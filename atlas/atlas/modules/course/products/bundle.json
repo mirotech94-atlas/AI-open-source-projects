@@ -1,0 +1,79 @@
+{
+  "source": "ATLAS Vault/Products/AI for Every Age/adults/ and seniors/, copied 2026-09-29. A lesson id starting A is the adult course's, S the large-print edition's. Every hook, line and blog section is a verbatim excerpt of the lesson file named beside it.",
+  "hashtags": "#ai #claude #aisafety #family",
+  "lessons": [
+    {
+      "id": "A0.3",
+      "title": "Family AI Agreement",
+      "hook": "you'll write and sign a short set of house rules for AI that everyone at home can follow, and keep it on paper, not online.",
+      "line": "If you're ever unsure whether something is private, treat it as private.",
+      "source": "Products/AI for Every Age/adults/Lesson 0.3 - Family AI Agreement.md"
+    },
+    {
+      "id": "A1.4",
+      "title": "Why chatbots can be confidently wrong",
+      "hook": "you'll understand that chatbots predict likely words, so sounding sure isn't the same as being right, and you'll sort any AI answer into an idea, a claim to check, or an action that needs your approval.",
+      "line": "Anything in the third group, whether it sends, buys, books, deletes, pays, or signs, needs a person's approval. In this course's core lessons, you do those things yourself; the AI only drafts.",
+      "source": "Products/AI for Every Age/adults/Lesson 1.4 - Why chatbots can be confidently wrong.md"
+    },
+    {
+      "id": "A7.1",
+      "title": "What a workflow is",
+      "hook": "you'll be able to break any repeated chore into a trigger, a set of steps, and a result, and draw it as a workflow on paper.",
+      "line": "A workflow keeps running whether or not you're watching. Mark every step that sends, buys, books, or deletes, and never automate those without a human approval step. In this course, none of the core builds do them at all.",
+      "source": "Products/AI for Every Age/adults/Lesson 7.1 - What a workflow is.md"
+    },
+    {
+      "id": "S3.1",
+      "title": "Create your Claude account",
+      "hook": "You will set up your own Claude account on your own phone, and ask it one test question.",
+      "line": "Claude never asks you to create a password. If a message asks for your \"Claude password,\" it's a scam.",
+      "source": "Products/AI for Every Age/seniors/Lesson 3.1 - Create your Claude account.md"
+    },
+    {
+      "id": "S4.5",
+      "title": "Explain this letter",
+      "hook": "You will take a photo of a confusing letter, with the numbers covered, and get a plain-English summary from Claude.",
+      "line": "Cover names and numbers before you take the photo, and check every date and amount against the real letter.",
+      "source": "Products/AI for Every Age/seniors/Lesson 4.5 - Explain this letter.md"
+    },
+    {
+      "id": "S6.2",
+      "title": "Voice-clone and family emergency scams",
+      "hook": "You will pick a family safe word, and practice hanging up and calling back.",
+      "line": "If a \"family emergency\" call asks for money, hang up and call back on a number you already know.",
+      "source": "Products/AI for Every Age/seniors/Lesson 6.2 - Voice-clone and family emergency scams.md"
+    }
+  ],
+  "blog": {
+    "title": "AI for Every Age: two editions for one household",
+    "meta": "Lessons from both AI for Every Age editions, word for word: house rules for AI, what a workflow is, and a routine with a real person in it.",
+    "sections": [
+      {
+        "lesson": "A0.3",
+        "heading": "House rules for AI",
+        "text": "Most AI mistakes at home aren't technical. Someone pastes a bank statement into a chatbot to \"tidy it up.\" A teenager uses a parent's account. A grandparent believes a voice on the phone because it sounds exactly like their grandson. Each of these starts with a missing rule, not a missing skill.\n\nA household AI agreement is a one-page list of rules that you write once and put somewhere visible. It works in two ways. It gives you a quick answer when you're unsure (\"Does this go in the AI? The agreement says no\"). And it gives everyone in the house the same rules, so nobody has to argue case by case.\n\nThe course's Family AI Agreement has four core rules. This adult version keeps them and adds two that matter once you're using AI for real tasks:\n\n1. **No secrets go into AI.** No passwords, ID numbers, account numbers, medical records, or children's names, photos, or schools.\n2. **An adult is present.** Children only see AI with an adult at the keyboard, and never on an adult's account.\n3. **Tell someone if something feels wrong.** An odd answer, a message asking for money, a request for a code: stop and tell another adult in the house.\n4. **AI is a helper, not a friend.** It doesn't replace the people you talk to about problems.\n5. **Check before you trust.** Dates, prices, rules, and numbers get checked against the original source.\n6. **Ask before it acts.** AI can suggest; a person approves anything that sends, buys, books, or deletes.\n\nYou can reword these, but keep the meaning. Rules 1 and 2 aren't optional.",
+        "source": "Products/AI for Every Age/adults/Lesson 0.3 - Family AI Agreement.md"
+      },
+      {
+        "lesson": "A7.1",
+        "heading": "What a workflow is",
+        "text": "A workflow is a recipe a computer follows by itself. It has three parts:\n\n1. **Trigger:** the thing that starts it. A time (\"every Monday at 7:00\"), an event (\"a form was submitted\"), or you clicking a button.\n2. **Steps:** what happens next, in order. Each step takes some information in, does one job, and passes the result on.\n3. **Result:** what exists at the end that didn't exist before. A new row in a spreadsheet, a message in your inbox, a note that says \"do it now\".\n\nIn n8n, each step is called a **node**, and the information moving between nodes is called **data** (n8n shows it as items, each a small list of named fields). The lines between nodes show where the data goes next.\n\nSome steps make a decision. An **If** step checks a condition, such as \"is the quantity more than 5?\", and sends the data down one of two paths: true or false. That fork is called a **branch**. Branches are how a workflow does different things in different situations without you watching.\n\nThree ideas will save you trouble in every build:\n\n- **One job per step.** \"Get the item, check it, save it, and email me\" is four steps, not one. Small steps are easier to test and fix.\n- **Know what goes in and what comes out.** Before you build a step, say out loud which fields it needs and which it produces.\n- **Decide where a human says yes.** Anything that sends, buys, books, or deletes should have a person approve it first, or not be automated at all. The core builds in this course never send, delete, or pay for anything on their own. (Build 2 emails *you* a reminder, which is as far as it goes.)\n\nA workflow is different from a chat with Claude. Claude answers when you ask. A workflow runs when its trigger fires, even when you're asleep. That's the whole point, and it's also why you build carefully and test before you let it run by itself.",
+        "source": "Products/AI for Every Age/adults/Lesson 7.1 - What a workflow is.md"
+      },
+      {
+        "lesson": "S4.7",
+        "heading": "Accessibility and aging well",
+        "text": "Claude can make everyday things a little easier. Three ways help most.\n\n**Simplify.** Paste a hard paragraph and ask for it in plain, short sentences. Or ask for a recipe written in big steps.\n\n**Translate.** Ask Claude to translate a message for a relative who speaks another language. Or to explain a phrase you heard. Check anything important with a person who speaks the language.\n\n**Talk.** Use voice mode when typing is tiring or your hands are busy.\n\nA routine helps you use these without thinking. The same small tasks, on the same days.\n\nBut a good routine also says when **not** to use AI. We call these \"call a professional\" moments. For example:\n\n- Chest pain, a fall, or trouble breathing: call 911.\n- A question about your medicines: call your pharmacist.\n- Anyone asking for money or account details: call your bank or a family member on a number you already know.\n- Feeling low or lonely for days: call a friend, a family member, or your doctor.\n\nClaude is a helper, not a friend. It is not a replacement for the people in your life.",
+        "source": "Products/AI for Every Age/seniors/Lesson 4.7 - Accessibility and aging well.md"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "text": "The full adult course and the large-print edition, for a household where more than one generation is learning.",
+      "source": "Products/AI for Every Age/Sales page.md"
+    }
+  ],
+  "quotes": []
+}

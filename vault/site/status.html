@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Status — Vault</title>
+<meta name="description" content="Whether Vault's hub and API are answering right now, and what this page can and cannot tell you.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg?v=vault">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body class="page-auth">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <main id="main" class="wrap">
+  <h1>Status</h1>
+
+  <p class="lede">Whether Vault&rsquo;s own hub and API are answering, checked from your
+  browser the moment you opened this page.</p>
+
+  <section class="status-live">
+    <h2>Right now</h2>
+    <p id="status-line" class="status-line status-pending" data-testid="status-line">
+      Checking&hellip;
+    </p>
+    <p class="muted" id="status-checked"></p>
+    <noscript>
+      <p class="muted">This check runs in your browser, so it needs JavaScript. Without it,
+      try <a href="https://api.guarder.io/v1/health">api.guarder.io/v1/health</a> directly.</p>
+    </noscript>
+  </section>
+
+  <section>
+    <h2>What this page cannot tell you</h2>
+    <p>It is served from the same machine as the hub, so it is not an independent monitor and
+    should not be your only source of truth.</p>
+    <p>What it does distinguish is worth something: the page itself is a static file, while the
+    hub is a separate process behind it. If this page loads and the check below fails, the hub
+    has stopped answering while the machine is otherwise up. <strong>If this page does not load
+    at all, assume everything is down</strong> &mdash; a status page hosted on the thing it
+    reports on cannot report its own absence.</p>
+    <p>Genuine independence needs probing from somewhere else entirely. Until that exists, this
+    page is honest about being a convenience rather than a guarantee.</p>
+  </section>
+
+  <section>
+    <h2>Telling us</h2>
+    <p>If Vault is down for you and this page disagrees, that is worth knowing:
+    <a href="/.well-known/security.txt">the contact address is here</a>.</p>
+  </section>
+</main>
+
+<footer class="auth-foot">
+  <div class="wrap">
+    <a href="/">guarder.io</a> &middot; <a href="/terms.html">Terms</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="https://my.guarder.io/help">Help</a>
+  </div>
+</footer>
+<script src="/app.js"></script>
+<script src="/status.js"></script>
+</body>
+</html>

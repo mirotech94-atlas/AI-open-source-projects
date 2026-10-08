@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the ATLAS independent watchdog every 5 minutes
+
+[Timer]
+OnCalendar=*:0/5
+AccuracySec=30s
+# A missed run is not caught up: the next one reads the current state anyway.
+Persistent=false
+
+[Install]
+WantedBy=timers.target

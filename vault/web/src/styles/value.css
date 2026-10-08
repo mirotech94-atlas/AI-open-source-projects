@@ -1,0 +1,32 @@
+/* The Reports value strip. Numbers large, notes small but never hidden —
+   the note is where a figure that could be over-read is corrected. */
+.g-value-stats {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+.g-value-stats li {
+  display: grid; gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+}
+.g-value-n { font-size: var(--font-size-xl); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.g-value-label { font-size: var(--font-size-sm); font-weight: 600; }
+.g-value-note { font-size: var(--font-size-xs); color: var(--color-text-muted); line-height: 1.45; }
+
+.g-value-work { margin-top: var(--space-4); }
+.g-value-work h4 { margin: 0 0 var(--space-2); font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600; }
+.g-value-work ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.g-value-work li {
+  display: grid; grid-template-columns: minmax(0, 1fr) 110px auto;
+  align-items: center; gap: var(--space-3); font-size: var(--font-size-xs);
+}
+.g-value-work-bar { height: 6px; border-radius: 3px; background: var(--color-track); overflow: hidden; }
+.g-value-work-bar > span { display: block; height: 100%; background: var(--color-primary); }
+.g-value-work-n { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 720px) {
+  .g-value-work li { grid-template-columns: minmax(0, 1fr) auto; }
+  .g-value-work-bar { display: none; }
+}

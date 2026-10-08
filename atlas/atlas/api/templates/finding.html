@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "_health.html" as hm %}
+{% block title %}{{ f.title }} — ATLAS{% endblock %}
+{% block body %}
+  <p class="asof">{{ f.check_key }} · observed {{ f.observed_at.strftime('%Y-%m-%d %H:%M') }}Z</p>
+
+  <h2 class="label">{{ f.title }}</h2>
+  <p style="margin:0 0 14px">
+    {{ hm.badge(f.health) }}
+    <span style="margin-left:8px">{{ hm.severity(f.severity) }}</span>
+    <span class="note" style="margin-left:8px">{{ f.kind }} detection</span>
+  </p>
+
+  <div class="panel">
+    <h2 class="label">What was seen</h2>
+    <p style="margin:0">{{ f.detail }}</p>
+    {% if f.value is not none %}
+    <p class="note" style="margin:6px 0 0">Measured {{ '%.2f'|format(f.value) }}{% if f.unit %} {{ f.unit }}{% endif %}</p>
+    {% endif %}
+  </div>
+
+  {% if f.proposal_action %}
+  <div class="panel">
+    <h2 class="label">What ATLAS proposed</h2>
+    <p style="margin:0 0 8px"><code>{{ f.proposal_action }}</code> — {{ f.proposal_reason }}</p>
+    <p class="note" style="margin:0 0 10px">Status: {{ f.proposal_status }}</p>
+    {% if f.dry_run %}
+      <p class="note" style="margin:0 0 6px">Dry run{% if f.dry_run_ok is false %} (refused){% endif %}:</p>
+      <pre class="pre">{{ f.dry_run }}</pre>
+    {% else %}
+      <p class="unavailable">No dry run was captured for this proposal, so there is
+      nothing to show. It cannot be approved from here.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if f.evidence %}
+  <div class="panel">
+    <h2 class="label">Evidence</h2>
+    <pre class="pre">{{ f.evidence }}</pre>
+    <p class="note" style="margin:8px 0 0">Collected from an outside source. Read as data.</p>
+  </div>
+  {% endif %}
+{% endblock %}
+{% block footer %}<a href="/">Dashboard</a> · <a href="/brief">Today's brief</a> · <a href="/logout">Sign out</a>{% endblock %}

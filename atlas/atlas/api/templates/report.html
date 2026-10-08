@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ r.title }} — ATLAS{% endblock %}
+{% block body %}
+  <p class="asof">
+    {{ r.at.strftime('%A %d %B %Y, %H:%M') }}Z · {{ r.kind }}
+    {% if r.delivered_via == 'undelivered' %}
+      · <span style="color:var(--amber)">this was never delivered</span>
+    {% elif r.delivered_via %}· sent via {{ r.delivered_via }}{% endif %}
+  </p>
+
+  <h2 class="label">{{ r.title }}</h2>
+
+  {# The report exactly as it was sent. Not re-rendered from live data — that
+     would show today's numbers under an older date. #}
+  <pre class="pre" style="white-space:pre-wrap">{{ r.body }}</pre>
+{% endblock %}
+{% block footer %}<a href="/reports">All reports</a> · <a href="/">Status</a> · <a href="/logout">Sign out</a>{% endblock %}

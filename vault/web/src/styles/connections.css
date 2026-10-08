@@ -1,0 +1,105 @@
+/* Live connections (pages/Connections.tsx).
+ *
+ * One strong element and everything else quiet: the per-device share bar,
+ * which answers "where did this machine's traffic go" before a single row is
+ * read. Everything else is text on the surface, sized by importance. Colour
+ * is only the portal's tokens; "New" is the warn tone and never the alert
+ * red, which stays rationed to "someone needs you" (CLAUDE.md, Design). */
+
+.g-cx { display: grid; gap: 14px; }
+
+.g-cx-bar {
+  display: flex; flex-wrap: wrap; gap: 12px 20px;
+  align-items: center; justify-content: space-between;
+}
+.g-cx-summary { margin: 0; font-size: 15px; color: var(--color-text); display: flex; align-items: center; gap: 8px; }
+.g-cx-summary-new { color: var(--color-warn-text); font-weight: 600; }
+.g-cx-live {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--color-text-muted);
+}
+.g-cx-live[data-state="open"] { background: var(--color-good); }
+
+.g-cx-controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.g-cx-seg-ctl {
+  display: inline-flex; border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 3px); overflow: hidden;
+}
+.g-cx-seg-ctl button {
+  border: 0; border-radius: 0; background: transparent; color: var(--color-text-muted);
+  padding: 6px 12px; font-size: 13px; cursor: pointer;
+}
+.g-cx-seg-ctl button + button { border-left: 1px solid var(--color-border); }
+.g-cx-seg-ctl button[aria-pressed="true"] { background: var(--color-primary-soft); color: var(--color-text); font-weight: 600; }
+.g-cx-seg-ctl button:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+
+.g-cx-note { margin: 0; font-size: 13px; line-height: 1.5; color: var(--color-text-muted); max-width: 72ch; }
+
+/* A device: its name, address, total, and the share bar under them. */
+.g-cx-device {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm, 3px);
+  background: var(--color-surface);
+}
+.g-cx-device-head {
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: baseline;
+  padding: 14px 16px 12px;
+}
+.g-cx-device-name { margin: 0; font-size: 16px; font-weight: 700; grid-column: 1; }
+.g-cx-device-meta { grid-column: 1; grid-row: 2; font-size: 12px; color: var(--color-text-muted); }
+.g-cx-device-total { grid-column: 2; grid-row: 1 / span 2; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.g-cx-share {
+  grid-column: 1 / -1; display: flex; gap: 2px; height: 8px; margin-top: 8px;
+  border-radius: 2px; overflow: hidden; background: var(--color-track);
+}
+.g-cx-seg { display: block; height: 100%; background: var(--color-primary); }
+.g-cx-seg[data-rank="1"] { opacity: .72; }
+.g-cx-seg[data-rank="2"] { opacity: .52; }
+.g-cx-seg[data-rank="3"] { opacity: .36; }
+.g-cx-seg[data-rank="rest"] { background: var(--color-text-muted); opacity: .3; }
+
+/* Destinations: name first, then what it is and what kind of traffic, then
+ * how much. The name carries the weight; the rest is read only if needed. */
+.g-cx-dests { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--color-border); }
+.g-cx-by-dest { border: 1px solid var(--color-border); border-radius: var(--radius-sm, 3px); background: var(--color-surface); }
+.g-cx-dests li + li { border-top: 1px solid var(--color-border); }
+.g-cx-dest, .g-cx-head {
+  display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.4fr) minmax(0, 1fr) 5.5rem; gap: 12px; align-items: baseline;
+  width: 100%; padding: 10px 16px; border: 0; border-radius: 0; background: transparent;
+  color: inherit; text-align: left; font: inherit; cursor: pointer;
+}
+.g-cx-dest:hover { background: var(--color-surface-raised); }
+.g-cx-dest:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+.g-cx-dest-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.g-cx-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-cx-raw { font-weight: 500; }
+.g-cx-new {
+  flex: none; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 2px;
+  color: var(--color-warn-text); background: var(--color-warn-soft);
+}
+.g-cx-head {
+  padding: 8px 16px 6px; font-size: 12px; color: var(--color-text-muted);
+}
+.g-cx-head span:last-child, .g-cx-bytes { text-align: right; }
+.g-cx-what { font-size: 13px; color: var(--color-text-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-cx-kind { font-size: 13px; color: var(--color-text); min-width: 0; }
+.g-cx-dest-cell { display: grid; gap: 2px; min-width: 0; }
+.g-cx-who { font-size: 12px; color: var(--color-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-cx-bytes { font-size: 13px; font-variant-numeric: tabular-nums; color: var(--color-text-muted); }
+
+details.g-cx-raw > summary {
+  cursor: pointer; font-size: 13px; color: var(--color-text-muted); padding: 8px 0;
+}
+details.g-cx-raw[open] > summary { color: var(--color-text); }
+
+.g-cx-drawer { display: grid; gap: 14px; }
+.g-cx-sentence { margin: 0; font-size: 16px; line-height: 1.55; max-width: 60ch; }
+
+@media (max-width: 640px) {
+  .g-cx-head { display: none; }
+  .g-cx-dest { grid-template-columns: 1fr auto; }
+  .g-cx-what { grid-column: 1; grid-row: 2; }
+  .g-cx-kind { grid-column: 1; grid-row: 3; }
+  .g-cx-what:empty { display: none; }
+  .g-cx-bytes { grid-column: 2; grid-row: 1; }
+}

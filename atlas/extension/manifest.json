@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "ATLAS Browser Collector",
+  "version": "1.0.0",
+  "description": "Sends browsing history, open tabs and dwell time to your own ATLAS instance over the NetBird mesh. Nothing else.",
+  "permissions": ["tabs", "history", "storage", "alarms", "idle"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ATLAS — click to pause or resume"
+  },
+  "options_page": "options.html",
+  "host_permissions": []
+}

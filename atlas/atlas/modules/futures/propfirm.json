@@ -1,0 +1,10 @@
+{
+  "_note": "ILLUSTRATIVE evaluation rules for a typical $50k futures prop-firm account. Real firms differ (intraday vs end-of-day trailing drawdown, consistency rules, allowed hours, resets, fees). ATLAS uses these for arithmetic on its own paper curve only. It never signs up for, pays for, or contacts any firm.",
+  "name": "$50k evaluation",
+  "account": 50000,
+  "profit_target": 3000,
+  "daily_loss_limit": 1000,
+  "trailing_max_drawdown": 2000,
+  "min_trading_days": 5,
+  "trailing_basis": "end of each trade (close-to-close marks), not intraday"
+}

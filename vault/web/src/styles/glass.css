@@ -1,0 +1,100 @@
+/* The glass material.
+ *
+ * WHAT THIS IS FOR, AND THE LINE IT DOES NOT CROSS
+ *
+ * Chrome only. Bars, rails, drawers, sheets, overlays -- the surfaces that
+ * frame the work. Never a table row, a status pill, a metric or an input.
+ *
+ * The reason is not taste. A translucent surface has whatever contrast the
+ * thing behind it happens to give it, which means the contrast of text on
+ * glass is a property of the scroll position, not of the palette. Vault's
+ * whole job is that an alert reads at a glance, and `tests/contrast.test.ts`
+ * makes a promise about specific foreground/background pairs that only holds
+ * while those grounds are opaque. So the promise is kept where the numbers
+ * live, and the glass goes around it.
+ *
+ * WHAT MAKES IT READ AS GLASS RATHER THAN AS A BLURRED RECTANGLE
+ *
+ * Three things, in order of how much they matter:
+ *
+ * 1. The specular edge. Real glass gathers light at its rim. A bright hairline
+ *    along the TOP edge and nothing along the bottom is most of the effect,
+ *    and it costs one inset shadow. A uniform border on all four sides undoes
+ *    it -- that reads as a box with a blur, which is the thing this is not.
+ * 2. Saturation. `backdrop-filter: blur()` alone desaturates whatever is
+ *    behind it and the pane goes grey and dead. Pairing the blur with
+ *    `saturate()` is what keeps the colour of the content alive through it.
+ * 3. Something to refract. Glass over a flat fill is just a tinted bar. These
+ *    surfaces are worth it only where content actually passes beneath them --
+ *    which is why the shell lets the page scroll UNDER the top bar rather than
+ *    starting below it.
+ *
+ * TWO FALLBACKS, BOTH REQUIRED
+ *
+ * `prefers-reduced-transparency` is the one people forget. It is the same
+ * accessibility setting Apple ships this material behind, and a reader who has
+ * asked the OS to stop doing this has asked for a reason -- vestibular
+ * sensitivity, low vision, or simply wanting to read a number without a
+ * kitchen behind it. Honouring it is not a nicety.
+ *
+ * `@supports not (backdrop-filter:...)` covers the other half: this product is
+ * sold to small practices running whatever is on the reception desk, and on a
+ * machine that cannot composite a blur the browser silently paints the tint
+ * with nothing behind it -- a half-transparent bar over live text. The opaque
+ * fallback is the difference between degrading and breaking.
+ */
+
+.g-glass {
+  background: var(--color-glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  /* Top edge only: the lensing highlight. The hairline underneath is the
+   * existing structural rule, kept, so the chrome still separates from the
+   * page the way every other region in this UI does. */
+  box-shadow:
+    inset 0 1px 0 0 var(--color-glass-edge),
+    0 1px 0 0 var(--color-border);
+}
+
+/* A pane that floats free of an edge -- a drawer, a command palette, a sheet.
+ * It gets the highlight on the top and a faint one down the leading edge,
+ * because two visible edges is what tells you it is an object rather than a
+ * band across the viewport. */
+.g-glass-pane {
+  background: var(--color-glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--color-border);
+  box-shadow:
+    inset 0 1px 0 0 var(--color-glass-edge),
+    inset 1px 0 0 0 var(--color-glass-edge),
+    var(--shadow-card);
+}
+
+/* Reduced transparency: the material becomes the opaque surface it was
+ * standing in for. Nothing moves, nothing resizes -- only the translucency
+ * goes, so the layout a reader has learned stays exactly where it was. */
+@media (prefers-reduced-transparency: reduce) {
+  .g-glass,
+  .g-glass-pane,
+  .g-drawer,
+  .g-palette,
+  .g-owner-bar,
+  .g-owner-rail {
+    background: var(--color-surface-raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* No backdrop-filter at all. Same destination, different road. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .g-glass,
+  .g-glass-pane,
+  .g-drawer,
+  .g-palette,
+  .g-owner-bar,
+  .g-owner-rail {
+    background: var(--color-surface-raised);
+  }
+}

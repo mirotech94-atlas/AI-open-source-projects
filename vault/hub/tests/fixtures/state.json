@@ -1,0 +1,2508 @@
+{
+  "last_run": "2026-09-09T18:30:26-04:00",
+  "sites": {
+    "Patient portal (portal.northwind-dental.example)": {
+      "dns_a": [
+        "192.0.2.130"
+      ],
+      "ok": true,
+      "cert_days_left": 74
+    },
+    "Online booking (booking.northwind-clinics.example)": {
+      "dns_a": [
+        "203.0.113.175"
+      ],
+      "ok": true,
+      "cert_days_left": 62
+    },
+    "FlyCheap": {
+      "dns_a": [
+        "192.0.2.46"
+      ],
+      "ok": true,
+      "cert_days_left": 88
+    },
+    "Staff intranet (intranet.northwind-clinics.example)": {
+      "dns_a": [
+        "198.51.100.116"
+      ],
+      "ok": true,
+      "cert_days_left": 89
+    }
+  },
+  "ssh": {
+    "prod": {
+      "uptime": "26 days, 23:46",
+      "reachable": true,
+      "disk_pct": 56,
+      "ports": [
+        22,
+        80,
+        443
+      ]
+    },
+    "demo": {
+      "uptime": "18:43",
+      "reachable": true,
+      "disk_pct": 57,
+      "ports": [
+        22,
+        80,
+        443
+      ]
+    },
+    "safehome": {
+      "uptime": "21:32",
+      "reachable": true,
+      "disk_pct": 16,
+      "ports": [
+        22,
+        80,
+        443
+      ]
+    }
+  },
+  "lan": {
+    "known_macs": {
+      "58:96:71:61:05:e3": {
+        "ip": "192.168.1.1",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "WNC Corporation",
+        "name": "gateway.northwind-dental.example",
+        "ports": {
+          "53": "2026-09-09T08:25:17-04:00",
+          "80": "2026-09-09T08:25:17-04:00",
+          "443": "2026-09-09T13:17:10-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 15,
+        "label": "Router (clinic gateway)",
+        "trusted": true,
+        "always_on": true
+      },
+      "74:04:f1:4f:5a:ca": {
+        "ip": "192.168.1.159",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Intel Corporate",
+        "name": "frontdesk-pc",
+        "ports": {
+          "445": "2026-09-09T16:35:35-04:00",
+          "3389": "2026-09-09T16:35:35-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 25,
+        "label": "Windows PC (frontdesk-pc)",
+        "trusted": true
+      },
+      "08:7c:39:f8:f4:07": {
+        "ip": "192.168.1.160",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Amazon Technologies Inc.",
+        "name": "echo-waiting-room",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0,
+        "label": "Amazon device",
+        "trusted": true
+      },
+      "6e:f8:af:e3:20:61": {
+        "ip": "192.168.1.163",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "private/randomized MAC (phone/laptop privacy)",
+        "name": "iphone",
+        "ports": {
+          "62078": "2026-09-09T18:30:26-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 5,
+        "label": "iPhone",
+        "trusted": true
+      },
+      "7e:b3:23:ef:d0:1f": {
+        "ip": "192.168.1.170",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "private/randomized MAC (phone/laptop privacy)",
+        "name": "practice-mac (airplay)",
+        "label": "Practice MacBook",
+        "ports": {
+          "22": "2026-09-08T23:48:02-04:00",
+          "445": "2026-09-08T23:48:02-04:00",
+          "5000": "2026-09-08T23:48:02-04:00",
+          "5900": "2026-09-08T23:48:02-04:00",
+          "53": "2026-09-09T11:54:11-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 40,
+        "trusted": true
+      },
+      "06:1b:79:42:c8:b0": {
+        "ip": "192.168.1.178",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "private/randomized MAC (phone/laptop privacy)",
+        "name": "iphone",
+        "ports": {
+          "62078": "2026-09-09T18:30:26-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 5,
+        "label": "iPhone"
+      },
+      "54:88:0e:dc:75:2c": {
+        "ip": "192.168.1.179",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T12:58:02-04:00",
+        "vendor": "SAMSUNG ELECTRO-MECHANICS(THAILAND)",
+        "name": null,
+        "ports": {},
+        "flapping": false,
+        "presence": "SLEEPING",
+        "risk": 0,
+        "label": "Samsung device"
+      },
+      "ec:71:db:05:5a:aa": {
+        "ip": "192.168.1.182",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Reolink Innovation Limited",
+        "name": "surgery-cam",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0,
+        "label": "Reolink camera",
+        "trusted": true
+      },
+      "34:55:e5:e9:7b:b8": {
+        "ip": "192.168.1.189",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "SJIT Co., Ltd.",
+        "name": "range-waiting-room",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0,
+        "label": "Samsung range (oven)",
+        "trusted": true
+      },
+      "d6:f4:54:7a:9b:b4": {
+        "ip": "192.168.1.196",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T17:32:03-04:00",
+        "vendor": "private/randomized MAC (phone/laptop privacy)",
+        "name": "iphone",
+        "ports": {},
+        "flapping": false,
+        "presence": "SLEEPING",
+        "risk": 0,
+        "label": "iPhone"
+      },
+      "54:27:1e:d3:5c:fb": {
+        "ip": "192.168.1.202",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "AzureWave Technology Inc.",
+        "name": "printer-reception",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0,
+        "label": "Canon printer (reception)",
+        "trusted": true
+      },
+      "70:3e:76:66:d3:95": {
+        "ip": "192.168.1.100",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Arcadyan Corporation",
+        "name": "ap-reception",
+        "ports": {
+          "80": "2026-09-09T10:09:25-04:00",
+          "443": "2026-09-09T10:09:25-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 10,
+        "label": "Wi-Fi extender",
+        "trusted": true
+      },
+      "70:3e:76:94:4b:94": {
+        "ip": "192.168.1.101",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Arcadyan Corporation",
+        "name": "ap-surgery",
+        "ports": {
+          "80": "2026-09-08T23:48:02-04:00",
+          "443": "2026-09-08T23:48:02-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 10,
+        "label": "Wi-Fi extender",
+        "trusted": true
+      },
+      "42:20:33:1c:2a:37": {
+        "ip": "192.168.1.167",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "private/randomized MAC (phone/laptop privacy)",
+        "name": "ipad",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0,
+        "label": "iPad",
+        "trusted": true
+      },
+      "52:b6:29:31:5b:37": {
+        "ip": "192.168.1.168",
+        "first_seen": "2026-09-08T20:45:29-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "private/randomized MAC (phone/laptop privacy)",
+        "name": "iphone",
+        "ports": {
+          "62078": "2026-09-09T18:10:37-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 5,
+        "label": "iPhone",
+        "trusted": true
+      },
+      "8a:06:a1:00:82:2c": {
+        "ip": "192.168.1.169",
+        "first_seen": "2026-09-08T20:49:44-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "private/randomized MAC (phone/laptop privacy)",
+        "name": "Reception MacBook Air (airplay)",
+        "trusted": true,
+        "ports": {
+          "5000": "2026-09-09T18:24:06-04:00"
+        },
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 5,
+        "label": "MacBook"
+      },
+      "d8:be:65:72:45:31": {
+        "ip": "192.168.1.157",
+        "first_seen": "2026-09-08T20:49:44-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Amazon Technologies Inc.",
+        "name": null,
+        "label": "Amazon Echo",
+        "trusted": false,
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0
+      },
+      "f8:89:d2:cc:b7:ce": {
+        "ip": "192.168.1.166",
+        "first_seen": "2026-09-08T21:13:38-04:00",
+        "last_seen": "2026-09-09T16:41:55-04:00",
+        "vendor": "CLOUD NETWORK TECHNOLOGY SINGAPORE PTE. LTD.",
+        "name": "staff-phone",
+        "trusted": true,
+        "ports": {},
+        "flapping": false,
+        "presence": "SLEEPING",
+        "risk": 0,
+        "label": "Phone (staff)"
+      },
+      "14:14:16:9e:de:40": {
+        "ip": "192.168.1.176",
+        "first_seen": "2026-09-08T21:13:38-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Hui Zhou Gaoshengda Technology Co.,LTD",
+        "name": "FireTV waiting-room (homekit)",
+        "label": "Fire TV (waiting room)",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0,
+        "trusted": true
+      },
+      "14:14:16:83:53:bf": {
+        "ip": "192.168.1.175",
+        "first_seen": "2026-09-08T21:13:38-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Hui Zhou Gaoshengda Technology Co.,LTD",
+        "name": "Waiting room Fire TV (airplay)",
+        "label": "Fire TV (waiting room)",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0,
+        "trusted": true
+      },
+      "dc:72:23:8b:0e:7e": {
+        "ip": "192.168.1.172",
+        "first_seen": "2026-09-08T21:13:38-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Hui Zhou Gaoshengda Technology Co.,LTD",
+        "name": null,
+        "label": "Streaming box (Fire TV?)",
+        "ports": {},
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 0
+      },
+      "dc:72:23:e0:80:37": {
+        "ip": "192.168.1.171",
+        "first_seen": "2026-09-08T21:13:38-04:00",
+        "last_seen": "2026-09-09T18:30:26-04:00",
+        "vendor": "Hui Zhou Gaoshengda Technology Co.,LTD",
+        "name": "Smart-TV-surgery-2 (cast)",
+        "label": "Smart TV",
+        "flapping": false,
+        "presence": "ONLINE",
+        "risk": 5,
+        "ports": {
+          "8443": "2026-09-09T18:04:16-04:00"
+        },
+        "trusted": true
+      },
+      "dc:72:23:c6:b8:9b": {
+        "ip": "192.168.1.177",
+        "first_seen": "2026-09-08T21:13:38-04:00",
+        "last_seen": "2026-09-08T21:13:38-04:00",
+        "vendor": "Hui Zhou Gaoshengda Technology Co.,LTD",
+        "name": null,
+        "label": "Streaming box (Fire TV?)",
+        "flapping": false,
+        "presence": "SLEEPING",
+        "risk": 0
+      },
+      "b8:ab:62:ac:e3:c7": {
+        "ip": "192.168.1.173",
+        "first_seen": "2026-09-08T23:48:02-04:00",
+        "last_seen": "2026-09-09T00:03:24-04:00",
+        "vendor": "Hui Zhou Gaoshengda Technology Co.,LTD",
+        "name": "breakroom-tv",
+        "label": "Break room TV",
+        "ports": {},
+        "flapping": false,
+        "presence": "SLEEPING",
+        "risk": 0,
+        "trusted": true
+      }
+    },
+    "last_live_count": 13,
+    "last_live_macs": [
+      "06:1b:79:42:c8:b0",
+      "08:7c:39:f8:f4:07",
+      "14:14:16:9e:de:40",
+      "14:14:16:83:53:bf",
+      "34:55:e5:e9:7b:b8",
+      "42:20:33:1c:2a:37",
+      "52:b6:29:31:5b:37",
+      "54:27:1e:d3:5c:fb",
+      "58:96:71:61:05:e3",
+      "6e:f8:af:e3:20:61",
+      "70:3e:76:94:4b:94",
+      "70:3e:76:66:d3:95",
+      "74:04:f1:4f:5a:ca",
+      "7e:b3:23:ef:d0:1f",
+      "8a:06:a1:00:82:2c",
+      "d8:be:65:72:45:31",
+      "dc:72:23:8b:0e:7e",
+      "dc:72:23:e0:80:37",
+      "ec:71:db:05:5a:aa"
+    ],
+    "miss_count": {
+      "dc:72:23:c6:b8:9b": 2,
+      "b8:ab:62:ac:e3:c7": 2,
+      "54:88:0e:dc:75:2c": 2,
+      "f8:89:d2:cc:b7:ce": 2,
+      "d6:f4:54:7a:9b:b4": 2
+    },
+    "transitions": {
+      "d6:f4:54:7a:9b:b4": [
+        "2026-09-09T17:38:29-04:00",
+        "2026-09-09T17:45:08-04:00"
+      ]
+    }
+  },
+  "alert_history": [
+    {
+      "ts": "2026-09-09T08:37:51-04:00",
+      "keys": [
+        "sec:attacker:demo:203.0.113.202",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:drift:demo:ufw_rules",
+        "lan:port:74:04:f1:4f:5a:ca:445",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T08:43:57-04:00",
+      "keys": [
+        "sec:attacker:demo:203.0.113.202",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T08:49:59-04:00",
+      "keys": [
+        "sec:attacker:demo:203.0.113.202",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T08:56:04-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:203.0.113.202",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:02:08-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:203.0.113.202",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:08:12-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:14:15-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:20:19-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:26:24-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:32:29-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:39:04-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:45:12-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:51:17-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T09:57:20-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:03:22-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:09:25-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:15:28-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "wan:loss:cloudflare",
+        "wan:loss:google",
+        "wan:loss:safehome",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:21:32-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "lan:unverified",
+        "reboot:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:26:12-04:00",
+      "keys": [
+        "sec:panel:Patient portal (portal.northwind-dental.example):/.env",
+        "sec:panel:Patient portal (portal.northwind-dental.example):/.git/config",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/.env",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/.git/config",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:demo:ufw_rules",
+        "sec:panel:Patient portal (portal.northwind-dental.example):/phpmyadmin/",
+        "sec:panel:Patient portal (portal.northwind-dental.example):/server-status",
+        "sec:panel:Patient portal (portal.northwind-dental.example):/actuator/env",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/phpmyadmin/",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/server-status",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/actuator/env",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "lan:unverified",
+        "reboot:safehome",
+        "sec:panel:Patient portal (portal.northwind-dental.example):/wp-login.php",
+        "sec:panel:Patient portal (portal.northwind-dental.example):/admin",
+        "sec:panel:Patient portal (portal.northwind-dental.example):/console",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/wp-login.php",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/admin",
+        "sec:panel:Online booking (booking.northwind-clinics.example):/console",
+        "email:dmarc-none:northwind-dental.example",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:30:03-04:00",
+      "keys": [
+        "sec:drift:prod:cron",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "sec:drift:safehome:cron",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:32:35-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:38:58-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:45:23-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:51:46-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T10:58:10-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:04:31-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:10:54-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:17:16-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:23:38-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:30:02-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:36:38-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:42:01-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:48:26-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "home:evil-twin",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:54:11-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T11:59:48-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:06:12-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "home:evil-twin",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:12:35-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.198",
+        "wan:loss:google",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:18:59-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:25:24-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:31:48-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:38:50-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:port:74:04:f1:4f:5a:ca:445",
+        "lan:port:74:04:f1:4f:5a:ca:3389",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:45:14-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "wan:loss:google",
+        "wan:loss:safehome",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:51:38-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T12:58:02-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:04:24-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:10:48-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:17:10-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:22:18-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:28:31-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:35:20-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:41:41-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:48:02-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "wan:loss:safehome",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T13:54:24-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:00:45-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:07:07-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:13:28-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:19:49-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:26:11-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:33:21-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:39:46-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:46:08-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:52:30-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T14:58:52-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:port:74:04:f1:4f:5a:ca:3389",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:05:14-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:11:36-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:17:59-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:24:23-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:31:14-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:37:35-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:port:74:04:f1:4f:5a:ca:445",
+        "lan:port:74:04:f1:4f:5a:ca:3389",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:43:57-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:50:18-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T15:56:39-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "home:evil-twin",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:03:01-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:09:21-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:15:47-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:22:14-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:29:13-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:35:35-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "lan:port:74:04:f1:4f:5a:ca:445",
+        "lan:port:74:04:f1:4f:5a:ca:3389",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:41:55-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "home:evil-twin",
+        "lan:unverified",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:47:20-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T16:53:27-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:00:00-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:06:35-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:12:27-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "home:evil-twin",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:18:09-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:25:29-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:32:03-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "wan:loss:cloudflare",
+        "wan:loss:safehome",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:38:29-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:45:08-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:51:31-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T17:57:54-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T18:04:16-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T18:10:37-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T18:16:57-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T18:24:06-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    },
+    {
+      "ts": "2026-09-09T18:30:26-04:00",
+      "keys": [
+        "sec:attacker:demo:192.0.2.107",
+        "reboot:safehome",
+        "email:spf:northwind-clinics.example",
+        "email:dmarc:northwind-clinics.example",
+        "email:dmarc-none:northwind-dental.example",
+        "sec:cve:prod",
+        "sec:cve:demo",
+        "sec:cve:safehome",
+        "hb:roots-daily-report:setup"
+      ]
+    }
+  ],
+  "acked": {
+    "reboot:demo": {
+      "ts": "2026-09-08T23:46:09-0400",
+      "note": ""
+    },
+    "reboot:safehome": {
+      "ts": "2026-09-08T23:46:10-0400",
+      "note": ""
+    },
+    "lan:new:b8:ab:62:ac:e3:c7": {
+      "ts": "2026-09-08T23:50:28-0400",
+      "note": ""
+    }
+  },
+  "wan_ip": "198.51.100.105",
+  "notified": {
+    "lan:unverified": "2026-09-08T22:44:23-04:00",
+    "reboot:demo": "2026-09-08T23:43:05-04:00",
+    "reboot:safehome": "2026-09-08T23:43:05-04:00",
+    "hb:roots-daily-report:setup": "2026-09-08T23:54:26-04:00",
+    "sec:attacker:demo:192.0.2.107": "2026-09-09T06:41:25-04:00"
+  },
+  "speed": {
+    "down_mbps": 526.6,
+    "up_mbps": 86.3,
+    "latency_ms": 21,
+    "responsiveness_rpm": 436.069091796875,
+    "ts": "2026-09-09T18:19:03-04:00"
+  },
+  "speed_baseline": {
+    "down_mbps": 473.8,
+    "n": 48
+  },
+  "fix_cooldown": {
+    "enable_unattended:prod:": "2026-09-08T22:44:23-04:00",
+    "enable_unattended:demo:": "2026-09-08T22:44:23-04:00",
+    "enable_unattended:safehome:": "2026-09-08T22:44:23-04:00",
+    "security_updates:prod": "2026-09-08T22:51:05-04:00",
+    "harden_fail2ban:demo:": "2026-09-08T22:51:05-04:00",
+    "security_updates:demo": "2026-09-08T22:51:05-04:00",
+    "disable_ssh_password:demo:": "2026-09-08T23:31:38-04:00",
+    "enable_ufw:demo:": "2026-09-08T23:31:38-04:00",
+    "disable_ssh_password:safehome:": "2026-09-08T23:31:38-04:00",
+    "block_ip:demo:192.0.2.198": "2026-09-08T23:33:33-04:00",
+    "block_ip:demo:198.51.100.16": "2026-09-08T23:33:33-04:00",
+    "block_ip:demo:203.0.113.202": "2026-09-08T23:33:33-04:00",
+    "block_ip:demo:192.0.2.107": "2026-09-09T06:41:25-04:00",
+    "install_debsecan:prod:": "2026-09-09T10:26:12-04:00",
+    "install_debsecan:demo:": "2026-09-09T10:26:12-04:00",
+    "install_debsecan:safehome:": "2026-09-09T10:26:12-04:00"
+  },
+  "sec": {
+    "prod": {
+      "authorized_keys": 5,
+      "login_users": [
+        "gitlab-runner"
+      ],
+      "cron_net": [],
+      "login_sources": [
+        "198.51.100.249",
+        "198.51.100.105",
+        "Fri",
+        "Sun"
+      ],
+      "drift": {
+        "sshd_config": "5eac342e2b",
+        "authorized_keys": "ec94967091",
+        "cron": "f0a0cb629c",
+        "ufw_rules": "0a2457ff88",
+        "docker_compose": "61d3b199f9"
+      }
+    },
+    "demo": {
+      "authorized_keys": 1,
+      "login_users": [],
+      "cron_net": [],
+      "login_sources": [
+        "198.51.100.105",
+        "10.3.6.158",
+        "Tue"
+      ],
+      "drift": {
+        "sshd_config": "1dec5bc7b2",
+        "authorized_keys": "7e394bd008",
+        "cron": "2fdec11353",
+        "ufw_rules": "8eccdae7a3",
+        "docker_compose": "61d3b199f9"
+      }
+    },
+    "safehome": {
+      "authorized_keys": 1,
+      "login_users": [],
+      "cron_net": [],
+      "login_sources": [
+        "10.3.6.158",
+        "Tue"
+      ],
+      "drift": {
+        "sshd_config": "1dec5bc7b2",
+        "authorized_keys": "2442e44715",
+        "cron": "25eefe26a8",
+        "ufw_rules": "a5f424fd32",
+        "docker_compose": "d41d8cd98f"
+      }
+    }
+  },
+  "home": {
+    "exposure": {
+      "probe_host": "safehome",
+      "wan_ip": "198.51.100.105",
+      "open_ports": [],
+      "checked": [
+        21,
+        22,
+        23,
+        25,
+        53,
+        80,
+        443,
+        445,
+        3389,
+        5900,
+        8080,
+        8443,
+        7547,
+        1900,
+        5000,
+        8291,
+        32400,
+        49152
+      ],
+      "ts": "2026-09-09T18:18:22-04:00"
+    }
+  },
+  "home_last": {
+    "wifi": {
+      "ssid": "Northwind-Staff",
+      "security": "WPA2 Personal",
+      "channel": "100 (5GHz, 80MHz)",
+      "phy": "802.11ax",
+      "signal": "-32 dBm / -86 dBm"
+    },
+    "gateway": "192.168.1.1",
+    "gateway_ports": [
+      53,
+      80,
+      443
+    ],
+    "exposure": {
+      "probe_host": "safehome",
+      "wan_ip": "198.51.100.105",
+      "open_ports": [],
+      "checked": [
+        21,
+        22,
+        23,
+        25,
+        53,
+        80,
+        443,
+        445,
+        3389,
+        5900,
+        8080,
+        8443,
+        7547,
+        1900,
+        5000,
+        8291,
+        32400,
+        49152
+      ],
+      "ts": "2026-09-09T18:18:22-04:00"
+    },
+    "unverified": [],
+    "stale": true
+  },
+  "mac_updates": {
+    "os": "27.0",
+    "available": [
+      "Command Line Tools for Xcode 27.0",
+      "macOS 27"
+    ],
+    "ts": "2026-09-09T17:39:57-04:00",
+    "raw": ""
+  },
+  "heartbeats": {
+    "roots-daily-report": {
+      "token": "TOKEN"
+    }
+  },
+  "alerts_db": {
+    "sec:attacker:demo:192.0.2.198": {
+      "key": "sec:attacker:demo:192.0.2.198",
+      "sev": "WARN",
+      "msg": "demo: 192.0.2.198 made 310 failed SSH logins in 24h",
+      "first_seen": "2026-09-09T09:08:12-04:00",
+      "last_seen": "2026-09-09T12:12:35-04:00",
+      "count": 32,
+      "state": "resolved",
+      "fires": 2,
+      "resolved_at": "2026-09-09T12:18:59-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "sec:attacker:demo:198.51.100.16": {
+      "key": "sec:attacker:demo:198.51.100.16",
+      "sev": "WARN",
+      "msg": "demo: 198.51.100.16 made 510 failed SSH logins in 24h",
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "last_seen": "2026-09-09T05:58:20-04:00",
+      "count": 63,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-09T06:04:25-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "sec:attacker:demo:203.0.113.202": {
+      "key": "sec:attacker:demo:203.0.113.202",
+      "sev": "WARN",
+      "msg": "demo: 203.0.113.202 made 392 failed SSH logins in 24h",
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "last_seen": "2026-09-09T09:02:08-04:00",
+      "count": 93,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-09T09:08:12-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "rebooted:demo": {
+      "key": "rebooted:demo",
+      "sev": "WARN",
+      "msg": "demo rebooted (uptime 35 days,  7:53 -> 1 min)",
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "last_seen": "2026-09-08T23:48:02-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-08T23:50:58-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "hb:roots-daily-report": {
+      "key": "hb:roots-daily-report",
+      "sev": "WARN",
+      "msg": "Heartbeat 'roots-daily-report' missing — expected every 1500 min, last never",
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "last_seen": "2026-09-08T23:50:58-04:00",
+      "count": 2,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-08T23:54:26-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "lan:port:74:04:f1:4f:5a:ca:445": {
+      "key": "lan:port:74:04:f1:4f:5a:ca:445",
+      "sev": "WARN",
+      "msg": "frontdesk-pc now exposes smb (port 445) on the LAN",
+      "first_seen": "2026-09-09T16:35:35-04:00",
+      "last_seen": "2026-09-09T16:35:35-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 8,
+      "resolved_at": "2026-09-09T16:41:55-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "lan:port:74:04:f1:4f:5a:ca:3389": {
+      "key": "lan:port:74:04:f1:4f:5a:ca:3389",
+      "sev": "WARN",
+      "msg": "frontdesk-pc now exposes rdp (port 3389) on the LAN",
+      "first_seen": "2026-09-09T16:35:35-04:00",
+      "last_seen": "2026-09-09T16:35:35-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 7,
+      "resolved_at": "2026-09-09T16:41:55-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "lan:port:7e:b3:23:ef:d0:1f:445": {
+      "key": "lan:port:7e:b3:23:ef:d0:1f:445",
+      "sev": "WARN",
+      "msg": "Practice MacBook now exposes smb (port 445) on the LAN",
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "last_seen": "2026-09-08T23:48:02-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-08T23:50:58-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "lan:port:7e:b3:23:ef:d0:1f:5900": {
+      "key": "lan:port:7e:b3:23:ef:d0:1f:5900",
+      "sev": "WARN",
+      "msg": "Practice MacBook now exposes vnc (port 5900) on the LAN",
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "last_seen": "2026-09-08T23:48:02-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-08T23:50:58-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "reboot:safehome": {
+      "key": "reboot:safehome",
+      "sev": "INFO",
+      "msg": "safehome needs a reboot (kernel update)",
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 184,
+      "state": "acked",
+      "fires": 1
+    },
+    "lan:unverified": {
+      "key": "lan:unverified",
+      "sev": "WARN",
+      "msg": "3 device(s) on the Wi-Fi are not verified (no label, not trusted): Hui Zhou Gaoshengda Technology Co.,LTD 192.168.1.172, Smart-TV-surgery-2 (cast) 192.168.1.171, Hui Zhou Gaoshengda Technology Co.,LTD 192.168.1.177",
+      "first_seen": "2026-09-08T23:54:26-04:00",
+      "last_seen": "2026-09-09T16:41:55-04:00",
+      "count": 165,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-09T16:47:20-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "hb:roots-daily-report:setup": {
+      "key": "hb:roots-daily-report:setup",
+      "sev": "INFO",
+      "msg": "Heartbeat 'roots-daily-report' never pinged yet — add `curl -s https://intranet.northwind-clinics.example/hb/roots-daily-report/REDACTED` to the end of that job",
+      "first_seen": "2026-09-08T23:54:26-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 182,
+      "state": "open",
+      "fires": 1
+    },
+    "lan:flapping:f8:89:d2:cc:b7:ce": {
+      "key": "lan:flapping:f8:89:d2:cc:b7:ce",
+      "sev": "INFO",
+      "msg": "staff-phone is flapping (joins/leaves repeatedly) — weak Wi-Fi or power saving; join/leave alerts muted",
+      "first_seen": "2026-09-09T00:46:22-04:00",
+      "last_seen": "2026-09-09T01:04:29-04:00",
+      "count": 4,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-09T01:10:32-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "wan:loss:cloudflare": {
+      "key": "wan:loss:cloudflare",
+      "sev": "WARN",
+      "msg": "Packet loss 20.0% to cloudflare (1.1.1.1)",
+      "first_seen": "2026-09-09T17:32:03-04:00",
+      "last_seen": "2026-09-09T17:32:03-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 3,
+      "resolved_at": "2026-09-09T17:38:29-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "wan:loss:google": {
+      "key": "wan:loss:google",
+      "sev": "WARN",
+      "msg": "Packet loss 20.0% to google (8.8.8.8)",
+      "first_seen": "2026-09-09T12:45:14-04:00",
+      "last_seen": "2026-09-09T12:45:14-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 5,
+      "resolved_at": "2026-09-09T12:51:38-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "wan:loss:safehome": {
+      "key": "wan:loss:safehome",
+      "sev": "WARN",
+      "msg": "Packet loss 20.0% to safehome (198.51.100.116)",
+      "first_seen": "2026-09-09T17:32:03-04:00",
+      "last_seen": "2026-09-09T17:32:03-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 5,
+      "resolved_at": "2026-09-09T17:38:29-04:00",
+      "resolved_by": "auto-cleared"
+    },
+    "sec:attacker:demo:192.0.2.107": {
+      "key": "sec:attacker:demo:192.0.2.107",
+      "sev": "WARN",
+      "msg": "demo: 192.0.2.107 made 362 failed SSH logins in 24h",
+      "first_seen": "2026-09-09T06:41:25-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 115,
+      "state": "open",
+      "fires": 1,
+      "fix": "auto-fixed: block attacker IP in the firewall"
+    },
+    "email:spf:northwind-clinics.example": {
+      "key": "email:spf:northwind-clinics.example",
+      "sev": "INFO",
+      "msg": "northwind-clinics.example: no SPF record — anyone can spoof mail from this domain (domain sends no mail: publish 'v=spf1 -all' and DMARC p=reject so nobody can spoof it)",
+      "first_seen": "2026-09-09T10:26:12-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 78,
+      "state": "open",
+      "fires": 1
+    },
+    "email:dmarc:northwind-clinics.example": {
+      "key": "email:dmarc:northwind-clinics.example",
+      "sev": "INFO",
+      "msg": "northwind-clinics.example: no DMARC record — spoofed mail is not rejected (domain sends no mail: publish 'v=spf1 -all' and DMARC p=reject so nobody can spoof it)",
+      "first_seen": "2026-09-09T10:26:12-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 78,
+      "state": "open",
+      "fires": 1
+    },
+    "email:dmarc-none:northwind-dental.example": {
+      "key": "email:dmarc-none:northwind-dental.example",
+      "sev": "INFO",
+      "msg": "northwind-dental.example: DMARC policy is p=none (monitor only); move to quarantine or reject",
+      "first_seen": "2026-09-09T10:26:12-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 78,
+      "state": "open",
+      "fires": 1
+    },
+    "sec:drift:prod:cron": {
+      "key": "sec:drift:prod:cron",
+      "sev": "WARN",
+      "msg": "prod: cron changed since last scan (config drift) — was it you or the platform?",
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "last_seen": "2026-09-09T10:30:03-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-09T10:30:03-04:00",
+      "resolved_by": "fix: debsecan install added its daily cron (expected)"
+    },
+    "sec:drift:safehome:cron": {
+      "key": "sec:drift:safehome:cron",
+      "sev": "WARN",
+      "msg": "safehome: cron changed since last scan (config drift) — was it you or the platform?",
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "last_seen": "2026-09-09T10:30:03-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 1,
+      "resolved_at": "2026-09-09T10:30:03-04:00",
+      "resolved_by": "fix: debsecan install added its daily cron (expected)"
+    },
+    "sec:cve:prod": {
+      "key": "sec:cve:prod",
+      "sev": "INFO",
+      "msg": "prod: 200 known vulnerabilities with a fix available (debsecan) — the daily upgrade clears them",
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 77,
+      "state": "open",
+      "fires": 1
+    },
+    "sec:cve:demo": {
+      "key": "sec:cve:demo",
+      "sev": "INFO",
+      "msg": "demo: 103 known vulnerabilities with a fix available (debsecan) — the daily upgrade clears them",
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 77,
+      "state": "open",
+      "fires": 1
+    },
+    "sec:cve:safehome": {
+      "key": "sec:cve:safehome",
+      "sev": "INFO",
+      "msg": "safehome: 100 known vulnerabilities with a fix available (debsecan) — the daily upgrade clears them",
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "last_seen": "2026-09-09T18:30:26-04:00",
+      "count": 77,
+      "state": "open",
+      "fires": 1
+    },
+    "home:evil-twin": {
+      "key": "home:evil-twin",
+      "sev": "WARN",
+      "msg": "Another access point broadcasts your SSID on channel(s) [11] (not seen before) — evil twin or a new extender?",
+      "first_seen": "2026-09-09T17:12:27-04:00",
+      "last_seen": "2026-09-09T17:12:27-04:00",
+      "count": 1,
+      "state": "resolved",
+      "fires": 5,
+      "resolved_at": "2026-09-09T17:18:09-04:00",
+      "resolved_by": "auto-cleared"
+    }
+  },
+  "digest_date": "2026-09-09",
+  "gw_mac": "58:96:71:61:05:e3",
+  "domains": {
+    "northwind-dental.example": {
+      "expires": "2029-05-11",
+      "days_left": 976,
+      "ts": "2026-09-08T23:48:55-04:00"
+    },
+    "northwind-clinics.example": {
+      "expires": "2027-01-04",
+      "days_left": 118,
+      "ts": "2026-09-08T23:48:55-04:00"
+    }
+  },
+  "forgotten": [],
+  "admin_probe": {
+    "Patient portal (portal.northwind-dental.example)": {
+      "hits": {},
+      "catch_all": true,
+      "ts": "2026-09-09T10:30:59-04:00"
+    },
+    "Online booking (booking.northwind-clinics.example)": {
+      "hits": {},
+      "catch_all": true,
+      "ts": "2026-09-09T10:30:59-04:00"
+    },
+    "FlyCheap": {
+      "hits": {},
+      "catch_all": false,
+      "ts": "2026-09-09T10:31:08-04:00"
+    },
+    "Staff intranet (intranet.northwind-clinics.example)": {
+      "hits": {},
+      "catch_all": false,
+      "ts": "2026-09-09T10:31:08-04:00"
+    }
+  },
+  "email_sec": {
+    "northwind-clinics.example": {
+      "spf": null,
+      "dmarc": null,
+      "dmarc_policy": null,
+      "dkim_selector": null,
+      "has_mx": false,
+      "ts": "2026-09-09T10:27:12-04:00"
+    },
+    "northwind-dental.example": {
+      "spf": "v=spf1 a mx ip4:192.0.2.173 ~all",
+      "dmarc": "v=DMARC1; p=none;",
+      "dmarc_policy": "none",
+      "dkim_selector": "default",
+      "has_mx": true,
+      "ts": "2026-09-09T10:27:13-04:00"
+    }
+  },
+  "external_sites": {
+    "portal.northwind-dental.example": {
+      "ip": "192.0.2.130",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    },
+    "booking.northwind-clinics.example": {
+      "ip": "203.0.113.175",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    },
+    "pay.northwind-clinics.example": {
+      "ip": "192.0.2.46",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    },
+    "intranet.northwind-clinics.example": {
+      "ip": "198.51.100.116",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    }
+  },
+  "home_ssid": "Northwind-Staff",
+  "twin_channels": [
+    6,
+    100
+  ],
+  "incidents": {
+    "host:demo|2026-09-09": {
+      "id": 101,
+      "opened": "2026-09-09T11:36:38-04:00"
+    },
+    "home|2026-09-08": {
+      "id": 102,
+      "opened": "2026-09-09T11:48:26-04:00"
+    },
+    "home|2026-09-09": {
+      "id": 103,
+      "opened": "2026-09-09T17:32:03-04:00"
+    }
+  },
+  "incident_seq": 103,
+  "rec_decisions": {},
+  "attacker_hist": {
+    "192.0.2.107": [
+      "2026-09-09"
+    ]
+  }
+}

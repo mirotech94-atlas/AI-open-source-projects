@@ -1,0 +1,146 @@
+{
+  "owner": "Owner",
+  "sites": [
+    {
+      "name": "Roots prod (status.example.org)",
+      "url": "https://status.example.org/health",
+      "expect": [
+        200
+      ],
+      "expect_body": "\"ok\":true",
+      "host": "status.example.org",
+      "public": true
+    },
+    {
+      "name": "Demo (pulsedemo.example.com)",
+      "url": "https://pulsedemo.example.com/",
+      "expect": [
+        200
+      ],
+      "host": "pulsedemo.example.com",
+      "public": true
+    },
+    {
+      "name": "FlyCheap",
+      "url": "https://flycheap.example.com/",
+      "expect": [
+        200,
+        307,
+        302
+      ],
+      "host": "flycheap.example.com",
+      "public": true
+    },
+    {
+      "name": "Nexus public (safehome.example.com)",
+      "url": "https://safehome.example.com/",
+      "expect": [
+        401
+      ],
+      "host": "safehome.example.com",
+      "public": false
+    }
+  ],
+  "ssh_hosts": [
+    {
+      "name": "prod",
+      "target": "root@203.0.113.10",
+      "key": null,
+      "expect_docker": [
+        "standup-bot"
+      ]
+    },
+    {
+      "name": "demo",
+      "target": "root@203.0.113.10",
+      "key": "~/.ssh/id_rsa",
+      "expect_docker": [
+        "standup-bot"
+      ]
+    },
+    {
+      "name": "safehome",
+      "target": "root@203.0.113.10",
+      "key": null,
+      "expect_services": [
+        "nginx",
+        "fail2ban"
+      ]
+    }
+  ],
+  "lan": {
+    "enabled": true,
+    "subnet_prefix": "192.168.1",
+    "expected_gateway": "192.168.1.1",
+    "watch_ips": {}
+  },
+  "tailscale": {
+    "enabled": false
+  },
+  "thresholds": {
+    "http_latency_warn_s": 4.0,
+    "cert_days_warn": 21,
+    "cert_days_crit": 7,
+    "disk_pct_warn": 80,
+    "disk_pct_crit": 92,
+    "mem_pct_warn": 90,
+    "load_per_core_warn": 2.0,
+    "failed_ssh_24h_warn": 20000,
+    "require_fail2ban": true,
+    "attacker_block_24h": 300,
+    "fire_after_runs": 2,
+    "resend_hours": 6,
+    "loss_pct_warn": 20,
+    "path_ms_warn": 120
+  },
+  "home": {
+    "external_probe_host": "safehome",
+    "site_allowed_ports": []
+  },
+  "auto_fix": {
+    "enabled": true,
+    "note": "safe unattended fixes: fail2ban, security updates (not docker/containerd/nginx), auto-updates, kill miners, restart expected containers/services, disk cleanup, block attacker IPs. Lock-out/downtime actions (key-only SSH, ufw enable, reboot) are dashboard buttons only.",
+    "max_per_day": 30,
+    "digest_hour": 9
+  },
+  "public_url": "https://example.invalid",
+  "heartbeats": {
+    "roots-daily-report": {
+      "every_min": 1500,
+      "note": "example: curl the /hb URL at the end of a cron job or n8n flow; delete if unused"
+    }
+  },
+  "checks": [
+    {
+      "name": "prod ssh port",
+      "type": "tcp",
+      "target": "203.0.113.10",
+      "port": 22
+    },
+    {
+      "name": "router ping",
+      "type": "icmp",
+      "target": "192.168.1.1"
+    },
+    {
+      "name": "status.example.org resolves",
+      "type": "dns",
+      "target": "status.example.org",
+      "record": "A"
+    }
+  ],
+  "roles": {},
+  "dns": {
+    "enabled": true,
+    "bind": "0.0.0.0",
+    "port": 53,
+    "family_filter": false,
+    "allow": [],
+    "block": [],
+    "upstreams": [
+      "https://cloudflare-dns.com/dns-query",
+      "https://dns.quad9.net/dns-query"
+    ],
+    "note": "point the router's DHCP DNS at this machine's IP (192.168.1.170); leave the secondary DNS empty so filtering cannot be bypassed"
+  }
+}

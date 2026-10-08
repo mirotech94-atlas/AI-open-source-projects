@@ -1,0 +1,100 @@
+{
+  "source": "ATLAS Vault/Products/AI for Every Age/adults/, copied 2026-09-29. Every hook, line and blog section is a verbatim excerpt of the lesson file named beside it (bold marks dropped from hooks and lines); the server cannot read the vault.",
+  "hashtags": "#ai #claude #aisafety #automation",
+  "lessons": [
+    {
+      "id": "0.3",
+      "title": "Family AI Agreement",
+      "hook": "you'll write and sign a short set of house rules for AI that everyone at home can follow, and keep it on paper, not online.",
+      "line": "If you're ever unsure whether something is private, treat it as private.",
+      "source": "Products/AI for Every Age/adults/Lesson 0.3 - Family AI Agreement.md"
+    },
+    {
+      "id": "1.4",
+      "title": "Why chatbots can be confidently wrong",
+      "hook": "you'll understand that chatbots predict likely words, so sounding sure isn't the same as being right, and you'll sort any AI answer into an idea, a claim to check, or an action that needs your approval.",
+      "line": "Anything in the third group, whether it sends, buys, books, deletes, pays, or signs, needs a person's approval. In this course's core lessons, you do those things yourself; the AI only drafts.",
+      "source": "Products/AI for Every Age/adults/Lesson 1.4 - Why chatbots can be confidently wrong.md"
+    },
+    {
+      "id": "2.1",
+      "title": "The CLEAR prompt",
+      "hook": "you'll turn a vague request like \"write an email\" into a clear prompt that gets a useful answer the first time.",
+      "line": "Context doesn't mean everything. Describe the situation, not the people. Put real names, addresses, and numbers in by hand after the draft is done.",
+      "source": "Products/AI for Every Age/adults/Lesson 2.1 - The CLEAR prompt.md"
+    },
+    {
+      "id": "2.4",
+      "title": "Check before you trust",
+      "hook": "you'll check dates, sources, and numbers in an AI answer against the original source, and keep a simple fact-check log for anything that matters.",
+      "line": "Be most careful with claims about money, health, law, and deadlines. For these, the original source is the only acceptable check, and for anything serious, a qualified person is the next step.",
+      "source": "Products/AI for Every Age/adults/Lesson 2.4 - Check before you trust.md"
+    },
+    {
+      "id": "2.6",
+      "title": "Remove private details before you paste",
+      "hook": "you'll strip names, ID numbers, health and money details, and passwords out of anything before you paste it into AI, and still get a useful answer.",
+      "line": "If you ever paste a password, change that password right away. Claude accounts have no password of their own, and no AI tool needs any of your passwords to help you.",
+      "source": "Products/AI for Every Age/adults/Lesson 2.6 - Remove private details before you paste.md"
+    },
+    {
+      "id": "4.3",
+      "title": "Work and small business",
+      "hook": "you'll turn rough, made-up notes into a clear one-page how-to guide with a human approval step, and score it with a simple rubric.",
+      "line": "No customer names, emails, order histories, alarm codes, or passwords in any prompt. Placeholders like [ORDER NUMBER] do the same job.",
+      "source": "Products/AI for Every Age/adults/Lesson 4.3 - Work and small business.md"
+    },
+    {
+      "id": "5.5",
+      "title": "Permissions and how to disconnect",
+      "hook": "you'll spot a request for more access than a task needs, turn it down, and fully disconnect a connector, on Claude's side and on Google's.",
+      "line": "When a setup asks for more than the task needs, the answer is no, however convenient it sounds. And when you've finished with a connection, remove it on both sides.",
+      "source": "Products/AI for Every Age/adults/Lesson 5.5 - Permissions and how to disconnect.md"
+    },
+    {
+      "id": "6.1",
+      "title": "What never goes into an AI",
+      "hook": "you'll sort any piece of information into never, with care, or fine before it goes into an AI, whether you type it, upload it, photograph it, or say it out loud.",
+      "line": "The camera and the microphone count. If you wouldn't type it, don't say it in voice mode and don't hold it up to the camera.",
+      "source": "Products/AI for Every Age/adults/Lesson 6.1 - What never goes into an AI.md"
+    },
+    {
+      "id": "7.1",
+      "title": "What a workflow is",
+      "hook": "you'll be able to break any repeated chore into a trigger, a set of steps, and a result, and draw it as a workflow on paper.",
+      "line": "A workflow keeps running whether or not you're watching. Mark every step that sends, buys, books, or deletes, and never automate those without a human approval step. In this course, none of the core builds do them at all.",
+      "source": "Products/AI for Every Age/adults/Lesson 7.1 - What a workflow is.md"
+    }
+  ],
+  "blog": {
+    "title": "Everyday AI for Adults: use Claude with care",
+    "meta": "Three lessons from Everyday AI for Adults, word for word: why chatbots can be confidently wrong, and what to keep out of any AI.",
+    "sections": [
+      {
+        "lesson": "1.4",
+        "heading": "Why chatbots can be confidently wrong",
+        "text": "A chatbot writes its answer one small piece at a time. At each step it predicts what is most likely to come next, based on the patterns it learned in training and whatever you've given it in the chat. That's how it writes fluent, useful text so quickly.\n\nIt's also why it can be wrong without sounding wrong. The model is choosing words that *fit*, and a confident, specific answer often fits the pattern of a good answer better than \"I'm not sure.\" So you can get a made-up book title, a wrong date, or a price from two years ago, written in the same calm tone as a correct answer. People call these mistakes **hallucinations**.\n\nModern chatbots are better at saying when they're unsure, and web search helps with current facts. But the tone of an answer is never evidence. You need a way to handle every answer that doesn't depend on how sure it sounds.\n\nHere's the one this course uses. Every sentence a chatbot gives you is one of three things:\n\n1. **An idea.** A suggestion, a draft, a list of options, a new way of wording something. You judge it by whether it's useful. No checking needed; you just decide whether you like it.\n2. **A claim to check.** A fact, a date, a price, a rule, a number, a quote, a name. You check it against the original source before you rely on it.\n3. **An action that needs approval.** Anything that would send, buy, book, delete, pay, or sign. A person approves it first, every time.\n\nMost answers mix all three. The skill is spotting which is which.",
+        "source": "Products/AI for Every Age/adults/Lesson 1.4 - Why chatbots can be confidently wrong.md"
+      },
+      {
+        "lesson": "2.6",
+        "heading": "Remove private details before you paste",
+        "text": "The fastest way to get help with a real document is to paste it in. That's also the fastest way to share things you never meant to share. Once text is in a chat, it's stored in your account's history and handled under the company's policies. Deleting it later isn't the same as never pasting it.\n\nThe good news: AI almost never needs the private details to help you. It needs the **shape** of the problem. \"My landlord hasn't fixed the heating\" works exactly as well as the landlord's full name and your apartment number.\n\n### Three lists\n\n**Never paste:**\n\n- Passwords, PINs, security codes, and one-time codes\n- Social Security numbers, passport numbers, and other government ID numbers\n- Bank account, card, and routing numbers\n- Medical records and test results tied to a named person\n- Children's names, photos, and schools\n\n**With care (replace or remove first):**\n\n- Names, addresses, phone numbers, and email addresses, yours or anyone else's\n- Dates of birth\n- Employer names and client names\n- Exact amounts tied to a named account\n- Health details. Describe the general question, not the person.\n\n**Fine:**\n\n- Made-up examples\n- General questions (\"How do security deposits usually work?\")\n- Your own writing with identifying details removed\n- Public information (a store's published return policy)\n\n### How to clean a prompt\n\n1. **Replace names with roles:** \"my landlord\", \"Tenant A\", \"my manager\".\n2. **Replace numbers with placeholders:** [ACCOUNT], [PHONE], [AMOUNT], or a made-up value.\n3. **Generalize health details:** \"a relative with a long-term condition\" instead of a diagnosis and a name.\n4. **Delete what isn't needed:** signatures, reference numbers, email footers, addresses.\n5. **Read it once more** as if you were a stranger. Could you work out who this is?",
+        "source": "Products/AI for Every Age/adults/Lesson 2.6 - Remove private details before you paste.md"
+      },
+      {
+        "lesson": "6.1",
+        "heading": "What never goes into an AI",
+        "text": "Lesson 2.6 showed you how to clean up text before you paste it. But typing is only one way in. A photo of a letter carries every number printed on it. A screenshot of your banking app shows your balance and your name. An uploaded PDF can hold pages you never read. In voice mode, saying your card number out loud is the same as typing it.\n\nWhatever the route, the result is the same. The information is sent, stored in your chat history, and handled under the company's policies. You can delete a chat, but you can't un-send it.\n\nSo the three lists from Lesson 2.6 apply to everything you share, not only to what you paste.\n\n**Never:**\n\n- Passwords, PINs, security codes, and one-time codes\n- Social Security numbers, passport numbers, and other government ID numbers\n- Bank account, card, and routing numbers\n- Medical records and test results tied to a named person\n- Children's names, photos, and schools\n\n**With care (replace or remove first):**\n\n- Names, addresses, phone numbers, and email addresses, yours or anyone else's\n- Dates of birth\n- Employer names and client names\n- Exact amounts tied to a named account\n- Health details. Describe the general question, not the person.\n\n**Fine:**\n\n- Made-up examples\n- General questions\n- Your own writing with identifying details removed\n- Public information\n\nWhen you're unsure, ask two questions. Could someone use this to get into an account or pretend to be me? Then it's never. Does it point to a real, findable person? Then it's with care. If neither, it's usually fine.",
+        "source": "Products/AI for Every Age/adults/Lesson 6.1 - What never goes into an AI.md"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "text": "Learn to question AI, use it safely for everyday tasks, and build your first useful automation.",
+      "source": "Products/AI for Every Age/Sales page.md"
+    }
+  ],
+  "quotes": []
+}

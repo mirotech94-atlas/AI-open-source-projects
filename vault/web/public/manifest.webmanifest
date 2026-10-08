@@ -1,0 +1,19 @@
+{
+  "name": "Vault",
+  "short_name": "Vault",
+  "description": "What is wrong on your network, and what Vault did about it.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080d17",
+  "theme_color": "#1257c4",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg?v=vault",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

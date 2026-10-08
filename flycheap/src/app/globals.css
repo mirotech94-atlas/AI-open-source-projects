@@ -1,0 +1,2136 @@
+@import 'react-day-picker/dist/style.css';
+@import './editorial.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Design tokens
+   ============================================================ */
+:root {
+  color-scheme: light;
+  --bg-app:       #f4f6fb;
+  --bg-elevated:  #ffffff;
+  --bg-subtle:    #f1f5f9;
+  --border:       #e5e9f1;
+  --border-soft:  #eef2f7;
+  --text:         #0b1220;
+  --text-muted:   #5b6678;
+  --text-faint:   #697181;   /* was #8a93a6 — 3.09:1 on --bg-elevated, below AA */
+  --brand:        #1A4459;
+  --brand-soft:   #eef4fb;
+  /* `--gold` deleted: zero references, and it held the retired Bloomberg gold
+     ready for the next person who reached for "the gold one". */
+  --shadow-card:  0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.08);
+}
+html.dark {
+  color-scheme: dark;
+  --bg-app:       #070b15;
+  --bg-elevated:  #0f172a;
+  --bg-subtle:    #111a2e;
+  --border:       #1f2a44;
+  --border-soft:  #182238;
+  --text:         #e8ecf4;
+  --text-muted:   #94a3b8;
+  --text-faint:   #7E8AA0;   /* was #6b7894 — 4.03:1 on --bg-elevated. Same value as the
+                                app sidebar's faint text token, which was raised for this
+                                exact reason. */
+  --brand-soft:   rgba(26,68,89,.18);
+  --shadow-card:  0 1px 2px rgba(0,0,0,.4), 0 12px 30px -16px rgba(0,0,0,.6);
+}
+
+html, body {
+  /* The page ground is the editorial canvas, not the pre-night-cabin
+     --bg-app/--text pair. Those two legacy tokens outlived both migrations
+     because the per-route audit samples elements INSIDE body and never body
+     itself, so the ground it painted was invisible to every sweep. */
+  background: var(--bg);
+  color: var(--ink);
+  font-feature-settings: "ss01","cv11","cv05","cv02";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* The two radial "ambient glow" gradients that used to sit on body are gone:
+   the editorial sheet has no gradients, and these shipped on every page of
+   all three surfaces in both themes. */
+
+/* ============================================================
+   Typography
+   ============================================================ */
+h1 { font-family: var(--font-display, var(--font-sans)); letter-spacing: -0.02em; }
+h2, h3 { letter-spacing: -0.01em; }
+
+/* Page eyebrow / section labels */
+.eyebrow {
+  @apply text-[11px] uppercase tracking-[0.14em] font-semibold;
+  color: var(--muted);
+}
+
+/* Tabular numerics everywhere money/dates render */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+  /* Live on the dashboard brief and the two route loading skeletons. Was on
+     the legacy --bg-elevated/--border pair (white/navy, slate borders), which
+     read as a foreign card among editorial panels in dark. */
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 1.25rem;
+  position: relative;
+}
+.card h2 {
+  @apply text-[15px] font-semibold;
+  color: var(--text);
+  margin-bottom: .75rem;
+}
+.card-elevated {
+  box-shadow: 0 2px 4px rgba(15,23,42,.04), 0 20px 40px -20px rgba(26,68,89,.20);
+}
+.card-feature {
+  background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+  border-color: #dde7f3;
+}
+html.dark .card-feature {
+  background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  border-color: #1f2a44;
+}
+.card-accent-emerald {
+  background: linear-gradient(180deg, rgba(236,253,245,.65) 0%, rgba(255,255,255,1) 100%);
+  border-color: #bfe6cf;
+}
+html.dark .card-accent-emerald {
+  background: linear-gradient(180deg, rgba(6,78,59,.18) 0%, rgba(15,23,42,1) 100%);
+  border-color: #14532d;
+}
+
+/* Section header inside a card (title + actions row) */
+.card-head {
+  @apply flex items-center justify-between mb-3 gap-3;
+}
+
+/* ============================================================
+   KPI tiles (executive stat strip)
+   ============================================================ */
+.kpi {
+  @apply relative overflow-hidden rounded-2xl p-4;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+}
+.kpi::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(26,68,89,.04), transparent 60%);
+  pointer-events: none;
+}
+.kpi-label {
+  @apply text-[11px] uppercase tracking-[0.14em] font-semibold;
+  color: var(--text-muted);
+}
+.kpi-value {
+  @apply mt-1 text-2xl font-bold tabular;
+  color: var(--text);
+  letter-spacing: -.02em;
+}
+.kpi-sub {
+  @apply mt-1 text-xs;
+  color: var(--text-muted);
+}
+.kpi-accent .kpi-value { color: #047857; }
+html.dark .kpi-accent .kpi-value { color: #34d399; }
+.kpi-warn .kpi-value { color: #b45309; }
+html.dark .kpi-warn .kpi-value { color: #fbbf24; }
+.kpi-brand {
+  background: linear-gradient(135deg, #1a4459 0%, #235870 100%);
+  border-color: transparent;
+  color: white;
+}
+.kpi-brand .kpi-label { color: rgba(255,255,255,.72); }
+.kpi-brand .kpi-value { color: white; }
+.kpi-brand .kpi-sub   { color: rgba(255,255,255,.78); }
+
+/* ============================================================
+   Tables
+   ============================================================ */
+table.fmt {
+  @apply w-full text-sm border-collapse;
+  font-variant-numeric: tabular-nums;
+}
+table.fmt thead th {
+  @apply text-left font-semibold uppercase text-[11px] tracking-[0.1em] px-3 py-2.5 sticky top-0;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+}
+table.fmt tbody td {
+  @apply px-3 py-2.5 align-middle;
+  border-bottom: 1px solid var(--border-soft);
+}
+table.fmt tbody tr:nth-child(even) td { background: rgba(241,245,249,.45); }
+html.dark table.fmt tbody tr:nth-child(even) td { background: rgba(17,24,39,.55); }
+table.fmt tbody tr { transition: background-color .12s ease; }
+table.fmt tbody tr:hover td { background: rgba(238,244,251,.85); }
+html.dark table.fmt tbody tr:hover td { background: rgba(31,95,165,.12); }
+table.fmt tbody tr.row-hot td { background: linear-gradient(90deg, rgba(232,163,61,.10), transparent 70%); }
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold;
+  border: 1px solid transparent;
+}
+.badge-ok    { background:#dcfce7; color:#065f46; border-color:#bbf7d0; }
+.badge-warn  { background:#fef3c7; color:#92400e; border-color:#fde68a; }
+.badge-muted { background:#f1f5f9; color:#475569; border-color:#e2e8f0; }
+.badge-info  { background:#dbeafe; color:#1e40af; border-color:#bfdbfe; }
+.badge-gold  { background:#fdf6e3; color:#7c5c10; border-color:#f1d98a; }
+html.dark .badge-ok    { background:rgba(6,95,70,.25);  color:#86efac; border-color:rgba(34,197,94,.3); }
+html.dark .badge-warn  { background:rgba(180,83,9,.25); color:#fcd34d; border-color:rgba(245,158,11,.3); }
+html.dark .badge-muted { background:rgba(71,85,105,.3); color:#cbd5e1; border-color:rgba(148,163,184,.2); }
+html.dark .badge-info  { background:rgba(30,64,175,.25);color:#93c5fd; border-color:rgba(59,130,246,.3); }
+html.dark .badge-gold  { background:rgba(124,92,16,.3); color:#fde68a; border-color:rgba(232,163,61,.35); }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+.btn:hover { box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 4px 10px -4px rgba(15,23,42,.10); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary {
+  background: linear-gradient(180deg, #F2B961 0%, #E8A33D 100%);
+  border-color: #B87B22;
+  color: #0B1220;
+}
+.btn-primary:hover { background: linear-gradient(180deg, #F7CE8C 0%, #F2B961 100%); }
+/* Primary CTAs: "Get early access", "Start free trial", "Add your first route".
+   Measured rendering the retired #d4af37 -- this rule was never shadowed. */
+.btn-gold {
+  background: linear-gradient(180deg, #F2B961 0%, #E8A33D 100%);
+  border-color: #B87B22;
+  color: #0B1220;
+}
+.btn-ghost   { background: transparent; border-color: transparent; color: var(--text); }
+.btn-ghost:hover { background: var(--bg-subtle); }
+.btn-danger  { background: #b91c1c; border-color: #991b1b; color: white; }
+.btn-sm { @apply px-2.5 py-1 text-xs rounded-md; }
+
+/* ============================================================
+   Form inputs
+   ============================================================ */
+input, select, textarea {
+  @apply px-3 py-1.5 text-sm transition-all;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #1f5fa5;
+  box-shadow: 0 0 0 3px rgba(31,95,165,.15);
+}
+label { @apply block text-sm font-medium; color: var(--text); }
+
+/* Compact filter inputs */
+.filter-grid input,
+.filter-grid select {
+  @apply w-full px-2.5 py-1.5 rounded-md text-xs;
+}
+.filter-grid label > span:first-child {
+  @apply block mb-1 text-[10px] uppercase tracking-[0.1em] font-semibold;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: saturate(140%) blur(12px);
+  -webkit-backdrop-filter: saturate(140%) blur(12px);
+  background: linear-gradient(180deg, rgba(26,68,89,.96) 0%, rgba(26,68,89,.88) 100%);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 6px 24px -12px rgba(26,68,89,.6);
+}
+html.dark .app-header {
+  background: linear-gradient(180deg, rgba(8,28,52,.92) 0%, rgba(8,28,52,.85) 100%);
+}
+.nav-link {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors;
+  color: rgba(255,255,255,.78);
+}
+.nav-link:hover { color: white; background: rgba(255,255,255,.08); }
+.nav-link.active { color: white; background: rgba(255,255,255,.12); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* ============================================================
+   Misc utilities
+   ============================================================ */
+.divider { height: 1px; background: var(--border); }
+
+/* Lift muted text in dark mode */
+html.dark .text-slate-400 { color: #94a3b8; }
+html.dark .text-slate-500 { color: #94a3b8; }
+html.dark .text-slate-600 { color: #cbd5e1; }
+html.dark .text-slate-700 { color: #e2e8f0; }
+html.dark .text-slate-800 { color: #f1f5f9; }
+html.dark .text-slate-900 { color: #f8fafc; }
+html.dark .text-emerald-700 { color: #34d399; }
+html.dark .text-emerald-800 { color: #6ee7b7; }
+html.dark .text-amber-700 { color: #fbbf24; }
+html.dark .text-amber-800 { color: #fcd34d; }
+html.dark .bg-emerald-50\/30 { background: rgba(6,95,70,.10); }
+html.dark .border-emerald-200 { border-color: rgba(34,197,94,.25); }
+html.dark .bg-emerald-100 { background: rgba(6,95,70,.30); color: #d1fae5; }
+html.dark .bg-amber-100 { background: rgba(180,83,9,.25); color: #fde68a; }
+
+/* react-day-picker dark */
+html.dark .rdp-months,
+html.dark .rdp-month_grid,
+html.dark .rdp-caption,
+html.dark .rdp-caption_label { color: #f1f5f9; }
+html.dark .rdp-weekday { color: #94a3b8; }
+html.dark .rdp-day { color: #e2e8f0; }
+html.dark .rdp-day_disabled { color: #475569; }
+html.dark .rdp-day_today { color: #fbbf24; font-weight: 700; }
+html.dark .rdp-button_next,
+html.dark .rdp-button_previous { color: #f1f5f9; }
+html.dark .rdp-day_button:hover:not([disabled]) { background-color: rgba(111,179,201,.2); }
+html.dark .rdp-dropdown { background-color: #1e293b; color: #f1f5f9; }
+html.dark .rdp { color: #e2e8f0; }
+
+/* ============================================================
+   Motion — fade / slide / lift / shimmer
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(111,179,201, .35); }
+  50%      { box-shadow: 0 0 0 8px rgba(111,179,201, 0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+.motion-fade-in     { animation: fadeIn .45s cubic-bezier(.2,.7,.3,1) both; }
+.motion-slide-up    { animation: slideUp .55s cubic-bezier(.2,.7,.3,1) both; }
+.motion-slide-right { animation: slideInRight .45s cubic-bezier(.2,.7,.3,1) both; }
+.motion-pulse       { animation: pulseGlow 2s ease-in-out infinite; }
+.motion-float       { animation: float 3s ease-in-out infinite; }
+.motion-delay-1     { animation-delay: .08s; }
+.motion-delay-2     { animation-delay: .16s; }
+.motion-delay-3     { animation-delay: .24s; }
+.motion-delay-4     { animation-delay: .32s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-in, .motion-slide-up, .motion-slide-right, .motion-pulse, .motion-float {
+    animation: none !important;
+  }
+}
+
+/* Skeleton shimmer for loading states */
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(148,163,184,.10) 0%, rgba(148,163,184,.20) 50%, rgba(148,163,184,.10) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* Card hover lift — opt-in via .lift */
+.lift { transition: transform .18s ease, box-shadow .18s ease; }
+.lift:hover { transform: translateY(-2px); box-shadow: 0 12px 30px -16px rgba(15,23,42,.18); }
+
+/* ============================================================
+   Print
+   ============================================================ */
+@media print {
+  body { background: white !important; color: black !important; }
+  .no-print, header, footer, button, .rdp, [aria-label="Open chat"], [aria-label="Close chat"] { display: none !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; page-break-after: auto; }
+  thead { display: table-header-group; }
+  a[href]:after { content: "" !important; }
+  a { color: black !important; text-decoration: none !important; }
+  .recharts-wrapper { page-break-inside: avoid; }
+}
+
+/* ============================================================
+   Globe HUD — always-on cinematic concierge panel
+   Brand-tinted (navy + gold) with cyan landmass points
+   ============================================================ */
+.flight-conversation-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background:
+    radial-gradient(460px 260px at 8% 35%, rgba(63,214,200,0.16), transparent 62%),
+    linear-gradient(180deg, var(--bg-elevated) 0%, rgba(248,250,252,0.92) 100%);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+}
+html.dark .flight-conversation-panel {
+  background:
+    radial-gradient(460px 260px at 8% 35%, rgba(63,214,200,0.14), transparent 62%),
+    linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+}
+.flight-conversation-panel__globe {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background:
+    linear-gradient(rgba(63,214,200,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(63,214,200,0.07) 1px, transparent 1px),
+    radial-gradient(circle at center, rgba(15,23,42,0.96), #020617);
+  background-size: 24px 24px, 24px 24px, auto;
+  border: 1px solid rgba(63,214,200,0.22);
+}
+.flight-conversation-panel__sphere {
+  position: relative;
+  width: 172px;
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(210,246,239,0.86), rgba(63,214,200,0.34) 16%, transparent 23%),
+    radial-gradient(circle at 52% 50%, rgba(26,68,89,0.22), rgba(3,7,18,0.94) 62%);
+  border: 1px solid rgba(63,214,200,0.38);
+  box-shadow: inset -24px -18px 40px rgba(0,0,0,0.52), 0 0 42px rgba(63,214,200,0.28);
+  overflow: hidden;
+}
+.flight-conversation-panel__sphere::before,
+.flight-conversation-panel__sphere::after {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(63,214,200,0.18);
+}
+.flight-conversation-panel__sphere::after {
+  inset: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(63,214,200,0.12) 19px 20px),
+    repeating-linear-gradient(0deg, transparent 0 22px, rgba(111,179,201,0.10) 23px 24px);
+  mix-blend-mode: screen;
+  opacity: 0.62;
+}
+.flight-conversation-panel__orbit {
+  position: absolute;
+  inset: 22px -18px;
+  border: 1px solid rgba(111,179,201,0.48);
+  border-radius: 50%;
+  transform: rotate(-16deg);
+}
+.flight-conversation-panel__orbit--two {
+  inset: 48px -10px;
+  transform: rotate(22deg);
+  border-color: rgba(63,214,200,0.38);
+}
+.flight-conversation-panel__orbit--three {
+  inset: -4px 48px;
+  transform: rotate(88deg);
+  border-color: rgba(63,214,200,0.26);
+}
+.flight-conversation-panel__pin {
+  position: absolute;
+  z-index: 2;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(111,179,201,0.16), 0 0 14px rgba(111,179,201,0.7);
+}
+.flight-conversation-panel__body {
+  min-width: 0;
+  align-self: stretch;
+}
+.flight-conversation-panel__stat {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  background: rgba(255,255,255,0.64);
+}
+html.dark .flight-conversation-panel__stat {
+  background: rgba(15,23,42,0.68);
+}
+.flight-conversation-panel__stat span {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+.flight-conversation-panel__stat strong {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 17px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 860px) {
+  .flight-conversation-panel {
+    grid-template-columns: 1fr;
+  }
+  .flight-conversation-panel__globe {
+    min-height: 180px;
+  }
+}
+
+/* --accent flips per OUTER theme (tuned against --surface/--bg), but
+   --panel-bg is dark in BOTH themes — raw --accent measured 2.49:1 against
+   it in light mode (below both the 4.5:1 text and 3:1 non-text floors; see
+   task-2.12-report.md). Every accent role in this HUD is lifted toward
+   --panel-fg instead, the same "mix toward the panel foreground" rule
+   ruling 6 already applies to text on --panel-bg elsewhere (readouts
+   below, .mk-band, .ed-plan.current) — clears AA in both themes. */
+.globe-hud {
+  position: fixed;
+  right: 16px;
+  bottom: 96px;
+  width: 420px;
+  height: 600px;
+  z-index: 35;
+  border-radius: 0;
+  background: var(--panel-bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 65%, var(--panel-fg));
+  color: var(--panel-fg);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  overflow: hidden;
+  transition: width 0.35s ease, height 0.35s ease, opacity 0.25s ease;
+}
+@media (max-width: 900px) {
+  .globe-hud { width: calc(100vw - 24px); height: 420px; right: 12px; bottom: 88px; }
+}
+.globe-hud--collapsed {
+  height: 56px;
+  width: 260px;
+}
+.globe-hud--collapsed .globe-hud__canvas,
+.globe-hud--collapsed .globe-hud__readouts,
+.globe-hud--collapsed .globe-hud__status { display: none; }
+
+/* Corner brackets */
+.globe-hud__chrome { position: absolute; inset: 0; pointer-events: none; }
+.globe-hud__bracket {
+  position: absolute; width: 18px; height: 18px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 65%, var(--panel-fg));
+}
+.globe-hud__bracket--tl { top: 8px;    left: 8px;  border-right: none; border-bottom: none; }
+.globe-hud__bracket--tr { top: 8px;    right: 8px; border-left: none;  border-bottom: none; }
+.globe-hud__bracket--bl { bottom: 8px; left: 8px;  border-right: none; border-top: none; }
+.globe-hud__bracket--br { bottom: 8px; right: 8px; border-left: none;  border-top: none; }
+
+/* Scanline that sweeps top→bottom — flat tint, no gradient fade. */
+.globe-hud__scanline {
+  position: absolute; left: 0; right: 0; height: 2px; top: -2px;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  animation: hud-scan 7s linear infinite;
+}
+.globe-hud--speaking .globe-hud__scanline { animation-duration: 2.5s; }
+@keyframes hud-scan {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(600px); opacity: 0; }
+}
+
+/* Round 1 fix (F4): the faint grid overlay drew its hairlines with
+   linear-gradient() background-images — a literal gradient function, which
+   constraint 4 (no gradients) forbids absolutely regardless of what it
+   renders as. A single pseudo-element pair can only draw one crosshair, not
+   a repeating grid, and repeating-linear-gradient() is still a gradient —
+   so the grid is dropped rather than reimplemented; it was pure decoration
+   (.globe-hud__grid's sibling <div> in GlobeHUD.tsx is removed with it). */
+
+/* Header */
+.globe-hud__header {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px 8px 16px;
+  font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 65%, var(--panel-fg));
+  border-bottom: 1px solid var(--rule);
+}
+.globe-hud__title { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.globe-hud__dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 65%, var(--panel-fg));
+  animation: hud-blink 1.6s ease-in-out infinite;
+}
+@keyframes hud-blink { 50% { opacity: 0.35; } }
+.globe-hud__meta { display: flex; align-items: center; gap: 10px; }
+.globe-hud__rec { color: color-mix(in srgb, var(--red) 65%, var(--panel-fg)); font-weight: 700; animation: hud-blink 0.9s steps(2) infinite; }
+.globe-hud__tx  { color: color-mix(in srgb, var(--accent) 65%, var(--panel-fg)); font-weight: 700; }
+.globe-hud__btn {
+  background: transparent; border: 1px solid color-mix(in srgb, var(--accent) 65%, var(--panel-fg));
+  color: color-mix(in srgb, var(--accent) 65%, var(--panel-fg)); width: 22px; height: 22px;
+  border-radius: 0; font-size: 12px; line-height: 1; cursor: pointer;
+  display: grid; place-items: center;
+}
+.globe-hud__btn:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+/* Globe canvas */
+.globe-hud__canvas {
+  position: relative; width: 100%; height: 100%;
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+.globe-hud__canvas canvas { outline: none !important; }
+
+/* Readouts row */
+.globe-hud__readouts {
+  position: relative;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--rule);
+  background: var(--panel-bg);
+}
+.globe-hud__readout {
+  font-size: 9px;
+  text-align: left;
+}
+.globe-hud__readout-label {
+  color: color-mix(in srgb, var(--panel-fg) 72%, var(--panel-bg));
+  letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700;
+}
+.globe-hud__readout-value {
+  color: var(--panel-fg); font-size: 14px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.globe-hud__readout-unit {
+  font-size: 9px; opacity: 0.6; margin-left: 2px; font-weight: 500;
+}
+
+/* Status ticker */
+.globe-hud__status {
+  position: relative;
+  padding: 6px 16px 8px 16px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: color-mix(in srgb, var(--accent) 65%, var(--panel-fg));
+  border-top: 1px solid var(--rule);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.globe-hud__status-text::before { content: '▸ '; color: color-mix(in srgb, var(--accent) 65%, var(--panel-fg)); }
+
+/* When the bot is speaking, give the header a slightly stronger rule instead
+   of a glow — no shadow in the editorial system. */
+.globe-hud--speaking {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--panel-fg));
+}
+
+/* Hero */
+.fc-hero {
+  position: relative;
+  margin-top: 22px;
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 500px at 88% 30%, rgba(111,179,201,.10), transparent 60%),
+    radial-gradient(700px 400px at 10% 100%, rgba(63,214,200,.08), transparent 55%),
+    linear-gradient(160deg, var(--fc-navy-2) 0%, var(--fc-ink) 100%);
+  color: var(--fc-cream);
+  isolation: isolate;
+}
+.fc-hero::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  pointer-events: none;
+}
+.fc-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 30px;
+  position: relative;
+  padding: 38px 42px 36px;
+}
+@media (max-width: 1080px) { .fc-hero-grid { grid-template-columns: 1fr; } }
+
+.fc-eyebrow {
+  font-family: var(--fc-font-mono);
+  font-size: 10.5px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--fc-accent);
+  display: flex; align-items: center; gap: 12px;
+}
+.fc-eyebrow::after {
+  content: ""; flex: 1; height: 1px;
+  background: var(--rule);
+  max-width: 120px;
+}
+.fc-hero h1 {
+  font-family: var(--fc-font-display);
+  font-weight: 400;
+  font-size: clamp(34px, 3.9vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -.025em;
+  margin: 18px 0 18px;
+  color: var(--fc-cream);
+  text-wrap: balance;
+}
+.fc-hero h1 em { font-style: italic; color: var(--fc-accent); }
+.fc-hero h1 .fc-strike {
+  font-style: italic;
+  color: var(--muted-2);
+  text-decoration: line-through;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+}
+.fc-hero-lede {
+  color: rgba(255,255,255,.72);
+  font-size: 15px;
+  line-height: 1.55;
+  max-width: 480px;
+  margin-bottom: 28px;
+}
+.fc-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+.fc-hero-stat-label {
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 8px;
+}
+.fc-hero-stat-value {
+  font-family: var(--fc-font-display);
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: var(--fc-cream);
+}
+.fc-hero-stat-value .delta {
+  font-family: var(--fc-font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 6px;
+  vertical-align: 6px;
+}
+.fc-delta-up    { color: #f87171; }
+.fc-delta-down  { color: #4ade80; }
+.fc-delta-flat  { color: rgba(255,255,255,.5); }
+
+.fc-hero-cta { display: flex; gap: 10px; margin-top: 4px; }
+.fc-btn {
+  font-family: var(--fc-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 11px 18px;
+  border-radius: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity .15s;
+  letter-spacing: -.005em;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.fc-btn-gold {
+  /* The .ed-btn-primary recipe: --fc-gold paired with --fc-navy-3 (now both
+     alias to --accent post-S1) read as 1.03:1 dark / 2.46:1 light. */
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+}
+.fc-btn-gold:hover { opacity: 0.72; }
+.fc-btn-ghost {
+  /* The .ed-btn-secondary recipe. */
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-color: var(--rule-strong);
+}
+.fc-btn-ghost:hover { opacity: 0.72; }
+.fc-btn-light {
+  background: var(--surface);
+  color: var(--fc-ink);
+  border-color: var(--fc-line-strong);
+}
+.fc-btn-light:hover { background: var(--fc-paper); }
+.fc-btn-ink { background: var(--fc-ink); color: var(--fc-cream); }
+.fc-btn-ink:hover { background: var(--fc-navy-2); }
+.fc-btn-sm { padding: 7px 12px; font-size: 12px; border-radius: 0; }
+
+/* Globe panel */
+.fc-hero-globe {
+  position: relative;
+  min-height: 460px;
+  display: grid;
+  place-items: center;
+}
+.fc-globe-frame { position: absolute; inset: 0; pointer-events: none; }
+.fc-globe-frame .fc-corner { position: absolute; width: 22px; height: 22px; border: 1.5px solid color-mix(in srgb, var(--accent) 70%, var(--surface)); }
+.fc-globe-frame .tl { top:0; left:0; border-right:none; border-bottom:none; }
+.fc-globe-frame .tr { top:0; right:0; border-left:none; border-bottom:none; }
+.fc-globe-frame .bl { bottom:0; left:0; border-right:none; border-top:none; }
+.fc-globe-frame .br { bottom:0; right:0; border-left:none; border-top:none; }
+.fc-globe-tag {
+  position: absolute;
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--fc-accent);
+  display: flex; align-items: center; gap: 6px;
+}
+.fc-globe-tag::before {
+  content: ""; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--fc-accent);
+}
+.fc-globe-tag.tl { top: 6px; left: 14px; }
+.fc-globe-tag.br { bottom: 6px; right: 14px; }
+
+/* Ticker */
+.fc-ticker {
+  position: relative;
+  display: flex; align-items: center;
+  background: var(--fc-ink);
+  color: var(--fc-cream);
+  border-top: 1px solid color-mix(in srgb, var(--accent) 18%, var(--panel-bg));
+  font-family: var(--fc-font-mono);
+  font-size: 12px;
+  height: 38px;
+  overflow: hidden;
+}
+.fc-ticker-tag {
+  background: var(--fc-accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: .16em;
+  padding: 0 14px;
+  height: 100%;
+  display: flex; align-items: center;
+  flex-shrink: 0;
+}
+.fc-ticker-tape { flex: 1; overflow: hidden; display: flex; align-items: center; }
+.fc-ticker-track {
+  display: flex; gap: 38px; white-space: nowrap; padding-left: 24px;
+  animation: fc-ticker-scroll 60s linear infinite;
+}
+.fc-ticker-item { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.fc-ticker-route { color: color-mix(in srgb, var(--panel-fg) 75%, var(--panel-bg)); }
+.fc-ticker-price { color: var(--fc-gold); }
+.fc-ticker-delta-down { color: var(--green); font-weight: 600; }
+.fc-ticker-delta-up { color: var(--red); font-weight: 600; }
+.fc-ticker-sep { width: 4px; height: 4px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 35%, var(--panel-bg)); flex-shrink: 0; }
+@keyframes fc-ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* Sections */
+.fc-section { margin-top: 56px; }
+.fc-section-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; margin-bottom: 22px;
+}
+.fc-section-title {
+  font-family: var(--fc-font-display);
+  font-size: 38px;
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: var(--fc-ink);
+  margin: 6px 0 0;
+  font-weight: 400;
+}
+.fc-section-title em { font-style: italic; color: var(--fc-navy); }
+.fc-section-sub {
+  color: var(--fc-muted);
+  font-size: 14px;
+  margin-top: 8px;
+  max-width: 540px;
+  line-height: 1.5;
+}
+.fc-section-actions { display: flex; gap: 8px; align-items: center; }
+.fc-smallcaps {
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--fc-muted);
+}
+.fc-mono { font-family: var(--fc-font-mono); }
+
+/* KPI strip */
+.fc-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  /* Sits clear of the hero (no overlap) so tile labels and sparklines are never
+     hidden behind the hero's bottom edge / ticker. */
+  margin-top: 26px;
+  /* Spacer below the strip so the next section's top edge (incl. the deals
+     table horizontal scrollbar) isn't visually clipped by the KPI tile
+     shadows. Previously the KPI shadow + negative margin made the deals
+     table scrollbar appear "blocked" from above. */
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 2;
+}
+@media (max-width: 880px) { .fc-kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+.fc-kpi {
+  background: var(--surface);
+  border: 1px solid var(--fc-line);
+  border-radius: 0;
+  padding: 18px 20px 16px;
+  position: relative;
+  overflow: hidden;
+  transition: opacity .15s;
+}
+.fc-kpi:hover { opacity: 0.92; }
+.fc-kpi-label {
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--fc-muted);
+}
+.fc-kpi-value {
+  font-family: var(--fc-font-display);
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -.02em;
+  margin: 8px 0 4px;
+  color: var(--fc-ink);
+  display: flex; align-items: baseline; gap: 6px;
+}
+.fc-kpi-value .fc-unit {
+  font-family: var(--fc-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .08em;
+  color: var(--fc-muted);
+  text-transform: uppercase;
+}
+.fc-kpi-sub {
+  font-size: 12px;
+  color: var(--fc-muted);
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 2px;
+}
+.fc-kpi-trend { position: absolute; right: 14px; top: 18px; width: 64px; height: 28px; }
+.fc-kpi.fc-kpi-accent {
+  background: var(--fc-navy);
+  color: var(--fc-ink);
+  border: 1px solid var(--fc-navy-3);
+}
+/* The "accent" tile renders on the same card surface as every other KPI —
+   its label/value/sub read the same as the base tile, not a dark panel.
+   Amber stays reserved for the delta/sparkline, not the headline number
+   (README: KPI values are ink; amber marks deltas). */
+.fc-kpi.fc-kpi-accent .fc-kpi-label { color: var(--fc-muted); }
+.fc-kpi.fc-kpi-accent .fc-kpi-value { color: var(--fc-ink); }
+.fc-kpi.fc-kpi-accent .fc-kpi-value .fc-unit { color: var(--fc-muted); }
+.fc-kpi.fc-kpi-accent .fc-kpi-sub { color: var(--fc-muted); }
+
+/* Card */
+.fc-card {
+  background: var(--surface);
+  border: 1px solid var(--fc-line);
+  border-radius: 0;
+  overflow: hidden;
+}
+.fc-card-head {
+  padding: 20px 24px 14px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  border-bottom: 1px solid var(--fc-line);
+}
+.fc-card-title {
+  font-family: var(--fc-font-display);
+  font-size: 23px;
+  line-height: 1.05;
+  letter-spacing: -.015em;
+  margin: 4px 0 0;
+  font-weight: 400;
+}
+.fc-card-title em { font-style: italic; color: var(--fc-navy); }
+.fc-card-meta {
+  font-family: var(--fc-font-mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--fc-muted);
+  margin-top: 6px;
+}
+
+.fc-main-split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 22px;
+  margin-top: 22px;
+}
+@media (max-width: 1080px) { .fc-main-split { grid-template-columns: 1fr; } }
+
+/* Chips */
+.fc-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 14px 22px 4px;
+  border-bottom: 1px solid var(--fc-line);
+}
+.fc-chip {
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 0;
+  background: var(--fc-paper);
+  border: 1px solid transparent;
+  cursor: pointer;
+  color: var(--fc-ink);
+  transition: opacity .12s;
+  display: flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+.fc-chip:hover { background: var(--fc-paper-2); }
+.fc-chip.active { background: var(--fc-ink); color: var(--fc-cream); }
+.fc-chip-gold {
+  background: color-mix(in srgb, var(--amber) 22%, var(--surface));
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--surface));
+}
+.fc-chip-gold::before { content: "✦"; color: var(--fc-gold); }
+
+/* Deals table */
+.fc-deals-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.fc-deals-table thead th {
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-align: left;
+  font-weight: 600;
+  color: var(--fc-muted);
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--fc-line);
+  background: var(--fc-cream);
+}
+.fc-deals-table tbody td {
+  padding: 14px 12px;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--fc-line);
+  vertical-align: middle;
+}
+.fc-deals-table tbody tr { transition: background .12s; cursor: pointer; }
+.fc-deals-table tbody tr:hover td { background: color-mix(in srgb, var(--amber) 5%, var(--surface)); }
+.fc-deals-table .fc-col-rank { font-family: var(--fc-font-mono); font-size: 11px; color: var(--fc-faint); width: 36px; }
+.fc-deals-table .fc-col-route { font-weight: 600; color: var(--ink); }
+.fc-deals-table .fc-col-route .arrow { color: var(--fc-faint); margin: 0 4px; }
+.fc-deals-table .fc-col-route .dest { color: var(--muted); }
+.fc-deals-table .fc-col-date { color: var(--fc-muted); font-size: 13px; }
+.fc-deals-table .fc-col-date .day {
+  display: inline-block;
+  font-family: var(--fc-font-mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  color: var(--fc-faint);
+  margin-right: 4px;
+}
+.fc-deals-table .fc-col-price {
+  text-align: right;
+  font-family: var(--fc-font-display);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+.fc-deals-table .fc-col-price .currency {
+  font-size: 11px; font-family: var(--fc-font-mono); color: var(--fc-muted);
+  font-weight: 500; margin-right: 1px;
+}
+.fc-deals-table .fc-col-vs { text-align: right; font-size: 12px; font-weight: 600; }
+.fc-deals-table .fc-vs-below { color: color-mix(in srgb, var(--green) 75%, var(--ink)); }
+.fc-deals-table .fc-vs-above { color: color-mix(in srgb, var(--red) 75%, var(--ink)); }
+.fc-row-sweetspot { background: color-mix(in srgb, var(--accent) 2%, var(--surface)); }
+.fc-row-sweetspot .fc-col-rank::after { content: "✦"; color: var(--fc-gold); margin-left: 2px; }
+
+.fc-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 0;
+  letter-spacing: .02em;
+}
+.fc-badge-ok    { background: color-mix(in srgb, var(--green) 8%, var(--surface)); color: color-mix(in srgb, var(--green) 75%, var(--ink)); }
+.fc-badge-warn  { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); color: var(--ink); }
+.fc-badge-info  { background: color-mix(in srgb, var(--fc-navy) 10%, var(--surface)); color: var(--fc-navy); }
+.fc-badge-mute  { background: var(--fc-paper); color: var(--fc-muted); }
+.fc-badge-hot   {
+  background: var(--fc-crimson);
+  color: var(--on-accent);
+  text-transform: uppercase;
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  padding: 3px 8px;
+}
+
+.fc-deals-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px;
+  background: var(--fc-cream);
+  font-size: 12px;
+  color: var(--fc-muted);
+  border-top: 1px solid var(--fc-line);
+}
+
+/* Live Feed */
+.fc-feed { display: flex; flex-direction: column; }
+.fc-feed-head {
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--fc-line);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.fc-feed-title {
+  font-family: var(--fc-font-display);
+  font-size: 22px;
+  letter-spacing: -.01em;
+  margin: 0;
+  font-weight: 400;
+}
+.fc-feed-pulse {
+  display: flex; align-items: center; gap: 7px;
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--fc-emerald);
+}
+.fc-feed-pulse .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--fc-emerald);
+  animation: fc-blink 1.4s ease-in-out infinite;
+}
+@keyframes fc-blink { 50% { opacity: .4; } }
+.fc-feed-list { flex: 1; overflow: hidden; max-height: 540px; }
+.fc-feed-item {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 14px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--fc-line);
+  align-items: center;
+  animation: fc-feed-in .35s ease both;
+}
+@keyframes fc-feed-in {
+  /* No animated colour: the browser interpolates an animated <color> in
+     OKLab by default regardless of how the endpoints were written, which a
+     computed-style contrast audit reads as an unparseable oklab(...). Slide
+     + fade only. */
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fc-feed-time { font-family: var(--fc-font-mono); font-size: 10.5px; color: var(--fc-faint); line-height: 1.3; }
+.fc-feed-time strong { display: block; color: var(--fc-ink); font-weight: 600; font-size: 11px; }
+.fc-feed-route { font-weight: 600; font-size: 13.5px; }
+.fc-feed-route .small { display: block; font-weight: 400; font-size: 11.5px; color: var(--fc-muted); margin-top: 2px; }
+.fc-feed-price {
+  text-align: right;
+  font-family: var(--fc-font-display);
+  font-size: 22px;
+  letter-spacing: -.01em;
+  line-height: 1;
+}
+.fc-feed-price .delta-down, .fc-feed-price .delta-up {
+  display: block;
+  font-family: var(--fc-font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+.fc-feed-price .delta-down { color: var(--fc-emerald); }
+.fc-feed-price .delta-up { color: var(--fc-crimson); }
+
+/* Mistake-fare radar */
+.fc-radar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 0; position: relative; overflow: hidden;
+  border-radius: 0;
+  background: var(--panel-bg);
+  color: var(--panel-fg);
+  isolation: isolate;
+}
+@media (max-width: 900px) { .fc-radar { grid-template-columns: 1fr; } }
+.fc-radar-left { padding: 32px 36px; position: relative; z-index: 1; }
+.fc-radar-h {
+  font-family: var(--fc-font-display);
+  font-size: 42px;
+  line-height: 1.04;
+  letter-spacing: -.02em;
+  font-weight: 400;
+  margin: 14px 0 12px;
+  color: var(--panel-fg);
+}
+.fc-radar-h em { color: var(--fc-gold); font-style: italic; }
+.fc-radar-lede { color: color-mix(in srgb, var(--panel-fg) 72%, var(--panel-bg)); max-width: 460px; line-height: 1.55; font-size: 14px; }
+.fc-radar-fare-list { margin-top: 22px; display: flex; flex-direction: column; gap: 8px; }
+.fc-radar-fare {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--panel-fg) 4%, var(--panel-bg));
+  border: 1px solid color-mix(in srgb, var(--panel-fg) 8%, var(--panel-bg));
+  border-radius: 0;
+  font-size: 13px;
+  transition: opacity .15s;
+  cursor: pointer;
+}
+.fc-radar-fare:hover { background: color-mix(in srgb, var(--panel-fg) 7%, var(--panel-bg)); border-color: color-mix(in srgb, var(--amber) 30%, var(--panel-bg)); }
+.fc-radar-fare-time { font-family: var(--fc-font-mono); font-size: 10px; color: color-mix(in srgb, var(--panel-fg) 72%, var(--panel-bg)); letter-spacing: .1em; }
+.fc-radar-fare-route { font-weight: 600; }
+.fc-radar-fare-route .small { display: block; font-weight: 400; font-size: 11px; color: color-mix(in srgb, var(--panel-fg) 72%, var(--panel-bg)); margin-top: 2px; }
+.fc-radar-fare-was { font-family: var(--fc-font-mono); font-size: 11px; color: color-mix(in srgb, var(--panel-fg) 72%, var(--panel-bg)); text-decoration: line-through; }
+.fc-radar-fare-now { font-family: var(--fc-font-display); font-size: 22px; color: var(--fc-gold); letter-spacing: -.01em; }
+.fc-radar-fare-now .pct { display: block; font-family: var(--fc-font-mono); font-size: 10px; color: color-mix(in srgb, var(--green) 70%, var(--panel-fg)); font-weight: 600; margin-top: 2px; }
+.fc-radar-right { position: relative; padding: 32px; display: grid; place-items: center; z-index: 1; }
+.fc-radar-ring {
+  position: relative;
+  width: 280px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--panel-bg));
+  display: grid; place-items: center;
+}
+.fc-radar-ring::before, .fc-radar-ring::after {
+  content: ""; position: absolute; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--panel-bg));
+}
+.fc-radar-ring::before { inset: 20%; }
+.fc-radar-ring::after { inset: 40%; }
+.fc-radar-sweep {
+  position: absolute; inset: 0; border-radius: 50%;
+  border-top: 2px solid color-mix(in srgb, var(--accent) 45%, var(--panel-bg));
+  animation: fc-sweep 4s linear infinite;
+}
+@keyframes fc-sweep { to { transform: rotate(360deg); } }
+.fc-radar-blip {
+  position: absolute; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--fc-gold);
+}
+.fc-radar-center {
+  font-family: var(--fc-font-display);
+  font-size: 50px;
+  line-height: 1;
+  color: var(--fc-gold);
+  font-style: italic;
+}
+.fc-radar-center .label {
+  display: block;
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--panel-fg) 72%, var(--panel-bg));
+  margin-top: 4px;
+  font-style: normal;
+}
+
+/* Three-up */
+.fc-three-up { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+@media (max-width: 1080px) { .fc-three-up { grid-template-columns: 1fr; } }
+
+/* DNA */
+.fc-dna-vis { padding: 8px 24px 18px; }
+.fc-dna-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 56px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--fc-line);
+}
+.fc-dna-row:last-child { border-bottom: none; }
+.fc-dna-label {
+  font-family: var(--fc-font-mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--fc-muted);
+}
+.fc-dna-bar { height: 6px; border-radius: 0; background: var(--fc-paper); position: relative; overflow: hidden; }
+.fc-dna-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background: var(--fc-gold);
+  border-radius: 0;
+  transition: width .6s ease;
+}
+.fc-dna-val { font-family: var(--fc-font-mono); font-size: 12px; font-weight: 600; text-align: right; }
+.fc-dna-flightcard {
+  margin: 0 24px 22px;
+  border: 1px solid var(--fc-line);
+  border-radius: 0;
+  background: var(--surface);
+  padding: 16px;
+}
+.fc-dna-route { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.fc-dna-iata {
+  font-family: var(--fc-font-display);
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -.01em;
+}
+.fc-dna-iata .label {
+  display: block;
+  font-family: var(--fc-font-mono);
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  color: var(--fc-muted);
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.fc-dna-iata.right { text-align: right; }
+.fc-dna-plane { flex: 1; margin: 0 14px; position: relative; height: 24px; }
+.fc-dna-plane::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 0;
+  border-top: 1px dashed var(--fc-line-strong);
+}
+.fc-dna-plane svg {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--fc-navy);
+  background: var(--surface);
+  padding: 0 8px;
+}
+
+/* Calendar */
+.fc-cal { padding: 18px 24px 22px; }
+.fc-cal-month {
+  font-family: var(--fc-font-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--fc-muted);
+  margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.fc-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.fc-cal-dow {
+  font-family: var(--fc-font-mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  color: var(--fc-faint);
+  text-align: center;
+  text-transform: uppercase;
+  padding-bottom: 4px;
+}
+.fc-cal-cell {
+  aspect-ratio: 1;
+  border-radius: 0;
+  background: var(--fc-paper);
+  display: grid; place-items: center;
+  font-size: 10px;
+  font-family: var(--fc-font-mono);
+  font-weight: 500;
+  color: var(--fc-faint);
+  cursor: pointer;
+  transition: opacity .15s;
+  position: relative;
+}
+.fc-cal-cell:hover { opacity: 0.72; z-index: 2; }
+/* Month-grid intensity ramp — color-mix(var(--accent) N%) per the heatmap spec. */
+.fc-cal-cell.l0 { background: var(--fc-paper); }
+.fc-cal-cell.l1 { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--ink); }
+.fc-cal-cell.l2 { background: color-mix(in srgb, var(--accent) 34%, var(--surface)); color: var(--ink); }
+.fc-cal-cell.l3 { background: color-mix(in srgb, var(--accent) 58%, var(--surface)); color: var(--on-accent); }
+.fc-cal-cell.l4 { background: color-mix(in srgb, var(--accent) 82%, var(--surface)); color: var(--on-accent); }
+.fc-cal-cell.l5 { background: var(--fc-gold); color: var(--fc-navy-3); }
+.fc-cal-cell.l5::after { content: "★"; position: absolute; bottom: 1px; right: 2px; font-size: 7px; }
+.fc-cal-legend {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--fc-font-mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--fc-muted);
+  margin-top: 14px;
+}
+.fc-cal-legend .swatches { display: flex; gap: 2px; }
+.fc-cal-legend .sw { width: 12px; height: 12px; border-radius: 0; }
+
+/* Carbon */
+.fc-carbon { padding: 22px 24px; }
+.fc-carbon-hero {
+  font-family: var(--fc-font-display);
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: var(--fc-ink);
+  display: flex; align-items: baseline; gap: 8px;
+  margin: 10px 0;
+}
+.fc-carbon-hero .fc-unit {
+  font-family: var(--fc-font-mono);
+  font-size: 13px;
+  letter-spacing: .12em;
+  color: var(--fc-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.fc-carbon-eq { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.fc-carbon-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 13px;
+  border-top: 1px dashed var(--fc-line);
+}
+.fc-carbon-row:first-child { border-top: none; }
+.fc-carbon-icon {
+  width: 28px; height: 28px;
+  border-radius: 0;
+  background: var(--fc-paper);
+  display: grid; place-items: center;
+  color: var(--fc-navy);
+}
+.fc-carbon-row .val { font-family: var(--fc-font-mono); font-weight: 600; font-size: 12px; color: var(--fc-ink); }
+.fc-carbon-cta {
+  margin-top: 16px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+  border-radius: 0;
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--green) 75%, var(--ink));
+  line-height: 1.4;
+}
+.fc-carbon-cta strong { color: color-mix(in srgb, var(--green) 75%, var(--ink)); font-weight: 700; }
+
+/* Concierge */
+.fc-concierge {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 380px;
+  background: linear-gradient(180deg, var(--fc-ink), var(--fc-navy-3));
+  color: var(--fc-cream);
+  border-radius: 18px;
+  border: 1px solid rgba(111,179,201,.22);
+  box-shadow:
+    0 30px 70px -20px rgba(0,0,0,.55),
+    0 0 80px -10px rgba(63,214,200,.18),
+    inset 0 0 0 1px rgba(111,179,201,.06);
+  font-size: 13px;
+  z-index: 40;
+  overflow: hidden;
+}
+.fc-concierge-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(111,179,201,.14);
+}
+.fc-concierge-head .title {
+  font-family: var(--fc-font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--fc-accent);
+  display: flex; align-items: center; gap: 8px;
+}
+.fc-concierge-head .title .pulse {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #3fd6c8;
+  box-shadow: 0 0 10px #3fd6c8;
+  animation: fc-blink 1.6s ease-in-out infinite;
+}
+
+
+/* Footer */
+.fc-footer {
+  margin-top: 64px; padding-top: 28px;
+  border-top: 1px solid var(--fc-line);
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; color: var(--fc-muted);
+}
+.fc-footer .links { display: flex; gap: 18px; }
+.fc-footer .links a {
+  font-family: var(--fc-font-mono);
+  color: inherit; font-size: 11px;
+  letter-spacing: .08em; text-transform: uppercase;
+  text-decoration: none;
+}
+
+/* GlobeHUD self-gates inside the React component — only renders while FarePilot
+   is actively speaking/listening, then auto-hides after a 5s linger. No CSS
+   hide rule needed. */
+
+/* The legacy top app-header was removed in favor of the app sidebar/topbar.
+   Keep this rule to suppress any orphan references that survived. */
+.app-header { display: none; }
+
+/* ===========================================================================
+   Route DNA recommendation card — themed via classes (was inline-styled).
+   The light "green" treatment becomes a muted gold panel under Coal so it
+   blends with the dark surfaces instead of flashing as a white island.
+   =========================================================================== */
+.fc-dna-reco {
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+  border-radius: 0;
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--green) 75%, var(--ink));
+  line-height: 1.4;
+}
+.fc-dna-reco-strong { color: color-mix(in srgb, var(--green) 75%, var(--ink)); }
+
+/* Mistake-fare radar rows are now anchors when bookHref is set; ensure the
+   <a> still lays out as a row, has no underline, and uses pointer cursor. */
+a.fc-radar-fare-link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  display: grid; /* re-assert same layout as the div variant */
+}
+a.fc-radar-fare-link:hover { background: color-mix(in srgb, var(--amber) 10%, var(--panel-bg)); border-color: color-mix(in srgb, var(--amber) 45%, var(--panel-bg)); }
+
+/* Best deals table — make the horizontal scrollbar always visible (not
+   clipped by the KPI strip above) and styled to match the dark/coal theme. */
+.fc-deals-table-wrap {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--amber) 45%, var(--panel-bg)) color-mix(in srgb, var(--panel-fg) 4%, var(--panel-bg));
+}
+.fc-deals-table-wrap::-webkit-scrollbar { height: 10px; }
+.fc-deals-table-wrap::-webkit-scrollbar-track { background: color-mix(in srgb, var(--panel-fg) 4%, var(--panel-bg)); border-radius: 0; }
+.fc-deals-table-wrap::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--amber) 55%, var(--panel-bg)); border-radius: 0; }
+.fc-deals-table-wrap::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--amber) 85%, var(--panel-bg)); }
+
+/* Book provider dropdown — translucent glass. Always sits at z:999999 via
+   inline style, but we extend the look here (hovers, text, dividers). */
+.fc-book-menu { color: #e8ecf4; }
+.fc-book-menu .border-b,
+.fc-book-menu .border-t,
+.fc-book-menu .border-slate-100,
+.fc-book-menu .border-slate-200,
+.fc-book-menu .border-slate-100,
+.fc-book-menu .border-slate-700,
+.fc-book-menu .border-slate-800 { border-color: rgba(255,255,255,0.10) !important; }
+.fc-book-menu a, .fc-book-menu button { color: rgba(255,255,255,0.92) !important; }
+.fc-book-menu a:hover, .fc-book-menu button:hover { background: rgba(255,255,255,0.08) !important; }
+.fc-book-menu .text-slate-500,
+.fc-book-menu .text-slate-400,
+.fc-book-menu .text-slate-700,
+.fc-book-menu .text-slate-200 { color: rgba(255,255,255,0.85) !important; }
+.fc-book-menu .text-slate-500 { color: rgba(255,255,255,0.55) !important; }
+
+/* Scroll-driven section reveals (Chrome/Edge); no-op elsewhere */
+@keyframes fc-rise-in {
+  from { opacity: 0; transform: translateY(26px) scale(.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fc-faq-open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fc-aurora { to { transform: rotate(1turn); } }
+
+/* ── Login page (canonical FC design + live data panel) ── */
+.fc-login { display: flex; min-height: 100vh; background: var(--fc-cream); }
+.fc-login-intel {
+  display: none; width: 55%; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(900px 500px at 88% 20%, rgba(111,179,201,.12), transparent 60%),
+    radial-gradient(700px 400px at 5% 95%, rgba(63,214,200,.08), transparent 55%),
+    linear-gradient(160deg, var(--fc-navy-2) 0%, var(--fc-ink) 100%);
+  color: var(--fc-cream);
+}
+@media (min-width: 1024px) { .fc-login-intel { display: flex; } }
+.fc-login-intel::before {
+  content: ""; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+  pointer-events: none;
+}
+.fc-login-intel-inner { position: relative; padding: 44px 52px 0; display: flex; flex-direction: column; gap: 34px; }
+.fc-login-intel-foot {
+  position: relative; padding: 20px 52px 26px;
+  font-family: var(--fc-font-mono); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.3);
+}
+.fc-login-pill {
+  display: inline-flex; align-items: center; gap: 10px; width: fit-content;
+  background: rgba(255,255,255,.06); color: rgba(255,255,255,.85);
+  border: 1px solid rgba(255,255,255,.16);
+  padding: 7px 14px 7px 12px; border-radius: 999px;
+  font-family: var(--fc-font-mono); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+}
+.fc-login-pill .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #4ade80; box-shadow: 0 0 0 4px rgba(74,222,128,.18);
+  animation: fc-blink 1.6s ease-in-out infinite;
+}
+.fc-login-hero h1 {
+  font-family: var(--fc-font-display); font-weight: 400;
+  font-size: clamp(38px, 3.6vw, 54px); line-height: 1.04;
+  letter-spacing: -.02em; color: var(--fc-cream); margin: 18px 0 14px;
+}
+.fc-login-hero h1 em { font-style: italic; color: var(--fc-accent); }
+.fc-login-hero p { color: rgba(255,255,255,.65); font-size: 15px; line-height: 1.6; max-width: 420px; margin: 0; }
+.fc-login-stats { display: grid; grid-template-columns: repeat(4, auto); gap: 28px; width: fit-content; }
+@media (max-width: 1280px) { .fc-login-stats { grid-template-columns: repeat(2, auto); } }
+.fc-login-stats .v {
+  font-family: var(--fc-font-display); font-size: 30px; letter-spacing: -.02em; color: var(--fc-cream);
+}
+.fc-login-stats .v.gold { color: var(--fc-gold); }
+
+/* ============================================================
+   Dashboard "cabin" overrides — restored (Task 3.9 fix round 1).
+
+   At base (03b1a69) the dashboard wrapper carried a static cabin-theme
+   attribute (src/app/page.tsx), so the rules below were live overrides
+   for the .fc-* dashboard widgets above, not dead theme machinery —
+   Task 3.9 deleted them along with the retired theme-attribute gate
+   itself, which regressed contrast on / (the accent KPI tile fell back
+   to .fc-kpi.fc-kpi-accent's own navy/ink, and .fc-ticker-route /
+   .fc-eyebrow lost their dashboard colour). Restored here unscoped —
+   the attribute selector is gone and .fc-shell is the only theme .fc-*
+   widgets render inside now, so it always applies — with every retired
+   night-cabin token name re-pointed to the editorial token its alias
+   used to resolve it to. The welcome-page half of each rule that used
+   to also be shared with the landing template stays deleted (that page
+   is fully editorial now). Placed after every base rule it overrides
+   so an equal-specificity tie (.fc-shell .fc-kpi and .fc-kpi.fc-kpi-accent
+   are both 0,2,0) still resolves in this rule's favor, the way the
+   attribute selector's higher specificity used to guarantee.
+   ============================================================ */
+.fc-shell {
+  background: var(--bg);
+  color: var(--ink);
+}
+.fc-shell .fc-card,
+.fc-shell .fc-kpi,
+.fc-shell .fc-panel {
+  background: var(--surface);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+.fc-shell .fc-card-title,
+.fc-shell .fc-section-title,
+.fc-shell h1,
+.fc-shell h2,
+.fc-shell h3 { color: var(--ink); }
+
+.fc-shell .fc-eyebrow,
+.fc-shell .fc-hero-stat-label { color: var(--muted-2); }
+
+.fc-shell .fc-radar h1,
+.fc-shell .fc-radar h2,
+.fc-shell .fc-radar h3,
+.fc-shell .fc-radar-h { color: var(--panel-fg); }
+.fc-shell .fc-radar .fc-eyebrow { color: color-mix(in srgb, var(--panel-fg) 72%, var(--panel-bg)); }
+
+.fc-shell .fc-hero-stat-value,
+.fc-shell .fc-price { color: var(--amber); }
+
+.fc-shell table { font-variant-numeric: tabular-nums; }
+
+.fc-shell .fc-hero {
+  background: var(--surface);
+  border-color: var(--rule);
+  color: var(--ink);
+}
+.fc-shell .fc-ticker {
+  background: var(--surface);
+  color: var(--ink);
+  border-top: 1px solid var(--rule-strong);
+}
+.fc-shell .fc-ticker-route { color: var(--ink); }
+.fc-shell .fc-ticker-price { color: var(--amber); }
+.fc-shell .fc-ticker-sep { background: var(--rule-strong); }
+
+.fc-shell .fc-btn-ghost {
+  background: rgba(255,255,255,.06);
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+.fc-shell .fc-btn-ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--amber);
+  color: var(--ink);
+}
+
+.fc-shell .fc-hero h1 em { color: var(--ink); }
+
+.fc-shell .fc-btn-light {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule-strong);
+}
+.fc-shell .fc-btn-light:hover { background: var(--surface-2); }
+
+.fc-shell .fc-badge-ok {
+  background: color-mix(in srgb, var(--green) 8%, var(--bg));
+  color: color-mix(in srgb, var(--green) 75%, var(--ink));
+}
+
+.fc-shell .fc-login-stats .v { color: var(--ink); }
+.fc-shell .fc-login-stats .v.gold { color: var(--amber); }
+
+.fc-login-stats .k {
+  margin-top: 3px; font-family: var(--fc-font-mono); font-size: 9.5px;
+  letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.45);
+}
+.fc-login-deals {
+  background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px; overflow: hidden; backdrop-filter: blur(6px); max-width: 480px;
+}
+.fc-login-deals-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
+  font-family: var(--fc-font-mono); font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.6);
+}
+.fc-login-deals-head .tag {
+  color: #4ade80; display: inline-flex; align-items: center; gap: 6px;
+}
+.fc-login-deals-head .tag::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%; background: #4ade80;
+  animation: fc-blink 1.6s ease-in-out infinite;
+}
+.fc-login-deals table { width: 100%; border-collapse: collapse; }
+.fc-login-deals th {
+  text-align: left; padding: 8px 16px 6px;
+  font-family: var(--fc-font-mono); font-size: 9px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.35);
+}
+.fc-login-deals td { padding: 7px 16px; border-top: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.fc-login-deals td.route { font-family: var(--fc-font-mono); font-weight: 600; color: rgba(255,255,255,.9); font-size: 12px; }
+.fc-login-deals td.dates { color: rgba(255,255,255,.55); font-size: 12px; }
+.fc-login-deals td.price { font-family: var(--fc-font-display); color: var(--fc-gold); font-size: 17px; text-align: right; }
+.fc-login-deals-foot {
+  padding: 10px 16px 12px; font-size: 11.5px; color: rgba(255,255,255,.45);
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.fc-login-auth { flex: 1; display: flex; align-items: center; justify-content: center; padding: 48px 24px; }
+.fc-login-auth-inner { width: 100%; max-width: 400px; }
+.fc-login-auth h2 {
+  font-family: var(--fc-font-display); font-weight: 400; font-size: 34px;
+  letter-spacing: -.015em; color: var(--fc-ink); margin: 0 0 8px;
+}
+.fc-login-auth h2 em { font-style: italic; color: var(--fc-navy); }
+.fc-login-auth .sub { font-size: 13.5px; color: var(--fc-muted); line-height: 1.6; margin: 0 0 20px; }
+.fc-login-card {
+  background: white; border: 1px solid var(--fc-line); border-radius: 18px;
+  padding: 22px; box-shadow: 0 24px 48px -28px rgba(26,68,89,.3);
+}
+.fc-login-auth .legal { font-size: 11px; color: var(--fc-faint); text-align: center; margin-top: 16px; line-height: 1.6; }
+.fc-login-auth .legal a { color: var(--fc-muted); text-decoration: underline; }
+
+/* ── About / docs page ── */
+.fc-about .fc-about-doc { margin-top: 40px; }
+.fc-about .fc-about-block {
+  background: white; border: 1px solid var(--fc-line); border-radius: 18px;
+  padding: 32px 34px; margin-bottom: 18px;
+}
+.fc-about .fc-about-block.gold {
+  background: linear-gradient(180deg, #fffdf6, white);
+  border-color: rgba(111,179,201,.5);
+}
+.fc-about .fc-about-block h2 {
+  display: flex; align-items: baseline; gap: 14px;
+  font-family: var(--fc-font-display); font-weight: 400; font-size: 27px;
+  letter-spacing: -.015em; color: var(--fc-ink); margin: 0 0 14px;
+}
+.fc-about .fc-about-block h2 .num {
+  font-family: var(--fc-font-mono); font-size: 11px; letter-spacing: .16em;
+  color: var(--fc-accent); font-weight: 600;
+}
+.fc-about .fc-about-block h3 {
+  font-family: var(--fc-font-display); font-weight: 400; font-size: 19px;
+  color: var(--fc-ink); margin: 20px 0 8px;
+}
+.fc-about .fc-about-block p,
+.fc-about .fc-about-block li { font-size: 14.5px; line-height: 1.65; color: #33405a; }
+.fc-about .fc-about-block p { margin: 0 0 12px; }
+.fc-about .fc-about-block p:last-child { margin-bottom: 0; }
+.fc-about .fc-about-block ul, .fc-about .fc-about-block ol { margin: 0; padding-left: 20px; }
+.fc-about .fc-about-block li { margin-bottom: 8px; }
+.fc-about .fc-about-block li::marker { color: var(--fc-accent); font-weight: 600; }
+.fc-about .fc-about-block a { color: var(--fc-navy); text-decoration: underline; text-decoration-color: rgba(26,68,89,.3); }
+.fc-about .fc-about-block a:hover { text-decoration-color: var(--fc-navy); }
+.fc-about .fc-about-block code {
+  font-family: var(--fc-font-mono); font-size: 12.5px;
+  background: var(--fc-cream); border: 1px solid var(--fc-line);
+  padding: 1px 6px; border-radius: 5px;
+}
+.fc-about .fc-about-block .dim { color: var(--fc-muted); }
+.fc-about .fc-about-block .small { font-size: 12.5px; font-style: italic; }
+.fc-about .fc-about-block strong { color: var(--fc-ink); }
+
+/* ===========================================================================
+   VERDICT CARD (Kayak / Hopper pattern) + ROUTE SPARKLINE — canonical FC system.
+   Appended 2026-09 for the competitor-benchmark patterns. Scoped to the
+   .fc-verdict / .fc-spark namespaces; uses the --fc-* tokens (dashboard-widget
+   token aliases, defined in editorial.css).
+   =========================================================================== */
+.fc-verdict {
+  --fcv-accent: var(--fc-emerald);
+  /* 2%, not S5's 8% cap: --muted on the tint (.fc-verdict-conf) only clears
+     4.5:1 in light theme at ≤3%; 2% keeps a safety margin (measured 4.5–4.6). */
+  --fcv-tint: color-mix(in srgb, var(--green) 2%, var(--surface));
+  border: 1px solid var(--fc-line);
+  border-left: 4px solid var(--fcv-accent);
+  border-radius: 0;
+  background: var(--fcv-tint);
+  padding: 14px 16px 12px;
+  color: var(--fc-ink);
+  font-family: var(--fc-font-sans);
+}
+.fc-verdict-wait { --fcv-accent: var(--fc-gold); --fcv-tint: color-mix(in srgb, var(--amber) 2%, var(--surface)); }
+.fc-verdict-hold { --fcv-accent: var(--fc-navy); --fcv-tint: color-mix(in srgb, var(--accent) 2%, var(--surface)); }
+.fc-verdict-compact { padding: 12px 14px 10px; }
+.fc-verdict-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.fc-verdict-call { display: flex; align-items: center; gap: 8px; }
+.fc-verdict-dot {
+  width: 9px; height: 9px; border-radius: 50%; background: var(--fcv-accent);
+}
+.fc-verdict-label {
+  font-family: var(--fc-font-display);
+  font-size: 24px; line-height: 1; letter-spacing: -.01em;
+}
+.fc-verdict-compact .fc-verdict-label { font-size: 20px; }
+.fc-verdict-conf {
+  font-family: var(--fc-font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--fc-muted); white-space: nowrap;
+}
+.fc-verdict-conf strong { color: var(--fc-ink); font-size: 12px; }
+.fc-verdict-reason { margin: 8px 0 12px; font-size: 12.5px; line-height: 1.45; color: var(--fc-ink); }
+.fc-verdict-reason strong { color: var(--fc-ink); }
+
+/* Typical-range band (Google pattern) with the current price marker */
+.fc-verdict-range-labels,
+.fc-verdict-range-foot {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-family: var(--fc-font-mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--fc-faint);
+}
+.fc-verdict-range-labels b, .fc-verdict-range-foot b { color: var(--fc-ink); font-weight: 600; }
+.fc-verdict-track {
+  position: relative; height: 8px; margin: 18px 0 6px; border-radius: 0;
+  background: var(--track);
+}
+.fc-verdict-band {
+  position: absolute; top: -3px; bottom: -3px; border-radius: 0;
+  background: color-mix(in srgb, var(--fc-navy) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--fc-navy) 28%, var(--surface));
+}
+.fc-verdict-marker {
+  position: absolute; top: 50%; width: 14px; height: 14px; margin-left: -7px; transform: translateY(-50%);
+  border-radius: 0; background: var(--fcv-accent); border: 2px solid var(--surface);
+}
+.fc-verdict-marker-price {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  font-family: var(--fc-font-mono); font-size: 10px; font-weight: 700; color: var(--fc-ink);
+  background: var(--surface); border: 1px solid var(--fc-line); border-radius: 0; padding: 1px 5px; white-space: nowrap;
+}
+.fc-verdict-stats {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--fc-line); text-align: center;
+}
+.fc-verdict-stat-label {
+  font-family: var(--fc-font-mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--fc-faint);
+}
+.fc-verdict-stat-value { font-family: var(--fc-font-mono); font-size: 13px; font-weight: 600; color: var(--fc-ink); }
+.fc-verdict-stat-value.down { color: color-mix(in srgb, var(--green) 75%, var(--ink)); }
+.fc-verdict-stat-value.up { color: color-mix(in srgb, var(--red) 75%, var(--ink)); }
+
+/* Route sparkline */
+.fc-spark { display: block; width: 100%; }
+.fc-spark-labels {
+  display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px;
+  font-family: var(--fc-font-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase;
+}
+.fc-spark-min { color: color-mix(in srgb, var(--green) 75%, var(--ink)); font-weight: 600; }
+.fc-spark-max { color: color-mix(in srgb, var(--red) 75%, var(--ink)); font-weight: 600; }
+.fc-spark-delta { color: var(--fc-muted); }
+.fc-spark-delta.down { color: color-mix(in srgb, var(--green) 75%, var(--ink)); }
+.fc-spark-delta.up { color: color-mix(in srgb, var(--red) 75%, var(--ink)); }
+.fc-spark-svg { display: block; width: 100%; height: 56px; overflow: visible; }
+.fc-spark-area { fill: color-mix(in srgb, var(--accent) 22%, transparent); }
+.fc-spark-line { fill: none; stroke: var(--fc-navy); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.fc-spark-target { stroke: var(--fc-faint); stroke-width: 1; stroke-dasharray: 3 3; opacity: .7; vector-effect: non-scaling-stroke; }
+.fc-spark-low { fill: var(--fc-gold); stroke: var(--surface); stroke-width: 1.5; }
+.fc-spark-last { fill: var(--fc-navy); stroke: var(--surface); stroke-width: 1.5; }
+.fc-spark-caption { margin-top: 4px; font-family: var(--fc-font-mono); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--fc-faint); }
+.fc-spark-empty { padding: 6px 0; }
+/* Verdict range: room for the floating marker price above the track. */
+.fc-verdict-track { margin-top: 30px; }
+
+/* ==========================================================================
+   i18n: RTL (Arabic) + script fonts for the core app shell.
+   Appended by the language-system extension; html[lang]/[dir] are set in
+   src/app/layout.tsx from the fc_lang cookie / Accept-Language.
+   ========================================================================== */
+
+/* Script fallbacks — Public Sans/Newsreader lack Arabic, Han and Devanagari
+   glyphs, so each script's Noto face is listed alongside them (the Google font
+   <link> is injected by the root layout, LOCALES[locale].font). The editorial
+   faces come in as var(--font-ui)/var(--font-serif); the retired Manrope and
+   Fraunces names were left behind by task 3.10's loader removal and would have
+   dropped Latin text in zh/hi onto the Noto face. */
+html[lang="ar"] body, html[lang="ar"] .fc-login {
+  --font-fc-sans: 'Noto Sans Arabic', var(--font-ui), system-ui, sans-serif;
+  --font-fc-display: 'Noto Sans Arabic', var(--font-serif), serif;
+  font-family: 'Noto Sans Arabic', var(--font-sans, system-ui), sans-serif;
+}
+html[lang="zh"] body, html[lang="zh"] .fc-login {
+  --font-fc-sans: var(--font-ui), 'Noto Sans SC', system-ui, sans-serif;
+  --font-fc-display: var(--font-serif), 'Noto Sans SC', serif;
+  font-family: var(--font-sans, system-ui), 'Noto Sans SC', sans-serif;
+}
+html[lang="hi"] body, html[lang="hi"] .fc-login {
+  --font-fc-sans: var(--font-ui), 'Noto Sans Devanagari', system-ui, sans-serif;
+  --font-fc-display: var(--font-serif), 'Noto Sans Devanagari', serif;
+  font-family: var(--font-sans, system-ui), 'Noto Sans Devanagari', sans-serif;
+}
+/* Tracked small-caps and tight display headings don't suit Arabic script. */
+html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3, html[lang="ar"] .fc-section-title { letter-spacing: 0; }
+html[lang="ar"] .fc-eyebrow, html[lang="ar"] .fc-smallcaps, html[lang="ar"] .eyebrow,
+html[lang="ar"] .fc-l-brand-meta, html[lang="ar"] .fc-hero-stat-label { letter-spacing: .04em; }
+html[lang="ar"] h1 em, html[lang="ar"] h2 em, html[lang="ar"] h3 em { font-style: normal; }
+@media (min-width: 768px) {
+  /* AdminAwareMain's md:pl-[220px] gutter moves to the right side. */
+  html[dir="rtl"] main.md\:pl-\[220px\] { padding-left: 0; padding-right: 220px; }
+}
+
+/* Ticker tape scrolls the same way regardless of writing direction; keep the
+   marquee track LTR so the animation's translateX math still holds. */
+html[dir="rtl"] .fc-ticker-track { direction: ltr; }
+
+/* ── Founder-only admin login ── */
+.fc-admin-login { min-height: 100vh; display: grid; place-items: center; padding: 40px 20px; background: radial-gradient(800px 400px at 50% -10%, rgba(111,179,201,.12), transparent 60%), #0a0e16 !important; color: #e8ecf4; }
+.fc-admin-login-card { width: 100%; max-width: 420px; }
+.fc-admin-login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+.fc-admin-login-brand .n { font-family: var(--fc-font-display); font-size: 22px; color: #f5f1e8; }
+.fc-admin-login-brand .m { font-family: var(--fc-font-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--fc-accent); }
+.fc-admin-login h2 { font-family: var(--fc-font-display); font-weight: 400; font-size: 34px; letter-spacing: -.015em; margin: 0 0 8px; color: #f5f1e8; }
+.fc-admin-login h2 em { font-style: italic; color: var(--fc-accent); }
+.fc-admin-login .sub { font-size: 13.5px; color: rgba(255,255,255,.6); line-height: 1.6; margin: 0 0 20px; }
+.fc-admin-login .fc-login-card { background: #14181f; border: 1px solid rgba(111,179,201,.35); border-radius: 18px; padding: 22px; box-shadow: 0 0 0 5px rgba(111,179,201,.06), 0 30px 60px -30px rgba(0,0,0,.8); }
+.fc-admin-login .legal { font-size: 11px; color: rgba(255,255,255,.4); text-align: center; margin-top: 16px; }
+.fc-admin-login .legal a { color: rgba(255,255,255,.6); text-decoration: underline; }
+/* Live feed: slide-in for the newest row */
+.fc-feed-item.fresh { animation: fc-feed-in .45s ease both; }
+@keyframes fc-feed-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+/* Founding period banner (dashboard) */
+.fc-founding-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 12px 16px; border-radius: 0; background: color-mix(in srgb, var(--accent) 8%, var(--panel-bg)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--panel-bg)); color: var(--panel-fg); font-size: 13.5px; line-height: 1.5; }
+.fc-founding-banner.due { background: color-mix(in srgb, var(--accent) 14%, var(--panel-bg)); border-color: color-mix(in srgb, var(--accent) 50%, var(--panel-bg)); }
+.fc-founding-banner a { color: var(--fc-gold); text-decoration: underline; }
+.fc-founding-tag { font-family: var(--fc-font-mono, ui-monospace, monospace); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--fc-gold); white-space: nowrap; }
+
+
+/* Photo credits (/credits). CC BY / CC BY-SA want the credit where a
+   reader can see it, so this is a real page, not a footnote. */
+.fc-credits {
+  list-style: none; margin: 32px 0 0; padding: 0;
+  display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+.fc-credit {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--fc-line); border-radius: 12px; overflow: hidden;
+  background: var(--fc-paper);
+}
+.fc-credit img {
+  width: 100%; aspect-ratio: 16 / 10; object-fit: cover; display: block;
+  background: var(--fc-line);
+}
+.fc-credit-body { padding: 10px 12px 12px; }
+.fc-credit-place {
+  font-family: var(--fc-font-display); font-weight: 700; font-size: 15px;
+  line-height: 1.2; color: var(--fc-ink);
+}
+.fc-credit-code {
+  font-family: var(--fc-font-mono); font-size: 10.5px; letter-spacing: .1em;
+  color: var(--fc-faint); margin-left: 4px;
+}
+.fc-credit-author { font-size: 13px; color: var(--fc-muted); margin-top: 3px; }
+.fc-credit-meta { font-size: 11.5px; color: var(--fc-faint); margin-top: 5px; }
+.fc-credit-meta a { color: inherit; text-decoration: underline; }
+.fc-credit-meta a:hover { color: var(--fc-accent); }
+
+/* ===================================================================
+   Hero sky — GetLayers gradient "firmament", retinted to night-cabin.
+   See docs/design/getlayers.md. The canvas is the hero's ground; the
+   existing ::before graticule stays ON TOP of it as instrument chrome,
+   which is why the three layers are numbered explicitly (a ::before
+   paints before real children, so the canvas would otherwise cover it).
+   =================================================================== */
+.fc-hero-sky {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+  pointer-events: none;
+}
+.fc-hero::before { z-index: 1; }
+.fc-hero-grid,
+.fc-hero .fc-ticker { position: relative; z-index: 2; }
+
+/* ===================================================================
+   Hero on a phone. Two compounding bugs made the landing hero CLIP
+   rather than wrap at 375px — and .fc-hero has overflow:hidden, so the
+   headline, lede and second CTA were silently cut off mid-word instead
+   of overflowing visibly.
+
+   1. `@media (max-width:1080px) { .fc-hero-grid { grid-template-columns: 1fr } }`
+      A bare `1fr` cannot shrink below min-content, so the widest word in
+      the headline ("monitored", 54px) set the column width: a 340px column
+      inside a 319px box. minmax(0, 1fr) lets it shrink.
+   2. `.fc-hero h1 { font-size: clamp(54px, 6.8vw, 96px) }`
+      6.8vw is only 25px at this width, so the clamp pinned to its 54px
+      FLOOR. The floor, not the preferred size, was the problem.
+   =================================================================== */
+@media (max-width: 720px) {
+  .fc-hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 28px 20px 26px;
+  }
+  .fc-hero h1 { font-size: clamp(26px, 6.4vw, 34px); }
+  .fc-hero-cta { flex-wrap: wrap; }
+}
+
+/* ===================================================================
+   The scan — adapted from GetLayers' "kimi" instrument map.
+
+   Two ambient loops, both deliberately slight. An instrument panel is
+   never quite still, but neither should it compete with the fares.
+   Both are pure CSS so they run on the compositor rather than through
+   React, and both stop dead under reduced motion.
+   =================================================================== */
+
+/* A ping out of the hub and gone. The opacity falls off QUADRATICALLY —
+   linear reads as a ring being deleted, squared reads as something
+   dissipating into distance. */
+@keyframes fc-globe-ping {
+  0%   { r: 6;  opacity: .45; }
+  100% { r: 96; opacity: 0; }
+}
+.fc-globe-ping { animation: fc-globe-ping 4.2s cubic-bezier(.16, 1, .3, 1) infinite; }
+
+/* The poll head running each route. Driven by stroke-dashoffset against
+   pathLength=1, so it is immune to `d` being rebuilt every frame as the
+   globe turns. */
+@keyframes fc-globe-poll {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+.fc-globe-poll { animation: fc-globe-poll 4.6s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fc-globe-ping { animation: none; opacity: 0; }
+  .fc-globe-poll { animation: none; stroke-dashoffset: 0; }
+}
+
+/* ===================================================================
+   Liquid glass.
+
+   The Apple treatment is not "a translucent panel" — it is four things
+   at once, and dropping any one makes it read as flat plastic:
+
+     1. blur AND saturate behind it, so colour blooms through instead of
+        going grey. The saturation is what sells it.
+     2. a gradient fill, lighter at the top, so the sheet faces a
+        direction instead of being uniformly milky.
+     3. a specular edge — a bright hairline on the TOP lip only, as an
+        inset shadow. Real glass catches light on the edge facing it.
+     4. a soft drop shadow, so it floats above the ground rather than
+        reading as a hole cut into it.
+
+   =================================================================== */
+.fc-glass {
+  position: relative;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, .10) 0%,
+    rgba(255, 255, 255, .045) 42%,
+    rgba(255, 255, 255, .025) 100%
+  );
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, .22),
+    inset 0 -1px 0 0 rgba(255, 255, 255, .05),
+    0 10px 30px -12px rgba(0, 0, 0, .55);
+}
+
+.fc-glass-sm { border-radius: 12px; }
+
+.fc-glass-pill {
+  border-radius: 999px;
+  background: linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: blur(14px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, .26),
+    0 6px 18px -8px rgba(0, 0, 0, .5);
+}
+
+/* Without backdrop-filter the fill alone is nearly invisible and the panel
+   loses its edges, so fall back to an opaque deck surface. Written as a
+   single plain condition: `@supports not ((a) or (b))` did not survive the
+   PostCSS pass — it took the backdrop-filter declarations above it with it,
+   which is why the first cut of this rendered as a flat gradient. */
+@supports not (backdrop-filter: blur(1px)) {
+  .fc-glass,
+  .fc-glass-pill { background: var(--surface-2); }
+}

@@ -1,0 +1,20 @@
+.env
+*.pyc
+__pycache__/
+.venv/
+secrets/
+*.key
+*.pem
+data/
+data/browser/
+logs/
+.DS_Store
+ui/node_modules
+ui/dist/
+ui/public/wake/*.task
+ui/public/wake/wasm/
+ui/public/wake/whisper/
+.venv/
+
+# generated docs — regenerate with tools/md2pdf.py
+*.pdf

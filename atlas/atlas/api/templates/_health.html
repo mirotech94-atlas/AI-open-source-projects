@@ -1,0 +1,36 @@
+{#
+  The one rule this macro exists to enforce: a health state ALWAYS carries its
+  word, and UNKNOWN always carries the hatch. Colour never carries the meaning
+  on its own — not for a colour-blind reader, not in a screenshot, not in a
+  terminal rendering the HTML as text.
+
+  Every surface that shows health goes through here. There is no second way to
+  draw one.
+#}
+{# Anything we do not recognise is an absence of knowledge, not a new state.
+   An unrecognised value previously passed straight through into the attribute,
+   matched no CSS rule, and rendered with no colour, no dashed border and no
+   hatch — which is much closer to OK than to UNKNOWN. #}
+{% macro normalise(health) -%}
+{% set h = (health or 'unknown')|lower|trim %}
+{{- h if h in ('ok', 'degraded', 'failing') else 'unknown' -}}
+{%- endmacro %}
+
+{% macro badge(health) -%}
+{% set h = normalise(health) %}
+<span class="badge{% if h == 'unknown' %} hatch-edge{% endif %}" data-health="{{ h }}">
+  <span class="badge-dot{% if h == 'unknown' %} hatch{% endif %}" aria-hidden="true"></span>
+  {{ {'ok':'OK','degraded':'Degraded','failing':'Failing'}.get(h, 'Unknown') }}
+</span>
+{%- endmacro %}
+
+{% macro rail(health) -%}
+{% set h = normalise(health) %}
+<span class="rail{% if h == 'unknown' %} hatch{% endif %}" data-health="{{ h }}"
+      aria-hidden="true"></span>
+{%- endmacro %}
+
+{% macro severity(level) -%}
+{% set s = level|int %}
+<span class="sev" data-sev="{{ s }}">{{ {0:'Info',1:'Normal',2:'High',3:'Critical'}.get(s, 'Normal') }}</span>
+{%- endmacro %}

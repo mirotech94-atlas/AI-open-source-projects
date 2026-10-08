@@ -1,0 +1,3284 @@
+{
+ "source": "hand-written by Miro's 'Atlas engine setup' session, 2026-09-28; handed to the series engine at Miro's choice (Atlas's pipeline owns the reels)",
+ "series": [
+  {
+   "title": "The Parking Spot",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated comedy with lively camera moves and lots of motion; talking cars with expressive semi-human faces: big eyes in the windshield and a mouth in the front grille that visibly moves in sync whenever that car speaks; the cars face, bump and react to each other. English dialogue spoken by the cars themselves, no narrator, no on-screen text or subtitles, no brand logos. Original designs, not any existing film characters. Characters: GOLDIE, an old boxy two-tone cream-and-mint station wagon with wood side panels and round headlights like reading glasses, calm wise voice; VIPER, a low wedge-shaped matte-purple electric hypercar with neon green stripes and slit LED eyes, cocky young voice; TOBY, a tall bright-blue tow truck with a crane arm, square friendly eyes and a red bandana, slow sleepy voice. ",
+   "first_slot": "2026-10-03 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 3,
+     "caption": "The Parking Spot — Part 1\n🚗 Two cars, one parking spot. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "A crowded city parking lot at night with one empty space; Viper zooms in and cuts in front of Goldie: \"Move it, grandpa. That spot is reserved for luxury.\"",
+       "speaker": "VIPER",
+       "caption_en": "Move it, grandpa. That spot is reserved for luxury."
+      },
+      {
+       "scene": "Goldie peers over his headlight-glasses, unimpressed: \"Reserved? I've parked here for twenty years, sonny.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Reserved? I've parked here for twenty years, sonny."
+      },
+      {
+       "scene": "Viper revs loudly, bouncing on his wheels and smirking: \"Twenty years of rust, maybe.\"",
+       "speaker": "VIPER",
+       "caption_en": "Twenty years of rust, maybe."
+      },
+      {
+       "scene": "Goldie chuckles and taps his wood panel proudly: \"Rust is just experience you can see.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Rust is just experience you can see."
+      },
+      {
+       "scene": "Viper swings sideways and squeezes into the space, laughing: \"Too slow, old man!\"",
+       "speaker": "VIPER",
+       "caption_en": "Too slow, old man!"
+      },
+      {
+       "scene": "Goldie calmly nods toward a red painted curb behind Viper: \"Oh, Viper... you're parked in the fire lane.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Oh, Viper… you're parked in the fire lane."
+      },
+      {
+       "scene": "Viper's eyes go wide as he looks down at the red curb: \"The what?\"",
+       "speaker": "VIPER",
+       "caption_en": "The what?"
+      },
+      {
+       "scene": "Toby the blue tow truck rolls in and hooks Viper's bumper with his crane while Viper yells: \"This is not over!\" Goldie smiles and parks.",
+       "speaker": "VIPER",
+       "caption_en": "This is not over!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 3,
+     "caption": "The Parking Spot — Part 2\n🚗 Two cars, one parking spot. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Night at a fenced impound lot; Viper behind the fence calls to Toby the tow truck: \"Hey, tow truck. How much to let me out?\"",
+       "speaker": "VIPER",
+       "caption_en": "Hey, tow truck. How much to let me out?"
+      },
+      {
+       "scene": "Toby yawns slowly: \"Around here, pal... we call that a bribe.\"",
+       "speaker": "TOBY",
+       "caption_en": "Around here, pal… we call that a bribe."
+      },
+      {
+       "scene": "Toby dozes off by the gate, snoring, as Viper quietly rolls past him: \"Sleep tight, big guy.\"",
+       "speaker": "VIPER",
+       "caption_en": "Sleep tight, big guy."
+      },
+      {
+       "scene": "Toby mumbles in his sleep, smiling: \"Mmm... one more oil change...\"",
+       "speaker": "TOBY",
+       "caption_en": "Mmm… one more oil change…"
+      },
+      {
+       "scene": "Next night, the parking lot; Viper pulls up nose to nose with Goldie: \"Round two, grandpa. Winner gets the spot forever.\"",
+       "speaker": "VIPER",
+       "caption_en": "Round two, grandpa. Winner gets the spot forever."
+      },
+      {
+       "scene": "Goldie raises his headlight-glasses, thinks, then grins: \"A race? At my age? ...You're on.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "A race? At my age? …You're on."
+      },
+      {
+       "scene": "On an empty street at a chalk start line, Toby waves a checkered flag with his crane arm: \"Engines ready... set...\"",
+       "speaker": "TOBY",
+       "caption_en": "Engines ready… set…"
+      },
+      {
+       "scene": "Goldie and Viper rev side by side; Goldie winks: \"Hope you like the view of my bumper, kid.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Hope you like the view of my bumper, kid."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 3,
+     "caption": "The Parking Spot — Part 3 (final)\n🚗 Two cars, one parking spot. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The race starts; Viper blasts far ahead with a trail of neon light, shouting back: \"See you never, rust bucket!\"",
+       "speaker": "VIPER",
+       "caption_en": "See you never, rust bucket!"
+      },
+      {
+       "scene": "Goldie rolls along at a steady pace, humming: \"Slow and steady, sonny.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Slow and steady, sonny."
+      },
+      {
+       "scene": "Near the finish line Viper sputters and stops, his battery icon blinking red on his dashboard: \"No, no, no... I'm out of charge?!\"",
+       "speaker": "VIPER",
+       "caption_en": "No, no, no… I'm out of charge?!"
+      },
+      {
+       "scene": "Goldie pulls up beside him: \"Fancy cars drink a lot, kid.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Fancy cars drink a lot, kid."
+      },
+      {
+       "scene": "Goldie lines up behind Viper: \"Come on. I'll push you over the line.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Come on. I'll push you over the line."
+      },
+      {
+       "scene": "Viper looks back, surprised and humbled: \"Why would you help me?\"",
+       "speaker": "VIPER",
+       "caption_en": "Why would you help me?"
+      },
+      {
+       "scene": "At sunrise in the parking lot, Goldie and Viper park side by side in two spaces: \"Because this lot is big enough for two.\"",
+       "speaker": "GOLDIE",
+       "caption_en": "Because this lot is big enough for two."
+      },
+      {
+       "scene": "Viper smiles sheepishly while Toby honks happily nearby: \"Thanks, Goldie. Same spot tomorrow?\"",
+       "speaker": "VIPER",
+       "caption_en": "Thanks, Goldie. Same spot tomorrow?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Halo of Coins",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated comedy-drama, glossy cinematic lighting, lively camera, expressive semi-human fruit and vegetable heads on human bodies; every character's mouth visibly moves in sync when they speak and they react to each other. English dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, no logos. Wealth is shown as small glowing gold coins slowly orbiting each character's head -- the more coins, the richer. Original designs only. Characters: SAM, a sun-gold mango-headed man in a faded denim jacket and a grey knitted beanie, ONE lonely copper coin circling his head, calm warm voice; BOLT, his old butler, a silver-grey artichoke head with a velvet bow tie and white gloves, dry deadpan voice; LINA, a lime-headed young woman with a freckled rind, yellow raincoat, a modest ring of coins, quick kind voice; MR. FIGGS, her father, a purple fig head with a monocle and a thick golden ring of coins, booming pompous voice; MRS. FIGGS, a plum head with a pearl headband who polishes her coins with a hanky, sing-song snobbish voice; DOLLY, Lina's sister, a pink dragonfruit head with sunglasses indoors, bored drawl; TREVOR, Dolly's husband, a coconut head with slicked hair and a huge coin halo whose coins are secretly painted cardboard, braggy voice; GRANDPA OKRA, a tall wrinkled okra patriarch with half-moon glasses and a slow drifting galaxy of coins, soft gravel voice. ",
+   "first_slot": "next",
+   "position": 10,
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Halo of Coins — Part 1\n🪙 Everyone's wealth floats over their head. He wears one coin on purpose. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "A sleek private train cabin at night; Bolt pours tea and stares at Sam's single copper coin: \"Sir, you have ten thousand coins. And you're wearing ONE?\"",
+       "speaker": "BOLT",
+       "caption_en": "Sir, you have ten thousand coins. And you're wearing ONE?"
+      },
+      {
+       "scene": "Sam tugs his grey beanie lower over his head, smiling, and says to Bolt: \"I want to know who's kind to me when they can't see the rest.\"",
+       "speaker": "SAM",
+       "caption_en": "I want to know who's kind to me when they can't see the rest."
+      },
+      {
+       "scene": "Bolt raises one eyebrow and sets the teapot down with a clink: \"With one coin, sir, people will treat you like a vending machine.\"",
+       "speaker": "BOLT",
+       "caption_en": "With one coin, sir, people will treat you like a vending machine."
+      },
+      {
+       "scene": "Sam winks and taps the beanie: \"Exactly what I'm paying to find out.\"",
+       "speaker": "SAM",
+       "caption_en": "Exactly what I'm paying to find out."
+      },
+      {
+       "scene": "A rainy city street; Lina in her yellow raincoat hurries up to Sam under a bus shelter, breathless: \"You! One-coin guy! Be my boyfriend for one dinner tonight?\"",
+       "speaker": "LINA",
+       "caption_en": "You! One-coin guy! Be my boyfriend for one dinner tonight?"
+      },
+      {
+       "scene": "Sam blinks at her, then glances at his lonely orbiting coin: \"You picked me because I look poor, didn't you?\"",
+       "speaker": "SAM",
+       "caption_en": "You picked me because I look poor, didn't you?"
+      },
+      {
+       "scene": "Lina nods honestly, rain dripping off her hood: \"My family judges people by their halo. I want to watch them meet a good one-coin man.\"",
+       "speaker": "LINA",
+       "caption_en": "My family judges people by their halo. I want to watch them meet a good one-coin man."
+      },
+      {
+       "scene": "Sam laughs, shakes her hand; she walks off and turns back mid-rain: \"Dinner's at six. Wear something... cheaper.\"",
+       "speaker": "LINA",
+       "caption_en": "Dinner's at six. Wear something... cheaper."
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Halo of Coins — Part 2\n🪙 He brought a gift. They brought a tape measure. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Outside a gaudy mansion at dusk; Bolt hands Sam a small glass box holding one glowing golden mango: \"The first fruit of your first tree, sir. There is no second one.\"",
+       "speaker": "BOLT",
+       "caption_en": "The first fruit of your first tree, sir. There is no second one."
+      },
+      {
+       "scene": "Mr. Figgs opens the grand door, squints at Sam's single coin and pulls out a tape measure: \"Lina. Your boyfriend's halo is shorter than my doormat.\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "Lina. Your boyfriend's halo is shorter than my doormat."
+      },
+      {
+       "scene": "Lina steps between them, chin up: \"His name is Sam, Dad. Try measuring his manners.\"",
+       "speaker": "LINA",
+       "caption_en": "His name is Sam, Dad. Try measuring his manners."
+      },
+      {
+       "scene": "Mrs. Figgs polishes one of her orbiting coins with a hanky and sniffs at Sam's jacket: \"Denim. At dinner. How brave.\"",
+       "speaker": "MRS. FIGGS",
+       "caption_en": "Denim. At dinner. How brave."
+      },
+      {
+       "scene": "At a long candlelit table, Trevor leans back and makes his giant coin halo spin faster: \"Two thousand coins, buddy. They follow me into the shower.\"",
+       "speaker": "TREVOR",
+       "caption_en": "Two thousand coins, buddy. They follow me into the shower."
+      },
+      {
+       "scene": "Sam calmly sips water and eyes one of Trevor's coins, which is peeling at the edge: \"One of them is peeling, buddy.\"",
+       "speaker": "SAM",
+       "caption_en": "One of them is peeling, buddy."
+      },
+      {
+       "scene": "Dolly lowers her sunglasses, bored, and points at Sam's lonely coin: \"Is that a coin or a lost button?\"",
+       "speaker": "DOLLY",
+       "caption_en": "Is that a coin or a lost button?"
+      },
+      {
+       "scene": "Sam slides the glass box with the glowing mango toward Mr. Figgs with a polite smile: \"A gift. Please be careful with it.\"",
+       "speaker": "SAM",
+       "caption_en": "A gift. Please be careful with it."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Halo of Coins — Part 3\n🪙 They broke the one thing money can't buy twice. Follow for the finale!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Mr. Figgs holds the glass box up to the candlelight, sneering at the glowing mango: \"A mango? We ARE fruit, young man. This is practically cannibalism.\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "A mango? We ARE fruit, young man. This is practically cannibalism."
+      },
+      {
+       "scene": "Trevor snatches the box, shaking it like a snow globe while everyone gasps: \"It's glowing. Cheap battery inside, I bet.\"",
+       "speaker": "TREVOR",
+       "caption_en": "It's glowing. Cheap battery inside, I bet."
+      },
+      {
+       "scene": "Lina jumps up, reaching for it, panicked: \"Trevor, put it down! Now!\"",
+       "speaker": "LINA",
+       "caption_en": "Trevor, put it down! Now!"
+      },
+      {
+       "scene": "The box slips from Trevor's hands and shatters on the marble; the golden mango rolls across the floor: \"Oops. Relax, I'll buy you a whole bag.\"",
+       "speaker": "TREVOR",
+       "caption_en": "Oops. Relax, I'll buy you a whole bag."
+      },
+      {
+       "scene": "Mr. Figgs steps on the rolling mango with a squish and points at the door: \"There. Now get your one coin out of my house.\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "There. Now get your one coin out of my house."
+      },
+      {
+       "scene": "Sam stands slowly, not angry, just quiet, and looks at the family one by one: \"When you find out what you just stepped on, you'll wish you'd said hello.\"",
+       "speaker": "SAM",
+       "caption_en": "When you find out what you just stepped on, you'll wish you'd said hello."
+      },
+      {
+       "scene": "Grandpa Okra shuffles over, kneels, and lifts the golden seed; a tiny crown is carved into it: \"The crown seed... from the very first grove.\"",
+       "speaker": "GRANDPA OKRA",
+       "caption_en": "The crown seed... from the very first grove."
+      },
+      {
+       "scene": "Grandpa Okra looks up at Sam, his coin galaxy trembling, voice shaking: \"Young man... who ARE you?\"",
+       "speaker": "GRANDPA OKRA",
+       "caption_en": "Young man... who ARE you?"
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Halo of Coins — Part 4 (final)\n🪙 He took off the beanie. Their coins started sweating. The end!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Sam pulls off his beanie; ten thousand glowing coins burst out and fill the whole dining room like a golden storm: \"I'm the one who planted the grove, sir.\"",
+       "speaker": "SAM",
+       "caption_en": "I'm the one who planted the grove, sir."
+      },
+      {
+       "scene": "Mr. Figgs drops his monocle into his soup, and his own coins suddenly look tiny: \"Sam! Son! Have I mentioned how much I LOVE denim?\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "Sam! Son! Have I mentioned how much I LOVE denim?"
+      },
+      {
+       "scene": "A draft from the storm of coins blows Trevor's halo apart; painted cardboard coins flutter to the floor: \"Those were... on loan.\"",
+       "speaker": "TREVOR",
+       "caption_en": "Those were... on loan."
+      },
+      {
+       "scene": "Mrs. Figgs frantically polishes Sam's chair with her hanky, grinning: \"Would the gentleman like the good forks? We have good forks!\"",
+       "speaker": "MRS. FIGGS",
+       "caption_en": "Would the gentleman like the good forks? We have good forks!"
+      },
+      {
+       "scene": "Sam gently turns to Lina, ignoring the scramble: \"You were the only one who asked my name first.\"",
+       "speaker": "SAM",
+       "caption_en": "You were the only one who asked my name first."
+      },
+      {
+       "scene": "Lina smiles and pokes his lonely copper coin, which is still circling bravely: \"Good thing. I only ever counted one.\"",
+       "speaker": "LINA",
+       "caption_en": "Good thing. I only ever counted one."
+      },
+      {
+       "scene": "Grandpa Okra hands Sam the crown seed back with a small bow: \"Plant it again, son. Some of us still need to grow.\"",
+       "speaker": "GRANDPA OKRA",
+       "caption_en": "Plant it again, son. Some of us still need to grow."
+      },
+      {
+       "scene": "Sam and Lina walk out into the night, the coin storm following them like fireflies; Bolt holds the door, deadpan: \"Shall I tell them dessert is cancelled, sir?\"",
+       "speaker": "BOLT",
+       "caption_en": "Shall I tell them dessert is cancelled, sir?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Sand Contract",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated comedy-drama, warm golden-hour Mediterranean light on an Egyptian coast, lively camera with slow push-ins, crashing waves and spray; expressive semi-realistic cartoon humans with big eyes; every character's mouth visibly moves in sync when they speak and they react to each other. Egyptian Arabic dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, no logos. Everyone's remaining life is a small glowing HOURGLASS floating above their head -- the sand level shows how much time they have left. Original designs only. Characters: ZAIN, a skinny young builder of 19 in dusty blue overalls and a tool belt, his hourglass almost empty, earnest hopeful voice; AM SAYED, an older builder of 60 with a bushy grey moustache and a fisherman's hat, a half-full hourglass, warm gruff voice; EL-BASHA, a rich boss in a white linen suit with a gold cane and an hourglass overflowing with gold sand, smug slow voice; ANTAR, his huge bodyguard in a red tracksuit and tiny sunglasses, a fierce hourglass, deep threatening voice that cracks when he is scared. ",
+   "first_slot": "next",
+   "position": 10,
+   "parts": [
+    {
+     "part": 1,
+     "of": 3,
+     "caption": "عقد الرملة — الجزء ١\n⏳ الوقت هنا فلوس. وزين فاضل له يوم واحد. تابع للجزء ٢!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "On a golden beach, El-Basha taps Zain's almost-empty hourglass with his gold cane and it fills a little: \"هديك عشر سنين. ابنيلي أجمد فندق في نص البحر.\"",
+       "speaker": "EL-BASHA",
+       "caption_en": "I'll give you ten years. Build me the grandest hotel in the middle of the sea."
+      },
+      {
+       "scene": "Zain stares at the open sea, swallows hard, then nods bravely: \"صعب... يمكن مستحيل. بس هعمل كل اللي أقدر عليه.\"",
+       "speaker": "ZAIN",
+       "caption_en": "It's hard... maybe impossible. But I'll do everything I can."
+      },
+      {
+       "scene": "Antar leans down to El-Basha by a white convertible, whispering loudly: \"يا باشا، الواد ده هيعملها بجد؟\"",
+       "speaker": "ANTAR",
+       "caption_en": "Boss, is this kid really going to pull it off?"
+      },
+      {
+       "scene": "El-Basha adjusts his sunglasses and smirks: \"لأ. هيقضي العشر سنين بياكل فول على الشط.\"",
+       "speaker": "EL-BASHA",
+       "caption_en": "No. He'll spend ten years eating fava beans on the beach."
+      },
+      {
+       "scene": "Antar jabs a huge finger at Zain's hourglass, making the sand tremble: \"لو بوّظتها، أنا بنفسي هقلب الساعة دي.\"",
+       "speaker": "ANTAR",
+       "caption_en": "Mess this up and I'll flip that hourglass myself."
+      },
+      {
+       "scene": "Night on a rusty steel platform in the middle of the waves; Zain tightens a giant bolt alone, then calls out to Am Sayed rowing up in a small boat: \"يا عم سيد، مش هقدر لوحدي. محتاجك.\"",
+       "speaker": "ZAIN",
+       "caption_en": "Am Sayed, I can't do this alone. I need you."
+      },
+      {
+       "scene": "Am Sayed climbs onto the platform, looks at Zain's nearly empty hourglass, then at his own half-full one: \"وإنت هتديني إيه؟ ما عندكش غير كام ساعة.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "And what can you give me? You've only got a few hours."
+      },
+      {
+       "scene": "Zain grins and holds out his hand; the storm starts rolling in behind them: \"هقسم معاك الجايزة. ونخلي المستحيل ممكن.\"",
+       "speaker": "ZAIN",
+       "caption_en": "I'll split the reward with you. And we'll make the impossible possible."
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 3,
+     "caption": "عقد الرملة — الجزء ٢\n⏳ عشر سنين، عاصفة ورا عاصفة، والرملة بتخلص. تابع للجزء ٣!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "A violent storm; huge waves slam the half-built steel tower; Am Sayed grabs Zain's arm as he climbs a swinging beam: \"انزل يا مجنون! الموج هياخدك!\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Get down, you madman! The waves will take you!"
+      },
+      {
+       "scene": "Zain clings to the beam, spray in his face, and shouts back over the wind: \"لأ! لازم أخلّص. الراجل صدّقني.\"",
+       "speaker": "ZAIN",
+       "caption_en": "No! I have to finish. The man believed in me."
+      },
+      {
+       "scene": "Am Sayed looks at his own hourglass draining faster, then pours some of his glowing sand into Zain's: \"خد من رملتي. إنت أصغر، وإنت اللي عندك حلم.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Take some of my sand. You're younger, and you're the one with the dream."
+      },
+      {
+       "scene": "Zain's eyes fill with tears as his hourglass glows brighter: \"يا عم سيد... ما ينفعش.\"",
+       "speaker": "ZAIN",
+       "caption_en": "Am Sayed... you can't."
+      },
+      {
+       "scene": "Am Sayed laughs, wiping rain off his moustache: \"ينفع ونص. أنا عشت كتير. يلا شد المسمار.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Of course I can. I've lived plenty. Now tighten that bolt."
+      },
+      {
+       "scene": "Years pass in fast cuts: the tower rises floor by floor, both men greyer, their hourglasses nearly empty; at sunset they sit in a rowboat below a stunning finished glass hotel: \"بص إحنا عملنا إيه.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Look at what we built."
+      },
+      {
+       "scene": "Zain leans back in the rowboat, exhausted and proud: \"قلتلك. في عشر سنين بالظبط.\"",
+       "speaker": "ZAIN",
+       "caption_en": "I told you. Ten years exactly."
+      },
+      {
+       "scene": "Am Sayed taps his almost-empty hourglass and smiles weakly: \"بس ياريت الباشا يفتكر الجايزة.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "I just hope the Basha remembers the reward."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 3,
+     "caption": "عقد الرملة — الجزء ٣ (الأخير)\n⏳ الباشا وصل... وأول سؤال سأله صدمنا. النهاية!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "El-Basha's white convertible speeds along a cliff road; Antar grips the dashboard, looking green and seasick: \"يا باشا، أنا دايخ من غير ما نركب بحر أصلاً.\"",
+       "speaker": "ANTAR",
+       "caption_en": "Boss, I'm seasick and we're not even on the sea."
+      },
+      {
+       "scene": "The car stops; El-Basha lowers his sunglasses, sees the glowing glass hotel rising out of the waves, and gasps: \"يا نهار أبيض!\"",
+       "speaker": "EL-BASHA",
+       "caption_en": "Oh my goodness!"
+      },
+      {
+       "scene": "On the hotel's marble lobby floor, El-Basha spins around in awe, then frowns at the lobby: \"حلو... بس فين الأسانسير؟\"",
+       "speaker": "EL-BASHA",
+       "caption_en": "Beautiful... but where's the elevator?"
+      },
+      {
+       "scene": "Zain and Am Sayed look at each other, then point up at a hundred floors of spiral stairs: \"كان فاضلنا يوم واحد يا باشا.\"",
+       "speaker": "ZAIN",
+       "caption_en": "We had one day left, Basha."
+      },
+      {
+       "scene": "Antar tries the first stair, wobbles, and sits down dramatically: \"أنا هستنى هنا. بلغوني لما توصلوا.\"",
+       "speaker": "ANTAR",
+       "caption_en": "I'll wait down here. Let me know when you get there."
+      },
+      {
+       "scene": "El-Basha looks at their two nearly empty hourglasses and his own overflowing one; he goes quiet, then smiles: \"انتوا الاتنين بنيتوا اللي أنا ما قدرتش أشتريه.\"",
+       "speaker": "EL-BASHA",
+       "caption_en": "You two built what I couldn't buy."
+      },
+      {
+       "scene": "El-Basha tilts his own hourglass and pours golden sand into both of theirs until they overflow: \"ودي مش جايزة. ده حقكم.\"",
+       "speaker": "EL-BASHA",
+       "caption_en": "This isn't a reward. It's what you're owed."
+      },
+      {
+       "scene": "Am Sayed hugs Zain as their hourglasses glow full; El-Basha picks up his cane and starts climbing the stairs: \"ياللا يا باشا. أول دور بس صعب.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Come on, Basha. Only the first floor is hard."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Return",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated cinematic drama, dramatic lighting and moving camera, expressive semi-realistic cartoon humans; every character's mouth visibly moves in sync when they speak and they react to each other. Egyptian Arabic dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, no real actor likeness, original designs, no violence shown. Characters (keep identical): ADHAM, a kind wealthy Cairo merchant in his 40s, neat moustache, cream suit (later: long grey beard in prison clothes; later still: elegant disguise with dark glasses and a black suit); LAILA, his daughter (a girl of 8 in Part 1, later a young woman of 24 in a green office blouse); SHAWKY, a smooth-talking partner with slick hair and a gold ring; RAFAAT, a nervous greedy accountant with thick glasses; MOKHTAR, a cold powerful businessman with grey temples and a cane; AM HASSAN, a wise old prisoner with a white beard. ",
+   "first_slot": "2026-10-06 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 6,
+     "caption": "The Return — Part 1\n⚖️ A revenge story in Egyptian Arabic. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "A glamorous party in a Cairo villa; Adham raises a glass with his partners: \"الليلة دي لشراكتنا يا جماعة!\"",
+       "speaker": "ADHAM",
+       "caption_en": "Tonight is for our partnership, friends!"
+      },
+      {
+       "scene": "Shawky smiles and whispers to Rafaat behind Adham's back: \"الليلة دي آخر ليلة ليه.\"",
+       "speaker": "SHAWKY",
+       "caption_en": "Tonight is his last night."
+      },
+      {
+       "scene": "Rafaat nervously slips a folder of fake documents into Adham's desk drawer: \"الورق جاهز يا باشا.\"",
+       "speaker": "RAFAAT",
+       "caption_en": "The papers are ready, sir."
+      },
+      {
+       "scene": "Police burst into the party; an officer holds up the folder: \"أدهم! إنت مقبوض عليك بتهمة الاختلاس!\"",
+       "speaker": "OFFICER",
+       "caption_en": "Adham! You're under arrest for embezzlement!"
+      },
+      {
+       "scene": "Adham, shocked, turns to his partners: \"شوقي! رأفت! قولولهم الحقيقة!\"",
+       "speaker": "ADHAM",
+       "caption_en": "Shawky! Rafaat! Tell them the truth!"
+      },
+      {
+       "scene": "Mokhtar steps forward coldly, leaning on his cane: \"الحقيقة إن الورق ما بيكدبش يا أدهم.\"",
+       "speaker": "MOKHTAR",
+       "caption_en": "The truth is, papers don't lie, Adham."
+      },
+      {
+       "scene": "Little Laila runs crying toward her father as he is led away: \"بابا! ماتسيبنيش!\"",
+       "speaker": "LAILA",
+       "caption_en": "Daddy! Don't leave me!"
+      },
+      {
+       "scene": "Close-up of Adham looking back through the police car window with fire in his eyes: \"هرجع يا ليلى... وعد.\"",
+       "speaker": "ADHAM",
+       "caption_en": "I'll come back, Laila… I promise."
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 6,
+     "caption": "The Return — Part 2\n⚖️ A revenge story in Egyptian Arabic. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "A dark prison cell; the iron door slams; Adham in prison clothes sits on the floor: \"ليه يا رب؟ ليه أنا؟\"",
+       "speaker": "ADHAM",
+       "caption_en": "Why, God? Why me?"
+      },
+      {
+       "scene": "Years later, Adham now has a long grey beard; old Am Hassan in the next cell knocks on the wall: \"إنت لسه صاحي يا أدهم؟\"",
+       "speaker": "AM HASSAN",
+       "caption_en": "Are you still awake, Adham?"
+      },
+      {
+       "scene": "Adham presses his ear to the wall and whispers: \"مين؟ مين بيكلمني؟\"",
+       "speaker": "ADHAM",
+       "caption_en": "Who? Who's talking to me?"
+      },
+      {
+       "scene": "A loose stone slides out and Am Hassan's wise face appears through the small hole, smiling: \"صاحبك... من عشرين سنة بحفر.\"",
+       "speaker": "AM HASSAN",
+       "caption_en": "A friend… I've been digging for twenty years."
+      },
+      {
+       "scene": "By candlelight the two men dig together with an old spoon: \"الصبر يا ابني هو السلاح الوحيد اللي معانا.\"",
+       "speaker": "AM HASSAN",
+       "caption_en": "Patience, son, is the only weapon we have."
+      },
+      {
+       "scene": "Am Hassan hands Adham a folded old map with trembling hands: \"الكنز ده بتاعك... ما تسيبش حقك.\"",
+       "speaker": "AM HASSAN",
+       "caption_en": "This treasure is yours… don't give up what's yours."
+      },
+      {
+       "scene": "Adham grips the map, eyes burning with purpose: \"مش هسيب حقي... ولا حق بنتي.\"",
+       "speaker": "ADHAM",
+       "caption_en": "I won't give up what's mine… or my daughter's."
+      },
+      {
+       "scene": "A final push of the wall breaks through to the open sea under the moon; wind rushes in; Adham gasps: \"البحر!\"",
+       "speaker": "ADHAM",
+       "caption_en": "The sea!"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 6,
+     "caption": "The Return — Part 3\n⚖️ A revenge story in Egyptian Arabic. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Adham dives into the moonlit sea from the prison rocks and swims hard through the waves: \"يا رب... نجيني!\"",
+       "speaker": "ADHAM",
+       "caption_en": "God… save me!"
+      },
+      {
+       "scene": "At dawn he crawls onto a quiet beach, exhausted, and looks at the map: \"الكهف... لازم يكون هنا.\"",
+       "speaker": "ADHAM",
+       "caption_en": "The cave… it has to be here."
+      },
+      {
+       "scene": "Inside a glowing cave he opens an old chest full of gold, his face lit gold: \"يا عم حسن... كنت بتقول الحقيقة!\"",
+       "speaker": "ADHAM",
+       "caption_en": "Am Hassan… you were telling the truth!"
+      },
+      {
+       "scene": "In a barber shop his long beard is trimmed away; the barber asks: \"تحب أعملك إيه يا بيه؟\"",
+       "speaker": "BARBER",
+       "caption_en": "What would you like, sir?"
+      },
+      {
+       "scene": "Adham looks in the mirror as a new man: \"اعملني... واحد تاني خالص.\"",
+       "speaker": "ADHAM",
+       "caption_en": "Make me… someone else entirely."
+      },
+      {
+       "scene": "Adham walks out in an elegant black suit and dark glasses to a waiting car; the driver bows: \"على فين يا باشا؟\"",
+       "speaker": "DRIVER",
+       "caption_en": "Where to, Pasha?"
+      },
+      {
+       "scene": "Adham looks at the Cairo skyline from the car window: \"على القاهرة... عندي حساب قديم.\"",
+       "speaker": "ADHAM",
+       "caption_en": "To Cairo… I have an old account to settle."
+      },
+      {
+       "scene": "Close-up: Adham opens a notebook with three photos: Shawky, Rafaat and Mokhtar: \"واحد... واتنين... وتلاتة.\"",
+       "speaker": "ADHAM",
+       "caption_en": "One… two… and three."
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 6,
+     "caption": "The Return — Part 4\n⚖️ A revenge story in Egyptian Arabic. Follow for Part 5!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Shawky's luxury office; he greets the disguised Adham, not recognizing him: \"أهلاً يا باشا! سمعت إنك عايز تستثمر.\"",
+       "speaker": "SHAWKY",
+       "caption_en": "Welcome, Pasha! I hear you want to invest."
+      },
+      {
+       "scene": "Adham smiles calmly, placing a small recorder under the desk: \"بستثمر في ناس... بيقولوا الحقيقة.\"",
+       "speaker": "ADHAM",
+       "caption_en": "I invest in people… who tell the truth."
+      },
+      {
+       "scene": "Shawky laughs and brags, leaning back: \"الحقيقة؟ أنا زمان لبست شريكي قضية وخدت فلوسه كلها!\"",
+       "speaker": "SHAWKY",
+       "caption_en": "The truth? Years ago I framed my partner and took all his money!"
+      },
+      {
+       "scene": "Adham stands and plays the recording back; Shawky's face turns pale: \"ده... ده كلامي؟!\"",
+       "speaker": "SHAWKY",
+       "caption_en": "That… that's my voice?!"
+      },
+      {
+       "scene": "Rafaat's messy office full of account books; investigators enter: \"إحنا من مصلحة الضرايب يا أستاذ رأفت.\"",
+       "speaker": "INVESTIGATOR",
+       "caption_en": "We're from the tax authority, Mr. Rafaat."
+      },
+      {
+       "scene": "Rafaat sweats and hides a book behind his back: \"دي... دي دفاتر قديمة ما لهاش لازمة!\"",
+       "speaker": "RAFAAT",
+       "caption_en": "These… these are old useless books!"
+      },
+      {
+       "scene": "The investigator pulls the hidden book out and reads it: \"الدفتر ده فيه كل حاجة يا أستاذ.\"",
+       "speaker": "INVESTIGATOR",
+       "caption_en": "This book has everything, sir."
+      },
+      {
+       "scene": "Outside, Adham watches both men led away, and whispers: \"اتنين... فاضل واحد.\"",
+       "speaker": "ADHAM",
+       "caption_en": "Two… one left."
+      }
+     ]
+    },
+    {
+     "part": 5,
+     "of": 6,
+     "caption": "The Return — Part 5\n⚖️ A revenge story in Egyptian Arabic. Follow for Part 6!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "A big office tower lobby with Mokhtar's name on it; Adham in disguise walks in: \"جه دورك يا مختار.\"",
+       "speaker": "ADHAM",
+       "caption_en": "Your turn, Mokhtar."
+      },
+      {
+       "scene": "In an open office, a grown-up Laila carries files as two coworkers mock her: \"إنتي فاكرة نفسك مين يا ليلى؟\"",
+       "speaker": "COWORKER",
+       "caption_en": "Who do you think you are, Laila?"
+      },
+      {
+       "scene": "The coworker knocks the files out of her hands; papers fly: \"بنت واحد حرامي... هتفضلي كده طول عمرك.\"",
+       "speaker": "COWORKER",
+       "caption_en": "A thief's daughter… you'll always be this."
+      },
+      {
+       "scene": "Laila kneels to gather the papers, eyes full of tears: \"أبويا ما كانش حرامي.\"",
+       "speaker": "LAILA",
+       "caption_en": "My father wasn't a thief."
+      },
+      {
+       "scene": "Adham freezes behind his dark glasses, recognizing her, his voice breaking: \"ليلى...\"",
+       "speaker": "ADHAM",
+       "caption_en": "Laila…"
+      },
+      {
+       "scene": "He kneels and helps her pick up the papers, speaking gently: \"أبوكي كان راجل شريف. صدقيني.\"",
+       "speaker": "ADHAM",
+       "caption_en": "Your father was an honest man. Believe me."
+      },
+      {
+       "scene": "Mokhtar steps out of the elevator with his cane and stops, staring at Adham: \"إنت مين؟\"",
+       "speaker": "MOKHTAR",
+       "caption_en": "Who are you?"
+      },
+      {
+       "scene": "Adham slowly removes his dark glasses; Mokhtar's cane drops to the floor: \"أدهم؟!\"",
+       "speaker": "MOKHTAR",
+       "caption_en": "Adham?!"
+      }
+     ]
+    },
+    {
+     "part": 6,
+     "of": 6,
+     "caption": "The Return — Part 6 (final)\n⚖️ A revenge story in Egyptian Arabic. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The whole office watches as Adham faces Mokhtar: \"أيوه يا مختار. رجعت.\"",
+       "speaker": "ADHAM",
+       "caption_en": "Yes, Mokhtar. I'm back."
+      },
+      {
+       "scene": "Mokhtar laughs nervously: \"ما عندكش دليل على حاجة!\"",
+       "speaker": "MOKHTAR",
+       "caption_en": "You have no proof of anything!"
+      },
+      {
+       "scene": "Adham holds up a recording device and a folder: \"شوقي ورأفت اعترفوا بكل حاجة... وقالوا اسمك.\"",
+       "speaker": "ADHAM",
+       "caption_en": "Shawky and Rafaat confessed everything… and named you."
+      },
+      {
+       "scene": "Police walk in; an officer takes Mokhtar by the arm: \"اتفضل معانا يا مختار بيه.\"",
+       "speaker": "OFFICER",
+       "caption_en": "Come with us, Mr. Mokhtar."
+      },
+      {
+       "scene": "Adham turns to the coworkers who mocked Laila: \"اللي ظلمتوها... تبقى بنتي.\"",
+       "speaker": "ADHAM",
+       "caption_en": "The one you mistreated… is my daughter."
+      },
+      {
+       "scene": "Laila stares at him, tears in her eyes: \"بابا؟\"",
+       "speaker": "LAILA",
+       "caption_en": "Dad?"
+      },
+      {
+       "scene": "Adham opens his arms: \"وعدتك إني هرجع يا ليلى.\" They embrace tightly.",
+       "speaker": "ADHAM",
+       "caption_en": "I promised you I'd come back, Laila."
+      },
+      {
+       "scene": "Sunset on a balcony over the Nile, father and daughter smiling together: \"الحمد لله... رجعنا لبعض.\"",
+       "speaker": "LAILA",
+       "caption_en": "Thank God… we're together again."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Fridge Wars",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated comedy-drama inside a glowing refrigerator, dramatic soap-opera lighting, lively camera moves; realistic vegetables and fruit with expressive cartoon faces, tiny arms, and mouths that visibly move in sync whenever they speak; they face and react to each other. English dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, no brand logos, original characters. Characters (keep identical): CARL, a tall loyal carrot with a leafy green top and big emotional eyes; BRUNO, a smug broccoli with a sly grin and one raised eyebrow; QUEEN OLIVIA, a regal orange wearing a tiny crown made of a bottle cap; TINA, a chatty cherry tomato who gossips; OLD PETE, a wrinkled wise old potato with sprouts like a beard. ",
+   "first_slot": "2026-10-12 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Fridge Wars — Part 1\n🥕 Drama in the fridge. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The fridge light clicks on; Queen Olivia stands on the top shelf addressing all the produce: \"Family! I am ripening. Soon I must choose who inherits the Top Shelf.\"",
+       "speaker": "QUEEN OLIVIA",
+       "caption_en": "Family! I am ripening. Soon I must choose who inherits the Top Shelf."
+      },
+      {
+       "scene": "Tina the tomato gasps and turns to the others: \"The Top Shelf?! Near the light?!\"",
+       "speaker": "TINA",
+       "caption_en": "The Top Shelf?! Near the light?!"
+      },
+      {
+       "scene": "Carl the carrot bows humbly: \"Your Majesty, I only want everyone to stay fresh.\"",
+       "speaker": "CARL",
+       "caption_en": "Your Majesty, I only want everyone to stay fresh."
+      },
+      {
+       "scene": "Bruno the broccoli smiles too widely: \"And I only want what's best for... me. I mean, for us.\"",
+       "speaker": "BRUNO",
+       "caption_en": "And I only want what's best for… me. I mean, for us."
+      },
+      {
+       "scene": "Later, in the dark, Bruno whispers to a jar of pickles: \"By Friday, that carrot goes in the trash.\"",
+       "speaker": "BRUNO",
+       "caption_en": "By Friday, that carrot goes in the trash."
+      },
+      {
+       "scene": "Carl, hiding behind a milk carton, covers his mouth in shock: \"The trash?!\"",
+       "speaker": "CARL",
+       "caption_en": "The trash?!"
+      },
+      {
+       "scene": "Bruno spins around toward the noise: \"Who's there?\"",
+       "speaker": "BRUNO",
+       "caption_en": "Who's there?"
+      },
+      {
+       "scene": "Carl holds his breath behind the milk; the fridge light suddenly clicks off. Bruno hisses in the dark: \"I know you heard me, Carl.\"",
+       "speaker": "BRUNO",
+       "caption_en": "I know you heard me, Carl."
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Fridge Wars — Part 2\n🥕 Drama in the fridge. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Morning; Bruno secretly dabs a brown rotten-looking spot onto sleeping Carl with a tiny brush: \"A little rot... goes a long way.\"",
+       "speaker": "BRUNO",
+       "caption_en": "A little rot… goes a long way."
+      },
+      {
+       "scene": "Tina spots it and screams to the whole fridge: \"Carl is going BAD!\"",
+       "speaker": "TINA",
+       "caption_en": "Carl is going BAD!"
+      },
+      {
+       "scene": "Carl wakes up confused and looks at his side: \"What? This isn't mine! Someone painted it!\"",
+       "speaker": "CARL",
+       "caption_en": "What? This isn't mine! Someone painted it!"
+      },
+      {
+       "scene": "Queen Olivia descends slowly, disappointed: \"Carl... you know the rule. Rot spreads.\"",
+       "speaker": "QUEEN OLIVIA",
+       "caption_en": "Carl… you know the rule. Rot spreads."
+      },
+      {
+       "scene": "Bruno pretends to wipe a tear: \"It breaks my heart, Your Majesty. But rules are rules.\"",
+       "speaker": "BRUNO",
+       "caption_en": "It breaks my heart, Your Majesty. But rules are rules."
+      },
+      {
+       "scene": "Olivia points her tiny arm down to the drawer: \"To the crisper drawer. Until we know the truth.\"",
+       "speaker": "QUEEN OLIVIA",
+       "caption_en": "To the crisper drawer. Until we know the truth."
+      },
+      {
+       "scene": "Carl is slid down into the dark crisper drawer, looking back up at everyone: \"I'll prove it wasn't me!\"",
+       "speaker": "CARL",
+       "caption_en": "I'll prove it wasn't me!"
+      },
+      {
+       "scene": "The drawer slams shut; in the darkness a raspy old voice says: \"Welcome to the bottom, kid.\" Old Pete's eyes glow.",
+       "speaker": "OLD PETE",
+       "caption_en": "Welcome to the bottom, kid."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Fridge Wars — Part 3\n🥕 Drama in the fridge. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "In the dim crisper drawer, Old Pete the potato lights a tiny candle: \"Name's Pete. Been down here since the last grocery run.\"",
+       "speaker": "OLD PETE",
+       "caption_en": "Name's Pete. Been down here since the last grocery run."
+      },
+      {
+       "scene": "Carl sits beside him, sad: \"Bruno framed me, Pete. And the Queen believed him.\"",
+       "speaker": "CARL",
+       "caption_en": "Bruno framed me, Pete. And the Queen believed him."
+      },
+      {
+       "scene": "Pete chuckles and points to a crack leading to the ice maker: \"Then let's go get proof. There's a secret path.\"",
+       "speaker": "OLD PETE",
+       "caption_en": "Then let's go get proof. There's a secret path."
+      },
+      {
+       "scene": "The two slide along an icy tunnel, Carl yelping: \"Cold, cold, cold!\"",
+       "speaker": "CARL",
+       "caption_en": "Cold, cold, cold!"
+      },
+      {
+       "scene": "They peek out behind the ketchup: Bruno is whispering to a greasy slice of pizza: \"Top Shelf is yours if you keep quiet.\"",
+       "speaker": "BRUNO",
+       "caption_en": "Top Shelf is yours if you keep quiet."
+      },
+      {
+       "scene": "Carl gasps: \"He's selling our shelf to junk food!\"",
+       "speaker": "CARL",
+       "caption_en": "He's selling our shelf to junk food!"
+      },
+      {
+       "scene": "Pete grabs Carl's arm: \"Shh! Now we tell the Queen.\"",
+       "speaker": "OLD PETE",
+       "caption_en": "Shh! Now we tell the Queen."
+      },
+      {
+       "scene": "Suddenly the fridge door swings wide open and a giant human hand reaches in; everyone freezes and Tina screams: \"THE HAND!\"",
+       "speaker": "TINA",
+       "caption_en": "THE HAND!"
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Fridge Wars — Part 4 (final)\n🥕 Drama in the fridge. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The giant hand grabs Bruno, lifting him toward a soup pot; Bruno panics: \"No! Not the soup! I'm too fresh for soup!\"",
+       "speaker": "BRUNO",
+       "caption_en": "No! Not the soup! I'm too fresh for soup!"
+      },
+      {
+       "scene": "Carl looks up, torn, then runs forward: \"Hang on, Bruno!\"",
+       "speaker": "CARL",
+       "caption_en": "Hang on, Bruno!"
+      },
+      {
+       "scene": "Carl and Pete roll an orange across the shelf so the hand grabs it instead, and Bruno drops back to safety: \"You... saved me? After what I did?\"",
+       "speaker": "BRUNO",
+       "caption_en": "You… saved me? After what I did?"
+      },
+      {
+       "scene": "Carl helps him up: \"Everybody deserves to stay fresh.\"",
+       "speaker": "CARL",
+       "caption_en": "Everybody deserves to stay fresh."
+      },
+      {
+       "scene": "Bruno turns to the whole fridge, ashamed: \"I painted the rot on Carl. It was me. I'm sorry.\"",
+       "speaker": "BRUNO",
+       "caption_en": "I painted the rot on Carl. It was me. I'm sorry."
+      },
+      {
+       "scene": "Queen Olivia removes her tiny bottle-cap crown: \"Carl, the Top Shelf is yours.\"",
+       "speaker": "QUEEN OLIVIA",
+       "caption_en": "Carl, the Top Shelf is yours."
+      },
+      {
+       "scene": "Carl smiles and shakes his head, placing the crown between everyone: \"Then it belongs to all of us.\"",
+       "speaker": "CARL",
+       "caption_en": "Then it belongs to all of us."
+      },
+      {
+       "scene": "Everyone cheers as the fridge light glows warm; Old Pete winks: \"Now that's what I call a fresh start.\"",
+       "speaker": "OLD PETE",
+       "caption_en": "Now that's what I call a fresh start."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Mishmish & Rocky",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated comedy on the rooftop and stairs of an old Cairo apartment building, warm light, lively camera moves; cartoon animals with expressive semi-human faces whose mouths visibly move in sync when they speak; they chase, bump and react to each other. Egyptian Arabic dialogue spoken by the animals themselves, no narrator, no on-screen text or subtitles, original designs. Characters (keep identical): MISHMISH, a sassy slim orange street cat with a torn ear and a red collar bell; ROCKY, a big clumsy fluffy brown guard dog with floppy ears and a blue collar; LOLO, a gossiping green parrot on a balcony cage; ZA3EEM, a chubby grey rat boss with a gold tooth and a tiny cap, with two small rat henchmen. ",
+   "first_slot": "2026-10-16 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Mishmish & Rocky — Part 1\n🐱🐶 A rooftop comedy in Egyptian Arabic. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "On the sunny rooftop Mishmish stretches on her favourite warm spot: \"ده مكاني من زمان... محدش يقرب.\"",
+       "speaker": "MISHMISH",
+       "caption_en": "This has been my spot forever… nobody come near."
+      },
+      {
+       "scene": "Rocky bursts up the stairs, tail wagging wildly, and flops right onto her spot: \"هاي! أنا روكي، الجار الجديد!\"",
+       "speaker": "ROCKY",
+       "caption_en": "Hi! I'm Rocky, the new neighbour!"
+      },
+      {
+       "scene": "Mishmish hisses, fur standing up: \"قوم من مكاني يا دب!\"",
+       "speaker": "MISHMISH",
+       "caption_en": "Get off my spot, you bear!"
+      },
+      {
+       "scene": "Rocky tilts his head, confused and happy: \"دب؟ أنا كلب... بس شكراً!\"",
+       "speaker": "ROCKY",
+       "caption_en": "Bear? I'm a dog… but thanks!"
+      },
+      {
+       "scene": "Lolo the parrot laughs from her balcony cage: \"هههه! حرب على السطح!\"",
+       "speaker": "LOLO",
+       "caption_en": "Hahaha! War on the rooftop!"
+      },
+      {
+       "scene": "Later, a building neighbour's fish basket on the stairs is suddenly empty; Lolo screams: \"السمك اتسرق!\"",
+       "speaker": "LOLO",
+       "caption_en": "The fish has been stolen!"
+      },
+      {
+       "scene": "Everyone turns to Mishmish; Lolo points her wing: \"أكيد القطة!\"",
+       "speaker": "LOLO",
+       "caption_en": "It must be the cat!"
+      },
+      {
+       "scene": "Mishmish freezes with wide eyes, her collar bell jingling: \"أنا؟! والله ما أنا!\"",
+       "speaker": "MISHMISH",
+       "caption_en": "Me?! I swear it wasn't me!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Mishmish & Rocky — Part 2\n🐱🐶 A rooftop comedy in Egyptian Arabic. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Mishmish paces on the stairs, angry: \"كلهم فاكريني حرامية! لازم ألاقي الحرامي بنفسي.\"",
+       "speaker": "MISHMISH",
+       "caption_en": "They all think I'm a thief! I have to find the thief myself."
+      },
+      {
+       "scene": "She sniffs the floor and finds a trail of fish scales: \"قشر سمك... ماشي لفوق.\"",
+       "speaker": "MISHMISH",
+       "caption_en": "Fish scales… going up."
+      },
+      {
+       "scene": "The trail leads straight to Rocky, who is napping; she pokes him: \"إنت اللي سرقت السمك يا روكي؟\"",
+       "speaker": "MISHMISH",
+       "caption_en": "Did you steal the fish, Rocky?"
+      },
+      {
+       "scene": "Rocky wakes up, offended: \"أنا؟ أنا باكل بسكوت بس!\"",
+       "speaker": "ROCKY",
+       "caption_en": "Me? I only eat biscuits!"
+      },
+      {
+       "scene": "Rocky sniffs the scales and his ears perk up: \"استني... الريحة دي مش ريحة قطة ولا كلب.\"",
+       "speaker": "ROCKY",
+       "caption_en": "Wait… this smell isn't cat or dog."
+      },
+      {
+       "scene": "They follow tiny footprints to a crack in the wall; Mishmish whispers: \"رجلين صغيرين... دي فيران!\"",
+       "speaker": "MISHMISH",
+       "caption_en": "Tiny feet… these are rats!"
+      },
+      {
+       "scene": "From inside the wall a voice laughs: Za3eem the rat boss peeks out with his gold tooth: \"أهلاً بالمخبرين!\"",
+       "speaker": "ZA3EEM",
+       "caption_en": "Welcome, detectives!"
+      },
+      {
+       "scene": "Za3eem snaps his fingers and vanishes: \"اللي جاي... أكبر!\" Mishmish and Rocky look at each other in shock.",
+       "speaker": "ZA3EEM",
+       "caption_en": "What's coming… is bigger!"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Mishmish & Rocky — Part 3\n🐱🐶 A rooftop comedy in Egyptian Arabic. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Night on the rooftop; Mishmish and Rocky hide behind water tanks: \"اتفقنا؟ مؤقتاً بس.\"",
+       "speaker": "MISHMISH",
+       "caption_en": "Deal? Just temporarily."
+      },
+      {
+       "scene": "Rocky nods proudly, whispering too loudly: \"مؤقتاً! أنا وإنتي فريق!\"",
+       "speaker": "ROCKY",
+       "caption_en": "Temporarily! You and me are a team!"
+      },
+      {
+       "scene": "Mishmish covers his mouth with her paw: \"وطي صوتك يا روكي!\"",
+       "speaker": "MISHMISH",
+       "caption_en": "Keep your voice down, Rocky!"
+      },
+      {
+       "scene": "Za3eem and his two henchmen tiptoe out carrying a whole fish: \"شيلوا بالراحة يا رجالة!\"",
+       "speaker": "ZA3EEM",
+       "caption_en": "Carry it gently, boys!"
+      },
+      {
+       "scene": "Rocky can't help it and jumps out barking: \"وقفوا عندكوا!\" The rats scatter.",
+       "speaker": "ROCKY",
+       "caption_en": "Freeze right there!"
+      },
+      {
+       "scene": "A wild chase across the rooftop between laundry lines; Mishmish shouts: \"من الناحية التانية يا روكي!\"",
+       "speaker": "MISHMISH",
+       "caption_en": "From the other side, Rocky!"
+      },
+      {
+       "scene": "Rocky runs straight into a laundry basket and gets stuck upside down: \"أنا... مش شايف حاجة!\"",
+       "speaker": "ROCKY",
+       "caption_en": "I… can't see anything!"
+      },
+      {
+       "scene": "Za3eem stands on the edge of the roof laughing, holding the fish: \"الكلب وقع، والقطة لوحدها!\"",
+       "speaker": "ZA3EEM",
+       "caption_en": "The dog is down, and the cat is alone!"
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Mishmish & Rocky — Part 4 (final)\n🐱🐶 A rooftop comedy in Egyptian Arabic. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Mishmish looks at the escaping rats, then at stuck Rocky, and runs to Rocky: \"مش هسيبك يا روكي!\"",
+       "speaker": "MISHMISH",
+       "caption_en": "I won't leave you, Rocky!"
+      },
+      {
+       "scene": "She pulls the basket off him; Rocky shakes his head: \"إنتي رجعتيلي؟ بدل السمك؟\"",
+       "speaker": "ROCKY",
+       "caption_en": "You came back for me? Instead of the fish?"
+      },
+      {
+       "scene": "Mishmish smirks: \"الفريق ما بيسيبش حد. يلا!\"",
+       "speaker": "MISHMISH",
+       "caption_en": "A team never leaves anyone. Let's go!"
+      },
+      {
+       "scene": "Mishmish leaps across the roof while Rocky blocks the stairs with his big body: \"سديت الطريق!\"",
+       "speaker": "ROCKY",
+       "caption_en": "Road blocked!"
+      },
+      {
+       "scene": "The rats are trapped between them; Za3eem drops the fish and raises his paws: \"خلاص خلاص! إحنا آسفين!\"",
+       "speaker": "ZA3EEM",
+       "caption_en": "Okay, okay! We're sorry!"
+      },
+      {
+       "scene": "Lolo the parrot cheers from her cage: \"برافو يا أبطال السطح!\"",
+       "speaker": "LOLO",
+       "caption_en": "Bravo, heroes of the rooftop!"
+      },
+      {
+       "scene": "Morning: the neighbours' fish basket is full again; Rocky nudges Mishmish: \"يعني... إحنا صحاب دلوقتي؟\"",
+       "speaker": "ROCKY",
+       "caption_en": "So… are we friends now?"
+      },
+      {
+       "scene": "Mishmish curls up next to Rocky on the warm spot and smiles: \"المكان يساع اتنين... يا دب.\"",
+       "speaker": "MISHMISH",
+       "caption_en": "There's room for two… you bear."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Tin & Tilly",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated family comedy-drama in a cosy old house and garden, warm light, lively camera moves; expressive cartoon characters whose mouths visibly move in sync when they speak, reacting to each other. English dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real person likeness. Characters (keep identical): TILLY, a bright 8-year-old girl with curly red hair and yellow rain boots; GRANDPA JOE, a grumpy but loving old man with a white beard, cardigan and cane; TIN, a small clumsy homemade robot built from a toaster, tin cans and a desk lamp for a head, with round blue screen eyes and a speaker mouth that lights up as it talks. ",
+   "first_slot": "2026-10-20 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Tin & Tilly — Part 1\n🤖 A grandpa, his granddaughter and a very clumsy robot. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "In Grandpa Joe's cluttered garage Tilly proudly switches on her homemade robot: \"Grandpa, meet Tin! He's going to help you around the house!\"",
+       "speaker": "TILLY",
+       "caption_en": "Grandpa, meet Tin! He's going to help you around the house!"
+      },
+      {
+       "scene": "Grandpa Joe frowns at the robot: \"I don't need help. I need peace and quiet.\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "I don't need help. I need peace and quiet."
+      },
+      {
+       "scene": "Tin's eyes light up and he beeps happily: \"Hello, Grandpa! I will make you breakfast!\"",
+       "speaker": "TIN",
+       "caption_en": "Hello, Grandpa! I will make you breakfast!"
+      },
+      {
+       "scene": "In the kitchen Tin flips pancakes that stick to the ceiling: \"Pancake... launched!\"",
+       "speaker": "TIN",
+       "caption_en": "Pancake… launched!"
+      },
+      {
+       "scene": "A pancake lands on Grandpa's head; he sighs: \"Tilly... this is exactly what I meant.\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "Tilly… this is exactly what I meant."
+      },
+      {
+       "scene": "Tin tries to water the plants and soaks the whole living room: \"Plants... very hydrated!\"",
+       "speaker": "TIN",
+       "caption_en": "Plants… very hydrated!"
+      },
+      {
+       "scene": "Grandpa stands dripping and points to the door: \"That tin can goes back to the junkyard. Tomorrow.\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "That tin can goes back to the junkyard. Tomorrow."
+      },
+      {
+       "scene": "Tin's screen eyes turn sad as he looks at Tilly: \"Tilly... am I junk?\"",
+       "speaker": "TIN",
+       "caption_en": "Tilly… am I junk?"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Tin & Tilly — Part 2\n🤖 A grandpa, his granddaughter and a very clumsy robot. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Tilly hugs Tin in the garage at night: \"You're not junk, Tin. You just need practice.\"",
+       "speaker": "TILLY",
+       "caption_en": "You're not junk, Tin. You just need practice."
+      },
+      {
+       "scene": "Tin practises carrying a teacup, shaking: \"Steady... steady...\"",
+       "speaker": "TIN",
+       "caption_en": "Steady… steady…"
+      },
+      {
+       "scene": "Grandpa Joe watches secretly through the garage window and mutters: \"Stubborn little machine.\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "Stubborn little machine."
+      },
+      {
+       "scene": "Next morning Tin brings Grandpa a perfect cup of tea: \"One tea, no disasters!\"",
+       "speaker": "TIN",
+       "caption_en": "One tea, no disasters!"
+      },
+      {
+       "scene": "Grandpa sips, surprised, and tries to hide a smile: \"Hmph. It's... acceptable.\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "Hmph. It's… acceptable."
+      },
+      {
+       "scene": "Tilly cheers: \"He said acceptable, Tin! That's grandpa for amazing!\"",
+       "speaker": "TILLY",
+       "caption_en": "He said acceptable, Tin! That's grandpa for amazing!"
+      },
+      {
+       "scene": "Then Tin vacuums up Grandpa's old photo of Grandma by accident; Grandpa shouts: \"No! That's the only photo I have of her!\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "No! That's the only photo I have of her!"
+      },
+      {
+       "scene": "Tin freezes, his lights flickering, as rain starts outside: \"I... I ruin everything.\" He rolls out into the storm.",
+       "speaker": "TIN",
+       "caption_en": "I… I ruin everything."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Tin & Tilly — Part 3\n🤖 A grandpa, his granddaughter and a very clumsy robot. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "A thunderstorm; Tilly runs into the living room: \"Grandpa! Tin is gone!\"",
+       "speaker": "TILLY",
+       "caption_en": "Grandpa! Tin is gone!"
+      },
+      {
+       "scene": "Grandpa grabs his coat and cane: \"That silly robot will short-circuit out there. Come on.\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "That silly robot will short-circuit out there. Come on."
+      },
+      {
+       "scene": "In the rainy garden Tin sits under a tree, sparking, holding the rescued photo from his vacuum bag: \"I have to give it back...\"",
+       "speaker": "TIN",
+       "caption_en": "I have to give it back…"
+      },
+      {
+       "scene": "Grandpa slips on the muddy path and falls with a cry: \"Ah! My leg!\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "Ah! My leg!"
+      },
+      {
+       "scene": "Tin's eyes flash bright and he rolls fast through the mud: \"Grandpa! I'm coming!\"",
+       "speaker": "TIN",
+       "caption_en": "Grandpa! I'm coming!"
+      },
+      {
+       "scene": "Tin shields Grandpa from the rain with his lamp-head glowing: \"Tilly! Call for help! I'll keep him warm!\"",
+       "speaker": "TIN",
+       "caption_en": "Tilly! Call for help! I'll keep him warm!"
+      },
+      {
+       "scene": "Tilly runs back toward the house shouting into her phone: \"We need help at Maple Street!\"",
+       "speaker": "TILLY",
+       "caption_en": "We need help at Maple Street!"
+      },
+      {
+       "scene": "Tin's lights begin to flicker out in the rain as he holds the photo: \"Battery... low...\"",
+       "speaker": "TIN",
+       "caption_en": "Battery… low…"
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Tin & Tilly — Part 4 (final)\n🤖 A grandpa, his granddaughter and a very clumsy robot. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Morning after the storm; Grandpa rests on the sofa with his leg bandaged: \"Where's the robot?\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "Where's the robot?"
+      },
+      {
+       "scene": "Tilly wheels in Tin, drying out and blinking weakly: \"He kept you warm all night, Grandpa.\"",
+       "speaker": "TILLY",
+       "caption_en": "He kept you warm all night, Grandpa."
+      },
+      {
+       "scene": "Tin slowly holds out the rescued photo: \"I saved her picture. I'm sorry I took it.\"",
+       "speaker": "TIN",
+       "caption_en": "I saved her picture. I'm sorry I took it."
+      },
+      {
+       "scene": "Grandpa takes the photo with shaking hands, eyes wet: \"You went into a storm... for this?\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "You went into a storm… for this?"
+      },
+      {
+       "scene": "Tin beeps softly: \"You looked sad without her.\"",
+       "speaker": "TIN",
+       "caption_en": "You looked sad without her."
+      },
+      {
+       "scene": "Grandpa pats Tin's tin-can head gently: \"Well. I suppose the house could use a helper after all.\"",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "Well. I suppose the house could use a helper after all."
+      },
+      {
+       "scene": "Tilly jumps with joy: \"So Tin can stay?!\"",
+       "speaker": "TILLY",
+       "caption_en": "So Tin can stay?!"
+      },
+      {
+       "scene": "Grandpa smiles and hands Tin a pancake pan: \"Only if he learns to keep pancakes off the ceiling.\" They all laugh.",
+       "speaker": "GRANDPA JOE",
+       "caption_en": "Only if he learns to keep pancakes off the ceiling."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Order in the Court",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated courtroom comedy in a small old Egyptian courtroom with ceiling fans, warm dusty light, lively camera moves; expressive cartoon characters and one goat, all with mouths that visibly move in sync when they speak or bleat, reacting to each other. Egyptian Arabic dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real person likeness, fictional court. Characters (keep identical): JUDGE FAHMY, a round sleepy old judge with huge glasses who is always hungry; HAMDY, an over-dramatic lawyer with slicked hair and a flowing black robe; ABDO, a nervous kind young man in a striped galabeya; OM KARIMA, a loud neighbour lady in a colourful headscarf; ZOZA, a white fluffy goat with a pink ribbon. ",
+   "first_slot": "2026-10-24 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 5,
+     "caption": "Order in the Court — Part 1\n⚖️ A courtroom comedy in Egyptian Arabic. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The courtroom fills; Judge Fahmy bangs his gavel while yawning: \"الجلسة مفتوحة... بسرعة عشان الغدا.\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Court is in session… quickly, because of lunch."
+      },
+      {
+       "scene": "Om Karima jumps up pointing at Abdo: \"الواد ده سرق معزتي زوزا يا باشا!\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "This boy stole my goat Zoza, your honour!"
+      },
+      {
+       "scene": "Abdo raises his hands in panic: \"والله ما سرقتها! هي اللي بتمشي ورايا!\"",
+       "speaker": "ABDO",
+       "caption_en": "I swear I didn't steal her! She follows me!"
+      },
+      {
+       "scene": "Lawyer Hamdy swirls his robe dramatically: \"سيدي القاضي! موكلي بريء براءة الذئب من دم ابن يعقوب!\"",
+       "speaker": "HAMDY",
+       "caption_en": "Your honour! My client is as innocent as the wolf in the old story!"
+      },
+      {
+       "scene": "The door opens and Zoza the goat trots in as evidence: \"ماااااء!\"",
+       "speaker": "ZOZA",
+       "caption_en": "Maaaaa!"
+      },
+      {
+       "scene": "Judge Fahmy squints at the goat: \"دي بقى المعزة المسروقة؟\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "So this is the stolen goat?"
+      },
+      {
+       "scene": "Zoza jumps onto the evidence table and starts eating the case file; Hamdy gasps: \"ملف القضية!\"",
+       "speaker": "HAMDY",
+       "caption_en": "The case file!"
+      },
+      {
+       "scene": "The judge stares at the half-eaten papers and bangs the gavel: \"الجلسة... اتأجلت! لحد ما المعزة تخلص!\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Court is… adjourned! Until the goat finishes!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 5,
+     "caption": "Order in the Court — Part 2\n⚖️ A courtroom comedy in Egyptian Arabic. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Next session; Om Karima takes the witness stand, crying dramatically: \"زوزا دي بنتي! ربيتها على إيدي!\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "Zoza is like my daughter! I raised her with my own hands!"
+      },
+      {
+       "scene": "Hamdy leans in slyly: \"طب هي بتحب تاكل إيه يا حاجة؟\"",
+       "speaker": "HAMDY",
+       "caption_en": "Then what does she like to eat, ma'am?"
+      },
+      {
+       "scene": "Om Karima hesitates: \"بتاكل... بتاكل... اللي يتحط قدامها!\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "She eats… she eats… whatever's put in front of her!"
+      },
+      {
+       "scene": "Abdo whispers loudly: \"بتحب الجرجير! أنا اللي بأكلها كل يوم!\"",
+       "speaker": "ABDO",
+       "caption_en": "She loves arugula! I feed her every day!"
+      },
+      {
+       "scene": "Judge Fahmy perks up: \"جرجير؟ حد معاه جرجير؟ أنا جعان.\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Arugula? Does anyone have arugula? I'm hungry."
+      },
+      {
+       "scene": "Hamdy suddenly clutches his chest and fake-faints onto a chair: \"الظلم ده... مش قادر أستحمله!\"",
+       "speaker": "HAMDY",
+       "caption_en": "This injustice… I can't bear it!"
+      },
+      {
+       "scene": "Om Karima rolls her eyes: \"قوم يا أستاذ، إحنا مش في مسلسل!\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "Get up, sir, we're not in a soap opera!"
+      },
+      {
+       "scene": "Zoza chews loudly next to the judge's bench; the judge whispers: \"المعزة دي... بتبصلي كده ليه؟\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Why is this goat… looking at me like that?"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 5,
+     "caption": "Order in the Court — Part 3\n⚖️ A courtroom comedy in Egyptian Arabic. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Recess; Judge Fahmy opens his lunch box in his chambers happily: \"أخيراً... الفول والطعمية.\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Finally… beans and falafel."
+      },
+      {
+       "scene": "Zoza pushes the door open with her head: \"ماااء؟\"",
+       "speaker": "ZOZA",
+       "caption_en": "Maaa?"
+      },
+      {
+       "scene": "The judge hugs his lunch box: \"لا لا لا! ده غدايا!\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "No no no! That's my lunch!"
+      },
+      {
+       "scene": "Zoza leaps onto the desk and eats a falafel right out of his hand; the judge yells: \"يا حرس!\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Guards!"
+      },
+      {
+       "scene": "Abdo runs in and calls softly: \"زوزا! تعالي يا حبيبتي.\" Zoza immediately trots to him.",
+       "speaker": "ABDO",
+       "caption_en": "Zoza! Come here, sweetie."
+      },
+      {
+       "scene": "The judge stops mid-rage, noticing: \"استنى... جت لك إنت على طول؟\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Wait… she came straight to you?"
+      },
+      {
+       "scene": "Om Karima appears in the doorway and calls: \"زوزا! تعالي هنا!\" Zoza turns her back on her.",
+       "speaker": "OM KARIMA",
+       "caption_en": "Zoza! Come here!"
+      },
+      {
+       "scene": "Judge Fahmy slowly adjusts his huge glasses, eyes narrowing: \"الموضوع ده... فيه إن.\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "There's something… fishy about this."
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 5,
+     "caption": "Order in the Court — Part 4\n⚖️ A courtroom comedy in Egyptian Arabic. Follow for Part 5!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Back in court; Judge Fahmy leans forward seriously: \"يا حاجة كريمة... المعزة دي اشتريتيها إمتى؟\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Mrs. Karima… when did you buy this goat?"
+      },
+      {
+       "scene": "Om Karima fidgets with her scarf: \"اشتريتها... يعني... هي كانت بتلف في الشارع...\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "I bought her… I mean… she was wandering in the street…"
+      },
+      {
+       "scene": "Hamdy jumps up triumphantly: \"يعني ما اشترتهاش يا ريس! لقيتها!\"",
+       "speaker": "HAMDY",
+       "caption_en": "So she didn't buy her, your honour! She found her!"
+      },
+      {
+       "scene": "Abdo speaks softly: \"وأنا لقيتها جعانة قدام بيتي... فأكلتها. ومن ساعتها وهي ماشية ورايا.\"",
+       "speaker": "ABDO",
+       "caption_en": "And I found her hungry outside my house… so I fed her. She's followed me ever since."
+      },
+      {
+       "scene": "Om Karima lowers her head, embarrassed: \"كنت عايزة أبيعها في العيد...\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "I wanted to sell her for the holiday…"
+      },
+      {
+       "scene": "Zoza bleats loudly at Om Karima as if offended: \"ماااااء!\"",
+       "speaker": "ZOZA",
+       "caption_en": "Maaaaa!"
+      },
+      {
+       "scene": "The whole court gasps; Hamdy whispers: \"المعزة زعلت يا ريس.\"",
+       "speaker": "HAMDY",
+       "caption_en": "The goat is upset, your honour."
+      },
+      {
+       "scene": "Judge Fahmy raises his gavel slowly: \"الحكم... بكرة. والمعزة هي اللي هتختار.\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "The verdict… tomorrow. And the goat will choose."
+      }
+     ]
+    },
+    {
+     "part": 5,
+     "of": 5,
+     "caption": "Order in the Court — Part 5 (final)\n⚖️ A courtroom comedy in Egyptian Arabic. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Verdict day; the court is packed; Judge Fahmy announces: \"المعزة زوزا تقف في النص.\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "The goat Zoza will stand in the middle."
+      },
+      {
+       "scene": "Om Karima on one side holds out a bunch of grass: \"تعالي يا زوزا... عندي حشيش طازة!\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "Come, Zoza… I have fresh grass!"
+      },
+      {
+       "scene": "Abdo on the other side simply kneels and opens his arms: \"تعالي يا زوزا.\"",
+       "speaker": "ABDO",
+       "caption_en": "Come, Zoza."
+      },
+      {
+       "scene": "Zoza looks left, looks right, then trots straight to Abdo and nuzzles him: \"ماااء.\"",
+       "speaker": "ZOZA",
+       "caption_en": "Maaa."
+      },
+      {
+       "scene": "The court cheers; Judge Fahmy bangs the gavel: \"حكمت المحكمة... زوزا لعبده!\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "The court rules… Zoza goes to Abdo!"
+      },
+      {
+       "scene": "Hamdy spins in his robe: \"العدالة انتصرت! العدالة انتصرت!\"",
+       "speaker": "HAMDY",
+       "caption_en": "Justice has won! Justice has won!"
+      },
+      {
+       "scene": "Om Karima laughs and shrugs: \"خلاص... بس تعزمني على الجرجير.\"",
+       "speaker": "OM KARIMA",
+       "caption_en": "Fine… but invite me for arugula."
+      },
+      {
+       "scene": "Zoza jumps onto the judge's bench and eats his gavel's paper notes; the judge laughs: \"رفعت الجلسة... قبل ما تاكل المحكمة!\"",
+       "speaker": "JUDGE FAHMY",
+       "caption_en": "Court adjourned… before she eats the courthouse!"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Lemon Family",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated family drama with realistic fruit characters that have expressive cartoon faces, tiny arms and mouths that visibly move in sync when they speak, at a small lemonade stand on a sunny street, lively camera moves. English dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real person likeness. Characters (keep identical): PAPA LEMON, a big proud lemon with a bushy moustache and a straw hat; LENNY, his hard-working son, a small green lemon with a backwards cap; LILY, his favourite daughter, a shiny perfect lemon with a sparkly bow; GRANNY LIME, a wise wrinkled lime with tiny glasses. ",
+   "first_slot": "2026-10-29 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "The Lemon Family — Part 1\n🍋 A fruit family drama. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "At the lemonade stand Papa Lemon hugs Lily: \"My shiny Lily! One day this stand will be yours!\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "My shiny Lily! One day this stand will be yours!"
+      },
+      {
+       "scene": "Lenny, sweaty from carrying a huge sack of sugar, looks up: \"Papa, I finished all the chores.\"",
+       "speaker": "LENNY",
+       "caption_en": "Papa, I finished all the chores."
+      },
+      {
+       "scene": "Papa waves him off without looking: \"Good, good. Now go wash the cups.\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Good, good. Now go wash the cups."
+      },
+      {
+       "scene": "Lenny holds up a notebook excitedly: \"Papa, I made a new recipe! Lemon with mint and honey!\"",
+       "speaker": "LENNY",
+       "caption_en": "Papa, I made a new recipe! Lemon with mint and honey!"
+      },
+      {
+       "scene": "Lily laughs: \"Mint? Honey? Lemonade is lemonade, silly.\"",
+       "speaker": "LILY",
+       "caption_en": "Mint? Honey? Lemonade is lemonade, silly."
+      },
+      {
+       "scene": "Papa pats Lenny's head: \"Leave the thinking to your sister, son.\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Leave the thinking to your sister, son."
+      },
+      {
+       "scene": "Granny Lime watches from her rocking chair and sighs quietly: \"That boy has more juice than all of them.\"",
+       "speaker": "GRANNY LIME",
+       "caption_en": "That boy has more juice than all of them."
+      },
+      {
+       "scene": "A sign is taped to the stand: across the street a giant new juice shop opens with a crowd; Papa's smile drops: \"Who... who is that?\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Who… who is that?"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "The Lemon Family — Part 2\n🍋 A fruit family drama. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Days later the stand is empty while the big juice shop across the street is packed; Papa groans: \"Not one customer today.\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Not one customer today."
+      },
+      {
+       "scene": "Lily unveils a fancy golden cup: \"Don't worry, Papa! Luxury lemonade! Ten dollars a cup!\"",
+       "speaker": "LILY",
+       "caption_en": "Don't worry, Papa! Luxury lemonade! Ten dollars a cup!"
+      },
+      {
+       "scene": "A passing customer reads the price and walks away laughing: \"Ten dollars? For lemonade?\"",
+       "speaker": "CUSTOMER",
+       "caption_en": "Ten dollars? For lemonade?"
+      },
+      {
+       "scene": "Lily pouts and throws down the cup: \"They just don't understand fashion!\"",
+       "speaker": "LILY",
+       "caption_en": "They just don't understand fashion!"
+      },
+      {
+       "scene": "Lenny whispers to Papa: \"Papa, let me try my recipe. Just one day.\"",
+       "speaker": "LENNY",
+       "caption_en": "Papa, let me try my recipe. Just one day."
+      },
+      {
+       "scene": "Papa snaps, tired and worried: \"Enough, Lenny! We have no money for experiments!\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Enough, Lenny! We have no money for experiments!"
+      },
+      {
+       "scene": "Lenny walks off sadly; Granny Lime calls him over and hands him a small jar: \"My secret honey. Use it well.\"",
+       "speaker": "GRANNY LIME",
+       "caption_en": "My secret honey. Use it well."
+      },
+      {
+       "scene": "Lenny looks at the jar, then at the dark street, determined: \"Tonight, then.\"",
+       "speaker": "LENNY",
+       "caption_en": "Tonight, then."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "The Lemon Family — Part 3\n🍋 A fruit family drama. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Night; Lenny sets up a tiny secret stand under a streetlight with mint and honey lemonade: \"Fresh mint lemonade! One dollar!\"",
+       "speaker": "LENNY",
+       "caption_en": "Fresh mint lemonade! One dollar!"
+      },
+      {
+       "scene": "A tired jogger takes a sip and stops in shock: \"Whoa... this is the best thing I've ever tasted!\"",
+       "speaker": "CUSTOMER",
+       "caption_en": "Whoa… this is the best thing I've ever tasted!"
+      },
+      {
+       "scene": "A line quickly forms; Lenny pours faster and faster, grinning: \"One at a time, everyone!\"",
+       "speaker": "LENNY",
+       "caption_en": "One at a time, everyone!"
+      },
+      {
+       "scene": "Word spreads; even customers from the big juice shop walk over: \"Is this the mint guy?\"",
+       "speaker": "CUSTOMER",
+       "caption_en": "Is this the mint guy?"
+      },
+      {
+       "scene": "Granny Lime watches from a bench, smiling: \"That's my boy.\"",
+       "speaker": "GRANNY LIME",
+       "caption_en": "That's my boy."
+      },
+      {
+       "scene": "Lily sneaks up and gasps at the crowd: \"Lenny?! Papa is going to explode!\"",
+       "speaker": "LILY",
+       "caption_en": "Lenny?! Papa is going to explode!"
+      },
+      {
+       "scene": "Lenny freezes as a shadow falls over the stand: \"Lily, please don't tell...\"",
+       "speaker": "LENNY",
+       "caption_en": "Lily, please don't tell…"
+      },
+      {
+       "scene": "Papa Lemon steps into the streetlight, staring at the crowd and at Lenny: \"Lenny... what is all this?\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Lenny… what is all this?"
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "The Lemon Family — Part 4 (final)\n🍋 A fruit family drama. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Papa Lemon walks slowly to the tiny stand as the crowd goes quiet: \"You sold lemonade... behind my back?\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "You sold lemonade… behind my back?"
+      },
+      {
+       "scene": "Lenny looks down: \"I just wanted to save our stand, Papa.\"",
+       "speaker": "LENNY",
+       "caption_en": "I just wanted to save our stand, Papa."
+      },
+      {
+       "scene": "A customer raises his cup: \"Sir, your son makes the best lemonade in town!\"",
+       "speaker": "CUSTOMER",
+       "caption_en": "Sir, your son makes the best lemonade in town!"
+      },
+      {
+       "scene": "Papa takes a cup and sips; his moustache twitches and his eyes fill with tears: \"Mint... and honey.\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Mint… and honey."
+      },
+      {
+       "scene": "Papa pulls Lenny into a big hug: \"I never listened to you. I'm so sorry, son.\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "I never listened to you. I'm so sorry, son."
+      },
+      {
+       "scene": "Lily joins the hug, sheepish: \"Can I help? I promise, no golden cups.\"",
+       "speaker": "LILY",
+       "caption_en": "Can I help? I promise, no golden cups."
+      },
+      {
+       "scene": "Next morning the family stand has a new sign and a long line; Papa announces: \"Our new boss... Lenny!\"",
+       "speaker": "PAPA LEMON",
+       "caption_en": "Our new boss… Lenny!"
+      },
+      {
+       "scene": "Granny Lime raises her cup from her rocking chair: \"To the juiciest family on the street!\" Everyone cheers.",
+       "speaker": "GRANNY LIME",
+       "caption_en": "To the juiciest family on the street!"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Bembo",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated comedy on a busy colourful Cairo street and a small car-repair garage, warm sunlight, lively camera moves; talking vehicles with big expressive eyes in the windshield and mouths in the front bumper that visibly move in sync when they speak, bouncing on their wheels as they react to each other, plus cartoon humans with mouths that move in sync. Egyptian Arabic dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real brand logos, no real person likeness. Characters (keep identical): BEMBO, an old proud black 1990s luxury sedan with a round chrome grille, dented bumper and fancy manners; TOKTOK, a tiny hyper red three-wheeled tuk-tuk with flashing disco lights and a loud horn; MICRO, a grumpy old white minibus with a cracked windshield; AM SAYED, a chubby kind mechanic in a greasy blue overall with a moustache; SALMA, a cheerful young woman in a flowered dress, Am Sayed's daughter. ",
+   "first_slot": "2026-11-02 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 5,
+     "caption": "Bembo — Part 1\n🚗 An old car comedy in Egyptian Arabic. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "In Am Sayed's garage Bembo wakes up and stretches his wipers proudly: \"صباح الفل! أنا بيمبو... أشيك عربية في مصر!\"",
+       "speaker": "BEMBO",
+       "caption_en": "Good morning! I'm Bembo… the classiest car in Egypt!"
+      },
+      {
+       "scene": "Toktok zooms in with disco lights flashing and honks: \"أشيك مين يا عم؟ إنت عندك تلاتين سنة!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "Classiest who? You're thirty years old!"
+      },
+      {
+       "scene": "Micro the minibus grumbles from the corner: \"الاتنين دوشة... سيبوني أنام.\"",
+       "speaker": "MICRO",
+       "caption_en": "You're both noisy… let me sleep."
+      },
+      {
+       "scene": "Am Sayed walks in, wiping his hands, looking sad at Bembo: \"بيمبو يا حبيبي... لازم أبيعك.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Bembo, my dear… I have to sell you."
+      },
+      {
+       "scene": "Bembo's headlights go wide in shock: \"تبيعني؟! أنا؟! ده أنا ابن العيلة!\"",
+       "speaker": "BEMBO",
+       "caption_en": "Sell me?! Me?! I'm family!"
+      },
+      {
+       "scene": "Am Sayed sighs: \"الورشة عليها ديون... ومفيش شغل.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "The garage has debts… and there's no work."
+      },
+      {
+       "scene": "Toktok spins in a happy circle: \"يعني الجراج هيبقى بتاعي لوحدي؟ ييييه!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "So the garage will be all mine? Yaaay!"
+      },
+      {
+       "scene": "A man in sunglasses points at Bembo through the garage door: \"أنا عايز العربية دي... للخردة.\" Bembo gasps: \"خردة؟!\"",
+       "speaker": "BEMBO",
+       "caption_en": "Scrap?!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 5,
+     "caption": "Bembo — Part 2\n🚗 An old car comedy in Egyptian Arabic. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Night in the garage; Bembo whispers to Toktok: \"توكتوك... لازم تساعدني أهرب.\"",
+       "speaker": "BEMBO",
+       "caption_en": "Toktok… you have to help me escape."
+      },
+      {
+       "scene": "Toktok flashes his lights suspiciously: \"وأنا مالي؟ إنت كل يوم بتتريق عليا!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "Why should I? You make fun of me every day!"
+      },
+      {
+       "scene": "Bembo lowers his headlights, embarrassed: \"عندك حق... أنا آسف يا توكتوك.\"",
+       "speaker": "BEMBO",
+       "caption_en": "You're right… I'm sorry, Toktok."
+      },
+      {
+       "scene": "Toktok's lights soften: \"خلاص... بس هتسمع كلامي. خطتي هي الأحسن.\"",
+       "speaker": "TOKTOK",
+       "caption_en": "Fine… but you listen to me. My plan is best."
+      },
+      {
+       "scene": "Micro wakes up grumbling: \"إنتوا بتعملوا إيه الساعة تلاتة الفجر؟\"",
+       "speaker": "MICRO",
+       "caption_en": "What are you doing at three in the morning?"
+      },
+      {
+       "scene": "Toktok pushes the garage door open with his nose and it squeaks loudly: \"هششش! يلا بسرعة!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "Shhh! Quick, let's go!"
+      },
+      {
+       "scene": "Bembo rolls out onto the empty moonlit street, amazed: \"الشارع فاضي... الحرية!\"",
+       "speaker": "BEMBO",
+       "caption_en": "The street is empty… freedom!"
+      },
+      {
+       "scene": "Bembo's engine coughs and he stops dead in the middle of the road: \"يا نهار أبيض... البنزين خلص.\"",
+       "speaker": "BEMBO",
+       "caption_en": "Oh no… I'm out of gas."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 5,
+     "caption": "Bembo — Part 3\n🚗 An old car comedy in Egyptian Arabic. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Morning traffic honks around stranded Bembo; Micro pulls up beside him, annoyed: \"إنت واقف في نص الشارع ليه يا باشا؟\"",
+       "speaker": "MICRO",
+       "caption_en": "Why are you parked in the middle of the street, sir?"
+      },
+      {
+       "scene": "Bembo whispers nervously: \"هربان يا ميكرو... وخلصان بنزين.\"",
+       "speaker": "BEMBO",
+       "caption_en": "I'm on the run, Micro… and out of gas."
+      },
+      {
+       "scene": "Micro rolls his eyes, then sighs: \"ماشي... اربط نفسك فيا.\" He tows Bembo with a rope.",
+       "speaker": "MICRO",
+       "caption_en": "Alright… tie yourself to me."
+      },
+      {
+       "scene": "Toktok zooms ahead leading the way: \"يمين! شمال! لأ لأ يمين!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "Right! Left! No no, right!"
+      },
+      {
+       "scene": "They pass a wedding hall with a crying bride outside; Salma sobs: \"عربية الفرح عطلت! هتجوز إزاي؟\"",
+       "speaker": "SALMA",
+       "caption_en": "The wedding car broke down! How will I get married?"
+      },
+      {
+       "scene": "Bembo stares at Salma: \"دي سلمى... بنت عم سيد!\"",
+       "speaker": "BEMBO",
+       "caption_en": "That's Salma… Am Sayed's daughter!"
+      },
+      {
+       "scene": "Toktok gasps: \"الفرح النهارده؟ وعم سيد بيبيعك عشان يجهزه!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "The wedding is today? And Am Sayed is selling you to pay for it!"
+      },
+      {
+       "scene": "Bembo's headlights glow with determination: \"يبقى أنا عربية الفرح.\"",
+       "speaker": "BEMBO",
+       "caption_en": "Then I'll be the wedding car."
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 5,
+     "caption": "Bembo — Part 4\n🚗 An old car comedy in Egyptian Arabic. Follow for Part 5!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Back at the garage, Am Sayed searches frantically: \"بيمبو فين؟ الراجل جاي ياخده!\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Where's Bembo? The man is coming to take him!"
+      },
+      {
+       "scene": "The man in sunglasses arrives angrily: \"فين عربيتي؟ أنا دافع العربون!\"",
+       "speaker": "BUYER",
+       "caption_en": "Where's my car? I paid the deposit!"
+      },
+      {
+       "scene": "Meanwhile at a gas station, Toktok honks at the attendant: \"فوّلها يا ريس! ده فرح!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "Fill him up, boss! It's a wedding!"
+      },
+      {
+       "scene": "Micro splashes Bembo with a bucket of soapy water: \"لازم تبقى بتلمع... اثبت!\"",
+       "speaker": "MICRO",
+       "caption_en": "You have to shine… hold still!"
+      },
+      {
+       "scene": "Toktok decorates Bembo with flowers and ribbons, giggling: \"بقيت عريس يا بيمبو!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "You look like a groom, Bembo!"
+      },
+      {
+       "scene": "Bembo checks himself in a shop window, touched: \"أنا... حلو بجد.\"",
+       "speaker": "BEMBO",
+       "caption_en": "I… actually look beautiful."
+      },
+      {
+       "scene": "A traffic officer blows his whistle and blocks the road: \"قف عندك! فين الرخصة؟\"",
+       "speaker": "OFFICER",
+       "caption_en": "Stop right there! Where's the licence?"
+      },
+      {
+       "scene": "Bembo panics as the wedding music echoes in the distance: \"الفرح هيبدأ... وإحنا اتمسكنا!\"",
+       "speaker": "BEMBO",
+       "caption_en": "The wedding is starting… and we've been caught!"
+      }
+     ]
+    },
+    {
+     "part": 5,
+     "of": 5,
+     "caption": "Bembo — Part 5 (final)\n🚗 An old car comedy in Egyptian Arabic. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The officer looks at the flower-covered Bembo and softens: \"عربية فرح؟ طب ما تقولوا! اتفضلوا!\"",
+       "speaker": "OFFICER",
+       "caption_en": "A wedding car? Why didn't you say so! Go ahead!"
+      },
+      {
+       "scene": "Bembo, Toktok and Micro race through the streets honking a wedding rhythm: \"زفة! زفة! زفة!\"",
+       "speaker": "TOKTOK",
+       "caption_en": "Wedding parade! Parade! Parade!"
+      },
+      {
+       "scene": "They pull up at the wedding hall; Salma gasps and laughs through her tears: \"بيمبو؟! عربية بابا!\"",
+       "speaker": "SALMA",
+       "caption_en": "Bembo?! Dad's car!"
+      },
+      {
+       "scene": "Am Sayed runs in with the buyer behind him and freezes: \"بيمبو... جيت لوحدك؟\"",
+       "speaker": "AM SAYED",
+       "caption_en": "Bembo… you came by yourself?"
+      },
+      {
+       "scene": "Bembo bows his bumper: \"عمري ما أسيب بنت العيلة من غير زفة.\"",
+       "speaker": "BEMBO",
+       "caption_en": "I'd never let the family's girl go without a parade."
+      },
+      {
+       "scene": "The buyer takes off his sunglasses, wiping a tear: \"خلاص... خلي العربية. العربون هدية للعروسة.\"",
+       "speaker": "BUYER",
+       "caption_en": "Alright… keep the car. The deposit is a gift for the bride."
+      },
+      {
+       "scene": "Am Sayed hugs Bembo's hood: \"مش هبيعك أبداً تاني يا بيمبو.\"",
+       "speaker": "AM SAYED",
+       "caption_en": "I'll never sell you again, Bembo."
+      },
+      {
+       "scene": "Salma rides off in Bembo with Toktok and Micro honking behind, everyone dancing: \"يعيش بيمبو!\" Bembo laughs: \"أشيك عربية في مصر!\"",
+       "speaker": "BEMBO",
+       "caption_en": "The classiest car in Egypt!"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Agent Granny",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated action comedy, cosy suburban cottage that hides secret spy gadgets, dramatic lighting and fast dynamic camera moves; expressive cartoon characters whose mouths visibly move in sync when they speak, reacting to each other. English dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real brand logos, no real person likeness. Characters (keep identical): GRANNY ROSE, a tiny sweet 80-year-old grandma with a silver bun, pearl necklace, pink cardigan and round glasses who secretly moves like a martial-arts master; MAX, her 10-year-old grandson with messy brown hair, freckles and a green hoodie; BISCUIT, her chubby fawn pug in a knitted sweater who talks with a deep serious voice; DR. VEX, a short dramatic villain with a huge white moustache, purple cape and a hovering gold armchair. ",
+   "first_slot": "2026-11-07 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Agent Granny — Part 1\n👵 Sweet old grandma by day, secret agent by night. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Max arrives at Granny Rose's cottage with a suitcase, bored: \"A whole week at Granny's? There's not even Wi-Fi.\"",
+       "speaker": "MAX",
+       "caption_en": "A whole week at Granny's? There's not even Wi-Fi."
+      },
+      {
+       "scene": "Granny Rose hugs him and smiles sweetly: \"Oh sweetie, we'll knit and bake cookies!\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Oh sweetie, we'll knit and bake cookies!"
+      },
+      {
+       "scene": "Biscuit the pug looks at Max and speaks in a deep voice: \"Welcome, kid. Don't touch the red teapot.\"",
+       "speaker": "BISCUIT",
+       "caption_en": "Welcome, kid. Don't touch the red teapot."
+      },
+      {
+       "scene": "Max jumps back in shock: \"The dog TALKS?!\"",
+       "speaker": "MAX",
+       "caption_en": "The dog TALKS?!"
+      },
+      {
+       "scene": "Granny laughs innocently: \"Oh, Biscuit just has a lot of opinions, dear.\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Oh, Biscuit just has a lot of opinions, dear."
+      },
+      {
+       "scene": "That night Max sneaks into the kitchen and lifts the red teapot; the floor opens into a glowing high-tech spy lab: \"WHOA!\"",
+       "speaker": "MAX",
+       "caption_en": "WHOA!"
+      },
+      {
+       "scene": "Granny Rose appears behind him in a black tactical cardigan and night-vision glasses: \"I told Biscuit you'd find it by day one.\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "I told Biscuit you'd find it by day one."
+      },
+      {
+       "scene": "A giant screen flickers on showing Dr. Vex laughing on his hovering armchair: \"Hello, Agent Rose. Did you miss me?\"",
+       "speaker": "DR. VEX",
+       "caption_en": "Hello, Agent Rose. Did you miss me?"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Agent Granny — Part 2\n👵 Sweet old grandma by day, secret agent by night. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "In the spy lab Granny Rose glares at the screen: \"Vex. I retired forty years ago.\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Vex. I retired forty years ago."
+      },
+      {
+       "scene": "Dr. Vex twirls his moustache: \"And I've spent forty years building my Nap Ray! Tomorrow, the whole world falls asleep!\"",
+       "speaker": "DR. VEX",
+       "caption_en": "And tomorrow, my Nap Ray puts the whole world to sleep!"
+      },
+      {
+       "scene": "Max whispers, amazed: \"Granny... you're a SPY?\"",
+       "speaker": "MAX",
+       "caption_en": "Granny… you're a SPY?"
+      },
+      {
+       "scene": "Granny pulls a knitting needle that turns into a glowing laser: \"Retired spy, dear. Semi-retired now.\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Retired spy, dear. Semi-retired now."
+      },
+      {
+       "scene": "Biscuit rolls out on a tiny rocket skateboard: \"I'll fuel the jet. Somebody bring snacks.\"",
+       "speaker": "BISCUIT",
+       "caption_en": "I'll fuel the jet. Somebody bring snacks."
+      },
+      {
+       "scene": "Granny presses a button and the cottage garage opens to reveal a flying pink camper van: \"Buckle up, Max.\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Buckle up, Max."
+      },
+      {
+       "scene": "Max climbs in, grinning wildly: \"This is the best week of my LIFE!\"",
+       "speaker": "MAX",
+       "caption_en": "This is the best week of my LIFE!"
+      },
+      {
+       "scene": "The van blasts into the night sky; suddenly red alarms flash as a missile follows them: \"Granny, something's chasing us!\"",
+       "speaker": "MAX",
+       "caption_en": "Granny, something's chasing us!"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Agent Granny — Part 3\n👵 Sweet old grandma by day, secret agent by night. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Inside the flying van Granny swerves hard as the missile closes in: \"Hold on to your cookies!\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Hold on to your cookies!"
+      },
+      {
+       "scene": "Biscuit presses a paw button and a cloud of knitting yarn bursts out, tangling the missile: \"Grandma's yarn bomb. Classic.\"",
+       "speaker": "BISCUIT",
+       "caption_en": "Grandma's yarn bomb. Classic."
+      },
+      {
+       "scene": "They land on a giant floating island shaped like a pillow; Max stares: \"His lair is a PILLOW?\"",
+       "speaker": "MAX",
+       "caption_en": "His lair is a PILLOW?"
+      },
+      {
+       "scene": "Dr. Vex floats out on his golden armchair with robot guards in pyjamas: \"Welcome to Snooze Island!\"",
+       "speaker": "DR. VEX",
+       "caption_en": "Welcome to Snooze Island!"
+      },
+      {
+       "scene": "Granny flips over three robot guards with lightning-fast moves: \"I've still got it!\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "I've still got it!"
+      },
+      {
+       "scene": "Granny grabs her lower back mid-kick and freezes: \"Oh... oh no. My hip.\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Oh… oh no. My hip."
+      },
+      {
+       "scene": "The robots capture Granny and Biscuit in a giant birdcage; Dr. Vex cackles: \"Forty years, and you finally lose!\"",
+       "speaker": "DR. VEX",
+       "caption_en": "Forty years, and you finally lose!"
+      },
+      {
+       "scene": "Max hides behind a huge pillow, shaking, and whispers: \"Okay, Max... it's all up to you now.\"",
+       "speaker": "MAX",
+       "caption_en": "Okay, Max… it's all up to you now."
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Agent Granny — Part 4 (final)\n👵 Sweet old grandma by day, secret agent by night. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Max sneaks toward the giant Nap Ray machine, holding Granny's knitting needle: \"Think like Granny... think like Granny...\"",
+       "speaker": "MAX",
+       "caption_en": "Think like Granny… think like Granny…"
+      },
+      {
+       "scene": "From the cage Biscuit shouts: \"Kid! The big purple button! Nobody ever guards the big purple button!\"",
+       "speaker": "BISCUIT",
+       "caption_en": "Kid! The big purple button! Nobody guards the big purple button!"
+      },
+      {
+       "scene": "Dr. Vex spins around on his armchair: \"Who let a CHILD in here?!\"",
+       "speaker": "DR. VEX",
+       "caption_en": "Who let a CHILD in here?!"
+      },
+      {
+       "scene": "Max points the glowing needle and zaps the Nap Ray backwards; a sleepy beam hits Dr. Vex: \"Sweet dreams, Doctor!\"",
+       "speaker": "MAX",
+       "caption_en": "Sweet dreams, Doctor!"
+      },
+      {
+       "scene": "Dr. Vex yawns hugely and slumps in his chair, snoring: \"Just... five more minutes... zzz.\"",
+       "speaker": "DR. VEX",
+       "caption_en": "Just… five more minutes… zzz."
+      },
+      {
+       "scene": "Max opens the cage; Granny hugs him tight: \"Max! You saved the whole world!\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Max! You saved the whole world!"
+      },
+      {
+       "scene": "Back home at sunrise, Biscuit eats a cookie on the sofa: \"Not bad, kid. Welcome to the family business.\"",
+       "speaker": "BISCUIT",
+       "caption_en": "Not bad, kid. Welcome to the family business."
+      },
+      {
+       "scene": "Granny hands Max a tiny knitted spy badge and winks: \"Same time next summer, Agent Max?\" Max grins: \"Wouldn't miss it!\"",
+       "speaker": "GRANNY ROSE",
+       "caption_en": "Same time next summer, Agent Max?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Market Wars",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated comedy at a crowded colourful Egyptian street market stall with wooden crates and hanging lamps, warm light, lively camera moves; realistic fruit and vegetable characters with expressive cartoon faces, tiny arms and mouths that visibly move in sync when they speak, bouncing and reacting to each other, plus a cartoon human vendor. Egyptian Arabic dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real brand logos, no real person likeness. Characters (keep identical): BATIKHA, a huge striped watermelon with a gold chain, boss of the fruit crate; BATATES, a lumpy tough potato with a scar and a flat cap, boss of the vegetable crate; MANGA, a sweet golden mango girl with long eyelashes and a flower; TAMATEM, a shy round red tomato boy with a little green leaf hat; AM FAWZY, a skinny old market vendor with a white galabeya and a loud voice. ",
+   "first_slot": "2026-11-11 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 5,
+     "caption": "Market Wars — Part 1\n🍉 Fruits vs vegetables — a market comedy in Egyptian Arabic. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "At dawn at the market stall, Batikha taps his gold chain on the fruit crate: \"السوق ده بتاع الفاكهة... وبس!\"",
+       "speaker": "BATIKHA",
+       "caption_en": "This market belongs to the fruits… period!"
+      },
+      {
+       "scene": "Batates jumps up on the vegetable crate: \"بطلوا فشر! من غير الخضار مفيش طبيخ!\"",
+       "speaker": "BATATES",
+       "caption_en": "Stop bragging! Without vegetables there's no cooking!"
+      },
+      {
+       "scene": "Tamatem sits nervously on the line between the two crates: \"أنا... أنا أقعد فين؟\"",
+       "speaker": "TAMATEM",
+       "caption_en": "Me… where do I sit?"
+      },
+      {
+       "scene": "Both bosses shout at him at once: \"إنت خضار!\" \"إنت فاكهة!\"",
+       "speaker": "BATATES",
+       "caption_en": "You're a vegetable!"
+      },
+      {
+       "scene": "Manga rolls over from the fruit crate and smiles at him shyly: \"متزعلش... أنا شايفاك حلو.\"",
+       "speaker": "MANGA",
+       "caption_en": "Don't be upset… I think you're sweet."
+      },
+      {
+       "scene": "Tamatem turns even redder, stammering: \"أ... أنا؟ حلو؟\"",
+       "speaker": "TAMATEM",
+       "caption_en": "M… me? Sweet?"
+      },
+      {
+       "scene": "Batikha spots them and slams a crate: \"مانجة! بنت الفاكهة ما تكلمش طماطم!\"",
+       "speaker": "BATIKHA",
+       "caption_en": "Manga! A fruit girl doesn't talk to a tomato!"
+      },
+      {
+       "scene": "Batates growls at Tamatem: \"ولو شفتك جنبها تاني... هتبقى صلصة!\"",
+       "speaker": "BATATES",
+       "caption_en": "And if I see you near her again… you'll be tomato sauce!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 5,
+     "caption": "Market Wars — Part 2\n🍉 Fruits vs vegetables — a market comedy in Egyptian Arabic. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Night at the market; Tamatem climbs up a crate and whispers under the lamp: \"مانجة... إنتي صاحية؟\"",
+       "speaker": "TAMATEM",
+       "caption_en": "Manga… are you awake?"
+      },
+      {
+       "scene": "Manga peeks out between the oranges: \"صاحية... مستنياك.\"",
+       "speaker": "MANGA",
+       "caption_en": "I'm awake… I was waiting for you."
+      },
+      {
+       "scene": "They share a tiny cup of sugarcane juice on the edge of the crate: \"الدنيا حلوة وإنت جنبي.\"",
+       "speaker": "MANGA",
+       "caption_en": "Life is sweet with you beside me."
+      },
+      {
+       "scene": "An onion spy with sunglasses spots them and runs off crying: \"هقول لبطاطس! هقول لبطاطس!\"",
+       "speaker": "BASAL",
+       "caption_en": "I'm telling Batates! I'm telling Batates!"
+      },
+      {
+       "scene": "Batates wakes the whole vegetable crate: \"اصحوا يا خضار! الطماطم خاننا!\"",
+       "speaker": "BATATES",
+       "caption_en": "Wake up, vegetables! Tomato betrayed us!"
+      },
+      {
+       "scene": "Batikha rolls out with the fruit gang behind him: \"مين اللي جه جنب مانجة؟!\"",
+       "speaker": "BATIKHA",
+       "caption_en": "Who came near Manga?!"
+      },
+      {
+       "scene": "Both gangs face each other on the table, carrots and bananas raised like swords: \"الحرب!\"",
+       "speaker": "BATIKHA",
+       "caption_en": "War!"
+      },
+      {
+       "scene": "Tamatem and Manga stand in the middle holding hands, trembling: \"استنوا!\"",
+       "speaker": "TAMATEM",
+       "caption_en": "Wait!"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 5,
+     "caption": "Market Wars — Part 3\n🍉 Fruits vs vegetables — a market comedy in Egyptian Arabic. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Morning; the market is a mess of rolling fruit and vegetables; Am Fawzy arrives shocked: \"إيه الخراب ده؟!\"",
+       "speaker": "AM FAWZY",
+       "caption_en": "What is this disaster?!"
+      },
+      {
+       "scene": "The produce freezes and pretends to be normal; Batikha whispers: \"محدش يتحرك...\"",
+       "speaker": "BATIKHA",
+       "caption_en": "Nobody move…"
+      },
+      {
+       "scene": "Am Fawzy picks up Tamatem and looks at him: \"الطماطماية دي هتروح الشوربة النهارده.\"",
+       "speaker": "AM FAWZY",
+       "caption_en": "This tomato goes into today's soup."
+      },
+      {
+       "scene": "Manga gasps silently, tears in her eyes: \"لأ... تماطم!\"",
+       "speaker": "MANGA",
+       "caption_en": "No… Tamatem!"
+      },
+      {
+       "scene": "Am Fawzy drops Tamatem into a basket headed for the restaurant next door: \"الشوربة الساعة اتناشر!\"",
+       "speaker": "AM FAWZY",
+       "caption_en": "Soup at twelve o'clock!"
+      },
+      {
+       "scene": "Manga turns to Batikha, crying: \"أرجوك يا بطيخة... ساعدني!\"",
+       "speaker": "MANGA",
+       "caption_en": "Please, Batikha… help me!"
+      },
+      {
+       "scene": "Batikha looks away, stubborn: \"ده خضار... مش مشكلتنا.\"",
+       "speaker": "BATIKHA",
+       "caption_en": "He's a vegetable… not our problem."
+      },
+      {
+       "scene": "Batates stares at the basket, his scar twitching: \"ده خضار... بس ده واحد مننا.\"",
+       "speaker": "BATATES",
+       "caption_en": "He's a vegetable… but he's one of us."
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 5,
+     "caption": "Market Wars — Part 4\n🍉 Fruits vs vegetables — a market comedy in Egyptian Arabic. Follow for Part 5!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Batates climbs onto a crate and shouts: \"يا خضار! النهارده نتحد!\"",
+       "speaker": "BATATES",
+       "caption_en": "Vegetables! Today we unite!"
+      },
+      {
+       "scene": "Manga rolls over to the fruit crate and faces Batikha: \"وإنتوا يا فاكهة؟ هتسيبوه يتطبخ؟\"",
+       "speaker": "MANGA",
+       "caption_en": "And you, fruits? Will you let him get cooked?"
+      },
+      {
+       "scene": "Batikha is silent, then sighs heavily: \"...ماشي. عشانك إنتي بس.\"",
+       "speaker": "BATIKHA",
+       "caption_en": "…Fine. Only for you."
+      },
+      {
+       "scene": "Batikha and Batates shake tiny hands for the first time: \"هدنة؟\" \"هدنة.\"",
+       "speaker": "BATATES",
+       "caption_en": "Truce? Truce."
+      },
+      {
+       "scene": "The fruits and vegetables roll together in a big wave across the market street: \"يلااااا!\"",
+       "speaker": "BATIKHA",
+       "caption_en": "Let's gooo!"
+      },
+      {
+       "scene": "Inside the restaurant kitchen, Tamatem sits on the cutting board as a big knife rises: \"دي النهاية...\"",
+       "speaker": "TAMATEM",
+       "caption_en": "This is the end…"
+      },
+      {
+       "scene": "Batikha crashes through the kitchen door like a bowling ball, knocking the cook over: \"ولا النهاية ولا حاجة!\"",
+       "speaker": "BATIKHA",
+       "caption_en": "End nothing!"
+      },
+      {
+       "scene": "Batates grabs Tamatem off the board: \"اتشد يا طماطم! إحنا خارجين!\"",
+       "speaker": "BATATES",
+       "caption_en": "Hold on, Tamatem! We're getting out!"
+      }
+     ]
+    },
+    {
+     "part": 5,
+     "of": 5,
+     "caption": "Market Wars — Part 5 (final)\n🍉 Fruits vs vegetables — a market comedy in Egyptian Arabic. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Back at the stall, everyone is panting and laughing; Tamatem hugs Manga: \"إنتوا كلكم جيتوا عشاني؟\"",
+       "speaker": "TAMATEM",
+       "caption_en": "You all came for me?"
+      },
+      {
+       "scene": "Batikha coughs, pretending not to care: \"أي خدمة... بس ما تتعودش.\"",
+       "speaker": "BATIKHA",
+       "caption_en": "Anytime… but don't get used to it."
+      },
+      {
+       "scene": "Am Fawzy returns and sees all the fruits and vegetables mixed together in one crate: \"مين اللي خلط الخضار بالفاكهة؟\"",
+       "speaker": "AM FAWZY",
+       "caption_en": "Who mixed the vegetables with the fruits?"
+      },
+      {
+       "scene": "He scratches his head, then smiles and writes a new sign: \"سلطة فواكه وخضار... فكرة جديدة!\"",
+       "speaker": "AM FAWZY",
+       "caption_en": "Fruit and vegetable salad… a new idea!"
+      },
+      {
+       "scene": "Customers line up excitedly; the mixed crate sells out fast. Batates grins: \"شايف؟ مع بعض أحسن.\"",
+       "speaker": "BATATES",
+       "caption_en": "See? We're better together."
+      },
+      {
+       "scene": "Tamatem asks Batikha nervously: \"يعني... أنا فاكهة ولا خضار؟\"",
+       "speaker": "TAMATEM",
+       "caption_en": "So… am I a fruit or a vegetable?"
+      },
+      {
+       "scene": "Batikha and Batates answer together, laughing: \"إنت واحد مننا!\"",
+       "speaker": "BATIKHA",
+       "caption_en": "You're one of us!"
+      },
+      {
+       "scene": "Manga kisses Tamatem's cheek and he turns bright red as the whole market cheers: \"بحبك يا طماطم!\"",
+       "speaker": "MANGA",
+       "caption_en": "I love you, Tamatem!"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Pup Squad",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated comedy in a bright colourful doggy daycare with toys, a fenced yard and a big gate, sunny light, energetic camera moves; expressive cartoon dogs whose mouths visibly move in sync when they speak, wagging and reacting to each other, plus one cartoon human. English dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real brand logos, no real person likeness. Characters (keep identical): PEANUT, a tiny bossy tan chihuahua with a spiked red collar and huge ears; DUKE, a giant clumsy grey dog with a droopy face who is scared of everything; LUNA, a clever white-and-grey fluffy husky with one blue eye and one brown eye and tiny glasses; MS. PATTY, the cheerful daycare owner with a blonde ponytail, pink apron and a whistle. ",
+   "first_slot": "2026-11-16 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Pup Squad — Part 1\n🐶 Four daycare dogs plan the great escape. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "In the daycare yard Peanut climbs onto a toy box and addresses the dogs: \"Listen up! Tomorrow, we escape to the beach!\"",
+       "speaker": "PEANUT",
+       "caption_en": "Listen up! Tomorrow, we escape to the beach!"
+      },
+      {
+       "scene": "Duke hides behind a ball, trembling: \"The beach? Is there... sand? I'm scared of sand.\"",
+       "speaker": "DUKE",
+       "caption_en": "The beach? Is there… sand? I'm scared of sand."
+      },
+      {
+       "scene": "Luna pushes up her tiny glasses: \"The gate opens at 3 p.m. for exactly eight seconds. I did the math.\"",
+       "speaker": "LUNA",
+       "caption_en": "The gate opens at 3 p.m. for exactly eight seconds. I did the math."
+      },
+      {
+       "scene": "Peanut points at Duke: \"You're the distraction, big guy. Be... big.\"",
+       "speaker": "PEANUT",
+       "caption_en": "You're the distraction, big guy. Be… big."
+      },
+      {
+       "scene": "Ms. Patty walks in with treats, singing: \"Who wants snacks? Who's a good pup?\"",
+       "speaker": "MS. PATTY",
+       "caption_en": "Who wants snacks? Who's a good pup?"
+      },
+      {
+       "scene": "All the dogs sit perfectly, smiling innocently; Peanut whispers: \"Act normal. ACT NORMAL.\"",
+       "speaker": "PEANUT",
+       "caption_en": "Act normal. ACT NORMAL."
+      },
+      {
+       "scene": "Duke panics, falls over the treat bag and snacks explode everywhere: \"I'M ACTING NORMAL!\"",
+       "speaker": "DUKE",
+       "caption_en": "I'M ACTING NORMAL!"
+      },
+      {
+       "scene": "Ms. Patty narrows her eyes at the three of them and taps her whistle: \"Hmm... you three are up to something.\"",
+       "speaker": "MS. PATTY",
+       "caption_en": "Hmm… you three are up to something."
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Pup Squad — Part 2\n🐶 Four daycare dogs plan the great escape. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "It's 2:59 p.m.; Luna watches the clock: \"Sixty seconds. Positions!\"",
+       "speaker": "LUNA",
+       "caption_en": "Sixty seconds. Positions!"
+      },
+      {
+       "scene": "Duke flops dramatically in the middle of the yard and howls: \"Ohhh! My paw! I'm so hurt!\"",
+       "speaker": "DUKE",
+       "caption_en": "Ohhh! My paw! I'm so hurt!"
+      },
+      {
+       "scene": "Ms. Patty runs to Duke: \"Oh no, sweetie! Let me see!\"",
+       "speaker": "MS. PATTY",
+       "caption_en": "Oh no, sweetie! Let me see!"
+      },
+      {
+       "scene": "The gate slides open; Peanut sprints: \"GO GO GO!\"",
+       "speaker": "PEANUT",
+       "caption_en": "GO GO GO!"
+      },
+      {
+       "scene": "Luna and Peanut dash through just as it closes; Luna looks back: \"Wait... where's Duke?\"",
+       "speaker": "LUNA",
+       "caption_en": "Wait… where's Duke?"
+      },
+      {
+       "scene": "Duke is still lying on his back getting belly rubs, blissful: \"Guys... this is actually really nice.\"",
+       "speaker": "DUKE",
+       "caption_en": "Guys… this is actually really nice."
+      },
+      {
+       "scene": "Peanut smacks his own forehead with a paw: \"The distraction got DISTRACTED!\"",
+       "speaker": "PEANUT",
+       "caption_en": "The distraction got DISTRACTED!"
+      },
+      {
+       "scene": "A huge city bus roars past them outside the gate; Luna gasps: \"Peanut... we have no idea where the beach is.\"",
+       "speaker": "LUNA",
+       "caption_en": "Peanut… we have no idea where the beach is."
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Pup Squad — Part 3\n🐶 Four daycare dogs plan the great escape. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Back inside, Duke finally notices his friends are gone and stands up: \"Wait... they left without me?\"",
+       "speaker": "DUKE",
+       "caption_en": "Wait… they left without me?"
+      },
+      {
+       "scene": "Duke takes a deep breath and jumps the fence clumsily, landing in a flower bed: \"I'm coming, guys!\"",
+       "speaker": "DUKE",
+       "caption_en": "I'm coming, guys!"
+      },
+      {
+       "scene": "Meanwhile Peanut and Luna ride on the back of a pizza delivery scooter: \"This is how the beach works, right?\"",
+       "speaker": "PEANUT",
+       "caption_en": "This is how the beach works, right?"
+      },
+      {
+       "scene": "The scooter stops at a busy crossing; Luna spots a sign with waves on it: \"Beach, two blocks! Left!\"",
+       "speaker": "LUNA",
+       "caption_en": "Beach, two blocks! Left!"
+      },
+      {
+       "scene": "A grumpy street pigeon blocks their path: \"Toll's one fry, pups.\" Peanut glares: \"We don't HAVE fries!\"",
+       "speaker": "PEANUT",
+       "caption_en": "We don't HAVE fries!"
+      },
+      {
+       "scene": "Duke gallops around the corner, tongue flapping, knocking over trash cans: \"GUYS! WAIT FOR ME!\"",
+       "speaker": "DUKE",
+       "caption_en": "GUYS! WAIT FOR ME!"
+      },
+      {
+       "scene": "Peanut stares, touched: \"The big guy came... through the scary city... alone?\"",
+       "speaker": "PEANUT",
+       "caption_en": "The big guy came… through the scary city… alone?"
+      },
+      {
+       "scene": "Behind Duke, Ms. Patty speeds up on a bicycle with her whistle: \"THERE you are!\"",
+       "speaker": "MS. PATTY",
+       "caption_en": "THERE you are!"
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Pup Squad — Part 4 (final)\n🐶 Four daycare dogs plan the great escape. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The three dogs run onto the sand as Ms. Patty chases them; Duke freezes: \"Sand! SAND! It's everywhere!\"",
+       "speaker": "DUKE",
+       "caption_en": "Sand! SAND! It's everywhere!"
+      },
+      {
+       "scene": "Luna pulls him forward gently: \"You crossed the whole city, Duke. You can handle sand.\"",
+       "speaker": "LUNA",
+       "caption_en": "You crossed the whole city, Duke. You can handle sand."
+      },
+      {
+       "scene": "Duke takes one step, then his eyes light up: \"It's... warm! It's AMAZING!\" He rolls in it happily.",
+       "speaker": "DUKE",
+       "caption_en": "It's… warm! It's AMAZING!"
+      },
+      {
+       "scene": "Peanut runs straight into a tiny wave and screams: \"WHO PUT WATER IN THE BEACH?!\"",
+       "speaker": "PEANUT",
+       "caption_en": "WHO PUT WATER IN THE BEACH?!"
+      },
+      {
+       "scene": "Ms. Patty arrives out of breath, then sees them all so happy and laughs: \"Okay... okay. Five minutes.\"",
+       "speaker": "MS. PATTY",
+       "caption_en": "Okay… okay. Five minutes."
+      },
+      {
+       "scene": "She kicks off her shoes and throws a ball into the waves: \"Go on, fetch!\"",
+       "speaker": "MS. PATTY",
+       "caption_en": "Go on, fetch!"
+      },
+      {
+       "scene": "At sunset all three dogs sit next to Ms. Patty wrapped in one towel; Peanut sighs: \"Best. Escape. Ever.\"",
+       "speaker": "PEANUT",
+       "caption_en": "Best. Escape. Ever."
+      },
+      {
+       "scene": "Duke wags his tail proudly: \"Same time next week?\" Ms. Patty blows her whistle, laughing: \"Absolutely not!\"",
+       "speaker": "DUKE",
+       "caption_en": "Same time next week?"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Stuck",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated comedy inside a small old wood-panelled elevator in a Cairo apartment building, flickering light, close dynamic camera moves; expressive cartoon humans whose mouths visibly move in sync when they speak, bumping into each other and reacting. Egyptian Arabic dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real brand logos, no real person likeness. Characters (keep identical): AM ABDELLATIF, the old building doorman with a big grey moustache, brown galabeya and a huge key ring; TANT NABILA, a dramatic middle-aged neighbour with big curly hair, gold bangles and a shopping bag full of vegetables; HOSSAM, a huge gym guy in a tight tank top who is secretly very scared; ZIZO, a smart 9-year-old boy with glasses and a backpack. ",
+   "first_slot": "2026-11-20 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Stuck — Part 1\n🛗 Four neighbours stuck in one elevator — Egyptian Arabic comedy. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The four squeeze into the tiny elevator; Tant Nabila complains: \"الأسانسير ده بيستحمل أربعة بالعافية!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "This elevator barely holds four people!"
+      },
+      {
+       "scene": "The elevator jerks and stops between floors with a loud clunk and the lights flicker; Hossam grabs the wall: \"إيه ده؟! وقفنا؟!\"",
+       "speaker": "HOSSAM",
+       "caption_en": "What?! Did we stop?!"
+      },
+      {
+       "scene": "Am Abdellatif shakes his huge key ring calmly: \"ما تقلقوش... ده بيعمل كده كل خميس.\"",
+       "speaker": "AM ABDELLATIF",
+       "caption_en": "Don't worry… it does this every Thursday."
+      },
+      {
+       "scene": "Hossam starts breathing fast, hugging the wall: \"أنا عندي فوبيا من الأماكن الضيقة!\"",
+       "speaker": "HOSSAM",
+       "caption_en": "I'm scared of tight spaces!"
+      },
+      {
+       "scene": "Zizo looks up from his book: \"حضرتك قد الباب يا كابتن... إزاي خايف؟\"",
+       "speaker": "ZIZO",
+       "caption_en": "You're as big as the door, captain… how are you scared?"
+      },
+      {
+       "scene": "Tant Nabila pulls out her phone: \"هكلم جوزي... مفيش شبكة! يا نهار أسود!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "I'll call my husband… no signal! Oh no!"
+      },
+      {
+       "scene": "Am Abdellatif presses the alarm button; it just plays a tiny tinny tune and everyone stares at him; he shrugs: \"ده... الإنذار.\"",
+       "speaker": "AM ABDELLATIF",
+       "caption_en": "That's… the alarm."
+      },
+      {
+       "scene": "The lights go completely dark; Hossam screams in a high voice: \"ماماااا!\"",
+       "speaker": "HOSSAM",
+       "caption_en": "Mommyyy!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Stuck — Part 2\n🛗 Four neighbours stuck in one elevator — Egyptian Arabic comedy. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "In the dark, Zizo turns on a small flashlight from his backpack: \"اهدوا... عندي كشاف.\"",
+       "speaker": "ZIZO",
+       "caption_en": "Calm down… I have a flashlight."
+      },
+      {
+       "scene": "Tant Nabila sits on her vegetable bag: \"هنفضل هنا لحد إمتى؟ عندي محشي على النار!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "How long will we be here? I have stuffed peppers on the stove!"
+      },
+      {
+       "scene": "Hossam's stomach growls loudly; he stares at her bag: \"هو... في محشي في الشنطة؟\"",
+       "speaker": "HOSSAM",
+       "caption_en": "Is there… stuffed peppers in the bag?"
+      },
+      {
+       "scene": "Tant Nabila hugs her bag protectively: \"دي خضار نية يا أستاذ!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "These are raw vegetables, sir!"
+      },
+      {
+       "scene": "Am Abdellatif tries every key on his giant ring in the control panel: \"واحد منهم لازم يفتح...\"",
+       "speaker": "AM ABDELLATIF",
+       "caption_en": "One of them has to open it…"
+      },
+      {
+       "scene": "Zizo notices something: \"يا عم عبد اللطيف... هو إنت ليه عندك مفتاح مكتوب عليه 'أسانسير'؟\"",
+       "speaker": "ZIZO",
+       "caption_en": "Am Abdellatif… why do you have a key labelled 'elevator'?"
+      },
+      {
+       "scene": "Am Abdellatif looks at the key, embarrassed: \"أه... ده ضاع مني من عشرين سنة.\"",
+       "speaker": "AM ABDELLATIF",
+       "caption_en": "Oh… I lost that twenty years ago."
+      },
+      {
+       "scene": "He puts it in the panel, the elevator shakes violently and drops a whole floor; everyone screams: \"آآآآه!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "Aaaah!"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Stuck — Part 3\n🛗 Four neighbours stuck in one elevator — Egyptian Arabic comedy. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "The elevator stops again with a thud; everyone is piled on top of Hossam: \"قوموا من عليا!\"",
+       "speaker": "HOSSAM",
+       "caption_en": "Get off me!"
+      },
+      {
+       "scene": "Tant Nabila's vegetables are everywhere; she picks up a cucumber like a weapon: \"مين اللي داس على الطماطم؟!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "Who stepped on the tomatoes?!"
+      },
+      {
+       "scene": "Zizo climbs on Hossam's shoulders and pushes the ceiling hatch open: \"فيه فتحة فوق!\"",
+       "speaker": "ZIZO",
+       "caption_en": "There's a hatch up here!"
+      },
+      {
+       "scene": "Hossam holds Zizo up, trembling but brave: \"أنا... أنا شايلك. متخافش.\"",
+       "speaker": "HOSSAM",
+       "caption_en": "I… I've got you. Don't be scared."
+      },
+      {
+       "scene": "Zizo peeks up the dark elevator shaft and freezes: \"في حد فوق...\"",
+       "speaker": "ZIZO",
+       "caption_en": "There's someone up there…"
+      },
+      {
+       "scene": "A cat's glowing eyes appear in the dark and it meows loudly; Hossam screams \"عفريت! عفريت!\" and drops Zizo into Tant Nabila's arms.",
+       "speaker": "HOSSAM",
+       "caption_en": "A ghost! A ghost!"
+      },
+      {
+       "scene": "The cat jumps down into the elevator and sits on Am Abdellatif's head; he smiles: \"دي بسبوسة... قطتي!\"",
+       "speaker": "AM ABDELLATIF",
+       "caption_en": "That's Basbousa… my cat!"
+      },
+      {
+       "scene": "Tant Nabila looks at the cat, then at everyone: \"يعني القطة عارفة تطلع... وإحنا لأ؟\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "So the cat knows how to get out… and we don't?"
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Stuck — Part 4 (final)\n🛗 Four neighbours stuck in one elevator — Egyptian Arabic comedy. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Zizo watches the cat and gets an idea: \"بسبوسة بتطلع من فين؟ لو مشينا وراها هنخرج!\"",
+       "speaker": "ZIZO",
+       "caption_en": "Where does Basbousa go? If we follow her, we get out!"
+      },
+      {
+       "scene": "Hossam lifts Zizo through the hatch, then Tant Nabila: \"يلا يا طنط... واحد اتنين تلاتة!\"",
+       "speaker": "HOSSAM",
+       "caption_en": "Come on, auntie… one, two, three!"
+      },
+      {
+       "scene": "Tant Nabila gets stuck halfway in the hatch, legs kicking: \"أنا مش هعدي من هنا! شيلوا الخضار!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "I won't fit through here! Take the vegetables!"
+      },
+      {
+       "scene": "The cat leads them across a beam to a small door on the next floor; Zizo pushes it open: \"الدور الخامس! إحنا برة!\"",
+       "speaker": "ZIZO",
+       "caption_en": "Fifth floor! We're out!"
+      },
+      {
+       "scene": "Last is Hossam, too big for the hatch; he looks down at the dark shaft, afraid: \"وأنا؟\"",
+       "speaker": "HOSSAM",
+       "caption_en": "And me?"
+      },
+      {
+       "scene": "Am Abdellatif pats his shoulder: \"إنت شلت الكل يا كابتن. دورك تخاف شوية وإحنا نشيلك.\"",
+       "speaker": "AM ABDELLATIF",
+       "caption_en": "You carried everyone, captain. Your turn to be scared and let us carry you."
+      },
+      {
+       "scene": "Everyone pulls together and Hossam pops out onto the landing; the whole building cheers from their doors: \"حمد الله على السلامة!\"",
+       "speaker": "TANT NABILA",
+       "caption_en": "Thank God you're safe!"
+      },
+      {
+       "scene": "At the end they all sit on the stairs eating Tant Nabila's stuffed peppers; the elevator dings behind them and opens perfectly. Everyone stares. Am Abdellatif: \"...ده بيعمل كده كل خميس.\"",
+       "speaker": "AM ABDELLATIF",
+       "caption_en": "…It does this every Thursday."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Night Shift",
+   "arabic": false,
+   "cast": "Vertical 9:16 stylized 3D animated hospital comedy on a busy night ward with beeping monitors, rolling gurneys and bright corridors, fast playful camera moves; expressive cartoon humans whose mouths visibly move in sync when they speak, reacting to each other. English dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real brand logos, no real person likeness, fictional hospital. Characters (keep identical): DR. BENJI, a lanky nervous first-day intern with big curly hair, oversized white coat and a stethoscope that keeps tangling; NURSE GLORIA, a tough, warm veteran nurse with purple scrubs, braids and reading glasses on a chain; MR. FIGGS, a cheeky 90-year-old patient with a bald head, bushy eyebrows and a hospital gown who keeps escaping in a wheelchair; DR. STONE, the strict silver-haired chief of surgery who never smiles. ",
+   "first_slot": "2026-11-24 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "Night Shift — Part 1\n🏥 One clumsy intern, one very long hospital night. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Dr. Benji rushes onto the ward at midnight, tripping over his coat: \"Dr. Benji, reporting for my first night shift!\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Dr. Benji, reporting for my first night shift!"
+      },
+      {
+       "scene": "Nurse Gloria looks him up and down: \"Honey, your stethoscope is on backwards.\"",
+       "speaker": "NURSE GLORIA",
+       "caption_en": "Honey, your stethoscope is on backwards."
+      },
+      {
+       "scene": "Dr. Stone walks past without stopping: \"One rule, intern. Do NOT lose a patient.\"",
+       "speaker": "DR. STONE",
+       "caption_en": "One rule, intern. Do NOT lose a patient."
+      },
+      {
+       "scene": "Benji salutes nervously: \"Absolutely! Never! Not on my watch!\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Absolutely! Never! Not on my watch!"
+      },
+      {
+       "scene": "He opens room 12: the bed is empty and the window is open. \"...Nurse Gloria? Where's Mr. Figgs?\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "…Nurse Gloria? Where's Mr. Figgs?"
+      },
+      {
+       "scene": "Gloria sighs deeply: \"Oh, he does this every night. He's ninety, and faster than you.\"",
+       "speaker": "NURSE GLORIA",
+       "caption_en": "Oh, he does this every night. He's ninety, and faster than you."
+      },
+      {
+       "scene": "Down the corridor, Mr. Figgs zooms past in a wheelchair, laughing: \"Catch me if you can, doc!\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "Catch me if you can, doc!"
+      },
+      {
+       "scene": "Benji sprints after him, sliding on the polished floor: \"Mr. Figgs! Please! It's my FIRST DAY!\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Mr. Figgs! Please! It's my FIRST DAY!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "Night Shift — Part 2\n🏥 One clumsy intern, one very long hospital night. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Benji chases the wheelchair into the hospital cafeteria: \"Mr. Figgs, you need to rest!\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Mr. Figgs, you need to rest!"
+      },
+      {
+       "scene": "Mr. Figgs grabs a pudding cup from the counter: \"Rest? I've rested for ninety years! I want pudding!\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "Rest? I've rested for ninety years! I want pudding!"
+      },
+      {
+       "scene": "Benji dives for the wheelchair and lands face-first in a tray of jelly: \"Got... nothing.\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Got… nothing."
+      },
+      {
+       "scene": "Mr. Figgs rolls into the elevator and waves as the doors close: \"Top floor, please!\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "Top floor, please!"
+      },
+      {
+       "scene": "Nurse Gloria appears behind Benji holding a walkie-talkie: \"He's heading to the roof. He always goes to the roof.\"",
+       "speaker": "NURSE GLORIA",
+       "caption_en": "He's heading to the roof. He always goes to the roof."
+      },
+      {
+       "scene": "Benji wipes jelly off his face: \"Why the roof?\" Gloria pauses: \"You'll see.\"",
+       "speaker": "NURSE GLORIA",
+       "caption_en": "You'll see."
+      },
+      {
+       "scene": "Dr. Stone's voice booms over the speaker: \"Dr. Benji. Report to my office. NOW.\"",
+       "speaker": "DR. STONE",
+       "caption_en": "Dr. Benji. Report to my office. NOW."
+      },
+      {
+       "scene": "Benji looks at the stairs, then at the office door, panicking: \"The roof or my career... the roof or my career...\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "The roof or my career… the roof or my career…"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "Night Shift — Part 3\n🏥 One clumsy intern, one very long hospital night. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Benji bursts onto the moonlit roof, out of breath: \"Mr. Figgs! There you are!\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Mr. Figgs! There you are!"
+      },
+      {
+       "scene": "Mr. Figgs sits quietly at the edge by a telescope, not running anymore: \"Shh. Look. The comet.\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "Shh. Look. The comet."
+      },
+      {
+       "scene": "Benji looks up at a glowing comet streaking across the sky: \"Whoa... that's beautiful.\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Whoa… that's beautiful."
+      },
+      {
+       "scene": "Mr. Figgs smiles softly: \"My wife and I watched it together, seventy years ago. It comes back tonight.\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "My wife and I watched it together, seventy years ago. It comes back tonight."
+      },
+      {
+       "scene": "Benji sits down beside him, his voice gentle now: \"So that's why you keep escaping.\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "So that's why you keep escaping."
+      },
+      {
+       "scene": "The roof door slams open; Dr. Stone stands there furious: \"Intern! You ignored a direct order!\"",
+       "speaker": "DR. STONE",
+       "caption_en": "Intern! You ignored a direct order!"
+      },
+      {
+       "scene": "Benji stands between Stone and Mr. Figgs, shaking but firm: \"Sir, my patient needed me more.\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Sir, my patient needed me more."
+      },
+      {
+       "scene": "Dr. Stone walks forward slowly... then sees the comet and stops, his stern face softening: \"...The Harlow Comet.\"",
+       "speaker": "DR. STONE",
+       "caption_en": "…The Harlow Comet."
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "Night Shift — Part 4 (final)\n🏥 One clumsy intern, one very long hospital night. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Dr. Stone sits down next to them, quietly: \"My father showed me this comet when I was a boy.\"",
+       "speaker": "DR. STONE",
+       "caption_en": "My father showed me this comet when I was a boy."
+      },
+      {
+       "scene": "Mr. Figgs nudges Stone with his elbow: \"See? Even the grumpy ones have hearts.\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "See? Even the grumpy ones have hearts."
+      },
+      {
+       "scene": "Nurse Gloria arrives with three pudding cups and blankets: \"Figured the whole team would end up here.\"",
+       "speaker": "NURSE GLORIA",
+       "caption_en": "Figured the whole team would end up here."
+      },
+      {
+       "scene": "They all watch the comet together as Mr. Figgs laughs happily: \"Best night in this hospital. Ever.\"",
+       "speaker": "MR. FIGGS",
+       "caption_en": "Best night in this hospital. Ever."
+      },
+      {
+       "scene": "At sunrise Dr. Stone stands and turns to Benji: \"Intern. You broke my rule.\"",
+       "speaker": "DR. STONE",
+       "caption_en": "Intern. You broke my rule."
+      },
+      {
+       "scene": "Benji gulps: \"Am I... fired?\"",
+       "speaker": "DR. BENJI",
+       "caption_en": "Am I… fired?"
+      },
+      {
+       "scene": "Dr. Stone almost smiles for the first time: \"You didn't lose a patient. You found one. See you tonight, Doctor.\"",
+       "speaker": "DR. STONE",
+       "caption_en": "You didn't lose a patient. You found one. See you tonight, Doctor."
+      },
+      {
+       "scene": "Benji cheers and trips over his coat again; Gloria catches him, laughing: \"Welcome to the night shift, honey.\"",
+       "speaker": "NURSE GLORIA",
+       "caption_en": "Welcome to the night shift, honey."
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "The Flying Hen",
+   "arabic": true,
+   "cast": "Vertical 9:16 stylized 3D animated comedy on a Cairo apartment rooftop with a chicken coop, pigeon tower, satellite dishes and laundry lines, golden sunset light over the city, lively camera moves; expressive cartoon birds whose beaks and mouths visibly move in sync when they speak, flapping and reacting to each other, plus one cartoon human. Egyptian Arabic dialogue spoken by the characters themselves, no narrator, no on-screen text or subtitles, original designs, no real brand logos, no real person likeness. Characters (keep identical): FARKHA, a plump determined white hen with a red flower on her head and big dreamy eyes; DEEK, a dramatic proud rooster with huge colourful tail feathers who thinks he's a singer; HAMAMA, a cool fast grey pigeon with sunglasses and a scarf; OM SAMIR, the round cheerful rooftop owner in a colourful house dress and headscarf with a bucket of feed. ",
+   "first_slot": "2026-11-28 07:03:00",
+   "parts": [
+    {
+     "part": 1,
+     "of": 4,
+     "caption": "The Flying Hen — Part 1\n🐔 A rooftop hen who dreams of flying — Egyptian Arabic comedy. Follow for Part 2!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "On the rooftop at sunset Farkha watches pigeons fly over Cairo: \"نفسي أطير زيهم... مرة واحدة بس.\"",
+       "speaker": "FARKHA",
+       "caption_en": "I wish I could fly like them… just once."
+      },
+      {
+       "scene": "Deek laughs loudly, puffing his feathers: \"فرخة بتطير؟ ده أنا الديك وما بطيرش!\"",
+       "speaker": "DEEK",
+       "caption_en": "A flying hen? I'm the rooster and I don't fly!"
+      },
+      {
+       "scene": "Hamama lands on the coop, lowering her sunglasses: \"مين اللي عايزة تطير؟\"",
+       "speaker": "HAMAMA",
+       "caption_en": "Who wants to fly?"
+      },
+      {
+       "scene": "Farkha jumps up excitedly: \"أنا! علميني يا حمامة! أرجوكي!\"",
+       "speaker": "FARKHA",
+       "caption_en": "Me! Teach me, Hamama! Please!"
+      },
+      {
+       "scene": "Hamama looks her up and down: \"إنتي... تقيلة شوية. بس ماشي. أول درس بكرة الفجر.\"",
+       "speaker": "HAMAMA",
+       "caption_en": "You're… a bit heavy. But fine. First lesson tomorrow at dawn."
+      },
+      {
+       "scene": "Om Samir comes up the stairs shaking the feed bucket: \"يا فراخ! العشا!\"",
+       "speaker": "OM SAMIR",
+       "caption_en": "Chickens! Dinner!"
+      },
+      {
+       "scene": "Farkha turns away from the feed: \"لأ... أنا عاملة رجيم. عشان الطيران.\"",
+       "speaker": "FARKHA",
+       "caption_en": "No… I'm on a diet. For flying."
+      },
+      {
+       "scene": "Deek and the other hens gasp in shock; Deek faints dramatically: \"فرخة مش بتاكل؟! الدنيا اتقلبت!\"",
+       "speaker": "DEEK",
+       "caption_en": "A hen that won't eat?! The world is upside down!"
+      }
+     ]
+    },
+    {
+     "part": 2,
+     "of": 4,
+     "caption": "The Flying Hen — Part 2\n🐔 A rooftop hen who dreams of flying — Egyptian Arabic comedy. Follow for Part 3!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Dawn; Hamama stands on the edge of the rooftop wall: \"الدرس الأول... افردي جناحاتك.\"",
+       "speaker": "HAMAMA",
+       "caption_en": "Lesson one… spread your wings."
+      },
+      {
+       "scene": "Farkha spreads her wings proudly, then flaps as hard as she can; she lifts one centimetre and drops: \"طرت؟ طرت؟!\"",
+       "speaker": "FARKHA",
+       "caption_en": "Did I fly? Did I fly?!"
+      },
+      {
+       "scene": "Hamama sighs: \"إنتي نطيتي يا حبيبتي.\"",
+       "speaker": "HAMAMA",
+       "caption_en": "You jumped, sweetie."
+      },
+      {
+       "scene": "Deek watches from the coop, singing loudly to distract: \"كوكوكوووو! مفيش فايدة!\"",
+       "speaker": "DEEK",
+       "caption_en": "Cock-a-doodle-doo! It's hopeless!"
+      },
+      {
+       "scene": "Farkha tries again from a satellite dish, flapping wildly, and crash-lands in the laundry: \"آآآه!\"",
+       "speaker": "FARKHA",
+       "caption_en": "Aaah!"
+      },
+      {
+       "scene": "Om Samir finds Farkha wrapped in a bedsheet like a ghost: \"يا خبر! الفرخة لابسة الملاية!\"",
+       "speaker": "OM SAMIR",
+       "caption_en": "Oh my! The hen is wearing the bedsheet!"
+      },
+      {
+       "scene": "Farkha peeks out of the sheet with a new idea sparkling in her eyes: \"ملاية... كبيرة... ريح...\"",
+       "speaker": "FARKHA",
+       "caption_en": "A sheet… big… wind…"
+      },
+      {
+       "scene": "Hamama slowly lowers her sunglasses, understanding: \"لأ... إنتي ناوية على إيه؟\"",
+       "speaker": "HAMAMA",
+       "caption_en": "No… what are you planning?"
+      }
+     ]
+    },
+    {
+     "part": 3,
+     "of": 4,
+     "caption": "The Flying Hen — Part 3\n🐔 A rooftop hen who dreams of flying — Egyptian Arabic comedy. Follow for Part 4!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Farkha and Hamama secretly tie the bedsheet to a basket like a parachute: \"الملاية دي هتطيرني!\"",
+       "speaker": "FARKHA",
+       "caption_en": "This sheet will make me fly!"
+      },
+      {
+       "scene": "Deek sees them and gasps: \"إنتي مجنونة! ده الدور العاشر!\"",
+       "speaker": "DEEK",
+       "caption_en": "You're crazy! This is the tenth floor!"
+      },
+      {
+       "scene": "A strong wind gust fills the sheet; the basket lifts off with Farkha inside: \"أنا طاايرة!\"",
+       "speaker": "FARKHA",
+       "caption_en": "I'm flyyying!"
+      },
+      {
+       "scene": "Farkha floats over the Cairo rooftops, amazed as pigeons fly beside her: \"الدنيا حلوة أوي من فوق!\"",
+       "speaker": "FARKHA",
+       "caption_en": "The world is so beautiful from up here!"
+      },
+      {
+       "scene": "The wind grows stronger and blows her far away; Farkha's smile disappears: \"استنى... أنا رايحة فين؟\"",
+       "speaker": "FARKHA",
+       "caption_en": "Wait… where am I going?"
+      },
+      {
+       "scene": "On the roof Deek panics, flapping in circles: \"فرخة! ارجعي! إنتي أحلى فرخة في السطح!\"",
+       "speaker": "DEEK",
+       "caption_en": "Farkha! Come back! You're the prettiest hen on the roof!"
+      },
+      {
+       "scene": "Hamama takes off her sunglasses seriously: \"لازم نلحقها.\"",
+       "speaker": "HAMAMA",
+       "caption_en": "We have to catch her."
+      },
+      {
+       "scene": "Deek looks at his wings, then at the sky, terrified: \"أنا... ما بطيرش.\" Hamama: \"النهارده هتطير.\"",
+       "speaker": "DEEK",
+       "caption_en": "I… don't fly."
+      }
+     ]
+    },
+    {
+     "part": 4,
+     "of": 4,
+     "caption": "The Flying Hen — Part 4 (final)\n🐔 A rooftop hen who dreams of flying — Egyptian Arabic comedy. THE END. Follow for the next series!\n\nMade with AI",
+     "beats": [
+      {
+       "scene": "Deek stands on the rooftop edge, shaking: \"عشانها... هعملها!\" He jumps and flaps with all his heart.",
+       "speaker": "DEEK",
+       "caption_en": "For her… I'll do it!"
+      },
+      {
+       "scene": "Deek actually glides, wobbling through the air next to Hamama: \"أنا بطير! أنا بطيييير!\"",
+       "speaker": "DEEK",
+       "caption_en": "I'm flying! I'm flyyying!"
+      },
+      {
+       "scene": "They reach Farkha's basket as the sheet tears; Farkha screams: \"الملاية بتتقطع!\"",
+       "speaker": "FARKHA",
+       "caption_en": "The sheet is tearing!"
+      },
+      {
+       "scene": "Deek grabs the basket with his feet while Hamama pulls the rope: \"امسكي فيا!\"",
+       "speaker": "DEEK",
+       "caption_en": "Hold on to me!"
+      },
+      {
+       "scene": "They glide down together and land softly back on the roof in a pile of feathers; Om Samir runs up: \"يا ولاد! كنتوا فين؟!\"",
+       "speaker": "OM SAMIR",
+       "caption_en": "Kids! Where were you?!"
+      },
+      {
+       "scene": "Farkha looks at Deek, touched: \"إنت طرت... عشاني؟\"",
+       "speaker": "FARKHA",
+       "caption_en": "You flew… for me?"
+      },
+      {
+       "scene": "Deek fluffs his feathers, embarrassed: \"كنت بتمرن بس... بس أه. عشانك.\"",
+       "speaker": "DEEK",
+       "caption_en": "I was just practising… but yes. For you."
+      },
+      {
+       "scene": "At sunset the three sit on the rooftop wall looking at Cairo; Farkha smiles: \"مش مهم أطير... المهم مين جنبي.\" Hamama laughs: \"وبكرة درس تاني!\"",
+       "speaker": "FARKHA",
+       "caption_en": "Flying doesn't matter… what matters is who's beside me."
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

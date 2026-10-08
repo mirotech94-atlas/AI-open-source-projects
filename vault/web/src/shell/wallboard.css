@@ -1,0 +1,189 @@
+/* The wallboard overlay. Read from across a room, so the figures are the whole
+   design: very large tabular numerals, one tone each, and nothing else
+   competing for the eye. Tones come from the shared `.g-tone-*` hooks
+   (`design/primitives.css`), never from raw hex — `tests/contrast.test.ts`
+   checks the tokens and this view has to ride on that same guarantee. */
+
+.g-wallboard {
+  position: fixed;
+  inset: 0;
+  /* Above the chat popover and the mobile tab bar, below nothing: while the
+     wallboard is up it IS the page. */
+  z-index: 90;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.g-wallboard-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.g-wallboard-title {
+  margin: 0;
+  font-size: clamp(18px, 2.2vw, 28px);
+  font-weight: 600;
+}
+
+.g-wallboard-title b {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+.g-wallboard-meta,
+.g-wallboard-clock {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Pushes the close control to the far end on a wide screen and lets it fall in
+   line on a phone, without a media query. */
+.g-wallboard-clock {
+  margin-left: auto;
+}
+
+/* Sits next to the close button, same weight. Healthy recedes: this is a
+   setting, not a status, so it stays muted until it is on. */
+.g-wallboard-speak {
+  border: 0; background: none; cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 1.25rem; line-height: 1; padding: 0.25rem 0.5rem;
+}
+.g-wallboard-speak[aria-pressed="true"] { color: var(--color-text); }
+
+.g-wallboard-close {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.g-wallboard-close:hover {
+  border-color: var(--color-primary);
+}
+
+.g-wallboard-close kbd {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+}
+
+.g-wallboard-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* `minmax(0, …)` on the min side of auto-fit is what keeps a 375px phone from
+     scrolling sideways: at 240px the track would be wider than the padded
+     viewport. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-4);
+}
+
+.g-wallboard-tile {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--tone);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.g-wallboard-tile-label {
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.g-wallboard-tile-value {
+  /* The point of the whole view. Scales with the display rather than a fixed
+     54px, so the same markup reads on a phone and on a 4K panel. */
+  font-size: clamp(34px, 5vw, 68px);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--tone-text);
+  overflow-wrap: anywhere;
+}
+
+.g-wallboard-tile.g-tone-plain .g-wallboard-tile-value {
+  color: var(--color-text);
+}
+
+.g-wallboard-tile-value small {
+  font-size: var(--font-size-md);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.g-wallboard-alerts h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-lg);
+}
+
+.g-wallboard-quiet {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--color-good-text);
+}
+
+.g-wallboard-alert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-wallboard-alert {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-3);
+  border-left: 4px solid var(--tone);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font-size: clamp(15px, 1.4vw, 20px);
+  min-width: 0;
+}
+
+.g-wallboard-sev {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  color: var(--tone-text);
+  flex: none;
+}
+
+.g-wallboard-alert-title {
+  overflow-wrap: anywhere;
+}
+
+.g-wallboard-alert-entity {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}

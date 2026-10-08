@@ -1,0 +1,31 @@
+.superpowers/
+.env
+*.db
+*.db-journal
+__pycache__/
+*.pyc
+.venv
+node_modules/
+dist/
+state/
+data/
+*.egg-info/
+.pytest_cache/
+sensor/.venv
+build/
+
+# Design handoff working copies — large prototypes, not app source.
+.design/
+# Local Stripe sandbox env for .claude/launch.json's hub-sandbox; carries an sk_test_ key.
+.env.*
+# The local Stripe-sandbox hub's database (.claude/launch.json -> hub-sandbox).
+# `*.db` above catches guardian.db but not SQLite's -wal/-shm siblings, so the
+# directory sat untracked in every `git status` on this shared checkout --
+# noise that makes a peer's real dirty files harder to see.
+data-sandbox/
+
+# Native worktrees the desktop app creates for isolated sessions. Each one is a
+# full checkout with its own .git file, so leaving one untracked means every
+# `git status` on the shared checkout prints it -- the same noise data-sandbox/
+# above was hiding a peer's real dirty files behind.
+.claude/worktrees/

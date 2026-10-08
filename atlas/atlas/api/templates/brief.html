@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "_health.html" as h %}
+{% block title %}Morning brief — ATLAS{% endblock %}
+{% block body %}
+  <p class="asof">Built {{ brief.at.strftime('%A %d %B, %H:%M') }}Z · every figure read at build time</p>
+
+  {% if brief.watch_only %}
+  <p class="watch-only">Watch-only. ATLAS is reporting, not acting — nothing below was
+  carried out.</p>
+  {% endif %}
+
+  {% for section in brief.sections %}
+  <div class="panel">
+    <h2 class="label">{{ section.title }}</h2>
+    {% if section.unavailable %}
+      <p class="unavailable">Could not check: {{ section.unavailable }}</p>
+    {% elif not section.lines %}
+      <p class="empty">{{ section.empty }}</p>
+    {% else %}
+      <ul class="rows">{% for line in section.lines %}<li>{{ line }}</li>{% endfor %}</ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% endblock %}

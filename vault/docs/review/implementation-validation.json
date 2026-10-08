@@ -1,0 +1,44 @@
+{
+  "date": "2026-09-15",
+  "branch": "codex/guardian-improvements",
+  "production_changed": false,
+  "web": {
+    "files": 52,
+    "passed": 529
+  },
+  "sensor": {
+    "passed": 103
+  },
+  "hub_focused": {
+    "passed": 24
+  },
+  "hub_other_successful_runs": {
+    "overview_topology": 43,
+    "assets_security": 67,
+    "slack_settings": 46,
+    "scheduled_updates": 8,
+    "camera_contracts": 9,
+    "watcher_integration_boundaries": 57
+  },
+  "counts_overlap": true,
+  "typescript": "passed",
+  "build": "passed; existing large-chunk advisory",
+  "sqlite_migration_roundtrip": "passed; legacy queue and tenant indexes verified",
+  "browser": {
+    "widths": [
+      320,
+      390
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "page_overflow_at_320": false,
+    "dns_exception_end_to_end": "passed; allowed query observed, exception then removed"
+  },
+  "live_hardware_tested": false,
+  "schema_parity": {
+    "status": "passed",
+    "shared_types": 160
+  }
+}

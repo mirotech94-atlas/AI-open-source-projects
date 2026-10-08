@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the ATLAS restore drill weekly, after Sunday's backup
+
+[Timer]
+# The backup timer fires 06:20 UTC daily; the drill takes the newest dump.
+OnCalendar=Sun *-*-* 07:30:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+
+[Install]
+WantedBy=timers.target

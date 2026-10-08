@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Pre-paint theme boot. Must stay the first script in <head>, before any
+         stylesheet or module. See web/public/theme-boot.js for why it is a file. -->
+    <script src="/theme-boot.js"></script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=vault" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Installable so a repair can be approved from a phone at 2am without
+         finding a laptop. The service worker it registers caches nothing on
+         purpose — see web/public/sw.js. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#1257c4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Vault" />
+    <title>Vault</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

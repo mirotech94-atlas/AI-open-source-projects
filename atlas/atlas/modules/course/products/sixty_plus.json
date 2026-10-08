@@ -1,0 +1,113 @@
+{
+  "source": "ATLAS Vault/Products/AI for Every Age/seniors/, copied 2026-09-29. Every hook, line and blog section is a verbatim excerpt of the lesson file named beside it (bold marks dropped from hooks and lines); the server cannot read the vault.",
+  "hashtags": "#scamawareness #aisafety #largeprint",
+  "lessons": [
+    {
+      "id": "0.2",
+      "title": "Who can use which AI",
+      "hook": "You will learn the age rules for four AI tools, and fill in a chart for the people in your home.",
+      "line": "Never make an account for someone else, and never share yours. If anyone asks you to, say no.",
+      "source": "Products/AI for Every Age/seniors/Lesson 0.2 - Who can use which AI.md"
+    },
+    {
+      "id": "2.6",
+      "title": "Remove private details before you paste",
+      "hook": "You will clean up a message before you give it to Claude, by taking out names, numbers, health and money details, and passwords.",
+      "line": "If you cannot remove the private details, do not paste it. Ask a person you trust instead.",
+      "source": "Products/AI for Every Age/seniors/Lesson 2.6 - Remove private details before you paste.md"
+    },
+    {
+      "id": "3.1",
+      "title": "Create your Claude account",
+      "hook": "You will set up your own Claude account on your own phone, and ask it one test question.",
+      "line": "Claude never asks you to create a password. If a message asks for your \"Claude password,\" it's a scam.",
+      "source": "Products/AI for Every Age/seniors/Lesson 3.1 - Create your Claude account.md"
+    },
+    {
+      "id": "3.4",
+      "title": "Privacy, memory and incognito",
+      "hook": "You will find the setting that controls whether your chats help train Claude, and learn what memory and incognito chats do.",
+      "line": "Settings help, but the best privacy is not typing private details in the first place.",
+      "source": "Products/AI for Every Age/seniors/Lesson 3.4 - Privacy, memory and incognito.md"
+    },
+    {
+      "id": "4.4",
+      "title": "Health and money, know the limits",
+      "hook": "You will use Claude to write good questions for your doctor or pharmacist, and learn what AI must never decide for you.",
+      "line": "Use AI for questions, never for diagnoses, medicine changes, or money decisions.",
+      "source": "Products/AI for Every Age/seniors/Lesson 4.4 - Health and money, know the limits.md"
+    },
+    {
+      "id": "4.5",
+      "title": "Explain this letter",
+      "hook": "You will take a photo of a confusing letter, with the numbers covered, and get a plain-English summary from Claude.",
+      "line": "Cover names and numbers before you take the photo, and check every date and amount against the real letter.",
+      "source": "Products/AI for Every Age/seniors/Lesson 4.5 - Explain this letter.md"
+    },
+    {
+      "id": "6.1",
+      "title": "What never goes into an AI",
+      "hook": "You will sort information into three piles: never, with care, and fine.",
+      "line": "Never type Social Security numbers, account numbers, passwords, medical records, or children's names, photos or schools into any AI.",
+      "source": "Products/AI for Every Age/seniors/Lesson 6.1 - What never goes into an AI.md"
+    },
+    {
+      "id": "6.2",
+      "title": "Voice-clone and family emergency scams",
+      "hook": "You will pick a family safe word, and practice hanging up and calling back.",
+      "line": "If a \"family emergency\" call asks for money, hang up and call back on a number you already know.",
+      "source": "Products/AI for Every Age/seniors/Lesson 6.2 - Voice-clone and family emergency scams.md"
+    },
+    {
+      "id": "6.3",
+      "title": "Deepfakes, seeing is not believing",
+      "hook": "You will check a surprising picture or video by using a second, separate source.",
+      "line": "Before you believe or share something surprising, confirm it with a second source you found yourself.",
+      "source": "Products/AI for Every Age/seniors/Lesson 6.3 - Deepfakes, seeing is not believing.md"
+    },
+    {
+      "id": "6.7",
+      "title": "If it happens, report and recover",
+      "hook": "You will fill in an \"If it happens\" card, so you know who to call if a scam gets through.",
+      "line": "Anyone who promises to \"recover\" your lost money for a fee is almost always another scammer.",
+      "source": "Products/AI for Every Age/seniors/Lesson 6.7 - If it happens, report and recover.md"
+    }
+  ],
+  "blog": {
+    "title": "Safe and Simple AI 60+: a large-print guide to Claude",
+    "meta": "Lessons from Safe and Simple AI 60+, word for word: setting up Claude on your phone, what never goes into an AI, and what to do if a scam gets through.",
+    "sections": [
+      {
+        "lesson": "3.1",
+        "heading": "Setting up Claude on your own phone",
+        "text": "Claude is a helper you can type or talk to. It is made by a company called Anthropic.\n\nAn account is your own private space. Your chats are kept there. You can go back and read an old chat later, just like an old letter.\n\nThe account must be yours. You must be 18 or older. You use your own email and your own phone. Nobody else should use your account. You should not set one up for someone else.\n\nHere is the most important thing in this lesson.\n\n**Claude never asks you to create a password.**\n\nThere is no Claude password. You sign in with your email, or with your Google account. If you choose Google, you may type your Google password, on Google's own page. That is the only password you might type to sign in to Claude. If a message ever asks for your \"Claude password,\" it is a scam. Delete it. Do not reply.\n\nThe free plan is enough for this whole course. You do not need a credit card.",
+        "source": "Products/AI for Every Age/seniors/Lesson 3.1 - Create your Claude account.md"
+      },
+      {
+        "lesson": "6.1",
+        "heading": "What never goes into an AI",
+        "text": "When you type into an AI, your words leave your phone. They go to the company that runs it. They are kept there, at least for a while.\n\nMost of what you type is harmless. A recipe. A question about the weather. A shopping list.\n\nBut some things should never go in. If they leak, or if you type them into a fake app, a scammer can use them. They can empty an account. They can pretend to be you.\n\nSo we use three piles.\n\n**Never.** These never go into any AI, ever:\n\n- Social Security numbers\n- Bank, card and account numbers\n- Passwords and the codes sent to your phone\n- Medical records\n- Children's names, photos and schools\n\n**With care.** These are sometimes fine, if you take out the details first:\n\n- A letter from your doctor's office, with your name and numbers covered\n- A question about a medicine, without your name\n- Your street, only if the task truly needs it\n\n**Fine.** These are safe to type:\n\n- Recipes, shopping lists, gardening questions\n- \"Explain this word to me\"\n- A made-up example\n\nWhen in doubt, leave it out. Claude can still help. It does not need your real details to explain something.",
+        "source": "Products/AI for Every Age/seniors/Lesson 6.1 - What never goes into an AI.md"
+      },
+      {
+        "lesson": "4.5",
+        "heading": "Explain this letter",
+        "text": "Bills, notices and leaflets can be hard to read. The print is small. The words are formal. It is not clear what you need to do.\n\nClaude can read a photo of a letter and explain it simply. It can tell you what the letter is about, what you need to do, and by when.\n\nTwo things keep this safe.\n\n**Cover the private details first.** Before you take the photo, cover your name, address, and any account, ID or policy numbers. Use a sticky note or a folded piece of paper. Claude does not need them to explain the letter.\n\n**Check the answer against the letter.** Claude can misread a photo or get a date wrong. So always look at the real letter to confirm any date, amount or instruction.\n\nOne more thing. If a letter asks for money, or asks you to call a number, do not use the number in the letter until you are sure it is real. Call a number you already know for that company, such as the one on an old bill.",
+        "source": "Products/AI for Every Age/seniors/Lesson 4.5 - Explain this letter.md"
+      },
+      {
+        "lesson": "6.7",
+        "heading": "If a scam gets through",
+        "text": "Scams catch careful, clever people every day. If it happens to you, it is not your fault. The people who did it are criminals. They do this all day.\n\nThe most important thing is to act fast. The sooner your bank knows, the better your chances of getting money back.\n\nHere is who helps, and what they do:\n\n- **Your bank.** Call the number on the back of your card. Ask them to stop or reverse the payment. Ask them to watch your account.\n- **The FTC** (Federal Trade Commission). Report the scam at **ReportFraud.ftc.gov**. This helps stop scammers and warn others.\n- **The FBI.** Report online scams at **ic3.gov**. This is the FBI's Internet Crime Complaint Center.\n- **The Elder Fraud Hotline.** Call **(833) 372-8311**. The line is open Monday to Friday, 10 a.m. to 6 p.m. Eastern Time. They help people 60 and over file a report.\n- **The three credit bureaus.** Ask Equifax, Experian and TransUnion for a credit freeze. It is free. It stops anyone opening new accounts in your name.\n- **Your family.** Tell someone you trust. Scammers count on shame to keep you quiet.\n\nIf your identity was stolen, you can also go to **IdentityTheft.gov**.\n\nYou are not alone. In 2025, people 60 and over sent the FBI 201,266 fraud complaints.",
+        "source": "Products/AI for Every Age/seniors/Lesson 6.7 - If it happens, report and recover.md"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "text": "Every step is one action on its own line, followed by a shaded \"What you should see\" box.",
+      "source": "Products/AI for Every Age/Sales page.md"
+    }
+  ],
+  "quotes": []
+}

@@ -1,0 +1,122 @@
+/* ATLAS HUD — the single source of truth for how state looks.
+ *
+ * Imported by the Vite bundle AND inlined into the server-rendered pages, so
+ * the two surfaces cannot drift apart on the one thing that must not drift:
+ * how a health state reads.
+ *
+ * The governing rule of this interface: in a dark cyan HUD everything looks
+ * alive by default, and that is exactly the trap. Light is reserved for things
+ * ATLAS actually measured. A check that could not run is grey, unlit, flat, and
+ * says UNKNOWN. It never glows, never pulses, and never borrows a live colour.
+ */
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/fonts/JetBrainsMono-Bold.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+
+:root {
+  --bg:        #05080c;
+  --panel:     #070c12;
+  --raised:    #0a1119;
+  --line:      #13303a;
+  --line-soft: #0e2029;
+
+  --text:      #b8d4dd;
+  --text-dim:  #6f8f9b;
+  --text-faint:#47616b;
+  --text-hot:  #e8fbff;
+
+  /* Primary. Used for live, measured, working things — and nothing else. */
+  --cyan:      #22d3ee;
+  --cyan-dim:  #0e7490;
+  --cyan-glow: rgba(34, 211, 238, .30);
+
+  --amber:     #f59e0b;
+  --amber-glow:rgba(245, 158, 11, .28);
+  --red:       #ef4444;
+  --red-glow:  rgba(239, 68, 68, .32);
+
+  /* UNKNOWN. Deliberately the only state with no glow variable — there is no
+   * lit version of "I could not measure this". */
+  --grey:      #64748b;
+
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
+
+  /* Spacing. Not a grid: these are the five lengths the interface actually
+   * repeats, named so the design system and the code agree on them. Match an
+   * existing component before reaching for a step. */
+  --space-1: 2px;   /* the health rail, waveform bars, the nav's active edge */
+  --space-2: 6px;   /* every status dot — always a 6px square, never a circle */
+  --space-3: 9px;   /* vertical padding on the top bar, bottom bar, panel headers */
+  --space-4: 12px;  /* panel body padding, the command centre's column gap */
+  --space-5: 18px;  /* horizontal padding on the top bar and main; the status grid gap */
+}
+
+/* --- state colour ---------------------------------------------------------
+ * Every state carries its word. Colour never carries the meaning alone.
+ */
+[data-health="ok"]       { --state: var(--cyan);  --state-glow: var(--cyan-glow); }
+[data-health="degraded"] { --state: var(--amber); --state-glow: var(--amber-glow); }
+[data-health="failing"]  { --state: var(--red);   --state-glow: var(--red-glow); }
+/* No glow. This is the whole point. */
+[data-health="unknown"]  { --state: var(--grey);  --state-glow: transparent; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 3px 9px; border: 1px solid var(--state); color: var(--state);
+  background: color-mix(in srgb, var(--state) 8%, transparent);
+  box-shadow: 0 0 10px var(--state-glow), inset 0 0 12px var(--state-glow);
+  white-space: nowrap;
+}
+.badge-dot { width: var(--space-2); height: var(--space-2);
+             background: var(--state); flex: none; }
+
+/* UNKNOWN: unlit, dashed, hollow. Three structural differences from every
+ * other state, none of which is only a colour. */
+.badge[data-health="unknown"] {
+  border-style: dashed; box-shadow: none;
+  background: transparent; opacity: .82;
+}
+.badge[data-health="unknown"] .badge-dot {
+  background: transparent; border: 1px solid var(--grey);
+}
+
+.rail {
+  display: block; width: var(--space-1); align-self: stretch; min-height: 100%;
+  background: var(--state); box-shadow: 0 0 8px var(--state-glow);
+}
+.rail[data-health="unknown"] {
+  box-shadow: none;
+  background: repeating-linear-gradient(
+    180deg, var(--grey) 0 3px, transparent 3px 7px);
+}
+
+.sev { font-family: var(--mono); font-size: 10.5px; font-weight: 700;
+       letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+.sev[data-sev="0"] { color: var(--text-faint); }
+.sev[data-sev="1"] { color: var(--text-dim); }
+.sev[data-sev="2"] { color: var(--amber); }
+.sev[data-sev="3"] { color: var(--red); }
+
+/* --- motion ---------------------------------------------------------------
+ * Nothing moves unless something is happening. A HUD that animates while idle
+ * teaches you to ignore movement, which is the one signal worth keeping.
+ */
+@keyframes atlas-pulse { 0%, 100% { opacity: 1 } 50% { opacity: .55 } }
+.live { animation: atlas-pulse 2.4s ease-in-out infinite; }
+/* Never applied to unknown: an unlit thing has nothing to pulse about. */
+.live[data-health="unknown"] { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .live { animation: none; }
+}

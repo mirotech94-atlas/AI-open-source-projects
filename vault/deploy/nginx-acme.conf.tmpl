@@ -1,0 +1,13 @@
+# Port-80 block for Guardian's own hostnames.
+#
+# Installed before any certificate exists, because the certificate authority
+# validates over plain HTTP on port 80. It stays in place afterwards so
+# unattended renewals keep working; everything that is not a challenge is
+# sent to HTTPS.
+server {
+  listen 80;
+  listen [::]:80;
+  server_name __NAMES__;
+  location /.well-known/acme-challenge/ { root /var/www/acme; }
+  location / { return 301 https://$host$request_uri; }
+}

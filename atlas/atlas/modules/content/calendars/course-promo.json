@@ -1,0 +1,347 @@
+{
+ "source": "ATLAS Vault/Products/Build a Safe AI Operator/Outline.md, copied 2026-09-29 (Miro's course; the server cannot read the vault)",
+ "product": {
+  "title": "The AI That Can't Burn Your Business: Build a Safe AI Operator",
+  "short": "Build a Safe AI Operator",
+  "url": "https://shop.mapfront.io/safe-ai-operator/",
+  "store": "https://shop.mapfront.io",
+  "blog": "https://atlasacademy-ai.myshopify.com/blogs/news/5-things-my-ai-agent-will-never-do-even-if-i-beg-it",
+  "price_json": "https://shop.mapfront.io/catalog.json",
+  "slug": "safe-ai-operator",
+  "shopify_url": "https://atlasacademy-ai.myshopify.com/products/build-a-safe-ai-operator-the-course",
+  "note": "Repointed 2026-10-01 from the Shopify listing to ATLAS Academy (shop.mapfront.io), the store every bio now links to. The price is read from the store's public catalog.json."
+ },
+ "images": [
+  "1-cover.jpg",
+  "2-eight-rules.jpg",
+  "3-whats-inside.jpg"
+ ],
+ "lessons": [
+  {
+   "id": "0.1",
+   "title": "The week-one failure",
+   "hook": "I gave my AI agent my bank login on day one. Here's why you shouldn't.",
+   "line": "Most agent projects fail because the agent gets hands before it has eyes."
+  },
+  {
+   "id": "1.1",
+   "title": "Collectors only read",
+   "hook": "My AI watched my business for two weeks before it was allowed to touch anything.",
+   "line": "Your first collector only reads: is the website up, how full is the inbox, what sold today."
+  },
+  {
+   "id": "1.2",
+   "title": "Unknown is not OK",
+   "hook": "The worst bug an AI agent can have is saying everything's fine.",
+   "line": "A check that can't run says unknown, grey and dashed, never green."
+  },
+  {
+   "id": "2.1",
+   "title": "Fresh reads",
+   "hook": "Ask your AI how much you made today. Mine refuses to guess.",
+   "line": "Every figure is read now, from the source, with the time it was read."
+  },
+  {
+   "id": "3.1",
+   "title": "The model picks names, not code",
+   "hook": "My AI can't run code. That's why I trust it.",
+   "line": "The model chooses from a list of actions. It can't write a shell command or a query."
+  },
+  {
+   "id": "4.2",
+   "title": "Things that are never allowed",
+   "hook": "There are five things my AI will never do, even if I beg it.",
+   "line": "Moving money, changing DNS, deleting, revoking keys and rewriting its own code are never allowed."
+  },
+  {
+   "id": "5.2",
+   "title": "Silence is never consent",
+   "hook": "My AI asked me something and I ignored it. Here's what it did: nothing.",
+   "line": "Unanswered requests expire. They never run on a timeout."
+  },
+  {
+   "id": "6.1",
+   "title": "Prompt injection in the wild",
+   "hook": "This email tried to take over my AI. It failed.",
+   "line": "Emails, web pages and comments can try to give your agent orders. Mine treats them as data."
+  },
+  {
+   "id": "8.1",
+   "title": "Guard the machine your agent lives on",
+   "hook": "Who watches my AI? Another AI that can't act.",
+   "line": "A second watcher keeps an eye on the network the agent runs on, and it can only report."
+  },
+  {
+   "id": "p.1",
+   "title": "Clipping, made easier",
+   "hook": "I stopped clipping streams by hand. My agent cuts the moment, captions it and queues it.",
+   "line": "A clipping campaign has rules; the agent reads them first, cuts to them, and never posts what it can't verify."
+  },
+  {
+   "id": "p.2",
+   "title": "AI consultant, not AI agency",
+   "hook": "Don't sell an AI agency. Build one operator a client can watch, and show the receipts.",
+   "line": "A consultant hands over one system with eyes before hands; an agency promises hands it can't control."
+  },
+  {
+   "id": "p.3",
+   "title": "How to use Claude correctly",
+   "hook": "Claude isn't a chatbot. It's a worker that needs a closed menu of actions.",
+   "line": "Give it the names of what it may do, validate every argument, and let it answer unknown."
+  },
+  {
+   "id": "p.4",
+   "title": "AI automation, made easier",
+   "hook": "Four systems run my business while I sleep: a watcher, a picker, a gate and a log.",
+   "line": "Watch first, pick from a closed list, ask before acting, write everything down."
+  },
+  {
+   "id": "p.5",
+   "title": "Converting your website, made easier",
+   "hook": "Your website doesn't need a chatbot. It needs an agent that asks before it answers a customer.",
+   "line": "It drafts the reply, shows you the dry run, and nothing leaves until you tap yes."
+  },
+  {
+   "id": "p.6",
+   "title": "YouTube Shorts, made easier",
+   "hook": "I don't upload Shorts by hand. An agent queues them, and it can't post what failed a check.",
+   "line": "Every post goes through one door, with a gate before it and a record after it."
+  },
+  {
+   "id": "p.7",
+   "title": "An AI course, made easier",
+   "hook": "Most AI courses teach prompts. This one teaches what your agent must never be able to do.",
+   "line": "Twenty-eight lessons, an exercise in each, and a starter agent with its tests passing."
+  }
+ ],
+ "promo_note": "p.* lessons: Miro's reference hooks (Instagram, 2026-10-01: 'clipping easier' Dd5AZGCtYsg, 'AI consultant not agency' Db3XbXROHbm, 'how to use Claude correctly' Ddy5N9Gmt1U, 'AI automation easier' DcSzjwxh9N_; p.5-p.7 added 2026-10-05 for his 'converting your website', 'YouTube Shorts easier' and 'AI course easier' formats). Same rules as every lesson: no income claim, the course's own ideas, CTA the store.",
+ "products": [
+  {
+   "slug": "sell-with-ai",
+   "price_slug": "sell-with-ai-ebook",
+   "title": "Sell With AI",
+   "short": "Sell With AI",
+   "url": "https://shop.mapfront.io/sell-with-ai/",
+   "store": "https://shop.mapfront.io",
+   "price_json": "https://shop.mapfront.io/catalog.json",
+   "images": [
+    "../academy/assets/covers/sell-with-ai.jpg",
+    "../academy/assets/covers/sell-with-ai.jpg",
+    "../academy/assets/covers/sell-with-ai.jpg"
+   ],
+   "lessons": [
+    {
+     "id": "0.2",
+     "title": "The ground rules",
+     "hook": "Eight rules I follow before I let AI sell anything for me.",
+     "line": "Never guess a number, permission in writing, drafts before sends, and money out is always your own click."
+    },
+    {
+     "id": "1.2",
+     "title": "Permission first, and where to find it",
+     "hook": "Clipping a streamer without a campaign is how a channel gets deleted.",
+     "line": "No campaign, no clip: cut only footage the owner has put up for clippers, with the rules page saved."
+    },
+    {
+     "id": "1.3",
+     "title": "Reading a campaign's rules",
+     "hook": "Most rejected clips are good clips that broke a rule nobody read.",
+     "line": "Fill in one card per campaign: source, platforms, length, required tags, draft step, how to claim."
+    },
+    {
+     "id": "1.4",
+     "title": "Finding the moments",
+     "hook": "I don't watch three hours of stream. I read a transcript and judge a short list.",
+     "line": "A model proposes moments with exact first and last lines; you keep the ones that start clean and end."
+    },
+    {
+     "id": "1.5",
+     "title": "Cutting, captions and formats",
+     "hook": "If your clip doesn't make sense with the sound off, it doesn't work.",
+     "line": "Vertical, short caption lines inside the safe area, one layout per campaign, checked before it leaves."
+    },
+    {
+     "id": "2.1",
+     "title": "One product, from what you already know",
+     "hook": "Sell the thing you've actually done, to the person you were before you'd done it.",
+     "line": "Pick one small product from what people already ask you for, and name its buyer in one sentence."
+    },
+    {
+     "id": "2.2",
+     "title": "Building it, with the model as editor",
+     "hook": "Don't ask AI to write your product. Make it interview you instead.",
+     "line": "You supply the steps and mistakes; the model shapes them, and you test the result as a stranger."
+    },
+    {
+     "id": "2.3",
+     "title": "The honest product page",
+     "hook": "A new product has no reviews. A page that says so outsells one that fakes them.",
+     "line": "Describe what's inside with counted numbers, say who it isn't for, and leave out urgency and invented praise."
+    },
+    {
+     "id": "2.5",
+     "title": "Getting paid and delivering",
+     "hook": "Landing on a thank-you page proves nothing. Ask the payment provider every time.",
+     "line": "A payment link takes the money; delivery checks the payment is real and not refunded before giving files."
+    },
+    {
+     "id": "3.1",
+     "title": "What dropshipping really is",
+     "hook": "When you dropship, you are the seller. Not the supplier. You.",
+     "line": "Returns, delivery promises and product safety are yours, so start with one product you understand."
+    },
+    {
+     "id": "3.3",
+     "title": "Order the sample",
+     "hook": "Before I sell anything, I buy it myself and time the delivery.",
+     "line": "Order like a customer, keep a diary, measure it, photograph it, and put the real delivery time on the page."
+    },
+    {
+     "id": "4.3",
+     "title": "What no automation may do",
+     "hook": "Five things my AI can never do, even if a message tells it to.",
+     "line": "Money out, domain and account settings, deleting, keys, and its own rules stay with you, enforced by setup."
+    }
+   ]
+  },
+  {
+   "slug": "ai-for-every-age-adults",
+   "title": "Everyday AI for Adults",
+   "short": "Everyday AI for Adults",
+   "url": "https://shop.mapfront.io/ai-for-every-age/",
+   "store": "https://shop.mapfront.io",
+   "price_json": "https://shop.mapfront.io/catalog.json",
+   "images": [
+    "../academy/assets/covers/everyday-ai-for-adults.jpg",
+    "../academy/assets/covers/everyday-ai-for-adults.jpg",
+    "../academy/assets/covers/everyday-ai-for-adults.jpg"
+   ],
+   "lessons": [
+    {
+     "id": "1.4",
+     "title": "Why chatbots can be confidently wrong",
+     "hook": "A chatbot sounding sure is not the same as a chatbot being right.",
+     "line": "Sort any AI answer into an idea, a claim to check, or an action that needs your approval."
+    },
+    {
+     "id": "2.1",
+     "title": "The CLEAR prompt",
+     "hook": "\"Write an email\" is why your AI answers are useless.",
+     "line": "Turn a vague request into a clear prompt that gets a useful answer the first time."
+    },
+    {
+     "id": "2.4",
+     "title": "Check before you trust",
+     "hook": "Before you repeat what an AI told you, check three things.",
+     "line": "Check dates, sources and numbers against the original, and keep a simple fact-check log."
+    },
+    {
+     "id": "2.6",
+     "title": "Remove private details before you paste",
+     "hook": "Stop pasting your whole life into a chatbot.",
+     "line": "Strip names, ID numbers, health and money details and passwords out first, and still get a useful answer."
+    },
+    {
+     "id": "3.4",
+     "title": "Privacy, memory, and incognito",
+     "hook": "Three settings in your Claude account you should look at today.",
+     "line": "Whether chats help train models, what it remembers about you, and how to have a chat that isn't saved."
+    },
+    {
+     "id": "4.5",
+     "title": "Explain this letter",
+     "hook": "That confusing letter from your landlord? Have AI explain it, then check it.",
+     "line": "Give Claude a document and get a plain-English summary plus a list of what to double-check."
+    },
+    {
+     "id": "5.3",
+     "title": "Build your first Skill",
+     "hook": "You can teach Claude a task once and reuse it forever.",
+     "line": "Write a Skill file, upload it, and test it on made-up task lists."
+    },
+    {
+     "id": "6.1",
+     "title": "What never goes into an AI",
+     "hook": "Some things never go into an AI. Here's how to sort them.",
+     "line": "Sort information into never, with care, or fine, whether you type it, upload it or say it."
+    },
+    {
+     "id": "6.2",
+     "title": "Voice-clone and family emergency scams",
+     "hook": "If a family member calls in a panic asking for money, hang up and call back.",
+     "line": "Call back on a number you already know, and agree a family safe word as a second check."
+    },
+    {
+     "id": "7.1",
+     "title": "What a workflow is",
+     "hook": "Every repeated chore is a trigger, some steps and a result.",
+     "line": "Break a chore into those three parts and draw it as a workflow on paper."
+    }
+   ]
+  },
+  {
+   "slug": "ai-for-every-age-60plus",
+   "title": "Safe and Simple AI 60 plus",
+   "short": "Safe and Simple AI 60 plus",
+   "url": "https://shop.mapfront.io/ai-for-every-age/",
+   "store": "https://shop.mapfront.io",
+   "price_json": "https://shop.mapfront.io/catalog.json",
+   "images": [
+    "../academy/assets/covers/safe-and-simple-ai-60plus.jpg",
+    "../academy/assets/covers/safe-and-simple-ai-60plus.jpg",
+    "../academy/assets/covers/safe-and-simple-ai-60plus.jpg"
+   ],
+   "lessons": [
+    {
+     "id": "3.1",
+     "title": "Create your Claude account",
+     "hook": "Claude never asks you to create a password. If something does, stop.",
+     "line": "Set up your own account on your own phone and ask it one test question."
+    },
+    {
+     "id": "2.6",
+     "title": "Remove private details before you paste",
+     "hook": "Before you show AI a message, cover the private parts.",
+     "line": "Take out names, numbers, health and money details and passwords first."
+    },
+    {
+     "id": "3.5",
+     "title": "Voice mode and the mobile app",
+     "hook": "You don't have to type. You can just talk to it.",
+     "line": "Talk to Claude out loud and hear it answer, using voice mode on your phone."
+    },
+    {
+     "id": "4.5",
+     "title": "Explain this letter",
+     "hook": "A confusing letter in the post? Take a photo, with the numbers covered.",
+     "line": "Get a plain-English summary of a letter, then check it against the original."
+    },
+    {
+     "id": "6.1",
+     "title": "What never goes into an AI",
+     "hook": "Three piles: never, with care, and fine.",
+     "line": "Sort information into three piles before any of it goes into an AI."
+    },
+    {
+     "id": "6.2",
+     "title": "Voice-clone and family emergency scams",
+     "hook": "A voice on the phone can be copied. Pick a family safe word.",
+     "line": "Choose a safe word, and practise hanging up and calling back."
+    },
+    {
+     "id": "6.3",
+     "title": "Deepfakes, seeing is not believing",
+     "hook": "A surprising video is not proof. Check a second source.",
+     "line": "Check a surprising picture or video using a second, separate source."
+    },
+    {
+     "id": "6.4",
+     "title": "Phishing and AI-polished messages",
+     "hook": "Hurry, secrecy and strange payment requests: three warning signs.",
+     "line": "Spot three warning signs in a text or an email before you answer it."
+    }
+   ]
+  }
+ ],
+ "products_note": "Miro, 2026-10-05: every course is advertised as reels. Hooks and lines are the store session's promo.json files (ATLAS Vault/Products/AI for Every Age/{adults,seniors}/promo.json), copied here as reviewed repo content. Sell With AI (added 2026-10-05) is priced by its ebook offer, sell-with-ai-ebook, until the videos are on sale. No reel calls these 'video courses' until the store's own label does."
+}

@@ -1,0 +1,110 @@
+# CI on the aicode-docker runner (docker executor, one job at a time,
+# 3 GB / 1.5 CPU). CLAUDE.md: ruff clean at line-length 90 and TypeScript
+# strict. The repo as a whole still carries older lint debt, so ruff runs
+# on the Python files each push CHANGES -- a change is held to the rule
+# without waiting for every old file to be fixed first.
+stages: [test, deploy]
+
+# One runner, one job at a time: a pipeline for every pushed feature branch
+# queued ahead of the production deploy (2026-09-28, pipeline 100 held 101).
+# Pipelines run for the deploy branch, main and merge requests only; feature
+# branches are shared by hash, not CI.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH == "phases-12-14" || $CI_COMMIT_BRANCH == "main"
+
+default:
+  interruptible: true
+
+python:
+  stage: test
+  image: python:3.12-slim
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    PYTHONPATH: "$CI_PROJECT_DIR"
+    GIT_DEPTH: "50"
+  cache:
+    key: atlas-pip
+    paths: [.cache/pip]
+  rules:
+    - changes: ["**/*.py", pyproject.toml, db/**/*, "atlas/**/*", "ops/deploy/**/*", .gitlab-ci.yml]
+  before_script:
+    - apt-get update -qq >/dev/null && apt-get install -y -qq --no-install-recommends git ffmpeg >/dev/null
+    # ATLAS is not a package (the Dockerfile installs its dependencies the
+    # same way): the dependency list is read from pyproject.toml, and the
+    # tests import `atlas` from the checkout (PYTHONPATH).
+    - python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']))" > /tmp/requirements.txt
+    # playwright too, as in the Dockerfile: the fiverr/linkedin tests import it
+    # (no browser is launched in a test).
+    - pip install -q -r /tmp/requirements.txt playwright pytest pytest-asyncio ruff
+  script:
+    # Lint: a push may not ADD ruff findings to any file it changes. Older
+    # files still carry findings from before the rule, so a changed file is
+    # held to "no worse than it was", not to "clean" -- a new file (no base
+    # version) must be clean.
+    - |
+      BASE="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
+      if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] \
+         || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+        echo "no base commit to diff against; ruff skipped for this push"
+      else
+        worse=0
+        for f in $(git diff --name-only --diff-filter=ACMR "$BASE" "$CI_COMMIT_SHA" -- '*.py'); do
+          now=$(ruff check --line-length 90 --output-format concise "$f" 2>/dev/null | grep -c ":[0-9]*:[0-9]*: " || true)
+          if git cat-file -e "$BASE:$f" 2>/dev/null; then
+            was=$(git show "$BASE:$f" | ruff check --line-length 90 --output-format concise --stdin-filename "$f" - 2>/dev/null | grep -c ":[0-9]*:[0-9]*: " || true)
+          else
+            was=0
+          fi
+          if [ "$now" -gt "$was" ]; then
+            echo "$f: $was -> $now ruff findings"; ruff check --line-length 90 "$f" || true; worse=1
+          fi
+        done
+        [ "$worse" = 0 ] && echo "no file got worse under ruff"
+        test "$worse" = 0
+      fi
+    # The whole suite, test_pool included: its lock is loop-bound since
+    # 1f22d18, so a green deploy is reachable.
+    - pytest -q -p no:cacheprovider
+
+ui:
+  stage: test
+  image: node:22-slim
+  cache:
+    key: atlas-npm
+    paths: [.npm]
+  rules:
+    - changes: [ui/**/*, .gitlab-ci.yml]
+  script:
+    - cd ui
+    - npm ci --cache "$CI_PROJECT_DIR/.npm" --prefer-offline --no-audit --no-fund
+    - npm run typecheck
+    - npm test
+
+# Continuous deploy (Miro, 2026-09-28): a green pipeline on phases-12-14
+# deploys itself. The key may only run "deploy <sha>" on the ATLAS host
+# (bootstrap/deploy/deploy-gate.sh), from this runner's address, and lives
+# only in the protected variable ATLAS_DEPLOY_KEY. deploy.sh waits for any
+# render to finish, rebuilds, applies the schema and rolls back itself if
+# /healthz does not come up. resource_group: never two deploys at once.
+deploy:
+  stage: deploy
+  image: alpine:3.20
+  resource_group: atlas-production
+  # A newer push must never cancel a deploy mid-run (a half-recreated api
+  # is how the stuck "Created" container happened); it deploys after.
+  interruptible: false
+  rules:
+    - if: $CI_COMMIT_BRANCH == "phases-12-14"
+  needs:
+    - job: python
+      optional: true
+    - job: ui
+      optional: true
+  script:
+    - apk add -q --no-cache openssh-client
+    - chmod 600 "$ATLAS_DEPLOY_KEY"
+    - ssh -i "$ATLAS_DEPLOY_KEY" -o UserKnownHostsFile="$ATLAS_KNOWN_HOSTS" -o BatchMode=yes -o ServerAliveInterval=60 root@203.0.113.10 "deploy $CI_COMMIT_SHA"

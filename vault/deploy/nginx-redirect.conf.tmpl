@@ -1,0 +1,17 @@
+# Sends the bare domain (and www) to the app.
+#
+# Served under the app's own certificate, so the hop is HTTPS-clean instead of
+# tripping a browser warning on the way through. When a marketing site exists,
+# replace this block with it -- the app's hostname never moves, so no enrolled
+# sensor and no bookmark is affected.
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  http2 on;
+  server_name __REDIRECTS__;
+  ssl_certificate     /etc/nginx/certs/__DOMAIN__.fullchain.pem;
+  ssl_certificate_key /etc/nginx/certs/__DOMAIN__.key.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  return 301 https://__DOMAIN__$request_uri;
+}

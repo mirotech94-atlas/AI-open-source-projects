@@ -1,0 +1,146 @@
+# The public REST API on its own hostname.
+#
+# One server block, one job: proxy `/v1/*` to the hub and refuse everything
+# else. This is the strictest vhost of the three, because it is the one whose
+# callers are machines holding long-lived credentials.
+#
+#   my.guarder.io   the Guardian app     guardian-443.conf   UNTOUCHED
+#   guarder.io      the public site      guardian-site.conf  UNTOUCHED
+#   api.guarder.io  the REST API         this file
+#
+# Default-deny, not allow-with-exceptions. `location /` returns 404 with a JSON
+# body, so:
+#   - no dashboard route is reachable from this hostname. `/api/v1/...` is not
+#     proxied at all, which means a stolen session cookie is useless here and a
+#     future dashboard route cannot become internet-facing by accident.
+#   - the single-page app is not served here. A browser that lands on this name
+#     gets the reference page, not a login form.
+#   - `/metrics` is not proxied. It stays loopback-only, enforced in the app's
+#     own block and absent from this one entirely.
+#   - `/act/...`, `/status/...`, `/hb/...`, `/r/...` and the installer routes
+#     stay on the app hostname, where their links are minted.
+#
+# Served under the app's certificate: acme.sh issues ONE certificate covering
+# the app hostname plus these names (deploy/setup-api-domain.sh re-issues it
+# with this name added), so there is nothing extra to renew.
+#
+# Placeholders, substituted by deploy/setup-api-domain.sh:
+#   __API_NAMES__   space-separated server_name list (api.guarder.io)
+#   __CERT_DOMAIN__ the hostname the certificate files are named after
+#
+# There is deliberately no `map $http_upgrade` here: no WebSocket reaches this
+# vhost (the live feed is a dashboard feature on the app's origin), and that map
+# is declared once per nginx instance by the app's block.
+
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  http2 on;
+  server_name __API_NAMES__;
+
+  ssl_certificate     /etc/nginx/certs/__CERT_DOMAIN__.fullchain.pem;
+  ssl_certificate_key /etc/nginx/certs/__CERT_DOMAIN__.key.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+
+  charset utf-8;
+
+  # A request body here is a handful of short JSON fields — the largest is an
+  # alert snooze. 64k refuses a megabyte of junk at the edge, before it can
+  # occupy a worker or spend a rate-limit slot.
+  client_max_body_size 64k;
+
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "no-referrer" always;
+  # `no-referrer`, stricter than the other two vhosts: a request to this API
+  # carries a credential, and a `Referer` header naming this host is one more
+  # place a path can turn up in someone else's log.
+  #
+  # `script-src 'none'` for API traffic. This is the origin whose callers hold
+  # long-lived credentials, and a script running here would be worth a great
+  # deal to whoever managed to get it there. Every JSON route on this host is
+  # covered by this line; the two documentation paths, and only those, are
+  # relaxed to `script-src 'self'` in the location block further down.
+  add_header Content-Security-Policy "default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; script-src 'none'" always;
+
+  gzip on;
+  # `text/html` is already in nginx.conf's own gzip_types, and repeating it
+  # emits a duplicate-MIME warning on every reload.
+  gzip_types application/json;
+  gzip_min_length 512;
+
+  # The reference page and its console -- and nothing else on this host.
+  #
+  # Regex locations are matched before prefix ones, so this wins over
+  # `location /v1/` below for these two exact paths and for no others: the
+  # anchors mean `/v1/docs`, `/v1/docs.js`, `/v1/docs.css`, and not
+  # `/v1/docsomething` or
+  # `/v1/docs/anything`.
+  #
+  # The single difference from the server-level policy is `script-src 'self'`
+  # in place of `'none'`. There is no `'unsafe-inline'`, no nonce and no hash,
+  # so the only script that can run is one this host served from a real URL --
+  # today exactly one, `/v1/docs.js`. The stylesheet is a real file for the
+  # same reason and needs no grant at all: `default-src 'self'` already allows
+  # it, which an inline `<style>` block is not. That is defensible here because the page
+  # has no injection vector: it is generated wholly from Guardian's own OpenAPI
+  # document, every interpolated value is HTML-escaped, nothing from the query
+  # string is reflected into it, and the console writes responses back with
+  # `textContent`. The console needs a script to be useful at all -- a reader
+  # who cannot call an endpoint from the page is reading a PDF -- and this is
+  # the narrowest grant that makes it possible.
+  #
+  # nginx `add_header` does NOT inherit: the moment this block declares one,
+  # every server-level header disappears for these paths. All four are restated
+  # below, deliberately, and they must stay in step with the block above.
+  location ~ ^/v1/docs(\.js|\.css)?$ {
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header Content-Security-Policy "default-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'; script-src 'self'" always;
+
+    proxy_pass http://127.0.0.1:8800;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 60s;
+  }
+
+  # The API itself, plus the OpenAPI document and the rendered reference, which
+  # the hub also serves under this prefix. Nothing else is proxied.
+  location /v1/ {
+    proxy_pass http://127.0.0.1:8800;
+    proxy_http_version 1.1;
+    # $http_host, not $host: the hub builds its own absolute URLs from what the
+    # client asked for, port included.
+    proxy_set_header Host $http_host;
+    # The hub reads the caller's address from X-Real-IP, and trusts it only
+    # because the request reaches it from loopback. Without this header every
+    # call would look like 127.0.0.1 and the per-address rate-limit bucket —
+    # the one that absorbs credential probing — would collapse into one global
+    # bucket shared by every caller on the internet.
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 60s;
+    # A 401 from the hub carries `WWW-Authenticate: Bearer`; nothing here
+    # rewrites it, so a client library sees the real challenge.
+  }
+
+  # Bare `/v1` (no trailing slash) — send it to the reference rather than 404ing
+  # someone who typed the version and pressed enter.
+  location = /v1 { return 302 /v1/docs; }
+
+  # The root of an API hostname is a person, not a script: point them at the
+  # documentation instead of an empty 404.
+  location = / { return 302 /v1/docs; }
+
+  # Everything else. Default-deny, and JSON rather than nginx's grey HTML page,
+  # because every legitimate caller here parses JSON.
+  location / {
+    default_type application/json;
+    return 404 '{"detail":"not found — this host serves /v1 only, see /v1/docs"}';
+  }
+}

@@ -1,0 +1,4 @@
+import {Link} from "react-router-dom";
+export function DemoGuide() {
+ return <div className="g-demo-notice" role="note"><strong>Demo organization — simulated activity and example data</strong><details><summary>Guided example: investigate a blocked domain</summary><ol><li><Link to="/dns">Open DNS</Link> and find <code>blocked-demo.example</code>. Inspect its simulated matching rule and client.</li><li>If you choose to allow it, add an exact-domain temporary exception on the DNS page. Filtering for other domains stays active.</li><li>The next simulated query reflects the exception. Check “Allowed query observed” in the exception list; removing it or letting it expire restores the example block.</li></ol><p>This is a demonstration of the decision and verification flow. Historical charts are example data, and the demo refreshes periodically.</p></details></div>;
+}

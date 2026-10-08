@@ -1,0 +1,9 @@
+[Unit]
+Description=ATLAS weekly housekeeping (Docker cache, posted media off the box)
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/atlas/bootstrap/backup/atlas-housekeeping.sh
+Nice=19
+IOSchedulingClass=idle

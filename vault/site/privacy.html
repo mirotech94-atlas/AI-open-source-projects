@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy Policy — Vault</title>
+<meta name="description" content="What Vault collects from a network it watches, why, and how long it is kept.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg?v=vault">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body class="page-auth">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+        <circle cx="24" cy="24" r="24" fill="#1257c4"/>
+        <rect x="4.6" y="15.6" width="6.4" height="4.6" rx="1.3" fill="#fff"/>
+        <rect x="4.6" y="27.8" width="6.4" height="4.6" rx="1.3" fill="#fff"/>
+        <circle cx="24" cy="24" r="16.2" fill="#fff"/>
+        <circle cx="24" cy="24" r="14.1" fill="#1257c4"/>
+        <circle cx="24" cy="24" r="12.7" fill="#fff"/>
+        <circle cx="24" cy="24" r="6.4" fill="#1257c4"/>
+        <circle cx="24" cy="24" r="2.3" fill="#fff"/>
+        <line x1="24" y1="18.9" x2="24" y2="20.4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>
+      Vault
+    </a>
+    <a class="cta" href="https://my.guarder.io/login">Log in</a>
+  </div>
+</header>
+
+<main id="main" class="auth-main">
+  <article class="auth-panel doc-panel">
+    <h1>Privacy Policy</h1>
+    <p class="hint">Last updated: 18 September 2026.</p>
+
+    <h2>1. Who we are</h2>
+    <p>Vault operates from 4087 Richmond Avenue, Staten Island, New York 10312, United States. For anything in this policy, write to <a href="mailto:support@guarder.io">support@guarder.io</a>.</p>
+    <p>Vault watches a network you own or administer and tells you what is wrong with it. That means the sensor sees your network in detail, and this page is an honest account of what that detail is.</p>
+
+    <h2>2. What the sensor collects</h2>
+    <p>A sensor runs on your own premises and reports to the hub. It collects:</p>
+    <ul>
+      <li><strong>Devices on the network</strong> — MAC address, IP address, hostname, manufacturer as inferred from the MAC, open ports, and when each was last seen.</li>
+      <li><strong>DNS lookups</strong>, if you turn DNS filtering on — the domain requested, which device asked, whether it was blocked, and when. This is the most revealing thing Vault holds, which is why it has the shortest retention below.</li>
+      <li><strong>Service checks</strong> — whether a site, host or certificate you asked Vault to watch is reachable, and the error when it is not.</li>
+      <li><strong>Presence</strong> — whether a known device is on the network, used to answer "is anyone home".</li>
+      <li><strong>Cameras and recorders</strong> — that they exist, whether they are reachable and whether they appear to be recording. Vault does not receive video or still images.</li>
+      <li><strong>Account data</strong> — your email address, the tenant name, and the sign-in and change history.</li>
+    </ul>
+
+    <h2>3. What Vault does not collect</h2>
+    <ul>
+      <li>The contents of your traffic. Vault records that a lookup happened, not what was sent or received afterwards.</li>
+      <li>Video, audio or images from cameras.</li>
+      <li>Files from the devices it watches.</li>
+      <li>Card numbers. Payments go to Stripe and no card detail reaches Vault.</li>
+    </ul>
+    <p>Credentials the sensor needs to repair something are held on the sensor, on your premises. They are stripped from the payload before it is stored, not removed afterwards.</p>
+
+    <h2>4. Why we hold it</h2>
+    <p>To provide the product you asked for: to show the dashboard, raise alerts, run repairs you approve, and produce reports. We also keep an audit record of administrative changes so you can see who changed what. We do not sell it, and we do not use it to advertise.</p>
+
+    <h2>5. How long it is kept</h2>
+    <p>These are the product's defaults and are configurable per account:</p>
+    <ul>
+      <li><strong>Raw DNS lookups: 7 days.</strong> After that they are aggregated into counts per domain and the individual rows are deleted.</li>
+      <li><strong>Aggregated DNS counts: 365 days.</strong></li>
+      <li><strong>Metrics, events and presence samples: 90 days.</strong></li>
+      <li><strong>Audit log: 365 days.</strong></li>
+    </ul>
+    <p>Alerts, devices and account records are kept while the account exists. Delete the account and they go with it.</p>
+
+    <h2>6. Who else sees it</h2>
+    <p>Vault uses a small number of processors and no advertising or analytics trackers:</p>
+    <ul>
+      <li><strong>Stripe</strong> — payments and subscriptions. Stripe receives your billing details directly; we receive a reference, not a card.</li>
+      <li><strong>Zoho Mail</strong> — the mailbox that sends and receives Vault's email.</li>
+      <li><strong>Our hosting provider</strong> — runs the hub and holds the database.</li>
+    </ul>
+    <p>We disclose data otherwise only where the law requires it.</p>
+
+    <h2>7. Where it is stored</h2>
+    <p>On servers in the United States. Data reaches them over TLS, and the sensor authenticates to the hub with a token rather than a password.</p>
+
+    <h2>8. Your choices</h2>
+    <ul>
+      <li><strong>DNS filtering is off unless you enable it.</strong> Leave it off and no lookups are recorded.</li>
+      <li><strong>Export.</strong> Ask and we will give you your data before deleting it.</li>
+      <li><strong>Deletion.</strong> Ask and we delete the account and its data.</li>
+      <li><strong>Retention.</strong> The windows in section 5 can be shortened for your account.</li>
+    </ul>
+    <p>If you are in the UK, EU or another region with statutory data rights, those rights apply and the same address reaches us.</p>
+
+    <h2>9. Telling the people on the network</h2>
+    <p>If you install Vault on a network other people use — an office, a shared house — you are responsible for telling them it is there and for having a basis to watch it. Vault gives you the tool; it cannot give you that permission.</p>
+
+    <h2>10. Security</h2>
+    <p>We report vulnerabilities and accept reports at <a href="/.well-known/security.txt">/.well-known/security.txt</a>.</p>
+
+    <h2>11. Children</h2>
+    <p>Vault is sold to adults for networks they administer and is not directed at children.</p>
+
+    <h2>12. Changes</h2>
+    <p>If this policy changes in a way that matters, we will say so in the product rather than only editing this page.</p>
+  </article>
+</main>
+
+<footer class="auth-foot">
+  <div class="wrap">
+    <a href="/">guarder.io</a> &middot; <a href="/terms.html">Terms</a> &middot; <a href="/privacy.html">Privacy</a> &middot; <a href="https://my.guarder.io/help">Help</a>
+  </div>
+</footer>
+<script src="/app.js"></script>
+</body>
+</html>

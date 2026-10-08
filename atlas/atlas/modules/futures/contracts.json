@@ -1,0 +1,19 @@
+{
+  "_note": "CME contract specs as published (verified against CME's MNQ/NQ contract pages, 2026-09-29). The brief that asked for this engine said '$0.50/point MNQ, $2/point NQ'; those are MNQ's tick value ($0.50 per 0.25 tick) and MNQ's point value. These are the real ones.",
+  "MNQ=F": {
+    "name": "Micro E-mini Nasdaq-100",
+    "tick_size": 0.25,
+    "point_value": 2.0,
+    "tick_value": 0.5,
+    "slippage_ticks_per_side": 1,
+    "commission_per_side": 0.5
+  },
+  "NQ=F": {
+    "name": "E-mini Nasdaq-100",
+    "tick_size": 0.25,
+    "point_value": 20.0,
+    "tick_value": 5.0,
+    "slippage_ticks_per_side": 1,
+    "commission_per_side": 2.0
+  }
+}

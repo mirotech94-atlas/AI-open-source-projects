@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>{% block title %}ATLAS{% endblock %}</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+{% include "_tokens.css" %}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
+
+.wrap { max-width: 74ch; margin: 0 auto; padding: 22px 16px 64px; }
+
+.masthead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; padding-bottom: 10px; margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.masthead .id {
+  font-size: 13px; font-weight: 700; letter-spacing: .34em; color: var(--cyan);
+  text-shadow: 0 0 12px var(--cyan-glow);
+  display: inline-flex; align-items: center; gap: 9px;
+}
+/* The mark carries its own glow; the text-shadow above would not reach it. */
+.masthead .id svg { filter: drop-shadow(0 0 6px var(--cyan-glow)); }
+.masthead .when { color: var(--text-faint); font-size: 11.5px; }
+
+/* Bracketed, wide-tracked section labels. The brackets are the structure — no
+   rules, no cards, no shadows. */
+h2.label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--text-dim);
+  margin: 26px 0 9px;
+}
+h2.label::before { content: "[ "; color: var(--cyan-dim); }
+h2.label::after  { content: " ]"; color: var(--cyan-dim); }
+h2.label:first-of-type { margin-top: 0; }
+
+.panel { border: 1px solid var(--line); background: var(--panel); padding: 11px 13px; }
+.panel + .panel { margin-top: -1px; }
+
+ul.rows { list-style: none; margin: 0; padding: 0; }
+ul.rows li { padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
+ul.rows li:last-child { border-bottom: 0; }
+
+.asof { color: var(--text-faint); font-size: 11.5px; margin: 0 0 16px; }
+.empty { color: var(--text-faint); }
+
+/* A section that could not be built. Never mistakable for an empty one. */
+.unavailable {
+  color: var(--amber); border: 1px dashed var(--amber);
+  background: color-mix(in srgb, var(--amber) 7%, transparent);
+  padding: 8px 11px; font-size: 12.5px;
+}
+.watch-only {
+  border: 1px solid var(--amber); color: var(--amber);
+  background: color-mix(in srgb, var(--amber) 7%, transparent);
+  padding: 8px 11px; font-size: 12.5px; margin-bottom: 18px;
+}
+
+.pre {
+  font-size: 12px; line-height: 1.55; background: var(--raised);
+  border: 1px solid var(--line); padding: 10px 12px; margin: 0;
+  white-space: pre-wrap; word-break: break-word;
+}
+.note { color: var(--text-dim); font-size: 12px; }
+
+footer {
+  margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--line);
+  color: var(--text-faint); font-size: 11.5px;
+}
+footer a { color: var(--text-dim); }
+
+@media (max-width: 480px) { .wrap { padding: 16px 12px 48px; } body { font-size: 14px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <span class="id">
+      <svg viewBox="0 0 32 32" width="17" height="17" fill="none"
+           stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true">
+        <circle cx="16" cy="7.6" r="3.4" fill="currentColor" stroke="none"/>
+        <path d="M4.6 26.6L12.4 12.2"/><path d="M27.4 26.6L19.6 12.2"/>
+        <path d="M8.2 19.8H23.8"/>
+      </svg>ATLAS</span>
+    <span class="when">{{ generated_at.strftime('%Y-%m-%d %H:%M') }}Z</span>
+  </header>
+  {% block body %}{% endblock %}
+  <footer>
+    {% block footer %}<a href="/">Status</a> · <a href="/reports">Reports</a> · <a href="/logout">Sign out</a>{% endblock %}
+  </footer>
+</div>
+</body>
+</html>

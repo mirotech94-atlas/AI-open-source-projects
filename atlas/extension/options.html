@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ATLAS collector</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      max-width: 640px; margin: 40px auto; padding: 0 20px;
+    }
+    h1 { font-size: 19px; }
+    h2 { font-size: 14px; margin-top: 28px; }
+    label { display: block; margin: 14px 0 4px; font-weight: 600; }
+    input[type=text], input[type=password], textarea {
+      width: 100%; padding: 8px; font: inherit; font-size: 13px;
+      border: 1px solid rgba(128,128,128,.45); border-radius: 6px;
+      background: transparent; color: inherit; box-sizing: border-box;
+    }
+    textarea { min-height: 190px; font-family: ui-monospace, SFMono-Regular, monospace; }
+    .note { opacity: .7; font-size: 12.5px; margin-top: 4px; }
+    .warn {
+      border-left: 3px solid #b45309; padding: 8px 12px; margin: 18px 0;
+      background: rgba(180,83,9,.08); font-size: 13px;
+    }
+    button {
+      margin-top: 18px; padding: 9px 18px; font: inherit; font-weight: 600;
+      border-radius: 7px; border: 1px solid rgba(128,128,128,.45);
+      background: transparent; color: inherit; cursor: pointer;
+    }
+    #saved { margin-left: 12px; opacity: 0; transition: opacity .2s; font-size: 13px; }
+    #saved.on { opacity: .8; }
+  </style>
+</head>
+<body>
+  <h1>ATLAS browser collector</h1>
+
+  <div class="warn">
+    The deny-list below <strong>never leaves this browser</strong>. Pages it
+    matches are not sent, not buffered, and not written to disk. ATLAS has no
+    copy of it.
+  </div>
+
+  <h2>Where to send</h2>
+  <label for="endpoint">Ingest endpoint</label>
+  <input type="text" id="endpoint" placeholder="http://100.x.y.z:8080/ingest/browser" spellcheck="false">
+  <div class="note">
+    Must be your ATLAS mesh address. This endpoint is not reachable from the
+    public internet, by design — if it works off the mesh, something is wrong.
+  </div>
+
+  <label for="token">Ingest token</label>
+  <input type="password" id="token" spellcheck="false" autocomplete="off">
+  <div class="note">The value of BROWSER_INGEST_TOKEN in your ATLAS .env.</div>
+
+  <h2>What to send</h2>
+  <label><input type="checkbox" id="sendUrls"> Include full URLs and page titles</label>
+  <div class="note">
+    Unchecked, ATLAS receives only the domain, the time and how long you spent.
+    That is enough for the patterns it reports on, and much less to hold.
+  </div>
+
+  <label for="localRetentionDays">Discard unsent events after (days)</label>
+  <input type="text" id="localRetentionDays" inputmode="numeric">
+  <div class="note">
+    Server-side, raw history is deleted after BROWSER_RETENTION_DAYS; the
+    per-domain roll-up survives.
+  </div>
+
+  <h2>Deny-list</h2>
+  <label for="denylist">One entry per line</label>
+  <textarea id="denylist" spellcheck="false"></textarea>
+  <div class="note">
+    A line with a dot matches that domain and its subdomains
+    (<code>chase.com</code> also blocks <code>secure.chase.com</code>). A bare
+    word matches any domain containing it as a label — <code>bank</code> blocks
+    <code>mybank.co.uk</code>.
+  </div>
+
+  <button id="save">Save</button><span id="saved">Saved</span>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

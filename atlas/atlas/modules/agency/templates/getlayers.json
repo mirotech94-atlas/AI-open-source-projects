@@ -1,0 +1,275 @@
+{
+  "version": 4,
+  "made": "2026-09-30",
+  "brief": {
+    "pitch": "Free preview websites for NYC local-service businesses, judged on an iPhone: one tap to call, what they do, where, a way to enquire. Honest: no invented reviews, figures, hours or licences. Static, fast, no WebGL.",
+    "dimensionality": [
+      "flat"
+    ],
+    "mood": [
+      "calm",
+      "technical"
+    ],
+    "tone": [
+      "light"
+    ],
+    "motionEnergy": [
+      "still",
+      "subtle"
+    ],
+    "density": [
+      "balanced"
+    ]
+  },
+  "route": "build-site, (c) build unique, target 'other': three static HTML templates filled by atlas/modules/agency/sitetemplate.py. GetLayers is used at design time only; nothing calls it at run time.",
+  "styleId": "ridgeline-style",
+  "stylePreview": "https://www.getlayers.ai/?layer=ridgeline",
+  "materialized": [
+    {
+      "id": "ridgeline",
+      "type": "template",
+      "target": "other",
+      "styleId": "ridgeline-style",
+      "use": "reference for the shape language only: card on a field, the 28/20/14 radius ladder, a pill for every control, the label that rolls up out of its window on hover, hairlines instead of shadows. No section, spring, photograph or copy was copied; no 'preserve' layer (motion, composition) was rewritten."
+    }
+  ],
+  "families": {
+    "trades": {
+      "for": "plumbers, electricians, roofers, locksmiths, painters, movers, contractors",
+      "paletteId": "ridgeline-style (its own palette)",
+      "tokens": {
+        "gl-bg": "#f5f6f7",
+        "gl-surface": "#ffffff",
+        "gl-ink": "#0e2035",
+        "gl-ink-muted": "#5e6d7e",
+        "gl-accent": "#133153",
+        "gl-accent-ink": "#ffffff"
+      },
+      "type": "Archivo variable, statements (hero lines, section titles) at wdth 92 / wght 780, display (wordmark, docket) at wdth 62 / wght 800 (van-side lettering), body at wdth 100",
+      "hero": {
+        "composition": "cortex-hero (v3), replaced in v4 by the Lovable reference's cinematic hero: the photograph full bleed under a navy gradient, three stacked lines, the second marigold",
+        "preview": null
+      }
+    },
+    "beauty": {
+      "for": "salons, barbers, nail studios, groomers",
+      "paletteId": "dringle-palette",
+      "tokens": {
+        "gl-bg": "#f0f2fa",
+        "gl-surface": "#ffffff",
+        "gl-ink": "#00012f",
+        "gl-ink-muted": "#4d5073",
+        "gl-accent": "#1b0095",
+        "gl-accent-ink": "#ffffff"
+      },
+      "type": "Archivo variable, display at wdth 125 / wght 260 (expanded, light), body at wdth 100",
+      "hero": {
+        "composition": "artist-hero",
+        "seededFromTemplatePreview": "https://www.getlayers.ai/?layer=artist"
+      }
+    },
+    "food": {
+      "for": "restaurants, cafes, bakeries, florists, caterers, dry cleaners, tailors, shops",
+      "paletteId": "jade-depths (a dark palette, re-dressed light on the DOM: its secondary is the panel, its pale jade the awning stripe)",
+      "tokens": {
+        "gl-bg": "#eef3f0",
+        "gl-surface": "#ffffff",
+        "gl-ink": "#0a1413",
+        "gl-ink-muted": "#45574f",
+        "gl-accent": "#275a47",
+        "gl-glow": "#b0e4cd"
+      },
+      "type": "Archivo variable, display at wdth 100 / wght 900 (shop sign), body at wdth 100",
+      "hero": {
+        "composition": "baseline-hero",
+        "seededFromTemplatePreview": "https://www.getlayers.ai/?layer=baseline"
+      }
+    }
+  },
+  "placed": [
+    {
+      "compositionId": "cortex-hero | artist-hero | baseline-hero",
+      "slot": "hero",
+      "note": "one per family"
+    },
+    {
+      "compositionId": "vexon-showcase",
+      "slot": "services",
+      "note": "4|8 heading split over ruled rows instead of image cards: there are no photographs to put in a triptych"
+    },
+    {
+      "compositionId": "stride-contact",
+      "slot": "contact",
+      "note": "short prompt, fields on hairlines, one pill; the form only exists when the client has a form service"
+    },
+    {
+      "compositionId": "artist-faq",
+      "slot": "faq",
+      "note": "narrow heading beside a ruled accordion (details/summary, no script)"
+    },
+    {
+      "compositionId": "baseline-footer",
+      "slot": "footer",
+      "note": "closing line and pill, weighted columns, meta bar"
+    }
+  ],
+  "fonts": "getlayers_fonts was consulted; none of its fifteen has a width axis and each would be a new download. Archivo variable (OFL, already self-hosted for the Mapfront landing, templates/fonts/) carries all three families through wdth 62-125, so one type system, three voices, no third-party request.",
+  "notReused": "Mapfront's own teal #0f3d3e and marigold #f4b942 are not used on client sites, and ridgeline's Geist Mono uppercase labels were dropped (labels are Archivo, sentence case).",
+  "previewLinks": "Only links GetLayers itself returned are recorded: ridgeline (Style and template), and the artist and baseline templates the artist-hero and baseline-hero compositions were seeded from. Compositions and palette cards carry no preview link, so cortex-hero, dringle-palette and jade-depths have none here. The interaction pass adds only links GetLayers returned for the cards it used: brewns, hero-mirror-hall and aerra.",
+  "notes": "One Style for the whole system; each family is a re-tint (paletteId), its own hero composition and its own GetLayers Background, so the three read as one studio's work without looking alike. The loop is desktop-only; a phone gets the poster.",
+  "interaction": {
+    "made": "2026-09-30",
+    "ask": "Miro, from the phone review: \"design it better with buttons, reservations if it's a restaurant or booking system ... make GetLayers use interactive website design for all the clients\".",
+    "route": "enhance-project (mode 5) on the committed build: read the checked-in templates first, then add motion and interaction. Same Style (ridgeline-style), same palettes, same Archivo type; nothing materialized, nothing called at run time.",
+    "principle": "One moment per family, and each one answers the visitor's own input inside the booking flow; nothing ambient, no loader. Everything else is the controls' own state changes (hover, focus-visible, active, disabled, loading, error, done).",
+    "moments": {
+      "trades": {
+        "name": "the work order",
+        "what": "The booking sheet opens on a navy docket with a perforated edge. Picking a job, typing the address and choosing a day and time of day prints each line onto it; sending stamps it (\"Sending\" live, \"Not sent\" in a preview).",
+        "references": [
+          {
+            "id": "brewns",
+            "preview": "https://www.getlayers.ai/?layer=brewns",
+            "took": "a receipt built in HTML/CSS that fills as you act, never an image; not its printer, scene or code"
+          }
+        ]
+      },
+      "beauty": {
+        "name": "the mirror",
+        "what": "The sheet opens under the arched mirror from the hero. The treatment and time you pick appear in it, and a skewed sheen crosses the glass on each change; sending stamps it. Each treatment row has its own Book pill that opens the sheet with that treatment chosen.",
+        "references": [
+          {
+            "id": "hero-mirror-hall",
+            "preview": "https://www.getlayers.ai/?layer=hero-mirror-hall",
+            "took": "a reflective surface that answers the visitor's movement; not its WebGL floor"
+          },
+          {
+            "id": "aerra-style",
+            "preview": "https://www.getlayers.ai/?layer=aerra",
+            "took": "its CTA hover's skewed sheen sweeping the width (~700ms), as the mirror's sheen (950ms)"
+          }
+        ]
+      },
+      "food": {
+        "name": "the table",
+        "what": "The sheet opens under the awning from the hero, which unrolls. The party-size stepper lays a place at a round table for each guest (facing pairs first, on a small overshoot spring); the table size, day and time read back on the awning. Bakeries, florists, caterers, tailors and other shops get the awning and read-back without the table."
+      }
+    },
+    "motionRules": [
+      "revealChoreography: text lands opaque early in its curve and de-blurs (the read-back lines: opaque at 30%, blur 2px to 0, 460ms)",
+      "revealChoreography: reduced motion reaches everything; every animation and transition drops to 1ms, the sheen is removed, and the script starts no motion of its own",
+      "combinationRules: motionEnergy is a page budget; the brief stays still/subtle, so the moments are user-triggered and short (200-950ms)"
+    ],
+    "compositionsConsulted": [
+      {
+        "id": "stride-contact",
+        "role": "cta",
+        "use": "the booking form's rhythm: short prompt, fields, one full-width pill"
+      },
+      {
+        "id": "altitude-cta",
+        "role": "cta",
+        "use": "considered, not used: an inline capsule holds two fields, a booking needs five or six"
+      }
+    ],
+    "simplified": [
+      "No loader or curtain (revealChoreography's default): it gates LCP on a phone, and a local business page is visited once by someone who wants to book or call.",
+      "No scene, gradient or background: the brief is flat and mobile-first, and the sheet already carries the moment. getlayers_scene_lab and materialize were not used.",
+      "No GetLayers font: Archivo variable stays the one self-hosted family."
+    ],
+    "sheet": "A native <dialog>: a bottom sheet under 40rem, a centred panel above. The #book section holds the same form in the page, so without a script the button still scrolls to it."
+  },
+  "media": {
+    "made": "2026-09-30",
+    "ask": "Miro, from the desktop review: \"very poor design -- make sure it's a frontend marketing website for each one\".",
+    "route": "wire-video (mode 4) + browse-pull (mode 3) on the committed build, same Style (ridgeline-style): one GetLayers Background per family behind the hero, materialized with styleId ridgeline-style and downloaded from the signed links (never hotlinked), re-encoded for the web in templates/media/ and copied beside every page by sitemedia.copy_assets. Photographs are Unsplash, under the Unsplash License, self-hosted the same way.",
+    "backgrounds": {
+      "trades": {
+        "id": "blue-contour-lines",
+        "preview": "https://www.getlayers.ai/?layer=blue-contour-lines",
+        "retired": "2026-10-01 (v4): the trades hero is the photograph itself, so the loop and its posters were removed from templates/media; the id stays here for the record",
+        "files": []
+      },
+      "beauty": {
+        "id": "lilac-silk-waves",
+        "preview": "https://www.getlayers.ai/?layer=lilac-silk-waves",
+        "why": "cool silk light in the dringle lavender, behind the arched mirror",
+        "files": [
+          "media/bg-beauty.mp4 (1280px H.264, 8s, ~0.3 MB)",
+          "media/bg-beauty-{1600,800}.{avif,webp}"
+        ]
+      },
+      "food": {
+        "id": "sage-room-sunbeam",
+        "preview": "https://www.getlayers.ai/?layer=sage-room-sunbeam",
+        "why": "an empty sage corner with one sunbeam: the shop wall the awning and the sign hang on",
+        "files": [
+          "media/bg-food.mp4 (1280px H.264, 8s, ~0.3 MB)",
+          "media/bg-food-{1600,800}.{avif,webp}"
+        ]
+      }
+    },
+    "loading": "The poster (AVIF then WebP, two widths) is what every visitor gets; the loop is attached by an inline script only on a screen at least 56rem wide that does not ask for reduced motion, and never autoplays sound. Nothing on a phone downloads the video.",
+    "photos": "sitemedia.PHOTOS: Unsplash IDs and photographers are recorded on each entry; every alt begins 'Illustrative photo:' and nothing is captioned as the business's own team, van, premises or work.",
+    "compositionsConsulted": [
+      {
+        "id": "artist-hero",
+        "use": "the hero: a copy column beside a tall plate, the two vertically centred"
+      },
+      {
+        "id": "vexon-showcase",
+        "use": "the services heading, label left and statement right, over a row of cards; here one card is the photograph"
+      },
+      {
+        "id": "altitude-stats",
+        "use": "the facts strip: a shallow rail of label pairs under the hero, only facts from the lead's record"
+      },
+      {
+        "id": "helion-timeline",
+        "use": "how it works: evenly pitched stations along one baseline, numbered because it is a sequence"
+      },
+      {
+        "id": "baseline-footer",
+        "use": "the closing band and the footer's weighted columns and meta bar"
+      }
+    ],
+    "notUsed": "No scene, no loader, no scroll-scrubbed motion: a local business page is visited once by someone who wants to book or call, and the brief stays still/subtle."
+  },
+  "lovable": {
+    "made": "2026-10-01",
+    "rule": "Miro: every client site's design goes frontend-design -> GetLayers -> Webild -> Lovable, and the best of each is ported into these static templates. A Lovable project is a design reference only; its React app is never deployed as a client site, and its photographs (rights unknown) are never copied -- the templates use sitemedia.PHOTOS.",
+    "trades": {
+      "project": "Bright Spark Site",
+      "projectId": "1d613626-2177-490b-8e33-242910df26ec",
+      "url": "https://lovable.dev/projects/1d613626-2177-490b-8e33-242910df26ec",
+      "subject": "lead 40, Hitchingham Electric Company (electrician), from the lead's own record and the honesty rules",
+      "ported": [
+        "the cinematic full-bleed photo hero with a dark gradient and a three-line headline, one line in the mark colour (sitetemplate.default_lines per trade; the model's `lines` field is validated like every other)",
+        "the small numbered section labels, '01 / What we do' (sitetemplate.Numbering: the page is a sequence, and a section that is not rendered takes no number)",
+        "large statement headings with a drawn full stop in the mark colour (sitetemplate.statements, code-written, claim-checked)",
+        "the navy 'how it works' band with the numbered list on the right",
+        "the tilted street map with the borough, its neighbours, the street and a monogram pin (sitetemplate.street_map)",
+        "the two-column booking: statement and 'Prefer to talk?' on the left, the form in a white card on the right (sitebooking.section)",
+        "the 'A few things worth knowing' FAQ heading beside the ruled accordion",
+        "the marigold closing band with navy pills",
+        "the phone in words beside the booking pill in the header"
+      ],
+      "notPorted": [
+        "its photograph (rights unknown): sitemedia.PHOTOS, self-hosted Unsplash",
+        "the numerals on the service cards (services are not a sequence)",
+        "the arrows appended to link and button labels",
+        "the 'Explore below' scroll cue",
+        "its geometric sans: Archivo variable stays the one self-hosted family"
+      ],
+      "kept": "our structure, honesty rules, pagegate, launch check, booking paths, the callme slot, every button's states, self-hosted media only, mobile light (no video on a phone, as before)"
+    },
+    "beauty": {
+      "project": null,
+      "note": "no Lovable project yet (Miro's account and credits); the shared structure above was applied over the v3 look in the family's own mark colour (--mark #5b3df5, --mark-on-deep #c7bfff)"
+    },
+    "food": {
+      "project": null,
+      "note": "no Lovable project yet; the shared structure above over the v3 look (--mark #2f8a63, --mark-on-deep #b0e4cd)"
+    }
+  }
+}

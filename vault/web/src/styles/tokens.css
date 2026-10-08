@@ -1,0 +1,899 @@
+/* Vault design tokens — two skins, both ported from the product owner's
+ * reference console (`design/1-console.html`) so Vault reads as the same
+ * instrument.
+ *
+ * "calm" light (default) and "console" dark. Blue and white: a true white
+ * page in the light skin, Vault's own blue-black in the dark one, with
+ * every neutral carrying a blue cast rather than the green one it used to —
+ * blue survives only as the one interactive accent (focus ring, links,
+ * selection, charts) — with red = alert, green = good, amber = warning as
+ * the only saturated colours on the page. Manrope for text, IBM Plex Mono
+ * for every number, latency, MAC, IP, timestamp and code value.
+ * `data-theme="light"` / `data-theme="dark"` on <html> overrides
+ * `prefers-color-scheme`; the default "system" setting leaves it to the OS.
+ *
+ * The reference's instrument-panel language: regions are separated by a
+ * single hairline, not lifted on a bordered, shadowed card — `--color-
+ * surface` sits one step *down* from `--color-bg` (recessed), never above
+ * it, and `--shadow-glow`/`--shadow-card` stay out of `.g-card` entirely.
+ * The two skins still differ in more than colour: the console skin is
+ * denser — tighter card padding and a smaller base font size. Those two
+ * carry skin-specific values (`--pad-card`, `--font-size-base`) like the
+ * palette does; radii are tiny (2-4px, near-flat) in both skins alike, so
+ * they are no longer split per skin.
+ *
+ * Status colours come in two strengths, and the difference matters:
+ *   --color-good / -warn / -alert   the MARK colour — dots, strokes, ring
+ *                                   arcs, borders, filled badge grounds.
+ *   --color-good-text / …           the same hue darkened far enough to clear
+ *                                   WCAG AA as *text* on its own `-soft`
+ *                                   ground (pills, toasts, status labels).
+ * In the console skin the mark colour already clears AA on its soft ground,
+ * so the two are the same value there. In the calm skin the reference's raw
+ * `--ok`/`--warn` values fall short of AA on their own `-soft` grounds
+ * (~4.3:1 / ~3.7:1) — `--color-good-text`/`--color-warn-text` are those same
+ * hues darkened just enough to clear 4.5:1 there; the soft grounds and mark
+ * colours themselves are the reference's values, unchanged.
+ * `tests/contrast.test.ts` asserts the `-text`/`-soft` pairs, which are the
+ * pairs actually rendered.
+ */
+
+:root {
+  /* calm light (default): white page, blue structure. */
+  --color-bg: #ffffff;
+  /* Recessed, not elevated: cards/tables sit one step *down* from the page
+   * ground, separated by a hairline border, never lifted with a shadow. */
+  --color-surface: #f1f5fb;
+  /* A further recess — chips, inset panels, sticky table headers. */
+  --color-surface-sunken: #e6edf7;
+  /* The navigation rail's ground, one step BELOW the page rather than above
+     it. The owner console's design reference builds its whole sense of depth
+     from background steps and 1px borders rather than from shadows -- rail,
+     then page, then card, then inset -- and without a darker rail the console
+     reads as one flat sheet with a line down it. Declared here rather than in
+     `owner.css`, which carries no colour literal by test. */
+  --color-rail: #e9eef7;
+  /* Elevated: popovers, menus, drawers, toasts — the one place that reads
+   * as "closer to the glass" than the page, so it goes back up to paper. */
+  --color-surface-raised: #ffffff;
+  --color-border: #c3d3e6;
+  /* The rail dividers only (topbar bottom, sidebar edge) — the reference's
+   * `--line-strong`, a touch darker than the everyday hairline. */
+  --color-border-strong: #8ba4c2;
+  --color-text: #0b1b2e;
+  --color-text-muted: #4a6280;
+  --color-primary: #1257c4;
+  --color-primary-strong: #0d3f92;
+  --color-primary-soft: #e2ecfc;
+  --color-on-primary: #ffffff;
+  --color-good: #1f7a4d;
+  --color-good-text: #1c6f46;
+  --color-good-soft: #dcece1;
+  --color-warn: #a6631a;
+  --color-warn-text: #8f5710;
+  --color-warn-soft: #f1e2cd;
+  --color-alert: #a3273a;
+  --color-alert-text: #a3273a;
+  --color-alert-soft: #f3dde1;
+  --shadow-card: 0 8px 24px rgba(11, 27, 46, 0.12);
+  /* No card ring/bloom in either skin — a hairline is the only separator. */
+  --shadow-glow: none;
+  /* Neutral modal scrim, deliberately the same in both skins (like
+   * `--shadow-card`) so a confirmation dialog reads as lifted off the page
+   * rather than tinted by the active theme. Expressed with `color-mix` on
+   * the light skin's ink so it stays a genuine token reference rather than a
+   * bare hex, while resolving to the same value in both skins because it is
+   * only ever redefined here, on the skin-independent `:root` block. */
+  --color-scrim: color-mix(in srgb, #0b1b2e 45%, transparent);
+
+  --font-sans: "Manrope", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  /* The numeric face. Every number, metric, latency, MAC, IP, timestamp and
+   * code value renders in it (see the `.mono` / `.num` classes below), which
+   * is what makes columns of figures line up. Same stack as `--font-mono`,
+   * named for the job so a call site reads as intent rather than as "some
+   * monospace". */
+  --font-num: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* Control geometry, from the reference console's `button` and
+     `input,select,textarea` rules — dense chips, not marketing buttons. */
+  --pad-control: 6px 10px;
+  --pad-field: 4px 6px;
+  --font-size-control: 12px;
+
+  /* Near-flat: the reference's badges/keys/buttons round 2-3px, its cells
+   * round 0. Same in both skins — see the file header. */
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  /* Card padding, per skin. */
+  --card-py: 14px;
+  --card-px: 16px;
+  --pad-card: var(--card-py) var(--card-px);
+  --font-size-base: 13px;
+
+  /* Chart/gauge surfaces. `--color-accent-2` is the single permitted second
+   * blue for a two-series chart: it separates from `--color-primary` by
+   * lightness inside the same hue, never by reaching for cyan/teal/purple. */
+  --color-grid: #e6edf7;
+  --color-accent-2: #0d3f92;
+  --color-track: #e6edf7;
+
+  /* Spacing, type scale, z-layers and shell geometry are skin-independent by
+   * design — a dark redefinition would be noise, not a token. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+
+  /* The header's site switcher and overflow menu -- above the sub-header's
+     latency strip and any card content, below the drawer. */
+  --z-menu: 30;
+  --z-drawer: 40;
+  /* The floating chat button sits one step above its own popover, so the
+     button stays clickable while the popover is open. */
+  --z-fab: 41;
+  --z-palette: 60;
+  --z-toast: 80;
+
+  --sidebar-w: 232px;
+  --sidebar-w-collapsed: 64px;
+  --topbar-h: 56px;
+  /* Height of the fixed mobile bottom tab bar. The floating chat button and
+     its popover are offset by it so neither ever covers the tabs. */
+  --mobile-tabs-h: 56px;
+
+  color-scheme: light;
+
+  /* ---- The glass material -------------------------------------------------
+   * Chrome only, and that boundary is the whole design. A translucent surface
+   * has whatever contrast the thing behind it happens to give it, and this is
+   * a product whose job is making an alert legible -- so the bars, rails,
+   * drawers and overlays that FRAME the work are glass, and everything that
+   * carries a number, a row or a status stays on an opaque token ground where
+   * `tests/contrast.test.ts` can still make a promise about it.
+   *
+   * `--color-glass-edge` is not decoration. Real glass lenses light at its
+   * rim, and a bright hairline along the top edge with nothing along the
+   * bottom is what separates a pane of glass from a grey bar with a blur
+   * behind it. It is the cheapest part of the effect and the one that carries
+   * it.
+   *
+   * Both are `--color-*` on purpose: that name opts them into
+   * `tests/ownerPalette.test.ts`, which forces the owner console to say what
+   * every semantic colour means on paper. Glass over paper is a different
+   * material from glass over a dark instrument panel, and the console should
+   * have to answer for it rather than inherit a tint built for a blue-black
+   * ground. */
+  --color-glass-tint: rgba(255, 255, 255, 0.62);
+  --color-glass-edge: rgba(255, 255, 255, 0.9);
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* console dark — reference's dark remap of `--paper`/`--panel`/`--line` */
+    --color-bg: #070d18;
+    --color-surface: #0d1626;
+    --color-surface-sunken: #111d31;
+    /* The navigation rail's ground, one step BELOW the page rather than above
+         it. The owner console's design reference builds its whole sense of depth
+         from background steps and 1px borders rather than from shadows -- rail,
+         then page, then card, then inset -- and without a darker rail the console
+         reads as one flat sheet with a line down it. Declared here rather than in
+         `owner.css`, which carries no colour literal by test. */
+    --color-rail: #050a12;
+    --color-surface-raised: #111d31;
+    --color-border: #21354f;
+    --color-border-strong: #3c5678;
+    --color-text: #e9f0fa;
+    --color-text-muted: #91a7c4;
+    --color-primary: #66a6ff;
+    --color-primary-strong: #8fc0ff;
+    --color-primary-soft: #14284a;
+    --color-on-primary: #04101f;
+    --color-good: #4fbb85;
+    --color-good-text: #4fbb85;
+    --color-good-soft: #123322;
+    --color-warn: #d99a4e;
+    --color-warn-text: #d99a4e;
+    --color-warn-soft: #3a2a12;
+    --color-alert: #e2647c;
+    --color-alert-text: #e2647c;
+    --color-alert-soft: #3a1620;
+    --shadow-card: 0 10px 32px rgba(0, 0, 0, 0.55);
+    --shadow-glow: none;
+    --card-py: 10px;
+    --card-px: 12px;
+    --pad-card: var(--card-py) var(--card-px);
+    --font-size-base: 12.5px;
+    --color-grid: #111d31;
+    --color-accent-2: #9fc4ff;
+    --color-track: #111d31;
+    color-scheme: dark;
+
+  /* Glass on the instrument panel: a dark tint, because a light one over a
+   * blue-black ground turns to milk. The edge stays light -- it is a
+   * highlight, not a border, and it is what makes the pane read as lensing
+   * rather than as a translucent rectangle. */
+  --color-glass-tint: rgba(18, 30, 51, 0.76);
+  --color-glass-edge: rgba(150, 190, 255, 0.22);
+  }
+}
+
+:root[data-theme="dark"] {
+  --color-bg: #070d18;
+  --color-surface: #0d1626;
+  --color-surface-sunken: #111d31;
+  --color-rail: #050a12;
+  --color-surface-raised: #111d31;
+  --color-border: #21354f;
+  --color-border-strong: #3c5678;
+  --color-text: #e9f0fa;
+  --color-text-muted: #91a7c4;
+  --color-primary: #66a6ff;
+  --color-primary-strong: #8fc0ff;
+  --color-primary-soft: #14284a;
+  --color-on-primary: #04101f;
+  --color-good: #4fbb85;
+  --color-good-text: #4fbb85;
+  --color-good-soft: #123322;
+  --color-warn: #d99a4e;
+  --color-warn-text: #d99a4e;
+  --color-warn-soft: #3a2a12;
+  --color-alert: #e2647c;
+  --color-alert-text: #e2647c;
+  --color-alert-soft: #3a1620;
+  --shadow-card: 0 10px 32px rgba(0, 0, 0, 0.55);
+  --shadow-glow: none;
+  --pad-card: 8px 12px;
+  --font-size-base: 12.5px;
+  --color-grid: #111d31;
+  --color-accent-2: #9fc4ff;
+  --color-track: #111d31;
+  color-scheme: dark;
+
+  /* Glass on the instrument panel: a dark tint, because a light one over a
+   * blue-black ground turns to milk. The edge stays light -- it is a
+   * highlight, not a border, and it is what makes the pane read as lensing
+   * rather than as a translucent rectangle. */
+  --color-glass-tint: rgba(18, 30, 51, 0.76);
+  --color-glass-edge: rgba(150, 190, 255, 0.22);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every number, metric, latency, MAC, IP, timestamp and code value. `.num`
+   is the same rule under the name the numeric token carries, so a call site
+   can read either way. */
+.mono,
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Nothing styled a bare `<a>`, so every link outside the handful of places
+   with their own rule -- a mailto in the access-request table, the sign-in
+   link on the console's refused page -- fell through to the user agent's
+   #0000EE, and to purple once visited. That is unreadable on the app's dark
+   ground and wrong on the console's paper one, and it was invisible in review
+   because the links that *are* styled look fine.
+
+   Links take the primary colour, which each surface has already defined for
+   itself: blue in the app, ink in the owner console. The underline stays --
+   colour alone is not a signal every reader can use, and these sit inside
+   running text and table cells where nothing else marks them out. */
+a {
+  color: var(--color-primary);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--color-primary-strong);
+}
+
+/* The default control is the reference's quiet chip: a recessed ground, a
+   hairline border, and an accent border on hover — not a filled blue button.
+   Filling is reserved for the one primary action in a view, which is what
+   `.primary` (and a form's own submit) marks. */
+button {
+  font-family: inherit;
+  font-size: var(--font-size-control);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: var(--pad-control);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+}
+
+button.primary,
+button[type="submit"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+
+button.primary:hover:not(:disabled),
+button[type="submit"]:hover:not(:disabled) {
+  border-color: var(--color-primary-strong);
+  background: var(--color-primary-strong);
+}
+
+button.danger {
+  border-color: var(--color-alert);
+  color: var(--color-alert-text);
+}
+
+/* The reference's `button.sm`, for a control that rides inside a row. */
+button.sm {
+  padding: 2px 7px;
+  font-size: var(--font-size-xs);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.link-button {
+  background: transparent;
+  color: var(--color-primary);
+  border: none;
+  padding: 0;
+  font-weight: 600;
+}
+
+button.link-button:hover:not(:disabled) {
+  border-color: transparent;
+  text-decoration: underline;
+}
+
+button.auth-secondary {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: none;
+  font-weight: 500;
+  padding: 0.3rem 0;
+}
+
+input[type="text"],
+input[type="checkbox"],
+input:not([type]) {
+  font-family: inherit;
+}
+
+/* `width: 100%` is Vault's own: its settings forms stack a label above a
+   field, where the reference puts both on one flex row with a narrow input.
+   Everything else — ground, hairline, radius, padding, size — is the
+   reference's `input,select,textarea` rule. */
+input:not([type="checkbox"]),
+select,
+textarea {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--pad-field);
+  font-size: var(--font-size-control);
+  font-family: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+input:not([type="checkbox"]) {
+  width: 100%;
+}
+
+/* The reference's `input[type=number]{width:70px}` — a number field sized to
+   its content instead of stretching across its column. */
+input[type="number"] {
+  width: 70px;
+}
+
+input:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin: 0.9rem 0 0.3rem;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glow);
+  padding: var(--pad-card);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0.4rem 0 0;
+}
+
+/* Visible error line for a failed mutation/query (e.g. "Generate enrol
+   code" failing) — same red as .auth-error, kept as its own class since
+   it's used outside the auth shell. */
+.error-text {
+  color: var(--color-alert-text);
+  font-size: 0.88rem;
+  margin: 0.6rem 0 0;
+}
+
+/* --- auth shell --- */
+
+/* The reference's sign-in: two equal columns, the pitch on the rail's darker
+ * ground with the brand mark at the top and a mono footer line, the form in a
+ * 340px column on the right. No card, no glass: the fields sit on the page. */
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.auth-side {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  padding: 48px;
+  background: var(--color-rail);
+  border-right: 1px solid var(--color-border);
+}
+
+/* The lattice, behind the pitch, and the veil that covers it until the first
+ * frame is drawn -- so the moment before the shader compiles looks like the
+ * design, and a machine with no WebGL2 lands on exactly the same screen. */
+#auth-gl {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0.5;
+}
+#auth-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--color-rail);
+  opacity: 1;
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.auth-side-in {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 100%;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.auth-pitch {
+  max-width: 420px;
+  margin: auto 0;
+}
+.auth-pitch h1 {
+  margin: 0 0 16px;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.auth-pitch p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.auth-foot {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.auth-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: var(--color-bg);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.auth-card form { display: flex; flex-direction: column; gap: 6px; }
+
+.auth-h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+}
+.auth-tagline {
+  margin: -10px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Field labels in the mono face, small and tracked, over an inset input. */
+.auth-card label {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.auth-card input:not([type="checkbox"]) {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  color: var(--color-text);
+}
+.auth-card input:not([type="checkbox"]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
+
+.auth-hint {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+.auth-error {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--color-alert-text);
+}
+.auth-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text);
+}
+
+.auth-card form button[type="submit"] {
+  width: 100%;
+  margin-top: 14px;
+  padding: 11px;
+  border-radius: 5px;
+  border: 0;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.auth-card form button[type="submit"]:hover:not(:disabled) { filter: brightness(1.12); }
+.auth-card form button[type="submit"]:disabled { opacity: 0.55; cursor: default; }
+.auth-card form button.auth-secondary {
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px;
+  border-radius: 5px;
+  background: none;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+/* The bordered note with the green dot, and the fine print under it. */
+.auth-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+.auth-note-dot {
+  flex: 0 0 auto;
+  width: 6px; height: 6px; margin-top: 6px;
+  border-radius: 50%;
+  background: var(--color-good);
+}
+.auth-fine {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+@media (max-width: 860px) {
+  .auth-shell { grid-template-columns: minmax(0, 1fr); }
+  .auth-side { min-height: 38vh; padding: 28px 24px; border-right: 0; border-bottom: 1px solid var(--color-border); }
+  .auth-pitch h1 { font-size: 24px; }
+  .auth-main { padding: 32px 20px; }
+}
+
+/* --- app shell --- */
+
+.app-shell {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+}
+
+.app-title {
+  font-size: 1.05rem;
+}
+
+.app-tenant {
+  color: var(--color-text-muted);
+  font-weight: 500;
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--color-border);
+  margin-left: 0.2rem;
+}
+
+.app-header-user {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.app-main {
+  flex: 1;
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.waiting-card h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.3rem;
+}
+
+.enrol-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.enrol-result code {
+  word-break: break-all;
+  font-size: 0.9rem;
+}
+
+.enrol-result button {
+  align-self: flex-start;
+}
+
+.score-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.score-ring-track {
+  fill: none;
+  stroke: var(--color-border);
+  stroke-width: 8;
+}
+
+.score-ring-text {
+  font-size: 1.6rem;
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
+.verdict {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.alerts-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.alert-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.alert-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.alert-stripe {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--color-text-muted);
+}
+
+.alert-row.sev-crit .alert-stripe {
+  background: var(--color-alert);
+}
+
+.alert-row.sev-warn .alert-stripe {
+  background: var(--color-warn);
+}
+
+.alert-row.sev-info .alert-stripe {
+  background: var(--color-primary);
+}
+
+.alert-msg {
+  flex: 1;
+  font-size: 0.92rem;
+}
+
+.alert-sev {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+}
+
+/* --- categorical chart palette ---------------------------------------
+ * Named `--chart-*`, deliberately outside the `--color-*` identity
+ * namespace: the product's identity tokens stay exactly as the redesign
+ * left them, and a chart series can never be mistaken for a status.
+ *
+ * Status colours (good / warn / alert) are RESERVED and never appear here.
+ * Reusing them for "vendor 4" makes an orange slice look like a warning.
+ *
+ * Both rows are validated, not eyeballed — dataviz `validate_palette.js`,
+ * all six checks passing against each mode's own chart surface:
+ *   light on #f1f5fb — lightness band, chroma floor, CVD separation,
+ *     normal-vision floor (worst adjacent ΔE 17.7) and 3:1 contrast
+ *   dark  on #0d1626 — the same checks, re-stepped into the dark band
+ *     (0.48–0.67) rather than flipped; worst adjacent ΔE 15.6
+ * Re-run the validator before changing any value here.
+ *
+ * `--chart-rest` and `--chart-unknown` are deliberately grey: neither is an
+ * identity, so both sit outside the categorical set and its chroma floor.
+ * They are two different greys because they mean two different things --
+ * "Other" is known vendors collapsed, "Not identified" is a vendor Vault
+ * could not determine, and one grey for both made the legend unreadable.
+ */
+:root {
+  --chart-1: #1257c4;
+  --chart-2: #0f9b8e;
+  --chart-3: #8a5cd6;
+  --chart-4: #b5651d;
+  --chart-5: #c2367f;
+  --chart-rest: #8494a8;
+  --chart-unknown: #c3cedd;
+}
+:root:not([data-theme="light"]) {
+  @media (prefers-color-scheme: dark) {
+    --chart-1: #4a86dd;
+    --chart-2: #1aa595;
+    --chart-3: #9573d4;
+    --chart-4: #c07c38;
+    --chart-5: #d05a8c;
+    --chart-rest: #6b7c91;
+    --chart-unknown: #3b4c63;
+  }
+}
+:root[data-theme="dark"] {
+  --chart-1: #4a86dd;
+  --chart-2: #1aa595;
+  --chart-3: #9573d4;
+  --chart-4: #c07c38;
+  --chart-5: #d05a8c;
+  --chart-rest: #6b7c91;
+  --chart-unknown: #3b4c63;
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      width: 260px; margin: 0; padding: 14px;
+    }
+    h1 { font-size: 13px; margin: 0 0 10px; letter-spacing: .02em; }
+    button {
+      width: 100%; padding: 9px; font-size: 13px; font-weight: 600;
+      border: 1px solid rgba(128,128,128,.4); border-radius: 7px;
+      background: transparent; color: inherit; cursor: pointer;
+    }
+    button:hover { border-color: rgba(128,128,128,.8); }
+    button.paused { background: #b45309; color: #fff; border-color: #b45309; }
+    .row { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+    .muted { opacity: .65; }
+    .err { color: #dc2626; word-break: break-word; }
+    a { color: inherit; font-size: 12px; }
+    .small { font-size: 12px; padding: 6px; font-weight: 400; }
+  </style>
+</head>
+<body>
+  <h1>ATLAS collector</h1>
+  <button id="toggle">…</button>
+  <div class="row muted"><span>Buffered</span><span id="buffered">–</span></div>
+  <div class="row muted"><span>Last sent</span><span id="sent">–</span></div>
+  <div class="row"><span id="error" class="err"></span></div>
+  <div class="row">
+    <button id="flush" class="small">Send now</button>
+    <button id="purge" class="small">Discard buffer</button>
+  </div>
+  <div class="row"><a href="#" id="options">Deny-list and settings →</a></div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

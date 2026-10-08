@@ -1,0 +1,131 @@
+# The public site on the bare domain (and www) — replaces the 301 that
+# nginx-redirect.conf.tmpl installed.
+#
+# This block serves static files only, with TWO exceptions, both exact-match
+# locations: the marketing site's "Request access" form posts to
+# /api/v1/public/lead, and its live panel polls /api/v1/public/feed. Those two
+# paths are proxied through to the hub so the page works from this origin.
+# Everything else about the app stays where it is — the app's own hostname, its server
+# block and its certificate are not touched by this file, and no other API path
+# is reachable from here.
+#
+# Served under the app's certificate: acme.sh issued ONE certificate covering
+# the app hostname plus these names (see deploy/setup-domain.sh), so there is
+# nothing extra to issue and nothing extra to renew.
+#
+# Placeholders, substituted by deploy/setup-site.sh:
+#   __SITE_NAMES__  space-separated server_name list (guarder.io www.guarder.io)
+#   __CERT_DOMAIN__ the hostname the certificate files are named after
+#   __SITE_ROOT__   directory the static site was rsynced to
+#
+# There is deliberately no `map $http_upgrade` here: no WebSocket reaches this
+# vhost, and that map is declared once per nginx instance by the app's block.
+
+server {
+  listen 443 ssl;
+  listen [::]:443 ssl;
+  http2 on;
+  server_name __SITE_NAMES__;
+
+  ssl_certificate     /etc/nginx/certs/__CERT_DOMAIN__.fullchain.pem;
+  ssl_certificate_key /etc/nginx/certs/__CERT_DOMAIN__.key.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+
+  root __SITE_ROOT__;
+  index index.html;
+  charset utf-8;
+
+  add_header Strict-Transport-Security "max-age=31536000" always;
+  add_header X-Content-Type-Options "nosniff" always;
+  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+  # The page loads nothing from anywhere else — its CSS, its scripts, its
+  # fonts and its favicon are all in this root — so the policy can be as tight
+  # as it reads. `form-action 'self'` matters most: it is the sales page, and
+  # this is what stops an injected form posting a visitor's details elsewhere.
+  #
+  # `connect-src` is the one widening, and only to Guardian's own API host:
+  # /status.html asks the reader's browser whether api.guarder.io answers,
+  # which is the only part of a same-machine status page worth anything. Under
+  # `default-src 'self'` alone that fetch is refused with no visible error —
+  # the page would load, the check would never run, and it would sit on
+  # "Checking…" forever. That silent-refusal failure is exactly what
+  # `test_site_csp` was written about for inline CSS; a `connect-src` that
+  # does not list the API fails the same way.
+  add_header Content-Security-Policy "default-src 'self'; connect-src 'self' https://api.guarder.io; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" always;
+
+  gzip on;
+  gzip_types text/css application/javascript image/svg+xml application/json;
+  gzip_min_length 512;
+
+  # The one proxied path. `location =` is an exact match, so no other API route
+  # — and nothing under /api/ — is reachable from the marketing hostname.
+  location = /api/v1/public/lead {
+    # A lead is a handful of short fields (the hub caps every one of them);
+    # 16k is generous for that and refuses a megabyte of junk at the edge,
+    # before it can occupy a worker or spend a rate-limit slot.
+    client_max_body_size 16k;
+
+    proxy_pass http://127.0.0.1:8800;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    # The hub reads the submitting address from X-Real-IP, and trusts it only
+    # because the request reaches it from loopback (see routers/leads.py).
+    # Without this header every lead would be recorded as 127.0.0.1 and the
+    # per-address rate limit would collapse into one global bucket.
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 30s;
+  }
+
+  # The live panel's source: the demo tenant's most recent notices, and the
+  # only other path this hostname can reach on the hub. A GET with no body and
+  # no parameters -- the hub caches it for 30s and rate-limits it per address,
+  # so a page left open all day is cheap on both sides.
+  location = /api/v1/public/feed {
+    proxy_pass http://127.0.0.1:8800;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    # Same reason as the lead route: without this every visitor shares one
+    # rate-limit bucket, because behind nginx they all arrive from loopback.
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 15s;
+  }
+
+  # Content-hashed asset names do not exist here (no build step), so a cached
+  # stylesheet cannot be invalidated by renaming it. An hour's max-age was
+  # therefore an hour in which the HTML and the CSS could disagree, and they
+  # did: a pricing change shipped, readers got the new markup with the old
+  # stylesheet, and the Subscribe button appeared twice on every card.
+  #
+  # `expires -1` means revalidate before use, not do not store. These are three
+  # small files and the usual answer is a 304, which costs one round trip and
+  # no body. Correctness over a saved kilobyte.
+  #
+  # `expires` emits Cache-Control on its own: an `add_header` here would ALSO
+  # stop this location inheriting the four security headers above, because
+  # nginx only inherits add_headers into a level that declares none of its own.
+  location ~* \.(css|js|svg)$ {
+    expires -1;
+    try_files $uri =404;
+  }
+
+  # Fonts are the exception: their names never change meaning and a refetch is
+  # 24 KB, so they keep a long window of their own.
+  location ~* \.woff2$ {
+    expires 30d;
+    try_files $uri =404;
+  }
+
+  location / {
+    try_files $uri $uri/ =404;
+    # A mistyped URL gets the sales page rather than nginx's default grey 404
+    # -- with a 404 status, not a 200, so a typo is never indexed as a real
+    # page. Scoped to this location on purpose: at server level it would also
+    # catch the asset location above, and a missing .woff2 would answer with
+    # 15KB of HTML on every cold load.
+    error_page 404 /index.html;
+  }
+}

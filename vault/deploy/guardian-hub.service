@@ -1,0 +1,16 @@
+[Unit]
+Description=Vault hub (API + dashboard)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/guardian/hub
+EnvironmentFile=/opt/guardian/hub/.env
+ExecStart=/opt/guardian/venv/bin/uvicorn guardian_hub.main:app --host 127.0.0.1 --port 8800 --workers 1 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,194 @@
+/* "Get help" — the customer's side of a ticket.
+ *
+ * Same grammar as the rest of the tenant app (hairlines, surfaces, no
+ * shadows). The thread is the point of the page, so the list is narrow and
+ * quiet and the conversation gets the width.
+ */
+.g-sup-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-4); margin: 0 0 var(--space-4);
+}
+.g-sup-head h1 { margin: 0; font-size: var(--font-size-xl); letter-spacing: -0.01em; }
+.g-sup-sub { margin: var(--space-2) 0 0; font-size: var(--font-size-sm); color: var(--color-text-muted); max-width: 60ch; }
+
+.g-sup-panes { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+
+.g-sup-list {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-surface); overflow: hidden;
+}
+.g-sup-item {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 12px; width: 100%; text-align: left;
+  background: none; border: 0; border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text); cursor: pointer;
+}
+.g-sup-item:last-child { border-bottom: 0; }
+.g-sup-item:hover { background: var(--color-surface-sunken); }
+.g-sup-item.is-active { background: var(--color-surface-sunken); border-left-color: var(--color-primary-strong); }
+.g-sup-subj { font-weight: 600; font-size: var(--font-size-sm); line-height: 1.4; }
+.g-sup-item-foot { display: flex; align-items: center; gap: 8px; }
+.g-sup-when { margin-left: auto; font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.g-sup-none { color: var(--color-text-muted); margin: 0; padding: var(--space-4); }
+
+.g-sup-main {
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-surface); min-width: 0;
+}
+.g-sup-thread-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4);
+  padding: var(--space-4); border-bottom: 1px solid var(--color-border);
+}
+.g-sup-thread-head h2 { margin: 0; font-size: var(--font-size-lg); }
+.g-sup-meta { margin: 4px 0 0; font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.g-sup-resolved {
+  margin: 0; padding: 10px var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm); color: var(--color-text-muted);
+}
+
+.g-sup-msgs { list-style: none; margin: 0; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }
+.g-sup-msg { padding-left: 12px; border-left: 2px solid var(--color-border); }
+.g-sup-msg.is-owner { border-left-color: var(--color-primary-strong); }
+.g-sup-msg-head { display: flex; align-items: baseline; gap: 8px; font-size: var(--font-size-xs); }
+.g-sup-msg-when { color: var(--color-text-muted); }
+.g-sup-msg-body { margin: 4px 0 0; white-space: pre-wrap; line-height: 1.6; font-size: var(--font-size-sm); }
+
+.g-sup-new, .g-sup-reply { padding: var(--space-4); }
+.g-sup-reply { border-top: 1px solid var(--color-border); }
+.g-sup-new label, .g-sup-reply label {
+  display: block; margin: var(--space-3) 0 6px;
+  font-size: var(--font-size-xs); color: var(--color-text-muted);
+}
+.g-sup-new label:first-child { margin-top: 0; }
+.g-sup-new input, .g-sup-new textarea, .g-sup-new select, .g-sup-reply textarea {
+  width: 100%; box-sizing: border-box; padding: 9px 10px;
+  border: 1px solid var(--color-border); border-radius: var(--radius-sm);
+  background: var(--color-bg); color: var(--color-text);
+  font: inherit; line-height: 1.6;
+}
+.g-sup-new textarea, .g-sup-reply textarea { resize: vertical; }
+.g-sup-new-foot { display: flex; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-4); }
+.g-sup-reply .g-btn-primary { margin-top: var(--space-3); }
+.g-sup-err { margin: var(--space-2) 0 0; font-size: var(--font-size-xs); color: var(--color-alert-text); }
+
+@media (max-width: 900px) {
+  .g-sup-panes { grid-template-columns: 1fr; }
+}
+
+/* "If it is urgent". Rendered only when a number is configured — see
+   Support.tsx: an unanswered line is worse than no line at all. */
+.g-sup-urgent {
+  margin-top: var(--space-4); padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+}
+.g-sup-urgent h3 { margin: 0 0 2px; font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600; }
+.g-sup-tel { font-family: var(--font-mono); font-size: var(--font-size-md); font-weight: 600; }
+.g-sup-urgent p { margin: 2px 0 0; font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.g-sup-lede { margin: 0 0 var(--space-2); font-size: var(--font-size-sm); font-weight: 600; }
+.g-sup-sla { margin: var(--space-2) 0 0; font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+/* --- Support as a ticket desk (Vault Portal v2 + the fields the hub
+   already holds: reference, priority, status, who spoke last, how many
+   messages, where the ticket is in its life). ------------------------- */
+.g-sup-stats { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-2); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.g-sup-stats li { display: grid; gap: 1px; padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
+.g-sup-stats li[data-warn] .g-sup-stat-n { color: var(--color-warn-text); }
+/* Healthy recedes: a zero is the absence of work, so it sits at label size
+   and muted rather than as three equal-weight numerals shouting "nothing". */
+.g-sup-stats li[data-zero] .g-sup-stat-n { font-size: var(--font-size-md); font-weight: 600; color: var(--color-text-muted); }
+.g-sup-stat-n { font-size: var(--font-size-xl); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.g-sup-stat-text { font-size: var(--font-size-md); }
+.g-sup-stat-l { font-size: var(--font-size-sm); font-weight: 600; }
+.g-sup-stat-note { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+
+.g-sup-tools { display: grid; gap: 6px; padding: 0 0 var(--space-2); }
+.g-sup-filters { display: flex; gap: 4px; flex-wrap: wrap; }
+.g-sup-filter { font: inherit; font-size: var(--font-size-xs); padding: 3px 8px; border-radius: var(--radius-sm); cursor: pointer; background: transparent; color: var(--color-text-muted); border: 1px solid var(--color-border); }
+.g-sup-filter[aria-pressed="true"] { color: var(--color-primary); border-color: var(--color-primary); }
+.g-sup-filter:hover { color: var(--color-text); }
+.g-sup-search { font: inherit; font-size: var(--font-size-xs); padding: 5px 8px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-surface-sunken); color: var(--color-text); width: 100%; }
+
+.g-sup-item-top { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.g-sup-ref { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-muted); }
+.g-sup-item[data-status="answered"] { border-left: 2px solid var(--color-warn); }
+.g-sup-last { font-size: 11px; color: var(--color-text-muted); }
+.g-sup-count { font-size: 11px; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+.g-sup-ref-line { margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+.g-sup-steps { list-style: none; margin: var(--space-3) 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.g-sup-steps li { display: grid; gap: 1px; padding: 6px 10px; border-top: 2px solid var(--color-border); font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.g-sup-steps li[data-done] { border-top-color: var(--color-good); color: var(--color-text); }
+.g-sup-steps li span { font-weight: 600; }
+.g-sup-steps li em { font-style: normal; font-size: 11px; color: var(--color-text-muted); }
+
+/* Item 46: what a ticket is about.
+   The category and the attached thing are the two facts a desk triages on,
+   so they sit in the row itself rather than behind the thread. */
+.g-sup-cat {
+  font-size: 11px;
+  letter-spacing: .01em;
+  color: var(--color-text-soft);
+}
+.g-sup-about-chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 1px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-soft);
+}
+.g-sup-age {
+  font-size: 11px;
+  color: var(--color-text-soft);
+}
+.g-sup-age[data-old="1"] { color: var(--sig-warn, var(--warn)); }
+
+.g-sup-about {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+.g-sup-about-l {
+  text-transform: none;
+  color: var(--color-text-soft);
+}
+.g-sup-about-v { color: var(--color-text); }
+a.g-sup-about-v { color: var(--color-primary); }
+
+/* The way back into the ticket desk from wherever the problem is. Quiet: it
+   sits beside Forget, and it is not the action anyone came to the drawer
+   for. */
+.g-device-ask { margin-top: 12px; }
+.g-device-ask a { text-decoration: none; }
+
+/* Live: the header says whether replies are arriving as they are sent. */
+.g-sup-live { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-text-muted); }
+.g-sup-live::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--color-text-muted); }
+.g-sup-live[data-state="open"]::before { background: var(--color-good); }
+
+/* Unread: a reply from Vault this browser has not opened. Weight, not colour,
+ * does most of the work -- the subject turns bold -- and one small dot. */
+.g-sup-unread { width: 8px; height: 8px; border-radius: 50%; background: var(--color-primary); flex: none; }
+.g-sup-item[data-unread="1"] .g-sup-subj { font-weight: 700; color: var(--color-text); }
+
+/* "New reply" marks where the reader left off, above the first reply from
+ * Vault that arrived since. */
+.g-sup-msg[data-new-from="1"] { position: relative; margin-top: 28px; }
+.g-sup-msg[data-new-from="1"]::before {
+  content: "New reply"; position: absolute; top: -22px; left: 0; right: 0;
+  font-size: 12px; font-weight: 600; color: var(--color-primary);
+  border-top: 1px solid var(--color-primary); padding-top: 3px;
+}
+
+/* The reply box stays in reach while the thread scrolls. */
+.g-sup-reply { position: sticky; bottom: 0; background: var(--color-surface); padding-top: 10px; z-index: 1; }

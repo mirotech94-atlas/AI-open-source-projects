@@ -1,0 +1,7 @@
+{
+  "name": "airglass",
+  "private": true,
+  "type": "module",
+  "description": "Local webcam hand-tracking HUD. No dependencies: three.js and MediaPipe load from pinned CDN URLs in index.html.",
+  "scripts": { "test": "node --test test/" }
+}

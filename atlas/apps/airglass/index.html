@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Privacy, enforced by the browser: scripts only from this folder and the
+     pinned CDN; the page may connect only to this server, the pinned library and
+     model hosts and (if the ATLAS STATUS toggle is on) ATLAS's public /healthz.
+     No code here sends a frame, landmark or image anywhere. The importmap's
+     sha256 is listed in script-src: recompute it if you edit the importmap. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval' 'sha256-H/BkOGkQUzryT1VDVL5mOf+nkOIet+Vcqgj15cnhrQU='; connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com https://atlas.example.com blob: data:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: mediastream:; worker-src 'self' blob:; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<title>Air Glass</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="main.js"></script>
+</head>
+<body>
+<video id="cam" playsinline muted autoplay></video>
+<div id="scrim"></div>
+<canvas id="gl"></canvas>
+<canvas id="hands"></canvas>
+
+<div class="frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+<header id="brand">
+  <b>AIR GLASS</b><span>ATLAS · LOCAL</span>
+</header>
+
+<div id="status" role="status">
+  <span>SRC <b id="st-source">–</b></span>
+  <span>HANDS <b id="st-hands">0</b></span>
+  <span>FPS <b id="st-fps">–</b></span>
+  <span>GESTURE <b id="st-gesture">IDLE</b></span>
+</div>
+
+<p id="privacy">Runs entirely in this browser. No frame, landmark or image leaves this Mac.</p>
+<p id="hint">Hold an open palm for 1 s for the menu · pinch to grab · two hands to scale · flick right to toss</p>
+
+<button id="panel-tab" aria-controls="panel" aria-expanded="false">MENU</button>
+<aside id="panel" aria-label="Air Glass menu">
+  <section id="vault">
+    <h2><span>01</span>VAULT</h2>
+    <ul id="vault-list"></ul>
+  </section>
+  <section id="props">
+    <h2><span>02</span>PROPS</h2>
+    <ul id="prop-list"></ul>
+    <button id="open-file" class="file">Open file… <small>.glb / .gltf</small></button>
+    <input id="file" type="file" accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp" multiple hidden>
+  </section>
+  <section id="kinetics">
+    <h2><span>03</span>KINETICS</h2>
+    <dl>
+      <dt>POS</dt><dd id="k-pos">0.00 0.00</dd>
+      <dt>ROT XYZ</dt><dd id="k-rot">0° 0° 0°</dd>
+      <dt>SCALE</dt><dd id="k-scale">×1.00</dd>
+      <dt>VEL</dt><dd id="k-vel">0.00</dd>
+    </dl>
+    <div class="toggles">
+      <button data-toggle="hologram" aria-pressed="true">LOOK <b>HOLO</b></button>
+      <button data-toggle="voice" aria-pressed="true">VOICE <b>CAPTIONS</b></button>
+      <button data-toggle="demo" aria-pressed="false">DEMO <b>OFF</b></button>
+      <button data-toggle="status" aria-pressed="false">ATLAS STATUS <b>OFF</b></button>
+    </div>
+    <p class="keys">Keys: H look · V voice · D demo · M menu · S status</p>
+  </section>
+</aside>
+
+<div id="catcher" aria-hidden="true"><i></i><span>ATLAS</span></div>
+
+<div id="orb" hidden data-state="OFF">
+  <i></i>
+  <div><b id="orb-word">UNKNOWN</b><small id="orb-detail"></small></div>
+</div>
+
+<div id="caption" aria-live="polite"></div>
+<p id="speak-hint" hidden>Click once anywhere to let ATLAS speak (the browser's rule)</p>
+<div id="demo-caption" hidden></div>
+<div id="drop" hidden><p>Drop a .glb or .gltf<br><small>loaded locally, never uploaded</small></p></div>
+
+<div id="message" hidden role="alertdialog" aria-labelledby="msg-title">
+  <div class="box">
+    <h1 id="msg-title"></h1>
+    <p id="msg-body"></p>
+    <div class="actions">
+      <button id="msg-demo">Start demo mode</button>
+      <button id="msg-retry" class="ghost">Try the camera again</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

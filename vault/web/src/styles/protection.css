@@ -1,0 +1,120 @@
+/* Malware / dark-web protection on the Security page.
+   Two columns of the same weight: what was stopped, and what this machine
+   is doing for itself. No new hues — the bars borrow the alert palette so a
+   dark-web row reads the same as a dark-web badge elsewhere. */
+.g-prot-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+.g-prot-col h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.01em;
+}
+.g-prot-col h4 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.g-prot-quiet, .g-prot-note, .g-prot-scope {
+  margin: 0; font-size: var(--font-size-xs);
+  line-height: 1.55; color: var(--color-text-muted); max-width: 62ch;
+}
+.g-prot-note { margin-top: var(--space-3); }
+.g-prot-scope {
+  margin-top: var(--space-4); padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+.g-prot-total { margin: 0 0 var(--space-3); font-size: var(--font-size-sm); }
+.g-prot-total strong { font-size: var(--font-size-lg); font-variant-numeric: tabular-nums; }
+
+/* One row per category: name, proportion, count. The bar is the comparison;
+   the number is the fact. */
+.g-prot-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.g-prot-bars li {
+  display: grid; grid-template-columns: minmax(0, 1fr) 90px auto;
+  align-items: center; gap: var(--space-3);
+}
+.g-prot-bar-label { display: flex; flex-direction: column; gap: 1px; font-size: var(--font-size-xs); }
+.g-prot-bar-label em {
+  font-style: normal; color: var(--color-text-muted); font-size: var(--font-size-xs);
+}
+.g-prot-bar-track {
+  height: 6px; border-radius: 3px; background: var(--color-surface-sunken); overflow: hidden;
+}
+.g-prot-bar-fill { display: block; height: 100%; background: var(--color-warn); }
+/* The one category the owner asked for by name wears the alarm colour. */
+.g-prot-bars li[data-darkweb] .g-prot-bar-fill { background: var(--color-alert); }
+.g-prot-bars li[data-darkweb] .g-prot-bar-label { font-weight: 600; }
+.g-prot-bar-n { font-variant-numeric: tabular-nums; font-size: var(--font-size-xs); }
+
+.g-prot-recent { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.g-prot-recent li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center; gap: var(--space-3);
+  font-size: var(--font-size-xs); color: var(--color-text-muted);
+}
+.g-prot-recent code {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--font-mono); color: var(--color-text);
+}
+
+.g-prot-defences { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.g-prot-defences li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "badge label" ". buys";
+  align-items: baseline; gap: 2px var(--space-3);
+  padding-bottom: 8px; border-bottom: 1px solid var(--color-border);
+}
+.g-prot-defences li:last-child { border-bottom: 0; }
+.g-prot-def-label { grid-area: label; font-size: var(--font-size-sm); font-weight: 600; }
+.g-prot-def-buys { grid-area: buys; font-size: var(--font-size-xs); color: var(--color-text-muted); }
+/* A protection that is OFF is the only thing here worth a second look. */
+.g-prot-defences li[data-state="off"] .g-prot-def-label { color: var(--color-alert-text); }
+
+@media (max-width: 900px) {
+  .g-prot-cols { grid-template-columns: 1fr; gap: var(--space-4); }
+}
+
+/* --- the attack-type grid ------------------------------------------------
+   Cards of equal weight, because the point is the comparison: which attacks
+   Vault stops, which it only watches, and which it admits it cannot do
+   anything about. A card with something open gets a left edge, nothing else. */
+.g-threats { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+.g-threats h3 { margin: 0 0 var(--space-4); font-size: var(--font-size-sm); }
+.g-threat-grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+.g-threat {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  border-left: 3px solid transparent;
+  background: var(--color-surface-sunken);
+}
+.g-threat[data-open] { border-left-color: var(--color-warn); }
+.g-threat[data-open][data-stance="effect-only"] { border-left-color: var(--color-alert); }
+.g-threat header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.g-threat h4 { margin: 0; font-size: var(--font-size-sm); }
+.g-threat-what { margin: 0; font-size: var(--font-size-xs); line-height: 1.5; }
+.g-threat-does, .g-threat-limit {
+  margin: 0; font-size: var(--font-size-xs); line-height: 1.5; color: var(--color-text-muted);
+}
+/* The sentence admitting what Vault does not do is set apart, not hidden. */
+.g-threat-limit { padding-left: var(--space-3); border-left: 2px solid var(--color-border); }
+.g-threat-now { margin-top: auto; padding-top: var(--space-2); }
+.g-threat-clear, .g-threat-count {
+  font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; color: var(--color-text-muted);
+}
+.g-threat-count { font-weight: 600; color: var(--color-text); }
+.g-threat-signals { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.g-threat-signals li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline;
+  gap: var(--space-2); font-size: var(--font-size-xs); color: var(--color-text-muted);
+}
+.g-threat-signals span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

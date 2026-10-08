@@ -1,0 +1,2400 @@
+{
+  "store": {
+    "name": "ATLAS Academy",
+    "domain": "shop.mapfront.io",
+    "author": "Miro (Myron Mekhael)",
+    "contact_email": "miro@mapfront.io",
+    "contact_email_note": "Configurable. No ATLAS Academy address was found in the vault, so this is Mapfront's address until Miro sets one.",
+    "currency": "usd",
+    "facts_checked": "1 Oct 2026",
+    "facts_note": "Every count on the site was read from the built files (pdfinfo, unzip -l, ls) on the date above. Re-check after any file changes.",
+    "access_valid_days": null,
+    "access_valid_days_note": "Miro sets. null: the access page keeps working for as long as Stripe says the checkout is paid and not refunded; every visit asks Stripe again.",
+    "download_link_days": 7
+  },
+  "products": [
+    {
+      "slug": "safe-ai-operator",
+      "title": "Build a Safe AI Operator",
+      "kind": "Course",
+      "tags": ["build", "business", "automate"],
+      "cover": "covers/safe-ai-operator.jpg",
+      "cover_alt": "Cover of Build a Safe AI Operator: a shield with a check mark and the line \"The AI that can't burn your business.\"",
+      "summary": "Build an AI agent that does real work for your business and can't move money, delete data or act without your OK.",
+      "intro": "A written course, by Miro, on the eight rules his own agent, ATLAS, runs on. You build a small operator that watches first, picks actions from a closed list, asks before it acts, and says \"unknown\" instead of guessing. Each lesson ends with one exercise on the starter agent.",
+      "benefits": [
+        "Write checks that only read, and that report UNKNOWN when they can't see, never \"fine\".",
+        "Give the model a closed menu of actions, with every argument validated, so it can't write code or commands.",
+        "Set tiers in code: runs by itself, asks you first, or never. Silence never counts as a yes.",
+        "Keep emails and web pages from giving your agent orders, and keep keys out of the prompt.",
+        "Put it to work: a receptionist, a content engine and laptop control, each with receipts."
+      ],
+      "label": [
+        {
+          "name": "Format",
+          "value": "Video course: 28 narrated video lessons of 4 to 8 minutes each, plus the written guide (PDF) and a Python starter agent"
+        },
+        {
+          "name": "Watch",
+          "value": "On your access page, in the browser, or download each lesson"
+        },
+        {
+          "name": "Guide",
+          "value": "93 pages, A4"
+        },
+        {
+          "name": "Lessons",
+          "value": "28 lessons in 10 modules, plus a bonus chapter"
+        },
+        {
+          "name": "Starter agent",
+          "value": "Python 3.11 or newer, with tests"
+        },
+        {
+          "name": "You need",
+          "value": "Some Python, or the patience to learn it with Claude beside you"
+        }
+      ],
+      "inside": [
+        {
+          "title": "Module 0: Why AI agents burn people",
+          "items": [
+            "0.1 The week-one failure",
+            "0.2 The eight rules"
+          ]
+        },
+        {
+          "title": "Module 1: Eyes before hands",
+          "items": [
+            "1.1 Collectors only read",
+            "1.2 Unknown is not OK",
+            "1.3 Watch-only mode"
+          ]
+        },
+        {
+          "title": "Module 2: Never guess a number",
+          "items": [
+            "2.1 Fresh reads",
+            "2.2 \"I can't reach Stripe\" beats a wrong number"
+          ]
+        },
+        {
+          "title": "Module 3: The closed catalog",
+          "items": [
+            "3.1 The model picks names, not code",
+            "3.2 Closed arguments too"
+          ]
+        },
+        {
+          "title": "Module 4: Tiers",
+          "items": [
+            "4.1 Auto, ask, never",
+            "4.2 Things that are never allowed",
+            "4.3 Dry run and undo"
+          ]
+        },
+        {
+          "title": "Module 5: Approvals that can't be faked",
+          "items": [
+            "5.1 One approval card, one tap",
+            "5.2 Silence is never consent",
+            "5.3 Earning autonomy"
+          ]
+        },
+        {
+          "title": "Module 6: Everything it reads is untrusted",
+          "items": [
+            "6.1 Prompt injection in the wild",
+            "6.2 Wrapping untrusted text",
+            "6.3 Security alerts are untrusted too"
+          ]
+        },
+        {
+          "title": "Module 7: Secrets and least privilege",
+          "items": [
+            "7.1 Keys never touch the prompt",
+            "7.2 Restricted keys",
+            "7.3 Which devices may talk to it"
+          ]
+        },
+        {
+          "title": "Module 8: Watch the watcher",
+          "items": [
+            "8.1 Guard the machine your agent lives on",
+            "8.2 The kill switch",
+            "8.3 Deploys that roll back"
+          ]
+        },
+        {
+          "title": "Module 9: Put it to work",
+          "items": [
+            "9.1 An AI receptionist",
+            "9.2 A content engine, with receipts",
+            "9.3 Laptop control",
+            "9.4 Your weekly report"
+          ]
+        },
+        {
+          "title": "Bonus",
+          "items": [
+            "From course to client: selling a safe operator to a local business"
+          ]
+        }
+      ],
+      "audience": [
+        "Founders, freelancers and technical small-business owners who want an agent that does real work.",
+        "People who have seen \"AI team runs my company\" videos and want the version that can't burn them."
+      ],
+      "not_for": [
+        "Anyone looking for a no-code tool. The course builds in Python.",
+        "Anyone hoping for an agent that acts on its own from day one. This course earns autonomy step by step."
+      ],
+      "notice": "",
+      "faq": [
+        {
+          "q": "Is the starter agent the ATLAS code?",
+          "a": "No. It was written fresh for the course, small on purpose so you can read all of it in an evening. Every pattern is shown on it with made-up names."
+        },
+        {
+          "q": "Does the course include videos?",
+          "a": "No. This is the written edition: the PDF and the starter agent."
+        },
+        {
+          "q": "Will it scan or test other people's systems?",
+          "a": "No. The material is defensive only: scan networks you own or have permission to scan."
+        }
+      ],
+      "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
+      "refund_note": "",
+      "licence": "One purchase covers one household: everyone who lives in the buyer's home may use the guides and printables. Please don't resell or share them publicly. The buyer must be an adult. We never ask for a child's name, age or email.",
+      "licence_note": "",
+      "pairs_with": "claude-obsidian-vault-kit",
+      "pairs_reason": "Keep your clients, projects and prompts in one vault your operator's Claude can read.",
+      "offers": [
+        {
+          "id": "safe-ai-operator",
+          "name": "Build a Safe AI Operator",
+          "price_usd": 20,
+          "price_note": "Miro, 2026-10-01: $20 (matches the Shopify price read 2026-09-29). Live Stripe link plink_1ULlC4AZE7Rk74vY6x9Ep7I2.",
+          "payment_link": "https://buy.stripe.com/dRm00icmberw2d63SJgnK08",
+          "stripe_price_id": "price_1ULlC3AZE7Rk74vY4CfIBYa5",
+          "files": [
+            {
+              "key": "operator-video-0-1",
+              "label": "Lesson 0.1: The week-one failure (video)",
+              "path": "safe-ai-operator/videos/lesson-0.1.mp4"
+            },
+            {
+              "key": "operator-video-0-2",
+              "label": "Lesson 0.2: The eight rules (video)",
+              "path": "safe-ai-operator/videos/lesson-0.2.mp4"
+            },
+            {
+              "key": "operator-video-1-1",
+              "label": "Lesson 1.1: Collectors only read (video)",
+              "path": "safe-ai-operator/videos/lesson-1.1.mp4"
+            },
+            {
+              "key": "operator-video-1-2",
+              "label": "Lesson 1.2: Unknown is not OK (video)",
+              "path": "safe-ai-operator/videos/lesson-1.2.mp4"
+            },
+            {
+              "key": "operator-video-1-3",
+              "label": "Lesson 1.3: Watch-only mode (video)",
+              "path": "safe-ai-operator/videos/lesson-1.3.mp4"
+            },
+            {
+              "key": "operator-video-2-1",
+              "label": "Lesson 2.1: Fresh reads (video)",
+              "path": "safe-ai-operator/videos/lesson-2.1.mp4"
+            },
+            {
+              "key": "operator-video-2-2",
+              "label": "Lesson 2.2: \"I can't reach Stripe\" beats a wrong number (video)",
+              "path": "safe-ai-operator/videos/lesson-2.2.mp4"
+            },
+            {
+              "key": "operator-video-3-1",
+              "label": "Lesson 3.1: The model picks names, not code (video)",
+              "path": "safe-ai-operator/videos/lesson-3.1.mp4"
+            },
+            {
+              "key": "operator-video-3-2",
+              "label": "Lesson 3.2: Closed arguments too (video)",
+              "path": "safe-ai-operator/videos/lesson-3.2.mp4"
+            },
+            {
+              "key": "operator-video-4-1",
+              "label": "Lesson 4.1: Auto, ask, never (video)",
+              "path": "safe-ai-operator/videos/lesson-4.1.mp4"
+            },
+            {
+              "key": "operator-video-4-2",
+              "label": "Lesson 4.2: Things that are never allowed (video)",
+              "path": "safe-ai-operator/videos/lesson-4.2.mp4"
+            },
+            {
+              "key": "operator-video-4-3",
+              "label": "Lesson 4.3: Dry run and undo (video)",
+              "path": "safe-ai-operator/videos/lesson-4.3.mp4"
+            },
+            {
+              "key": "operator-video-5-1",
+              "label": "Lesson 5.1: One approval card, one tap (video)",
+              "path": "safe-ai-operator/videos/lesson-5.1.mp4"
+            },
+            {
+              "key": "operator-video-5-2",
+              "label": "Lesson 5.2: Silence is never consent (video)",
+              "path": "safe-ai-operator/videos/lesson-5.2.mp4"
+            },
+            {
+              "key": "operator-video-5-3",
+              "label": "Lesson 5.3: Earning autonomy (video)",
+              "path": "safe-ai-operator/videos/lesson-5.3.mp4"
+            },
+            {
+              "key": "operator-video-6-1",
+              "label": "Lesson 6.1: Prompt injection in the wild (video)",
+              "path": "safe-ai-operator/videos/lesson-6.1.mp4"
+            },
+            {
+              "key": "operator-video-6-2",
+              "label": "Lesson 6.2: Wrapping untrusted text (video)",
+              "path": "safe-ai-operator/videos/lesson-6.2.mp4"
+            },
+            {
+              "key": "operator-video-6-3",
+              "label": "Lesson 6.3: Security alerts are untrusted too (video)",
+              "path": "safe-ai-operator/videos/lesson-6.3.mp4"
+            },
+            {
+              "key": "operator-video-7-1",
+              "label": "Lesson 7.1: Keys never touch the prompt (video)",
+              "path": "safe-ai-operator/videos/lesson-7.1.mp4"
+            },
+            {
+              "key": "operator-video-7-2",
+              "label": "Lesson 7.2: Restricted keys (video)",
+              "path": "safe-ai-operator/videos/lesson-7.2.mp4"
+            },
+            {
+              "key": "operator-video-7-3",
+              "label": "Lesson 7.3: Which devices may talk to it (video)",
+              "path": "safe-ai-operator/videos/lesson-7.3.mp4"
+            },
+            {
+              "key": "operator-video-8-1",
+              "label": "Lesson 8.1: Guard the machine your agent lives on (video)",
+              "path": "safe-ai-operator/videos/lesson-8.1.mp4"
+            },
+            {
+              "key": "operator-video-8-2",
+              "label": "Lesson 8.2: The kill switch (video)",
+              "path": "safe-ai-operator/videos/lesson-8.2.mp4"
+            },
+            {
+              "key": "operator-video-8-3",
+              "label": "Lesson 8.3: Deploys that roll back (video)",
+              "path": "safe-ai-operator/videos/lesson-8.3.mp4"
+            },
+            {
+              "key": "operator-video-9-1",
+              "label": "Lesson 9.1: An AI receptionist (video)",
+              "path": "safe-ai-operator/videos/lesson-9.1.mp4"
+            },
+            {
+              "key": "operator-video-9-2",
+              "label": "Lesson 9.2: A content engine, with receipts (video)",
+              "path": "safe-ai-operator/videos/lesson-9.2.mp4"
+            },
+            {
+              "key": "operator-video-9-3",
+              "label": "Lesson 9.3: Laptop control (video)",
+              "path": "safe-ai-operator/videos/lesson-9.3.mp4"
+            },
+            {
+              "key": "operator-video-9-4",
+              "label": "Lesson 9.4: Your weekly report (video)",
+              "path": "safe-ai-operator/videos/lesson-9.4.mp4"
+            },
+            {
+              "key": "operator-pdf",
+              "label": "Build a Safe AI Operator (PDF, 93 pages)",
+              "path": "safe-ai-operator/build-a-safe-ai-operator.pdf"
+            },
+            {
+              "key": "operator-starter",
+              "label": "safe-operator starter agent (zip)",
+              "path": "safe-ai-operator/safe-operator-starter.zip"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "Products/Build a Safe AI Operator/README.md",
+        "Products/Build a Safe AI Operator/Sales page.md",
+        "Products/Build a Safe AI Operator/Outline.md",
+        "Products/Build a Safe AI Operator/Lesson *.md"
+      ]
+    },
+    {
+      "slug": "30-business-lessons",
+      "title": "30 Business Lessons",
+      "kind": "Ebook",
+      "tags": ["business", "start", "money"],
+      "cover": "covers/30-business-lessons.jpg",
+      "cover_alt": "Cover of 30 Business Lessons: starting a small AI-assisted service business, one honest step at a time.",
+      "summary": "Starting a small AI-assisted service business, one honest step at a time: 30 short lessons and an offer worksheet.",
+      "intro": "A practical guide for people starting a small AI-assisted service business: captions, product demos, FAQ answers, booking pages, proposals, simple websites. Each lesson explains one idea, gives you one step to try, and one line to keep. Read one a day for thirty days, or straight through.",
+      "benefits": [
+        "Turn a skill into one clear offer, then scope and price it without fooling yourself.",
+        "Test an idea with real conversations before you build anything.",
+        "Write proposals, first messages and product descriptions people can understand.",
+        "Measure more than views, and pick your next experiment on purpose."
+      ],
+      "label": [
+        {
+          "name": "Format",
+          "value": "PDF ebook, English"
+        },
+        {
+          "name": "Length",
+          "value": "35 pages, A5"
+        },
+        {
+          "name": "Lessons",
+          "value": "30, each with a Try this step and a takeaway"
+        },
+        {
+          "name": "Also inside",
+          "value": "A one-page Offer Worksheet"
+        },
+        {
+          "name": "Arabic edition",
+          "value": "In language review, not for sale yet"
+        }
+      ],
+      "inside": [
+        {
+          "title": "Lessons 1 to 10",
+          "items": [
+            "1. Sell a result, not AI",
+            "2. Product-demo clips for shops",
+            "3. Menu clips without fake dishes",
+            "4. Find the hidden cost",
+            "5. Turn one recording into clips",
+            "6. The FAQ service",
+            "7. Ask before you build",
+            "8. Captions as a service",
+            "9. A simple lead tracker",
+            "10. A useful one-page website"
+          ]
+        },
+        {
+          "title": "Lessons 11 to 20",
+          "items": [
+            "11. A sample isn't a client result",
+            "12. Document the repeating task",
+            "13. Presentation cleanup",
+            "14. Choose one idea to test",
+            "15. A proposal people can understand",
+            "16. Product descriptions with evidence",
+            "17. The booking handoff",
+            "18. A newsletter from approved notes",
+            "19. A useful first message",
+            "20. Sell what you can review"
+          ]
+        },
+        {
+          "title": "Lessons 21 to 30",
+          "items": [
+            "21. Build a niche template pack",
+            "22. The free worksheet walkthrough",
+            "23. A retainer needs repeating work",
+            "24. What is inside the starter kit?",
+            "25. Who should not buy it?",
+            "26. A real tool test",
+            "27. Offer review, not a success guarantee",
+            "28. Measure more than views",
+            "29. One input, three checks",
+            "30. Pick the next experiment"
+          ]
+        },
+        {
+          "title": "Appendix",
+          "items": [
+            "The Offer Worksheet",
+            "Closing"
+          ]
+        }
+      ],
+      "audience": [
+        "People with a skill and a few ideas but no clear offer yet.",
+        "People with an offer who want to scope, price and test it honestly."
+      ],
+      "not_for": [
+        "Anyone looking for income promises. It makes none; the numbers in Lesson 4 are a labeled hypothetical.",
+        "Anyone who needs legal, tax or financial advice. It isn't that."
+      ],
+      "notice": "",
+      "faq": [
+        {
+          "q": "Are the examples real clients?",
+          "a": "No. The businesses in the examples are illustrations, not clients, and the figures are labeled hypotheticals."
+        },
+        {
+          "q": "Is there an Arabic edition?",
+          "a": "An Arabic edition is being reviewed. It isn't for sale yet; this purchase is the English edition."
+        }
+      ],
+      "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
+      "refund_note": "",
+      "licence": "One purchase covers one household: everyone who lives in the buyer's home may use the guides and printables. Please don't resell or share them publicly. The buyer must be an adult. We never ask for a child's name, age or email.",
+      "licence_note": "",
+      "pairs_with": "claude-obsidian-vault-kit",
+      "pairs_reason": "The kit's prompt library has prompts for defining and pressure-testing an offer, the same work these lessons walk through.",
+      "offers": [
+        {
+          "id": "30-business-lessons",
+          "name": "30 Business Lessons (English)",
+          "price_usd": 9,
+          "price_note": "",
+          "payment_link": "https://buy.stripe.com/3cIbJ085V3MSeZSfBrgnK00",
+          "stripe_price_id": "price_1ULVPaAZE7Rk74vYuljEoMst",
+          "files": [
+            {
+              "key": "lessons-pdf",
+              "label": "30 Business Lessons (PDF, 35 pages)",
+              "path": "30-business-lessons/30-business-lessons.pdf"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "Products/30 Business Lessons.md",
+        "Products/Products index.md",
+        "Products/dist/30-business-lessons.pdf"
+      ]
+    },
+    {
+      "slug": "claude-obsidian-vault-kit",
+      "title": "Claude + Obsidian Vault Kit",
+      "kind": "Kit",
+      "tags": ["business", "organize", "start"],
+      "cover": "",
+      "cover_alt": "The Vault Kit's folder tree: Home, CLAUDE, Weekly Review, and the Inbox, Clients, Projects, Content and Prompts folders.",
+      "summary": "A starter Obsidian vault for running a small business with Claude: templates, a weekly review and 16 prompts.",
+      "intro": "A folder of plain Markdown notes: templates, a weekly review, a prompt library, and a CLAUDE.md that tells Claude how to behave inside the vault. It needs no plugins and no extra software beyond Obsidian and Claude.",
+      "benefits": [
+        "Keep clients, projects and content in one place Claude can read and help maintain.",
+        "Run a weekly review: inbox, clients, projects, checkable money figures, three priorities.",
+        "Start from 16 original prompts, from defining an offer to a pre-delivery check.",
+        "Give Claude house rules: never invent numbers, never store secrets, draft messages instead of sending them."
+      ],
+      "label": [
+        {
+          "name": "Format",
+          "value": "Zip of plain Markdown notes"
+        },
+        {
+          "name": "Notes",
+          "value": "10: 4 at the top level, 6 across 5 folders"
+        },
+        {
+          "name": "Prompts",
+          "value": "16"
+        },
+        {
+          "name": "Plugins",
+          "value": "None needed"
+        },
+        {
+          "name": "You need",
+          "value": "Obsidian, and your own Claude access"
+        }
+      ],
+      "inside": [
+        {
+          "title": "Top level",
+          "items": [
+            "README.md: five-minute setup and how the templates work",
+            "Home.md: start page linking every part of the vault",
+            "CLAUDE.md: rules for Claude inside the vault",
+            "Weekly Review.md: the weekly review template"
+          ]
+        },
+        {
+          "title": "Folders",
+          "items": [
+            "Inbox/Inbox.md: capture point for unsorted notes",
+            "Clients/Client template.md",
+            "Projects/Project template.md",
+            "Content/Idea template.md",
+            "Content/Content calendar.md",
+            "Prompts/Prompt library.md"
+          ]
+        },
+        {
+          "title": "The 16 prompts",
+          "items": [
+            "1. Weekly review",
+            "2. Define one offer",
+            "3. Pressure-test an offer",
+            "4. Customer interview questions",
+            "5. Turn a conversation into a client note",
+            "6. Draft a scope and proposal",
+            "7. Cost and time check before quoting",
+            "8. A first message to a prospect",
+            "9. Reply to an inquiry",
+            "10. Turn a repeated task into instructions",
+            "11. Content ideas from real work",
+            "12. Rewrite copy against a fact sheet",
+            "13. Pre-delivery check",
+            "14. Sort the inbox",
+            "15. Design a multi-agent workflow",
+            "16. Monthly decision: continue, revise or stop"
+          ]
+        }
+      ],
+      "audience": [
+        "Small-business owners and freelancers who already use Claude, or want to.",
+        "Someone starting from an empty vault more than someone with an established Obsidian setup."
+      ],
+      "not_for": [
+        "Anyone expecting an Obsidian plugin or theme. It doesn't change Obsidian's settings.",
+        "Anyone expecting automation. Nothing runs by itself; Claude acts only when you ask."
+      ],
+      "notice": "",
+      "faq": [
+        {
+          "q": "Does it include Claude or Obsidian?",
+          "a": "No. You need Obsidian (from obsidian.md) and your own Claude access."
+        },
+        {
+          "q": "How do I connect Claude?",
+          "a": "Run Claude Code in the unzipped folder (it reads CLAUDE.md automatically), or attach the notes and CLAUDE.md to a chat or Project in the Claude app."
+        }
+      ],
+      "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
+      "refund_note": "",
+      "licence": "One purchase covers one household: everyone who lives in the buyer's home may use the guides and printables. Please don't resell or share them publicly. The buyer must be an adult. We never ask for a child's name, age or email.",
+      "licence_note": "",
+      "pairs_with": "30-business-lessons",
+      "pairs_reason": "Thirty lessons on shaping the offer your vault's client and project notes will track.",
+      "offers": [
+        {
+          "id": "claude-obsidian-vault-kit",
+          "name": "Claude + Obsidian Vault Kit",
+          "price_usd": 19,
+          "price_note": "",
+          "payment_link": "https://buy.stripe.com/fZu6oG4TJabg2d60GxgnK01",
+          "stripe_price_id": "price_1ULVTcAZE7Rk74vYMQbRoMgt",
+          "files": [
+            {
+              "key": "vault-kit-zip",
+              "label": "Claude + Obsidian Vault Kit (zip)",
+              "path": "vault-kit/claude-obsidian-vault-kit.zip"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "Products/Claude + Obsidian Vault Kit.md",
+        "Products/dist/claude-obsidian-vault-kit.zip"
+      ]
+    },
+    {
+      "slug": "ai-for-every-age",
+      "title": "AI for Every Age",
+      "kind": "Course",
+      "tags": ["home", "senior"],
+      "cover": "covers/everyday-ai-for-adults.jpg",
+      "cover_alt": "Cover of Everyday AI for Adults, from the AI for Every Age course: purple type on marigold with concentric arcs.",
+      "summary": "Two written courses for using AI safely at home: Everyday AI for Adults, and a large-print edition for readers 60 and over.",
+      "intro": "Learn to question AI, use Claude safely for everyday tasks, and, in the adult edition, build your first useful automation. The large-print edition puts scam safety first and takes one step at a time. Buy one edition, or both for a household where more than one generation is learning.",
+      "benefits": [
+        "Ask better and check better: every lesson includes a step for checking the answer.",
+        "Set up Claude on your own account, with privacy settings you understand.",
+        "Spot voice-clone calls, deepfakes and AI-polished phishing, and know what to do if a scam gets through.",
+        "Build a first automation in n8n that asks before it acts (adult edition)."
+      ],
+      "label": [
+        {
+          "name": "Everyday AI for Adults",
+          "value": "Video course: 60 narrated video lessons of 4 to 8 minutes, plus one PDF, 182 pages, US Letter; 4 n8n workflow files; a ready-made Claude Skill"
+        },
+        {
+          "name": "Safe and Simple AI 60+",
+          "value": "Video course: 17 narrated large-print video lessons of 4 to 7 minutes, plus one PDF, 87 pages, US Letter; 17-point body text"
+        },
+        {
+          "name": "Claude plan",
+          "value": "Works on Claude's free plan (one optional adult lesson needs a paid plan, and says so)"
+        },
+        {
+          "name": "Buyer",
+          "value": "Adults 18+"
+        },
+        {
+          "name": "Licence",
+          "value": "One household"
+        }
+      ],
+      "inside": [
+        {
+          "title": "Adults, Module 0: Start here",
+          "items": [
+            "0.1 How this course works",
+            "0.2 Who can use which AI in 2026",
+            "0.3 Family AI Agreement",
+            "0.4 Your one real-life goal",
+            "0.5 Set up to learn"
+          ]
+        },
+        {
+          "title": "Adults, Module 1: What AI is",
+          "items": [
+            "1.1 AI is already in your day",
+            "1.2 How computers see and hear",
+            "1.3 How AI learns from examples",
+            "1.4 Why chatbots can be confidently wrong",
+            "1.5 AI and people",
+            "1.6 Word wall"
+          ]
+        },
+        {
+          "title": "Adults, Module 2: Ask better, check better",
+          "items": [
+            "2.1 The CLEAR prompt",
+            "2.2 The all-purpose prompt card",
+            "2.3 Improve, don't restart",
+            "2.4 Check before you trust",
+            "2.5 A coach, not a ghostwriter",
+            "2.6 Remove private details before you paste"
+          ]
+        },
+        {
+          "title": "Adults, Module 3: Your Claude account",
+          "items": [
+            "3.1 Create your account",
+            "3.2 Free vs Pro vs Max",
+            "3.3 Usage limits in plain English",
+            "3.4 Privacy, memory, and incognito",
+            "3.5 Voice mode and the mobile app",
+            "3.6 Projects: instructions Claude remembers",
+            "3.7 Families: the adult-at-the-keyboard setup"
+          ]
+        },
+        {
+          "title": "Adults, Module 4: Everyday AI studio",
+          "items": [
+            "4.1 Home and family",
+            "4.2 School and learning",
+            "4.3 Work and small business",
+            "4.4 Health and money: know the limits",
+            "4.5 Explain this letter",
+            "4.6 Make something",
+            "4.7 Accessibility and aging well"
+          ]
+        },
+        {
+          "title": "Adults, Module 5: Claude's toolbox",
+          "items": [
+            "5.1 Three shelves and a backpack",
+            "5.2 Add a Skill from the directory",
+            "5.3 Build your first Skill",
+            "5.4 Connectors",
+            "5.5 Permissions and how to disconnect",
+            "5.6 Plugins",
+            "5.7 Agents that take action"
+          ]
+        },
+        {
+          "title": "Adults, Module 6: Stay safe",
+          "items": [
+            "6.1 What never goes into an AI",
+            "6.2 Voice-clone and family emergency scams",
+            "6.3 Deepfakes: seeing isn't believing",
+            "6.4 Phishing and AI-polished messages",
+            "6.5 AI is not a friend",
+            "6.6 Honesty, credit, and bias",
+            "6.7 If it happens: report and recover"
+          ]
+        },
+        {
+          "title": "Adults, Module 7: n8n starter",
+          "items": [
+            "7.1 What a workflow is",
+            "7.2 Counting runs",
+            "7.3 Cloud trial or self-hosted",
+            "7.4 Editor tour: testing vs publishing",
+            "7.5 Build 1: Today's Plan Card",
+            "7.6 Build 2: Family grocery form to Sheet",
+            "7.7 Build 3: Weekly reading list",
+            "7.8 Build 4: Inbox sorting by label",
+            "7.9 Logins, backups, and exporting",
+            "7.10 Fixing problems with Executions"
+          ]
+        },
+        {
+          "title": "Adults, Module 9: Capstone and certificate",
+          "items": [
+            "9.1 Choose your capstone",
+            "9.2 Build, test, document",
+            "9.3 Show and tell",
+            "9.4 Certificate and next steps",
+            "9.5 Staying current"
+          ]
+        },
+        {
+          "title": "Safe and Simple AI 60+",
+          "items": [
+            "0.1 How this book works",
+            "0.2 Who can use which AI",
+            "0.5 Set up your phone to learn",
+            "6.1 What never goes into an AI",
+            "6.2 Voice-clone and family emergency scams",
+            "6.3 Deepfakes, seeing is not believing",
+            "6.4 Phishing and AI-polished messages",
+            "6.7 If it happens, report and recover",
+            "2.6 Remove private details before you paste",
+            "3.1 Create your Claude account",
+            "3.2 Free, Pro or Max",
+            "3.4 Privacy, memory and incognito",
+            "3.5 Voice mode and the mobile app",
+            "4.4 Health and money, know the limits",
+            "4.5 Explain this letter",
+            "4.7 Accessibility and aging well",
+            "9.1 Choose your capstone"
+          ]
+        }
+      ],
+      "audience": [
+        "Adults who are new to AI, or who have tried a chatbot and want to use it with more care.",
+        "Parents who want house rules for AI, and small-business owners who want a first automation that asks before it acts.",
+        "Adults 60 and over, or adults buying for a parent or grandparent: print it, sit together for Lesson 3.1, then let them take it from there."
+      ],
+      "not_for": [
+        "Children. Claude is for adults 18 and over, and these courses never ask a child to use it.",
+        "Anyone wanting a qualification. It isn't accredited; the certificate records that you finished this course, nothing more."
+      ],
+      "notice": "Sold to adults 18+. The Claude lessons are for adults; this course never asks a child to use Claude.",
+      "faq": [
+        {
+          "q": "Can my child use Claude?",
+          "a": "No. Claude is for adults 18 and over, and you may not share your account with anyone, including your children. In these courses, only an adult ever types or speaks to Claude. If a child has an idea, they tell you or write it on paper, and you type it in your own words. Never put a child's name, face, voice, school or photos into any AI tool."
+        },
+        {
+          "q": "Do I need to pay for Claude?",
+          "a": "No. Every lesson in Safe and Simple AI 60+, and the core of Everyday AI for Adults, works on Claude's free plan. One optional lesson in the adult course (5.7, on agents that take action) covers features that need a paid Claude plan, and it says so."
+        },
+        {
+          "q": "Do I need to pay for n8n?",
+          "a": "Not to follow the course. n8n offers a free 14-day cloud trial, and a free edition you can run on your own computer. Check n8n's current prices before you choose a paid plan."
+        },
+        {
+          "q": "Is this legal, medical or financial advice?",
+          "a": "No. The courses teach you to use AI for questions, and to take decisions to a doctor, pharmacist, lawyer, bank or adviser."
+        },
+        {
+          "q": "I bought this for my parent. Can they use my account?",
+          "a": "No. Claude accounts can't be shared. They set up their own free account, on their own phone, in Lesson 3.1. You can sit next to them while they do it."
+        },
+        {
+          "q": "What format are the files?",
+          "a": "PDF, sized for US Letter paper. Everyday AI for Adults comes as a zip with the PDF, a folder of n8n workflow files (JSON) and a Claude Skill. Open the PDFs on a phone, tablet or computer, or print them. For Safe and Simple AI 60+, printing is recommended."
+        },
+        {
+          "q": "Why are some lessons dated?",
+          "a": "Apps, screens and prices change. Lessons that depend on them say when they were last checked. If your screen looks different, the lesson tells you what to look for."
+        }
+      ],
+      "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
+      "refund_note": "",
+      "licence": "One purchase covers one household: everyone who lives in the buyer's home may use the guides and printables. Please don't resell or share them publicly. The buyer must be an adult. We never ask for a child's name, age or email.",
+      "licence_note": "",
+      "pairs_with": "30-business-lessons",
+      "pairs_reason": "For readers of lesson 4.3, Work and small business, who want to turn a skill into a small service of their own.",
+      "offers": [
+        {
+          "id": "ai-for-every-age-adults",
+          "name": "Everyday AI for Adults",
+          "cover": "covers/everyday-ai-for-adults.jpg",
+          "blurb": "The full adult course: 60 lessons, a 182-page PDF, 4 n8n workflow files and a ready-made Claude Skill.",
+          "price_usd": 29,
+          "price_note": "",
+          "payment_link": "https://buy.stripe.com/aFa00ieuj838cRKblbgnK02",
+          "stripe_price_id": "price_1ULVWAAZE7Rk74vYKfrrBpTE",
+          "files": [
+            {
+              "key": "aiea-adults-video-0-1",
+              "label": "Lesson 0.1: How this course works (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-2",
+              "label": "Lesson 0.2: Who can use which AI in 2026 (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-3",
+              "label": "Lesson 0.3: Family AI Agreement (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-4",
+              "label": "Lesson 0.4: Your one real-life goal (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-5",
+              "label": "Lesson 0.5: Set up to learn (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-1",
+              "label": "Lesson 1.1: AI is already in your day (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-2",
+              "label": "Lesson 1.2: How computers see and hear (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-3",
+              "label": "Lesson 1.3: How AI learns from examples (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-4",
+              "label": "Lesson 1.4: Why chatbots can be confidently wrong (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-5",
+              "label": "Lesson 1.5: AI and people (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-6",
+              "label": "Lesson 1.6: Word wall (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-1",
+              "label": "Lesson 2.1: The CLEAR prompt (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-2",
+              "label": "Lesson 2.2: The all-purpose prompt card (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-3",
+              "label": "Lesson 2.3: Improve, don't restart (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-4",
+              "label": "Lesson 2.4: Check before you trust (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-5",
+              "label": "Lesson 2.5: A coach, not a ghostwriter (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-6",
+              "label": "Lesson 2.6: Remove private details before you paste (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-1",
+              "label": "Lesson 3.1: Create your account (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-2",
+              "label": "Lesson 3.2: Free vs Pro vs Max (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-3",
+              "label": "Lesson 3.3: Usage limits in plain English (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-4",
+              "label": "Lesson 3.4: Privacy, memory, and incognito (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-5",
+              "label": "Lesson 3.5: Voice mode and the mobile app (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-6",
+              "label": "Lesson 3.6: Projects: instructions Claude remembers (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-7",
+              "label": "Lesson 3.7: Families: the adult-at-the-keyboard setup (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-1",
+              "label": "Lesson 4.1: Home and family (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-2",
+              "label": "Lesson 4.2: School and learning (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-3",
+              "label": "Lesson 4.3: Work and small business (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-4",
+              "label": "Lesson 4.4: Health and money: know the limits (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-5",
+              "label": "Lesson 4.5: Explain this letter (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-6",
+              "label": "Lesson 4.6: Make something (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-7",
+              "label": "Lesson 4.7: Accessibility and aging well (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-1",
+              "label": "Lesson 5.1: Three shelves and a backpack (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-2",
+              "label": "Lesson 5.2: Add a Skill from the directory (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-3",
+              "label": "Lesson 5.3: Build your first Skill (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-4",
+              "label": "Lesson 5.4: Connectors (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-5",
+              "label": "Lesson 5.5: Permissions and how to disconnect (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-6",
+              "label": "Lesson 5.6: Plugins (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-7",
+              "label": "Lesson 5.7: Agents that take action: Cowork and Claude in Chrome (paid plans) (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-1",
+              "label": "Lesson 6.1: What never goes into an AI (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-2",
+              "label": "Lesson 6.2: Voice-clone and \"family emergency\" scams (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-3",
+              "label": "Lesson 6.3: Deepfakes: seeing isn't believing (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-4",
+              "label": "Lesson 6.4: Phishing and AI-polished messages (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-5",
+              "label": "Lesson 6.5: AI is not a friend (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-6",
+              "label": "Lesson 6.6: Honesty, credit, and bias (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-7",
+              "label": "Lesson 6.7: If it happens: report and recover (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-1",
+              "label": "Lesson 7.1: What a workflow is (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-2",
+              "label": "Lesson 7.2: Counting runs (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-3",
+              "label": "Lesson 7.3: Cloud trial or self-hosted? (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-4",
+              "label": "Lesson 7.4: Editor tour: testing vs publishing (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-5",
+              "label": "Lesson 7.5: Build 1: Today's Plan Card (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-6",
+              "label": "Lesson 7.6: Build 2: Family grocery form → Sheet (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-7",
+              "label": "Lesson 7.7: Build 3: Weekly reading list (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-8",
+              "label": "Lesson 7.8: Build 4: Inbox sorting by label (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.8.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-9",
+              "label": "Lesson 7.9: Logins, backups, and exporting (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.9.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-10",
+              "label": "Lesson 7.10: Fixing problems with Executions (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.10.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-1",
+              "label": "Lesson 9.1: Choose your capstone (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-2",
+              "label": "Lesson 9.2: Build, test, document (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-3",
+              "label": "Lesson 9.3: Show and tell (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-4",
+              "label": "Lesson 9.4: Certificate and next steps (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-5",
+              "label": "Lesson 9.5: Staying current (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.5.mp4"
+            },
+            {
+              "key": "aiea-adults-zip",
+              "label": "Everyday AI for Adults (zip: PDF, n8n workflows, Claude Skill)",
+              "path": "ai-for-every-age/everyday-ai-for-adults.zip"
+            }
+          ]
+        },
+        {
+          "id": "ai-for-every-age-60plus",
+          "name": "Safe and Simple AI 60+",
+          "cover": "covers/safe-and-simple-ai-60plus.jpg",
+          "blurb": "The large-print edition: 17 lessons in an 87-page PDF, safety first, one step at a time.",
+          "price_usd": 19,
+          "price_note": "",
+          "payment_link": "https://buy.stripe.com/dRm4gy4TJbfk8Bu88ZgnK03",
+          "stripe_price_id": "price_1ULVXtAZE7Rk74vY7aJxyRNo",
+          "files": [
+            {
+              "key": "aiea-60plus-video-0-1",
+              "label": "Lesson 0.1: How this book works (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-0.1.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-0-2",
+              "label": "Lesson 0.2: Who can use which AI (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-0.2.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-0-5",
+              "label": "Lesson 0.5: Set up your phone to learn (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-0.5.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-2-6",
+              "label": "Lesson 2.6: Remove private details before you paste (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-2.6.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-1",
+              "label": "Lesson 3.1: Create your Claude account (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.1.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-2",
+              "label": "Lesson 3.2: Free, Pro or Max (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.2.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-4",
+              "label": "Lesson 3.4: Privacy, memory and incognito (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.4.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-5",
+              "label": "Lesson 3.5: Voice mode and the mobile app (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.5.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-4-4",
+              "label": "Lesson 4.4: Health and money, know the limits (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-4.4.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-4-5",
+              "label": "Lesson 4.5: Explain this letter (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-4.5.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-4-7",
+              "label": "Lesson 4.7: Accessibility and aging well (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-4.7.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-1",
+              "label": "Lesson 6.1: What never goes into an AI (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.1.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-2",
+              "label": "Lesson 6.2: Voice-clone and family emergency scams (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.2.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-3",
+              "label": "Lesson 6.3: Deepfakes, seeing is not believing (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.3.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-4",
+              "label": "Lesson 6.4: Phishing and AI-polished messages (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.4.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-7",
+              "label": "Lesson 6.7: If it happens, report and recover (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.7.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-9-1",
+              "label": "Lesson 9.1: Choose your capstone (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-9.1.mp4"
+            },
+            {
+              "key": "aiea-60plus-pdf",
+              "label": "Safe and Simple AI 60+ (PDF, 87 pages)",
+              "path": "ai-for-every-age/safe-and-simple-ai-60plus.pdf"
+            }
+          ]
+        },
+        {
+          "id": "ai-for-every-age-both",
+          "name": "Both editions",
+          "cover": "",
+          "blurb": "Everyday AI for Adults and Safe and Simple AI 60+, for a household where more than one generation is learning.",
+          "price_usd": 39,
+          "price_note": "",
+          "payment_link": "https://buy.stripe.com/bJe7sK3PF6Z4eZS9d3gnK04",
+          "stripe_price_id": "price_1ULVZZAZE7Rk74vYGWRAWNEd",
+          "files": [
+            {
+              "key": "aiea-adults-video-0-1",
+              "label": "Lesson 0.1: How this course works (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-2",
+              "label": "Lesson 0.2: Who can use which AI in 2026 (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-3",
+              "label": "Lesson 0.3: Family AI Agreement (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-4",
+              "label": "Lesson 0.4: Your one real-life goal (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-0-5",
+              "label": "Lesson 0.5: Set up to learn (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-0.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-1",
+              "label": "Lesson 1.1: AI is already in your day (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-2",
+              "label": "Lesson 1.2: How computers see and hear (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-3",
+              "label": "Lesson 1.3: How AI learns from examples (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-4",
+              "label": "Lesson 1.4: Why chatbots can be confidently wrong (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-5",
+              "label": "Lesson 1.5: AI and people (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-1-6",
+              "label": "Lesson 1.6: Word wall (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-1.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-1",
+              "label": "Lesson 2.1: The CLEAR prompt (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-2",
+              "label": "Lesson 2.2: The all-purpose prompt card (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-3",
+              "label": "Lesson 2.3: Improve, don't restart (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-4",
+              "label": "Lesson 2.4: Check before you trust (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-5",
+              "label": "Lesson 2.5: A coach, not a ghostwriter (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-2-6",
+              "label": "Lesson 2.6: Remove private details before you paste (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-2.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-1",
+              "label": "Lesson 3.1: Create your account (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-2",
+              "label": "Lesson 3.2: Free vs Pro vs Max (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-3",
+              "label": "Lesson 3.3: Usage limits in plain English (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-4",
+              "label": "Lesson 3.4: Privacy, memory, and incognito (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-5",
+              "label": "Lesson 3.5: Voice mode and the mobile app (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-6",
+              "label": "Lesson 3.6: Projects: instructions Claude remembers (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-3-7",
+              "label": "Lesson 3.7: Families: the adult-at-the-keyboard setup (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-3.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-1",
+              "label": "Lesson 4.1: Home and family (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-2",
+              "label": "Lesson 4.2: School and learning (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-3",
+              "label": "Lesson 4.3: Work and small business (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-4",
+              "label": "Lesson 4.4: Health and money: know the limits (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-5",
+              "label": "Lesson 4.5: Explain this letter (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-6",
+              "label": "Lesson 4.6: Make something (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-4-7",
+              "label": "Lesson 4.7: Accessibility and aging well (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-4.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-1",
+              "label": "Lesson 5.1: Three shelves and a backpack (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-2",
+              "label": "Lesson 5.2: Add a Skill from the directory (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-3",
+              "label": "Lesson 5.3: Build your first Skill (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-4",
+              "label": "Lesson 5.4: Connectors (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-5",
+              "label": "Lesson 5.5: Permissions and how to disconnect (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-6",
+              "label": "Lesson 5.6: Plugins (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-5-7",
+              "label": "Lesson 5.7: Agents that take action: Cowork and Claude in Chrome (paid plans) (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-5.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-1",
+              "label": "Lesson 6.1: What never goes into an AI (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-2",
+              "label": "Lesson 6.2: Voice-clone and \"family emergency\" scams (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-3",
+              "label": "Lesson 6.3: Deepfakes: seeing isn't believing (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-4",
+              "label": "Lesson 6.4: Phishing and AI-polished messages (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-5",
+              "label": "Lesson 6.5: AI is not a friend (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-6",
+              "label": "Lesson 6.6: Honesty, credit, and bias (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-6-7",
+              "label": "Lesson 6.7: If it happens: report and recover (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-6.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-1",
+              "label": "Lesson 7.1: What a workflow is (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-2",
+              "label": "Lesson 7.2: Counting runs (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-3",
+              "label": "Lesson 7.3: Cloud trial or self-hosted? (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-4",
+              "label": "Lesson 7.4: Editor tour: testing vs publishing (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-5",
+              "label": "Lesson 7.5: Build 1: Today's Plan Card (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.5.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-6",
+              "label": "Lesson 7.6: Build 2: Family grocery form → Sheet (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.6.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-7",
+              "label": "Lesson 7.7: Build 3: Weekly reading list (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.7.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-8",
+              "label": "Lesson 7.8: Build 4: Inbox sorting by label (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.8.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-9",
+              "label": "Lesson 7.9: Logins, backups, and exporting (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.9.mp4"
+            },
+            {
+              "key": "aiea-adults-video-7-10",
+              "label": "Lesson 7.10: Fixing problems with Executions (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-7.10.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-1",
+              "label": "Lesson 9.1: Choose your capstone (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.1.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-2",
+              "label": "Lesson 9.2: Build, test, document (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.2.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-3",
+              "label": "Lesson 9.3: Show and tell (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.3.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-4",
+              "label": "Lesson 9.4: Certificate and next steps (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.4.mp4"
+            },
+            {
+              "key": "aiea-adults-video-9-5",
+              "label": "Lesson 9.5: Staying current (video)",
+              "path": "ai-for-every-age/videos-adults/lesson-9.5.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-0-1",
+              "label": "Lesson 0.1: How this book works (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-0.1.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-0-2",
+              "label": "Lesson 0.2: Who can use which AI (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-0.2.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-0-5",
+              "label": "Lesson 0.5: Set up your phone to learn (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-0.5.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-2-6",
+              "label": "Lesson 2.6: Remove private details before you paste (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-2.6.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-1",
+              "label": "Lesson 3.1: Create your Claude account (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.1.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-2",
+              "label": "Lesson 3.2: Free, Pro or Max (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.2.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-4",
+              "label": "Lesson 3.4: Privacy, memory and incognito (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.4.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-3-5",
+              "label": "Lesson 3.5: Voice mode and the mobile app (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-3.5.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-4-4",
+              "label": "Lesson 4.4: Health and money, know the limits (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-4.4.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-4-5",
+              "label": "Lesson 4.5: Explain this letter (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-4.5.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-4-7",
+              "label": "Lesson 4.7: Accessibility and aging well (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-4.7.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-1",
+              "label": "Lesson 6.1: What never goes into an AI (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.1.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-2",
+              "label": "Lesson 6.2: Voice-clone and family emergency scams (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.2.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-3",
+              "label": "Lesson 6.3: Deepfakes, seeing is not believing (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.3.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-4",
+              "label": "Lesson 6.4: Phishing and AI-polished messages (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.4.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-6-7",
+              "label": "Lesson 6.7: If it happens, report and recover (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-6.7.mp4"
+            },
+            {
+              "key": "aiea-60plus-video-9-1",
+              "label": "Lesson 9.1: Choose your capstone (video)",
+              "path": "ai-for-every-age/videos-60plus/lesson-9.1.mp4"
+            },
+            {
+              "key": "aiea-adults-zip",
+              "label": "Everyday AI for Adults (zip: PDF, n8n workflows, Claude Skill)",
+              "path": "ai-for-every-age/everyday-ai-for-adults.zip"
+            },
+            {
+              "key": "aiea-60plus-pdf",
+              "label": "Safe and Simple AI 60+ (PDF, 87 pages)",
+              "path": "ai-for-every-age/safe-and-simple-ai-60plus.pdf"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "Products/AI for Every Age/BRIEF.md",
+        "Products/AI for Every Age/Sales page.md",
+        "Products/AI for Every Age/shopify/*.html"
+      ],
+      "not_listed": "The Free Family Scam-Safety Kit is a free email sign-up in the plan; the store has no sign-up, so it isn't listed."
+    },
+    {
+      "slug": "local-business-automation-pack",
+      "title": "Local Business Automation Pack",
+      "kind": "Workflow pack",
+      "tags": ["business", "automate", "local"],
+      "cover": "covers/local-business-automation-pack.jpg",
+      "cover_alt": "Cover of the Local Business Automation Pack: white and marigold type on plum with concentric arcs, and the flow Webhook, Validate, Draft (sent: false).",
+      "summary": "Four n8n automations for a local business that draft, never send: a site health check, a lead-form reply, a missed-call text-back and a review request, with a guide that explains every node.",
+      "intro": "A written guide and four importable n8n workflow files, by Miro. Each workflow checks its input, writes the lead, call, job or site status to a plain text file on your own machine, and drafts the reply for you to send. Nothing is sent by the files, and nothing needs an account, a key or a password. Import them in an afternoon, test them with made-up data, and keep the owner in the loop.",
+      "benefits": [
+        "Know within 15 minutes when your website or booking page goes down, with a log that says OK, DOWN or UNKNOWN and never calls an unreadable site \"fine\".",
+        "Catch every contact-form lead the moment it arrives, with a reply already drafted in your words.",
+        "Draft a text back to every missed call, with an opt-out line, from the number your phone system reports.",
+        "Send every customer the same review request after a job, written while the job is fresh, with no cherry-picking.",
+        "Learn the five habits that make these workflows safe to adapt: untrusted input, 400 on bad data, draft never send, no secrets in the files, a fenced machine."
+      ],
+      "label": [
+        {
+          "name": "Format",
+          "value": "One zip: a PDF guide plus four n8n workflow files, a README and a Docker compose file"
+        },
+        {
+          "name": "Guide",
+          "value": "29 pages, US Letter, 10 chapters and an appendix"
+        },
+        {
+          "name": "Workflows",
+          "value": "4 importable n8n files, 9 nodes each, saved unpublished, no credentials inside"
+        },
+        {
+          "name": "Tested on",
+          "value": "n8n 2.40.7, self-hosted with Docker, 1 Oct 2026"
+        },
+        {
+          "name": "You need",
+          "value": "A computer that can run Docker, about an hour, no programming"
+        }
+      ],
+      "inside": [
+        {
+          "title": "The guide",
+          "items": [
+            "0 Start here",
+            "1 Set up n8n with Docker",
+            "2 Import a workflow",
+            "3 Workflow 1, Site health check",
+            "4 Workflow 2, Lead form to drafted reply",
+            "5 Workflow 3, Missed call to text-back draft",
+            "6 Workflow 4, Review request after a job",
+            "7 How the workflows protect you",
+            "8 When something goes wrong",
+            "9 Next steps",
+            "Appendix: the workflow files, with what was tested"
+          ]
+        },
+        {
+          "title": "The workflows folder",
+          "items": [
+            "1-site-health-check.json",
+            "2-lead-form-drafted-reply.json",
+            "3-missed-call-text-back.json",
+            "4-review-request-after-job.json",
+            "README.md: import, test, what was tested",
+            "docker-compose.yml: n8n on your own computer, localhost only, file access fenced to one folder"
+          ]
+        }
+      ],
+      "audience": [
+        "Owners of small service businesses who want to stop losing leads and missed calls without another subscription.",
+        "Freelancers and consultants who set up automations for local businesses and want a tested, documented starting point they can hand over.",
+        "People who have started with n8n and want to see how a careful workflow is built."
+      ],
+      "not_for": [
+        "Anyone who wants a tool that texts or emails customers by itself from day one. This pack drafts; sending is a step you add later, deliberately, and Chapter 9 says how.",
+        "Anyone who can't run software on a computer or small server. The workflows write files to disk, so they need a self-hosted n8n; on n8n Cloud the file step isn't reliable and Chapter 8 says what to swap it for.",
+        "Anyone expecting a promise about leads, reviews or revenue. There isn't one."
+      ],
+      "notice": "",
+      "faq": [
+        {
+          "q": "Does it send texts or emails?",
+          "a": "No. Every workflow writes a draft to a file and answers sent: false. There is no sending node in any file. Chapter 9 explains how to add one later, and why to add it last."
+        },
+        {
+          "q": "Do I need n8n Cloud or a paid plan?",
+          "a": "No. The pack runs on n8n's free self-hosted edition with Docker, on your own computer or server. n8n's licence allows using it for your own business and for automation services you offer to clients."
+        },
+        {
+          "q": "Do I need to know how to code?",
+          "a": "No. Every change is editing a short list or a placeholder such as [Business name] inside a box. The code in the workflows is already written and explained node by node."
+        },
+        {
+          "q": "Will it work with my form, phone system or job tracker?",
+          "a": "It works with anything that can send a web request (a webhook) to a URL, which most form tools and business phone systems can. If yours can't, you can still add a row with one command and get the draft; the guide shows how."
+        },
+        {
+          "q": "Are the workflow files really tested?",
+          "a": "They were imported, run and exported again on n8n 2.40.7 on 1 Oct 2026. The appendix lists exactly what was sent and what came back, including a deliberately malicious lead that was escaped correctly."
+        },
+        {
+          "q": "What format are the files?",
+          "a": "A zip with a PDF (US Letter) and a workflows folder of n8n JSON files, a README and a docker-compose.yml."
+        }
+      ],
+      "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
+      "refund_note": "The store's standard 14-day terms, as on the other four titles.",
+      "licence": "One purchase covers one business: the buyer and the people who work in that business may use the guide and the workflow files, including on the n8n they run for it. Please don't resell or share the files publicly. The buyer must be an adult.",
+      "licence_note": "Proposed 1 Oct 2026 (a business pack, so per business rather than per household). Miro to confirm.",
+      "pairs_with": "safe-ai-operator",
+      "pairs_reason": "The same rules, draft before send and unknown is never OK, taken further: an agent that picks actions from a closed list and asks before it acts.",
+      "offers": [
+        {
+          "id": "local-business-automation-pack",
+          "name": "Local Business Automation Pack",
+          "price_usd": 29,
+          "price_note": "Proposed from the market research of 30 Sep 2026 (Products/Roadmap.md): documented single n8n workflows sell at $29-45 and vertical kits at $35-59; Gumroad's $30-49 band converts best. Miro can change it.",
+          "payment_link": "https://buy.stripe.com/9B64gyae30AG3ha2OFgnK0b",
+          "stripe_price_id": "price_1ULlaRAZE7Rk74vYRsTnkkEa",
+          "files": [
+            {
+              "key": "lbap-zip",
+              "label": "Local Business Automation Pack (zip: PDF guide, 4 n8n workflows, README, docker-compose)",
+              "path": "local-business-automation-pack/local-business-automation-pack.zip"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "Products/Local Business Automation Pack/BRIEF.md",
+        "Products/Local Business Automation Pack/Sales page.md",
+        "Products/Local Business Automation Pack/VERIFY-LOG.md",
+        "Products/Local Business Automation Pack/guide/Chapter *.md"
+      ]
+    },
+    {
+      "slug": "family-ai-scam-defence-workbook",
+      "title": "The Family AI-Scam Defense Workbook",
+      "kind": "Printable workbook",
+      "tags": ["home", "senior"],
+      "cover": "covers/family-ai-scam-defence-workbook.jpg",
+      "cover_alt": "Cover of The Family AI-Scam Defense Workbook: white type on plum with marigold concentric arcs, and three labels: Safe word, Callback rule, By the phone.",
+      "summary": "A household plan you make in one sitting: a family safe word, a callback rule, a never-paste list, practice drills, and the pages you keep by the phone. A plan before the phone rings.",
+      "intro": "A printable workbook, by Miro. AI tools can now copy a voice, make up a video and write a message with no mistakes in it, so the old clues are not much help. This workbook does not try to teach you to spot fakes. It gives your family a few simple moves that still work when the fake is perfect: stop, hang up, call back on a number you already know. You read it together at the kitchen table, fill in the boxes with a pen, practise twice, and put the cards up.",
+      "benefits": [
+        "Choose a family safe word the right way, and agree that asking for it is never rude.",
+        "Hang up on any call that asks for money, a code or personal details, and call back on a number you wrote down while you were calm.",
+        "Keep one clear list of what never goes into an AI tool, a text or a phone call.",
+        "Check any unexpected call, text, email or video against six stop signs on one page.",
+        "Open the conversation with an older parent without it sounding like \"you are getting old\", and set their phone corner up in one visit.",
+        "Run short, announced family drills so the words are already there when you need them.",
+        "Know who to contact, in what order, if a scam gets through, with the official reporting sites and helplines already printed and your own numbers filled in."
+      ],
+      "label": [
+        {
+          "name": "Format",
+          "value": "One PDF to print at home, US Letter"
+        },
+        {
+          "name": "Length",
+          "value": "55 pages, 11 parts (0 to 10)"
+        },
+        {
+          "name": "To fill in",
+          "value": "7 pages to keep (A to G), including 4 cut-out cards, plus writing lines and tick boxes in every part"
+        },
+        {
+          "name": "Practice",
+          "value": "7 family drills with script cards, and a drill log"
+        },
+        {
+          "name": "Sources",
+          "value": "FTC, FBI IC3, US Department of Justice, AARP, SEC/FINRA/NASAA, CFPB and the Eldercare Locator, each read on 5 Oct 2026 and listed in Part 10"
+        },
+        {
+          "name": "For",
+          "value": "Adults 18+, households in the United States"
+        },
+        {
+          "name": "You need",
+          "value": "A printer, a pen, and about an hour and a half"
+        }
+      ],
+      "inside": [
+        {
+          "title": "The workbook",
+          "items": [
+            "Part 0: Start here",
+            "Part 1: How AI scams work now",
+            "Part 2: The family safe word",
+            "Part 3: The callback rule",
+            "Part 4: The never-paste list",
+            "Part 5: Stop signs for any message",
+            "Part 6: For caregivers: helping an older parent (9 pages)",
+            "Part 7: Family drills (10 pages, 7 drills, a drill log)",
+            "Part 8: If it happens: who to contact, where to report",
+            "Part 9: Pages to keep by the phone (A to G)",
+            "Part 10: Sources and dates"
+          ]
+        }
+      ],
+      "audience": [
+        "Adults who want a plan for their own household.",
+        "Adult children and other caregivers who look out for an older parent or relative.",
+        "Families with teenagers. One drill is written for them."
+      ],
+      "not_for": [
+        "Anyone looking for a promise. No workbook can stop every scam, and this one says so on its first page. It gives you a plan. It does not make anyone scam-proof.",
+        "Anyone outside the United States. The reporting sites and phone numbers are US ones.",
+        "Anyone who needs legal, financial or medical advice about a relative's affairs. The workbook points to official guides and says where a lawyer is the right next step.",
+        "Anyone who wants statistics and case stories. There are none in it."
+      ],
+      "notice": "",
+      "faq": [
+        {
+          "q": "Is this a course about AI?",
+          "a": "No. It does not teach any app. It is a plan for what your family does when a call or message asks for money, a code or personal details."
+        },
+        {
+          "q": "Will it stop my family being scammed?",
+          "a": "It can't promise that, and it doesn't. What it gives you is a plan made ahead of time: a word, a callback list, a few sentences you have already said out loud, and a page that tells you who to call."
+        },
+        {
+          "q": "How is it different from Safe and Simple AI 60+?",
+          "a": "The course teaches an older adult to use Claude on a phone. This workbook teaches no app at all: it is the household plan. Some safety advice appears in both, because it is the same advice from the same official sources. If you have the course, the new material here is Parts 6, 7 and 9 and the fuller reporting steps in Part 8."
+        },
+        {
+          "q": "Are the drills trick calls?",
+          "a": "No. Every drill is announced and starts with \"This is a drill.\" The ground rules say never to test anyone with a call they are not expecting."
+        },
+        {
+          "q": "Where do the phone numbers and reporting steps come from?",
+          "a": "From the official pages of the FTC, the FBI's Internet Crime Complaint Center, the Department of Justice's National Elder Fraud Hotline and AARP, each read on 5 Oct 2026. Part 10 lists every page. Details change, so the workbook tells you to trust the official site if it differs."
+        },
+        {
+          "q": "Does it print in black and white?",
+          "a": "Yes. The pages you write on use outline boxes with a dark title bar, and every page was checked as a grey image."
+        },
+        {
+          "q": "Is it legal advice?",
+          "a": "No. It is general information for households. Parts 6 and 8 say so on the page."
+        }
+      ],
+      "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
+      "refund_note": "The store's standard 14-day terms, as on the other titles.",
+      "licence": "One purchase covers one household, including the relatives in that household's plan, so you can print pages for a parent who lives elsewhere. Please don't resell or share the file publicly. The buyer must be an adult.",
+      "licence_note": "Proposed 5 Oct 2026 (a household plan, so per household). Miro to confirm.",
+      "pairs_with": "ai-for-every-age",
+      "pairs_reason": "The course teaches the app; the workbook is the household plan around it.",
+      "offers": [
+        {
+          "id": "family-ai-scam-defence-workbook",
+          "name": "The Family AI-Scam Defense Workbook",
+          "price_usd": 19,
+          "price_note": "Proposed in Products/Roadmap.md (1 Oct 2026): the one comparable workbook launched at CA$19.99; Etsy scam posters and senior guides sell at $1-6. Miro can change it. Live Stripe link plink_1UNJrRAZE7Rk74vYRlEwCe97, made 5 Oct 2026 at his word.",
+          "payment_link": "https://buy.stripe.com/00w9ASfyn97cg3WdtjgnK0f",
+          "stripe_price_id": "price_1UNJqwAZE7Rk74vYgEGY7rHp",
+          "files": [
+            {
+              "key": "fasdw-pdf",
+              "label": "The Family AI-Scam Defense Workbook (PDF, 55 pages, US Letter)",
+              "path": "family-ai-scam-defence-workbook/family-ai-scam-defence-workbook.pdf"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "Products/Family AI-Scam Defense Workbook/BRIEF.md",
+        "Products/Family AI-Scam Defense Workbook/Sales page.md",
+        "Products/Family AI-Scam Defense Workbook/VERIFY-LOG.md",
+        "Products/Family AI-Scam Defense Workbook/workbook/*.md"
+      ]
+    },
+    {
+      "slug": "sell-with-ai",
+      "title": "Sell With AI",
+      "kind": "Course",
+      "tags": ["business", "start", "money"],
+      "cover": "covers/sell-with-ai.jpg",
+      "cover_alt": "Cover of Sell With AI: white type on dark blue with a faint grid, and the line \"Clips, digital products and an online store\".",
+      "summary": "Three ways one person sells with AI doing the repetitive work: clipping with permission, one digital product, and a small online store. The method, with no income promises.",
+      "intro": "A course by Miro on the three lanes he runs himself, with his own agent, ATLAS, doing the repetitive parts. You learn to cut clips only from footage you're allowed to use, to build and sell one product from something you already know, and to open a one-product store with a supplier you've tested. Each lesson ends with one thing to do. No figure for what you'll earn appears anywhere in it.",
+      "benefits": [
+        "Join a clipping campaign that supplies its footage, read its rules as a checklist, and find, cut and caption the moments worth posting.",
+        "Turn something you've actually done into one guide, kit or short course, with the model as your editor, and test it as a stranger would.",
+        "Write a product page that describes what's inside, with counted numbers and nothing invented.",
+        "Take payment with a link and deliver files only after the payment provider confirms the purchase.",
+        "Open a store around one product you've handled yourself: sample ordered, delivery timed, your own photos.",
+        "Run all of it from one weekly report where every number has a source and a time, or says unknown."
+      ],
+      "label": [
+        {
+          "name": "Format",
+          "value": "Video course: 27 narrated video lessons of 5 to 7 minutes each. Also sold as an ebook with the same text."
+        },
+        {
+          "name": "Ebook",
+          "value": "89 pages, US Letter"
+        },
+        {
+          "name": "Lessons",
+          "value": "27 lessons in 4 modules, plus a start-here section"
+        },
+        {
+          "name": "You need",
+          "value": "A computer, a Claude account (the free plan covers the writing) and a payment account"
+        }
+      ],
+      "inside": [
+        {
+          "title": "Start here",
+          "items": [
+            "0.1 What this course is, and what it isn't",
+            "0.2 The ground rules",
+            "0.3 Your stack, set up in an hour"
+          ]
+        },
+        {
+          "title": "Module 1: Clipping, with permission",
+          "items": [
+            "1.1 What clipping is, and who pays for it",
+            "1.2 Permission first, and where to find it",
+            "1.3 Reading a campaign's rules",
+            "1.4 Finding the moments",
+            "1.5 Cutting, captions and formats",
+            "1.6 Posting and claiming",
+            "1.7 The clipping week"
+          ]
+        },
+        {
+          "title": "Module 2: One digital product",
+          "items": [
+            "2.1 One product, from what you already know",
+            "2.2 Building it, with the model as editor",
+            "2.3 The honest product page",
+            "2.4 Pricing against what sold",
+            "2.5 Getting paid and delivering",
+            "2.6 Short videos as free samples",
+            "2.7 The launch checklist"
+          ]
+        },
+        {
+          "title": "Module 3: An online store, done honestly",
+          "items": [
+            "3.1 What dropshipping really is",
+            "3.2 One product, one supplier",
+            "3.3 Order the sample",
+            "3.4 The store, from one product",
+            "3.5 Replies to customers, and what goes wrong",
+            "3.6 The store week, and the second product"
+          ]
+        },
+        {
+          "title": "Module 4: Running it as one system",
+          "items": [
+            "4.1 Stages, not a super-agent",
+            "4.2 The weekly report",
+            "4.3 What no automation may do",
+            "4.4 Your first thirty days"
+          ]
+        }
+      ],
+      "audience": [
+        "People who want to start selling online with one small, real thing rather than a plan for ten.",
+        "Anyone curious about clipping who wants the version that doesn't get a channel removed.",
+        "People who already know something useful and haven't turned it into a product yet.",
+        "Anyone thinking about a dropshipping store who wants to know what they're responsible for first."
+      ],
+      "not_for": [
+        "Anyone looking for a figure for what they'll earn. There isn't one in the course, and no method here promises results.",
+        "Anyone who wants to repost other people's videos, resell bundles of other people's templates, or list products they've never seen.",
+        "Anyone who wants an AI to run a business unattended. This course has AI draft and check; you decide, and money out is always your own click.",
+        "People after legal, tax or financial advice. The course points to your own country's guidance for sellers and says where the rules are yours to check."
+      ],
+      "notice": "Sold to adults 18+. The course teaches methods and describes what the author does; it doesn't promise income or results.",
+      "faq": [
+        {
+          "q": "Is this a video course or an ebook?",
+          "a": "Both exist, with the same lessons: one narrated video per lesson, or one PDF, or both together. Choose on this page."
+        },
+        {
+          "q": "Will this tell me how much I'll make?",
+          "a": "No. The course contains no earnings figures. It teaches three methods and how to read your own numbers from their sources."
+        },
+        {
+          "q": "Do I need to pay for tools?",
+          "a": "No subscription is needed to follow the lessons. Claude's free plan covers the writing, the video tool used for cutting is free, and a payment account charges per sale."
+        },
+        {
+          "q": "Is clipping other people's videos allowed?",
+          "a": "Only with permission. Module 1 is built on one rule: cut only footage the owner has put up for clippers, with the campaign's rules saved."
+        },
+        {
+          "q": "Do I have to do all three?",
+          "a": "No. The modules stand alone, and the last lesson helps you pick one lane for your first month."
+        },
+        {
+          "q": "How do I get it?",
+          "a": "After payment you land on your access page with your download. Bookmark it; it makes fresh download links each time you open it."
+        }
+      ],
+      "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
+      "refund_note": "",
+      "licence": "One purchase covers one household: everyone who lives in the buyer's home may use the guides and printables. Please don't resell or share them publicly. The buyer must be an adult. We never ask for a child's name, age or email.",
+      "licence_note": "",
+      "pairs_with": "safe-ai-operator",
+      "pairs_reason": "Sell With AI keeps AI to drafting and checking. Build a Safe AI Operator shows how to build the agent that does that safely: a closed list of actions, tiers, and approvals that can't be faked.",
+      "offers": [
+        {
+          "id": "sell-with-ai-ebook",
+          "name": "Ebook",
+          "cover": "",
+          "blurb": "All 27 lessons as one PDF.",
+          "price_usd": 19,
+          "price_note": "Proposed 4 Oct 2026 from the Roadmap's market read (ebooks $9-19; a full course text sits at the top of that band). Miro can change it.",
+          "payment_link": "https://buy.stripe.com/eVqaEW2LB2IO5pi9d3gnK0c",
+          "stripe_price_id": "price_1UN1J8AZE7Rk74vYkSMrnylg",
+          "files": [
+            {
+              "key": "sell-ebook-pdf",
+              "label": "Sell With AI (PDF, 89 pages)",
+              "path": "sell-with-ai/sell-with-ai.pdf"
+            }
+          ]
+        },
+        {
+          "id": "sell-with-ai-video",
+          "name": "Video course",
+          "cover": "",
+          "blurb": "One narrated video per lesson, to watch on your access page or download.",
+          "price_usd": 39,
+          "price_note": "Set 4 Oct 2026 (the $30-49 band). Live since the 27 videos landed on the server, 5 Oct 2026.",
+          "payment_link": "https://buy.stripe.com/00wdR8gCr0AGdVO88ZgnK0d",
+          "stripe_price_id": "price_1UN1J9AZE7Rk74vYWTgu8L7J",
+          "files": [
+            {
+              "key": "sell-video-0-1",
+              "label": "Lesson 0.1: What this course is, and what it isn't (video)",
+              "path": "sell-with-ai/videos/lesson-0.1.mp4"
+            },
+            {
+              "key": "sell-video-0-2",
+              "label": "Lesson 0.2: The ground rules (video)",
+              "path": "sell-with-ai/videos/lesson-0.2.mp4"
+            },
+            {
+              "key": "sell-video-0-3",
+              "label": "Lesson 0.3: Your stack, set up in an hour (video)",
+              "path": "sell-with-ai/videos/lesson-0.3.mp4"
+            },
+            {
+              "key": "sell-video-1-1",
+              "label": "Lesson 1.1: What clipping is, and who pays for it (video)",
+              "path": "sell-with-ai/videos/lesson-1.1.mp4"
+            },
+            {
+              "key": "sell-video-1-2",
+              "label": "Lesson 1.2: Permission first, and where to find it (video)",
+              "path": "sell-with-ai/videos/lesson-1.2.mp4"
+            },
+            {
+              "key": "sell-video-1-3",
+              "label": "Lesson 1.3: Reading a campaign's rules (video)",
+              "path": "sell-with-ai/videos/lesson-1.3.mp4"
+            },
+            {
+              "key": "sell-video-1-4",
+              "label": "Lesson 1.4: Finding the moments (video)",
+              "path": "sell-with-ai/videos/lesson-1.4.mp4"
+            },
+            {
+              "key": "sell-video-1-5",
+              "label": "Lesson 1.5: Cutting, captions and formats (video)",
+              "path": "sell-with-ai/videos/lesson-1.5.mp4"
+            },
+            {
+              "key": "sell-video-1-6",
+              "label": "Lesson 1.6: Posting and claiming (video)",
+              "path": "sell-with-ai/videos/lesson-1.6.mp4"
+            },
+            {
+              "key": "sell-video-1-7",
+              "label": "Lesson 1.7: The clipping week (video)",
+              "path": "sell-with-ai/videos/lesson-1.7.mp4"
+            },
+            {
+              "key": "sell-video-2-1",
+              "label": "Lesson 2.1: One product, from what you already know (video)",
+              "path": "sell-with-ai/videos/lesson-2.1.mp4"
+            },
+            {
+              "key": "sell-video-2-2",
+              "label": "Lesson 2.2: Building it, with the model as editor (video)",
+              "path": "sell-with-ai/videos/lesson-2.2.mp4"
+            },
+            {
+              "key": "sell-video-2-3",
+              "label": "Lesson 2.3: The honest product page (video)",
+              "path": "sell-with-ai/videos/lesson-2.3.mp4"
+            },
+            {
+              "key": "sell-video-2-4",
+              "label": "Lesson 2.4: Pricing against what sold (video)",
+              "path": "sell-with-ai/videos/lesson-2.4.mp4"
+            },
+            {
+              "key": "sell-video-2-5",
+              "label": "Lesson 2.5: Getting paid and delivering (video)",
+              "path": "sell-with-ai/videos/lesson-2.5.mp4"
+            },
+            {
+              "key": "sell-video-2-6",
+              "label": "Lesson 2.6: Short videos as free samples (video)",
+              "path": "sell-with-ai/videos/lesson-2.6.mp4"
+            },
+            {
+              "key": "sell-video-2-7",
+              "label": "Lesson 2.7: The launch checklist (video)",
+              "path": "sell-with-ai/videos/lesson-2.7.mp4"
+            },
+            {
+              "key": "sell-video-3-1",
+              "label": "Lesson 3.1: What dropshipping really is (video)",
+              "path": "sell-with-ai/videos/lesson-3.1.mp4"
+            },
+            {
+              "key": "sell-video-3-2",
+              "label": "Lesson 3.2: One product, one supplier (video)",
+              "path": "sell-with-ai/videos/lesson-3.2.mp4"
+            },
+            {
+              "key": "sell-video-3-3",
+              "label": "Lesson 3.3: Order the sample (video)",
+              "path": "sell-with-ai/videos/lesson-3.3.mp4"
+            },
+            {
+              "key": "sell-video-3-4",
+              "label": "Lesson 3.4: The store, from one product (video)",
+              "path": "sell-with-ai/videos/lesson-3.4.mp4"
+            },
+            {
+              "key": "sell-video-3-5",
+              "label": "Lesson 3.5: Customers, replies and what goes wrong (video)",
+              "path": "sell-with-ai/videos/lesson-3.5.mp4"
+            },
+            {
+              "key": "sell-video-3-6",
+              "label": "Lesson 3.6: The store week, and the second product (video)",
+              "path": "sell-with-ai/videos/lesson-3.6.mp4"
+            },
+            {
+              "key": "sell-video-4-1",
+              "label": "Lesson 4.1: Stages, not a super-agent (video)",
+              "path": "sell-with-ai/videos/lesson-4.1.mp4"
+            },
+            {
+              "key": "sell-video-4-2",
+              "label": "Lesson 4.2: The weekly report (video)",
+              "path": "sell-with-ai/videos/lesson-4.2.mp4"
+            },
+            {
+              "key": "sell-video-4-3",
+              "label": "Lesson 4.3: What no automation may do (video)",
+              "path": "sell-with-ai/videos/lesson-4.3.mp4"
+            },
+            {
+              "key": "sell-video-4-4",
+              "label": "Lesson 4.4: Your first thirty days (video)",
+              "path": "sell-with-ai/videos/lesson-4.4.mp4"
+            }
+          ]
+        },
+        {
+          "id": "sell-with-ai-both",
+          "name": "Video course and ebook",
+          "cover": "",
+          "blurb": "The videos and the PDF together.",
+          "price_usd": 49,
+          "price_note": "Set 4 Oct 2026. Live since the videos landed, 5 Oct 2026.",
+          "payment_link": "https://buy.stripe.com/9B628q71R5V0g3WdtjgnK0e",
+          "stripe_price_id": "price_1UN1JAAZE7Rk74vY3kmR016y",
+          "files": [
+            {
+              "key": "sell-video-0-1",
+              "label": "Lesson 0.1: What this course is, and what it isn't (video)",
+              "path": "sell-with-ai/videos/lesson-0.1.mp4"
+            },
+            {
+              "key": "sell-video-0-2",
+              "label": "Lesson 0.2: The ground rules (video)",
+              "path": "sell-with-ai/videos/lesson-0.2.mp4"
+            },
+            {
+              "key": "sell-video-0-3",
+              "label": "Lesson 0.3: Your stack, set up in an hour (video)",
+              "path": "sell-with-ai/videos/lesson-0.3.mp4"
+            },
+            {
+              "key": "sell-video-1-1",
+              "label": "Lesson 1.1: What clipping is, and who pays for it (video)",
+              "path": "sell-with-ai/videos/lesson-1.1.mp4"
+            },
+            {
+              "key": "sell-video-1-2",
+              "label": "Lesson 1.2: Permission first, and where to find it (video)",
+              "path": "sell-with-ai/videos/lesson-1.2.mp4"
+            },
+            {
+              "key": "sell-video-1-3",
+              "label": "Lesson 1.3: Reading a campaign's rules (video)",
+              "path": "sell-with-ai/videos/lesson-1.3.mp4"
+            },
+            {
+              "key": "sell-video-1-4",
+              "label": "Lesson 1.4: Finding the moments (video)",
+              "path": "sell-with-ai/videos/lesson-1.4.mp4"
+            },
+            {
+              "key": "sell-video-1-5",
+              "label": "Lesson 1.5: Cutting, captions and formats (video)",
+              "path": "sell-with-ai/videos/lesson-1.5.mp4"
+            },
+            {
+              "key": "sell-video-1-6",
+              "label": "Lesson 1.6: Posting and claiming (video)",
+              "path": "sell-with-ai/videos/lesson-1.6.mp4"
+            },
+            {
+              "key": "sell-video-1-7",
+              "label": "Lesson 1.7: The clipping week (video)",
+              "path": "sell-with-ai/videos/lesson-1.7.mp4"
+            },
+            {
+              "key": "sell-video-2-1",
+              "label": "Lesson 2.1: One product, from what you already know (video)",
+              "path": "sell-with-ai/videos/lesson-2.1.mp4"
+            },
+            {
+              "key": "sell-video-2-2",
+              "label": "Lesson 2.2: Building it, with the model as editor (video)",
+              "path": "sell-with-ai/videos/lesson-2.2.mp4"
+            },
+            {
+              "key": "sell-video-2-3",
+              "label": "Lesson 2.3: The honest product page (video)",
+              "path": "sell-with-ai/videos/lesson-2.3.mp4"
+            },
+            {
+              "key": "sell-video-2-4",
+              "label": "Lesson 2.4: Pricing against what sold (video)",
+              "path": "sell-with-ai/videos/lesson-2.4.mp4"
+            },
+            {
+              "key": "sell-video-2-5",
+              "label": "Lesson 2.5: Getting paid and delivering (video)",
+              "path": "sell-with-ai/videos/lesson-2.5.mp4"
+            },
+            {
+              "key": "sell-video-2-6",
+              "label": "Lesson 2.6: Short videos as free samples (video)",
+              "path": "sell-with-ai/videos/lesson-2.6.mp4"
+            },
+            {
+              "key": "sell-video-2-7",
+              "label": "Lesson 2.7: The launch checklist (video)",
+              "path": "sell-with-ai/videos/lesson-2.7.mp4"
+            },
+            {
+              "key": "sell-video-3-1",
+              "label": "Lesson 3.1: What dropshipping really is (video)",
+              "path": "sell-with-ai/videos/lesson-3.1.mp4"
+            },
+            {
+              "key": "sell-video-3-2",
+              "label": "Lesson 3.2: One product, one supplier (video)",
+              "path": "sell-with-ai/videos/lesson-3.2.mp4"
+            },
+            {
+              "key": "sell-video-3-3",
+              "label": "Lesson 3.3: Order the sample (video)",
+              "path": "sell-with-ai/videos/lesson-3.3.mp4"
+            },
+            {
+              "key": "sell-video-3-4",
+              "label": "Lesson 3.4: The store, from one product (video)",
+              "path": "sell-with-ai/videos/lesson-3.4.mp4"
+            },
+            {
+              "key": "sell-video-3-5",
+              "label": "Lesson 3.5: Customers, replies and what goes wrong (video)",
+              "path": "sell-with-ai/videos/lesson-3.5.mp4"
+            },
+            {
+              "key": "sell-video-3-6",
+              "label": "Lesson 3.6: The store week, and the second product (video)",
+              "path": "sell-with-ai/videos/lesson-3.6.mp4"
+            },
+            {
+              "key": "sell-video-4-1",
+              "label": "Lesson 4.1: Stages, not a super-agent (video)",
+              "path": "sell-with-ai/videos/lesson-4.1.mp4"
+            },
+            {
+              "key": "sell-video-4-2",
+              "label": "Lesson 4.2: The weekly report (video)",
+              "path": "sell-with-ai/videos/lesson-4.2.mp4"
+            },
+            {
+              "key": "sell-video-4-3",
+              "label": "Lesson 4.3: What no automation may do (video)",
+              "path": "sell-with-ai/videos/lesson-4.3.mp4"
+            },
+            {
+              "key": "sell-video-4-4",
+              "label": "Lesson 4.4: Your first thirty days (video)",
+              "path": "sell-with-ai/videos/lesson-4.4.mp4"
+            },
+            {
+              "key": "sell-ebook-pdf",
+              "label": "Sell With AI (PDF, 89 pages)",
+              "path": "sell-with-ai/sell-with-ai.pdf"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        "ATLAS Vault/Products/Sell With AI/ (BRIEF.md, 27 lesson files), 4 Oct 2026"
+      ]
+    }
+  ],
+  "bundle": {
+    "slug": "all-four",
+    "title": "All four",
+    "summary": "Four titles in one checkout: Build a Safe AI Operator, 30 Business Lessons, the Claude + Obsidian Vault Kit, and both editions of AI for Every Age. The Local Business Automation Pack, the Family AI-Scam Defense Workbook and Sell With AI are sold on their own.",
+    "includes": [
+      "safe-ai-operator",
+      "30-business-lessons",
+      "claude-obsidian-vault-kit",
+      "ai-for-every-age-both"
+    ],
+    "price_usd": 79,
+    "price_note": "Miro, 2026-10-01: $79 (the four titles alone are $87). Live Stripe link plink_1ULlC4AZE7Rk74vY1ALQIYqt.",
+    "payment_link": "https://buy.stripe.com/7sYdR8cmb4QWcRKdtjgnK09",
+    "stripe_price_id": "price_1ULlC4AZE7Rk74vY6P2VtkMu",
+    "terms_note": "Each title keeps its own refund terms and licence."
+  }
+}

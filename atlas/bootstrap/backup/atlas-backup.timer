@@ -1,0 +1,11 @@
+[Unit]
+Description=ATLAS nightly Postgres backup
+
+[Timer]
+# 06:20 UTC: after the night's work, before Veo's 07:00 reset and the reel ticks.
+OnCalendar=*-*-* 06:20:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,458 @@
+/* Help section and API guide (task 71; re-laid out 2026-09-16).
+ *
+ * Only tokens — no literal colours — so both skins are covered by the same
+ * rules. Prose gets a reading measure (`--g-help-measure`); the index is a
+ * grouped list of whole-row entries; an article is prose plus a rail that
+ * keeps "where in Vault" and "ask Vault" in view.
+ *
+ * Nothing here scrolls horizontally at 375px: every grid collapses to one
+ * column below 900px.
+ */
+
+.g-help-index,
+.g-help-article {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  --g-help-measure: 66ch;
+}
+
+.g-help-head h1,
+.g-help-article h1 {
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.g-help-head .hint,
+.g-help-summary {
+  margin: var(--space-2) 0 0;
+  max-width: var(--g-help-measure);
+}
+
+.g-help-summary {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-md);
+  line-height: 1.5;
+}
+
+/* --- The hero: ask Vault ------------------------------------------- */
+
+.g-help-askbox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg, 14px);
+  border: 1px solid var(--color-border);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--color-primary-strong) 14%, transparent), transparent 60%),
+    var(--color-surface);
+}
+
+.g-help-askbox label {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.g-help-askbox-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.g-help-askbox input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+  font: inherit;
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.g-help-askbox input:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 1px;
+}
+
+.g-help-askbox button {
+  padding: 0 18px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-on-primary, #fff);
+  background: var(--color-primary-strong);
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.g-help-askbox .hint {
+  margin: 0;
+}
+
+/* --- Grouped index ------------------------------------------------------ */
+
+.g-help-group {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) 1fr;
+  gap: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.g-help-group-head h2 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.g-help-group-head .hint {
+  margin: var(--space-1) 0 0;
+  line-height: 1.5;
+}
+
+.g-help-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+
+.g-help-entry {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.g-help-entry:hover,
+.g-help-entry:focus-within {
+  border-color: var(--color-primary-strong);
+  background: var(--color-surface-raised);
+}
+
+.g-help-entry-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  line-height: 1.35;
+}
+
+/* The whole entry is the target; the link's box is stretched over it. */
+.g-help-entry-title a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.g-help-entry-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.g-help-entry-title a:focus-visible {
+  outline: none;
+}
+
+.g-help-entry:focus-within {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 1px;
+}
+
+.g-help-entry-summary {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  flex: 1;
+}
+
+.g-help-entry-meta {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Article ------------------------------------------------------------ */
+
+.g-help-article-head {
+  display: flex;
+  flex-direction: column;
+}
+
+.g-help-crumb {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.g-help-article-body {
+  display: grid;
+  grid-template-columns: minmax(0, var(--g-help-measure)) 260px;
+  gap: var(--space-6, 40px);
+  align-items: start;
+}
+
+.g-help-prose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.g-help-p {
+  margin: 0;
+  line-height: 1.65;
+  font-size: var(--font-size-md);
+}
+
+.g-help-steps,
+.g-help-bullets {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  line-height: 1.6;
+  font-size: var(--font-size-md);
+}
+
+/* Steps are a real sequence, so they earn their numbers — set in the mono
+ * face as a rail, the way the console sets every other count. */
+.g-help-steps {
+  list-style: none;
+  counter-reset: step;
+}
+
+.g-help-steps li {
+  position: relative;
+  padding-left: 2.6em;
+  counter-increment: step;
+}
+
+.g-help-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+  width: 1.8em;
+  height: 1.8em;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-primary-strong);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+}
+
+.g-help-bullets {
+  list-style: none;
+}
+
+.g-help-bullets li {
+  position: relative;
+  padding-left: 1.2em;
+}
+
+.g-help-bullets li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.68em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary-strong);
+}
+
+.g-help-note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--color-warn);
+  background: var(--color-surface-sunken);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.g-help-note-label {
+  display: block;
+  font-weight: 700;
+  color: var(--color-warn-text);
+  margin-bottom: var(--space-1);
+}
+
+.g-help-note p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* The rail: what stays in view while reading. */
+.g-help-rail {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-help-rail-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.g-help-rail-block h2 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.g-help-where {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.g-help-where a {
+  font-weight: 600;
+}
+
+.g-help-where .hint {
+  line-height: 1.5;
+}
+
+.g-help-ask {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.g-help-ask-q {
+  margin: 0;
+  font-size: var(--font-size-md);
+  line-height: 1.45;
+}
+
+.g-help-ask-btn {
+  padding: 9px 14px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-on-primary, #fff);
+  background: var(--color-primary-strong);
+  border: 0;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.g-help-ask .hint {
+  margin: 0;
+}
+
+.g-help-pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  max-width: calc(var(--g-help-measure) + 260px + var(--space-6, 40px));
+}
+
+.g-help-pager a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.g-help-pager a:hover {
+  border-color: var(--color-primary-strong);
+}
+
+.g-help-pager-next {
+  text-align: right;
+  align-items: flex-end;
+}
+
+@media (max-width: 900px) {
+  .g-help-group,
+  .g-help-article-body {
+    grid-template-columns: 1fr;
+  }
+  .g-help-rail {
+    position: static;
+  }
+  .g-help-askbox-row {
+    flex-direction: column;
+  }
+  .g-help-askbox button {
+    padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-help-entry {
+    transition: none;
+  }
+}
+
+/* --- API guide --- */
+
+.g-api-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-api-group h2 {
+  margin: 0;
+}
+
+.g-api-endpoint {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.g-api-endpoint-head {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.g-api-method {
+  font-weight: 700;
+  color: var(--color-primary-strong);
+}
+
+.g-api-path {
+  /* A long path wraps mid-string rather than pushing the page sideways —
+   * the 375px rule. */
+  overflow-wrap: anywhere;
+}

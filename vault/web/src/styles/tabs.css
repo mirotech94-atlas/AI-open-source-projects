@@ -1,0 +1,7280 @@
+/* Overview + Inbox tab styles (Task 24/25 fix round).
+ *
+ * Everything here reuses the `.g-tone-*` hooks and `Card`/`Badge`/`Tabs`/
+ * `Chips` primitives from `design/primitives.css` — no new colour, spacing
+ * unit or radius is introduced. Imported once from `App.tsx`, so both tabs
+ * get it without either page having to remember to.
+ */
+
+/* --- shared page layout --- */
+
+.g-overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* A live WS frame landing in the timeline gets one brief highlight on the
+   card that holds it — the tone ramps in then back out, it never snaps. */
+.g-live-flash {
+  animation: g-live-flash-pulse 1.2s ease-out;
+}
+
+@keyframes g-live-flash-pulse {
+  0% {
+    box-shadow: 0 0 0 2px var(--color-primary);
+  }
+  100% {
+    box-shadow: var(--shadow-card);
+  }
+}
+
+.g-deduction {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Task 74: the five hero cards ---
+   One question per card, the widest first because "Are you watching?" carries a
+   sentence rather than a number. Reuses `.g-stat` wholesale — the label,
+   monospace value, unit and sub-line are all already the right typography. */
+
+.g-hero-cards {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(4, 1fr);
+  gap: var(--space-3);
+}
+
+.g-hero-card {
+  display: block;
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* The tone colours the left edge as well as the value, so a red card is
+   readable as red before the number is read. */
+.g-hero-card:has(.g-tone-good) {
+  border-left-color: var(--color-good);
+}
+
+.g-hero-card:has(.g-tone-warn) {
+  border-left-color: var(--color-warn);
+}
+
+.g-hero-card:has(.g-tone-alert) {
+  border-left-color: var(--color-alert);
+}
+
+.g-hero-card:hover {
+  border-color: var(--color-primary);
+}
+
+.g-hero-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* The sub-line is prose and must wrap rather than push the grid wider. */
+.g-hero-card .g-stat-sub {
+  overflow-wrap: anywhere;
+}
+
+.g-hero-card .g-stat-label {
+  white-space: normal;
+}
+
+/* Two rows of cards on a tablet, one column on a phone — the reference has no
+   media query here at all and scrolls sideways below about 900px. */
+@media (max-width: 1100px) {
+  .g-hero-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .g-hero-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The Overview console grid was retired with the page skeleton (design/skeleton.css). */
+
+
+/* --- score hero: the 7-day sparkline and the named deductions --- */
+
+.g-score-trend {
+  min-width: 0;
+}
+
+.g-score-trend .g-spark {
+  width: 100%;
+}
+
+.g-deductions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+}
+
+.g-deductions > li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.g-deduction-what {
+  min-width: 0;
+}
+
+.g-deduction-points {
+  flex: none;
+  color: var(--color-alert);
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- open incidents panel --- */
+
+.g-incident-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-incident {
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--tone, var(--color-border));
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.g-incident > a {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  color: inherit;
+  text-decoration: none;
+}
+
+.g-incident-title {
+  font-size: var(--font-size-sm);
+  font-weight: 650;
+}
+
+/* --- Vault health: a two-column key/value list --- */
+
+.g-health-kv {
+  margin: 0;
+  display: grid;
+  gap: 3px var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.g-health-kv-row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.g-health-kv dt {
+  color: var(--color-text-muted);
+}
+
+.g-health-kv dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.g-feed-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+@media (max-width: 420px) {
+  .g-health-kv-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+/* --- internet line: one bar per anchor --- */
+
+.g-paths {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-size-sm);
+}
+
+.g-path {
+  display: grid;
+  grid-template-columns: minmax(0, 120px) 1fr auto;
+  grid-template-areas:
+    "name bar value"
+    "detail detail detail";
+  gap: 2px var(--space-3);
+  align-items: center;
+  padding: var(--space-1) 0;
+}
+
+.g-path-name {
+  grid-area: name;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-path-bar {
+  grid-area: bar;
+  display: block;
+  height: 10px;
+  min-width: 0;
+  border-radius: 5px;
+  background: var(--color-surface-sunken);
+}
+
+.g-path-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--tone, var(--color-primary));
+}
+
+.g-path-value {
+  grid-area: value;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.g-path-detail {
+  grid-area: detail;
+  padding-left: calc(120px + var(--space-3));
+}
+
+@media (max-width: 520px) {
+  .g-path {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name value"
+      "bar bar"
+      "detail detail";
+  }
+
+  .g-path-detail {
+    padding-left: 0;
+  }
+}
+
+/* --- VerdictHero: the reference's score cell — figure+grade, the verdict
+   sentence and trend beside it, the named deductions stacked full-width
+   below. A row above a column, not three columns competing for the same
+   ~400px cell: that was squeezing the verdict sentence into a sliver next
+   to the deductions list. */
+
+.g-verdict-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-verdict-top {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.g-verdict-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  flex: 1;
+}
+
+.g-verdict-text {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+}
+
+.g-verdict-body button {
+  align-self: flex-start;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.g-verdict-body button:hover {
+  background: var(--color-primary-strong);
+}
+
+.g-verdict-body button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 699px) {
+  .g-verdict-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* --- HealthStrip: rows of 24 fixed-size hour blocks --- */
+
+.g-health-strip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-health-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.g-health-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.g-health-name {
+  flex: 0 0 140px;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-health-blocks {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(8px, 1fr));
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-sm);
+}
+
+.g-health-blocks:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.g-health-block {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: 14px;
+  border-radius: 3px;
+}
+
+@media (max-width: 699px) {
+  .g-health-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+  }
+
+  .g-health-name {
+    flex-basis: auto;
+  }
+}
+
+/* --- QuestionStrip: compact strip under the hero, wraps on mobile --- */
+
+.g-question-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.g-question {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.g-question-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Inbox: toolbar (tabs + status + search), one row, wraps < 700px --- */
+
+.g-inbox-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-inbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-inbox-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-inbox-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.g-inbox-toolbar-row input[type="search"] {
+  flex: 1 1 200px;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.g-inbox-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-5) 0;
+  text-align: center;
+  margin: 0;
+}
+
+.g-inbox-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* --- Inbox row: 4px left severity stripe, body, actions --- */
+
+.g-inbox-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) calc(var(--space-3) + 4px);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.g-inbox-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.g-inbox-row-cursor {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
+
+.g-inbox-row-selected {
+  background: var(--color-primary-soft);
+}
+
+/* An incident's expanded child alert, indented under its parent. */
+.g-inbox-row-child {
+  margin-left: var(--space-5);
+  background: var(--color-bg);
+}
+
+.g-inbox-select {
+  display: flex;
+  align-items: center;
+  padding-top: var(--space-1);
+  flex-shrink: 0;
+}
+
+.g-inbox-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  flex: 1;
+}
+
+.g-inbox-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-inbox-title,
+.g-inbox-title-button {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+}
+
+.g-inbox-title-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.g-inbox-title-button:hover {
+  text-decoration: underline;
+}
+
+.g-inbox-entity {
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+}
+
+.g-inbox-why,
+.g-inbox-changed {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+}
+
+.g-inbox-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.g-inbox-actions button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.g-inbox-actions button:first-child {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.g-inbox-actions button:hover {
+  filter: brightness(0.96);
+}
+
+.g-inbox-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+@media (max-width: 699px) {
+  .g-inbox-row {
+    flex-wrap: wrap;
+  }
+
+  .g-inbox-row-child {
+    margin-left: var(--space-3);
+  }
+}
+
+/* --- Inbox triage (Task 83, patterns A3 + A6): one lead item, everything
+   else one line, the three outcome counters as the primary axis. See
+   design/mockups/inbox-triage.html for the shape this follows. --- */
+
+.g-triage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.g-triage-outcomes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.g-triage-oc {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.g-triage-oc b {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.g-triage-oc-lbl {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-triage-oc-lbl strong {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.g-triage-oc-handled {
+  border-left: 3px solid var(--color-good);
+}
+.g-triage-oc-handled b {
+  color: var(--color-good-text);
+}
+.g-triage-oc-yes {
+  border-left: 3px solid var(--color-primary);
+}
+.g-triage-oc-yes b {
+  color: var(--color-primary);
+}
+.g-triage-oc-you {
+  border-left: 3px solid var(--color-warn);
+}
+.g-triage-oc-you b {
+  color: var(--color-warn-text);
+}
+
+.g-triage-lead {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--tone, var(--color-warn));
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+}
+
+.g-triage-kicker {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tone-text, var(--color-warn-text));
+}
+
+.g-triage-lead-title {
+  margin: 6px 0 6px;
+  font-size: var(--font-size-lg);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.g-triage-lead-meta {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-3);
+}
+
+.g-triage-lead-why {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  max-width: 72ch;
+  line-height: 1.55;
+}
+
+.g-triage-lead-acts {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.g-triage-rank-reason {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.g-triage-list {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.g-triage-list > header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.g-triage-list h3 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.g-triage-roll {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-triage-list > ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.g-triage-row {
+  border-bottom: 1px solid var(--color-border);
+}
+.g-triage-row:last-child {
+  border-bottom: none;
+}
+
+.g-triage-row-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 9px var(--space-4);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.g-triage-row-summary:hover {
+  background: var(--color-surface-sunken);
+}
+
+.g-triage-row-sev {
+  width: 3px;
+  align-self: stretch;
+  border-radius: 2px;
+  background: var(--tone, var(--color-text-muted));
+  flex: none;
+}
+
+.g-triage-row-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-triage-row-entity {
+  color: var(--color-text-muted);
+}
+
+.g-triage-row-when {
+  font-family: var(--font-num);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex: none;
+}
+
+.g-triage-row-body {
+  padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 3px + var(--space-3));
+  font-size: var(--font-size-sm);
+}
+
+.g-triage-row-body p {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  max-width: 72ch;
+  line-height: 1.55;
+}
+
+.g-triage-acts {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-triage-acts button:disabled,
+.g-triage-lead-acts button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.g-triage-browse {
+  margin-top: var(--space-2);
+}
+.g-triage-browse > summary {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  padding: var(--space-2) 0;
+}
+
+/* Focus is always visible inside the triage surface, the same rule
+   `primitives.css` states for the rest of the dashboard's controls. */
+.g-triage :focus-visible,
+.g-triage-browse > summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-triage-row-summary,
+  .g-triage-acts button,
+  .g-triage-lead-acts button {
+    transition: none;
+  }
+}
+
+@media (max-width: 699px) {
+  .g-triage-outcomes {
+    grid-template-columns: 1fr;
+  }
+  .g-triage-row-summary {
+    flex-wrap: wrap;
+  }
+  .g-triage-row-body {
+    padding-left: var(--space-4);
+  }
+}
+
+/* --- Activity: the job log. Inbox answers "what should I do", Activity
+   answers "what happened, and is anything stuck" -- so it reads as a dense,
+   fixed-width log with time as the leading axis, not another stack of
+   Inbox-shaped cards. One `Card` holds both zones (live work, then history)
+   so it never reads as two separate pages; the two `<section>`s inside it
+   are a log's own section breaks, not bordered panels. --- */
+
+.g-activity-filters {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.g-activity {
+  display: flex;
+  flex-direction: column;
+}
+
+.g-activity-section + .g-activity-section {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.g-activity-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-2);
+}
+
+.g-activity-section-head h3 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-activity-section-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-activity-empty-line {
+  margin: 0;
+  padding: var(--space-3) 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* A small solid dot beside "In progress" when something is actually live --
+   the running zone's own proof of life, echoing the "Vault health" proof
+   pattern elsewhere rather than inventing a new one. Turns the alert colour
+   and stops animating the instant something is stuck, because a job that
+   has been waiting on nobody for minutes is not "alive", it is the opposite. */
+.g-activity-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-warn);
+  animation: g-activity-pulse 1.6s ease-in-out infinite;
+}
+
+.g-activity-live-dot-stuck {
+  background: var(--color-alert);
+  animation: none;
+}
+
+@keyframes g-activity-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-activity-live-dot {
+    animation: none;
+  }
+}
+
+/* Fixed-width, tabular-numeral columns so a scanning eye tracks a column
+   top to bottom instead of re-reading each row -- Time and Duration lead
+   because they are what this log is for; Duration additionally gets weight
+   (see `.g-activity-duration`) because it is the single most informative
+   cell on the page and used to be the easiest to miss. */
+.g-activity-table {
+  table-layout: fixed;
+}
+
+.g-activity-table .g-table-empty {
+  table-layout: auto;
+}
+
+.g-activity-num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.g-activity-duration {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.g-activity-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* The stuck marker never rides on colour alone: a glyph ahead of the badge,
+   independent of `Badge`'s own tone, plus the row-level mark below and the
+   default sort (`duration_s desc`) that puts the longest-waiting job first
+   without anyone having to notice a colour at all. */
+.g-activity-alarm {
+  color: var(--color-alert-text);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.g-activity-job {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.g-activity-job-label,
+.g-activity-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  min-width: 0;
+}
+
+/* Row-level marks, the same inset-shadow convention `.g-row-selected`
+   already uses in `primitives.css` -- a coloured left edge that survives
+   next to `Badge`'s own tone rather than duplicating it, so severity lives
+   in the row's structure and not only in one cell. */
+.g-activity-row-stuck td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-alert);
+}
+.g-activity-row-stuck td {
+  background: var(--color-alert-soft);
+}
+.g-activity-row-failed td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-alert);
+}
+.g-activity-row-running td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-warn);
+}
+
+@media (max-width: 699px) {
+  .g-activity-table {
+    table-layout: auto;
+  }
+  .g-activity-job-label,
+  .g-activity-truncate {
+    max-width: 40vw;
+  }
+}
+
+/* --- Assets: Websites / Servers / Devices / Screen time (Task 26) --- */
+
+.g-assets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.g-asset-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  padding: var(--space-4) 0;
+}
+
+/* --- EmptyState: the heavier "nothing here yet" panel with a next step --- */
+
+.g-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.g-empty-state-icon {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+.g-empty-state-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.g-empty-state-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.g-empty-state-body {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  max-width: 40ch;
+}
+
+/* An empty panel's action is that panel's one primary next step, so it takes
+   the filled accent whichever element it renders as. */
+.g-empty-state-action {
+  margin-top: var(--space-1);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+
+.g-empty-state-action:hover:not(:disabled) {
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+}
+
+/* The `href`-flavoured empty-state action renders as an `<a>` (see
+   `EmptyState.tsx`'s comment on why), so it needs the same look the base
+   `button` rule in `tokens.css` gives every real `<button>` for free. */
+a.g-button-link {
+  display: inline-block;
+  font-family: inherit;
+  font-size: var(--font-size-control);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-primary);
+  padding: var(--pad-control);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  text-decoration: none;
+}
+
+a.g-button-link:hover {
+  background: var(--color-primary-strong);
+  border-color: var(--color-primary-strong);
+}
+
+/* One asset card: site, host or device. A plain button role, focusable and
+   activatable by Enter/Space, so the whole card opens its drawer either way. */
+.g-asset-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  cursor: pointer;
+  text-align: left;
+}
+
+.g-asset-card.g-tone-good,
+.g-asset-card.g-tone-warn,
+.g-asset-card.g-tone-alert {
+  border-left: 3px solid var(--tone);
+}
+
+.g-asset-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.g-asset-card-name {
+  font-weight: 700;
+  font-size: var(--font-size-md);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-asset-card-url {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The one line under the score saying why it moved. Quiet by default: it is
+   an explanation of a number already on screen, not a finding of its own, so
+   it must not compete with the verdict above it. */
+.g-score-change {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.g-score-change.g-tone-good { color: var(--color-ok, var(--color-text-muted)); }
+.g-score-change.g-tone-alert { color: var(--color-warn, var(--color-text-muted)); }
+
+/* "Is it mine?" on the device drawer. The verdict badge leads, the sentence
+   beside it says why in words, and the reasons list is the evidence a person
+   can push back on. Facts underneath in the drawer's own dl style. */
+.g-familiar-verdict {
+  margin: 0 0 var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  line-height: 1.5;
+}
+
+.g-familiar-reasons {
+  margin: 0 0 var(--space-3);
+  padding-left: 1.1em;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* Security → Vulnerability scans. The run form is one line on a desktop;
+   the history is a plain table (a report is a record, not a card); an open
+   report lists findings with the severity badge leading, evidence dimmed on
+   its own line so a long SSL error never runs into the title. */
+.g-vuln { display: flex; flex-direction: column; gap: var(--space-3); }
+.g-vuln-run { display: grid; grid-template-columns: auto minmax(220px, 1fr) auto auto auto; gap: var(--space-2) var(--space-3); align-items: center; }
+.g-vuln-run .hint { grid-column: 1 / -1; margin: 0; }
+@media (max-width: 899px) { .g-vuln-run { grid-template-columns: 1fr; } }
+.g-vuln-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
+.g-vuln-table th { text-align: left; font-weight: 600; color: var(--color-text-muted); padding: var(--space-1) var(--space-2); border-bottom: 1px solid var(--color-border); }
+.g-vuln-table td { padding: var(--space-2); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+.g-vuln-table tbody tr { cursor: pointer; }
+.g-vuln-table tbody tr:hover, .g-vuln-row-open { background: var(--color-bg-elevated, rgba(255, 255, 255, 0.03)); }
+.g-vuln-detail { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); }
+.g-vuln-detail h3 { margin: 0 0 var(--space-2); font-size: var(--font-size-md); }
+.g-vuln-findings { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.g-vuln-findings li { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-2); align-items: baseline; }
+.g-vuln-finding-title { font-weight: 600; }
+.g-vuln-evidence, .g-vuln-findings li > .hint:last-child { grid-column: 2; font-size: var(--font-size-xs); }
+
+/* A row the sensor has stopped reporting. The whole card is dimmed rather
+   than badged, because the problem is not one field -- every figure on it is
+   a last-known state. Dimming says "this is not live" at a glance; the note
+   underneath says when it actually stopped. Deliberately quiet: a frozen row
+   is the absence of a finding, not a new one, and must not out-shout a real
+   alert sitting next to it. */
+.g-asset-stale {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.g-asset-stale-note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+/* The website card's headline fact. Tone-coloured only when there is
+   something to act on (warn/alert) -- a healthy cert stays a quiet, muted
+   sentence so it never competes for attention with a site that is actually
+   in trouble. */
+.g-site-cert-headline {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.g-site-cert-headline.g-tone-plain,
+.g-site-cert-headline.g-tone-good {
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.g-site-cert-headline.g-tone-warn,
+.g-site-cert-headline.g-tone-alert {
+  color: var(--tone-text, var(--tone));
+}
+
+.g-asset-stat-row {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.g-asset-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.g-asset-stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-asset-stat-value {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.g-asset-spark {
+  width: 100%;
+}
+
+.g-asset-card-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-asset-pills {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.g-asset-pill {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--tone-soft);
+  color: var(--tone-text, var(--tone));
+}
+
+/* The server card's ops-inventory body: label/value rows read by column,
+   the tiered mini-bar carrying the same "how close to full" reading a Ring
+   gave without repeating the website card's circular language. */
+.g-host-specs {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-host-spec-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-host-spec-row dt {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-host-spec-row dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.g-host-spec-track {
+  width: 64px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-surface-sunken);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.g-host-spec-fill {
+  display: block;
+  height: 100%;
+  background: var(--tone);
+  border-radius: 999px;
+}
+
+.g-asset-gauges {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.g-asset-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.g-asset-gauge-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-asset-minilist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-size-xs);
+}
+
+.g-asset-minilist li {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--tone-soft);
+  color: var(--tone-text, var(--tone));
+}
+
+/* --- Devices sub-view: kind chips + card grid --- */
+
+.g-asset-devices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+/* Continues the same grid rhythm directly under the real device cards, with
+   no gap of its own — a camera the recorder claims but Vault has never
+   listed sits in the SAME grid as the ones it has, never a separate box. */
+.g-asset-grid-ghosts {
+  margin-top: calc(var(--space-3) * -1);
+}
+
+.g-asset-card-ghost {
+  border-style: dashed;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-color: var(--color-warn);
+}
+
+.g-device-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--tone);
+}
+
+.g-device-seen {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+/* --- Screen time sub-view --- */
+
+.g-screen-time {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-screen-time-lead {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-screen-time-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* --- Device drawer body --- */
+
+.g-device-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Why a device was filed as a camera -- dense, one line, muted like the
+   network line above it. */
+.g-device-drawer-camera {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-device-drawer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.g-device-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-device-field input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.g-device-toggles,
+.g-device-merge,
+.g-device-merged,
+.g-device-forget {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-device-merged {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-device-merge select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.g-device-toggles button,
+.g-device-merge button,
+.g-device-merged button,
+.g-device-forget button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.g-device-toggles button.g-toggle-on {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.g-device-forget button.g-danger {
+  background: var(--color-alert-soft);
+  border-color: var(--color-alert);
+  color: var(--color-alert-text);
+}
+
+/* A viewer-role drawer: every write control is disabled (still visible, with
+   a tooltip explaining why) rather than hidden — the layout stays stable
+   between roles and the control reappears the instant a session's role is
+   upgraded, no remount needed. */
+.g-device-field input:disabled,
+.g-device-toggles button:disabled,
+.g-device-merge select:disabled,
+.g-device-merge button:disabled,
+.g-device-merged button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* --- Generic raw-facts definition list (site/host drawer, presence/DNS tabs) --- */
+
+.g-facts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.g-facts dt {
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-facts dd {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  word-break: break-word;
+}
+
+.g-facts-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.g-facts-row dt {
+  flex: 0 0 160px;
+}
+
+.g-device-dns-lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+/* --- Traffic: Topology's own-network panel + the drawer's per-device block
+   (Task 12) --- */
+
+.g-traffic-section,
+.g-traffic-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.g-traffic-section h2,
+.g-traffic-block h2 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.g-traffic-section h3 {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-traffic-talkers,
+.g-traffic-new ul,
+.g-traffic-peers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-traffic-talkers li,
+.g-traffic-new li,
+.g-traffic-peers li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  flex-wrap: wrap;
+}
+
+.g-traffic-name {
+  font-weight: 600;
+}
+
+.g-traffic-bytes {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.g-traffic-peer {
+  margin: 0;
+}
+
+/* "Healthy recedes" -- a row with nothing unusual to report is drawn at the
+   same muted weight as the rest of the page's quiet text, never in a colour
+   of its own, so a screen of zeros does not out-shout the one row that
+   matters. */
+.g-traffic-quiet {
+  color: var(--color-text-muted);
+}
+
+.g-traffic-totals {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The hourly strip: `window_hours` plain bars, not a chart -- the History
+   tab already owns trend rendering (`payloads/history.py`). Fixed pixel
+   height so a lone busy hour still reads against 23 empty ones instead of
+   stretching the whole strip to it. */
+.g-traffic-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 32px;
+  padding: 2px;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.g-traffic-strip-bar {
+  flex: 1 1 0;
+  min-width: 2px;
+  background: var(--color-primary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  opacity: 0.7;
+}
+
+.g-device-dns-lists h3 {
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
+}
+
+.g-device-dns-lists ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+}
+
+@media (max-width: 699px) {
+  .g-assets-grid,
+  .g-asset-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* --- Security tab (Task 32): scorecards, Wi-Fi guard, checks, attack map,
+   exposure, attacker method --- */
+
+.g-security {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Generic pass/fail glyph, reused by the Wi-Fi facts and the checklist. */
+.g-sec-passfail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--tone-text, var(--tone));
+  background: var(--tone-soft);
+}
+
+/* A standalone danger action (the attack-map drawer's "Block this /24"),
+   independent of the device drawer's own `.g-device-forget button.g-danger`
+   scoping. */
+button.g-danger {
+  background: var(--color-alert-soft);
+  border: 1px solid var(--color-alert);
+  color: var(--color-alert-text);
+}
+
+/* --- Scorecard grid --- */
+
+.g-sec-scorecards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+
+.g-sec-scorecard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--tone);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.g-sec-scorecard-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.g-sec-scorecard-target {
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--font-size-md);
+}
+
+.g-sec-scorecard-kind {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.g-sec-scorecard-grade {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.g-sec-scorecard-letter {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--tone-text, var(--tone));
+}
+
+.g-sec-scorecard-score {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-sec-deductions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-sec-deductions li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+/* A deduction reads as the same fact a failing check row is: the same
+   bordered box, the same pass/fail glyph slot on the left, the point cost
+   where the autofix chip sits on a check row. Score and evidence, one look. */
+.g-sec-deduction-row {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.g-sec-deduction-text {
+  color: var(--color-text-muted);
+  min-width: 0;
+}
+
+.g-sec-deduction-text strong {
+  color: var(--color-text);
+}
+
+/* A deduction with no matching check (`d.key` is ""): not a button — there
+   is genuinely nothing behind it to open — but still legible as "computed,
+   not a dead control", via the title tooltip and the "Σ" mark in its
+   pass/fail glyph slot rather than the ✗ a real check gets. */
+.g-sec-deduction-static {
+  flex: 1;
+  min-width: 0;
+  cursor: help;
+}
+
+.g-sec-scorecard button {
+  align-self: flex-start;
+}
+
+/* --- Wi-Fi guard panel --- */
+
+.g-sec-wifi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-sec-wifi-verdict {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--tone-text, var(--tone));
+}
+
+.g-sec-wifi-facts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-sec-wifi-fact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.g-sec-wifi-fact:first-child {
+  border-top: none;
+}
+
+.g-sec-wifi-fact-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.g-sec-wifi-fact-label {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+
+.g-sec-wifi-fact-detail {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Checklist: grouped by area, one proof row each --- */
+
+.g-sec-checks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-sec-check-area {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.g-sec-check-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-sec-check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.g-sec-check-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.g-sec-check-title {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+
+.g-sec-check-evidence {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow-wrap: break-word;
+}
+
+.g-sec-check-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Passing checks are proof, not content: a dense wrapped strip of small
+   chips underneath whatever in this area actually failed, never another
+   full row the same size as an open problem. */
+.g-sec-check-proofs {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+}
+
+.g-sec-check-proof {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-sec-check-proof .g-sec-passfail {
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+}
+
+.g-sec-autofix-chip {
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--tone-soft);
+  color: var(--tone-text, var(--tone));
+}
+
+/* --- Check drill-down: a failing row/deduction opens `CheckDetailDrawer`
+   (owner request: clicking a failing check like "evil twin" should open
+   detail and offer resolve or leave it, same for Security posture). --- */
+
+.g-sec-check-row-btn {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  gap: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.g-sec-check-row-btn:hover,
+.g-sec-check-row-btn:focus-visible {
+  text-decoration: underline;
+}
+
+.g-sec-deduction-btn {
+  display: inline;
+  min-width: 0;
+}
+
+.g-sec-check-left-badge {
+  margin-left: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-muted, var(--color-border));
+  color: var(--color-text-muted);
+  vertical-align: middle;
+}
+
+.g-check-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-check-detail-seen {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.g-check-detail-why {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.g-check-detail-evidence {
+  overflow-wrap: break-word;
+}
+
+.g-check-detail-decision {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-muted, var(--color-border));
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-check-detail-decision-icon {
+  flex-shrink: 0;
+  color: var(--color-text);
+}
+
+.g-check-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-check-detail-reason {
+  flex: 1;
+  min-width: 12ch;
+}
+
+/* --- Exposure tiles --- */
+
+.g-sec-exposure {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3);
+}
+
+/* --- Attacker method select --- */
+
+.g-sec-attacker-method {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.g-sec-attacker-method label {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.g-sec-attacker-method select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  min-width: 200px;
+}
+
+.g-sec-attacker-method select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* --- Attack map --- */
+
+.g-sec-attackmap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-sec-attackmap-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 960 / 500;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.g-sec-attackmap-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.g-sec-attackmap-country {
+  fill: var(--color-track);
+  stroke: var(--color-border);
+  stroke-width: 0.5;
+}
+
+.g-sec-attackmap-markers {
+  position: absolute;
+  inset: 0;
+}
+
+/* Handled = a neutral/checked treatment (muted ink, not a status hue) so a
+   blocked attacker never reads as "good" the way `--color-good` would.
+   Active = the one alert-red mark on the map, because it is the one thing
+   here that still needs the owner. The two are told apart by more than hue:
+   a glyph (✓ / !) inside the dot, and a dashed vs solid ring, survive a
+   colour-blind or grayscale read. */
+.g-sec-attack-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.g-sec-attack-marker--active {
+  border: 2px solid var(--color-surface);
+  background: var(--color-alert);
+  box-shadow: 0 0 0 1px var(--color-alert);
+}
+
+.g-sec-attack-marker--handled {
+  border: 2px dashed var(--color-text-muted);
+  background: var(--color-surface-sunken);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
+}
+
+.g-sec-attack-marker-glyph {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-on-primary);
+}
+
+.g-sec-attack-marker--handled .g-sec-attack-marker-glyph {
+  color: var(--color-text-muted);
+}
+
+.g-sec-attack-marker:hover,
+.g-sec-attack-marker:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* A static swatch for the legend — same look as the marker, fixed size, no
+   interaction. */
+/* A pin standing for more than one attacker (same city, usually the same
+   /24) wears its count, so "5 handled" and three pins add up. */
+.g-sec-attack-marker-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  background: var(--color-text);
+  color: var(--color-bg);
+  border: 1px solid var(--color-bg);
+}
+
+.g-sec-attack-marker-swatch {
+  display: inline-block;
+  position: static;
+  transform: none;
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  margin-right: var(--space-1);
+}
+
+.g-sec-attackmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-sec-attackmap-legend-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.g-sec-attackmap-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.g-sec-attackmap-toggle-note {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-sec-attackmap-caption {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-sec-attackmap-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-sec-attackmap-list h3 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-sec-attackmap-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-sec-attackmap-list-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  width: 100%;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  text-align: left;
+}
+
+.g-sec-attackmap-list-place {
+  color: var(--color-text);
+}
+
+.g-sec-attackmap-list-meta {
+  color: var(--color-text-muted);
+}
+
+.g-sec-attackmap-list-status {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.g-sec-attackmap-unlocated {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-sec-attackmap-unlocated h3 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-sec-attackmap-unlocated-reason {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 699px) {
+  .g-sec-scorecards {
+    grid-template-columns: 1fr;
+  }
+
+  .g-sec-scorecard-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+
+  .g-sec-exposure {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .g-sec-attackmap-list-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .g-sec-attackmap-list-status {
+    margin-left: 0;
+  }
+}
+
+/* --- Updates tab (Task 33) --- */
+
+.g-updates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The apt row actions. They wrap rather than widen the table's Actions
+   column, so the servers table still scrolls inside its own container at
+   375 px instead of pushing the page sideways. */
+.g-updates-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+/* "This machine" beside "Pending packages by host", the way the reference
+   pairs them; one column under the tablet breakpoint. */
+.g-updates-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: var(--space-4);
+  /* Item 33: `start` left the shorter of the two cards floating with a
+     hole beside and below it. Stretching makes them one band, so the row
+     ends where both end. */
+  align-items: stretch;
+}
+.g-updates-pair > .g-card { display: flex; flex-direction: column; }
+.g-updates-pair > .g-card > :last-child { flex: 1; }
+
+@media (max-width: 860px) {
+  .g-updates-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- "Needs a restart": the tab's lead fact --- */
+
+.g-restart-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-restart-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-warn-soft);
+  border-left: 3px solid var(--color-warn);
+  border-radius: var(--radius-sm);
+}
+
+.g-restart-host {
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.g-restart-note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.g-pkglist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-pkglist-host {
+  margin: 0 0 var(--space-1);
+}
+
+/* Package names wrap inside the card — a hundred of them must never widen the
+   page at 375 px. */
+.g-pkglist-names {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+/* --- patch calendar --- */
+
+.g-patchcal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-patchcal-grid {
+  display: grid;
+  gap: 3px;
+  overflow-x: auto;
+}
+
+.g-patchcal-daylabel,
+.g-patchcal-hostlabel {
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-patchcal-daylabel {
+  justify-content: center;
+}
+
+.g-patchcal-hostlabel {
+  justify-content: flex-end;
+  padding-right: var(--space-2);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-patchcal-cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 18px;
+  border: none;
+  border-radius: 4px;
+  padding: 0;
+  cursor: pointer;
+  background: var(--color-track);
+}
+
+.g-patchcal-cell.g-tone-good {
+  background: var(--color-good-soft);
+}
+
+.g-patchcal-cell.g-tone-warn {
+  background: var(--color-warn-soft);
+}
+
+.g-patchcal-cell.g-tone-alert {
+  background: var(--color-alert-soft);
+}
+
+.g-patchcal-cell:hover,
+.g-patchcal-cell:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+.g-patchcal-reboot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-primary);
+}
+
+.g-patchcal-readout {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- CVE table --- */
+
+.g-cve-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-cve-summary {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-cve-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.g-cve-filter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-weight: 400;
+}
+
+.g-cve-filter span {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-cve-filter input {
+  min-width: 220px;
+}
+
+.g-cve-critical {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-weight: 400;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* --- upgrade progress --- */
+
+.g-upgrade-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.g-upgrade-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.g-upgrade-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-upgrade-host {
+  font-weight: 700;
+}
+
+.g-upgrade-action {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.g-upgrade-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-track);
+  overflow: hidden;
+}
+
+.g-upgrade-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.g-upgrade-count {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-upgrade-log {
+  margin: 0;
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* --- reboot planner --- */
+
+.g-reboot-planner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.g-reboot-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.g-reboot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.g-reboot-host {
+  font-weight: 700;
+}
+
+.g-reboot-reason {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-reboot-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* The window and its consequence, read before the button that commits to
+   it — a reboot is disruptive and this is the one sentence that has to land
+   first. */
+.g-reboot-consequence {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-warn-soft);
+  border-left: 3px solid var(--color-warn);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.g-reboot-schedule {
+  align-self: flex-start;
+}
+
+.g-reboot-window {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  font-weight: 400;
+  flex: 1;
+  min-width: 160px;
+}
+
+.g-reboot-window span {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-reboot-window select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.g-reboot-queue-status,
+.g-reboot-confirmation {
+  margin: 0;
+  font-size: var(--font-size-xs);
+}
+
+.g-reboot-confirmation {
+  color: var(--color-good-text);
+  font-weight: 700;
+}
+
+/* --- DNS tab (Task 34) --- */
+
+.g-dns {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-dns-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.g-dns-status dt {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-dns-status dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-lg);
+}
+
+/* --- live query stream --- */
+
+.g-dns-stream {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-dns-stream-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.g-dns-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-weight: 400;
+  flex: 1;
+}
+
+.g-dns-search span {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-dns-stream-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.g-dns-stream-row {
+  display: grid;
+  grid-template-columns: 64px 140px 1fr 48px auto 64px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  /* Plays once, on mount. Because each row now keys on its own identity
+   * (see QueryStream.tsx) rather than its position, only a genuinely new
+   * row ever mounts — so this is what makes the stream feel like new
+   * lines arriving at the top, without the list ever repainting as a
+   * whole or the reader's scroll position moving under them. */
+  animation: g-dns-row-in 0.28s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-dns-stream-row {
+    animation: none;
+  }
+}
+
+@keyframes g-dns-row-in {
+  from {
+    opacity: 0;
+    background: var(--color-primary-soft);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.g-dns-stream-row:nth-child(odd) {
+  background: var(--color-bg);
+}
+
+.g-dns-stream-time {
+  color: var(--color-text-muted);
+}
+
+.g-dns-client-badge {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-dns-client-badge:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.g-dns-stream-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-dns-stream-qtype {
+  color: var(--color-text-muted);
+}
+
+.g-dns-stream-ms {
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+/* --- per-device DNS profile --- */
+
+.g-dns-profile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-dns-profile-lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-4);
+}
+
+.g-dns-profile-lists h3 {
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
+}
+
+.g-dns-profile-lists ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+}
+
+/* --- rule manager --- */
+
+.g-dns-rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.g-dns-rule-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+
+.g-dns-rule-col h3 {
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
+}
+
+.g-dns-rule-add {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  font-weight: 400;
+}
+
+.g-dns-rule-add span {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-dns-rule-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-dns-rule-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.g-dns-rule-domain {
+  /* A flex child does not shrink below its content by default: without
+   * `min-width: 0` a long domain pushes the Remove button out of the row
+   * (or off the page at 375px) instead of truncating. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-dns-rule-list button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: 2px var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.g-dns-lists h3 {
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
+}
+
+.g-dns-lists-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-dns-list-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.g-dns-list-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.g-dns-list-name {
+  font-weight: 700;
+}
+
+.g-dns-list-category {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-dns-list-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.g-dns-list-row button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.g-dns-list-row button.g-toggle-on {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* --- setup wizard --- */
+
+.g-dns-wizard-steps {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-dns-wizard-step p {
+  margin: 0 0 var(--space-2);
+}
+
+.g-dns-wizard-hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.g-dns-wizard-check {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-track);
+  font-weight: 700;
+  display: inline-block;
+}
+
+.g-dns-wizard-check.g-tone-good {
+  background: var(--color-good-soft);
+  color: var(--color-good-text);
+}
+
+/* --- responsive: Updates + DNS --- */
+
+@media (max-width: 699px) {
+  .g-cve-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .g-cve-filter input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .g-dns-stream-row {
+    grid-template-columns: 1fr;
+    row-gap: 2px;
+  }
+
+  .g-dns-stream-ms {
+    text-align: left;
+  }
+
+  .g-dns-list-row {
+    grid-template-columns: 1fr;
+    row-gap: var(--space-1);
+  }
+
+  .g-reboot-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* --- Topology: the network map ("an actual topology map, with links") ---
+   A layered graph -- internet, gateway, infra, leaves, `TopoNode.ring`'s
+   own backbone -- drawn as inline SVG by `lib/topologyLayout.ts` +
+   `components/NetworkMap.tsx`. No d3-force: every position here comes from
+   that module's deterministic layout, so nothing below animates a node
+   into place -- only the live-traffic pulse moves, and it stops under
+   `prefers-reduced-motion`. */
+
+.g-map-wrap {
+  display: block;
+}
+
+.g-map-sr-heading {
+  /* Visually hidden, not `display:none` -- the SVG's own `aria-label`
+     carries the region name, but a screen reader still benefits from one
+     heading before it lands inside the graph. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.g-map-toolbar {
+  display: flex;
+  align-items: center;
+  /* Item 17: it did not wrap, so "Fit to screen", "Readable size" and the
+     "Focus network" label overlapped each other at the widths this tab is
+     actually read at. */
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.g-map-toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.g-map-toolbar button {
+  min-width: 32px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.g-map-toolbar button:hover {
+  background: var(--color-surface-sunken);
+}
+
+.g-map-toolbar button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.g-map-toolbar-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+/* Item 17: "3D-looking device marks". Depth, not decoration — a lit top
+   face and a shadow beneath give each mark a physical footing on the
+   board, which is what makes a dense map read as objects laid out rather
+   than a flat diagram. State is still carried by the STROKE (solid /
+   dashed / red outline): the shading is identical on every node whatever
+   it is doing, so nothing here can be mistaken for a signal. */
+.g-map-tile-rect {
+  fill: url(#g-map-face);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35));
+}
+
+/* The graph itself: pannable/zoomable via the toolbar, wheel, drag or
+   arrow keys (see `NetworkMap.tsx`'s `onWheel`/`onPointerMove`/`onKeyPan`).
+   A fixed height with internal scrolling of the viewBox -- never the page
+   itself -- keeps Topology's surrounding Card from growing unbounded. */
+.g-map-svg {
+  display: block;
+  width: 100%;
+  height: 520px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  cursor: grab;
+  touch-action: none;
+}
+
+.g-map-svg:active {
+  cursor: grabbing;
+}
+
+.g-map-svg:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+/* --- links: meaning carried by dash pattern + a live-traffic dot, never
+   colour alone --- */
+.g-map-link {
+  fill: none;
+  stroke: var(--color-border-strong, var(--color-text-muted));
+  stroke-width: 1.75;
+}
+
+.g-map-link-troubled {
+  stroke: var(--color-alert-text);
+  stroke-dasharray: 5 4;
+}
+
+/* Tone is the colour of what the link leads to: green good, yellow needs a
+   look, red emergency. Yellow and red links are clickable and open that
+   device; the wide invisible stroke is the hit area. */
+.g-map-link-good { stroke: var(--color-good); }
+.g-map-link-warn { stroke: var(--color-warn); stroke-dasharray: 5 4; }
+.g-map-link-alert { stroke: var(--color-alert); stroke-dasharray: 5 4; }
+
+.g-map-link-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14;
+}
+
+.g-map-link-clickable { cursor: pointer; }
+.g-map-link-clickable:hover .g-map-link,
+.g-map-link-clickable:focus-visible .g-map-link { stroke-width: 3; }
+.g-map-link-clickable:focus-visible { outline: none; }
+
+.g-map-legend-line-good { border-top-color: var(--color-good); }
+.g-map-legend-line-warn { border-top-color: var(--color-warn); border-top-style: dashed; }
+.g-map-legend-line-alert { border-top-color: var(--color-alert); border-top-style: dashed; }
+
+/* A moving dash = live traffic right now. Purely additive to the solid or
+   dashed base stroke above -- never the only signal a link carries. */
+.g-map-link-pulse {
+  stroke-dasharray: 1 7;
+  stroke-linecap: round;
+  animation: g-map-link-flow 900ms linear infinite;
+}
+
+.g-map-link-troubled.g-map-link-pulse {
+  stroke-dasharray: 1 5 4 5;
+}
+
+@keyframes g-map-link-flow {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-map-link-pulse {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-width: 2.5;
+  }
+}
+
+/* --- boundary: one per real network, a soft backdrop behind its row of
+   tiles plus a floating label above it (never inside it, so a link
+   dropping into the top tile never crosses the title text) --- */
+.g-map-boundary-rect {
+  fill: var(--color-surface);
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.g-map-boundary-label {
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--color-text);
+}
+
+.g-map-boundary-meta {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  fill: var(--color-text-muted);
+}
+
+/* --- one tile: icon + label, positioned entirely by the layout --- */
+.g-map-tile-rect {
+  fill: var(--color-surface);
+  stroke: var(--color-border);
+  stroke-width: 2;
+}
+
+.g-map-tile {
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.g-map-tile:focus-visible .g-map-tile-rect {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.g-map-tile-selected .g-map-tile-rect {
+  stroke: var(--color-primary);
+  filter: drop-shadow(0 0 0 2px var(--color-primary));
+}
+
+/* `sleeping`/`flapping` reads as "still there, just quiet" -- a dashed
+   outline instead of solid, never colour alone. */
+.g-tone-warn .g-map-tile-rect {
+  stroke-dasharray: 4 3;
+}
+
+.g-map-tile-untrusted .g-map-tile-rect {
+  stroke: var(--color-alert-text);
+  stroke-width: 2.5;
+}
+
+.g-map-tile-label {
+  font-size: 9.5px;
+  fill: var(--color-text);
+}
+
+.g-map-tile-risk-dot {
+  fill: var(--color-alert);
+}
+
+.g-map-tile-risk-text {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  fill: var(--color-on-primary);
+}
+
+/* The unconfirmed camera slot: dashed, unfilled -- absence drawn as a
+   shape, never styled like a real device. */
+.g-map-tile-ghost .g-map-tile-rect {
+  fill: none;
+  stroke-dasharray: 4 3;
+  opacity: 0.75;
+}
+
+.g-map-tile-ghost .g-map-tile-label {
+  fill: var(--color-text-muted);
+}
+
+.g-map-tile-ghost-mark {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--color-text-muted);
+}
+
+/* A bundle chip: the same tile shape, a doubled icon (never colour alone)
+   to say "more than one of these, folded up". */
+.g-map-tile-bundle .g-map-tile-rect {
+  stroke-dasharray: 2 2;
+}
+
+.g-map-tile-bundle-ghost {
+  opacity: 0.55;
+}
+
+/* A device actually live on this scan gets a soft halo, same visual
+   language as a status ring elsewhere in the app -- CSS only, stops under
+   reduced motion below. */
+.g-map-tile-pulse .g-map-tile-rect {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-primary) 45%, transparent));
+}
+
+/* --- legend: plain-words key to every shape and line the map draws --- */
+.g-map-legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-map-legend strong {
+  display: block;
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.g-map-legend-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 0;
+  vertical-align: middle;
+}
+
+.g-map-legend-line {
+  border-top: 2px solid var(--color-border-strong, var(--color-text-muted));
+}
+
+.g-map-legend-line-troubled {
+  border-top: 2px dashed var(--color-alert-text);
+}
+
+@media (max-width: 699px) {
+  .g-map-toolbar,
+  .g-map-svg,
+  .g-map-legend {
+    display: none;
+  }
+}
+
+
+/* --- the ordered list (< 699px) --- */
+
+.g-map-list {
+  display: none;
+}
+
+.g-map-list-section {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  overflow: hidden;
+}
+
+.g-map-list-section > summary {
+  list-style: none;
+  padding: var(--space-3);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  background: var(--color-surface-sunken);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.g-map-list-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.g-map-list-body {
+  padding: 0 var(--space-3);
+}
+
+.g-map-list-row {
+  border-top: 1px solid var(--color-border);
+}
+
+.g-map-list-row:first-child {
+  border-top: none;
+}
+
+.g-map-list-row-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border: none;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.g-map-list-row-selected .g-map-list-row-btn {
+  color: var(--color-primary);
+}
+
+.g-map-list-row-name {
+  font-weight: 500;
+}
+
+.g-map-list-row-note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-align: right;
+  flex: 0 0 auto;
+}
+
+.g-map-list-row-inferred .g-map-list-row-note {
+  color: var(--color-alert-text);
+}
+
+@media (max-width: 699px) {
+  .g-map-grid {
+    display: none;
+  }
+
+  .g-map-list {
+    display: block;
+  }
+}
+
+/* --- Settings (Task 46) ---
+ * Config answers "what are my settings?" — forms, not a dashboard. The
+ * eleven sections used to sit in one flat row of tabs at the top of a
+ * single Card, table-name order; a grouped vertical rail beside the form
+ * both fixes that ("who has access" next to "who has access", not next to
+ * "audit log") and stops a four-field form (Profile, Appearance) from
+ * having to fill the same width as an eleven-row table (Users, Sensors).
+ */
+
+.g-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.g-settings-head h1 {
+  margin: 0;
+}
+
+.g-settings-head p {
+  margin: var(--space-1) 0 0;
+}
+
+.g-settings-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+  min-width: 0;
+}
+
+.g-settings-nav-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  /* Recessed like every other surface — no border, no shadow, just a step
+   * down from the page, the same language as a table or a card body. */
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  position: sticky;
+  top: var(--space-3);
+}
+
+.g-settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-settings-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.g-settings-nav-group-label {
+  margin: 0 0 var(--space-1);
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-settings-nav-tab {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.g-settings-nav-tab[aria-selected="true"] {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  font-weight: 700;
+}
+
+.g-settings-nav-tab:hover:not([aria-selected="true"]) {
+  background: var(--color-surface-sunken);
+}
+
+.g-settings-nav-link {
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+.g-settings-nav-link:hover {
+  color: var(--color-primary);
+  background: var(--color-surface-sunken);
+}
+
+.g-settings-nav-elsewhere {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+.g-settings-panel {
+  min-width: 0;
+}
+
+@media (max-width: 899px) {
+  .g-settings-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .g-settings-nav-rail {
+    position: static;
+  }
+
+  .g-settings-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .g-settings-nav-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .g-settings-nav-group-label {
+    width: 100%;
+  }
+
+  .g-settings-nav-tab {
+    width: auto;
+  }
+}
+
+.g-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.g-settings-role-notice {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-warn-soft);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.g-settings-integrations-link {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.g-field-error {
+  margin: var(--space-1) 0 0;
+  color: var(--color-alert-text);
+  font-size: var(--font-size-xs);
+}
+
+/* --- Profile --- */
+
+.g-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 420px;
+}
+
+.g-settings-preview {
+  margin: var(--space-3) 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px dashed var(--color-border);
+}
+
+.g-settings-preview-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.g-settings-preview-line {
+  margin: var(--space-1) 0 0;
+  font-weight: 700;
+}
+
+.g-settings-form button[type="submit"] {
+  align-self: flex-start;
+  margin-top: var(--space-3);
+}
+
+/* The timezone block sits under the profile form as its own section (it saves
+   through its own endpoints), so it borrows the form's column and reads as a
+   titled group rather than a browser-default fieldset. */
+.g-settings-tz {
+  margin: var(--space-5) 0 0;
+  padding: var(--space-4) 0 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  gap: var(--space-2);
+}
+.g-settings-tz legend {
+  padding: 0;
+  font-weight: 600;
+}
+.g-settings-tz p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-sm); }
+.g-settings-tz label { display: flex; flex-direction: column; gap: var(--space-1); }
+.g-settings-tz button { align-self: flex-start; }
+
+/* --- Users & roles --- */
+
+.g-settings-users {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-settings-users select {
+  width: auto;
+}
+
+.g-settings-invite {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.g-settings-invite h3 {
+  margin: 0;
+  flex-basis: 100%;
+  font-size: var(--font-size-md);
+}
+
+.g-settings-invite label {
+  margin: 0 0 0.3rem;
+}
+
+.g-settings-invite input,
+.g-settings-invite select {
+  width: 200px;
+}
+
+/* --- Sites & targets --- */
+
+.g-settings-targets section {
+  margin-bottom: var(--space-4);
+}
+
+.g-settings-targets h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-md);
+}
+
+.g-settings-targets input[type="number"] {
+  width: 6rem;
+}
+
+.g-settings-targets input[type="checkbox"] {
+  width: auto;
+}
+
+/* --- Auto-fix policy --- */
+
+.g-settings-autofix {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 480px;
+}
+
+.g-settings-killswitch button[role="switch"] {
+  background: var(--color-alert-soft);
+  border: 1px solid var(--color-alert);
+  color: var(--color-alert-text);
+}
+
+.g-settings-killswitch button.g-toggle-on {
+  background: var(--color-good-soft);
+  border-color: var(--color-good);
+  color: var(--color-good-text);
+}
+
+.g-settings-window {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin: var(--space-2) 0;
+}
+
+.g-settings-window legend {
+  padding: 0 var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.g-settings-window label {
+  margin: 0;
+}
+
+.g-settings-cooldowns {
+  margin-top: var(--space-3);
+}
+
+.g-settings-cooldowns h3 {
+  font-size: var(--font-size-md);
+  margin: 0 0 var(--space-2);
+}
+
+.g-settings-cooldowns ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-settings-cooldowns li {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+/* --- Alert thresholds --- */
+
+.g-settings-thresholds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 640px;
+}
+
+.g-settings-threshold-row {
+  display: grid;
+  grid-template-columns: 200px 100px 1fr;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.g-settings-threshold-row label {
+  margin: 0;
+}
+
+.g-settings-threshold-live {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* --- Appearance --- */
+
+.g-settings-theme-picker {
+  display: flex;
+  gap: var(--space-4);
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.g-settings-theme-picker legend {
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.g-settings-theme-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 500;
+  margin: 0;
+}
+
+.g-settings-theme-option input {
+  width: auto;
+}
+
+/* --- Sensors --- */
+
+.g-settings-sensors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-settings-sensors-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* --- Tenants --- */
+
+.g-settings-tenants {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-settings-new-tenant {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.g-settings-demo-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+  margin: 0;
+}
+
+.g-settings-demo-toggle input {
+  width: auto;
+}
+
+/* --- Audit log --- */
+
+.g-settings-audit-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.g-settings-audit-filters label {
+  margin: 0 0 0.3rem;
+}
+
+.g-settings-audit-filters input {
+  width: 160px;
+}
+
+.g-settings-audit-body {
+  margin: 0 0 var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-size: var(--font-size-xs);
+  overflow-x: auto;
+}
+
+/* --- Networks stub --- */
+
+.g-settings-network-list {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* --- Confirm dialog (kill switch off / remove / revoke / delete) --- */
+
+.g-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-scrim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-toast);
+  padding: var(--space-4);
+}
+
+.g-confirm-dialog {
+  width: min(420px, 100%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.g-confirm-dialog h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-md);
+}
+
+.g-confirm-dialog p,
+.g-confirm-body {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.g-confirm-error {
+  display: block;
+  margin-top: var(--space-2);
+}
+
+.g-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.g-confirm-cancel {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+/* --- reports: builder --- */
+
+.g-reports {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.g-reports-builder {
+  display: grid;
+  /* Item 40: the form stays a form's width and the preview takes the rest
+     of the row. It was capped at 780px for a document's proportions, which
+     is the right instinct and the wrong result on a wide screen: what the
+     reader got was a narrow column of small type with empty space beside
+     it. The page itself is centred inside the frame, so the proportions
+     survive; what changes is that there is room to read it -- and a full
+     screen button for when there is not. */
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.g-reports-builder-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-reports-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-weight: 400;
+}
+
+.g-reports-field span {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-reports-field select,
+.g-reports-field input {
+  width: 100%;
+}
+
+.g-reports-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  margin: 0;
+}
+
+.g-reports-sections legend {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  padding: 0 0 var(--space-2);
+}
+
+.g-reports-section-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+  font-size: var(--font-size-sm);
+}
+
+.g-reports-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Tall, and it stays put while you tick sections on the left -- the whole
+     point of a live preview is watching it change, which you cannot do if
+     ticking a box scrolls it out of view. */
+  position: sticky;
+  top: var(--space-4);
+  height: calc(100vh - 13rem);
+  min-height: 540px;
+}
+
+/* Item 40: the preview, over everything, when asked. */
+.g-reports-preview.is-full {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  height: auto;
+  margin: 0;
+  padding: 14px 18px 18px;
+  background: var(--color-bg);
+}
+.g-reports-preview.is-full .g-reports-preview-frame { flex: 1; }
+.g-reports-preview-full {
+  margin-left: auto;
+  font-size: 11.5px;
+}
+
+.g-reports-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-reports-preview-frame {
+  flex: 1 1 auto;
+  /* `min-height: 0` so the frame actually shrinks to its flex parent instead
+     of forcing the column taller than the viewport. */
+  min-height: 0;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* --- reports: library --- */
+
+.g-reports-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+
+.g-reports-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.g-reports-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.g-reports-card-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.g-reports-card-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.g-reports-card-facts dt {
+  color: var(--color-text-muted);
+}
+
+.g-reports-card-facts dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.g-reports-card-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* --- reports: share + schedule --- */
+
+.g-reports-share,
+.g-reports-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-reports-share-url {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-reports-share-url input {
+  flex: 1;
+  font-family: var(--font-mono);
+}
+
+.g-reports-share-warning {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-warn-text);
+}
+
+.g-reports-share-pushed {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-good-text);
+}
+
+.g-reports-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 400;
+}
+
+@media (max-width: 699px) {
+  .g-settings-threshold-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-1);
+  }
+
+  .g-settings-invite,
+  .g-settings-audit-filters,
+  .g-settings-new-tenant {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .g-settings-invite input,
+  .g-settings-invite select,
+  .g-settings-audit-filters input {
+    width: 100%;
+  }
+
+  .g-reports-builder {
+    grid-template-columns: 1fr;
+  }
+
+  .g-reports-card-actions {
+    flex-wrap: wrap;
+  }
+}
+
+/* --- Integrations tab --- */
+
+.g-integrations {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-integrations-head h1 {
+  margin: 0 0 var(--space-1);
+}
+
+/* Denser than it was: three cards across on a desktop rather than two, a
+   tighter gutter, and each card sized to its own content (`align-items:
+   start`) so a webhook card with one field is not stretched to the height
+   of a Home Assistant card with seven. Nothing here changes what a card
+   contains -- only how much air sits around it. */
+/* Masonry via CSS multicol, not a grid: a configured card is expanded inline
+   (fields, routes, a Test) and much taller than a collapsed "Set up" card. In
+   a grid the whole row inherits the tall card's height, stranding a column of
+   empty space beside it; multicol lets each card pack under the one above it,
+   so a short card never leaves a hole. `break-inside: avoid` keeps every card
+   whole, and the bottom margin is the vertical gutter (column-gap is only
+   horizontal). */
+.g-integrations-list {
+  column-width: 340px;
+  column-gap: var(--space-3);
+}
+
+.g-integrations-list > .g-integrations-card {
+  width: 100%;
+  margin-bottom: var(--space-3);
+  break-inside: avoid;
+}
+
+.g-integrations-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.g-integrations-card.g-tone-good,
+.g-integrations-card.g-tone-alert {
+  border-left: 3px solid var(--tone);
+}
+
+.g-integrations-card.g-tone-alert {
+  border-left-width: 4px;
+  box-shadow: 0 0 0 1px var(--color-alert-soft);
+}
+
+.g-integrations-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.g-integrations-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-integrations-card-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.g-integrations-card-help {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--color-text-muted);
+}
+
+/* The one control on a collapsed card. Quiet: it is an invitation, not a
+   state, so it does not borrow the on/off switch's colour. */
+.g-integrations-setup {
+  flex-shrink: 0;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+}
+
+.g-integrations-card-head button[role="switch"] {
+  background: var(--color-alert-soft);
+  border: 1px solid var(--color-alert);
+  color: var(--color-alert-text);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  flex-shrink: 0;
+}
+
+.g-integrations-card-head button.g-toggle-on {
+  background: var(--color-good-soft);
+  border-color: var(--color-good);
+  color: var(--color-good-text);
+}
+
+.g-integrations-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-2) var(--space-3);
+}
+
+/* A URL or a secret needs the whole row; a port or an hour does not. */
+.g-integrations-field:has(input[type="url"]),
+.g-integrations-field:has(input[type="password"]),
+.g-integrations-field:has(.g-integrations-field-secret) {
+  grid-column: 1 / -1;
+}
+
+.g-integrations-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-integrations-field label,
+.g-integrations-field-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-integrations-field input,
+.g-integrations-field select {
+  width: 100%;
+}
+
+.g-integrations-field-secret {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-integrations-field-secret .mono {
+  flex: 1;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-integrations-routes {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.g-integrations-routes legend {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  padding: 0;
+  margin-right: var(--space-1);
+}
+
+.g-integrations-route {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.g-integrations-route-crit {
+  color: var(--color-alert-text);
+}
+
+.g-integrations-route-warn {
+  color: var(--color-warn-text);
+}
+
+.g-integrations-route-info {
+  color: var(--color-text-muted);
+}
+
+.g-integrations-inbound {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: var(--color-bg-inset, var(--color-bg));
+}
+
+.g-integrations-inbound label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-integrations-inbound-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-integrations-inbound-row input {
+  flex: 1;
+  font-family: var(--font-mono);
+}
+
+.g-integrations-pair {
+  font-size: var(--font-size-sm);
+}
+
+.g-integrations-pair code {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.g-integrations-attention-summary {
+  margin: calc(-1 * var(--space-2)) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-alert);
+  border-radius: var(--radius-sm);
+  background: var(--color-alert-soft);
+  color: var(--color-alert-text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+/* ============================================================ integrations
+   The tab is two honest halves: the channels Vault talks THROUGH, and the
+   devices on the LAN it acts ON. Each half is a titled section with its own
+   heading, description and (for channels) an inline metric strip -- no floating
+   KPI tiles, no repeated card chrome. The distinction is real in the data, so
+   the layout makes it structural rather than decorative. */
+.g-int-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* A hairline rule sets the second section apart from the first without a
+   heavy container -- the page reads as one surface, sectioned. */
+.g-int-section + .g-int-section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.g-int-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.g-int-section-heading {
+  min-width: 0;
+}
+
+.g-int-section-heading h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  letter-spacing: -0.01em;
+  /* A short accent rule to the left of the title: the one bit of colour that
+     tells the two sections apart at a glance, tied to the brand primary. */
+  padding-left: var(--space-2);
+  border-left: 3px solid var(--color-primary);
+  line-height: 1.15;
+}
+
+.g-int-section-heading p {
+  margin: var(--space-1) 0 0;
+  padding-left: calc(var(--space-2) + 3px);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  max-width: 62ch;
+}
+
+/* The channel metrics as an inline strip, hairline-separated, right-aligned
+   against the heading. Reads like an ops summary line, not three tiles. */
+.g-int-section-meta {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.g-int-section-meta > .g-stat {
+  padding: var(--space-2) var(--space-3);
+  min-width: 5.5rem;
+}
+
+.g-int-section-meta > .g-stat + .g-stat {
+  border-left: 1px solid var(--color-border);
+}
+
+/* -------------------------------------------------------- devices grid --- */
+/* No `align-items: start`: the Cameras card stretches to the router card's
+   height instead of leaving a blank column beside it. Its "Manage recorders"
+   link is pinned to the bottom (margin-top: auto), so the stretched card reads
+   as a full panel, not a short card with a gap under it. */
+.g-int-devices-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+/* -------------------------------------------------------- router card ----- */
+.g-router-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.g-router-card[data-tone="good"] { border-left: 3px solid var(--color-good); }
+.g-router-card[data-tone="warn"] { border-left: 3px solid var(--color-warn); }
+.g-router-card[data-tone="alert"] { border-left: 3px solid var(--color-alert); }
+
+.g-router-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.g-router-card-title {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.g-router-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.g-router-card-title h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  line-height: 1.2;
+}
+
+.g-router-card-sub {
+  margin: 2px 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-router-card-note {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+  color: var(--color-text-muted);
+  background: var(--color-bg-inset);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.g-router-card-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-router-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.g-router-field > span {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.g-router-field > span em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.g-router-field input {
+  width: 100%;
+  padding: var(--space-2);
+  font-size: var(--font-size-control);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.g-router-field input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-color: var(--color-primary);
+}
+
+.g-router-field-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-router-secret-saved {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-inset);
+}
+
+.g-router-secret-mask {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.g-router-secret-cancel {
+  align-self: flex-start;
+}
+
+.g-router-card-result {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+.g-router-card-result-ok {
+  background: var(--color-good-soft);
+  color: var(--color-good-text);
+}
+
+.g-router-card-result-bad {
+  background: var(--color-alert-soft);
+  color: var(--color-alert-text);
+}
+
+.g-router-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-router-card-hint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Buttons, scoped to the router card so they never collide with the global
+   button vocabulary. */
+.g-router-card .g-btn-primary,
+.g-router-card .g-btn,
+.g-router-card .g-btn-ghost {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-control);
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+}
+
+.g-router-card .g-btn-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.g-router-card .g-btn {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.g-router-card .g-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.g-router-card .g-router-remove {
+  margin-left: auto;
+  color: var(--color-alert-text);
+}
+
+/* The one mutating router action, set apart in a warn-toned panel so it never
+   reads as a routine button: it appears only after the credential Test has
+   passed, and it changes a setting on the router. */
+.g-router-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-3);
+  border: 1px solid var(--color-warn);
+  border-radius: var(--radius-sm);
+  background: var(--color-warn-soft);
+}
+
+/* Done: the same panel, de-escalated. A warn border earns attention by being
+   rare, so an action that has already been carried out must stop claiming it
+   -- otherwise the card reads as an open problem forever. No new hue: the
+   panel simply falls back to the surface and hairline every settled block in
+   the app uses. */
+.g-router-action[data-done] {
+  border-color: var(--color-border);
+  background: var(--color-surface-sunken);
+}
+
+.g-router-action[data-done] .g-router-action-copy h4 {
+  color: var(--color-text);
+}
+
+.g-router-action-copy {
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.g-router-action-copy h4 {
+  margin: 0 0 2px;
+  font-size: var(--font-size-sm);
+  color: var(--color-warn-text);
+}
+
+.g-router-action-copy p {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.g-router-card .g-btn-warn {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-control);
+  font-weight: 600;
+  border: 1px solid var(--color-warn);
+  background: var(--color-warn);
+  color: var(--color-on-primary);
+  cursor: pointer;
+}
+
+.g-router-card button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------- device pointer card - */
+.g-int-pointer-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: var(--color-bg-inset);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.g-int-pointer-card h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.g-int-pointer-card p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.g-int-pointer-link {
+  margin-top: auto;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-primary-strong);
+  text-decoration: none;
+}
+
+.g-int-pointer-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 899px) {
+  .g-int-section-head {
+    align-items: flex-start;
+  }
+  .g-int-section-meta {
+    width: 100%;
+  }
+  .g-int-devices-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.g-integrations-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-integrations-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-integrations-test {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  font-size: var(--font-size-sm);
+}
+
+.g-integrations-test .g-tone-good {
+  color: var(--color-good-text);
+  font-weight: 700;
+}
+
+.g-integrations-test .g-tone-alert {
+  color: var(--color-alert-text);
+  font-weight: 700;
+}
+
+@media (max-width: 699px) {
+  .g-integrations-list {
+    columns: 1;
+  }
+
+  .g-integrations-card-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .g-integrations-card-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .g-integrations-inbound-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* --- Onboarding wizard (Task 49) --- */
+
+.g-onboarding {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.g-onboarding-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 560px;
+}
+
+.g-onboarding-brand {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.g-onboarding-steps {
+  display: flex;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.g-onboarding-skip {
+  align-self: flex-end;
+}
+
+.g-onboarding-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-onboarding-step-dot-active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.g-onboarding-step-dot-done {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+  border-color: var(--color-primary-soft);
+}
+
+.g-onboarding-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-5);
+}
+
+.g-onboarding-card:focus {
+  outline: none;
+}
+
+.g-onboarding-os-picker {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.g-onboarding-os-picker button[aria-pressed="true"] {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.g-onboarding-command pre {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.g-onboarding-spinner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+.g-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  animation: g-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes g-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-spinner {
+    animation: none;
+    border-top-color: var(--color-border);
+  }
+}
+
+.g-onboarding-troubleshoot {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.g-onboarding-devices {
+  list-style: none;
+  margin: var(--space-3) 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-onboarding-device-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-onboarding-device-name {
+  min-width: 120px;
+  font-weight: 600;
+}
+
+.g-onboarding-device-row input {
+  flex: 1 1 140px;
+  width: auto;
+}
+
+/* --- Skip link: visually hidden until focused, per the a11y pass --- */
+
+.g-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: var(--z-drawer);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.g-skip-link:focus {
+  left: var(--space-3);
+  top: var(--space-3);
+}
+
+@media (max-width: 699px) {
+  .g-onboarding-card {
+    padding: var(--space-4);
+  }
+
+  .g-onboarding-os-picker {
+    flex-direction: column;
+  }
+}
+
+/* --- Devices summary tiles ----------------------------------------------- */
+
+/* Nine tiles is the widest row in the app, so it WRAPS rather than scrolling:
+   `auto-fit` fills as many 140 px columns as the width allows and pushes the
+   rest onto the next line, which keeps the page body free of any horizontal
+   scroll at 375 px. Below 700 px it settles on two per row — one per row would
+   push the device grid a screen and a half down the page. */
+/* Port and finding chips inside a Security panel cell: they wrap in the cell
+   rather than widening the table. */
+.g-secpanel-ports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* The table view's kind cell: the glyph and its name on one line. */
+.g-devtable-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.g-devtable-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-devtable-filter {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-devtable-filter select {
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+}
+
+/* A vendor OUI name or a device label can run to 60 characters -- truncate
+   deliberately instead of stretching the row, full value on hover/focus via
+   the cell's own `title`. */
+.g-devtable-truncate {
+  display: inline-block;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.g-device-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+/* A tile holds one `Stat` and nothing else, so the card's own column gap has
+   nothing to space out. */
+.g-device-tiles > .g-card {
+  gap: 0;
+}
+
+/* A value that is text rather than a figure — the WAN address — shrunk so that
+   fifteen characters fit a tile instead of ellipsising, the way the reference
+   drops its own WAN tile to 14 px. 12.5 px rather than 14: Vault's card
+   carries 16 px of horizontal padding, which costs the value the width the
+   reference's tighter card left it, and the narrowest column this grid ever
+   produces is 140 px. */
+.g-device-tile-compact .g-stat-value {
+  font-size: 12.5px;
+}
+
+/* --- Networks (chips, badges, per-network sections) ---------------------- */
+
+/* The chooser wraps by default. At 375 px a tenant with several networks
+   would otherwise push the page into a horizontal scroll, so below 700 px the
+   row becomes its own horizontally-scrollable strip instead — the page body
+   never scrolls sideways, the chips do. */
+.g-network-chips {
+  align-items: center;
+  min-width: 0;
+}
+
+.g-network-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: var(--color-bg);
+  white-space: nowrap;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-network-needs-sensor {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--tone);
+  border-radius: 999px;
+  padding: 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--tone-text, var(--tone));
+  background: var(--tone-soft);
+}
+
+.g-network-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.g-network-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.g-network-section-head h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+
+.g-network-section-counts {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Overview's per-network health strip: one pill per network, each a link
+   through to Assets with that network already selected. */
+.g-overview-networks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.g-overview-network-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  text-align: left;
+}
+
+.g-overview-network-pill:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Overview's camera census (Task 83, item 4): two status lines (count +
+   internet exposure), then one row per recorder Vault cannot fully
+   account for. Same row shape as `.g-overview-network-pill` but stacked,
+   not a pill strip -- there are at most three or four lines here, not one
+   per site. */
+.g-camera-census {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-camera-census-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.g-camera-census-gaps {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-camera-census-gaps li {
+  list-style: disc;
+}
+
+/* Settings -> Networks */
+
+.g-settings-networks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-network-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.g-network-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  min-width: 0;
+}
+
+.g-network-enrol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.g-network-enrol code {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+@media (max-width: 699px) {
+  .g-device-tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .g-network-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-1);
+  }
+
+  .g-network-chips > .g-chip {
+    flex: 0 0 auto;
+  }
+
+  .g-network-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* The primary network's "can't be deleted" reason: visible, not a tooltip. */
+.g-network-primary-note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  max-width: 28ch;
+  text-align: right;
+  line-height: 1.35;
+  /* The table cell this sits in is `white-space: nowrap` (it holds buttons),
+     which the note inherits — so without this it renders as one ~490px line
+     inside its 188px box and overflows straight across the Delete button,
+     which is exactly the unreadable result the tooltip-to-visible-text change
+     was meant to avoid. Caught on the live page, not by a test: jsdom lays
+     nothing out. */
+  white-space: normal;
+}
+
+.g-network-form-actions,
+.g-network-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.g-network-status,
+.g-network-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-onboarding-networks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-onboarding-network-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+
+.g-onboarding-network-row label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+/* --- History ------------------------------------------------------------ */
+
+.g-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.g-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.g-history-head p {
+  margin: 0;
+}
+
+/* Three panels across on a wide console, collapsing to one on a phone —
+   `auto-fit` with a `minmax` floor rather than a breakpoint ladder. */
+.g-history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.g-history-panel {
+  min-width: 0;
+}
+
+.g-history-sevs {
+  display: inline-flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.g-history-sev {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--tone-text, var(--tone));
+  white-space: nowrap;
+}
+
+/* --- History: time as the spine ---------------------------------------
+ * History is a timeline and nothing else, so the log tables (still real
+ * <table>s, for sortability and for the tests that assert on their column
+ * headers) are re-bucketed by calendar day client-side and each day gets
+ * its own heading — the reader scans backwards day by day rather than
+ * hunting a date column buried in a wide table. The Time column itself
+ * carries a small rail: a dot on every row and a connecting line between
+ * them, so the eye reads "one axis running down the page" even though the
+ * mark-up underneath is an ordinary table row.
+ */
+.g-history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.g-history-day + .g-history-day {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+.g-history-day-label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.g-history-when {
+  position: relative;
+  padding-left: var(--space-4);
+}
+
+.g-history-when::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  transform: translateY(-50%);
+}
+
+.g-history-cluster {
+  cursor: pointer;
+}
+
+.g-history-cluster summary {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.g-history-cluster ul {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-weight: 400;
+}
+
+/* --- Assets > Devices: "who makes your devices" vendor breakdown ---------
+   The bar is decorative (aria-hidden in the component); the count beside it
+   carries the value, so this only needs to read cleanly, not to be queried. */
+
+.g-vendor-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.g-vendor-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 12rem) 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.g-vendor-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-vendor-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-track);
+  overflow: hidden;
+}
+
+.g-vendor-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+}
+
+.g-vendor-fill-alert {
+  background: var(--color-alert);
+}
+
+.g-vendor-count {
+  color: var(--color-text-muted);
+  min-width: 2.5ch;
+  text-align: right;
+}
+
+@media (max-width: 480px) {
+  /* Narrow phones: the name gets its own line so a long vendor string never
+     squeezes the bar to nothing. */
+  .g-vendor-row {
+    grid-template-columns: 1fr auto;
+  }
+  .g-vendor-name {
+    grid-column: 1 / -1;
+  }
+}
+
+/* --- Config > Sites & targets: the "what is monitored" summary ----------- */
+
+.g-settings-summary {
+  margin-bottom: var(--space-4);
+}
+
+.g-settings-summary-list {
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+
+.g-settings-summary-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 14rem) 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.g-settings-summary-row dt {
+  color: var(--color-text-muted);
+}
+
+.g-settings-summary-row dd {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .g-settings-summary-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* What Vault can do about an alert (`InboxRowView`'s remedy line). It sits
+   under the why/what-changed lines and reads as Vault speaking, so it takes
+   the same muted size but an accent rule down its left edge. The
+   "needs-you" variant is the one the owner has to act on, so its text is
+   full-strength rather than muted. */
+.g-inbox-remedy {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+}
+
+.g-inbox-remedy-needs-you {
+  border-left-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.g-inbox-remedy-need {
+  color: var(--color-text-muted);
+}
+
+/* The blast radius. Its own block rather than another clause on the remedy
+   line, with a small tracked-out label above it, because it answers a
+   different question from the two sentences above: those say what Vault
+   can do and what it wants; this says what it will break. An owner deciding
+   whether to approve reads this one and skips the rest, so it has to be
+   findable at a glance rather than at the end of a paragraph.
+
+   Muted, not red. Every one of these carries a cost -- that is what the line
+   is for -- so colouring them would spend the console's one alarm colour on
+   the ordinary case and leave nothing for the emergency. */
+.g-inbox-remedy-cost {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+.g-inbox-remedy-cost-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Task 83, item 5: the honest "what changed" for a sec:drift: alert. Same
+   bordered-aside treatment as `.g-inbox-remedy` -- it is disclosing a limit
+   (no line diff exists), not naming an action, so it earns the same visual
+   weight as the remedy line rather than reading like plain body text. */
+.g-inbox-drift {
+  margin: var(--space-1) 0 0;
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+}
+
+/* How sure Vault is that it should make the repair itself, as prose. Last
+   line of the remedy aside and muted like `need`: it qualifies the offer, and
+   the cost above it is the line an owner reads first. */
+.g-inbox-remedy-why {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+/* The control that opens the working, and the working itself
+   (`hub/guardian_hub/confidence.py`; `InboxRowView` carries the reasoning for
+   what is on the row and what is only in here).
+
+   Treated as a disclosure, not a panel: the same bordered-aside shape as
+   `.g-inbox-remedy` above it, because it is the same voice continuing rather
+   than a second surface. No shadow, no animation, no radius beyond the token
+   -- `tokens.css` sets `--shadow-glow: none` on purpose, and this appears
+   beside an alert someone opened the page because of. */
+/* The heading line: the label, and the score on the right once open. One line
+   rather than a control above a heading that repeats it.
+
+   On a row whose title is not already an expand toggle it IS the control, and
+   takes `.g-inbox-score-button` as well; on an incident row, whose title
+   already opens everything, it is a plain `<p>` and nothing more. */
+.g-inbox-score-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  margin: var(--space-1) 0 0;
+  text-align: left;
+}
+
+.g-inbox-score-button {
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.g-inbox-score-button:hover .g-inbox-score-label,
+.g-inbox-score-button:focus-visible .g-inbox-score-label {
+  text-decoration: underline;
+}
+
+.g-inbox-score {
+  padding-left: var(--space-2);
+  border-left: 2px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-normal);
+}
+
+/* Same tracked-out mono label as `What it costs`, for the same reason: it
+   names which of the row's two "confidence" numbers this is. The badge in the
+   title row is the sensor's confidence that the finding is real; this is
+   Vault's confidence that it should act.
+
+   Muted like the cost label by default, and interactive blue only where the
+   heading is genuinely a control -- `--color-primary` is the portal's
+   interactive colour in both skins (it lightens to `#66a6ff` on dark), and
+   painting a plain heading with it would promise a click that does nothing.
+   `tests/contrast.test.ts` carries both pairs against `--color-surface`. */
+.g-inbox-score-label {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.g-inbox-score-button .g-inbox-score-label {
+  color: var(--color-primary);
+}
+
+.g-inbox-score-value {
+  font-family: var(--font-num);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.g-inbox-score-note {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-inbox-score-factors {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-inbox-score-factor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.g-inbox-score-question {
+  color: var(--color-text-muted);
+  min-width: 0;
+}
+
+.g-inbox-score-answer {
+  color: var(--color-text);
+  text-align: right;
+}
+
+/* Tabular numerals so the column is a column and the arithmetic can be
+   checked by eye -- the score is BASELINE plus these, deliberately additive
+   (`confidence.score_of`).
+
+   `is-zero` recedes, and nothing here is coloured. A factor that found
+   nothing is worth showing -- that is why all six are sent -- but a row of
+   quiet `0`s must not end up the loudest thing in the table, which is the
+   same rule the owner console's tiles follow. A negative weight gets the same
+   emphasis as a positive one: it is a reason for caution, not a fault, and
+   spending the console's one alarm colour on it would leave nothing for an
+   emergency. */
+.g-inbox-score-weight {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  min-width: 4ch;
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.g-inbox-score-weight.is-zero {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/* Narrow: three columns in a phone's width crushes the question to one word
+   per line. The answer and its weight stay together on a line of their own. */
+@media (max-width: 699px) {
+  .g-inbox-score-factor {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .g-inbox-score-question {
+    grid-column: 1 / -1;
+  }
+}
+
+/* "Ask Vault" is an escape hatch, not the row's primary action — it never
+   takes the filled treatment `:first-child` gives Ack. */
+.g-inbox-actions button.g-inbox-ask {
+  border-style: dashed;
+}
+
+/* ------------------------------------------------------------- billing --- */
+/* Settings > Billing. Dense like the rest of the admin surfaces: a plan
+   picker, not a pricing page — the marketing version of this lives on
+   guarder.io and is a different job. */
+
+.g-settings-billing {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.g-billing-notice {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+
+.g-billing-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-billing-section h3 {
+  margin: 0;
+}
+
+.g-billing-current {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.g-billing-portal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.g-billing-interval {
+  display: inline-flex;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  align-self: flex-start;
+}
+
+.g-billing-interval button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.g-billing-interval button[aria-pressed="true"] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.g-billing-save {
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.g-billing-plans {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  align-items: stretch;
+}
+
+.g-billing-plan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+}
+
+.g-billing-plan.is-current {
+  border-color: var(--color-primary);
+}
+
+.g-billing-plan h4 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.g-billing-price {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+}
+
+.g-billing-blurb {
+  margin: 0;
+  flex: 1;
+  color: var(--color-text-muted);
+}
+
+.g-billing-sites {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  color: var(--color-text);
+}
+
+.g-billing-sites input {
+  width: 6rem;
+}
+
+/* --- API tokens (/settings/api-tokens) --------------------------------- */
+/* Its own page rather than a Config section: the create form, the one-time
+   secret and the table are a whole workflow, and the nav link that reaches it
+   lives in the nav tree (see the note in `pages/ApiTokens.tsx`). */
+
+/* The Integrations tab's quiet entrance to the same panel.
+   A plain bordered control, not a primary button: opening a list is not the
+   action this page wants you to take, and "healthy recedes" applies to a
+   section most accounts never need. */
+.g-int-api-toggle {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.g-int-api-toggle:hover,
+.g-int-api-toggle:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Embedded in a section that already has its own heading and frame, so the
+   panel drops the page's Card chrome and just stacks. */
+.g-api-tokens-bare {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.g-api-tokens {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.g-api-tokens-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.g-api-tokens-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+/* The name is the only free-text field and the only one worth widening; the
+   three selects size to their own longest option. */
+.g-api-tokens-form label:first-child {
+  flex: 1 1 16rem;
+}
+
+.g-api-tokens-form label > span {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Deliberately loud: this panel holds the only copy of a credential that will
+   never be shown again, and it must not read like a success toast. */
+.g-api-tokens-secret {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-warn-soft);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-api-tokens-secret > p {
+  margin: 0;
+}
+
+.g-api-tokens-secret > code {
+  /* A 61-character token has to wrap, and has to stay selectable as one run of
+     text so a partial copy is impossible. */
+  word-break: break-all;
+  user-select: all;
+  font-size: var(--font-size-sm);
+}
+
+.g-api-tokens-secret-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* --- DNS filter: the three ranked lists (most looked-up / most blocked /
+   busiest devices), the reference's own `row3` ------------------------------ */
+.g-dns-lists-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+
+.g-dns-lists-row h3 {
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-2);
+}
+
+/* A state dot standing alone in a table cell — `.g-dot` itself lives inside
+   flex rows everywhere else, where it needs no display of its own. */
+.g-cell-dot {
+  display: inline-block;
+}
+
+/* The websites/servers detail tables under the asset cards: the reference
+   console keeps its wide host table collapsed the same way. */
+.g-asset-table-details {
+  margin-top: var(--space-4);
+}
+
+.g-asset-table-details > summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) 0;
+}
+
+.g-asset-table-details > summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Devices: the reference console's search box, above the per-network grids. */
+.g-device-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-device-search input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  max-width: 22rem;
+}
+
+/* Heartbeat setup panel (Security → Dead-man heartbeats). The one surface
+   that renders a heartbeat token, admin-only — so it is styled to read as a
+   credential you should be careful with, not as another data row. */
+.g-hb-setup {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-hb-setup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.g-hb-setup-note {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-hb-setup-cmd {
+  display: block;
+  overflow-x: auto;
+  white-space: pre;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+
+.g-hb-setup-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-hb-setup button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.g-hb-setup button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ==========================================================================
+   Incident detail (Task 83, patterns A1/A2)
+   One incident, one page: the written narrative, the outcome, then the
+   timeline / evidence / assets / scoped graph. All colour comes from tokens,
+   so light (Calm) and dark (Console) need no separate rules here. */
+
+.g-incident-crumbs {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-3);
+}
+
+.g-incident-crumbs a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.g-incident-crumbs a:hover,
+.g-incident-crumbs a:focus-visible {
+  text-decoration: underline;
+}
+
+.g-incident-story {
+  border-left: 4px solid var(--tone, var(--color-border));
+}
+
+.g-incident-story-top {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.g-incident-sevbar {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--tone, var(--color-border));
+  flex: none;
+  align-self: stretch;
+  min-height: 32px;
+}
+
+.g-incident-story-head {
+  min-width: 0;
+}
+
+.g-incident-h1 {
+  font-size: var(--font-size-lg);
+  line-height: 1.3;
+  margin: 0 0 6px;
+  max-width: 46ch;
+}
+
+.g-incident-meta {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.g-incident-para {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: var(--space-3) var(--space-4);
+  margin: var(--space-4) 0 0;
+}
+
+.g-incident-para dt {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding-top: 2px;
+}
+
+.g-incident-para dd {
+  margin: 0;
+  font-size: var(--font-size-md);
+  line-height: 1.55;
+  max-width: 68ch;
+}
+
+.g-incident-sure {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.g-incident-sure-track {
+  width: 120px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--color-track);
+  overflow: hidden;
+  flex: none;
+}
+
+.g-incident-sure-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+}
+
+.g-incident-need {
+  color: var(--color-text-muted);
+}
+
+.g-incident-outcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
+.g-incident-outcome-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.g-incident-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  align-items: start;
+}
+
+.g-incident-col {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.g-incident-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 var(--space-4);
+  position: relative;
+}
+
+.g-incident-timeline::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 6px;
+  bottom: 10px;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.g-incident-timeline li {
+  position: relative;
+  padding: 0 0 var(--space-4);
+}
+
+.g-incident-timeline li:last-child {
+  padding-bottom: 0;
+}
+
+.g-incident-timeline li::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--space-4) + 1px);
+  top: 5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+}
+
+.g-incident-timeline li.g-tone-warn::before {
+  border-color: var(--color-warn);
+}
+
+.g-incident-timeline li.g-tone-alert::before {
+  border-color: var(--color-alert);
+}
+
+.g-incident-timeline li.g-tone-good::before {
+  border-color: var(--color-good);
+  background: var(--color-good);
+}
+
+.g-incident-timeline time {
+  display: block;
+  font-family: var(--font-num);
+  font-size: 10px;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.g-incident-timeline p {
+  margin: 1px 0 0;
+  font-size: var(--font-size-sm);
+}
+
+.g-incident-ev-wrap {
+  overflow-x: auto;
+}
+
+.g-incident-ev {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.g-incident-ev th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  padding: 0 var(--space-3) 6px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.g-incident-ev td {
+  padding: 7px var(--space-3) 7px 0;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.g-incident-ev tr:last-child td {
+  border-bottom: none;
+}
+
+.g-incident-assets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.g-incident-asset {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 9px var(--space-3);
+  background: var(--color-surface-sunken, var(--color-bg));
+  text-decoration: none;
+  color: inherit;
+}
+
+a.g-incident-asset:hover,
+a.g-incident-asset:focus-visible {
+  border-color: var(--color-primary);
+}
+
+.g-incident-asset-ico {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  font-size: 13px;
+  flex: none;
+}
+
+.g-incident-asset-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.g-incident-asset-nm {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+
+.g-incident-asset-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-num);
+}
+
+.g-incident-asset-risk {
+  margin-left: auto;
+  text-align: right;
+  flex: none;
+}
+
+.g-incident-asset-risk b {
+  display: block;
+  font-family: var(--font-num);
+  font-weight: 600;
+  font-size: var(--font-size-md);
+}
+
+.g-incident-asset-risk span {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.g-incident-graph {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.g-incident-graph text {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  fill: var(--color-text);
+  font-weight: 600;
+}
+
+.g-incident-edge {
+  stroke: var(--color-alert);
+  stroke-width: 1.6;
+  stroke-dasharray: 4 3;
+}
+
+.g-incident-node {
+  fill: var(--color-surface, var(--color-bg));
+  stroke: var(--color-border);
+  stroke-width: 1.2;
+}
+
+.g-incident-node-hostile {
+  fill: var(--color-alert-soft);
+  stroke: var(--color-alert);
+}
+
+/* Inbox: the small link out of an incident row, to its own page. */
+.g-inbox-open-incident {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.g-inbox-open-incident:hover,
+.g-inbox-open-incident:focus-visible {
+  text-decoration: underline;
+}
+
+@media (max-width: 699px) {
+  .g-incident-cols {
+    grid-template-columns: 1fr;
+  }
+  .g-incident-para {
+    grid-template-columns: 1fr;
+    gap: var(--space-1) 0;
+  }
+  .g-incident-para dt {
+    margin-top: var(--space-3);
+  }
+  .g-incident-h1 {
+    font-size: var(--font-size-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-incident-sure-fill {
+    transition: none;
+  }
+}
+
+
+/* On a narrow screen the two columns stack, and a sticky full-height preview
+   would pin a letterbox over the form. It becomes an ordinary block again. */
+@media (max-width: 899px) {
+  .g-reports-builder {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .g-reports-preview {
+    position: static;
+    height: auto;
+    min-height: 420px;
+  }
+}
+
+
+/* --- Topology: coloured-link issue drawer ------------------------------- */
+.g-link-issues { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.g-link-issue-reasons { margin: 8px 0 14px; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+.g-link-issue-fix { margin: 10px 0 0; font-size: 13px; }
+.g-link-issue-fix-done { color: var(--color-good); }
+.g-link-issue-fix-failed { color: var(--color-alert); }
+.g-link-issue-foot { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+/* --- Integrations: AI failover ------------------------------------------ */
+.g-ai-ladder { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 8px; }
+.g-ai-rung { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2, transparent); }
+.g-ai-rung[data-configured="false"] { opacity: 0.65; }
+.g-ai-rung-n { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  font-variant-numeric: tabular-nums; font-weight: 600; border: 1px solid var(--line); }
+.g-ai-rung-body { display: grid; gap: 2px; }
+
+/* The condition that carries you to the next rung, set as a quiet aside
+   under the rung it leaves. Not a separate row: it belongs to the rung
+   above it, and a row of its own would read as a fourth provider. */
+.g-ai-rung-next {
+  margin-top: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.g-ai-note {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  line-height: 1.55;
+  color: var(--color-text-muted);
+  max-width: 78ch;
+}
+
+/* --- what a connected channel answers ---------------------------------
+   Two-way channels take instructions and nobody knew, because the only
+   place it was written was a field label. Set as a block under the channel
+   list rather than inside each card: it is one idea about the set of
+   channels you have, not a property of any one card. */
+.g-int-commands {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.g-int-commands h3 { margin: 0 0 4px; font-size: var(--font-size-sm); }
+.g-int-commands .hint { margin: 0 0 var(--space-3); max-width: 78ch; }
+.g-int-commands-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+.g-int-commands-card {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.g-int-commands-card h4 { margin: 0 0 8px; font-size: var(--font-size-sm); }
+.g-int-commands-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.g-int-commands-card li {
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  padding-left: 12px;
+  position: relative;
+}
+/* A hairline tick rather than a bullet glyph: these are things you can
+   type, not a bulleted list of features. */
+.g-int-commands-card li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0.62em;
+  width: 6px; height: 1px;
+  background: var(--color-border-strong, var(--color-border));
+}
+
+.g-int-help-out {
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.g-ai-rung-body span { font-size: 13px; color: var(--muted); }
+.g-ai-models-wrap { overflow-x: auto; }
+.g-ai-models { width: 100%; border-collapse: collapse; font-size: 13px; }
+.g-ai-models th, .g-ai-models td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+.g-ai-models tr[data-in-pool="false"] td { color: var(--muted); }
+.g-ai-pref { font-size: 12px; color: var(--muted); }
+/* The Leads page's approve/reject confirm (design/Drawer). Labels over
+   inputs, one column, the two actions on a row. */
+.g-lead-actions { display: flex; gap: var(--space-2); }
+.g-lead-form { display: flex; flex-direction: column; gap: var(--space-2); }
+.g-lead-form label { font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2); }
+.g-lead-form input { width: 100%; box-sizing: border-box; }
+.g-lead-form-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); }
+/* A trend panel with more sites than the chart draws lists them as chips in
+   the card head. The head is a single flex row and the actions slot refuses
+   to shrink, so six site names ran off the right edge (the owner's report).
+   Let the head wrap, and the chips with it, so every name fits. */
+.g-history-panel .g-card-head {
+  flex-wrap: wrap;
+}
+
+.g-history-panel .g-card-actions {
+  flex: 1 1 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+/* The first-run wizard's post-scan screen.
+ *
+ * `g-onboarding-finish` puts Done and the DNS offer on one row, with Done as
+ * the button and the offer as a link: they are not equal choices. Done is
+ * finishing setup; DNS is an extra that needs the router password, and giving
+ * it equal weight would read as a second required step. */
+.g-onboarding-finish { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-4); }
+.g-onboarding-summary { font-size: var(--font-size-lg); line-height: 1.5; margin: 0 0 var(--space-2); }
+/* What the sensor is doing while the customer waits. Quiet, because it is
+   reading matter for a blank minute rather than anything to act on. */
+.g-onboarding-doing { margin: var(--space-4) 0; padding-left: 1.1em; color: var(--color-text-muted); line-height: 1.7; }
+.g-onboarding-doing li { margin-bottom: 4px; }
+
+/* The standing DNS reminder. Deliberately the quietest thing that can still be
+   read: one line, muted, no icon and no dismiss. It has no dismiss because a
+   dismiss turns "keeps asking" into "asked once", and being unobtrusive is
+   what earns it the right to stay on screen indefinitely. */
+.g-dns-prompt {
+  display: flex; align-items: baseline; gap: var(--space-3); flex-wrap: wrap;
+  padding: 8px var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.g-dns-prompt a { color: var(--color-primary); }
+
+/* --- Coverage and Certificates-expiring (client Overview) --------------- */
+
+/* Rows of label / seen-of-total / percent, over a track. The track is the
+   point: a percentage read alone is a number, and a bar makes "97%" and "75%"
+   different at a glance without either being read. */
+.g-cov { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.g-cov-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 38px;
+  grid-template-areas: "label count pct" "track track track";
+  align-items: center; gap: 4px 10px;
+}
+.g-cov-label { grid-area: label; font-size: var(--font-size-sm); color: var(--color-text); }
+.g-cov-count { grid-area: count; font-size: var(--font-size-sm); font-variant-numeric: tabular-nums; }
+.g-cov-pct {
+  grid-area: pct; text-align: right;
+  font-size: var(--font-size-xs); color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Full coverage is the ordinary case and recedes; short of it is the reason
+   the card exists. Amber, not red -- an unwatched asset is work, not an
+   emergency, and red on this product means somebody needs you today. */
+.g-cov-short { color: var(--color-warn-text); }
+.g-cov-track {
+  grid-area: track; height: 4px; border-radius: 3px;
+  background: var(--color-surface-sunken); overflow: hidden;
+}
+.g-cov-fill { display: block; height: 100%; background: var(--color-good); border-radius: 3px; }
+.g-cov-fill-short { background: var(--color-warn); }
+
+.g-cert { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.g-cert-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3);
+  padding: 9px 0; border-bottom: 1px solid var(--color-border);
+}
+.g-cert-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.g-cert-host { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.g-cert-host .mono { font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.g-cert-days { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: 0 0 auto; }
+.g-cert-days b { font-size: 15px; font-variant-numeric: tabular-nums; font-weight: 600; }
+/* Under a fortnight a lapse takes the site down, so it is the one thing here
+   that earns the alert colour. */
+.g-cert-crit { color: var(--color-alert); }
+.g-cert-warn { color: var(--color-warn-text); }
+/* An unread certificate is a coverage gap wearing the certificates card, and
+   it takes the same warning tone the coverage bar uses for one. */
+.g-cert-unread { color: var(--color-warn-text); }
+
+/* Item 26: why a drifted file matters, set apart from the mechanics. */
+.g-inbox-drift-why {
+  margin: 4px 0; padding-left: 9px;
+  border-left: 2px solid var(--color-warn);
+  color: var(--color-text);
+}
+
+/* Item 31: a day with nothing on it recedes, so a patched day is visible at
+   a glance rather than being one flat colour across the whole grid. */
+.g-patchcal-cell[data-state="none"] { background: var(--color-surface-sunken); opacity: .5; }
+.g-patchcal-foot {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-top: 8px;
+}
+.g-patchcal-key { display: flex; gap: 12px; flex-wrap: wrap; list-style: none; margin: 0; padding: 0; }
+.g-patchcal-key li {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--color-text-muted);
+}
+.g-patchcal-swatch { width: 10px; height: 10px; border-radius: 2px; background: currentColor; }
+.g-patchcal-swatch-none { background: var(--color-surface-sunken); border: 1px solid var(--color-border); }
+
+/* Item 05: what the posture cards do NOT cover, said where they are read. */
+.g-sec-posture-gap {
+  margin: 0 0 10px; padding: 8px 11px;
+  border: 1px solid var(--color-warn); border-left-width: 3px; border-radius: 3px;
+  background: var(--color-warn-soft); color: var(--color-warn-text);
+  font-size: 12.5px; line-height: 1.5;
+}
+
+/* Where your queries actually go, said in the step that asks you to redirect them. */
+.g-dns-wizard-trust {
+  margin: 6px 0 0; padding: 8px 10px;
+  border-left: 2px solid var(--color-primary);
+  background: var(--color-primary-soft);
+  font-size: 12.5px; line-height: 1.55; color: var(--color-text);
+}
+
+/* --- who makes your devices, as a share (components/VendorDonut) ------ */
+.g-vendor-donut { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+.g-vendor-donut-fig { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.g-vendor-donut svg { width: 140px; height: 140px; display: block; }
+.g-vendor-donut circle[stroke]:not([stroke="var(--color-track)"]) { transition: stroke-width .12s ease; cursor: default; }
+.g-vendor-donut-n {
+  font-size: 22px; font-weight: 700; fill: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+.g-vendor-donut-l {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em;
+  fill: var(--color-text-muted);
+}
+.g-vendor-donut-cap { margin: 0; font-size: 12px; color: var(--color-text-muted); text-align: center; }
+.g-vendor-legend { list-style: none; margin: 0; padding: 0; flex: 1 1 210px; min-width: 0; }
+.g-vendor-legend-row {
+  display: grid; grid-template-columns: 11px minmax(0, 1fr) auto auto;
+  align-items: center; gap: 9px; padding: 3px 5px; border-radius: 3px;
+  font-size: 12.5px;
+}
+.g-vendor-legend-row.is-hover { background: var(--color-surface-sunken); }
+.g-vendor-swatch { width: 11px; height: 11px; border-radius: 2px; }
+.g-vendor-legend .g-vendor-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-vendor-legend .g-vendor-count { font-variant-numeric: tabular-nums; color: var(--color-text); }
+.g-vendor-legend .g-vendor-pct {
+  font-family: var(--font-mono); font-size: 10px; color: var(--color-text-muted);
+  min-width: 34px; text-align: right;
+}
+
+/* Item 29: patch state, on the security page. */
+.g-sec-patch {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px; background: var(--color-border); border: 1px solid var(--color-border);
+  border-radius: 3px; list-style: none; margin: 0 0 10px; padding: 0; overflow: hidden;
+}
+.g-sec-patch li { background: var(--color-surface); padding: 10px 12px; }
+.g-sec-patch-n { display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.g-sec-patch-l {
+  display: block; margin-top: 2px; font-family: var(--font-mono); font-size: 9.5px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--color-text-muted);
+}
+
+/* Item 32: CVE filters beyond free text. */
+.g-cve-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
+.g-cve-pick > span {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--color-text-muted);
+}
+.g-cve-shown { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* Item 36: the domain in the stream is a question you can ask. */
+button.g-dns-stream-name {
+  background: none; border: 0; padding: 0; text-align: left; color: inherit;
+  font: inherit; cursor: pointer; min-width: 0;
+}
+button.g-dns-stream-name:disabled { cursor: default; }
+button.g-dns-stream-name:not(:disabled):hover,
+button.g-dns-stream-name:not(:disabled):focus-visible { text-decoration: underline; }
+.g-dns-why dt {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--color-text-muted); margin-top: 10px;
+}
+.g-dns-why dd { margin: 3px 0 0; font-size: 13px; line-height: 1.55; }
+
+/* Item 39: a day in the logs is a fold, with its own count. */
+details.g-history-day > summary.g-history-day-label {
+  display: flex; align-items: baseline; gap: 8px; cursor: pointer;
+  list-style: none; padding: 6px 0;
+}
+details.g-history-day > summary::-webkit-details-marker { display: none; }
+details.g-history-day > summary.g-history-day-label::before {
+  content: "▸"; font-size: 9px; color: var(--color-text-muted); transition: transform .12s ease;
+}
+details.g-history-day[open] > summary.g-history-day-label::before { transform: rotate(90deg); }
+.g-history-day-n {
+  margin-left: auto; font-family: var(--font-mono); font-size: 10px;
+  color: var(--color-text-muted); font-variant-numeric: tabular-nums;
+}
+
+/* Item 06: the two glance strips beside Recent activity on Overview. */
+.g-ov-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.g-ov-mini { display: flex; gap: 20px; flex-wrap: wrap; align-items: baseline; list-style: none; margin: 0; padding: 0; }
+.g-ov-mini-n { display: block; font-family: var(--font-mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.g-ov-mini-l {
+  display: block; font-family: var(--font-mono); font-size: 9px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--color-text-muted);
+}
+.g-ov-mini-when { margin-left: auto; font-size: 11.5px; color: var(--color-text-muted); }
+.g-ov-tickets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.g-ov-tickets li { display: flex; align-items: baseline; gap: 10px; font-size: 13px; }
+.g-ov-tickets a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-ov-ticket-state {
+  margin-left: auto; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Item 28: the repair log's filter row. */
+.g-fixlog-controls {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 10px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Item 38: the wizard's per-step help. */
+.g-dns-wizard-help { margin-top: 8px; font-size: 12.5px; }
+.g-dns-wizard-help > summary { cursor: pointer; color: var(--color-primary); }
+.g-dns-wizard-help p { margin: 6px 0; line-height: 1.55; }
+.g-dns-wizard-ways { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.65; }
+.g-dns-wizard-ways li { margin-bottom: 3px; }
+
+/* --------------------------------------------------------------------------
+   Item 10b — the snooze dialog
+   A list of promises, not a number box: "come back tomorrow morning" is what
+   a person means, and a free-text hours field invites both 0.5 and 400.
+   Every selector is scoped under .g-snooze-choices because the drawer's sheet
+   styles bare `fieldset`/`label`, and an unscoped rule lost to it.
+   -------------------------------------------------------------------------- */
+.g-snooze-choices { border: 0; padding: 0; margin: 0 0 14px; display: block; }
+.g-snooze-choices legend {
+  float: none; width: auto; padding: 0 0 8px;
+  font-size: 13px; color: var(--color-text-soft);
+}
+.g-snooze-choices .g-snooze-choice {
+  display: flex; align-items: flex-start; gap: 10px;
+  margin: 0; padding: 8px 10px; border-radius: 8px;
+  cursor: pointer; text-align: left;
+}
+.g-snooze-choices .g-snooze-choice:hover {
+  background: var(--color-surface-2, rgba(127, 127, 127, .08));
+}
+.g-snooze-choices .g-snooze-choice input { width: auto; margin: 3px 0 0; flex: none; }
+.g-snooze-choices .g-snooze-text { display: flex; flex-direction: column; gap: 1px; }
+.g-snooze-choices .g-snooze-l { font-weight: 600; }
+.g-snooze-choices .g-snooze-n { font-size: 12px; color: var(--color-text-soft); }
+.g-snooze-where { font-size: 12.5px; color: var(--color-text-soft); margin: 0 0 16px; }
+.g-snooze-foot { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* --------------------------------------------------------------------------
+   Item 16 — which devices the Assets grid is showing
+   Beside the search, because they narrow the same list and reading them
+   apart implies they do not.
+   -------------------------------------------------------------------------- */
+.g-device-tools {
+  display: flex; flex-wrap: wrap;
+  align-items: flex-end; justify-content: space-between; gap: 12px;
+}
+.g-device-lens { display: flex; flex-wrap: wrap; gap: 4px; }
+.g-device-lens button {
+  font-size: 12px; padding: 5px 10px;
+  border: 1px solid var(--color-border); border-radius: 999px;
+  background: transparent; color: var(--color-text-soft); cursor: pointer;
+}
+.g-device-lens button[aria-pressed="true"] {
+  border-color: var(--color-primary); color: var(--color-text);
+}
+
+/* --------------------------------------------------------------------------
+   Items 43/44 — what Vault found and nobody asked it to watch
+   Quiet by design: it is an offer, not an alert.
+   -------------------------------------------------------------------------- */
+.g-suggested {
+  margin-top: 18px; padding: 12px 14px;
+  border: 1px dashed var(--color-border); border-radius: 10px;
+}
+.g-suggested h4 { margin: 0 0 10px; font-size: 13px; color: var(--color-text-soft); }
+.g-suggested ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.g-suggested li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.4fr) auto;
+  align-items: baseline; gap: 10px; font-size: 13px;
+}
+.g-suggested-u { color: var(--color-text-soft); overflow: hidden; text-overflow: ellipsis; }
+.g-suggested-w { color: var(--color-text-soft); font-size: 12px; }
+@media (max-width: 720px) {
+  .g-suggested li { grid-template-columns: 1fr auto; }
+  .g-suggested-w { grid-column: 1 / -1; }
+}
+
+/* --------------------------------------------------------------------------
+   Item 17 — the network chooser that stands in for the map
+   It had no styles at all, so its three spans ran together into
+   "Office Wi-Fi15 of 19 last reported onlineSensor reporting". This is the
+   first thing a multi-network customer reads on this tab.
+   -------------------------------------------------------------------------- */
+.g-network-summaries {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: stretch;
+}
+.g-network-summaries > p {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--space-1);
+  color: var(--color-text-soft);
+}
+.g-network-summaries button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.g-network-summaries button:hover { background: var(--color-surface-sunken); }
+.g-network-summaries button strong { font-size: 14px; }
+.g-network-summaries button span { font-size: 12px; color: var(--color-text-soft); }
+.g-network-summaries button span.g-tone-good,
+.g-network-summaries button span.g-tone-warn { font-size: 11.5px; }
+/* The org map is an escape hatch from the readable view, not a peer of it. */
+.g-network-summaries button:last-child {
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  color: var(--color-text-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Item 25 — the proof a finding was actually fixed
+   Three states, and the difference between the first two is the whole point:
+   "ran" is a command's own report, "confirmed" is a later look at the target.
+   -------------------------------------------------------------------------- */
+.g-proof { margin: var(--space-3) 0 0; }
+.g-proof h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 13px;
+  color: var(--color-text-soft);
+}
+.g-proof ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.g-proof li {
+  display: grid;
+  gap: 3px;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+}
+/* The confirmed ones wear the accent on the edge, so a list of repairs can
+   be read for "did any of these actually stick?" without reading a word. */
+.g-proof li[data-confirmed="1"] { border-left-color: var(--sig-ok, var(--ok)); }
+.g-proof-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.g-proof-when { font-size: 12px; color: var(--color-text-soft); }
+.g-proof-line { font-size: 13px; }
+.g-proof-out {
+  margin: 4px 0 0;
+  padding: 6px 8px;
+  max-height: 120px;
+  overflow: auto;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-soft);
+}
+
+/* Item 25: a passing check is a button now — it opens the same drawer, so
+   "was this dealt with, or did it just stop showing up?" is answerable
+   about a green row. It must not start LOOKING like a control: the list of
+   passes is meant to read as quiet proof, not as more things to do. */
+.g-sec-check-proof button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.g-sec-check-proof button:hover { text-decoration: underline; }
+.g-sec-check-proof button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Item 21 — gateway rules Vault proposes
+   Every rule carries the evidence it came from. The panel is quiet on
+   purpose: these are suggestions about somebody else's router, and the one
+   that is genuinely urgent wears the only strong colour here.
+   -------------------------------------------------------------------------- */
+.g-fw { margin-top: var(--space-3); }
+.g-fw h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-1);
+  font-size: 14px;
+}
+.g-fw-cant {
+  padding: 8px 10px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.g-fw-list { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: grid; gap: var(--space-2); }
+.g-fw-list li {
+  display: grid;
+  gap: 3px;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+}
+.g-fw-list li[data-status="proposed"][data-risk="CRIT"] { border-left-color: var(--sig-err, var(--err)); }
+.g-fw-list li[data-status="proposed"][data-risk="WARN"] { border-left-color: var(--sig-warn, var(--warn)); }
+/* A decision on record and a finding that has gone away both read as
+   settled — neither is something to look at again. */
+.g-fw-list li[data-status="declined"],
+.g-fw-list li[data-status="expired"] { opacity: .72; }
+.g-fw-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.g-fw-because { font-size: 13px; }
+.g-fw-evidence { font-size: 11.5px; color: var(--color-text-soft); }
+.g-fw-decided { font-size: 12px; color: var(--color-text-soft); }
+.g-fw-actions { display: flex; gap: var(--space-2); align-items: center; margin-top: 4px; flex-wrap: wrap; }
+.g-fw-actions input { flex: 1 1 200px; min-width: 0; }
+
+/* --------------------------------------------------------------------------
+   "Someone just emailed me — is this legit?"
+   Quiet until it has an answer. The verdict is never green unless something
+   is genuinely good: "nothing wrong found" is grey on purpose, because a
+   green tick on a well-run phishing domain is worse than no tool at all.
+   -------------------------------------------------------------------------- */
+.g-ec { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.g-ec-form label { display: block; font-size: 13px; margin-bottom: 6px; }
+.g-ec-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.g-ec-row input { flex: 1 1 260px; min-width: 0; }
+.g-ec-out {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+}
+.g-ec-out[data-verdict="forged"] { border-left-color: var(--sig-err, var(--err)); }
+.g-ec-out[data-verdict="risky"] { border-left-color: var(--sig-warn, var(--warn)); }
+.g-ec-head { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin: 0; }
+.g-ec-findings { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: grid; gap: 6px; }
+.g-ec-findings li { display: flex; gap: var(--space-2); align-items: flex-start; font-size: 13px; }
+.g-ec-limits {
+  margin: var(--space-2) 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--color-text-soft);
+}
+.g-ec-err { color: var(--sig-err, var(--err)); font-size: 13px; }
+
+/* Vault sets the router's DNS itself. The confirm is a panel, not a
+   browser dialog: it carries the summary a person has to actually read,
+   and a native confirm() truncates it. */
+.g-dns-wizard-auto { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; margin: var(--space-2) 0; }
+.g-dns-wizard-auto .hint { flex: 1 1 260px; min-width: 0; }
+.g-dns-wizard-note { font-size: 13px; margin: var(--space-1) 0 0; }
+.g-dns-wizard-confirm {
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--sig-warn, var(--warn));
+  border-radius: var(--radius-sm);
+}
+.g-dns-wizard-confirm p { margin: 0 0 var(--space-2); font-size: 13px; }
+.g-dns-wizard-confirm-foot { display: flex; gap: var(--space-2); justify-content: flex-end; }
+
+/* Devices squared up by what they ARE, rather than one long row of separate
+   tiles. The square is a backdrop, not a frame: quiet fill, a hairline
+   border, and the label and count on the same line so the header costs one
+   row of height and no more. */
+.g-map-group-rect {
+  fill: var(--color-surface-sunken);
+  stroke: var(--color-border);
+  stroke-width: 1;
+  opacity: .55;
+}
+/* A square with something wrong inside says so before it is opened. Tone on
+   the BORDER only — filling it would fight the tiles it holds. */
+.g-map-group[data-tone="warn"] .g-map-group-rect { stroke: var(--sig-warn, var(--warn)); opacity: .75; }
+.g-map-group[data-tone="alert"] .g-map-group-rect { stroke: var(--sig-err, var(--err)); opacity: .85; }
+.g-map-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--color-text-soft);
+  letter-spacing: .02em;
+}
+.g-map-group-count { font-size: 11px; fill: var(--color-text-soft); }
+
+/* Activity drawer (JobDetail): the facts reuse `.g-dns-why`'s label/value
+   rhythm; this only spaces the actions and the scan panel below them. */
+.g-job-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.g-job-scan { margin-top: 20px; }
+.g-job-scan h3 { font-size: 13px; margin: 0 0 4px; }
+.g-job-scan a.g-button-link { margin-top: 12px; }

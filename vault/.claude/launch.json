@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "_comment": "Local hub against the Stripe SANDBOX, for exercising checkout with test cards. Expects hub/.env.sandbox (gitignored) to carry an sk_test_ key and GUARDIAN_DATA_DIR=./data-sandbox -- its own database, because the test suite rebuilds ./data every test and would wipe a running hub out from under you. The file is NOT named .env on purpose: pydantic-settings reads env_file='.env' from the process cwd, so a hub/.env is also read by every test run from hub/ -- test_billing_trial_only went red because the sandbox's GUARDIAN_BILLING_MODE=plans leaked into the suite. --env-file is passed explicitly for the same reason in reverse: launched from the repo root, the default lookup finds nothing and the hub boots silently against defaults (trial_only, no Stripe), which looks fine and tests nothing.",
+  "configurations": [
+    {
+      "name": "hub-sandbox",
+      "runtimeExecutable": "hub/.venv/bin/uvicorn",
+      "runtimeArgs": [
+        "guardian_hub.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8800",
+        "--app-dir",
+        "hub",
+        "--env-file",
+        "hub/.env.sandbox"
+      ],
+      "port": 8800
+    }
+  ]
+}

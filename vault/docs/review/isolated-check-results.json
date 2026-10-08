@@ -1,0 +1,39 @@
+{
+  "secondary_network": {
+    "actual_live": [
+      "aa"
+    ],
+    "expected_live": [
+      "aa",
+      "bb"
+    ]
+  },
+  "score_namespace": {
+    "legacy": {
+      "total": 98,
+      "deductions": [
+        {
+          "category": "Exposure",
+          "points": 2,
+          "why": "1 risky LAN service(s)"
+        }
+      ],
+      "potential": 100,
+      "grade": "A"
+    },
+    "namespaced": {
+      "total": 100,
+      "deductions": [],
+      "potential": 100,
+      "grade": "A"
+    }
+  },
+  "slack_error": {
+    "exception": "TypeError",
+    "message": "unhashable type: 'slice'"
+  },
+  "future_window": {
+    "inside_window_now": false,
+    "note": "Combined with unconditional queue claim and outside-window failure path; this helper alone behaves correctly."
+  }
+}

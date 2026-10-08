@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Past briefs — ATLAS{% endblock %}
+{% block body %}
+  <h2 class="label">Past briefs</h2>
+  {% if not days %}
+    <p class="empty">No findings have been recorded yet, so there is nothing to
+    look back at.</p>
+  {% else %}
+    {# Briefs are built from live queries, so a past one cannot be rebuilt. A
+       link that silently showed today's brief under yesterday's date would be
+       a lie, so these link to the findings recorded on each day instead. #}
+    <p class="note" style="margin:-4px 0 14px">
+      Briefs are built from live queries, so a past one cannot be rebuilt.
+      These link to the findings recorded on each day.
+    </p>
+    <div class="panel">
+      <ul class="rows">
+      {% for day in days %}
+        <li>
+          <a href="/findings/day/{{ day.day }}">{{ day.day }}</a>
+          <span class="note"> — {{ day.findings }} finding{{ '' if day.findings == 1 else 's' }}{% if day.serious %}, {{ day.serious }} above normal{% endif %}</span>
+        </li>
+      {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endblock %}

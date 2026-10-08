@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guardian — change-request playground</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex: 0 0 auto;
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); font-size: 12.5px; }
+
+  main { flex: 1 1 auto; display: flex; min-height: 0; }
+
+  /* ---- left rail ---------------------------------------------------- */
+  #rail {
+    width: 310px;
+    flex: 0 0 310px;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 14px;
+  }
+  .group { margin-bottom: 20px; }
+  .group > h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 9px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .presets button:hover { border-color: var(--accent); }
+  .presets button[aria-pressed="true"] { background: #1f6feb33; border-color: var(--accent); color: #cae4ff; }
+
+  label.row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  label.row input { accent-color: var(--accent); margin: 0; }
+  .swatch { width: 22px; height: 3px; border-radius: 2px; flex: 0 0 22px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px; }
+
+  select {
+    width: 100%;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 13px;
+  }
+
+  #commentList { display: flex; flex-direction: column; gap: 8px; }
+  .comment {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 9px;
+    font-size: 12.5px;
+  }
+  .comment .who { font-weight: 600; }
+  .comment .path { font-family: var(--mono); font-size: 11px; color: var(--muted); word-break: break-all; }
+  .comment .txt { margin-top: 5px; white-space: pre-wrap; }
+  .comment .del {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 11px; padding: 2px 0 0; text-decoration: underline;
+  }
+  .comment .del:hover { color: #f85149; }
+  .empty { color: var(--muted); font-size: 12.5px; font-style: italic; }
+
+  /* ---- canvas -------------------------------------------------------- */
+  #stage { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+  #canvasWrap { flex: 1 1 auto; overflow: auto; position: relative; background: var(--bg); }
+  #zoomBar {
+    position: absolute; top: 10px; right: 14px; display: flex; gap: 4px; z-index: 5;
+  }
+  #zoomBar button {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--panel); border: 1px solid var(--border); color: var(--text);
+    cursor: pointer; font-size: 13px; line-height: 1;
+  }
+  #zoomBar button:hover { border-color: var(--accent); }
+  #zoomBar button.wide { width: auto; padding: 0 9px; font-size: 11.5px; }
+
+  .node { cursor: pointer; }
+  .node rect { transition: filter .12s; }
+  .node:hover rect { filter: brightness(1.45); }
+  .node text { pointer-events: none; }
+  .nodeLabel { font-size: 12px; font-weight: 600; fill: var(--text); }
+  .nodePath { font-size: 9.5px; fill: var(--muted); font-family: var(--mono); }
+  .bandLabel {
+    font-size: 10px; fill: var(--muted); text-transform: uppercase;
+    letter-spacing: 0.1em; font-weight: 600;
+  }
+
+  /* ---- prompt -------------------------------------------------------- */
+  #promptPane {
+    flex: 0 0 auto;
+    border-top: 1px solid var(--border);
+    background: var(--panel);
+    padding: 11px 14px 13px;
+    max-height: 38vh;
+    display: flex;
+    flex-direction: column;
+  }
+  #promptHead { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+  #promptHead h2 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em;
+    color: var(--muted); margin: 0; font-weight: 600; flex: 1 1 auto;
+  }
+  #copyBtn {
+    background: #238636; border: 1px solid #2ea043; color: #fff;
+    border-radius: 6px; padding: 5px 13px; font-size: 12.5px; cursor: pointer; font-weight: 500;
+  }
+  #copyBtn:hover:not(:disabled) { background: #2ea043; }
+  #copyBtn:disabled {
+    background: var(--panel-2); border-color: var(--border);
+    color: var(--muted); cursor: not-allowed;
+  }
+  #prompt {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin: 0;
+    color: #c9d1d9;
+  }
+
+  /* ---- modal --------------------------------------------------------- */
+  #modalBack {
+    position: fixed; inset: 0; background: #010409cc;
+    display: none; align-items: center; justify-content: center; z-index: 50;
+  }
+  #modalBack.on { display: flex; }
+  #modal {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px; width: min(520px, 92vw);
+  }
+  #modal h3 { margin: 0 0 3px; font-size: 14px; }
+  #modalPath { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin: 0 0 11px; word-break: break-all; }
+  #modalText {
+    width: 100%; min-height: 110px; resize: vertical;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px; font: inherit; font-size: 13px;
+  }
+  #modalBtns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 11px; }
+  #modalBtns button {
+    border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--panel-2); color: var(--text);
+  }
+  #saveBtn { background: #238636 !important; border-color: #2ea043 !important; color: #fff !important; }
+
+  /* The rail is a fixed 310px beside a map that wants every pixel it can get.
+   * That is right on a laptop and unusable the moment the window is shared
+   * with an editor: below this width the prompt collapses to a column of
+   * single characters. Stack instead -- controls on top, map and prompt
+   * below -- so a narrow window degrades rather than breaks. */
+  @media (max-width: 860px) {
+    main { flex-direction: column; }
+    #rail {
+      width: auto; flex: 0 0 auto; max-height: 40vh;
+      border-right: none; border-bottom: 1px solid var(--border);
+    }
+    #stage { min-height: 0; flex: 1 1 auto; }
+    #promptPane { max-height: 50vh; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Guardian — change-request playground</h1>
+  <p>Click a module to say what you want changed. Copy the prompt back into Claude.</p>
+</header>
+
+<main>
+  <div id="rail">
+    <div class="group">
+      <h2>Focus</h2>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <div class="group">
+      <h2>Layers</h2>
+      <div id="layerToggles"></div>
+    </div>
+
+    <div class="group">
+      <h2>Connections</h2>
+      <div id="connToggles"></div>
+    </div>
+
+    <div class="group">
+      <h2>Kind of change</h2>
+      <select id="kind">
+        <option value="behavior">Change existing behavior</option>
+        <option value="bug">Fix a bug</option>
+        <option value="feature">Add something new</option>
+        <option value="refactor">Refactor / clean up</option>
+        <option value="investigate">Investigate — explain before changing</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <h2>Who it's for</h2>
+      <select id="audience">
+        <option value="owner">The network owner (non-technical)</option>
+        <option value="installer">The installer / IT contractor</option>
+        <option value="prospect">A prospect on the demo tenant</option>
+        <option value="operator">Me, operating the platform</option>
+      </select>
+    </div>
+
+    <div class="group">
+      <h2>Constraints</h2>
+      <div id="constraints"></div>
+    </div>
+
+    <div class="group">
+      <h2>Requests (<span id="cCount">0</span>)</h2>
+      <div id="commentList"></div>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="canvasWrap">
+      <div id="zoomBar">
+        <button id="zOut" title="Zoom out">&minus;</button>
+        <button id="zIn" title="Zoom in">+</button>
+        <button id="zReset" class="wide" title="Reset zoom">Fit</button>
+      </div>
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div id="promptPane">
+      <div id="promptHead">
+        <h2>Prompt</h2>
+        <button id="copyBtn">Copy prompt</button>
+      </div>
+      <pre id="prompt"></pre>
+    </div>
+  </div>
+</main>
+
+<div id="modalBack">
+  <div id="modal">
+    <h3 id="modalTitle">Module</h3>
+    <p id="modalPath">path</p>
+    <textarea id="modalText" placeholder="What should change here? Plain language is fine — e.g. &quot;a blocked domain should carry the reason it was blocked, so the UI can explain it.&quot;"></textarea>
+    <div id="modalBtns">
+      <button id="cancelBtn">Cancel</button>
+      <button id="saveBtn">Save request</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Layers, in the order telemetry actually travels: the sensor sees the
+ * network, the hub ingests it, payloads shape it for reading, and the
+ * web app renders it. Delivery (Slack, Home Assistant, reports) hangs
+ * off ingest, not off the read path -- an alert is pushed when it is
+ * stored, not when someone looks at it.
+ * ------------------------------------------------------------------ */
+const LAYERS = [
+  { id: 'sensor',    label: 'Sensor (on-prem)', color: '#58a6ff' },
+  { id: 'ingest',    label: 'Hub — ingest',     color: '#d29922' },
+  { id: 'data',      label: 'Hub — data',       color: '#db61a2' },
+  { id: 'payloads',  label: 'Hub — payloads',   color: '#a371f7' },
+  { id: 'delivery',  label: 'Hub — delivery',   color: '#3fb950' },
+  { id: 'transport', label: 'Transport',        color: '#8b949e' },
+  { id: 'web',       label: 'Web app',          color: '#f0883e' },
+];
+
+const CONN_TYPES = [
+  { id: 'scan',     label: 'Scan telemetry', color: '#58a6ff', dash: '' },
+  { id: 'read',     label: 'Read path',      color: '#3fb950', dash: '' },
+  { id: 'action',   label: 'Fix / action',   color: '#f0883e', dash: '7,4' },
+  { id: 'event',    label: 'Live events',    color: '#f85149', dash: '4,4' },
+  { id: 'delivery', label: 'Notifications',  color: '#a371f7', dash: '2,3' },
+  { id: 'demo',     label: 'Demo / seed',    color: '#6e7681', dash: '1,4' },
+];
+
+/* Every path below is a real file in this repo. */
+const NODES = [
+  // --- sensor -----------------------------------------------------
+  { id: 'runner',    label: 'runner',      path: 'sensor/guardian_sensor/runner.py',    layer: 'sensor' },
+  { id: 'checks',    label: 'checks',      path: 'sensor/guardian_sensor/checks.py',    layer: 'sensor' },
+  { id: 'lan',       label: 'lan',         path: 'sensor/guardian_sensor/lan.py',       layer: 'sensor' },
+  { id: 'dnsfilter', label: 'dnsfilter',   path: 'sensor/guardian_sensor/dnsfilter.py', layer: 'sensor' },
+  { id: 'vulnscan',  label: 'vulnscan',    path: 'sensor/guardian_sensor/vulnscan.py',  layer: 'sensor' },
+  { id: 'sfix',      label: 'fix',         path: 'sensor/guardian_sensor/fix.py',       layer: 'sensor' },
+  { id: 'sync',      label: 'sync',        path: 'sensor/guardian_sensor/sync.py',      layer: 'sensor' },
+
+  // --- hub ingest -------------------------------------------------
+  { id: 'rsensor',   label: 'routers/sensor', path: 'hub/guardian_hub/routers/sensor.py', layer: 'ingest' },
+  { id: 'ingest',    label: 'ingest',      path: 'hub/guardian_hub/ingest.py',      layer: 'ingest' },
+  { id: 'networks',  label: 'networks',    path: 'hub/guardian_hub/networks.py',    layer: 'ingest' },
+  { id: 'remedy',    label: 'remedy',      path: 'hub/guardian_hub/remedy.py',      layer: 'ingest' },
+  { id: 'jobdisp',   label: 'jobdispatch', path: 'hub/guardian_hub/jobdispatch.py', layer: 'ingest' },
+  { id: 'verify',    label: 'verification', path: 'hub/guardian_hub/verification.py', layer: 'ingest' },
+
+  // --- hub data ---------------------------------------------------
+  { id: 'models',    label: 'models',      path: 'hub/guardian_hub/models.py',       layer: 'data' },
+  { id: 'seed',      label: 'seed',        path: 'hub/guardian_hub/seed.py',         layer: 'data' },
+  { id: 'trickle',   label: 'demo_trickle',path: 'hub/guardian_hub/demo_trickle.py', layer: 'data' },
+  { id: 'live',      label: 'live',        path: 'hub/guardian_hub/live.py',         layer: 'data' },
+
+  // --- hub payloads -----------------------------------------------
+  { id: 'pOverview', label: 'overview',    path: 'hub/guardian_hub/payloads/overview.py',    layer: 'payloads' },
+  { id: 'pTriage',   label: 'triage',      path: 'hub/guardian_hub/payloads/triage.py',      layer: 'payloads' },
+  { id: 'pTopology', label: 'topology',    path: 'hub/guardian_hub/payloads/topology.py',    layer: 'payloads' },
+  { id: 'pDns',      label: 'dnsview',     path: 'hub/guardian_hub/payloads/dnsview.py',     layer: 'payloads' },
+  { id: 'pUpdates',  label: 'updates',     path: 'hub/guardian_hub/payloads/updates.py',     layer: 'payloads' },
+  { id: 'pCameras',  label: 'cameras',     path: 'hub/guardian_hub/payloads/cameras.py',     layer: 'payloads' },
+  { id: 'pAssets',   label: 'assets',      path: 'hub/guardian_hub/payloads/assets.py',      layer: 'payloads' },
+
+  // --- hub delivery -----------------------------------------------
+  { id: 'registry',  label: 'registry',    path: 'hub/guardian_hub/integrations/registry.py',      layer: 'delivery' },
+  { id: 'slack',     label: 'slack',       path: 'hub/guardian_hub/integrations/slack.py',         layer: 'delivery' },
+  { id: 'ha',        label: 'homeassistant',path:'hub/guardian_hub/integrations/homeassistant.py', layer: 'delivery' },
+  { id: 'reports',   label: 'reports/builder', path: 'hub/guardian_hub/reports/builder.py',        layer: 'delivery' },
+  { id: 'chatTools', label: 'chat/tools',  path: 'hub/guardian_hub/chat/tools.py',                 layer: 'delivery' },
+  { id: 'chatReg',   label: 'chat/registry', path: 'hub/guardian_hub/chat/registry.py',               layer: 'delivery' },
+  { id: 'rchat',     label: 'routers/chat', path: 'hub/guardian_hub/routers/chat.py',                 layer: 'delivery' },
+  { id: 'slackbot',  label: 'routers/slackbot', path: 'hub/guardian_hub/routers/slackbot.py',      layer: 'delivery' },
+
+  // --- transport ---------------------------------------------------
+  { id: 'rread',     label: 'routers/read', path: 'hub/guardian_hub/routers/read.py', layer: 'transport' },
+  { id: 'rwrite',    label: 'routers/write', path: 'hub/guardian_hub/routers/write.py', layer: 'transport' },
+  { id: 'apiTs',     label: 'lib/api',      path: 'web/src/lib/api.ts',               layer: 'transport' },
+  { id: 'liveTs',    label: 'lib/live',     path: 'web/src/lib/live.ts',              layer: 'transport' },
+
+  // --- web ----------------------------------------------------------
+  { id: 'wOverview', label: 'Overview',    path: 'web/src/pages/Overview.tsx',     layer: 'web' },
+  { id: 'wInbox',    label: 'Inbox',       path: 'web/src/pages/Inbox.tsx',        layer: 'web' },
+  { id: 'wTopology', label: 'Topology',    path: 'web/src/pages/Topology.tsx',     layer: 'web' },
+  { id: 'wDns',      label: 'Dns',         path: 'web/src/pages/Dns.tsx',          layer: 'web' },
+  { id: 'wUpdates',  label: 'Updates',     path: 'web/src/pages/Updates.tsx',      layer: 'web' },
+  { id: 'wReports',  label: 'Reports',     path: 'web/src/pages/Reports.tsx',      layer: 'web' },
+  { id: 'wChat',     label: 'ChatPanel',   path: 'web/src/shell/ChatPanel.tsx',    layer: 'web' },
+];
+
+const CONNS = [
+  // sensor collects, sync ships it
+  { from: 'checks', to: 'runner', type: 'scan' },
+  { from: 'lan', to: 'runner', type: 'scan' },
+  { from: 'dnsfilter', to: 'runner', type: 'scan' },
+  { from: 'vulnscan', to: 'runner', type: 'scan' },
+  { from: 'runner', to: 'sync', type: 'scan' },
+  { from: 'sync', to: 'rsensor', type: 'scan', label: 'POST /ingest' },
+
+  // hub stores it
+  { from: 'rsensor', to: 'ingest', type: 'scan', label: 'store_scan' },
+  { from: 'ingest', to: 'networks', type: 'scan' },
+  { from: 'ingest', to: 'models', type: 'scan' },
+  { from: 'ingest', to: 'live', type: 'event' },
+  { from: 'ingest', to: 'verify', type: 'action', label: 'reconcile' },
+  { from: 'verify', to: 'live', type: 'event' },
+  { from: 'rsensor', to: 'jobdisp', type: 'action' },
+  { from: 'jobdisp', to: 'rsensor', type: 'action', label: 'queue' },
+  { from: 'jobdisp', to: 'registry', type: 'delivery', label: 'job waiting' },
+  { from: 'ingest', to: 'registry', type: 'delivery', label: 'deliver_background' },
+
+  // notifications out
+  { from: 'registry', to: 'slack', type: 'delivery' },
+  { from: 'registry', to: 'ha', type: 'delivery' },
+  { from: 'reports', to: 'registry', type: 'delivery' },
+
+  // demo data
+  { from: 'seed', to: 'models', type: 'demo' },
+  { from: 'trickle', to: 'models', type: 'demo' },
+
+  // read path
+  { from: 'models', to: 'pOverview', type: 'read' },
+  { from: 'models', to: 'pTriage', type: 'read' },
+  { from: 'models', to: 'pTopology', type: 'read' },
+  { from: 'models', to: 'pDns', type: 'read' },
+  { from: 'models', to: 'pUpdates', type: 'read' },
+  { from: 'models', to: 'pCameras', type: 'read' },
+  { from: 'models', to: 'pAssets', type: 'read' },
+  { from: 'pOverview', to: 'rread', type: 'read' },
+  { from: 'pTriage', to: 'rread', type: 'read' },
+  { from: 'pTopology', to: 'rread', type: 'read' },
+  { from: 'pDns', to: 'rread', type: 'read' },
+  { from: 'pUpdates', to: 'rread', type: 'read' },
+  { from: 'pCameras', to: 'rread', type: 'read' },
+  { from: 'pAssets', to: 'rread', type: 'read' },
+  { from: 'rread', to: 'apiTs', type: 'read' },
+  { from: 'apiTs', to: 'wOverview', type: 'read' },
+  { from: 'apiTs', to: 'wInbox', type: 'read' },
+  { from: 'apiTs', to: 'wTopology', type: 'read' },
+  { from: 'apiTs', to: 'wDns', type: 'read' },
+  { from: 'apiTs', to: 'wUpdates', type: 'read' },
+  { from: 'apiTs', to: 'wReports', type: 'read' },
+
+  // live events
+  { from: 'live', to: 'liveTs', type: 'event', label: 'WS /api/v1/ws' },
+  { from: 'liveTs', to: 'wInbox', type: 'event' },
+  { from: 'liveTs', to: 'wOverview', type: 'event' },
+
+  // the fix loop, running back down to the sensor
+  { from: 'wInbox', to: 'apiTs', type: 'action', label: 'Fix' },
+  { from: 'wChat', to: 'apiTs', type: 'action' },
+  { from: 'apiTs', to: 'rwrite', type: 'action' },
+  { from: 'apiTs', to: 'rchat', type: 'action', label: 'POST /chat' },
+  { from: 'slackbot', to: 'rchat', type: 'action', label: 'run_turn' },
+  { from: 'rchat', to: 'chatReg', type: 'action', label: 'dispatch' },
+  { from: 'chatReg', to: 'chatTools', type: 'action' },
+  { from: 'chatTools', to: 'rwrite', type: 'action' },
+  { from: 'rwrite', to: 'remedy', type: 'action', label: 'fix_steps' },
+  { from: 'rwrite', to: 'rsensor', type: 'action', label: 'queue' },
+  { from: 'rsensor', to: 'sync', type: 'action', label: 'GET /queue' },
+  { from: 'sync', to: 'sfix', type: 'action' },
+];
+
+/* Presets snap the view to one coherent slice of the system. */
+const PRESETS = {
+  'Full system': { layers: null, conns: null },
+  'Alert → fix loop': {
+    layers: ['sensor', 'ingest', 'delivery', 'transport', 'web'],
+    conns: ['action', 'delivery', 'scan'],
+  },
+  'DNS': {
+    layers: ['sensor', 'ingest', 'data', 'payloads', 'transport', 'web'],
+    conns: ['scan', 'read'],
+  },
+  'Sensor → hub ingest': {
+    layers: ['sensor', 'ingest', 'data'],
+    conns: ['scan', 'event', 'delivery'],
+  },
+  'Read path → UI': {
+    layers: ['data', 'payloads', 'transport', 'web'],
+    conns: ['read', 'event'],
+  },
+  'Notifications': {
+    layers: ['ingest', 'delivery', 'web'],
+    conns: ['delivery', 'action'],
+  },
+  'Demo tenant': {
+    layers: ['data', 'payloads', 'transport', 'web'],
+    conns: ['demo', 'read'],
+  },
+};
+
+const CONSTRAINTS = [
+  { id: 'test',  label: 'Ship a test with it',            text: 'Ship a test with the change (hub/.venv/bin/pytest, sensor/.venv/bin/pytest, or npm test in web/).' },
+  { id: 'demo',  label: "Don't break the demo tenant",     text: "Must not break the demo tenant: seed_demo stays deterministic and idempotent, and demo_trickle keeps writing timestamps in the tenant's own UTC offset." },
+  { id: 'live',  label: 'Must update live, no refresh',    text: 'The change must show up live: the write path calls bus.publish(...) and it arrives over WS /api/v1/ws, with no page refresh.' },
+  { id: 'slack', label: 'Must work over Slack too',        text: 'Whatever works in the web UI must work through the Slack bot as well.' },
+  { id: 'small', label: 'Smallest change that works',      text: 'Prefer the smallest change that works over a refactor; leave surrounding code alone.' },
+];
+
+const AUDIENCE_TEXT = {
+  owner:     'the network owner, who is not technical — wording and defaults should assume that',
+  installer: 'the installer / IT contractor setting a site up',
+  prospect:  'a prospect poking at the public demo tenant',
+  operator:  'me, operating the platform',
+};
+
+const KIND_TEXT = {
+  behavior:    'I want to change behavior that already exists.',
+  bug:         'This is a bug — something is behaving wrong.',
+  feature:     'I want to add something that is not there yet.',
+  refactor:    'This is a cleanup: same behavior, better shape.',
+  investigate: 'Explain what happens here first — do not change anything until we have talked it through.',
+};
+
+/* ------------------------------------------------------------------ */
+
+const DEFAULTS = {
+  preset: 'Full system',
+  kind: 'behavior',
+  audience: 'owner',
+};
+
+const state = {
+  preset: DEFAULTS.preset,
+  layers: Object.fromEntries(LAYERS.map(l => [l.id, true])),
+  conns: Object.fromEntries(CONN_TYPES.map(c => [c.id, true])),
+  kind: DEFAULTS.kind,
+  audience: DEFAULTS.audience,
+  constraints: Object.fromEntries(CONSTRAINTS.map(c => [c.id, false])),
+  comments: [],
+  zoom: 1,
+};
+
+const NODE_W = 132, NODE_H = 50, GAP_X = 14, BAND_H = 104, PAD_TOP = 34, PAD_LEFT = 118;
+const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
+const layerById = Object.fromEntries(LAYERS.map(l => [l.id, l]));
+const connById = Object.fromEntries(CONN_TYPES.map(c => [c.id, c]));
+
+/* Lay nodes out in bands, one band per layer, each band centred on the
+ * widest band. Computed rather than hardcoded so adding a node to the
+ * NODES list above never requires re-doing anyone's coordinates. */
+let CANVAS_W = 0, CANVAS_H = 0;
+function layout() {
+  const widest = Math.max(...LAYERS.map(l => NODES.filter(n => n.layer === l.id).length));
+  const rowW = widest * NODE_W + (widest - 1) * GAP_X;
+  CANVAS_W = PAD_LEFT + rowW + 40;
+  CANVAS_H = PAD_TOP + LAYERS.length * BAND_H + 20;
+
+  LAYERS.forEach((l, li) => {
+    const row = NODES.filter(n => n.layer === l.id);
+    const w = row.length * NODE_W + (row.length - 1) * GAP_X;
+    const x0 = PAD_LEFT + (rowW - w) / 2;
+    row.forEach((n, i) => {
+      n.x = x0 + i * (NODE_W + GAP_X);
+      n.y = PAD_TOP + li * BAND_H;
+    });
+  });
+}
+layout();
+
+/* ---- rail construction --------------------------------------------- */
+const $ = s => document.querySelector(s);
+
+function buildRail() {
+  const p = $('#presets');
+  Object.keys(PRESETS).forEach(name => {
+    const b = document.createElement('button');
+    b.textContent = name;
+    b.onclick = () => applyPreset(name);
+    b.dataset.preset = name;
+    p.appendChild(b);
+  });
+
+  const lt = $('#layerToggles');
+  LAYERS.forEach(l => {
+    const lab = document.createElement('label');
+    lab.className = 'row';
+    lab.innerHTML = '<input type="checkbox" checked>' +
+      '<span class="dot" style="background:' + l.color + '"></span>' +
+      '<span>' + l.label + '</span>';
+    lab.querySelector('input').onchange = e => {
+      state.layers[l.id] = e.target.checked;
+      state.preset = null;
+      updateAll();
+    };
+    lab.dataset.layer = l.id;
+    lt.appendChild(lab);
+  });
+
+  const ct = $('#connToggles');
+  CONN_TYPES.forEach(c => {
+    const lab = document.createElement('label');
+    lab.className = 'row';
+    lab.innerHTML = '<input type="checkbox" checked>' +
+      '<span class="swatch" style="background:' + c.color + '"></span>' +
+      '<span>' + c.label + '</span>';
+    lab.querySelector('input').onchange = e => {
+      state.conns[c.id] = e.target.checked;
+      state.preset = null;
+      updateAll();
+    };
+    lab.dataset.conn = c.id;
+    ct.appendChild(lab);
+  });
+
+  const cs = $('#constraints');
+  CONSTRAINTS.forEach(c => {
+    const lab = document.createElement('label');
+    lab.className = 'row';
+    lab.innerHTML = '<input type="checkbox"><span>' + c.label + '</span>';
+    lab.querySelector('input').onchange = e => {
+      state.constraints[c.id] = e.target.checked;
+      updateAll();
+    };
+    cs.appendChild(lab);
+  });
+
+  $('#kind').onchange = e => { state.kind = e.target.value; updateAll(); };
+  $('#audience').onchange = e => { state.audience = e.target.value; updateAll(); };
+}
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  state.preset = name;
+  LAYERS.forEach(l => { state.layers[l.id] = p.layers ? p.layers.includes(l.id) : true; });
+  CONN_TYPES.forEach(c => { state.conns[c.id] = p.conns ? p.conns.includes(c.id) : true; });
+  syncRail();
+  updateAll();
+}
+
+function syncRail() {
+  document.querySelectorAll('#presets button').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.preset === state.preset));
+  });
+  document.querySelectorAll('#layerToggles label').forEach(l => {
+    l.querySelector('input').checked = state.layers[l.dataset.layer];
+  });
+  document.querySelectorAll('#connToggles label').forEach(l => {
+    l.querySelector('input').checked = state.conns[l.dataset.conn];
+  });
+}
+
+/* ---- diagram -------------------------------------------------------- */
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(name, attrs, text) {
+  const e = document.createElementNS(SVGNS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function renderDiagram() {
+  const svg = $('#svg');
+  svg.textContent = '';
+  svg.setAttribute('width', CANVAS_W * state.zoom);
+  svg.setAttribute('height', CANVAS_H * state.zoom);
+  svg.setAttribute('viewBox', '0 0 ' + CANVAS_W + ' ' + CANVAS_H);
+
+  const defs = el('defs');
+  CONN_TYPES.forEach(c => {
+    const mk = el('marker', {
+      id: 'arrow-' + c.id, markerWidth: '8', markerHeight: '6',
+      refX: '7', refY: '3', orient: 'auto', markerUnits: 'strokeWidth',
+    });
+    mk.appendChild(el('polygon', { points: '0 0, 8 3, 0 6', fill: c.color }));
+    defs.appendChild(mk);
+  });
+  svg.appendChild(defs);
+
+  const shown = new Set(NODES.filter(n => state.layers[n.layer]).map(n => n.id));
+
+  /* A node whose every edge was filtered out still belongs to a visible layer,
+   * so it keeps rendering -- with nothing attached to it. Left at full
+   * strength it reads as "this module connects to nothing", which is a claim
+   * about the architecture rather than about the current filter: pick
+   * "Notifications" and all seven pages float free. Dim those instead of
+   * hiding them, because they stay worth clicking -- you may well want to file
+   * a request against a module the current view does not happen to wire up. */
+  const wired = new Set();
+  CONNS.forEach(c => {
+    if (!state.conns[c.type]) return;
+    if (shown.has(c.from) && shown.has(c.to)) { wired.add(c.from); wired.add(c.to); }
+  });
+
+  // band labels, only for visible layers
+  LAYERS.forEach((l, li) => {
+    if (!state.layers[l.id]) return;
+    svg.appendChild(el('text', {
+      x: 12, y: PAD_TOP + li * BAND_H + NODE_H / 2 + 4, class: 'bandLabel', fill: l.color,
+    }, l.label));
+  });
+
+  // connections first, so nodes sit on top of them
+  CONNS.forEach(c => {
+    if (!state.conns[c.type]) return;
+    if (!shown.has(c.from) || !shown.has(c.to)) return;
+    const a = byId[c.from], b = byId[c.to], t = connById[c.type];
+
+    const ax = a.x + NODE_W / 2, bx = b.x + NODE_W / 2;
+    let ay, by;
+    if (b.y > a.y)      { ay = a.y + NODE_H; by = b.y; }
+    else if (b.y < a.y) { ay = a.y;          by = b.y + NODE_H; }
+    else                { ay = a.y + NODE_H / 2; by = b.y + NODE_H / 2; }
+
+    let d;
+    if (a.y === b.y) {
+      // same band: arc over the top so the line does not vanish behind nodes
+      const lift = 26;
+      d = 'M' + ax + ',' + (a.y) + ' Q' + ((ax + bx) / 2) + ',' + (a.y - lift) + ' ' + bx + ',' + (b.y);
+    } else {
+      const mid = (ay + by) / 2;
+      d = 'M' + ax + ',' + ay + ' C' + ax + ',' + mid + ' ' + bx + ',' + mid + ' ' + bx + ',' + by;
+    }
+
+    svg.appendChild(el('path', {
+      d, fill: 'none', stroke: t.color, 'stroke-width': '1.4',
+      'stroke-dasharray': t.dash, opacity: '0.72',
+      'marker-end': 'url(#arrow-' + c.type + ')',
+    }));
+
+    if (c.label) {
+      const lx = (ax + bx) / 2, ly = (ay + by) / 2;
+      svg.appendChild(el('text', {
+        x: lx, y: ly - 3, 'text-anchor': 'middle',
+        'font-size': '9', fill: t.color, opacity: '0.9',
+        'font-family': 'ui-monospace, monospace',
+      }, c.label));
+    }
+  });
+
+  // nodes
+  NODES.forEach(n => {
+    if (!shown.has(n.id)) return;
+    const l = layerById[n.layer];
+    const has = state.comments.some(c => c.target === n.id);
+    // A node you have already written a request against stays at full
+    // strength whatever the filter does, so your own work never fades out.
+    const attrs = { class: 'node' };
+    if (!wired.has(n.id) && !has) attrs.opacity = '0.34';
+    const g = el('g', attrs);
+    g.appendChild(el('rect', {
+      x: n.x, y: n.y, width: NODE_W, height: NODE_H, rx: 7,
+      fill: has ? '#1f6feb26' : '#1c2128',
+      stroke: has ? '#f0883e' : l.color,
+      'stroke-width': has ? '2' : '1.2',
+    }));
+    g.appendChild(el('text', {
+      x: n.x + NODE_W / 2, y: n.y + 20, 'text-anchor': 'middle', class: 'nodeLabel',
+    }, n.label));
+    g.appendChild(el('text', {
+      x: n.x + NODE_W / 2, y: n.y + 35, 'text-anchor': 'middle', class: 'nodePath',
+    }, shortPath(n.path)));
+    if (has) {
+      g.appendChild(el('circle', { cx: n.x + NODE_W - 9, cy: n.y + 9, r: 4, fill: '#f0883e' }));
+    }
+    g.onclick = () => openModal(n);
+    svg.appendChild(g);
+  });
+}
+
+function shortPath(p) {
+  const parts = p.split('/');
+  return parts.slice(-2).join('/');
+}
+
+/* ---- comments -------------------------------------------------------- */
+let modalNode = null;
+
+function openModal(n) {
+  modalNode = n;
+  const existing = state.comments.find(c => c.target === n.id);
+  $('#modalTitle').textContent = n.label;
+  $('#modalPath').textContent = n.path;
+  $('#modalText').value = existing ? existing.text : '';
+  $('#modalBack').classList.add('on');
+  $('#modalText').focus();
+}
+
+function closeModal() {
+  $('#modalBack').classList.remove('on');
+  modalNode = null;
+}
+
+function saveComment() {
+  if (!modalNode) return;
+  const text = $('#modalText').value.trim();
+  const i = state.comments.findIndex(c => c.target === modalNode.id);
+  if (!text) {
+    if (i >= 0) state.comments.splice(i, 1);
+  } else if (i >= 0) {
+    state.comments[i].text = text;
+  } else {
+    state.comments.push({
+      id: Date.now(), target: modalNode.id,
+      targetLabel: modalNode.label, targetFile: modalNode.path, text,
+    });
+  }
+  closeModal();
+  updateAll();
+}
+
+function renderComments() {
+  const box = $('#commentList');
+  box.textContent = '';
+  $('#cCount').textContent = String(state.comments.length);
+  if (!state.comments.length) {
+    const p = document.createElement('div');
+    p.className = 'empty';
+    p.textContent = 'Click a module in the map to add one.';
+    box.appendChild(p);
+    return;
+  }
+  state.comments.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'comment';
+    const who = document.createElement('div'); who.className = 'who'; who.textContent = c.targetLabel;
+    const pa = document.createElement('div'); pa.className = 'path'; pa.textContent = c.targetFile;
+    const tx = document.createElement('div'); tx.className = 'txt'; tx.textContent = c.text;
+    const del = document.createElement('button'); del.className = 'del'; del.textContent = 'remove';
+    del.onclick = () => {
+      state.comments = state.comments.filter(x => x.id !== c.id);
+      updateAll();
+    };
+    d.append(who, pa, tx, del);
+    box.appendChild(d);
+  });
+}
+
+/* ---- prompt ---------------------------------------------------------- */
+function updatePrompt() {
+  const out = [];
+
+  out.push("I'm working on Guardian — the hub (FastAPI, hub/guardian_hub), the on-prem sensor (sensor/guardian_sensor) and the React web app (web/src).");
+  out.push('');
+  out.push(KIND_TEXT[state.kind]);
+
+  const hiddenLayers = LAYERS.filter(l => !state.layers[l.id]);
+  if (hiddenLayers.length) {
+    const visible = LAYERS.filter(l => state.layers[l.id]).map(l => l.label);
+    out.push('');
+    out.push('Scope: ' + visible.join(', ') + '. Leave the rest of the system alone.');
+  }
+
+  if (state.comments.length) {
+    out.push('');
+    out.push(state.comments.length === 1 ? 'What I want changed:' : 'What I want changed, module by module:');
+    state.comments.forEach(c => {
+      out.push('');
+      out.push('**' + c.targetLabel + '** (' + c.targetFile + ')');
+      out.push(c.text);
+    });
+  } else {
+    out.push('');
+    out.push('>>> Nothing requested yet. Click a module in the map and say what');
+    out.push('>>> should change there — the constraints below apply to a change,');
+    out.push('>>> but they do not describe one.');
+  }
+
+  const cons = CONSTRAINTS.filter(c => state.constraints[c.id]);
+  if (cons.length) {
+    out.push('');
+    out.push('Constraints:');
+    cons.forEach(c => out.push('- ' + c.text));
+  }
+
+  if (state.audience !== DEFAULTS.audience) {
+    out.push('');
+    out.push('This is for ' + AUDIENCE_TEXT[state.audience] + '.');
+  }
+
+  out.push('');
+  out.push('Repo conventions are in CLAUDE.md — follow them, especially the commit subject style (a sentence describing the user-visible behavior) and the docstring rule (explain the why of any non-obvious invariant).');
+
+  $('#prompt').textContent = out.join('\n');
+
+  // A prompt carrying only constraints describes no change, so copying it
+  // just sends me a list of rules and no request. Gate the button on there
+  // being at least one, rather than letting that round-trip fail silently.
+  const btn = $('#copyBtn');
+  btn.disabled = state.comments.length === 0;
+  if (!copying) {
+    btn.textContent = btn.disabled ? 'Click a module first' : 'Copy prompt';
+  }
+}
+let copying = false;
+
+/* ---- wiring ---------------------------------------------------------- */
+function updateAll() {
+  renderDiagram();
+  renderComments();
+  updatePrompt();
+  syncRail();
+}
+
+function fitZoom() {
+  const wrap = $('#canvasWrap');
+  state.zoom = Math.min(1, (wrap.clientWidth - 24) / CANVAS_W);
+  renderDiagram();
+}
+
+buildRail();
+$('#saveBtn').onclick = saveComment;
+$('#cancelBtn').onclick = closeModal;
+$('#modalBack').onclick = e => { if (e.target === $('#modalBack')) closeModal(); };
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && modalNode) saveComment();
+});
+$('#zIn').onclick = () => { state.zoom = Math.min(2, state.zoom + 0.15); renderDiagram(); };
+$('#zOut').onclick = () => { state.zoom = Math.max(0.35, state.zoom - 0.15); renderDiagram(); };
+$('#zReset').onclick = fitZoom;
+
+$('#copyBtn').onclick = async () => {
+  const btn = $('#copyBtn');
+  if (btn.disabled) return;
+  const old = btn.textContent;
+  copying = true;
+  /* Say "Copied!" only when something was actually copied.
+   *
+   * `navigator.clipboard` is undefined outside a secure context and absent
+   * in some embedded viewers, and `execCommand('copy')` can refuse without
+   * throwing (it returns false). Announcing success either way is the one
+   * failure the user cannot see: the prompt looks sent, the paste is
+   * whatever was on the clipboard before, and the mismatch surfaces as a
+   * confusing reply rather than as a copy that did not happen. When both
+   * routes fail, leave the prompt SELECTED and say so -- the manual
+   * keystroke is then one press away instead of a mystery. */
+  let ok = false;
+  const text = $('#prompt').textContent;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    }
+  } catch (err) {
+    ok = false;
+  }
+  if (!ok) {
+    const r = document.createRange();
+    r.selectNodeContents($('#prompt'));
+    const s = getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    if (ok) s.removeAllRanges();  // left selected on purpose when it failed
+  }
+  btn.textContent = ok ? 'Copied!' : 'Select-all above, then ⌘C';
+  setTimeout(() => { copying = false; btn.textContent = old; }, ok ? 1200 : 3000);
+};
+
+applyPreset(DEFAULTS.preset);
+fitZoom();
+window.addEventListener('resize', fitZoom);
+</script>
+</body>
+</html>

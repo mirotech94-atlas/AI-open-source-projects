@@ -1,0 +1,96 @@
+{
+  "source": "ATLAS Vault/Products/AI for Every Age/free-kit/, copied 2026-09-29. The kit's six printables; an item id is the printable's number. Hooks, lines and blog sections are verbatim lines of the printable named beside them, with the print-only markup (cut lines, fill-in blanks, checkboxes) left out.",
+  "hashtags": "#scamawareness #familysafety #aisafety",
+  "lessons": [
+    {
+      "id": "1",
+      "title": "Scam callback card",
+      "hook": "Callback card: stop, hang up, call back",
+      "line": "Call back on a number you already know.",
+      "source": "Products/AI for Every Age/free-kit/1 - Scam callback card.md"
+    },
+    {
+      "id": "2",
+      "title": "Family safe-word guide",
+      "hook": "A safe word is a word only your family knows.",
+      "line": "If a caller cannot say it, it is not your family.",
+      "source": "Products/AI for Every Age/free-kit/2 - Family safe-word guide.md"
+    },
+    {
+      "id": "3",
+      "title": "Family AI Agreement",
+      "hook": "We call back before we pay.",
+      "line": "Any call or message asking for money gets a callback on a number we already know.",
+      "source": "Products/AI for Every Age/free-kit/3 - Family AI Agreement.md"
+    },
+    {
+      "id": "4",
+      "title": "Never-paste list",
+      "hook": "Never paste these into any AI",
+      "line": "When in doubt, leave it out.",
+      "source": "Products/AI for Every Age/free-kit/4 - Never-paste list.md"
+    },
+    {
+      "id": "5",
+      "title": "If it happens card",
+      "hook": "It is not your fault.",
+      "line": "Anyone who offers to \"recover\" your money for a fee is almost always another scammer.",
+      "source": "Products/AI for Every Age/free-kit/5 - If it happens card.md"
+    },
+    {
+      "id": "6",
+      "title": "Scam decision tree",
+      "hook": "Use this for any call, text, email or message you did not expect.",
+      "line": "One \"yes\" is enough to stop.",
+      "source": "Products/AI for Every Age/free-kit/6 - Scam decision tree.md"
+    }
+  ],
+  "blog": {
+    "title": "Free Family Scam-Safety Kit: pages to keep by the phone",
+    "meta": "Six free printables for families, word for word: a callback card, a family safe word, house rules for AI, and what to do if a scam gets through.",
+    "sections": [
+      {
+        "lesson": "2",
+        "heading": "A family safe word",
+        "text": "Scammers can now copy a voice from a short clip, such as a video posted online. A call can sound exactly like your grandson or your daughter. A safe word is a word only your family knows. If a caller cannot say it, it is not your family.\n\n- **Easy to remember**, even when you are upset.\n- **Hard to guess.** Not a pet's name, a street, a birthday, a team, or anything posted online.\n- **A little odd.** Two words that do not usually go together work well. A made-up example: \"blue teapot.\" Do not use that one.\n- **The same for everyone** who might call for help or get the call.\n\n- Share it **in person** only.\n- Do not text it, email it, post it, or type it into any AI.\n- Do not say it where a smart speaker or a video call could pick it up.\n- If you think someone outside the family has heard it, choose a new one.\n\n1. A caller says they are family and need help or money.\n2. You ask: \"What's our word?\"\n3. If they cannot say it, hang up. Call back on a number you already know.\n4. Even if they say it, you can still hang up and call back. That is always allowed.\n\nA real family member will never be upset that you checked.",
+        "source": "Products/AI for Every Age/free-kit/2 - Family safe-word guide.md"
+      },
+      {
+        "lesson": "3",
+        "heading": "House rules for AI",
+        "text": "- **No secrets go into AI.** No passwords, account numbers, Social Security numbers, medical records, or children's names, photos or schools.\n- **An adult is present.** Children do not use AI on their own. If a child has an idea for an AI, they tell an adult, and the adult types it in their own words.\n- **AI is a helper, not a friend.** We talk about worries and problems with people, not with a chatbot.\n- **We check before we trust.** AI can sound sure and still be wrong. We check facts with a real source.\n- **We call back before we pay.** Any call or message asking for money gets a callback on a number we already know.",
+        "source": "Products/AI for Every Age/free-kit/3 - Family AI Agreement.md"
+      },
+      {
+        "lesson": "4",
+        "heading": "What never goes into an AI",
+        "text": "1. **Social Security numbers** (and Medicare, passport and driver's license numbers)\n2. **Account numbers:** bank, card, loan, policy\n3. **Passwords,** and the codes texted to your phone\n4. **Medical records**\n5. **Children's names, photos and schools**\nWhen in doubt, leave it out.\n\n- I swapped names for labels like [MY NAME] or [DOCTOR].\n- I deleted addresses the task does not need.\n- I removed every ID, account and card number.\n- I removed passwords and codes.\n- For a photo: I covered private parts with a sticky note, and checked the photo before sending.\nIf I cannot remove the private details, I do not paste it. I ask a person I trust instead.",
+        "source": "Products/AI for Every Age/free-kit/4 - Never-paste list.md"
+      },
+      {
+        "lesson": "6",
+        "heading": "A message you did not expect",
+        "text": "Use this for any call, text, email or message you did not expect. Start at the top. One \"yes\" is enough to stop.\n\n1. Does it ask for money, a gift card, cryptocurrency or a wire transfer? Yes → STOP.\n2. Does it ask for a password, a code sent to your phone, or an account, card or Social Security number? Yes → STOP. No real company or relative needs these from you by phone or message.\n3. Does it rush you? \"Today.\" \"Right now.\" \"Or your account closes.\" Yes → STOP.\n4. Does it ask you to keep it secret? \"Don't tell your bank.\" \"Don't tell Mom.\" Yes → STOP.\n5. Does it want you to tap a link, open a file, or call a number it gave you? Yes → Don't. Go to the company's own app or website, or call a number you already know.",
+        "source": "Products/AI for Every Age/free-kit/6 - Scam decision tree.md"
+      },
+      {
+        "lesson": "5",
+        "heading": "If a scam gets through",
+        "text": "It is not your fault. Act fast. In this order:\n\n1. **Stop.** Do not send more money, even if they threaten you.\n2. **Call your bank** on the number on the back of your card. Ask them to stop or reverse the payment.\n3. **Tell someone you trust.**\n4. **Report it to the FTC:** ReportFraud.ftc.gov\n5. **Report it to the FBI:** ic3.gov\n6. **Need help reporting? Age 60 or over?** Elder Fraud Hotline: (833) 372-8311, Monday to Friday, 10 a.m. to 6 p.m. Eastern.\n7. **Freeze your credit** with all three bureaus. It is free. Equifax · Experian · TransUnion\n8. **Identity stolen?** IdentityTheft.gov\n9. **Write it down:** dates, amounts, names, numbers, what was said.\n\nAnyone who offers to \"recover\" your money for a fee is almost always another scammer.",
+        "source": "Products/AI for Every Age/free-kit/5 - If it happens card.md"
+      }
+    ]
+  },
+  "claims": [
+    {
+      "text": "Printable pages to keep by the phone: a callback card, a family safe word, house rules for AI, and what to do if a scam gets through.",
+      "source": "Products/AI for Every Age/Sales page.md"
+    }
+  ],
+  "quotes": [
+    {
+      "text": "In 2025, the FBI's Internet Crime Complaint Center logged 201,266 complaints from people aged 60 and over, with reported losses of $7.748 billion (IC3 2025 Annual Report).",
+      "source": "Products/AI for Every Age/free-kit/5 - If it happens card.md"
+    }
+  ]
+}

@@ -1,0 +1,1242 @@
+{
+  "ts": "2026-09-09T18:30:26-04:00",
+  "sites": [
+    {
+      "name": "Patient portal (portal.northwind-dental.example)",
+      "url": "https://portal.northwind-dental.example/health",
+      "ok": true,
+      "code": 200,
+      "latency_s": 0.5,
+      "dns_a": [
+        "192.0.2.130"
+      ],
+      "cert_expires": "2026-11-23",
+      "cert_days_left": 74,
+      "cert_issuer": "Let's Encrypt",
+      "sec": {
+        "hsts": true,
+        "nosniff": true,
+        "frame": true,
+        "csp": true,
+        "server": "nginx",
+        "https_redirect": true,
+        "old_tls": false
+      }
+    },
+    {
+      "name": "Online booking (booking.northwind-clinics.example)",
+      "url": "https://booking.northwind-clinics.example/",
+      "ok": true,
+      "code": 200,
+      "latency_s": 0.11,
+      "dns_a": [
+        "203.0.113.175"
+      ],
+      "cert_expires": "2026-11-11",
+      "cert_days_left": 62,
+      "cert_issuer": "Let's Encrypt",
+      "sec": {
+        "hsts": true,
+        "nosniff": true,
+        "frame": true,
+        "csp": true,
+        "server": "uvicorn",
+        "https_redirect": true,
+        "old_tls": false
+      }
+    },
+    {
+      "name": "FlyCheap",
+      "url": "https://pay.northwind-clinics.example/",
+      "ok": true,
+      "code": 200,
+      "latency_s": 0.46,
+      "dns_a": [
+        "192.0.2.46"
+      ],
+      "cert_expires": "2026-12-07",
+      "cert_days_left": 88,
+      "cert_issuer": "Let's Encrypt",
+      "sec": {
+        "hsts": true,
+        "nosniff": true,
+        "frame": true,
+        "csp": false,
+        "server": "",
+        "https_redirect": true,
+        "old_tls": false
+      }
+    },
+    {
+      "name": "Staff intranet (intranet.northwind-clinics.example)",
+      "url": "https://intranet.northwind-clinics.example/",
+      "ok": true,
+      "code": 401,
+      "latency_s": 0.04,
+      "dns_a": [
+        "198.51.100.116"
+      ],
+      "cert_expires": "2026-12-08",
+      "cert_days_left": 89,
+      "cert_issuer": "Let's Encrypt",
+      "sec": {
+        "hsts": true,
+        "nosniff": true,
+        "frame": true,
+        "csp": false,
+        "server": "nginx",
+        "https_redirect": true,
+        "old_tls": false
+      }
+    }
+  ],
+  "ssh": [
+    {
+      "name": "prod",
+      "target": "root@192.0.2.130",
+      "reachable": true,
+      "optional": false,
+      "hostname": "n8n-workflow-test",
+      "uptime": "26 days, 23:46",
+      "load1": 0.68,
+      "load_per_core": 0.17,
+      "disk_pct": 56,
+      "mem_pct": 19,
+      "failed_ssh_24h": 0,
+      "fail2ban": "active",
+      "banned": "1",
+      "reboot_required": false,
+      "pending_updates": 0,
+      "docker": [
+        "standup-bot:Up 24 hours (healthy)"
+      ],
+      "services": {},
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "sec": {
+        "ssh_password": false,
+        "ssh_root": "without-password",
+        "ufw": "active",
+        "unattended": true,
+        "security_updates": [],
+        "preload": false,
+        "miners": [],
+        "cron_net": [],
+        "authorized_keys": 5,
+        "tmp_exec": [],
+        "top_attackers": {},
+        "login_users": [
+          "gitlab-runner"
+        ],
+        "login_sources": [
+          "198.51.100.249",
+          "198.51.100.105",
+          "Fri",
+          "Sun"
+        ]
+      },
+      "drift": {
+        "sshd_config": "5eac342e2b",
+        "authorized_keys": "ec94967091",
+        "cron": "f0a0cb629c",
+        "ufw_rules": "0a2457ff88",
+        "docker_compose": "61d3b199f9"
+      },
+      "docker_images": {
+        "standup-bot-bot:latest": "24 hours ago",
+        "standup-logic-runner:latest": "2 months ago",
+        "guardian-tier2-sandbox:latest": "2 months ago",
+        "standup-test:latest": "4 months ago",
+        "python:3.11-slim": "4 months ago",
+        "nginx:latest": "4 months ago"
+      },
+      "cve_fixable": 200,
+      "cve_list": [
+        {
+          "cve": "CVE-2025-11468",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-12084",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13462",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13836",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13837",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-15282",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-6069",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-6075",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-8194",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-8291",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-0672",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-0865",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-1299",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-1502",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-2297",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        }
+      ],
+      "updates": {
+        "pending": [],
+        "count": 0,
+        "security": [],
+        "kernel": "6.12.38+deb13-amd64",
+        "kernel_latest": "6.12.38+deb13-amd64",
+        "os": "Debian GNU/Linux 13 (trixie)",
+        "last_apt": "2026-09-09",
+        "reboot_required": false
+      }
+    },
+    {
+      "name": "demo",
+      "target": "root@203.0.113.175",
+      "reachable": true,
+      "optional": false,
+      "hostname": "booking.northwind-clinics.example",
+      "uptime": "18:43",
+      "load1": 0.0,
+      "load_per_core": 0.0,
+      "disk_pct": 57,
+      "mem_pct": 59,
+      "failed_ssh_24h": 1020,
+      "fail2ban": "active",
+      "banned": "26",
+      "reboot_required": false,
+      "pending_updates": 0,
+      "docker": [
+        "standup-bot:Up 19 hours (healthy)"
+      ],
+      "services": {},
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "sec": {
+        "ssh_password": false,
+        "ssh_root": "without-password",
+        "ufw": "active",
+        "unattended": true,
+        "security_updates": [],
+        "preload": false,
+        "miners": [],
+        "cron_net": [],
+        "authorized_keys": 1,
+        "tmp_exec": [],
+        "top_attackers": {
+          "192.0.2.107": 362,
+          "198.51.100.114": 119,
+          "192.0.2.198": 110
+        },
+        "login_users": [],
+        "login_sources": [
+          "198.51.100.105",
+          "10.3.6.158",
+          "Tue"
+        ]
+      },
+      "drift": {
+        "sshd_config": "1dec5bc7b2",
+        "authorized_keys": "7e394bd008",
+        "cron": "2fdec11353",
+        "ufw_rules": "8eccdae7a3",
+        "docker_compose": "61d3b199f9"
+      },
+      "docker_images": {
+        "standup-bot-bot:latest": "26 hours ago"
+      },
+      "cve_fixable": 103,
+      "cve_list": [
+        {
+          "cve": "CVE-2025-11468",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-12084",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13462",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13836",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13837",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-15282",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-6069",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-6075",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-8194",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-8291",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-0672",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-0865",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-1299",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-1502",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-2297",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        }
+      ],
+      "updates": {
+        "pending": [],
+        "count": 0,
+        "security": [],
+        "kernel": "6.12.107+deb13-amd64",
+        "kernel_latest": "6.12.107+deb13-amd64",
+        "os": "Debian GNU/Linux 13 (trixie)",
+        "last_apt": "2026-09-09",
+        "reboot_required": false
+      }
+    },
+    {
+      "name": "safehome",
+      "target": "root@198.51.100.116",
+      "reachable": true,
+      "optional": false,
+      "hostname": "intranet.northwind-clinics.example",
+      "uptime": "21:32",
+      "load1": 0.0,
+      "load_per_core": 0.0,
+      "disk_pct": 16,
+      "mem_pct": 39,
+      "failed_ssh_24h": 250,
+      "fail2ban": "active",
+      "banned": "0",
+      "reboot_required": true,
+      "pending_updates": 0,
+      "docker": [],
+      "services": {
+        "nginx": "active",
+        "fail2ban": "active"
+      },
+      "ports": [
+        22,
+        80,
+        443
+      ],
+      "sec": {
+        "ssh_password": false,
+        "ssh_root": "without-password",
+        "ufw": "active",
+        "unattended": true,
+        "security_updates": [],
+        "preload": false,
+        "miners": [],
+        "cron_net": [],
+        "authorized_keys": 1,
+        "tmp_exec": [],
+        "top_attackers": {
+          "198.51.100.16": 25,
+          "198.51.100.188": 24,
+          "203.0.113.161": 20
+        },
+        "login_users": [],
+        "login_sources": [
+          "10.3.6.158",
+          "Tue"
+        ]
+      },
+      "drift": {
+        "sshd_config": "1dec5bc7b2",
+        "authorized_keys": "2442e44715",
+        "cron": "25eefe26a8",
+        "ufw_rules": "a5f424fd32",
+        "docker_compose": "d41d8cd98f"
+      },
+      "docker_images": {},
+      "cve_fixable": 100,
+      "cve_list": [
+        {
+          "cve": "CVE-2025-11468",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-12084",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13462",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13836",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-13837",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-15282",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-6069",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-6075",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-8194",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2025-8291",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-0672",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-0865",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-1299",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-1502",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        },
+        {
+          "cve": "CVE-2026-2297",
+          "package": "(fixed)",
+          "urgency": "(fixed)"
+        }
+      ],
+      "updates": {
+        "pending": [],
+        "count": 0,
+        "security": [],
+        "kernel": "6.12.38+deb13-amd64",
+        "kernel_latest": "6.12.107+deb13-amd64",
+        "os": "Debian GNU/Linux 13 (trixie)",
+        "last_apt": "2026-09-09",
+        "reboot_required": true
+      }
+    }
+  ],
+  "on_home_lan": true,
+  "lan": {
+    "live_count": 13,
+    "devices": {
+      "192.168.1.1": "58:96:71:61:05:e3",
+      "192.168.1.100": "70:3e:76:66:d3:95",
+      "192.168.1.101": "70:3e:76:94:4b:94",
+      "192.168.1.157": "d8:be:65:72:45:31",
+      "192.168.1.159": "74:04:f1:4f:5a:ca",
+      "192.168.1.160": "08:7c:39:f8:f4:07",
+      "192.168.1.168": "52:b6:29:31:5b:37",
+      "192.168.1.169": "8a:06:a1:00:82:2c",
+      "192.168.1.170": "7e:b3:23:ef:d0:1f",
+      "192.168.1.171": "dc:72:23:e0:80:37",
+      "192.168.1.182": "ec:71:db:05:5a:aa",
+      "192.168.1.189": "34:55:e5:e9:7b:b8",
+      "192.168.1.202": "54:27:1e:d3:5c:fb",
+      "192.168.1.163": "6e:f8:af:e3:20:61",
+      "192.168.1.167": "42:20:33:1c:2a:37",
+      "192.168.1.172": "dc:72:23:8b:0e:7e",
+      "192.168.1.175": "14:14:16:83:53:bf",
+      "192.168.1.176": "14:14:16:9e:de:40",
+      "192.168.1.178": "06:1b:79:42:c8:b0"
+    },
+    "names": {
+      "192.168.1.1": "gateway.northwind-dental.example",
+      "192.168.1.100": "ap-reception",
+      "192.168.1.101": "ap-surgery",
+      "192.168.1.159": "frontdesk-pc",
+      "192.168.1.160": "echo-waiting-room",
+      "192.168.1.167": "ipad",
+      "192.168.1.168": "iphone",
+      "192.168.1.169": "Reception MacBook Air (airplay)",
+      "192.168.1.182": "surgery-cam",
+      "192.168.1.189": "range-waiting-room",
+      "192.168.1.202": "printer-reception",
+      "192.168.1.171": "Smart-TV-surgery-2 (cast)",
+      "192.168.1.170": "practice-mac (airplay)"
+    },
+    "gw_mac": "58:96:71:61:05:e3",
+    "watch_ips": {},
+    "port_events": [
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_closed",
+        "mac": "54:27:1e:d3:5c:fb",
+        "ip": "192.168.1.202",
+        "port": 80,
+        "label": "Canon printer (reception)",
+        "trusted": true
+      },
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_closed",
+        "mac": "54:27:1e:d3:5c:fb",
+        "ip": "192.168.1.202",
+        "port": 9100,
+        "label": "Canon printer (reception)",
+        "trusted": true
+      },
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_open",
+        "mac": "6e:f8:af:e3:20:61",
+        "ip": "192.168.1.163",
+        "port": 62078,
+        "label": "iPhone",
+        "trusted": true
+      },
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_open",
+        "mac": "06:1b:79:42:c8:b0",
+        "ip": "192.168.1.178",
+        "port": 62078,
+        "label": "iPhone",
+        "trusted": false
+      }
+    ],
+    "presence": {
+      "NEW": 0,
+      "ONLINE": 19,
+      "OFFLINE": 0,
+      "SLEEPING": 5,
+      "FLAPPING": 0,
+      "ARCHIVED": 0
+    },
+    "new_devices": [],
+    "events": [
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_closed",
+        "mac": "54:27:1e:d3:5c:fb",
+        "ip": "192.168.1.202",
+        "port": 80,
+        "label": "Canon printer (reception)",
+        "trusted": true
+      },
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_closed",
+        "mac": "54:27:1e:d3:5c:fb",
+        "ip": "192.168.1.202",
+        "port": 9100,
+        "label": "Canon printer (reception)",
+        "trusted": true
+      },
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_open",
+        "mac": "6e:f8:af:e3:20:61",
+        "ip": "192.168.1.163",
+        "port": 62078,
+        "label": "iPhone",
+        "trusted": true
+      },
+      {
+        "ts": "2026-09-09T18:30:26-04:00",
+        "type": "port_open",
+        "mac": "06:1b:79:42:c8:b0",
+        "ip": "192.168.1.178",
+        "port": 62078,
+        "label": "iPhone",
+        "trusted": false
+      }
+    ]
+  },
+  "tailscale": null,
+  "wan_ip": "198.51.100.105",
+  "dns": {
+    "system": {
+      "ok": true,
+      "ms": 96
+    },
+    "cloudflare": {
+      "ok": true,
+      "ms": 32
+    },
+    "google": {
+      "ok": true,
+      "ms": 39
+    }
+  },
+  "wan_path": {
+    "cloudflare": {
+      "ip": "1.1.1.1",
+      "loss_pct": 0.0,
+      "avg_ms": 15.233,
+      "jitter_ms": 11.535
+    },
+    "google": {
+      "ip": "8.8.8.8",
+      "loss_pct": 0.0,
+      "avg_ms": 16.214,
+      "jitter_ms": 11.243
+    },
+    "safehome": {
+      "ip": "198.51.100.116",
+      "loss_pct": 0.0,
+      "avg_ms": 16.021,
+      "jitter_ms": 8.905
+    }
+  },
+  "domains": {
+    "northwind-dental.example": {
+      "expires": "2029-05-11",
+      "days_left": 976,
+      "ts": "2026-09-08T23:48:55-04:00"
+    },
+    "northwind-clinics.example": {
+      "expires": "2027-01-04",
+      "days_left": 118,
+      "ts": "2026-09-08T23:48:55-04:00"
+    }
+  },
+  "heartbeats": {
+    "roots-daily-report": {
+      "every_min": 1500,
+      "last": null,
+      "late": true,
+      "token": "REDACTED",
+      "note": "example: curl the /hb URL at the end of a cron job or n8n flow; delete if unused"
+    }
+  },
+  "self": {
+    "env_perms_bad": false,
+    "version": "v9",
+    "env_age_days": 0
+  },
+  "checks": [
+    {
+      "name": "prod ssh port",
+      "type": "tcp",
+      "target": "192.0.2.130",
+      "port": 22,
+      "ok": true,
+      "latency_ms": 96,
+      "detail": ""
+    },
+    {
+      "name": "router ping",
+      "type": "icmp",
+      "target": "192.168.1.1",
+      "port": null,
+      "ok": true,
+      "latency_ms": 1157,
+      "detail": "4.353 ms"
+    },
+    {
+      "name": "portal.northwind-dental.example resolves",
+      "type": "dns",
+      "target": "portal.northwind-dental.example",
+      "port": null,
+      "ok": true,
+      "latency_ms": 21,
+      "detail": "192.0.2.130"
+    }
+  ],
+  "dns_filter": {
+    "enabled": true,
+    "running": true,
+    "status": {
+      "ts": "2026-09-09T18:31:05-0400",
+      "uptime_s": 19598,
+      "queries": 8,
+      "blocked": 4,
+      "cache": 1,
+      "lists": {
+        "stevenblack": {
+          "domains": 79540,
+          "status": "fresh",
+          "category": "ads+malware",
+          "ts": "2026-09-09T13:04:27"
+        },
+        "urlhaus": {
+          "domains": 357,
+          "status": "fresh",
+          "category": "malware",
+          "ts": "2026-09-09T13:04:27"
+        },
+        "phishing-army": {
+          "domains": 154579,
+          "status": "fresh",
+          "category": "phishing",
+          "ts": "2026-09-09T13:04:28"
+        }
+      },
+      "total_blocked_domains": 217288,
+      "upstream_ms_avg": 68,
+      "family_filter": false
+    },
+    "queries_24h": 55,
+    "blocked_24h": 21,
+    "block_pct": 38.2,
+    "top_domains": [
+      [
+        "doubleclick.net",
+        12
+      ],
+      [
+        "apple.com",
+        10
+      ],
+      [
+        "example.com",
+        7
+      ],
+      [
+        "github.com",
+        5
+      ],
+      [
+        "fonts.googleapis.com",
+        5
+      ],
+      [
+        "googlesyndication.com",
+        5
+      ],
+      [
+        "cloudflare.com",
+        4
+      ],
+      [
+        "ad.doubleclick.net",
+        3
+      ],
+      [
+        "google.com",
+        2
+      ],
+      [
+        "0following.com",
+        1
+      ],
+      [
+        "gateway.northwind-dental.example",
+        1
+      ]
+    ],
+    "top_blocked": [
+      [
+        "doubleclick.net",
+        12
+      ],
+      [
+        "googlesyndication.com",
+        5
+      ],
+      [
+        "ad.doubleclick.net",
+        3
+      ],
+      [
+        "0following.com",
+        1
+      ]
+    ],
+    "top_clients": [
+      [
+        "127.0.0.1",
+        "127.0.0.1",
+        55
+      ]
+    ],
+    "clients": 1,
+    "beaconing": [],
+    "suspicious": []
+  },
+  "admin_probe": {
+    "Patient portal (portal.northwind-dental.example)": {
+      "hits": {},
+      "catch_all": true,
+      "ts": "2026-09-09T10:30:59-04:00"
+    },
+    "Online booking (booking.northwind-clinics.example)": {
+      "hits": {},
+      "catch_all": true,
+      "ts": "2026-09-09T10:30:59-04:00"
+    },
+    "FlyCheap": {
+      "hits": {},
+      "catch_all": false,
+      "ts": "2026-09-09T10:31:08-04:00"
+    },
+    "Staff intranet (intranet.northwind-clinics.example)": {
+      "hits": {},
+      "catch_all": false,
+      "ts": "2026-09-09T10:31:08-04:00"
+    }
+  },
+  "email_sec": {
+    "northwind-clinics.example": {
+      "spf": null,
+      "dmarc": null,
+      "dmarc_policy": null,
+      "dkim_selector": null,
+      "has_mx": false,
+      "ts": "2026-09-09T10:27:12-04:00"
+    },
+    "northwind-dental.example": {
+      "spf": "v=spf1 a mx ip4:192.0.2.173 ~all",
+      "dmarc": "v=DMARC1; p=none;",
+      "dmarc_policy": "none",
+      "dkim_selector": "default",
+      "has_mx": true,
+      "ts": "2026-09-09T10:27:13-04:00"
+    }
+  },
+  "external_sites": {
+    "portal.northwind-dental.example": {
+      "ip": "192.0.2.130",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    },
+    "booking.northwind-clinics.example": {
+      "ip": "203.0.113.175",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    },
+    "pay.northwind-clinics.example": {
+      "ip": "192.0.2.46",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    },
+    "intranet.northwind-clinics.example": {
+      "ip": "198.51.100.116",
+      "open_ports": [
+        22,
+        80,
+        443
+      ],
+      "ts": "2026-09-09T10:27:20-04:00",
+      "probe_host": "safehome"
+    }
+  },
+  "rogue": {
+    "dhcp_server": "192.168.1.1",
+    "dhcp_router": "192.168.1.1",
+    "default_gateway": "192.168.1.1",
+    "on_home_ssid": true,
+    "twin_channels": [
+      6,
+      100
+    ]
+  },
+  "mac_updates": {
+    "os": "27.0",
+    "available": [
+      "Command Line Tools for Xcode 27.0",
+      "macOS 27"
+    ],
+    "ts": "2026-09-09T17:39:57-04:00",
+    "raw": ""
+  },
+  "home": {
+    "wifi": {
+      "ssid": "Northwind-Staff",
+      "security": "WPA2 Personal",
+      "channel": "100 (5GHz, 80MHz)",
+      "phy": "802.11ax",
+      "signal": "-32 dBm / -86 dBm"
+    },
+    "gateway": "192.168.1.1",
+    "gateway_ports": [
+      53,
+      80,
+      443
+    ],
+    "exposure": {
+      "probe_host": "safehome",
+      "wan_ip": "198.51.100.105",
+      "open_ports": [],
+      "checked": [
+        21,
+        22,
+        23,
+        25,
+        53,
+        80,
+        443,
+        445,
+        3389,
+        5900,
+        8080,
+        8443,
+        7547,
+        1900,
+        5000,
+        8291,
+        32400,
+        49152
+      ],
+      "ts": "2026-09-09T18:18:22-04:00"
+    },
+    "unverified": []
+  },
+  "speed": {
+    "down_mbps": 526.6,
+    "up_mbps": 86.3,
+    "latency_ms": 21,
+    "responsiveness_rpm": 436.069091796875,
+    "ts": "2026-09-09T18:19:03-04:00"
+  },
+  "alerts": [
+    {
+      "sev": "WARN",
+      "key": "sec:attacker:demo:192.0.2.107",
+      "msg": "demo: 192.0.2.107 made 362 failed SSH logins in 24h",
+      "confidence": 95,
+      "first_seen": "2026-09-09T06:41:25-04:00",
+      "count": 115,
+      "state": "open",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "reboot:safehome",
+      "msg": "safehome needs a reboot (kernel update)",
+      "confidence": 99,
+      "first_seen": "2026-09-08T23:48:02-04:00",
+      "count": 184,
+      "state": "acked",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "email:spf:northwind-clinics.example",
+      "msg": "northwind-clinics.example: no SPF record — anyone can spoof mail from this domain (domain sends no mail: publish 'v=spf1 -all' and DMARC p=reject so nobody can spoof it)",
+      "confidence": 95,
+      "first_seen": "2026-09-09T10:26:12-04:00",
+      "count": 78,
+      "state": "open",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "email:dmarc:northwind-clinics.example",
+      "msg": "northwind-clinics.example: no DMARC record — spoofed mail is not rejected (domain sends no mail: publish 'v=spf1 -all' and DMARC p=reject so nobody can spoof it)",
+      "confidence": 95,
+      "first_seen": "2026-09-09T10:26:12-04:00",
+      "count": 78,
+      "state": "open",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "email:dmarc-none:northwind-dental.example",
+      "msg": "northwind-dental.example: DMARC policy is p=none (monitor only); move to quarantine or reject",
+      "confidence": 95,
+      "first_seen": "2026-09-09T10:26:12-04:00",
+      "count": 78,
+      "state": "open",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "sec:cve:prod",
+      "msg": "prod: 200 known vulnerabilities with a fix available (debsecan) — the daily upgrade clears them",
+      "confidence": 90,
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "count": 77,
+      "state": "open",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "sec:cve:demo",
+      "msg": "demo: 103 known vulnerabilities with a fix available (debsecan) — the daily upgrade clears them",
+      "confidence": 90,
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "count": 77,
+      "state": "open",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "sec:cve:safehome",
+      "msg": "safehome: 100 known vulnerabilities with a fix available (debsecan) — the daily upgrade clears them",
+      "confidence": 90,
+      "first_seen": "2026-09-09T10:30:03-04:00",
+      "count": 77,
+      "state": "open",
+      "fires": 1
+    },
+    {
+      "sev": "INFO",
+      "key": "hb:roots-daily-report:setup",
+      "msg": "Heartbeat 'roots-daily-report' never pinged yet — add `curl -s https://intranet.northwind-clinics.example/hb/roots-daily-report/REDACTED` to the end of that job",
+      "confidence": 80,
+      "first_seen": "2026-09-08T23:54:26-04:00",
+      "count": 182,
+      "state": "open",
+      "fires": 1
+    }
+  ],
+  "fixes": [],
+  "score": {
+    "total": 83,
+    "deductions": [
+      {
+        "category": "Vulnerabilities",
+        "points": 12,
+        "why": "0 security updates and 403 fixable CVEs pending (auto-patched daily)"
+      },
+      {
+        "category": "Patch status",
+        "points": 3,
+        "why": "reboot pending on safehome; "
+      },
+      {
+        "category": "Identity & access",
+        "points": 2,
+        "why": "1 active brute-force source(s)"
+      }
+    ],
+    "potential": 98,
+    "grade": "B"
+  },
+  "recommendations": [
+    {
+      "priority": "High",
+      "text": "Reboot safehome to activate the updated kernel",
+      "why": "the running kernel is older than the installed one; security fixes are not active until reboot",
+      "action": {
+        "host": "safehome",
+        "action": "reboot"
+      },
+      "key": "reboot:safehome",
+      "done": true,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    },
+    {
+      "priority": "Low",
+      "text": "prod: 200 known CVEs have fixes available",
+      "why": "the nightly full upgrade applies them; a reboot may follow",
+      "action": null,
+      "key": "sec:cve:prod",
+      "done": false,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    },
+    {
+      "priority": "Low",
+      "text": "demo: 103 known CVEs have fixes available",
+      "why": "the nightly full upgrade applies them; a reboot may follow",
+      "action": null,
+      "key": "sec:cve:demo",
+      "done": false,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    },
+    {
+      "priority": "Low",
+      "text": "safehome: 100 known CVEs have fixes available",
+      "why": "the nightly full upgrade applies them; a reboot may follow",
+      "action": null,
+      "key": "sec:cve:safehome",
+      "done": false,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    },
+    {
+      "priority": "Low",
+      "text": "northwind-clinics.example: publish 'v=spf1 -all' and a DMARC reject record",
+      "why": "the domain sends no mail, so nobody should be able to send as it",
+      "action": null,
+      "key": "email:spf:northwind-clinics.example",
+      "done": false,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    },
+    {
+      "priority": "Low",
+      "text": "northwind-dental.example: DMARC is in monitor mode (p=none)",
+      "why": "kept as a reported item by your choice; spoofed mail is reported, not rejected",
+      "action": null,
+      "key": "email:dmarc-none:northwind-dental.example",
+      "done": false,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    },
+    {
+      "priority": "Low",
+      "text": "Use a guest Wi-Fi for visitors and smart-home gear",
+      "why": "isolates cheap IoT from your laptops and phones",
+      "action": null,
+      "key": "adv:guest",
+      "done": false,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    },
+    {
+      "priority": "Low",
+      "text": "Change the router admin password from the default and disable remote administration",
+      "why": "the router is the front door",
+      "action": null,
+      "key": "adv:router-admin",
+      "done": false,
+      "decision": null,
+      "status": null,
+      "decided_at": null
+    }
+  ],
+  "incidents": [],
+  "notified_via": [],
+  "health": {
+    "sensor": "online",
+    "run_seconds": 80,
+    "scans_last_hour": 10,
+    "feeds": {
+      "sites": true,
+      "servers": true,
+      "lan": true,
+      "dns": true,
+      "speed": true,
+      "path": true,
+      "heartbeats": true
+    },
+    "assets": 31
+  }
+}

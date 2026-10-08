@@ -1,0 +1,987 @@
+/* Vault design-system primitives.
+ *
+ * Every colour here is a token from `tokens.css`. No literal hue appears in
+ * this file: the palette is blue + white + grey, with red = alert,
+ * green = good, yellow = warning and nothing else. A `tone-*` class is the
+ * only way a primitive takes on colour, and `tone-plain` takes none.
+ *
+ * Both skins come free, because both are token redefinitions.
+ */
+
+/* --- shared tone hooks --- */
+
+/* `--tone` is the mark colour (stripe, dot, ring arc, filled ground);
+   `--tone-text` is the same hue at text strength, which is what a pill or a
+   status label on `--tone-soft` uses. In the console skin the two coincide —
+   see the header comment in `tokens.css`. */
+.g-tone-plain {
+  --tone: var(--color-text-muted);
+  --tone-text: var(--color-text-muted);
+  --tone-soft: var(--color-bg);
+}
+.g-tone-good {
+  --tone: var(--color-good);
+  --tone-text: var(--color-good-text);
+  --tone-soft: var(--color-good-soft);
+}
+.g-tone-warn {
+  --tone: var(--color-warn);
+  --tone-text: var(--color-warn-text);
+  --tone-soft: var(--color-warn-soft);
+}
+.g-tone-alert {
+  --tone: var(--color-alert);
+  --tone-text: var(--color-alert-text);
+  --tone-soft: var(--color-alert-soft);
+}
+
+/* Focus is always visible: a dense admin surface is unusable by keyboard
+   without it, and the palette/drawer are keyboard-first. */
+.g-card:focus-visible,
+.g-tab:focus-visible,
+.g-chip:focus-visible,
+.g-th-sort:focus-visible,
+.g-row-click:focus-visible,
+.g-drawer:focus-visible,
+.g-drawer-close:focus-visible,
+.g-timeline-item:focus-visible,
+.g-heat-cell:focus-visible,
+.g-toast-close:focus-visible,
+.g-onboarding input:focus-visible,
+.g-onboarding button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Card --- */
+
+/* A bordered card on the page's own recessed surface.
+ *
+ * This was a borderless, square-cornered `.cell` -- a region separated from
+ * its neighbours by one hairline underline. That came from an earlier design
+ * reference and it was coherent, but it is not what the 2026-09-20 handoff
+ * specifies (`docs/design/2026-09-20-console-handoff.md`): background
+ * `#131924`, `1px` border, `border-radius: 7px`. The owner console took that
+ * treatment and the customer portal did not, which left one product wearing
+ * two different card styles -- the exact drift the shared primitive exists to
+ * prevent.
+ *
+ * Still no shadow. The handoff is as strict about that as the old reference
+ * was: depth comes from the background ladder and 1px edges, and `tokens.css`
+ * sets `--shadow-glow: none` because a lifted card competes with the alert it
+ * is framing. */
+.g-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  box-shadow: none;
+  padding: var(--pad-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* `tone` marks the card's heading rule, not the whole surface or a coloured
+   edge — a wall of coloured cards would make red stop meaning "alert". See
+   `.g-card-head` below, which carries the hairline every card has and swaps
+   only its colour when a tone is set. */
+.g-card.g-tone-good .g-card-head,
+.g-card.g-tone-warn .g-card-head,
+.g-card.g-tone-alert .g-card-head {
+  border-bottom-color: var(--tone);
+}
+
+/* The card header as the 2026-09-20 design sets it: a full-width strip
+   across the top of the card, `13px 16px`, one hairline under it, the title
+   at 13.5px/600 in the text face and any meta pushed right. It bleeds to the
+   card's edges by exactly the card's own inset (`--card-py`/`--card-px`), so
+   the divider runs edge to edge like the design's rather than stopping at
+   the padding.
+
+   It was an 11.5px small-caps label with the rule under it inset -- the
+   owner console had already moved to the design's header, and the two
+   portals are one product; a card that reads differently on my.guarder.io
+   than on admin.guarder.io is the drift the shared primitive exists to
+   prevent. */
+.g-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--card-py)) calc(-1 * var(--card-px)) 0;
+  padding: 13px var(--card-px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.g-card-title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  line-height: var(--line-height-tight);
+}
+
+/* Small-caps section label — the reference console's card/board headers
+   ("ARE YOU WATCHING?", "WHAT DO I HAVE?"): uppercase, tracked out, muted,
+   one step below body size. Used for a group heading that names a region
+   rather than titling a card. */
+.g-section-label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-tight);
+}
+
+/* Vault Portal v2 card headers, customer portal only (`.g-shell`). v2
+   sets a card's title in sentence case at reading size with the subtitle
+   quiet beneath it -- the small-caps label above was the older console
+   idiom, and it is what makes every card read as a form field. The owner
+   console (`.g-owner`) keeps its own header treatment untouched. */
+.g-shell .g-card-title {
+  font-size: var(--font-size-md);
+  font-weight: 650;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text);
+}
+
+.g-shell .g-card-subtitle {
+  margin-top: 2px;
+  font-size: var(--font-size-xs);
+}
+
+.g-shell .g-card-head {
+  padding-bottom: var(--space-3);
+}
+
+.g-card-subtitle {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: var(--line-height-normal);
+  max-width: 72ch;
+}
+
+.g-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.g-card-body {
+  min-width: 0;
+}
+
+/* A card that is only a table runs the table edge to edge: a table that
+   stops short of its own card's border reads as floating inside it rather
+   than being it. */
+.g-card-body:has(> .g-table-wrap:only-child) {
+  margin: 0 calc(-1 * var(--card-px)) calc(-1 * var(--card-py));
+}
+.g-card-body:has(> .g-table-wrap:only-child):first-child {
+  margin-top: calc(-1 * var(--card-py));
+}
+
+/* --- Stat --- */
+
+.g-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.g-stat-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-stat-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  line-height: var(--line-height-tight);
+}
+
+/* 21px/650 is the reference's `.card .v`, and it always renders in the
+   numeric face — a stat's value is a number, and a column of them has to
+   line up (the reference lists `.card .v` first in its `--num` rule).
+   `.g-stat-mono` therefore now only adds the tighter tracking. */
+.g-stat-value {
+  font-size: 21px;
+  font-weight: 650;
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-stat .g-stat-value {
+  color: var(--tone-text, var(--tone, var(--color-text)));
+}
+
+.g-stat.g-tone-plain .g-stat-value {
+  color: var(--color-text);
+}
+
+.g-stat-mono {
+  letter-spacing: -0.01em;
+}
+
+.g-stat-unit {
+  font-size: var(--font-size-control);
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.g-stat-sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Table --- */
+
+.g-table-wrap {
+  /* Dense admin tables are wide by nature; they scroll inside their own box so
+     the page body never scrolls horizontally. */
+  overflow-x: auto;
+  width: 100%;
+}
+
+.g-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+/* Rows at 8px/12px; `.g-dense` tightens to 5px/8px for the long inventories. */
+.g-table th {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.g-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.g-table.g-dense th {
+  padding: 7px 8px;
+}
+.g-table.g-dense td {
+  padding: 5px 8px;
+}
+
+/* The design's column header: the mono face, 10px, tracked out and
+   uppercase, on the sunken ground -- furniture, so the rows read as the
+   content. The sticky header is Vault's, kept: its tables are far
+   longer than the design's. */
+.g-table thead th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-sunken);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.g-align-right {
+  text-align: right;
+}
+.g-align-center {
+  text-align: center;
+}
+
+.g-th-sort {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.g-sort-arrow {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+}
+
+.g-table tbody tr.g-row-click {
+  cursor: pointer;
+}
+
+/* Every row highlights under the pointer, not only a clickable one — the
+   reference's `tr:hover td` — which is what makes a wide row readable across
+   its full width. Recessed, so it never reads as a selection. */
+.g-table tbody tr:hover td {
+  background: var(--color-surface-sunken);
+}
+
+.g-table tbody tr.g-row-selected td,
+.g-table tbody tr.g-row-selected:hover td {
+  background: var(--color-primary-soft);
+  box-shadow: inset 2px 0 0 var(--color-primary);
+}
+
+.g-table-empty {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-6) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+/* --- Tabs --- */
+
+.g-tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.g-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  /* Tighter and quieter than a heading: a filter strip should not compete
+     with the content it filters. */
+  padding: 5px var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.g-tab[aria-selected="true"] {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* Hover feedback matters most on a tenant where every view is empty: without
+   it, switching tabs changes nothing on screen and the strip reads as dead. */
+.g-tab:hover {
+  color: var(--color-text);
+}
+
+.g-tab-count {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  margin-left: 5px;
+  color: var(--color-text-muted);
+}
+
+/* --- Chips --- */
+
+.g-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.g-chip {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 2px var(--space-2);
+  font-size: var(--font-size-control);
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.g-chip[aria-pressed="true"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.g-chip-count {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-xs);
+  opacity: 0.75;
+}
+
+/* --- Badge --- */
+
+/* The reference's `.tag` geometry — 1px/6px in a 4px box at 10.5px. Its own
+   tags are outlined rather than soft-filled; Vault keeps the soft ground,
+   which is the pairing `tests/contrast.test.ts` guards. */
+.g-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  background: var(--tone-soft);
+  color: var(--tone-text, var(--tone));
+  border: 1px solid transparent;
+}
+
+.g-badge.g-tone-plain {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+}
+
+/* --- Sparkline / Chart --- */
+
+.g-spark {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.g-spark-path {
+  fill: none;
+  stroke: var(--tone, var(--color-primary));
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* A tone-less sparkline still draws in the one accent — "plain" means "no
+   semantic colour", not "grey line". */
+.g-spark.g-tone-plain .g-spark-path {
+  stroke: var(--color-primary);
+}
+
+.g-chart {
+  position: relative;
+  width: 100%;
+}
+
+.g-chart-svg {
+  display: block;
+  width: 100%;
+  touch-action: none;
+}
+
+.g-chart-grid line {
+  stroke: var(--color-grid);
+  stroke-width: 1;
+}
+
+.g-chart-axis text {
+  fill: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+}
+
+.g-chart-ylabel {
+  fill: var(--color-text-muted);
+  font-size: 10px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.g-chart-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.g-chart-crosshair {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.g-chart-brush {
+  fill: var(--color-primary);
+  opacity: 0.14;
+}
+
+.g-chart-tip {
+  position: absolute;
+  top: var(--space-2);
+  pointer-events: none;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-2);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.g-chart-tip-ts {
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.g-chart-tip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-chart-tip-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.g-chart-tip-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  font-weight: 700;
+}
+
+.g-chart-note,
+.g-chart-empty {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: var(--space-1) 0 0;
+}
+
+.g-chart-empty {
+  padding: var(--space-5) 0;
+  text-align: center;
+}
+
+/* --- Ring --- */
+
+.g-ring {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.g-ring-track {
+  fill: none;
+  stroke: var(--color-track);
+}
+
+.g-ring-arc {
+  fill: none;
+  stroke: var(--tone);
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.g-ring-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  fill: var(--color-text);
+}
+
+/* The reference's score cell: `28px` mono figure plus an outlined grade
+   pill, no arc, no track — a cell in the grid, not a hero. */
+.g-ring-flat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.g-ring-flat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.g-ring-flat-grade {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--tone-text, var(--tone));
+  border: 1px solid var(--tone, var(--color-border));
+  border-radius: var(--radius-sm);
+  padding: 0 5px;
+}
+
+.g-ring-grade {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  fill: var(--tone);
+}
+
+/* --- Heatmap --- */
+
+.g-heat {
+  overflow-x: auto;
+}
+
+.g-heat-grid {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-size: var(--font-size-xs);
+}
+
+.g-heat-grid th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  padding: 0 var(--space-1);
+  white-space: nowrap;
+}
+
+.g-heat-grid th[scope="row"] {
+  text-align: right;
+  font-family: var(--font-sans);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-heat-cell {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  /* One accent, ramped from the track colour to `--color-primary` — a
+     sequential blue, never a rainbow. The per-cell mix percentage is the only
+     thing set inline, by `Heatmap`. */
+  background: var(--color-track);
+}
+
+.g-heat-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+}
+
+.g-heat-legend-ramp {
+  width: 72px;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-track), var(--color-primary));
+}
+
+.g-heat-readout {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+
+/* --- Timeline --- */
+
+.g-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.g-timeline-item:hover {
+  background: var(--color-bg);
+}
+
+/* A row with neither a handler nor an href is plain text, not a control. */
+span.g-timeline-item {
+  cursor: default;
+}
+
+.g-timeline-item {
+  text-decoration: none;
+}
+
+.g-timeline-stripe {
+  width: 3px;
+  border-radius: 2px;
+  align-self: stretch;
+  min-height: 24px;
+  background: var(--tone);
+  flex-shrink: 0;
+}
+
+.g-timeline-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.g-timeline-title {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: var(--line-height-normal);
+}
+
+.g-timeline-detail {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-timeline-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.g-timeline-ago {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.g-timeline-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-4) 0;
+}
+
+/* --- Drawer --- */
+
+.g-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Neutral scrim, deliberately the same in both skins so the drawer reads as
+     lifted off the page. Not a hue — the same convention as `--shadow-card`.
+     The 2px blur behind it is the reference's `#modal`. */
+  background: var(--color-scrim);
+  backdrop-filter: blur(2px);
+  z-index: var(--z-drawer);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.g-drawer {
+  /* Glass. A drawer opens ON something -- the device row, the alert, the site
+   * it is about -- and keeping that half-visible behind it is the difference
+   * between a panel that arrived and a panel that came from somewhere. The
+   * highlight runs down the leading edge, matching the rail. */
+  background: var(--color-glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-left: 1px solid var(--color-border);
+  box-shadow: inset 1px 0 0 0 var(--color-glass-edge), var(--shadow-card);
+  animation: g-drawer-slide-in 0.28s ease-out;
+  height: 100%;
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@keyframes g-drawer-slide-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-drawer {
+    animation: none;
+  }
+}
+
+.g-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.g-drawer-titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.g-drawer-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+}
+
+.g-drawer-subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.g-drawer-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.g-drawer-tabs {
+  padding: 0 var(--space-4);
+}
+
+.g-drawer-body {
+  padding: var(--space-4);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* --- Toast --- */
+
+.g-toasts {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+.g-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--tone);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  max-width: min(420px, calc(100vw - 2 * var(--space-4)));
+}
+
+.g-toast-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: var(--font-size-md);
+  line-height: 1;
+}
+
+@media (max-width: 699px) {
+  .g-toasts {
+    left: var(--space-3);
+    right: var(--space-3);
+    align-items: stretch;
+  }
+
+  .g-toast {
+    max-width: none;
+  }
+
+  /* The drawer becomes a bottom sheet under 700px: anchored to the bottom
+     edge with rounded top corners and a capped height, rather than the
+     desktop's right-anchored full-height panel — `Drawer.tsx`'s width prop
+     already caps at 100vw, so the panel itself needs no code change, only
+     where the backdrop parks it and how tall it is allowed to grow. */
+  .g-drawer-backdrop {
+    align-items: flex-end;
+    justify-content: stretch;
+  }
+
+  .g-drawer {
+    width: 100% !important;
+    max-height: 88vh;
+    border-left: none;
+    border-top: 1px solid var(--color-border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
+
+/* --- "a newer build is deployed" ---------------------------------------- */
+
+/* One line across the very top, above either portal's frame. It is the only
+   thing in the product allowed to sit above the chrome, because it is the only
+   message that is about the page itself rather than about the network. */
+.g-newbuild {
+  display: flex; align-items: center; justify-content: center; gap: var(--space-3);
+  padding: 7px var(--space-4);
+  background: var(--color-primary-soft); color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+.g-newbuild-btn {
+  font: inherit; font-size: var(--font-size-sm); font-weight: 600;
+  color: var(--color-primary); background: none; border: 0; padding: 0;
+  cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+}
+.g-newbuild-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+

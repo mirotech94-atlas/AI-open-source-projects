@@ -1,0 +1,89 @@
+{
+  "project": "guarder.io",
+  "committedAt": "2026-09-18",
+  "target": "other",
+  "targetReason": "site/ is static HTML with no build step, rsync-deployed by deploy/setup-site.sh, with 8 generated locales. The Layers starter is not applicable; we take the portable single-HTML master and translate it in.",
+  "style": {
+    "id": "evolve-style",
+    "preview": "https://www.getlayers.ai/?layer=evolve",
+    "why": "Closest match to Vault's existing tokens.css: hairline blueprint structure, zero shadows, near-flat radii, mono for every label, and one blue ramp used only on instruments."
+  },
+  "overrides": {
+    "note": "Vault's brand spine outranks the Style for colour and type. See docs/superpowers/specs/2026-09-18-brand-spine-design.md and CLAUDE.md § Design assets.",
+    "fonts": "Manrope + IBM Plex Mono, self-hosted from site/fonts/. Evolve's Inter Tight / Space Mono are NOT adopted: every Layers Style ships a Google Fonts URL and Vault must render with no third-party origin.",
+    "palette": "site/styles.css tokens are authoritative. Scenes and gradients are tinted to them through CONFIG, never by editing a shader.",
+    "brandBlue": "#1257c4 is pinned by web/tests/brandspine.test.ts and must not move."
+  },
+  "plan": {
+    "hero": "astragal gradient (lattice, cost: light) tinted to Vault blue, behind the existing live telemetry rail",
+    "choreography": "Layers house reveal: loader -> gate -> staggered reveal, honouring prefers-reduced-motion",
+    "scene": "one scene lower down the page, lazy-mounted so it cannot delay first paint",
+    "budget": "subtle, per Evolve's own motionEnergy axis"
+  },
+  "constraints": {
+    "vendoring": "Every borrowed asset is downloaded into the repo. No CDN, no hotlink to storage.getlayers.ai, no Google Fonts link.",
+    "locales": "site/index.html is the only hand-edited copy. After any change run: python3 site/i18n/build_locales.py",
+    "copyBudget": "115 assert-pinned strings. `live` (1), `capabilities` (0), `caps` (3) and `how` (4) are cheap; `access` (25) and `integrations` (15) are expensive."
+  },
+  "placed": [
+    {
+      "section": "hero",
+      "asset": "astragal",
+      "type": "gradient",
+      "preview": "https://www.getlayers.ai/?layer=astragal",
+      "file": "site/hero-gradient.js",
+      "tint": "Vault ramp: --bg / --panel / --line / --deep / --acc. The GetLayers-derived Evolve tint was refused: its mid-stop #ff1f4a is a red, and red on a Vault surface means an alert.",
+      "preserved": "motion + composition, per the asset's contract",
+      "adaptations": [
+        "authoring panel stripped (19 elements, ~370 lines)",
+        "WebGL2 fallback made silent — upstream covers the viewport with a notice",
+        "prefers-reduced-motion handled in JS; a canvas loop escapes the CSS rule",
+        "buffer and pointer measure the canvas, not the window",
+        "ResizeObserver added: the hero is content-sized",
+        "scrim flattened below 900px where the hero becomes one column",
+        "light skin: a CONFIG-level tint (window.__GUARDIAN_HERO_TINT merged before applyConfig) gives the calm skin a white ground and a blue lattice; the shader is untouched, the dark ramp is untouched",
+        "scrim and #hero-fade read --bg plus a --veil RGB triplet flipped by an is-light class, so the same gradient stops serve both skins",
+        "skin change remounts the scene: the canvas node is replaced, #hero-fade reset to opacity 1, the tint global reset, the script re-appended -- CONFIG is read once at start"
+      ]
+    },
+    {
+      "section": "page-wide",
+      "asset": "reveal choreography (house pattern, not a catalog asset)",
+      "file": "site/reveal.js",
+      "adaptations": [
+        "no loader and no progress counter — the guide's own 'be honest about what you are measuring' rules one out on a static page with nothing to measure",
+        "the hero's existing lattice veil is the gate; it flips at the start of the exit, not on its rest",
+        "nothing hides unless the script runs, per the site's no-JS rule in app.js",
+        "elements selected by class, never marked with a data- attribute, because the locale generator pins whole tags",
+        "no clipped reveals: both Evolve's contract and the guide forbid clipping a blurred entrance"
+      ]
+    },
+    {
+      "section": "how",
+      "asset": "Quiet Watch — ORIGINAL, authored via getlayers_scene_lab",
+      "type": "scene",
+      "file": "site/watch-scene.js",
+      "depicts": "a field of devices at rest; one goes quiet, a ring of attention passes through its neighbours, it recovers",
+      "adaptations": [
+        "plain WebGL2 instead of Scene Lab's three.js + CDN importmap: Vault reaches no third-party origin, and vendoring three.js with post-processing is ~0.75MB to draw dots",
+        "CONFIG contract kept in full: colours are '#rrggbb' strings, every other knob a number, applied to uniforms never to the shader",
+        "palette limited to --bg / --deep / --acc; no red and no green, which mean alert and good on every Vault surface",
+        "lazy: mounts on intersection, stops on exit",
+        "reduced motion draws one complete frame mid-event, so the ring is visible and static",
+        "light skin: window.__GUARDIAN_WATCH_TINT merged into CONFIG before applyConfig (bgColor white, pointColor --deep, liveColor --fg); shader untouched",
+        "how-scrim reads --bg plus --veil, flipped by is-light on #how",
+        "skin change remounts the scene the same way as the hero"
+      ]
+    }
+  ],
+  "sceneDecision": {
+    "status": "resolved — nothing in the catalog fit, so an original was authored (see placed[])",
+    "reviewed": 12,
+    "why": "The scene catalog is built for other kinds of product. The closest candidates are actively wrong for a security vendor: 'thorned-halo' is a crown of thorns with 'quiet religious weight'; 'luminous-saucer' draws a figure up into the night; 'candle-aurora' is a finance chart whose green would collide with green=good; 'grain-cubes' is acid risograph. 'halftone-iris' is the interesting near-miss — a sapphire eye that blinks and follows you, correctly dark and technical, and exactly the wrong connotation: Vault protects the owner's network, and an eye watching the reader reads as the thing they are buying protection from.",
+    "toneTrap": "Several otherwise-plausible scenes ('argent-massif', 'aether-flux', 'blocky-grid') ship only light-tone rolls. The combination rules say a scene's tone never flips, because its contrast is baked into the shader: re-skinning a light scene dark turns it to mud.",
+    "options": [
+      "getlayers_scene_lab — author an original scene for Vault",
+      "leave the page as it is: lattice plus choreography"
+    ]
+  }
+}

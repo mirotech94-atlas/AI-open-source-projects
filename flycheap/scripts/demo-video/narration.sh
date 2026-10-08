@@ -1,0 +1,21 @@
+#!/bin/bash
+TTS=~/Library/Python/3.9/bin/edge-tts
+V=en-US-AndrewNeural
+R="-5%"
+gen() { $TTS --text "$2" --voice $V --rate=$R --write-media "audio/$1.mp3"; }
+
+gen 01-welcome "Welcome to FlyCheap Tracker — your personal fare intelligence platform. Here's the problem it solves: flight prices change dozens of times a day, and the good ones vanish within hours. FlyCheap watches over one thousand airlines around the clock, learns what a normal price looks like on your routes, and pings you the instant a fare drops below your target. In the next few minutes, I'll walk you through the entire product. This is the real dashboard, with live data — no mock-ups. Let's dive in."
+
+gen 02-dashboard "This is the executive dashboard — the first thing you see when you sign in. Across the top, your key numbers: how many routes you're tracking, your total savings versus the ninety-day median, the cheapest pairing found right now, and any mistake fares caught in the last twenty-four hours. The globe is your live network — every arc is a route being monitored at this very minute. And the live feed streams every price movement as our pollers detect it — drops in green, and threshold crossings tagged as new lows."
+
+gen 03-deals "The best deals table scans a full twelve months ahead, and ranks every date pairing on your route by price. Sweet-spot trip lengths are flagged, hot deals are marked, and each row carries a confidence score based on how that fare compares to its own history. And when you're ready to book, you're never locked in: every book button cross-shops the exact same itinerary on Aviasales, Google Flights, Kayak, Skyscanner, Momondo — or the airline directly. We never add a booking fee."
+
+gen 04-calendar "The fare calendar is a twelve-month heat map of the cheapest price for every single day. Greener means cheaper, so seasonal patterns jump out immediately — click any green cell to filter the deals table to that date. Pair that with the buy-or-wait engine: it runs thirty days of trend and percentile analysis, and gives you a plain-English verdict — lock it in, or hold — with an explicit confidence percentage. No more guessing whether booking on a Tuesday at midnight is a real thing."
+
+gen 05-explore "Not sure where to go? The explore page flips the question around. Pick your home airport, and see the cheapest fare to every reachable destination on Earth, color-coded on an interactive map. Filter by budget, by month, or by region. It's the fastest way to turn 'somewhere warm in February' into an actual booked trip."
+
+gen 06-alerts "Now, the heart of the product: alerts. On your watchlist, every route has a target price per adult. Choose your trigger: a threshold cross, which fires the moment the fare dips below your number — or an anomaly alert, when a price falls significantly under its own seven-day median. Email alerts are free for everyone. And they don't stop at your inbox — open Integrations, join our public Slack workspace or message the Telegram bot, run one watch command with your route and target price, and fare drops land wherever you already are. No account linking, nothing to install."
+
+gen 07-concierge "Meet the AI concierge — a Claude-powered assistant with live access to your fare data. Ask it anything in plain English — like, find the cheapest two weeks to Cairo in September under eight hundred dollars per adult — and it goes to work: checking real routes, real prices, real history, not a script. A few seconds later, you get an answer with actual numbers pulled from your own tracked fares — not guesses. It's like having a travel analyst on staff, around the clock."
+
+gen 08-pricing "Getting started is simple. Request early access with just your name — email and phone are optional — and we personally review every request, usually within hours, no credit card required to get in. Once you're approved, your first three months run at the full Pro level, free: a hundred tracked routes, thirty-minute polling, and every alert channel. After that, the free tier keeps five routes and email alerts forever, or stay on Pro at nine dollars a month with a fourteen-day trial. Enterprise adds a full A-P-I and white-label branding for travel desks. Stop refreshing flight sites. Request access once — and let FlyCheap watch forever."

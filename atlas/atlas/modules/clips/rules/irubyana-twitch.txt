@@ -1,0 +1,25 @@
+Irubyana Twitch Clips
+Content Rewards campaign by irubyanaclips
+https://contentrewards.com/discover/d8f10d9f-5207-4268-8069-b6da45a23b67
+
+Clip my twitch streams and post on tiktok and instagram reels make short and high energy clips 15-60 second clips make sure to tag @Irubyana and use hashtags like irubyana, irubyanaclips, twitch, twitchlive
+
+- Reference material: https://www.twitch.tv/irubyana (her own VODs are the footage).
+- Recommended: captions/text overlays.
+- Include brand logo; Twitch banner in the background (re-read 2026-10-01, with
+  Miro's join of the Whop campaign https://whop.com/rubyanaclips/exp_qOpYZgW2DMo0F9/app/):
+  ATLAS composites her own logo.png (bottom-right) and banner.png (a top strip)
+  from data/clips/irubyana-twitch/brand/ -- files Miro placed, never fetched --
+  onto every clip, and cuts nothing without them.
+- Caption: tag @Irubyana and carry the hashtags irubyana, irubyanaclips, twitch,
+  twitchlive (all four, after #Ad).
+- "Submit a draft for review; drafts need brand approval before you post; once
+  approved, post and submit the live link" (Whop, verified 2026-10-01). So a
+  clip of hers is cut as a DRAFT: the Mac submitter uploads it on Whop (the
+  connected account there is TikTok @atlasclips12; an MP4 of at most 256 MB),
+  ATLAS posts it only once the brand approved it, and withdraws it if rejected.
+- Content approval by the campaign before payout.
+- Rates: $1.00 per 1K views on TikTok, Instagram, YouTube, X; min payout $1, max $60 per post.
+- Budget: $1,971 remaining of $2,000 (read 2026-09-29).
+- No stated region/audience requirement.
+- Category: streamer.

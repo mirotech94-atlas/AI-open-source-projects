@@ -1,0 +1,9 @@
+[Unit]
+Description=ATLAS nightly Postgres backup (dump, keep 14, copy off the box)
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/atlas/bootstrap/backup/atlas-backup.sh
+Nice=19
+IOSchedulingClass=idle

@@ -1,0 +1,22 @@
+# Keep the image to what actually runs.
+#
+# The build context is copied in full, and anything here is a layer that gets
+# written, stored and pulled for no reason. This box ran out of disk once
+# already.
+.git/
+.venv/
+ui/node_modules/
+ui/dist/
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+data/
+logs/
+secrets/
+*.key
+*.pem
+.env
+tests/
+tools/
+# Standalone local apps (apps/airglass runs on the Mac, never in the image).
+apps/

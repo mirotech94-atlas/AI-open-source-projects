@@ -1,0 +1,17 @@
+# Vault (guarder.io) — how to report a security problem.
+#
+# RFC 9116. Reachable at https://guarder.io/.well-known/security.txt
+#
+# Contact is the owner's mailbox rather than a security@ alias on purpose:
+# that alias does not exist yet, and a disclosure address that bounces is
+# worse than no security.txt at all. It is the same address Vault already
+# sends all of its mail from, so it is not a new disclosure. Point this at
+# security@guarder.io the day that alias is created, not before.
+#
+# Expires is mandatory and must stay under a year out. A stale security.txt
+# reads as an abandoned product; renew it when you renew the certificates.
+
+Contact: mailto:miro@guarder.io
+Expires: 2027-09-18T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://guarder.io/.well-known/security.txt

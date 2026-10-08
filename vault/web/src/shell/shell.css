@@ -1,0 +1,1545 @@
+/* The Vault app shell: sidebar, top bar, main content, right chat panel,
+ * mobile bottom tabs and the ⌘K palette overlay. Reuses the `.g-tone-*`
+ * hooks from `design/primitives.css` for the pulse dot and badges — no new
+ * colour is introduced here.
+ */
+
+.g-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100%;
+}
+
+/* --- sidebar --- */
+
+.g-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-2);
+  /* A flat step below the page, not frosted glass.
+   *
+   * The handoff builds its whole sense of depth from background steps and 1px
+   * borders -- rail, page, card, inset -- and the owner console already reads
+   * that way. A blurred rail takes its colour from whatever happens to be
+   * scrolled underneath it, which is the one thing a fixed frame must not do,
+   * and against a bordered card it read as a different material again. */
+  background: var(--color-rail);
+  box-shadow: inset 1px 0 0 0 var(--color-glass-edge);
+  border-right: 1px solid var(--color-border-strong);
+  width: var(--sidebar-w);
+  transition: width 0.15s ease;
+}
+
+.g-sidebar-collapsed {
+  width: var(--sidebar-w-collapsed);
+}
+
+/* Pinned to the bottom of the rail, always reachable however long the nav is. */
+.g-sidebar-collapse {
+  flex: 0 0 auto;
+  margin-top: auto;
+  align-self: stretch;
+}
+
+.g-sidebar-tenant {
+  padding: 0 var(--space-2);
+}
+
+.g-sidebar-tenant-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-1);
+}
+
+.g-sidebar-tenant select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  padding: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.g-sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Takes the free height and scrolls on its own, so the collapse control below
+   * stays pinned in view. Without this, expanding several dropdowns grew the nav
+   * past the viewport and pushed that control off the bottom of the screen --
+   * which is exactly how it went missing. `min-height: 0` is what lets a flex
+   * child shrink enough to scroll at all. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+/* One parent row: the link plus (when it has children) its disclosure. */
+.g-sidebar-group {
+  position: relative;
+  min-width: 0;
+}
+
+.g-sidebar-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.g-sidebar-row > .g-sidebar-item {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The reference console marks the active tab with an accent rail on the left
+   edge of the row, not just a tinted ground. */
+.g-sidebar-item {
+  border-left: 3px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 3px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+}
+
+.g-sidebar-item:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+.g-sidebar-item-active {
+  /* Handoff §Shared chrome: the active row sits on the soft primary ground
+     with a 3px primary mark on the left and the plain text ink, not blue text
+     -- blue is the interactive accent, and a label is not a control. */
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+  border-left-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.g-sidebar-disclosure {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+
+.g-sidebar-disclosure:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  filter: none;
+}
+
+.g-sidebar-disclosure svg {
+  transition: transform 0.15s ease;
+}
+
+.g-sidebar-group-open > .g-sidebar-row > .g-sidebar-disclosure svg {
+  transform: rotate(90deg);
+}
+
+.g-sidebar-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.g-sidebar-label {
+  flex: 1;
+}
+
+.g-sidebar-badge:empty {
+  display: none;
+}
+
+/* `nav button .n`: a recessed 10.5px count pill that turns solid red/yellow
+   when it carries a severity. */
+.g-sidebar-badge {
+  /* Mono 9.5px pill (handoff). Warn-toned badges pair -soft with -text. */
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .06em;
+  border-radius: 9px;
+  padding: 1px 6px;
+}
+.g-sidebar-badge .g-badge-warn, .g-sidebar-badge[data-tone="warn"] {
+  background: var(--color-warn-soft);
+  color: var(--color-warn-text);
+}
+
+.g-sidebar-subitem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 1px calc(var(--space-3) * 2 + 18px);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-decoration: none;
+}
+
+/* The label ellipsises; the count never does — it is the whole reason the row
+   is worth looking at. */
+.g-sidebar-sublabel {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-sidebar-subitem:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+.g-sidebar-subitem.g-sidebar-item-active {
+  color: var(--color-primary-strong);
+  background: var(--color-surface-sunken);
+  font-weight: 700;
+}
+
+/* --- collapsed: the dropdown becomes a flyout ---
+   Collapsed there is no room for a disclosure control, so the children are
+   always in the DOM and revealed on hover or keyboard focus. */
+.g-sidebar-collapsed .g-sidebar-children {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  z-index: var(--z-drawer);
+  min-width: 190px;
+  margin-left: var(--space-1);
+  padding: var(--space-2);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  display: none;
+}
+
+.g-sidebar-collapsed .g-sidebar-group:hover > .g-sidebar-children,
+.g-sidebar-collapsed .g-sidebar-group:focus-within > .g-sidebar-children {
+  display: block;
+}
+
+.g-sidebar-collapsed .g-sidebar-subitem {
+  margin-left: 0;
+  font-size: var(--font-size-sm);
+}
+
+.g-sidebar-collapse {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: var(--space-2);
+}
+
+/* --- top bar --- */
+
+.g-shell-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.g-topbar {
+  min-height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border-strong);
+  /* Glass (see styles/glass.css). Sticky rather than merely placed at the top,
+   * because translucency over nothing is just a tinted bar -- the material only
+   * reads once the page is visibly travelling underneath it. The tint and the
+   * lensing edge come from the token set, so this is one surface in the light
+   * skin, another on the instrument panel, and frosted paper in the owner
+   * console, without this rule knowing which. */
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--color-glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 0 var(--color-glass-edge);
+  /* One row. It used to wrap, which is what put `Scan now`, the search box
+     and the overflow button on three separate lines with a band of empty bar
+     beside them. Identity sits left, the actions are pushed right by their
+     own auto margin, and nothing stretches to fill the middle. */
+  flex-wrap: nowrap;
+}
+
+/* --- key legend: the reference's footer rail, real bindings only --- */
+
+.g-key-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-1) var(--space-4);
+  border-top: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.g-key-legend kbd {
+  font-family: var(--font-mono);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 4px;
+  margin-right: 4px;
+}
+
+.g-topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.g-topbar-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+/* The reference accents the product name with `--acc` itself, not a darker
+   step of it. */
+.g-topbar-title b {
+  color: var(--color-primary);
+  font-weight: 800;
+}
+
+/* The tagline used to live here (`.g-topbar-tagline`) — design proposal §3
+   moved it to the login screen (`.auth-tagline` in `styles/tokens.css`): it
+   is marketing copy, and an operator surface someone checks several times a
+   day is the wrong place for it. */
+
+/* `.g-topbar-spacer` is gone with the context zone: two elastic spacers
+   across three zones is what spread a mostly-empty bar. */
+
+.g-topbar-context {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.g-topbar-maint {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-warn-text);
+  background: var(--color-warn-soft);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.g-topbar-button {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.g-topbar-button-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+}
+
+.g-topbar-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-weight: 500;
+  /* Shrinkable: it is the one element here with room to give, so it yields
+     before the bar wraps. Below its floor the palette is still on ⌘K. */
+  flex: 0 1 320px;
+  min-width: 0;
+  flex: 0 1 320px;
+}
+
+.g-topbar-search-icon {
+  flex-shrink: 0;
+}
+
+.g-topbar-search kbd {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+}
+
+.g-topbar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.g-pulse-dot {
+  --tone: var(--color-text-muted);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tone);
+  display: inline-block;
+  flex: none;
+}
+
+/* A scan in flight: the same slow accent pulse the reference console uses. */
+.g-pulse-busy {
+  animation: g-pulse 0.9s infinite;
+}
+
+@keyframes g-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--color-primary-soft);
+  }
+  70% {
+    box-shadow: 0 0 0 9px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g-pulse-busy {
+    animation: none;
+  }
+}
+
+/* --- sub-header: the latency strip --- */
+
+/* The centre status cluster in the bar: what the sensor is doing, as quiet
+   text. Its auto margins balance it between the identity zone and the
+   actions; on a narrow bar it yields first (the `.g-topbar-scan` readouts
+   inside it are hidden at 699px, the dot stays). */
+.g-topbar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline: auto;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.g-topbar-sep {
+  color: var(--color-border-strong);
+}
+
+.g-topbar-status b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.g-topbar-unit {
+  margin-inline-start: 4px;
+  opacity: 0.75;
+}
+
+/* The load readout and its separator, as one unit. `contents` so they stay
+   direct flex children of the cluster and the row's gaps do not change. */
+.g-topbar-load {
+  display: contents;
+}
+
+/* Where the centre cluster yields. It is `white-space: nowrap` with auto
+   margins, so it cannot shrink: below this width it grew under the action
+   buttons and the Scan button sat on top of the word "cores". The load
+   figure goes first -- it is the longest of the three readouts and the one a
+   viewer is least likely to be reading -- leaving the live dot, the last-scan
+   age and the scan rate. At 699px the remaining readouts go too. */
+@media (max-width: 1200px) {
+  .g-topbar-load {
+    display: none;
+  }
+}
+
+/* The status rail under the bar: one labelled column per site, then
+   "updated". Labels sit over values so the eye reads down a column, not
+   along a pill. It scrolls sideways rather than wrapping. */
+.g-status-rail {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  overflow-x: auto;
+}
+
+.g-rail-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+.g-rail-col-end {
+  margin-inline-start: auto;
+  align-items: flex-end;
+}
+
+.g-rail-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-rail-value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.g-rail-figure {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.g-rail-col.g-tone-warn .g-rail-figure {
+  color: var(--color-warn-text);
+}
+
+.g-rail-col.g-tone-alert .g-rail-figure {
+  color: var(--color-alert-text);
+}
+
+.g-rail-unit {
+  margin-inline-start: 3px;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+/* Its own class, not the design primitive's `.g-spark`: `primitives.css`
+   sizes that one at `width: 100%`, which beat this SVG's `width="52"`,
+   stretched it across the pill, collapsed the site name to nothing and pushed
+   the figure out over the next pill (visible in production). The box is pinned
+   here too so no future global rule can do it again. */
+.g-latency-spark {
+  display: block;
+  flex: none;
+  width: 88px;
+  height: 22px;
+}
+
+.g-latency-spark-line {
+  stroke: var(--color-text-muted);
+}
+
+.g-latency-spark-line.g-tone-good {
+  stroke: var(--color-primary);
+}
+
+.g-latency-spark-line.g-tone-warn {
+  stroke: var(--color-warn);
+}
+
+.g-latency-spark-line.g-tone-alert {
+  stroke: var(--color-alert);
+}
+
+.g-topbar-scan {
+  margin: 0;
+}
+
+.g-topbar-actions {
+  /* No auto margin of its own any more: the centre cluster's `margin-inline:
+     auto` is what balances the row, and a second auto margin here would pull
+     the cluster off-centre. */
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  /* Not `wrap`. With a 320px search box this group put `Scan now` on one line,
+     the search on a second and the overflow on a third, which is what made the
+     bar three rows tall with empty space beside each. The search shrinks
+     instead. */
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.g-topbar-icon-button {
+  background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-2);
+  white-space: nowrap;
+}
+
+.g-topbar-icon-button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+  filter: none;
+}
+
+.g-icon-btn {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-size: var(--font-size-md);
+  line-height: 1;
+}
+
+/* The advanced-mode chip (design proposal §3): the second of the two
+   escapes from the overflow menu, shown only while advanced controls are
+   on -- forgetting it is on is the kind of thing that changes what the rest
+   of the screen looks like, so it stays visible rather than hiding in `⋯`. */
+.g-topbar-chip {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  border: 1px solid var(--color-primary);
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 3px var(--space-2);
+  white-space: nowrap;
+}
+
+/* --- context zone: the site switcher --- */
+
+.g-site-switch {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  max-width: 100%;
+  min-width: 0;
+  color: var(--color-text);
+}
+
+button.g-site-switch {
+  cursor: pointer;
+}
+
+button.g-site-switch:hover {
+  border-color: var(--color-primary);
+}
+
+.g-site-switch-name {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 26ch;
+}
+
+.g-site-switch-role {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.g-site-switch-caret {
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+/* --- shared popup-menu shell: the site switcher's and the overflow's --- */
+
+.g-menu-wrap {
+  position: relative;
+}
+
+.g-menu {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 4px;
+  min-width: 180px;
+  z-index: var(--z-menu);
+}
+
+.g-menu-right {
+  left: auto;
+  right: 0;
+}
+
+.g-menu-item {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.g-menu-item:hover:not(:disabled) {
+  background: var(--color-surface-sunken);
+}
+
+.g-menu-item:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.g-menu-item[aria-checked="true"]::before {
+  content: "✓";
+  margin-right: 4px;
+}
+
+.g-menu-item-hint {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.g-menu-sep {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 4px 2px;
+}
+
+.g-menu-static {
+  padding: 6px 8px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- content + chat --- */
+
+.g-shell-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.g-shell-content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  /* The tail matches the reference's `main{padding:… 90px}` — room to scroll
+     the last row clear of the floating chat button. */
+  padding: var(--space-5) var(--space-5) 90px;
+}
+
+/* --- the floating chat button and its popover ---
+   Geometry is the reference console's `#fab` / `#chat` verbatim, with its
+   `--acc` / `--accink` / `--panel` / `--line` / `--shadow` variables read
+   through Vault's own tokens. */
+
+.g-chat-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: var(--z-fab);
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border: none;
+  padding: 0;
+  font-size: 22px;
+  line-height: 1;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+}
+
+/* The red corner pill: open CRIT alerts, hidden entirely at zero (the
+   component renders nothing rather than a `0`). */
+.g-chat-fab-mark {
+  display: inline-flex;
+  line-height: 0;
+}
+
+.g-chat-fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--color-alert);
+  color: var(--color-on-primary);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 9px;
+  padding: 1px 5px;
+}
+
+.g-chat-fab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.g-chat-panel {
+  position: fixed;
+  right: 18px;
+  /* Clears the 54px button plus its 18px inset. */
+  bottom: 84px;
+  width: 400px;
+  max-width: calc(100vw - 36px);
+  height: 560px;
+  max-height: calc(100vh - 110px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* One step under the button, so the button always stays clickable. */
+  z-index: var(--z-drawer);
+}
+
+.g-chat-panel:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.g-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  flex: none;
+}
+
+.g-chat-title {
+  font-weight: 600;
+}
+
+/* The reference's `.hd > span.sp`: pushes the caption and the ✕ to the right
+   edge, so the mark and the word Vault stay together on the left. */
+.g-chat-head-spacer {
+  flex: 1;
+}
+
+/* `via groq → anthropic → rules` — the reference's `.muted.small` caption
+   (11px), which reports which providers are configured and nothing else. */
+.g-chat-head-prov {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g-chat-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.g-chat-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.g-chat-msg {
+  /* The reference's `.m`: 92% max width, 7px/10px padding, 9px radius. */
+  max-width: 92%;
+  border-radius: 9px;
+  padding: 7px 10px;
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+/* The greeting bubble is the panel's opening assistant message — static, so
+   it carries no provenance line and never scrolls out of the transcript's
+   own flow. */
+.g-chat-greeting {
+  align-self: flex-start;
+}
+
+/* The reference's `.m .prov`: which tools ran and which rung answered. */
+.g-chat-prov {
+  display: block;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.g-chat-msg-user {
+  align-self: flex-end;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.g-chat-msg-user p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.g-chat-msg-guardian {
+  align-self: flex-start;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.g-chat-msg-notice {
+  border-color: var(--color-alert);
+  color: var(--color-text-muted);
+}
+
+.g-chat-verdict {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-md);
+}
+
+.g-chat-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.g-chat-bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-chat-bullets li a {
+  font-weight: 600;
+}
+
+.g-chat-next {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+}
+
+.g-chat-next-btn {
+  margin-left: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.g-chat-thinking {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.g-chat-spinner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary-strong);
+  animation: g-chat-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes g-chat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- tool steps --- */
+
+.g-chat-tool-steps {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) 0 0;
+  border-top: 1px dashed var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.g-chat-tool-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-chat-tool-name {
+  font-family: var(--font-mono);
+}
+
+.g-chat-tool-status {
+  flex: 1;
+  text-align: right;
+}
+
+/* --- tier-3 proposal card --- */
+
+.g-chat-proposal {
+  margin-top: var(--space-3);
+  border: 1px solid var(--color-alert);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--color-surface);
+}
+
+.g-chat-proposal-expired {
+  opacity: 0.55;
+}
+
+.g-chat-proposal-summary {
+  margin: 0 0 var(--space-2);
+  font-weight: 600;
+}
+
+.g-chat-proposal-actions {
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.g-chat-proposal-actions li {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.g-chat-proposal-host {
+  font-weight: 600;
+}
+
+.g-chat-proposal-expired-note {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-alert-text);
+}
+
+.g-chat-proposal-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.g-chat-proposal-no {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+/* --- composer --- */
+
+/* No border of its own: the reference separates the input row from the chips
+   with the form's own top border, and the chips ride straight under the
+   transcript. `flex: none` keeps both rows out of the scrolling body. */
+.g-chat-composer-wrap {
+  flex: none;
+}
+
+/* The reference's `.chips`, shown for the whole conversation. Its 8px bottom
+   padding meets the form's border; the top gap comes from `#msgs`' own
+   bottom padding above it. */
+.g-chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 12px 8px;
+}
+
+/* The reference's `.chips button`, which is a `button.sm`. */
+.g-chat-suggestion {
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 10.5px;
+  padding: 2px 7px;
+}
+
+.g-chat-composer {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid var(--color-border);
+}
+
+.g-chat-composer textarea {
+  flex: 1;
+  resize: none;
+  min-height: 36px;
+  max-height: 140px;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* The microphone sits inside the composer row, the same size as the send
+   control. It gets the alert colour only while recording — a permanently red
+   mic on an instrument panel competes with the alerts it is there to ask
+   about, and `tokens.css` keeps emphasis in weight rather than hue. */
+.g-chat-mic {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  touch-action: none; /* hold-to-talk must not scroll the panel */
+}
+.g-chat-mic:disabled { opacity: 0.5; cursor: default; }
+.g-chat-mic-on { color: var(--color-alert); border-color: var(--color-alert); }
+.g-chat-mic-err {
+  margin: 0.25rem 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Quiet at rest. This is a preference, not a status — it sits above the
+   alert counts in the header and must not compete with them, so it stays
+   muted until on and never reaches for --color-alert. Red stays rationed to
+   "a customer needs you today". */
+.g-chat-speak {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.25rem;
+}
+.g-chat-speak[aria-pressed="true"] { color: var(--color-text); }
+
+/* --- ⌘K palette --- */
+
+.g-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Same neutral scrim convention as `.g-drawer-backdrop` in primitives.css —
+     not a hue, deliberately identical in both skins. */
+  background: rgba(6, 18, 43, 0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  z-index: var(--z-palette);
+}
+
+.g-palette {
+  width: min(560px, 92vw);
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  /* Glass. The palette is summoned over the page, never instead of it, so
+   * what you were looking at stays legible underneath while you type. */
+  background: var(--color-glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 0 var(--color-glass-edge), var(--shadow-card);
+  overflow: hidden;
+}
+
+.g-palette-input {
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+  padding: var(--space-4);
+  font-size: var(--font-size-lg);
+}
+
+.g-palette-input:focus {
+  outline: none;
+}
+
+.g-palette-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+}
+
+.g-palette-item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.g-palette-item-active {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-strong);
+}
+
+.g-palette-empty {
+  padding: var(--space-3);
+}
+
+/* --- mobile bottom tabs --- */
+
+.g-mobile-tabs {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  z-index: var(--z-drawer);
+}
+
+.g-mobile-tabs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+}
+
+.g-mobile-tabs-list li {
+  flex: 1;
+}
+
+.g-mobile-tab {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: var(--space-2) 0;
+  text-decoration: none;
+}
+
+.g-mobile-tab-active {
+  color: var(--color-primary-strong);
+}
+
+/* A count on a bar tab rides in the corner of its icon rather than pushing the
+   label around — five tabs share the width and none may grow. */
+.g-mobile-tab {
+  position: relative;
+}
+
+.g-mobile-tab .g-badge {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  margin-left: 4px;
+  font-size: 10px;
+  border-radius: 9px;
+  padding: 0 5px;
+}
+
+.g-mobile-more-item .g-badge,
+.g-mobile-more-child .g-badge {
+  margin-left: auto;
+  font-size: 10.5px;
+  border-radius: 9px;
+  padding: 0 6px;
+}
+
+/* The sheet is the whole nav, so it has to scroll: a phone screen is shorter
+   than ten parents plus their children. */
+.g-mobile-more {
+  position: absolute;
+  right: var(--space-2);
+  left: var(--space-2);
+  bottom: calc(100% + var(--space-1));
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.g-mobile-more-group + .g-mobile-more-group {
+  border-top: 1px solid var(--color-border);
+}
+
+.g-mobile-more-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+/* Indented to the parent label's text, so the tree reads as a tree. Kept at a
+   44px-tall tap target rather than shrunk to the sidebar's dense child row. */
+.g-mobile-more-child {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 18px + var(--space-2));
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+}
+
+.g-mobile-more-child.active,
+.g-mobile-more-item.active {
+  color: var(--color-primary-strong);
+  background: var(--color-surface-sunken);
+}
+
+/* --- breakpoint: under 700px switches to the mobile layout --- */
+
+@media (max-width: 699px) {
+  .g-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .g-sidebar {
+    display: none;
+  }
+
+  /* Not a full-screen sheet: the reference stretches the popover to the
+     viewport edges but keeps it anchored above the bottom bar, so the mobile
+     tab row stays visible and tappable while the chat is open. */
+  .g-chat-panel {
+    right: 8px;
+    left: 8px;
+    /* tab bar + the button's own inset + the button + a gap. */
+    bottom: calc(var(--mobile-tabs-h) + 14px + 54px + 8px);
+    width: auto;
+    max-width: none;
+    height: 70vh;
+    max-height: calc(100vh - var(--mobile-tabs-h) - 92px);
+  }
+
+  /* Lifted clear of the fixed bottom tab bar, which the reference layout has
+     no equivalent of — its own inset is 14px from the viewport edge. */
+  .g-chat-fab {
+    right: 14px;
+    bottom: calc(var(--mobile-tabs-h) + 14px);
+  }
+
+  .g-shell-content {
+    padding-bottom: calc(var(--space-5) + var(--mobile-tabs-h) + 62px);
+  }
+
+  .g-mobile-tabs {
+    display: block;
+  }
+
+  /* The bottom tab bar already owns the footer strip on a phone. */
+  .g-key-legend {
+    display: none;
+  }
+
+  /* The full "Search devices, hosts, sites, alerts…" bar's own 220px
+     `min-width` alone would overflow a 375px viewport once the sensor dot,
+     scan age and the theme/chat/sign-out actions all sit in the same row —
+     collapse it to the bare icon button the brief asks for ("reachable from
+     a search icon in the mobile top bar"), with `aria-label` carrying the
+     name an icon-only button needs. */
+  .g-topbar-search {
+    min-width: 0;
+    flex: 0 0 auto;
+    padding: var(--space-2);
+  }
+
+  .g-topbar-search-label,
+  .g-topbar-search-kbd {
+    display: none;
+  }
+
+  .g-topbar-scan,
+  .g-topbar-sep {
+    display: none;
+  }
+
+  .g-topbar-icon-button {
+    padding: var(--space-1) var(--space-2);
+  }
+
+  /* Task 83: at 375px the switcher's name has the least room of anything in
+     the row — cap it tighter than the desktop 26ch and drop the role suffix,
+     which is still one tap away inside the switcher's own menu. */
+  .g-site-switch-name {
+    max-width: 12ch;
+  }
+
+  .g-site-switch-role {
+    display: none;
+  }
+
+  /* The rail is a single horizontally-scrolling row (design proposal §3's
+     own 375px rule for it); tighter gaps so two columns fit beside the
+     "updated" one. */
+  .g-status-rail {
+    gap: var(--space-4);
+  }
+}
+
+/* Who you are, in the sidebar rather than the header.
+   A quiet line: the account name in the text colour, the role beside it in
+   the muted one. It is context a person reads once and then stops seeing,
+   which is exactly why it does not belong in the action bar. */
+.g-sidebar-whoami {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--font-size-xs);
+}
+
+.g-sidebar-whoami b {
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.g-sidebar-whoami-role {
+  color: var(--color-text-muted);
+  text-transform: lowercase;
+}
+
+
+/* The two guards, reaching the shell's own chrome. Same contract as
+ * `styles/glass.css`: a reader who has asked the OS to stop doing this, or a
+ * machine that cannot composite a blur, gets the opaque surface these rules
+ * stood in for -- with the layout untouched, so nothing shifts. */
+@media (prefers-reduced-transparency: reduce) {
+  .g-topbar,
+  .g-sidebar {
+    background: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .g-topbar,
+  .g-sidebar {
+    background: var(--color-surface);
+  }
+}
+
+/* Sidebar section headings (Vault Portal v2). Presentational only — the
+   rows stay one flat list so the arrow-key roving focus still works.
+
+   NOT `.g-sidebar-group`: that class already names every tab's <li> (the tab
+   plus its dropdown), and reusing it here once put `pointer-events: none`
+   on every link in the sidebar. The heading has its own name on purpose. */
+.g-sidebar-section {
+  margin: var(--space-4) 0 4px;
+  padding: 0 var(--space-3);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  opacity: 0.72;
+  list-style: none;
+  pointer-events: none;
+}
+.g-sidebar-section:first-child { margin-top: var(--space-2); }
+/* Collapsed to icons there is no room for a word; a rule stands in for it. */
+.g-sidebar[data-collapsed="true"] .g-sidebar-section {
+  margin: var(--space-3) var(--space-3) var(--space-2);
+  padding: 0;
+  height: 1px;
+  overflow: hidden;
+  text-indent: -999px;
+  background: var(--color-border);
+}
+
+/* Handoff §Geometry: a 216px rail. Set here rather than in tokens.css, which
+   the redesign leaves unedited -- this is layout, not palette. A later rule on
+   the same element wins for the custom property. */
+.g-shell { --sidebar-w: 216px; }

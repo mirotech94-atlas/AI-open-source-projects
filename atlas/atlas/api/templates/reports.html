@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Reports — ATLAS{% endblock %}
+{% block body %}
+  <h2 class="label">Reports</h2>
+  <p class="asof">{{ reports|length }} archived · newest first</p>
+
+  {# A plain GET form: this page must work with no JavaScript at all. #}
+  <form method="get" action="/reports" class="panel" style="margin-bottom:16px">
+    <label for="q" class="note">Search</label>
+    <input id="q" name="q" type="search" value="{{ q }}" placeholder="text or module"
+           style="width:100%;padding:7px 9px;font:inherit;font-size:13px;
+                  background:var(--raised);color:var(--text);
+                  border:1px solid var(--line);margin:4px 0 8px">
+    <label for="kind" class="note">Kind</label>
+    <select id="kind" name="kind"
+            style="width:100%;padding:7px 9px;font:inherit;font-size:13px;
+                   background:var(--raised);color:var(--text);
+                   border:1px solid var(--line);margin:4px 0 10px">
+      <option value=""        {% if not kind %}selected{% endif %}>All</option>
+      <option value="brief"   {% if kind == 'brief' %}selected{% endif %}>Morning briefs</option>
+      <option value="incident"{% if kind == 'incident' %}selected{% endif %}>Incident reports</option>
+      <option value="weekly"  {% if kind == 'weekly' %}selected{% endif %}>Weekly summaries</option>
+    </select>
+    <button type="submit"
+            style="padding:7px 16px;font:inherit;font-size:10.5px;letter-spacing:.14em;
+                   text-transform:uppercase;background:transparent;color:var(--cyan);
+                   border:1px solid var(--cyan-dim);cursor:pointer">Filter</button>
+  </form>
+
+  {% if not reports %}
+    <p class="empty">
+      Nothing archived yet. The first report is written when ATLAS sends the
+      07:00 brief.
+    </p>
+  {% else %}
+    <div class="panel">
+      <ul class="rows" style="margin:0;padding:0 13px">
+      {% for r in reports %}
+        <li style="padding:9px 0">
+          <a href="/reports/{{ r.id }}">{{ r.title }}</a>
+          <div class="note" style="margin-top:2px">
+            {{ r.at.strftime('%Y-%m-%d %H:%M') }}Z · {{ r.kind }}
+            {% if r.delivered_via == 'undelivered' %}
+              · <span style="color:var(--amber)">not delivered</span>
+            {% elif r.delivered_via %}· sent via {{ r.delivered_via }}{% endif %}
+          </div>
+        </li>
+      {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+{% endblock %}
+{% block footer %}<a href="/">Status</a> · <a href="/brief">Today's brief</a> · <a href="/logout">Sign out</a>{% endblock %}

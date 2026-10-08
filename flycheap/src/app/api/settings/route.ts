@@ -1,0 +1,198 @@
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { queries } from '@/lib/db';
+import { restartCron } from '@/lib/cron';
+import { requireUser } from '@/lib/apiGuard';
+import { isOwner } from '@/lib/auth';
+import { effectiveQuietHours } from '@/lib/alertGate';
+
+/**
+ * Account settings.
+ *
+ * THREE THINGS WERE WRONG HERE, ALL REACHABLE FROM THE OPEN INTERNET.
+ *
+ * 1. No authentication, on either verb. middleware.ts excludes `api/` from its
+ *    matcher, so nothing else was guarding it either. An anonymous GET returned
+ *    the owner's alert email, a Slack target and a Telegram chat id; an
+ *    anonymous PUT could repoint alert_email at an attacker's inbox, move the
+ *    global alert threshold, or change poll_interval_minutes and restart cron.
+ *
+ * 2. Everything was GLOBAL. Each account's settings page read and wrote the
+ *    same shared rows, so one user changing their alert threshold changed it
+ *    for everyone — while the poller reads the PER-USER value first, meaning
+ *    the page never actually edited the setting it was displaying.
+ *
+ * 3. It returned secrets. A webhook URL is a credential; whether one is set is
+ *    all a settings page needs, so that is all this returns now.
+ */
+
+/** Settings that belong to ONE account. Stored per user. */
+const USER_KEYS = [
+  'alert_threshold_per_adult_usd',
+  'alert_email',
+  'max_display_per_adult_usd',
+  'price_drop_pct',
+  'alert_channels',
+  'alert_telegram_chat_id',
+  'alert_phone',
+  'alert_phone_whatsapp',
+  // Write-only from the client's point of view: settable here, never echoed
+  // back by GET. A webhook URL is a credential.
+  'alert_slack_target',
+  'alert_slack_webhook',
+  'alert_ig_user_id',
+  // Alert POLICY. Shipped in lib/alertPolicy.ts with no way for a web user to
+  // reach any of it — quiet hours and the timezone were settable only from the
+  // mobile API, and the cap, the digest default and the mistake-fare opt-in
+  // from nowhere at all.
+  'quiet_hours_start',
+  'quiet_hours_end',
+  'daily_alert_cap',
+  'instant_alerts',
+  'wake_for_mistake_fares',
+  // Captured from the browser, not typed. alertGate only applies the DEFAULT
+  // quiet-hours window when this is known — without it "local time" is UTC, and
+  // a US user would be silenced from 6pm.
+  'tz_offset_min',
+] as const;
+
+/**
+ * Settings that change how the SERVICE runs, for everybody. Owner only.
+ *
+ * poll_interval_minutes is here rather than on the settings form because it is
+ * the scheduler tick, not a per-account promise — the poll allocator decides
+ * how often any given route is actually checked. See lib/pollBudget.ts.
+ */
+const GLOBAL_KEYS = [
+  'poll_interval_minutes',
+  'enabled_providers',
+  'usd_to_egp',
+] as const;
+
+/**
+ * Credentials. Settable (they are in USER_KEYS) but never READ back — GET
+ * reports only whether each one is set. Echoing a webhook URL to the browser
+ * on every settings page load is how it ends up somewhere it should not be.
+ */
+const SECRET_KEYS = ['alert_slack_webhook', 'alert_slack_target', 'alert_ig_user_id'] as const;
+
+type UserKey = (typeof USER_KEYS)[number];
+
+const numOrNull = (v: string | undefined): number | null => {
+  const n = v == null ? NaN : parseInt(v, 10);
+  return Number.isFinite(n) ? n : null;
+};
+
+/** Per-user value, falling back to the global default the account inherits. */
+function effective(userId: number, key: string, fallback: string): string {
+  return queries.getUserSetting(userId, key) ?? queries.getSetting(key) ?? fallback;
+}
+
+export async function GET() {
+  const auth = await requireUser();
+  if (!auth.ok) return auth.response;
+  const uid = auth.user.id;
+
+  const body: Record<string, unknown> = {
+    alert_threshold_per_adult_usd: parseFloat(effective(uid, 'alert_threshold_per_adult_usd', '900')),
+    alert_email: effective(uid, 'alert_email', auth.user.email),
+    max_display_per_adult_usd: parseFloat(effective(uid, 'max_display_per_adult_usd', '1200')),
+    price_drop_pct: parseFloat(effective(uid, 'price_drop_pct', '10')),
+    alert_channels: effective(uid, 'alert_channels', 'email'),
+    alert_telegram_chat_id: effective(uid, 'alert_telegram_chat_id', ''),
+
+    // Alert policy. These are per-user only — there is no sensible global
+    // default for "when is this person asleep".
+    quiet_hours_start: queries.getUserSetting(uid, 'quiet_hours_start') ?? '',
+    quiet_hours_end: queries.getUserSetting(uid, 'quiet_hours_end') ?? '',
+    // What is ACTUALLY in force, and why. A settings card that renders only the
+    // stored value cannot tell "no quiet hours" from "the default quiet hours",
+    // and says the wrong one of those to every account that has never set them.
+    ...(() => {
+      const e = effectiveQuietHours(uid);
+      const pad = (h: number) => `${String(h).padStart(2, '0')}:00`;
+      return {
+        quiet_hours_source: e.source,
+        quiet_hours_effective_start: e.window ? pad(e.window.startHour) : '',
+        quiet_hours_effective_end: e.window ? pad(e.window.endHour) : '',
+      };
+    })(),
+    daily_alert_cap: numOrNull(queries.getUserSetting(uid, 'daily_alert_cap')),
+    // Absent means instant, so no existing account's behaviour changes.
+    instant_alerts: queries.getUserSetting(uid, 'instant_alerts') !== 'false',
+    wake_for_mistake_fares: queries.getUserSetting(uid, 'wake_for_mistake_fares') === 'true',
+    tz_offset_min: numOrNull(queries.getUserSetting(uid, 'tz_offset_min')),
+  };
+
+  // Presence, never the value.
+  for (const k of SECRET_KEYS) {
+    body[`${k}_configured`] = Boolean(queries.getUserSetting(uid, k) || queries.getSetting(k));
+  }
+
+  if (isOwner(auth.user)) {
+    for (const k of GLOBAL_KEYS) body[k] = queries.getSetting(k) ?? null;
+  }
+
+  return NextResponse.json(body);
+}
+
+const PutSchema = z.object({
+  alert_threshold_per_adult_usd: z.number().positive().optional(),
+  alert_email: z.string().email().optional(),
+  max_display_per_adult_usd: z.number().positive().optional(),
+  price_drop_pct: z.number().min(1).max(80).optional(),
+  alert_channels: z.string().regex(/^[a-z,]*$/).optional(),
+  alert_telegram_chat_id: z.string().max(100).optional(),
+  alert_phone: z.string().max(40).optional(),
+  alert_phone_whatsapp: z.string().max(40).optional(),
+  alert_slack_target: z.string().max(200).optional(),
+  alert_slack_webhook: z.string().max(500).optional(),
+  alert_ig_user_id: z.string().max(100).optional(),
+  // '' clears the window; alertGate treats absent as "no quiet hours".
+  quiet_hours_start: z.string().regex(/^(\d{1,2}:\d{2})?$/).optional(),
+  quiet_hours_end: z.string().regex(/^(\d{1,2}:\d{2})?$/).optional(),
+  daily_alert_cap: z.number().int().min(1).max(50).optional(),
+  instant_alerts: z.enum(['true', 'false']).optional(),
+  wake_for_mistake_fares: z.enum(['true', 'false']).optional(),
+  tz_offset_min: z.number().int().min(-840).max(840).optional(),
+  // Owner-only. Silently ignored for everyone else rather than rejected, so a
+  // stale client cannot be told which keys are privileged.
+  poll_interval_minutes: z.number().int().min(5).max(1440).optional(),
+  enabled_providers: z.string().regex(/^[a-z,]+$/).optional(),
+  usd_to_egp: z.number().positive().optional(),
+});
+
+export async function PUT(req: Request) {
+  const auth = await requireUser(req);
+  if (!auth.ok) return auth.response;
+
+  const body = await req.json().catch(() => ({}));
+  const parsed = PutSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+
+  const owner = isOwner(auth.user);
+  let cadenceChanged = false;
+  const ignored: string[] = [];
+
+  for (const [k, v] of Object.entries(parsed.data)) {
+    if (v === undefined) continue;
+
+    if ((GLOBAL_KEYS as readonly string[]).includes(k)) {
+      if (!owner) { ignored.push(k); continue; }
+      queries.setSetting(k, String(v));
+      if (k === 'poll_interval_minutes') cadenceChanged = true;
+      continue;
+    }
+
+    if ((USER_KEYS as readonly string[]).includes(k as UserKey)) {
+      queries.setUserSetting(auth.user.id, k, String(v));
+      continue;
+    }
+
+    ignored.push(k);
+  }
+
+  if (cadenceChanged) restartCron();
+  // Saying what was ignored keeps a silent no-op from looking like a save.
+  return NextResponse.json(ignored.length ? { ok: true, ignored } : { ok: true });
+}

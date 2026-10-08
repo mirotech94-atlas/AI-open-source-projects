@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_health.html" as hm %}
+{% block title %}{{ day }} — ATLAS{% endblock %}
+{% block body %}
+  <p class="asof">Findings recorded on {{ day }} (UTC)</p>
+  <h2 class="label">{{ day }}</h2>
+
+  {% if not findings %}
+    <p class="empty">Nothing was recorded that day.</p>
+  {% else %}
+  <div class="panel">
+    <ul class="rows">
+      {% for f in findings %}
+      <li style="padding:8px 0">
+        <div>
+          {{ hm.badge(f.health) }}
+          <a href="/f/{{ f.id }}" style="margin-left:6px">{{ f.title }}</a>
+        </div>
+        <div class="note" style="margin-top:2px">
+          {{ f.at.strftime('%H:%M') }}Z · {{ f.check_key }} · {{ hm.severity(f.severity) }}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+{% endblock %}
+{% block footer %}<a href="/briefs">Past briefs</a> · <a href="/brief">Today's brief</a> · <a href="/logout">Sign out</a>{% endblock %}

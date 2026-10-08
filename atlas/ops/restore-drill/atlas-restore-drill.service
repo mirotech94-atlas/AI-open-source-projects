@@ -1,0 +1,14 @@
+[Unit]
+Description=ATLAS weekly restore drill (isolated, network-less postgres; RA-H2)
+Documentation=file:///opt/atlas/docs/restore-drill.md
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/atlas
+ExecStart=/opt/atlas/ops/restore_drill.sh
+# Low priority: the drill must never starve the live API or database.
+Nice=15
+IOSchedulingClass=idle
+TimeoutStartSec=1h

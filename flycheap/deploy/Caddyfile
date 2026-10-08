@@ -1,0 +1,61 @@
+my.flycheap.live, admin.flycheap.live, flycheap.live {
+    # Serve auto-posted video clips as public static files so Ayrshare can
+    # fetch them when posting to TikTok / Instagram / LinkedIn. Files are
+    # written here by post_video.py before each Ayrshare call.
+    handle_path /clips/* {
+        root * /opt/egyptair-tracker/public/clips
+        file_server {
+            # Don't expose a directory listing — only serve named files.
+            hide .htaccess
+        }
+        header {
+            Cache-Control "public, max-age=3600"
+            X-Content-Type-Options "nosniff"
+        }
+    }
+
+    # Everything else proxies to the Next.js app.
+    handle {
+        header {
+            Strict-Transport-Security "max-age=31536000; includeSubDomains"
+            X-Content-Type-Options "nosniff"
+            X-Frame-Options "SAMEORIGIN"
+            Referrer-Policy "strict-origin-when-cross-origin"
+            Permissions-Policy "camera=(), geolocation=(), payment=()"
+            Content-Security-Policy "default-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.maptiler.com https://tile.openstreetmap.org https://server.arcgisonline.com; worker-src 'self' blob:; child-src 'self' blob:"
+            -Server
+        }
+        reverse_proxy 127.0.0.1:3000
+        encode gzip zstd
+    }
+
+    log {
+        output file /var/log/caddy/egyptair.log
+        format console
+    }
+}
+
+# The bare domain serves the marketing site (app decides per path: / → /welcome,
+# account paths → my.flycheap.live); www is canonicalised to the bare domain. Certificates are issued
+# automatically once DNS for these names points here.
+www.flycheap.live {
+    redir https://flycheap.live{uri} permanent
+}
+
+# ── Retired 2026-09-17: flycheap.example.com is no longer served, only redirected.
+# Kept (rather than deleted) so old magic links, bookmarks and search results
+# still land somewhere correct. Safe to remove once nothing references it.
+flycheap.example.com {
+    redir https://flycheap.live{uri} permanent
+}
+
+admin.flycheap.example.com {
+    redir https://admin.flycheap.live{uri} permanent
+}
+
+# Plain-HTTP fallback by IP (redirects to the live apex)
+:80 {
+    @ip host 203.0.113.10
+    redir @ip https://flycheap.live{uri} permanent
+    reverse_proxy 127.0.0.1:3000
+}

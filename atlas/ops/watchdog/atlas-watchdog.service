@@ -1,0 +1,35 @@
+[Unit]
+Description=ATLAS independent watchdog (healthz, TLS, scheduler heartbeat)
+Documentation=file:///opt/atlas-watchdog/INSTALL.md
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# The webhook file stays root:root 0600. systemd hands a copy to this
+# unprivileged, throwaway user through the credentials directory; the script
+# looks for $CREDENTIALS_DIRECTORY/watchdog.env first.
+DynamicUser=yes
+LoadCredential=watchdog.env:/etc/atlas-watchdog/watchdog.env
+StateDirectory=atlas-watchdog
+Environment=ATLAS_WATCHDOG_STATE=/var/lib/atlas-watchdog/state.json
+ExecStart=/usr/bin/python3 /opt/atlas-watchdog/atlas_watchdog.py
+TimeoutStartSec=60
+# Exit 10 = a check is not OK (already alerted on change). Not a unit failure.
+# Any other non-zero (2 no route, 3 alert not sent, 4/1 crashed) fails the unit.
+SuccessExitStatus=10
+Nice=10
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=

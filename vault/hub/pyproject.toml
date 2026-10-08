@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "guardian-hub"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0,<3",
+  "alembic>=1.13",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "apscheduler>=3.10,<4",
+  "python-multipart>=0.0.9",
+  "httpx>=0.27",
+  "cryptography>=42",
+]
+[project.optional-dependencies]
+test = ["pytest>=8", "pytest-asyncio>=0.23", "openpyxl>=3.1"]
+[project.scripts]
+guardian = "guardian_hub.cli:main"
+[tool.setuptools.packages.find]
+include = ["guardian_hub*"]
+[tool.pytest.ini_options]
+# Upstream deprecation noise from starlette's TestClient (httpx2 doesn't exist as a
+# stable dependency yet) and anyio's internal BlockingPortal alias; not caused by
+# this project's code, so silenced to keep test output pristine. Scoped by message
+# regex to just the httpx-related warning so other StarletteDeprecationWarnings
+# (e.g. from our own future code) still surface.
+filterwarnings = [
+  "ignore:.*httpx.*:starlette.exceptions.StarletteDeprecationWarning",
+  "ignore:The anyio.abc.BlockingPortal alias is deprecated.*:DeprecationWarning",
+]

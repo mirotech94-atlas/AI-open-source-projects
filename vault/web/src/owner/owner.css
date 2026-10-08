@@ -1,0 +1,1542 @@
+/* The owner console (admin.guarder.io).
+ *
+ * The same dark instrument panel the customer portal wears, because the two
+ * are one product: an owner moving between admin.guarder.io and a customer's
+ * own dashboard should not feel they have changed applications.
+ *
+ * This file used to do the opposite, on purpose. It committed to a light paper
+ * ground and re-declared the app's entire token set on `.g-owner`, so that
+ * shared components -- Table, Badge, Drawer, buttons, form controls -- arrived
+ * here in paper and ink. The argument was that a glance could then never
+ * mistake this console for a customer's dashboard.
+ *
+ * The thing that argument protects against is real: acting on the wrong
+ * surface. But a whole second palette is an expensive way to say it, and the
+ * way it said it was to make the console look like a different, older
+ * product. The signal belongs in words instead, and already is in words --
+ * `.g-owner-host` prints the hostname in the bar. One line of text naming the
+ * surface you are on beats a colour you have to learn.
+ *
+ * So the console now declares no palette of its own. The `--own-*` names below
+ * are ALIASES onto the app's tokens: one indirection, which lets the rest of
+ * this file go on reading in its own vocabulary while every value comes from
+ * `tokens.css`. Add a semantic token to the app and this console inherits it.
+ * It cannot drift, because there is nothing here to drift from.
+ *
+ * What does NOT change is the console's grammar, which was never what looked
+ * wrong. Red stays reserved for the one thing it has always meant here -- a
+ * customer who needs the owner today. Everything healthy recedes. Status is
+ * the weight of a row's left edge rather than a badge, because a badge on
+ * every row distinguishes nothing. Numerals are tabular and right-aligned the
+ * way a balance sheet sets them, so columns of figures compare down rather
+ * than across, and mono is for identifiers only -- slugs and hostnames --
+ * never labels.
+ */
+
+/* Scoped to the console rather than `:root` so these names cannot leak into
+ * the tenant app, and every one resolves to an app token. There is
+ * deliberately no literal colour left in this file; `tests/ownerPalette.test.ts`
+ * is what keeps it that way. */
+.g-owner,
+.g-owner-refused {
+  --own-paper: var(--color-bg);
+  --own-ink: var(--color-text);
+  --own-rule: var(--color-border);
+  --own-red: var(--color-alert);
+  --own-quiet: var(--color-text-muted);
+  --own-surface: var(--color-surface);
+  --own-sunken: var(--color-surface-sunken);
+  --own-rail: var(--color-rail);
+  --own-red-soft: var(--color-alert-soft);
+  /* Amber: waiting on you. Distinct from `--own-red`, which is
+     reserved for a customer who needs the owner today. */
+  --own-warn: var(--color-warn-text);
+  --own-warn-soft: var(--color-warn-soft);
+  /* Green: an outcome that is settled -- a sensor reporting, a ticket
+     resolved. Soft ground + text-strength hue, the same pairing as amber. */
+  --own-good: var(--color-good-text);
+  --own-good-soft: var(--color-good-soft);
+  /* The edge a selected chip takes: one step stronger than a hairline,
+     because selection is a state and a state needs to be seen. */
+  --own-strong: var(--color-border-strong);
+  /* Blue at pill strength: the reference's DISCOVERED / informational pill,
+     the one place blue is a status rather than an action. */
+  --own-act-soft: var(--color-primary-soft);
+
+  /* The one name that is not a translation of the old palette.
+   *
+   * On paper an action was ink, and the file said it "reads as weight rather
+   * than as colour". That was true because ink was already the darkest thing
+   * available, so weight was the only axis left to use. On the instrument
+   * panel the brand blue IS the interactive colour -- CLAUDE.md fixes it at
+   * `#66a6ff` on a dark ground -- and it is the single strongest cue that this
+   * console and the customer portal are the same product. An active tab, a
+   * focus ring and the primary button take it.
+   *
+   * Emphasis stays a different job, and keeps the old rule: `--own-ink` at a
+   * heavier weight. A warn row shifts weight, not hue, so the one red remains
+   * the only colour on this console that means an emergency. */
+  --own-act: var(--color-primary);
+}
+
+/* No `color-scheme` here. `tokens.css` sets it per skin, and the console
+ * following the app's is the whole point -- pinning it would put native
+ * widgets (the `select` in a settings row) back on a ground of their own. */
+.g-owner {
+  min-height: 100vh;
+  background: var(--own-paper);
+  color: var(--own-ink);
+}
+
+/* --- top bar: says which surface you are on ---------------------------- */
+.g-owner-bar {
+  display: flex; align-items: center; gap: 10px;
+  height: 56px; padding: 0 26px;
+  border-bottom: 1px solid var(--own-rule);
+  /* Frosted paper, not frosted glass: the console's own answer for this
+   * material, declared in the rescope block above. Same rule as the app's top
+   * bar, a different substance. */
+  background: var(--color-glass-tint);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  box-shadow: inset 0 1px 0 0 var(--color-glass-edge);
+}
+.g-owner-brand { display: inline-flex; align-items: center; gap: 8px; }
+/* The wordmark as the reference sets it: the mono face, small, tracked out,
+   uppercase -- a label on the frame rather than a heading in it. */
+.g-owner-wordmark {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--own-ink);
+}
+/* The hostname is information, not decoration: it is the difference between
+   this console and a customer's own dashboard.
+ *
+ * It carries that difference alone now. While the console was paper and the
+ * app was dark, the ground said which surface you were on before you read
+ * anything, and this could afford to be a grey whisper beside the wordmark.
+ * The two surfaces share a skin as of this file's rewrite, so a whisper is no
+ * longer enough: it is set as a chip, in the interactive blue, at full text
+ * contrast. Nothing else in the bar is boxed, which is what makes it read as
+ * a label ON the surface rather than another word in it. */
+.g-owner-host {
+  font-family: var(--font-mono); font-size: var(--font-size-xs);
+  color: var(--own-act);
+  padding: 2px 8px;
+  border: 1px solid var(--own-act);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+}
+/* The customer jump. Pushed to the right-hand end of the bar with the
+   identity, because it is a destination control rather than a label about the
+   current page -- the left of this bar says where you ARE, the right says
+   where you can go and who you are.
+
+   `margin-left: auto` moves here from `.g-owner-who`: two elements both
+   claiming the spacer would put the jump immediately after the hostname and
+   leave a gap only after it, which reads as the hostname having grown a
+   dropdown. */
+/* What you are looking at, in the one piece of chrome that is always on
+   screen. A title that scrolls away with the content is the first line of the
+   page rather than a label for it. Separated from the brand by a rule, so the
+   bar reads as "this product · this surface · this page" left to right. */
+/* One line, as the reference sets it: the name, then its gloss beside it in
+   the quiet colour. Stacked, the bar grew to two lines and read as a page
+   heading with a strapline rather than as the label on a frame. */
+.g-owner-head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.g-owner-eyebrow {
+  font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--own-quiet); white-space: nowrap;
+}
+.g-owner-title {
+  margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.01em;
+  white-space: nowrap; color: var(--own-ink);
+}
+.g-owner-sub {
+  font-size: 13px; color: var(--own-quiet);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+@media (max-width: 900px) {
+  /* The subtitle is the hint, and the nav still carries it. */
+  .g-owner-sub { display: none; }
+}
+
+/* The palette's own control. Styled as the reference's search pill rather
+   than as a button, because that is what it opens onto, and it carries its
+   shortcut so the binding is discoverable instead of folklore. */
+.g-owner-find {
+  margin-left: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  width: 250px; text-align: left;
+  font: inherit; font-size: 13px;
+  color: var(--own-quiet); background: var(--own-surface);
+  border: 1px solid var(--own-rule); border-radius: 5px;
+  padding: 6px 10px; cursor: pointer;
+}
+.g-owner-find-glyph { flex: 0 0 auto; }
+.g-owner-find-text { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1000px) { .g-owner-find { width: auto; } .g-owner-find-text { display: none; } }
+
+/* The auto-heal readout: mono, tracked, a dot, on the soft ground of its
+   state. Green when Vault is repairing on its own; amber when it is not,
+   because that is work waiting rather than an emergency. */
+.g-owner-heal {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none;
+  padding: 6px 11px; border-radius: 5px;
+  color: var(--own-good); background: var(--own-good-soft);
+  border: 1px solid var(--own-good-soft);
+}
+.g-owner-heal-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.g-owner-heal.is-off { color: var(--own-warn); background: var(--own-warn-soft); border-color: var(--own-warn-soft); }
+.g-owner-heal:hover { border-color: currentColor; }
+.g-owner-heal:focus-visible { outline: 2px solid var(--own-act); outline-offset: 1px; }
+.g-owner-find:hover { color: var(--own-ink); border-color: var(--own-act); }
+.g-owner-find:focus-visible { outline: 2px solid var(--own-act); outline-offset: 1px; }
+.g-owner-kbd {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--own-quiet); border: 1px solid var(--own-rule);
+  border-radius: 3px; padding: 0 4px; line-height: 1.5;
+}
+
+/* The jump keeps its place beside the palette; the spacer moved to `.g-owner-find`
+   above, which is now the first of the right-hand controls. */
+.g-owner-jump { display: flex; align-items: center; gap: var(--space-2); }
+.g-owner-jump-label {
+  font-family: var(--font-mono); font-size: var(--font-size-xs);
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--own-quiet);
+}
+/* Deliberately styled as an input rather than as a button: it holds a value
+   and keeps showing it, which is what a field looks like. Left at the
+   platform's own select so its type-ahead and mobile picker survive. */
+.g-owner-jump-select {
+  font: inherit; font-size: var(--font-size-sm);
+  color: var(--own-ink); background: var(--own-surface);
+  border: 1px solid var(--own-rule); border-radius: 4px;
+  padding: 4px 8px; max-width: 200px;
+}
+.g-owner-jump-select:focus-visible { outline: 2px solid var(--own-act); outline-offset: 1px; }
+
+@media (max-width: 760px) {
+  /* The label is the first thing to go: the control keeps its placeholder
+     ("Jump to…"), which says the same thing in the space of the field. */
+  .g-owner-jump-label { display: none; }
+}
+
+.g-owner-who { font-size: var(--font-size-sm); color: var(--own-quiet); }
+
+/* --- rail + main ------------------------------------------------------- */
+.g-owner-body { display: grid; grid-template-columns: 238px minmax(0, 1fr); align-items: start; }
+/* The rail's own header: product mark and the surface you are on, above the
+   navigation and separated from it by the same hairline the bar uses. */
+.g-owner-railhead {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 4px 6px 14px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--own-rule);
+}
+
+/* Is the estate reporting. The one piece of live state in the frame, so it
+   gets the console's only moving part -- a slow pulse, which is what the
+   reference reserves for "the sensor is alive". Nothing else here animates;
+   an instrument panel that fidgets is one you stop looking at. */
+.g-owner-pulse {
+  display: flex; flex-direction: column; gap: 3px; align-self: stretch;
+  padding: 9px 11px;
+  background: var(--own-surface); border: 1px solid var(--own-rule); border-radius: 6px;
+}
+.g-owner-pulse-top { display: inline-flex; align-items: center; gap: 7px; }
+.g-owner-pulse-text {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--own-ink);
+}
+.g-owner-pulse-sub { font-size: 11.5px; color: var(--own-quiet); padding-left: 13px; }
+.g-owner-pulse.is-quiet .g-owner-pulse-sub { color: var(--own-warn); }
+.g-owner-pulse-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--color-good);
+  animation: g-owner-pulse 2.6s ease-in-out infinite;
+}
+.g-owner-pulse.is-quiet .g-owner-pulse-dot { background: var(--own-warn); }
+.g-owner-pulse.is-quiet .g-owner-pulse-text { color: var(--own-warn); }
+@keyframes g-owner-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+/* A pulse is decoration to anyone who cannot benefit from it, and a hazard to
+   some -- it stops rather than slows, because a slower blink is still a blink. */
+@media (prefers-reduced-motion: reduce) {
+  .g-owner-pulse-dot { animation: none; }
+}
+
+.g-owner-rail {
+  display: flex; flex-direction: column;
+  padding: 14px 12px;
+  border-right: 1px solid var(--own-rule);
+  /* A flat step below the page, not frosted glass. Depth in this console
+     comes from the background ladder -- rail, page, card, inset -- and 1px
+     borders; a blur over the page beneath it produces a rail whose colour
+     depends on what happens to be scrolled under it, which is the one thing
+     a fixed frame must not do. */
+  background: var(--own-rail);
+  box-shadow: inset 1px 0 0 0 var(--color-glass-edge);
+  min-height: calc(100vh - 45px);
+}
+.g-owner-navlink {
+  display: block; padding: 7px 10px; margin: 1px 0;
+  text-decoration: none; color: var(--own-ink);
+  border-left: 2px solid transparent; border-radius: 0 5px 5px 0;
+}
+.g-owner-navlink:hover { background: var(--own-surface); }
+
+/* Label and its count on one line, hint beneath. */
+.g-owner-navrow { display: flex; align-items: center; gap: var(--space-2); }
+/* The count of what is waiting behind this item.
+ *
+ * Neutral, not red. Red on this console means a customer needs the owner
+ * today; a queue with three things in it is work, not an emergency, and
+ * spending the alarm colour on the ordinary case leaves nothing for the real
+ * one. It reads because the rest of the rail is bare -- a badge on every item
+ * would be a badge on nothing. */
+.g-owner-navbadge {
+  margin-left: auto; flex: 0 0 auto;
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.4;
+  padding: 1px 6px; border-radius: 20px;
+  background: var(--own-surface); border: 1px solid var(--own-rule);
+  color: var(--own-quiet);
+  font-variant-numeric: tabular-nums;
+}
+.g-owner-navlink.is-active .g-owner-navbadge { color: var(--own-ink); }
+/* A queue with something in it. Amber, never red -- see the note on
+   `--own-warn`. Inventory counts stay neutral, so the two kinds of number in
+   this rail are told apart without reading them. */
+.g-owner-navbadge.is-waiting {
+  background: var(--own-warn-soft);
+  border-color: var(--own-warn-soft);
+  color: var(--own-warn);
+}
+
+/* The current item is a filled row with the blue edge -- the reference's
+   `#1c2634` step with a 2px `#2f7ff0` bar -- so the eye lands on it before
+   reading. Weight goes to 600, not 800: the fill is doing the work now. */
+.g-owner-navlink.is-active { background: var(--own-sunken); border-left-color: var(--own-act); }
+.g-owner-navlabel { display: block; font-weight: 500; font-size: 13.5px; }
+.g-owner-navlink.is-active .g-owner-navlabel { font-weight: 600; }
+
+/* The person, at the foot. `margin-top: auto` puts it at the bottom of the
+   rail whatever the rail's height, which is how the reference sets it. */
+.g-owner-railfoot {
+  margin-top: auto; padding: 14px 6px 2px;
+  border-top: 1px solid var(--own-rule);
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.g-owner-avatar {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 600;
+  background: var(--own-sunken); border: 1px solid var(--own-rule); color: var(--own-ink);
+}
+.g-owner-railwho { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.g-owner-railname { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-owner-railsub { font-family: var(--font-mono); font-size: 11px; color: var(--own-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-owner-navhint {
+  display: block; margin-top: 2px; font-size: var(--font-size-xs);
+  color: var(--own-quiet); line-height: 1.4;
+}
+/* The reference's content inset: 22px above, 26px at the sides, room below. */
+.g-owner-main { padding: 22px 26px 44px; min-width: 0; }
+
+.g-owner-refused { max-width: 46ch; margin: 12vh auto; padding: 0 var(--space-4); }
+.g-owner-refused h1 { font-size: var(--font-size-xl); margin: 0 0 var(--space-3); }
+.g-owner-refused p { color: var(--own-quiet); line-height: 1.6; }
+
+/* --- the ledger ------------------------------------------------------- */
+/* The page opens with a sentence that counts the work, not a row of stat
+   cards. It is the same move the product makes for customers -- plain
+   language, "what should I do?" -- turned on the business. */
+.g-led-head { margin: 0 0 17px; }
+/* 21px/600, the largest text the reference sets anywhere (an asset's name).
+ * It was 38px/800, a headline from the paper-and-ink console that now sat
+ * above cards drawn at half its scale and read as a different page. */
+.g-led-head .g-led-headline {
+  margin: 0 0 6px; font-size: 21px; line-height: 1.2;
+  letter-spacing: -0.015em; font-weight: 600;
+}
+/* The count is the one figure in the sentence, so it is set in the numeral
+   face the rest of the console uses for figures. */
+.g-led-head .g-led-headline .g-led-count { font-family: var(--font-num); font-weight: 500; color: var(--own-red); }
+.g-led-head .g-led-headline.is-quiet .g-led-count { color: var(--own-ink); }
+.g-led-say { margin: 0; max-width: 62ch; font-size: var(--font-size-sm); line-height: 1.55; color: var(--own-quiet); }
+
+/* The tallies under the sentence. Hairline-separated pairs read left to right,
+   the same shape the tenant app's own header uses, so a number means the same
+   thing on both surfaces. The separators are the only thing holding these
+   apart -- without them the line runs together into one unreadable string. */
+.g-led-status {
+  display: flex; flex-wrap: wrap; align-items: center;
+  margin: var(--space-3) 0 0; padding: 0;
+  font-size: var(--font-size-sm); color: var(--own-quiet);
+}
+.g-led-status > span { padding: 0 12px; border-left: 1px solid var(--own-rule); }
+.g-led-status > span:first-child { padding-left: 0; border-left: 0; }
+.g-led-status b { color: var(--own-ink); font-variant-numeric: tabular-nums; }
+/* The tally is the first line on the console and it is read to decide where to
+   look, so the two things in it are not the same thing. `open_crit` is a
+   critical finding on a customer's network; `paused`, `trials_ending` and
+   `open_requests` are business state -- real work, but nobody's network is on
+   fire. Painting all four the one red made a trial ending as loud as a
+   compromised host, on the exact line meant to direct attention.
+
+   The split follows this console's own rule rather than adding a second hue:
+   an action is ink and reads as WEIGHT, and the single red is kept for the
+   single emergency. */
+.g-led-status .is-warn b { color: var(--own-ink); font-weight: 700; }
+.g-led-status .is-crit b { color: var(--own-red); font-weight: 700; }
+/* ...and the word beside the red number takes the red too, so the emergency
+   reads as one phrase rather than a red digit with a grey label after it. */
+.g-led-status .is-crit { color: var(--own-red); }
+
+/* The table, as the design reference sets every list: a header strip on the
+   sunken ground with its labels in the mono face, small and tracked out, so
+   the column names read as furniture and the rows as the content; then rows
+   on hairlines, and a hover that makes a wide row readable across its full
+   width.
+
+   It used to open with a 2px ink rule and run its header in the text face --
+   the paper-and-ink ledger's table. That was the last of the old console
+   still on screen after the frame changed: every tab looked new at its edges
+   and old in the middle, which is exactly what the owner reported. Two ways
+   to draw a table exist here (the shared `Table` primitive, and the plain
+   `.g-own-table` the hand-built pages use), so this rule names both. A page
+   that used one and not the other is how the drift would come back. */
+.g-owner-main .g-table thead th,
+.g-owner-main .g-own-table th[scope="col"] {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--own-quiet);
+  background: var(--own-sunken);
+  padding: 10px 16px; border-bottom: 1px solid var(--own-rule);
+  text-align: left; white-space: nowrap;
+}
+.g-owner-main .g-table td,
+.g-owner-main .g-own-table td,
+.g-owner-main .g-own-table th[scope="row"] {
+  padding: 11px 16px; border-bottom: 1px solid var(--own-rule);
+  font-size: 13px; text-align: left; font-weight: 400; vertical-align: middle;
+}
+.g-owner-main .g-table tr { background: none; }
+.g-owner-main .g-table tbody tr:hover td,
+.g-owner-main .g-own-table tbody tr:hover td,
+.g-owner-main .g-own-table tbody tr:hover th[scope="row"] { background: var(--own-sunken); }
+.g-owner-main .g-table th.g-align-right,
+.g-owner-main .g-table td.g-align-right { text-align: right; }
+
+/* Status is the weight of the left edge, not a badge. `inset` rather than a
+   border so the row's height is unchanged and the rules still line up. */
+.g-owner-main .g-table tr.needs-you td:first-child { box-shadow: inset 3px 0 0 var(--own-red); }
+
+.g-led-name { display: flex; flex-direction: column; gap: 2px; }
+/* The reference's row: name 13.5px/500 over its slug. It was 16px/800, a
+   heading in every row, which made the customer column the loudest thing on a
+   page whose loud thing should be the row that needs you. */
+.g-led-name strong { font-size: 13.5px; font-weight: 500; }
+.g-led-slug { font-family: var(--font-mono); font-size: 11px; color: var(--own-quiet); }
+.g-led-plan { display: inline-flex; align-items: center; gap: 8px; font-size: var(--font-size-sm); }
+.g-led-quiet { color: var(--own-quiet); }
+/* The three things that mean "this one needs you", all in the one red. */
+.g-led-short, .g-led-soon { color: var(--own-red); font-weight: 600; }
+.g-led-alerts { display: inline-flex; gap: 8px; justify-content: flex-end; font-variant-numeric: tabular-nums; }
+/* A critical alert is today's work and says so. A warning count is printed
+   on every row regardless, so putting it in red too meant most of the ledger
+   was red and the eye had nothing left to land on. */
+.g-led-alerts .is-crit { color: var(--own-red); font-weight: 500; }
+.g-led-alerts .is-warn { color: var(--own-quiet); }
+/* Badges are outlined rather than filled, so they stay quieter than the
+   figures they sit beside -- but they keep their tone.
+ *
+ * An earlier version of this rule painted every badge red, on the reasoning
+ * that the console has one colour and the eye should not have to learn a
+ * second meaning. That held while the ledger was the only page with a badge.
+ * It stopped holding the moment Support and Settings arrived, because they
+ * use a badge to say "Resolved" and "set" -- outcomes, not work. Shouting
+ * those in the same red as "Waiting on you" is how red stopped meaning
+ * anything, and it is the reason this console read as mismatched.
+ *
+ * So tone decides. Red is still reserved for the one thing it has always
+ * meant here; everything else is an outline in quiet grey. */
+.g-owner-main .g-badge {
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px;
+  background: var(--own-sunken); border: 0; color: var(--own-quiet);
+}
+/* Three hues, the same three the state pills use: amber is waiting on you,
+ * green is settled, and the one red is still only an emergency. */
+.g-owner-main .g-badge.g-tone-warn { background: var(--own-warn-soft); color: var(--own-warn); }
+.g-owner-main .g-badge.g-tone-good { background: var(--own-good-soft); color: var(--own-good); }
+.g-owner-main .g-badge.g-tone-alert { background: var(--own-red-soft); color: var(--own-red); }
+
+.g-led-empty { color: var(--own-quiet); }
+.g-led-foot { margin-top: var(--space-3); font-size: var(--font-size-xs); color: var(--own-quiet); }
+
+
+@media (max-width: 860px) {
+  .g-owner-body { grid-template-columns: 1fr; }
+  .g-owner-rail { min-height: 0; border-right: 0; border-bottom: 1px solid var(--own-rule); }
+}
+
+/* --- support queue ----------------------------------------------------- */
+/* Two panes: the list answers "what needs me", the thread answers "what is
+   this about". No cards, no shadows — the same hairline-and-surface grammar
+   the ledger uses, so the console reads as one surface. */
+.g-tix-head { margin: 0 0 17px; }
+.g-tix-head h1 { margin: 0; font-size: var(--font-size-xl); letter-spacing: -0.01em; }
+.g-tix-sub { margin: var(--space-2) 0 0; font-size: var(--font-size-sm); color: var(--own-quiet); }
+
+.g-tix-panes {
+  display: grid; grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--space-4); align-items: start;
+}
+
+.g-tix-queue {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--own-rule); border-radius: 7px;
+  background: var(--own-surface);
+  max-height: 72vh; overflow-y: auto;
+}
+.g-tix-item {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 16px; text-align: left; width: 100%;
+  background: none; border: 0; border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--own-rule);
+  color: var(--own-ink); cursor: pointer;
+}
+.g-tix-item:last-child { border-bottom: 0; }
+.g-tix-item:hover { background: var(--own-sunken); }
+.g-tix-item.is-active { background: var(--own-sunken); border-left-color: var(--own-act); }
+.g-tix-item-top, .g-tix-item-foot { display: flex; align-items: center; gap: 8px; }
+.g-tix-cust { font-weight: 600; font-size: var(--font-size-sm); }
+.g-tix-age, .g-tix-count { margin-left: auto; font-size: var(--font-size-xs); color: var(--own-quiet); }
+.g-tix-item-foot .g-tix-count { margin-left: auto; }
+.g-tix-subj { font-size: var(--font-size-sm); color: var(--own-quiet); line-height: 1.4; }
+.g-tix-pri { font-size: var(--font-size-xs); color: var(--own-red); font-weight: 600; }
+.g-tix-none { color: var(--own-quiet); padding: var(--space-4); margin: 0; }
+
+.g-tix-thread {
+  border: 1px solid var(--own-rule); border-radius: 7px;
+  background: var(--own-surface); min-width: 0;
+}
+.g-tix-thread-head {
+  display: flex; gap: var(--space-4); align-items: flex-start; justify-content: space-between;
+  padding: 13px 16px; border-bottom: 1px solid var(--own-rule);
+}
+.g-tix-thread-head h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.g-tix-meta { margin: 4px 0 0; font-size: var(--font-size-xs); color: var(--own-quiet); }
+/* The status and the single control that changes it, kept together on the
+   right: the question "where is this up to" and the act of settling it are
+   the same thought. */
+.g-tix-state { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+.g-tix-state-note { margin: 0; font-size: var(--font-size-xs); color: var(--own-quiet); text-align: right; }
+
+.g-tix-msgs { list-style: none; margin: 0; padding: 16px; display: flex; flex-direction: column; gap: var(--space-4); }
+.g-tix-msg { padding-left: 12px; border-left: 2px solid var(--own-rule); }
+/* Vault's own words get the accent edge; the customer's stay neutral, so
+   a glance down the thread shows who spoke without reading names. */
+.g-tix-msg.is-owner { border-left-color: var(--own-act); }
+.g-tix-msg-head { display: flex; align-items: baseline; gap: 8px; font-size: var(--font-size-xs); }
+.g-tix-msg-when { color: var(--own-quiet); }
+.g-tix-msg-nomail { color: var(--own-red); }
+.g-tix-msg-body { margin: 4px 0 0; white-space: pre-wrap; line-height: 1.6; font-size: var(--font-size-sm); }
+
+.g-tix-reply { padding: 16px; border-top: 1px solid var(--own-rule); }
+.g-tix-reply label { display: block; font-size: var(--font-size-xs); color: var(--own-quiet); margin-bottom: 6px; }
+.g-tix-reply textarea {
+  width: 100%; box-sizing: border-box; padding: 10px;
+  border: 1px solid var(--own-rule); border-radius: 5px;
+  background: var(--own-sunken); color: var(--own-ink);
+  font: inherit; line-height: 1.6; resize: vertical;
+}
+.g-tix-reply-foot { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3); }
+.g-tix-reply-hint { font-size: var(--font-size-xs); color: var(--own-quiet); }
+.g-tix-reply-foot .g-btn-primary { margin-left: auto; }
+.g-tix-err { margin: var(--space-2) 0 0; font-size: var(--font-size-xs); color: var(--own-red); }
+
+@media (max-width: 900px) {
+  .g-tix-panes { grid-template-columns: 1fr; }
+  .g-tix-queue { max-height: 40vh; }
+}
+
+/* --- platform settings ------------------------------------------------- */
+/* A list, not a form: each setting is its own decision with its own Save, so
+   nothing is saved by accident alongside something else. */
+.g-set-head { margin: 0; }
+.g-set-head h1 { margin: 0; font-size: var(--font-size-xl); letter-spacing: -0.01em; }
+
+/* A switch, per the design reference: 38x21 track, 15px knob, blue when on.
+   The one control in this console that changes what Vault DOES, so it is
+   the one place a real switch earns its pixels over a checkbox. */
+.g-set-toggle {
+  width: 38px; height: 21px; flex: 0 0 auto;
+  border-radius: 12px; padding: 3px; border: 0; cursor: pointer;
+  background: var(--own-sunken);
+  display: inline-flex; align-items: center; justify-content: flex-start;
+  transition: background 120ms ease;
+}
+.g-set-toggle.is-on { background: var(--own-act); justify-content: flex-end; }
+.g-set-toggle:focus-visible { outline: 2px solid var(--own-act); outline-offset: 2px; }
+.g-set-toggle:disabled { opacity: 0.6; cursor: default; }
+.g-set-toggle-knob {
+  width: 15px; height: 15px; border-radius: 50%;
+  background: var(--own-paper);
+}
+.g-set-toggle.is-on .g-set-toggle-knob { background: var(--own-ink); }
+@media (prefers-reduced-motion: reduce) { .g-set-toggle { transition: none; } }
+
+/* Vault is not repairing anything. The reference asks for a visible banner
+   while paused, and it is right: this is a state an owner can leave switched on
+   by accident for a week, and the only thing that would tell them is an
+   incident that did not fix itself. It sits in the frame rather than on the
+   settings page, because the settings page is the one screen where they
+   already know. */
+.g-owner-paused {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 8px var(--space-5);
+  background: var(--own-warn-soft); color: var(--own-warn);
+  border-bottom: 1px solid var(--own-rule);
+  font-size: var(--font-size-sm);
+}
+.g-owner-paused a { color: inherit; font-weight: 600; }
+.g-set-sub { margin: var(--space-2) 0 0; font-size: var(--font-size-sm); color: var(--own-quiet); max-width: 70ch; }
+
+/* Each group is a card with the console's header, and every row is inset by
+ * the same 16px the tables use, so Settings sits on the same grid as the
+ * rest of the tabs instead of as a bare form. */
+.g-set-group {
+  margin-top: 17px; background: var(--own-surface);
+  border: 1px solid var(--own-rule); border-radius: 7px; overflow: hidden;
+}
+.g-set-group h2 {
+  margin: 0; padding: 13px 16px;
+  font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em;
+  border-bottom: 1px solid var(--own-rule);
+}
+.g-set-group > .g-set-sub { margin: 0; padding: 12px 16px 0; }
+.g-set-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 260px;
+  gap: var(--space-4); align-items: start;
+  padding: 13px 16px; border-bottom: 1px solid var(--own-rule);
+}
+.g-set-row:last-child { border-bottom: 0; }
+.g-set-copy label { display: block; font-weight: 600; font-size: var(--font-size-sm); }
+.g-set-copy p { margin: 4px 0 0; font-size: var(--font-size-xs); color: var(--own-quiet); line-height: 1.55; max-width: 62ch; }
+/* Provenance, not a problem: this line says the value differs from the
+   shipped default and who changed it. It was red, which read as a warning
+   about a setting that is working exactly as intended. */
+.g-set-origin { color: var(--own-quiet) !important; }
+.g-set-control { display: flex; flex-direction: column; gap: 8px; }
+.g-set-control input, .g-set-control select {
+  width: 100%; box-sizing: border-box; padding: 8px 10px;
+  border: 1px solid var(--own-rule); border-radius: 5px;
+  background: var(--own-sunken); color: var(--own-ink); font: inherit;
+}
+.g-set-err { margin: 0; font-size: var(--font-size-xs); color: var(--own-red); }
+
+.g-set-secrets { list-style: none; margin: 0; padding: 0; }
+.g-set-secrets li {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 10px 16px; border-bottom: 1px solid var(--own-rule);
+  font-size: var(--font-size-sm);
+}
+.g-set-secrets li:last-child { border-bottom: 0; }
+.g-set-foot {
+  margin: var(--space-5) 0 0; font-family: var(--font-mono);
+  font-size: var(--font-size-xs); color: var(--own-quiet);
+}
+
+@media (max-width: 760px) {
+  .g-set-row { grid-template-columns: 1fr; }
+}
+
+/* --- shared components, read in this console's voice -------------------- */
+
+/* The tenant drawer's fact list arrives from the app, where every value is
+   set in mono. That reads as a debug dump rather than a record: mono here is
+   reserved for identifiers -- a slug, a hostname -- and a plan name or a date
+   is neither. Labels lose their bold as well; a column of headings set in
+   heavy grey competes with the values it is supposed to introduce. */
+.g-owner .g-facts dt {
+  font-weight: 400;
+  color: var(--own-quiet);
+}
+.g-owner .g-facts dd {
+  font-family: inherit;
+  color: var(--own-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A Save that cannot be pressed should not look like a button waiting to be
+   pressed. Until the field is edited it is a label; the moment it is edited
+   it becomes the darkest thing in its row, which is the whole signal that
+   there is an unsaved change. It also stops filling the column: a full-width
+   slab under every field made the page read as a form of buttons. */
+.g-owner-main .g-set-control .g-btn-primary,
+.g-owner-main .g-tix-reply-foot .g-btn-primary {
+  align-self: flex-end;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--own-act);
+  border: 1px solid var(--own-act);
+  color: var(--color-on-primary);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.g-owner-main .g-set-control .g-btn-primary:disabled,
+.g-owner-main .g-tix-reply-foot .g-btn-primary:disabled {
+  background: none;
+  border-color: transparent;
+  color: var(--own-quiet);
+  font-weight: 400;
+  cursor: default;
+}
+
+/* The one action on a ledger row's detail. It changes which customer the
+   whole app is showing, so it says whose dashboard it opens by name. */
+.g-led-open { margin-top: var(--space-4); width: 100%; }
+.g-led-open-note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- access requests --------------------------------------------------- */
+
+/* This page is shared with the tenant app at `/settings/leads`, so it keeps
+   the app's `Card` frame and is brought into the console's voice from here
+   rather than by forking the component.
+ *
+ * The frame's heading is an 11.5px tracked-out uppercase label. On the app,
+ * among many cards, that is a quiet signpost for a region. Here it is the
+ * only heading on the page, sitting where the other three sections each lead
+ * with a sentence, so Requests read as the one section nobody had finished --
+ * a tinted panel with a label on it. It gets the same headline they have, and
+ * the panel loses its tint so the table sits on paper like the ledger's. */
+.g-owner-main > .g-card {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.g-owner-main > .g-card > .g-card-head {
+  /* The card here has no inset of its own, so the shared header's edge
+     bleed (its negative margins) has nothing to undo. */
+  margin: 0;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--own-rule);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.g-owner-main > .g-card > .g-card-head .g-card-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: var(--own-ink);
+}
+.g-owner-main > .g-card > .g-card-head .g-card-subtitle {
+  margin: 3px 0 0;
+  max-width: 72ch;
+  font-size: 12px;
+  color: var(--own-quiet);
+}
+.g-owner-main > .g-card > .g-card-body { padding: 0; margin: 0 !important; }
+.g-owner-main > .g-card > .g-card-body > :not(.g-table-wrap):not(.g-own-toolbar) { padding: 14px 16px; }
+.g-owner-main > .g-card > .g-card-body > .g-own-toolbar { padding: 10px 16px; border-bottom: 1px solid var(--own-rule); }
+
+/* Same mark the ledger uses for a customer who needs the owner today: a
+   request nobody has decided is the only row on this page that is work. */
+.g-owner-main .g-table tr.is-pending td:first-child {
+  box-shadow: inset 3px 0 0 var(--own-red);
+}
+
+/* Ten columns of request detail are wider than the pane, so the decision
+   buttons -- the only reason this page is a page -- sat off the right edge
+   behind a horizontal scroll. They stay put while the detail scrolls under
+   them. The cell carries its own paper ground and a hairline, or the text
+   passing beneath would show through. */
+.g-owner-main > .g-card .g-table td:last-child,
+.g-owner-main > .g-card .g-table th:last-child {
+  position: sticky;
+  right: 0;
+  background: var(--own-surface);
+  box-shadow: inset 1px 0 0 var(--own-rule);
+}
+/* ...and it has to follow the row it sits in. The cell carries its own ground
+   precisely so the detail scrolling underneath cannot show through, which
+   means a hovered row would otherwise stop dead at this column. On paper the
+   two grounds were a percent of luminance apart and the seam never showed;
+   against the instrument panel's skin `--own-paper` beside a hovered
+   `--own-surface` is a visibly darker notch down the right edge, on the one
+   column that exists to hold the decision buttons. */
+.g-owner-main > .g-card .g-table tbody tr:hover td:last-child {
+  background: var(--own-sunken);
+}
+
+.g-owner-main .g-lead-actions {
+  justify-content: flex-end;
+  padding-left: var(--space-2);
+}
+
+/* The decision form in the drawer. Its labels are the app's muted grey on a
+   recessed ground; on paper they read as a column of headings competing with
+   the values, the same way the tenant drawer's fact list did. */
+.g-owner-main .g-lead-form label,
+.g-owner .g-lead-form label {
+  color: var(--own-quiet);
+  font-weight: 400;
+}
+.g-owner .g-lead-form input {
+  padding: 8px 10px;
+  border: 1px solid var(--own-rule);
+  border-radius: var(--radius-sm);
+  background: var(--own-paper);
+  color: var(--own-ink);
+}
+.g-owner .g-lead-form-actions { justify-content: flex-end; }
+
+/* ---------------------------------------------------------------------------
+ * The console's own screens: Overview, Fleet, Billing.
+ *
+ * Paper and ink, like the rest of this console, and for the same reason: the
+ * tenant app is a dark instrument someone opens because a thing is broken, and
+ * this is a desk someone works at. Colour stays rationed to the single red, so
+ * a critical row is the only loud thing on any of these pages -- the ordering
+ * does the rest of the work, which is why every table here is sorted worst
+ * first rather than alphabetically.
+ * ------------------------------------------------------------------------- */
+
+.g-own-page { display: flex; flex-direction: column; gap: 17px; }
+
+/* Two columns, as the design reference lays its Overview out: the work on the
+   left at 1.5fr, the standing facts on the right at 1fr.
+ *
+ * The split is doing more than filling space. A page of full-width panels
+ * stacked down the screen reads as a LIST -- every region claiming equal
+ * importance and equal width, so the eye has no reason to stop anywhere. Two
+ * columns say which side moves and which side is reference, before a word is
+ * read.
+ *
+ * `align-items: start` so the shorter column does not stretch its last card
+ * to match the taller one, which would leave a card mostly empty and reading
+ * as missing content. */
+.g-own-split {
+  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 17px; align-items: start;
+}
+.g-own-col { display: flex; flex-direction: column; gap: 17px; min-width: 0; }
+
+@media (max-width: 1100px) {
+  /* Below this the right column is too narrow to hold a definition list
+     without wrapping every value, and the reference says the body stacks. */
+  .g-own-split { grid-template-columns: minmax(0, 1fr); }
+}
+.g-own-lede { margin: 0; color: var(--own-quiet); max-width: 72ch; font-size: 13px; line-height: 1.5; }
+/* Every panel is a card.
+ *
+ * The console used to lay its sections out flat: a tracked-out heading, a
+ * hairline under it, content below, repeated down the page. That reads as one
+ * continuous sheet, and on a screen whose job is to separate "the estate" from
+ * "the money" from "what happened", the reader has to do the grouping the
+ * layout should have done.
+ *
+ * A card does it with one border. No shadow and no radius above 7px: the
+ * design reference is explicit that depth comes from the background ladder and
+ * 1px edges, and `tokens.css` already sets `--shadow-glow: none` for the same
+ * reason -- this is an instrument panel, and a lifted card competes with the
+ * alert it is supposed to be framing. */
+.g-own-section {
+  display: flex; flex-direction: column; gap: 0;
+  background: var(--own-surface);
+  border: 1px solid var(--own-rule);
+  border-radius: 7px;
+  /* So a table's own edges cannot poke out of the rounded corners. */
+  overflow: hidden;
+}
+/* The card header the reference specifies: title 13.5px/600 in the text
+ * face, an optional mono fact pushed to the right, one hairline under both.
+ * It was an 11px tracked-out uppercase label, which on a page of several
+ * cards made every card read as a form section rather than as a panel with
+ * a name. */
+.g-own-section > h2 {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; text-transform: none;
+  color: var(--own-ink); margin: 0;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--own-rule);
+}
+/* The header's right-hand fact -- a count, a freshness, a total. Machine
+ * furniture, so it takes the mono face, small, and never the title's weight. */
+.g-own-section > h2 > .g-own-meta { margin-left: auto; }
+/* A status dot before a card's name, the reference's "● Waiting on you":
+ * amber for a card that holds work, green for one that is live. */
+.g-own-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tone, var(--own-quiet)); flex: 0 0 auto; }
+.g-own-meta {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--own-quiet);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+/* A row of controls under the header and above the rows: filter chips, a
+ * search field. Its own hairline, so it is neither header nor content. */
+.g-own-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.g-own-section > .g-own-toolbar { padding: 10px 16px; border-bottom: 1px solid var(--own-rule); }
+.g-own-section > .g-table-wrap { padding: 0; }
+/* Card body. Prose and lists are inset; a table runs edge to edge, because a
+   table that stops short of its own card's border reads as floating inside
+   it rather than being it. */
+.g-own-section > :not(h2) { padding: 14px 16px; }
+.g-own-section > .g-own-tablewrap { padding: 0; }
+.g-own-section > .g-own-tablewrap .g-own-table th:first-child,
+.g-own-section > .g-own-tablewrap .g-own-table td:first-child { padding-left: 16px; }
+.g-own-section > .g-own-tablewrap .g-own-table th:last-child,
+.g-own-section > .g-own-tablewrap .g-own-table td:last-child { padding-right: 16px; }
+.g-own-quiet { color: var(--own-quiet); margin: 0; }
+.g-own-note { color: var(--own-quiet); font-size: 13px; max-width: 72ch; margin: 0; }
+
+/* Tiles. Buttons, not cards: every figure on this page leads to the rows it
+ * counts, and a number you cannot follow is a number you have to trust. */
+/* Separate cards with real gaps, rather than one grid divided by hairlines.
+   Each figure answers a different question and links somewhere different, so
+   they are siblings rather than cells of one table. */
+.g-own-tiles {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  gap: 13px; background: none; border: 0;
+}
+.g-own-tile {
+  display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
+  padding: 15px 16px; background: var(--own-surface);
+  border: 1px solid var(--own-rule); border-radius: 7px; cursor: pointer;
+  text-align: left; font: inherit; color: var(--own-ink);
+}
+.g-own-tile:hover { border-color: var(--own-act); }
+.g-own-tile:focus-visible { outline: 2px solid var(--own-act); outline-offset: -2px; }
+.g-own-tile-v { font-family: var(--font-mono); font-size: 29px; font-weight: 600; line-height: 0.95; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.g-own-tile-of { font-size: 16px; color: var(--own-quiet); }
+/* The word after the figure, baseline-aligned with it so "2 online" reads as
+   one phrase rather than as a number with a caption. */
+.g-own-tile-unit { font-size: 12px; color: var(--own-quiet); margin-left: 5px; }
+/* The second fact. Wrapped rather than truncated -- it is a sentence, and a
+   sentence cut at the card edge is worse than a taller card. */
+/* The fourteen-day bar chart. Plain flex columns, bottom-anchored, one per
+   day -- the reference is explicit that this needs no charting dependency,
+   and adding one for eleven bars would cost every page in the product.
+
+   Blue is Vault's own work and the muted step is a person's. That is the
+   one place on this console where blue is not an action, and it earns it: the
+   whole point of the card is which share is which, and the reference uses the
+   same pairing (`#2f7ff0` over `#3a4a61`). */
+.g-own-chart {
+  display: flex; align-items: flex-end; gap: 5px;
+  height: 108px; margin: 0;
+}
+.g-own-chart-bar {
+  flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+  gap: 2px; height: 100%; min-width: 0;
+}
+.g-own-chart-auto { background: var(--own-act); border-radius: 2px 2px 0 0; }
+.g-own-chart-human { background: var(--own-sunken); border-radius: 0 0 2px 2px; }
+/* A day with nothing on it still gets a mark. An empty column reads as
+   missing data; a hairline reads as a quiet day, which is what it was. */
+.g-own-chart-none { height: 2px; background: var(--own-rule); border-radius: 2px; }
+
+.g-own-chart-ticks {
+  display: flex; justify-content: space-between;
+  margin-top: 6px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--own-quiet);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.g-own-chart-legend {
+  display: flex; flex-wrap: wrap; gap: var(--space-4);
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--own-rule);
+  font-size: 12px; color: var(--own-quiet);
+}
+.g-own-chart-key { display: inline-flex; align-items: center; gap: 7px; }
+/* The total beside the swatch, because a stacked bar has no axis: without it
+   a flat row at forty a day and a flat row at nothing are the same picture. */
+.g-own-chart-key b {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  color: var(--own-ink); font-weight: 600;
+}
+.g-own-chart-swatch {
+  width: 8px; height: 8px; border-radius: 2px; flex: 0 0 auto;
+}
+
+.g-own-tile-note {
+  font-size: 12px; color: var(--own-quiet); line-height: 1.4;
+  text-wrap: pretty;
+}
+/* The label row: name on the left, status on the right edge of the card. */
+.g-own-tile-top {
+  display: flex; align-items: center; gap: var(--space-2);
+  width: 100%;
+}
+.g-own-tile-l {
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--own-quiet);
+}
+/* Pushed to the far edge rather than sat beside the label, so a column of
+   tiles has its status marks in one vertical line and can be read down. */
+.g-own-tile-dot {
+  margin-left: auto; flex: 0 0 auto;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--tone, var(--own-quiet));
+}
+/* The one red, spent only where it means an emergency. A warning shifts weight
+ * rather than hue -- the console's rule, stated in the rescope block above. */
+.g-own-tile-crit .g-own-tile-v { color: var(--own-red); }
+/* Amber for a figure that is work waiting, the reference's "3 open" -- the
+ * same hue the rail's queue badges use, so a number and the badge that led
+ * to it agree. Only when non-zero; a calm tile recedes (below). */
+.g-own-tile-warn .g-own-tile-v { color: var(--own-warn); }
+
+/* A tile that is a readout rather than a link. The Overview's tiles navigate,
+ * so they are buttons and earn a pointer and a hover; Billing's lead figures
+ * have nowhere better to go than the page they are already on. Giving them
+ * the same affordance would promise a destination that does not exist, which
+ * is worse than a plain number. */
+.g-own-tile-static { cursor: default; }
+.g-own-tile-static:hover { border-color: var(--own-rule); }
+
+/* Money runs three to four times the width of the counts these tiles were
+ * built for -- "$1,234.56" against "2" -- so at 28px it wraps or clips in a
+ * 150px column. Stepping the figure down keeps the whole row on one line and
+ * still leaves it the loudest thing in the tile, which is the point of it. */
+.g-own-tile-money { font-size: 24px; letter-spacing: -0.01em; }
+@media (max-width: 900px) { .g-own-tile-money { font-size: 18px; } }
+
+/* "Needs you": a list of rows, each saying why it is here. */
+.g-own-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--own-rule); }
+.g-own-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; align-items: baseline; width: 100%;
+  padding: 12px 4px; background: none; border: 0; border-bottom: 1px solid var(--own-rule);
+  cursor: pointer; text-align: left; font: inherit; color: var(--own-ink);
+}
+.g-own-row:hover { background: var(--own-surface); }
+.g-own-row:focus-visible { outline: 2px solid var(--own-act); outline-offset: -2px; }
+.g-own-row-name { font-weight: 600; }
+.g-own-row-why { color: var(--own-red); font-size: 13px; }
+.g-own-row-meta { color: var(--own-quiet); font-size: 12px; font-family: var(--font-mono); }
+
+/* Tables. The header strip, the cell padding and the hover are set once for
+ * both this and the shared primitive, up beside the ledger ("The table, as
+ * the design reference sets every list"). Only what the primitive lacks is
+ * here. */
+.g-own-tablewrap { overflow-x: auto; }
+.g-own-table { width: 100%; border-collapse: collapse; }
+.g-own-table th[scope="row"] { display: flex; flex-direction: column; gap: 2px; }
+.g-own-name { font-weight: 600; }
+.g-own-slug { font-family: var(--font-mono); font-size: 11px; color: var(--own-quiet); }
+.g-own-num { text-align: right; }
+.g-own-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.g-own-crit { color: var(--own-red); font-weight: 600; }
+.g-own-warn { font-weight: 700; }
+/* A left edge rather than a filled row: the row stays readable, and the mark
+ * is in the margin where the eye scans for it. */
+/* Amber for waiting, the one red for an emergency -- the same two the rail's
+ * badges use, so a row's edge and the nav count that led to it agree. */
+.g-own-tr-crit > th[scope="row"] { box-shadow: inset 3px 0 0 0 var(--own-red); }
+.g-own-tr-warn > th[scope="row"] { box-shadow: inset 3px 0 0 0 var(--own-warn); }
+
+/* A state pill as the reference draws one: mono, 10.5px, tracked, on a soft
+ * ground of its own hue. The hue says which of three things it is -- settled
+ * (green), waiting (amber), an emergency (red) -- and anything else is
+ * neutral. It was an outlined box in the text face, which at a glance was
+ * not distinguishable from a chip. */
+.g-own-pill {
+  display: inline-block; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 3px;
+  background: var(--own-sunken); color: var(--own-quiet); white-space: nowrap;
+}
+.g-own-pill-crit { background: var(--own-red-soft); color: var(--own-red); }
+.g-own-pill-warn { background: var(--own-warn-soft); color: var(--own-warn); }
+.g-own-pill-good { background: var(--own-good-soft); color: var(--own-good); }
+
+.g-own-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+.g-own-chip {
+  font-size: 12.5px; font-weight: 500; padding: 5px 12px; border-radius: 20px;
+  border: 1px solid var(--own-rule); background: none; color: var(--own-ink);
+}
+/* A filter chip: the reference's `6px 12px`, 20px radius, 12.5px/500. Quiet
+ * until selected, when it takes the sunken ground and a stronger edge --
+ * selection is a state, so it is drawn as one rather than in the brand blue,
+ * which here means an action. `.is-warn` is for the one chip that names
+ * work waiting (the reference's amber "Unmanaged"). */
+.g-own-fchip {
+  font: inherit; font-size: 12.5px; font-weight: 500; line-height: 1.2;
+  padding: 5px 12px; border-radius: 20px; cursor: pointer;
+  background: none; border: 1px solid var(--own-rule); color: var(--own-quiet);
+}
+.g-own-fchip:hover { color: var(--own-ink); }
+.g-own-fchip[aria-pressed="true"] { background: var(--own-sunken); color: var(--own-ink); border-color: var(--own-strong); }
+.g-own-fchip.is-warn { color: var(--own-warn); border-color: var(--own-warn); }
+.g-own-fchip:focus-visible { outline: 2px solid var(--own-act); outline-offset: 2px; }
+.g-own-chip b { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+/* What a plan is worth, beside how many are on it. Quiet, because the count
+ * is the subject of the chip and the sum is the qualifier -- four trials and
+ * four Partner accounts are the same chip without it, and a different
+ * business. */
+.g-own-chip-sum { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--own-quiet); }
+
+/* A cell whose text opens the account. It is a button rather than an anchor
+ * because the console routes in-app, and it is stripped back to looking like
+ * the text it replaced so a table of names does not turn into a wall of
+ * underlines. */
+.g-own-linkish {
+  border: 0; padding: 0; margin: 0; background: none; font: inherit;
+  color: inherit; cursor: pointer; text-align: left;
+}
+.g-own-linkish:hover .g-own-name { color: var(--own-act); }
+.g-own-linkish:focus-visible { outline: 2px solid var(--own-act); outline-offset: 2px; }
+
+.g-own-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 24px; margin: 0; }
+.g-own-facts dt { font-size: 11px; letter-spacing: 0.04em; color: var(--own-quiet); text-transform: uppercase; }
+.g-own-facts dd { margin: 2px 0 0; font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+
+/* The rail's group headings, which are what stop seven links reading as a pile. */
+.g-owner-navgroup {
+  display: block; font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--own-quiet); padding: 18px 10px 6px;
+}
+.g-owner-navitem:first-child .g-owner-navgroup { padding-top: 4px; }
+
+@media (max-width: 720px) {
+  .g-own-row { grid-template-columns: 1fr; gap: 4px; }
+  .g-own-tile-v { font-size: 24px; }
+}
+
+/* The per-account page and the audit trail. */
+.g-own-crumb { margin: 0 0 6px; font-size: 12px; }
+.g-own-crumb a { color: var(--own-quiet); text-decoration: none; border-bottom: 1px solid var(--own-rule); }
+.g-own-crumb a:hover { color: var(--own-act); border-bottom-color: var(--own-act); }
+
+.g-own-filter { display: flex; align-items: center; gap: 10px; }
+.g-own-filter label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--own-quiet); }
+.g-own-filter input {
+  flex: 1 1 260px; max-width: 360px; padding: 6px 10px; font: inherit; font-size: 13px;
+  color: var(--own-ink); background: var(--own-sunken); border: 1px solid var(--own-rule);
+  border-radius: 5px;
+}
+/* Who acted, in the trail. Mono, because an actor is an identifier; and
+ * Vault's own acts take the interactive blue, so a column of rows shows
+ * machine and human at a glance without reading a name -- the reference's
+ * `guardian` / `owner` split. */
+.g-own-actor { font-family: var(--font-mono); font-size: 11.5px; }
+.g-own-actor.is-machine { color: var(--own-act); }
+.g-own-filter input:focus-visible { outline: 2px solid var(--own-act); outline-offset: -2px; }
+
+/* --- the charts on a customer's page ------------------------------------
+ *
+ * Two up on a wide screen, one on a narrow one. Deliberately not a grid of
+ * small multiples: this section is read aloud to a customer, so each chart
+ * needs room for its sentence underneath, and three across makes both the
+ * line and the sentence too small to be the thing being pointed at.
+ *
+ * The `Chart` component is the app's own, unchanged. It draws in
+ * `--color-primary` and `--color-accent-2` and reads the app's grid and text
+ * tokens, which is why it needed nothing done to it to land here -- the
+ * console shares those tokens now. On the old paper ground it would have
+ * arrived in the app's blues on a near-white sheet.
+ */
+.g-own-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+}
+.g-own-chartbox {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--own-rule);
+  min-width: 0;
+}
+.g-own-charthead {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin-bottom: var(--space-2);
+}
+.g-own-chartlabel { font-size: 13px; font-weight: 600; }
+
+/* The verdict pill. `worse` is the one red this console spends, on the same
+ * rule as everywhere else: it means a customer needs the owner. `better` is
+ * not green -- nothing that is fine is this console's work, and a green badge
+ * beside a red one turns the section into a scoreboard rather than a list of
+ * things to talk about. It shifts weight, like every other emphasis here. */
+.g-own-dir-worse { color: var(--own-red); border-color: var(--own-red); }
+.g-own-dir-better { color: var(--own-ink); border-color: var(--own-rule); font-weight: 600; }
+.g-own-dir-steady { color: var(--own-quiet); }
+
+/* The sentence the owner reads out. It sits under its own chart rather than
+   in one summary block, because a verdict separated from the line it is about
+   makes the customer hunt for which chart it refers to. */
+.g-own-says { margin: var(--space-2) 0 0; font-size: 13px; line-height: 1.5; }
+
+/* --- the front page's own furniture -------------------------------------- */
+
+/* A fault at zero.
+ *
+ * The tiles were all one weight, so a healthy platform drew five enormous `0`s
+ * and the loudest marks on the page were the five facts meaning "nothing to
+ * do". Painting the zero grey is not enough on its own -- at 28px in the
+ * numeral face it is still the biggest thing in its box -- so a calm tile
+ * drops the figure to label size and lets the LABEL lead. The row of tiles
+ * then reads as a row of headings with one number standing out of it, which is
+ * the shape the eye can scan.
+ *
+ * `--font-num` is dropped deliberately: tabular figures exist to be compared
+ * down a column, and a zero that means "nothing here" is not being compared
+ * with anything. */
+.g-own-tile-calm .g-own-tile-v {
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--own-quiet);
+}
+.g-own-tile-calm .g-own-tile-l { color: var(--own-quiet); }
+/* ...and it keeps a hairline of its own edge so the grid stays a grid. A calm
+   tile that lost its ground would tear a hole in the row. */
+.g-own-tile-calm:hover .g-own-tile-v { color: var(--own-ink); }
+
+/* The activity feed.
+ *
+ * Three columns on one baseline: when, what, whose. `when` is first and
+ * narrow because the feed is read top-down for recency, and a timestamp that
+ * trails the sentence makes you read the whole line to find out it was three
+ * days ago. No avatars, no icons, no card per row -- this is a log, and a log
+ * that decorates each line stops being skimmable at about ten of them. */
+.g-own-feed { list-style: none; margin: 0; padding: 0; }
+.g-own-feed-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+  gap: 14px; align-items: baseline;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--own-rule);
+  font-size: 13px;
+}
+.g-own-feed-row:last-child { border-bottom: 0; }
+.g-own-feed-when {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--own-quiet); font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.g-own-feed-what { min-width: 0; overflow-wrap: anywhere; }
+.g-own-feed-what b { font-weight: 600; }
+.g-own-feed-who { justify-self: end; font-size: 12px; }
+.g-own-feed-who a { color: var(--own-act); text-decoration: none; }
+.g-own-feed-who a:hover { text-decoration: underline; }
+
+/* The installation settings, last and quiet.
+ *
+ * A rule above rather than a heading: this is a footer, and giving it the same
+ * uppercase section heading the working regions use would promote it back to
+ * their level. The whole point of moving it down here was that it is reference
+ * the operator reads once a quarter. */
+.g-own-foot {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--own-rule);
+  display: flex; flex-direction: column; gap: var(--space-3);
+}
+.g-own-wiring {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px 24px; margin: 0;
+}
+.g-own-wiring dt {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--own-quiet);
+}
+.g-own-wiring dd {
+  margin: 2px 0 0; font-size: 13px; color: var(--own-quiet);
+  overflow-wrap: anywhere;
+}
+.g-own-foot a { color: var(--own-act); }
+
+@media (max-width: 720px) {
+  .g-own-feed-row { grid-template-columns: 48px minmax(0, 1fr); }
+  .g-own-feed-who { grid-column: 2; justify-self: start; }
+}
+
+/* The trend column's cell: the line, and the figure that makes it readable.
+ *
+ * A sparkline has no axis, so on its own a flat line at forty a day and a flat
+ * line at nothing are the same picture. The total sits beside it rather than
+ * under it so the row keeps one baseline, and it is set in the numeral face
+ * because it IS being compared down the column -- which is the whole reason
+ * the figure is there. */
+.g-own-trendcell { display: inline-flex; align-items: center; gap: 8px; }
+.g-own-trendcell .g-spark { width: 64px; flex: 0 0 64px; color: var(--own-quiet); }
+.g-own-trendtotal {
+  font-family: var(--font-num); font-size: 12px;
+  font-variant-numeric: tabular-nums; color: var(--own-quiet);
+}
+/* The line lifts to full strength on the row you are pointing at. The column
+   is quiet by default on purpose -- thirty lines all at text contrast turn a
+   table into a chart -- but the row under the cursor is the one being read. */
+.g-own-table tr:hover .g-own-trendcell .g-spark,
+.g-owner-main .g-table tbody tr:hover .g-own-trendcell .g-spark { color: var(--own-ink); }
+
+/* --- the network screens ------------------------------------------------
+ *
+ * Everything below draws the reference's ten screens over the selected
+ * customer's own payloads. The grammar is the one stated at the top of this
+ * file, applied: mono means machine-produced, blue means an action, colour
+ * carries status and nothing else, and every approvable thing says what it
+ * costs beside the button that authorises it.
+ * ------------------------------------------------------------------------- */
+
+/* Figures that are good news keep their hue; a fact stays ink. */
+.g-own-tile-good .g-own-tile-v { color: var(--own-good); }
+.g-own-tile-info .g-own-tile-v, .g-own-tile-fact .g-own-tile-v { color: var(--own-ink); }
+.g-own-pill-info { background: var(--own-act-soft); color: var(--own-act); }
+.g-own-pill-plain { background: var(--own-sunken); color: var(--own-quiet); }
+.g-own-dim { color: var(--own-quiet); }
+.g-own-sub { margin: 0; padding: 12px 16px 0; font-size: 12px; color: var(--own-quiet); max-width: 72ch; }
+.g-own-section > .g-own-sub + * { padding-top: 10px; }
+.g-own-section > h2 .g-own-meta-plain { font-family: inherit; text-transform: none; letter-spacing: 0; font-size: 12px; }
+.g-own-section > h2 .g-own-meta-link { text-transform: none; letter-spacing: 0; font-family: inherit; font-size: 12.5px; color: var(--own-act); text-decoration: none; }
+.g-own-section > h2 .g-own-meta-link:hover { text-decoration: underline; }
+.g-own-section > h2 .g-own-h2-pill { margin-left: auto; }
+.g-own-section > h2.g-own-h2-mono {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--own-quiet);
+}
+/* A card that holds work takes the reference's slightly lighter edge -- no
+ * coloured border, the eye finds it by contrast rather than by alarm. */
+.g-own-section.is-attn { border-color: var(--own-strong); }
+/* The one pulse in the console: the live-activity dot, meaning "the feed is
+ * alive", the same motion the sensor chip has and nothing else does. */
+.g-own-dot-live { animation: g-owner-pulse 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .g-own-dot-live { animation: none; } }
+.g-own-dot-lg { width: 8px; height: 8px; }
+
+/* Rows inside a card: 11-13px 16px, a hairline between, hover across. */
+.g-own-rows { list-style: none; margin: 0; padding: 0; }
+.g-own-section > .g-own-rows { padding: 0; }
+.g-own-rows > li { padding: 12px 16px; border-bottom: 1px solid var(--own-rule); }
+.g-own-rows > li:last-child { border-bottom: 0; }
+.g-own-rows > li:hover { background: var(--own-sunken); }
+
+/* Buttons: the reference's secondary (bordered, quiet) and primary (blue). */
+.g-own-btn {
+  font: inherit; font-size: 12.5px; font-weight: 500; line-height: 1.2;
+  padding: 7px 13px; border-radius: 5px; cursor: pointer;
+  background: none; border: 1px solid var(--own-strong); color: var(--own-ink);
+}
+.g-own-btn:hover { background: var(--own-sunken); }
+.g-own-btn:disabled { opacity: 0.55; cursor: default; }
+.g-own-btn-primary { background: var(--own-act); border-color: var(--own-act); color: var(--color-on-primary); font-weight: 600; padding: 7px 14px; }
+.g-own-btn-primary:hover { filter: brightness(1.12); background: var(--own-act); }
+.g-own-btn:focus-visible { outline: 2px solid var(--own-act); outline-offset: 2px; }
+
+/* Mono furniture: a target pill and an impact line. */
+.g-own-target {
+  display: inline-block; font-family: var(--font-mono); font-size: 10.5px;
+  padding: 2px 7px; border-radius: 3px; background: var(--own-sunken); color: var(--own-ink);
+}
+.g-own-impact {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--own-quiet);
+}
+
+/* The intro row: a sentence and the one action beside it. */
+.g-own-intro { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.g-own-toolbar-bare { padding: 0; }
+.g-own-toolbar-note { margin-left: auto; font-size: 12.5px; color: var(--own-quiet); }
+.g-own-filter-l { margin-left: auto; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--own-quiet); }
+.g-own-filter-in {
+  flex: 0 1 260px; padding: 6px 10px; font: inherit; font-size: 13px;
+  color: var(--own-ink); background: var(--own-sunken); border: 1px solid var(--own-rule); border-radius: 5px;
+}
+.g-own-filter-in:focus-visible { outline: 2px solid var(--own-act); outline-offset: -2px; }
+
+/* -- Overview: waiting on you ---------------------------------------- */
+.g-own-wait { display: flex; align-items: flex-start; gap: 16px; padding: 14px 16px !important; }
+.g-own-wait-main { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.g-own-wait-title { font-size: 13.5px; font-weight: 600; }
+.g-own-wait-detail { font-size: 12.5px; color: var(--own-quiet); max-width: 76ch; text-wrap: pretty; }
+.g-own-wait-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 2px; }
+.g-own-wait-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+
+/* -- Overview: self-healing ------------------------------------------ */
+.g-own-heal { display: flex; flex-direction: column; gap: 12px; }
+.g-own-heal-figs { display: flex; gap: 28px; }
+.g-own-fig { display: flex; flex-direction: column; gap: 4px; }
+.g-own-fig-l { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--own-quiet); }
+.g-own-fig-v { font-family: var(--font-mono); font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; }
+.g-own-fig-good { color: var(--own-good); }
+.g-own-share { height: 8px; border-radius: 3px; background: var(--color-track); overflow: hidden; }
+.g-own-share-auto { display: block; height: 100%; background: var(--own-act); border-radius: 3px; }
+
+/* -- Overview: live activity ----------------------------------------- */
+.g-own-act { display: flex; align-items: flex-start; gap: 10px; padding: 11px 16px !important; }
+.g-own-act-time { flex: 0 0 auto; min-width: 42px; font-family: var(--font-mono); font-size: 11.5px; color: var(--own-quiet); }
+.g-own-act .g-own-dot { margin-top: 5px; }
+.g-own-act-text { flex: 1; min-width: 0; font-size: 13px; text-wrap: pretty; }
+.g-own-act-detail { color: var(--own-quiet); }
+
+/* -- Sensor health / DNS: the 2x2 readout ---------------------------- */
+.g-own-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin: 0; }
+.g-own-grid2 dt { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--own-quiet); }
+.g-own-grid2 dd { margin: 4px 0 0; font-family: var(--font-mono); font-size: 17px; font-variant-numeric: tabular-nums; }
+
+/* -- Incidents --------------------------------------------------------- */
+.g-inc { position: relative; padding-left: 3px; }
+.g-inc::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--own-quiet); }
+.g-inc-crit::before { background: var(--own-red); }
+.g-inc-warn::before { background: var(--own-warn); }
+.g-inc-info::before { background: var(--own-act); }
+.g-inc-good::before { background: var(--own-good); }
+.g-inc-body { display: flex; align-items: flex-start; gap: 16px; padding: 15px 17px; }
+.g-inc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.g-inc-meta { display: flex; align-items: center; gap: 10px; }
+.g-inc-id { font-family: var(--font-mono); font-size: 11.5px; color: var(--own-quiet); max-width: 28ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.g-inc-age { font-size: 11.5px; color: var(--own-quiet); }
+.g-inc-title { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.g-inc-detail { margin: 0; font-size: 13px; color: var(--own-quiet); max-width: 76ch; text-wrap: pretty; }
+.g-inc-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex: 0 0 auto; }
+.g-inc-state { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 4px; }
+.g-inc-state .g-own-dot { background: currentColor; }
+.g-inc-target { font-family: var(--font-mono); font-size: 11px; color: var(--own-quiet); }
+
+/* The plan strip: recessed, mono, the literal thing Vault will run. */
+.g-own-plan {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 0 17px 15px; padding: 10px 13px;
+  background: var(--own-paper); border: 1px solid var(--own-rule); border-radius: 5px;
+}
+.g-own-plan-l { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--own-quiet); }
+.g-own-plan-cmd { flex: 1 1 200px; min-width: 0; font-family: var(--font-mono); font-size: 12px; color: var(--own-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-own-plan-impact { flex: 0 1 auto; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--own-warn); }
+.g-own-plan-side { margin-left: auto; flex: 0 0 auto; }
+.g-own-plan-go {
+  font: inherit; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--own-act); background: none; border: 0; padding: 0; cursor: pointer;
+}
+.g-own-plan-go:hover { text-decoration: underline; }
+.g-own-plan-go:disabled { opacity: 0.55; cursor: default; }
+.g-own-plan-fixed { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--own-good); }
+.g-own-plan-auto { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--own-good); }
+.g-own-plan-manual { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--own-quiet); }
+
+/* -- Maintenance ------------------------------------------------------- */
+.g-own-split-maint { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.g-own-win { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.g-own-win-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.g-own-win-l { font-size: 13.5px; font-weight: 500; }
+.g-own-win-when { font-family: var(--font-mono); font-size: 11.5px; color: var(--own-quiet); }
+.g-own-win-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: 0 0 auto; }
+.g-own-win-count { font-size: 11.5px; color: var(--own-quiet); }
+.g-own-held { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.g-own-held-title { flex: 1 1 100%; font-size: 13px; text-wrap: pretty; }
+.g-own-held-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* -- Audit ------------------------------------------------------------- */
+.g-own-table-audit td { vertical-align: top; }
+.g-own-action { font-size: 13px; }
+
+/* -- Assets ------------------------------------------------------------ */
+.g-own-rowlink { cursor: pointer; }
+.g-own-rowlink:focus-visible { outline: 2px solid var(--own-act); outline-offset: -2px; }
+.g-own-asset { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.g-own-asset-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.g-own-asset-name { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-own-asset-sub { font-size: 11.5px; color: var(--own-quiet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.g-own-back { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--own-quiet); text-decoration: none; }
+.g-own-back:hover { color: var(--own-ink); }
+.g-own-detailhead { padding: 19px; gap: 8px; }
+.g-own-detailhead-l { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.g-own-detailname { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.015em; }
+.g-own-detailsub { margin: 0; font-size: 13px; color: var(--own-quiet); }
+.g-own-split-detail { grid-template-columns: 248px minmax(0, 1fr); }
+@media (max-width: 1100px) { .g-own-split-detail, .g-own-split-maint { grid-template-columns: minmax(0, 1fr); } }
+.g-own-kv { margin: 0; }
+.g-own-section > .g-own-kv { padding: 4px 0; }
+.g-own-kv > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; padding: 8px 15px; border-bottom: 1px solid var(--own-rule); }
+.g-own-kv > div:last-child { border-bottom: 0; }
+.g-own-kv dt { font-size: 12px; color: var(--own-quiet); }
+.g-own-kv dd { margin: 0; font-family: var(--font-mono); font-size: 12px; overflow-wrap: anywhere; }
+.g-own-ports { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--own-rule); }
+.g-own-port { display: flex; flex-direction: column; gap: 3px; padding: 13px 16px; background: var(--own-surface); }
+.g-own-port-n { font-family: var(--font-mono); font-size: 14px; }
+.g-own-port-s { font-family: var(--font-mono); font-size: 11px; color: var(--own-quiet); }
+.g-own-port-note { font-size: 11.5px; color: var(--own-quiet); }
+.g-own-port.is-risky .g-own-port-n, .g-own-port.is-risky .g-own-port-note { color: var(--own-warn); }
+.g-own-finding { display: flex; align-items: flex-start; gap: 12px; }
+.g-own-finding-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.g-own-finding-t { font-size: 13px; }
+.g-own-finding-cmd { font-family: var(--font-mono); font-size: 11.5px; color: var(--own-quiet); overflow-wrap: anywhere; }
+.g-own-finding-mode { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--own-quiet); flex: 0 0 auto; }
+.g-own-finding-mode.is-auto { color: var(--own-good); }
+
+/* -- Websites & DNS ---------------------------------------------------- */
+.g-own-split-sites { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+.g-own-site { display: flex; align-items: flex-start; gap: 10px; }
+.g-own-site .g-own-dot { margin-top: 6px; }
+.g-own-site-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.g-own-site-host { font-family: var(--font-mono); font-size: 13px; color: var(--own-ink); text-decoration: none; }
+.g-own-site-host:hover { color: var(--own-act); }
+.g-own-site-note { font-size: 11.5px; color: var(--own-quiet); }
+.g-own-site-side { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: 0 0 auto; }
+.g-own-site-ms { font-family: var(--font-mono); font-size: 13px; }
+.g-own-site-up { font-family: var(--font-mono); font-size: 10.5px; color: var(--own-quiet); }
+
+/* -- Reports ----------------------------------------------------------- */
+.g-own-split-reports { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+.g-own-bars { list-style: none; margin: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.g-own-section > .g-own-bars { padding: 14px 16px; }
+.g-own-bars-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+.g-own-bars-track { display: block; height: 4px; border-radius: 3px; background: var(--color-track); }
+.g-own-bars-fill { display: block; height: 100%; border-radius: 3px; background: var(--own-act); }
+.g-own-report { display: flex; align-items: center; gap: 12px; }
+.g-own-report-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.g-own-report-t { font-size: 13px; }
+.g-own-report-sub { font-size: 11.5px; color: var(--own-quiet); }
+.g-own-report-link { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--own-act); text-decoration: none; }
+.g-own-report-link:hover { text-decoration: underline; }
+
+/* The 24h / 7d / 30d switch: one bordered group, the selected segment on the
+ * control ground. It sits between the customer picker and the auto-heal
+ * readout, as the reference orders the bar. */
+.g-owner-range {
+  display: inline-flex; border: 1px solid var(--own-rule); border-radius: 5px; overflow: hidden;
+}
+.g-owner-range button {
+  font: inherit; font-size: 12px; font-weight: 500; padding: 6px 11px;
+  background: none; border: 0; color: var(--own-quiet); cursor: pointer;
+}
+.g-owner-range button + button { border-left: 1px solid var(--own-rule); }
+.g-owner-range button[aria-pressed="true"] { background: var(--own-sunken); color: var(--own-ink); }
+.g-owner-range button:focus-visible { outline: 2px solid var(--own-act); outline-offset: -2px; }
+
+
+/* -- the conversation inside an incident ------------------------------ */
+.g-own-chat { margin: 0 17px 15px; border: 1px solid var(--own-rule); border-radius: 5px; background: var(--own-paper); }
+.g-own-chat-log { list-style: none; margin: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 12px; max-height: 360px; overflow-y: auto; }
+.g-own-chat-msg { display: flex; flex-direction: column; gap: 3px; padding-left: 10px; border-left: 2px solid var(--own-rule); }
+.g-own-chat-msg.is-guardian { border-left-color: var(--own-act); }
+.g-own-chat-who { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--own-quiet); }
+.g-own-chat-msg p { margin: 0; font-size: 13px; line-height: 1.55; white-space: pre-wrap; max-width: 76ch; text-wrap: pretty; }
+.g-own-chat-bullets { margin: 4px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--own-quiet); }
+.g-own-chat-proposal { margin: 0 14px 12px; }
+.g-own-chat-form { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--own-rule); }
+.g-own-chat-in {
+  flex: 1; padding: 8px 10px; font: inherit; font-size: 13px;
+  color: var(--own-ink); background: var(--own-sunken); border: 1px solid var(--own-rule); border-radius: 5px;
+}
+.g-own-chat-in:focus-visible { outline: 2px solid var(--own-act); outline-offset: -2px; }
+.g-own-plan-prose { font-family: inherit; font-size: 12.5px; white-space: normal; color: var(--own-ink); }
+.g-inc-talk { margin-top: 4px; padding: 5px 10px; font-size: 12px; }
+
+/* -- a roster row that opens ----------------------------------------- */
+.g-own-caret { display: inline-block; width: 14px; color: var(--own-quiet); font-size: 11px; }
+.g-own-rowlink.is-open th[scope="row"], .g-own-rowlink.is-open td { background: var(--own-sunken); }
+.g-own-expand > td { padding: 0 !important; background: var(--own-paper); }
+.g-own-subrows > li { padding: 10px 16px 10px 46px; }
+.g-own-subrows > li:hover { background: none; }
+.g-own-subfoot a { font-size: 12.5px; color: var(--own-act); text-decoration: none; }
+.g-own-subfoot a:hover { text-decoration: underline; }
+.g-own-setup { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--own-rule); }
+
+.g-own-intro-actions { display: inline-flex; gap: 8px; }
