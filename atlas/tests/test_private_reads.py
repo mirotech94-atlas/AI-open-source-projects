@@ -57,8 +57,8 @@ def roster(monkeypatch, memory_backend):
     return agents.ROSTER
 
 
-@pytest.mark.parametrize("agent", ["ops", "growth", "commerce", "sentinel",
-                                   "flycheap", "concierge"])
+@pytest.mark.parametrize("agent", ["qa", "content", "sales", "sites",
+                                   "research", "seo", "bizops"])
 @pytest.mark.parametrize("tool,params", [
     ("module_brief", {"module": "mail"}),
     ("module_status", {"module": "mail"}),
@@ -76,7 +76,7 @@ async def test_a_cloud_agent_asking_for_mail_is_refused(roster, agent, tool, par
 async def test_a_cross_property_query_leaves_private_rows_out(roster):
     res = await invoke("sql_query", {"query": "cross_property_window",
                                      "params": ["2026-09-24T09:00:00Z"]},
-                       agent="ops", allowed={"sql_query"})
+                       agent="qa", allowed={"sql_query"})
     assert [r["property"] for r in res.content] == ["flycheap"]
 
 
@@ -88,8 +88,8 @@ async def test_the_inbox_agent_gets_the_mail_brief(roster):
     assert res.content["inbox"][0]["sender"] == "Dr Aziz"
 
 
-async def test_the_school_agent_reads_its_own_module(roster):
-    res = await invoke("module_status", {"module": "school"}, agent="school",
+async def test_the_private_inbox_agent_reads_a_personal_module(roster):
+    res = await invoke("module_status", {"module": "school"}, agent="inbox",
                        allowed={"module_status"})
     assert "refused" not in res.content
 
@@ -100,7 +100,7 @@ async def test_a_call_from_outside_invoke_is_not_a_private_agent(roster):
 
 
 async def test_a_public_module_is_read_by_anyone(roster):
-    res = await invoke("module_status", {"module": "flycheap"}, agent="ops",
+    res = await invoke("module_status", {"module": "flycheap"}, agent="qa",
                        allowed={"module_status"})
     assert "refused" not in res.content
 

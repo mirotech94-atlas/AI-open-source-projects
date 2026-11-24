@@ -1,10 +1,12 @@
-"""The lead follow-up that runs by itself (Miro, 2026-10-06: "make the lead
+"""The lead follow-up that runs by itself (the owner, 2026-10-06: "make the lead
 replies send themselves too - approve invoices too and schedule meetings
 with them via email as well and call them as well").
 
-Every send is Tier 1 with its rules in code; a hold releases the claim, a
-refusal is the Tier 2 card with "Held for you: <reason>", a success is a
-Slack receipt. The executor, `propose` and `notify` are faked the way
+Replies and calls are Tier 1 with their rules in code; a hold releases the
+claim, a refusal is the Tier 2 card with "Held for you: <reason>", a success
+is a Slack receipt. Six agents (2026-10-27): the invite and the agreement
+are Tier 2 cards -- dry-run through `executor.preview`, one card each, never
+executed by the pass. The executor, `propose` and `notify` are faked the way
 tests/test_agency_followup.py fakes them; no socket, no model, no database.
 """
 from __future__ import annotations
@@ -60,8 +62,11 @@ class World:
     """Fakes around a pass: what the executor answers per action, what was
     run, carded, posted and released."""
 
+    SENDS = ("agency.send_invite", "agency.send_agreement", "agency.send_outreach")
+
     def __init__(self, monkeypatch, answers: dict[str, ActionResult]):
         self.ran: list[tuple[str, dict]] = []
+        self.previewed: list[tuple[str, dict]] = []
         self.cards: list[tuple[str, dict, str, dict]] = []
         self.slack: list = []
         self.released: list = []
@@ -70,8 +75,14 @@ class World:
         async def execute(request):
             self.ran.append((request.action, request.params))
             assert request.approved_by is None            # unattended, Tier 1
+            assert request.action not in self.SENDS, "a send is a card, never run"
             return answers[request.action]
         monkeypatch.setattr("atlas.kernel.executor.execute", execute)
+
+        async def preview(action, params):
+            self.previewed.append((action, params))
+            return answers[action]
+        monkeypatch.setattr("atlas.kernel.executor.preview", preview)
 
         async def propose(action, params, reason, **kw):
             self.cards.append((action, params, reason, kw))
@@ -148,8 +159,7 @@ async def test_a_hold_at_the_send_releases_the_claim(monkeypatch):
 async def test_the_reply_autosend_switch_holds_in_the_guard(monkeypatch):
     """`AGENCY_REPLY_AUTOSEND=off` is the last check in `_guard_reply`, with
     the HELD prefix the kernel reads; an approved card passes it."""
-    monkeypatch.setenv("AGENCY_SEND_DOMAIN", "mapfront.io")
-    monkeypatch.setenv("AGENCY_SEND_FROM", "miro@mapfront.io")
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "app-pass-for-test")
     monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "1 Main St, Queens, NY 11101")
     body = replies._email_finish("Hi Joe, it's $500.")
     draft = {"id": 21, "lead_id": 7, "status": "draft", "kind": "reply",
@@ -157,7 +167,7 @@ async def test_the_reply_autosend_switch_holds_in_the_guard(monkeypatch):
              "subject": "Re: your site", "body": body, "offered_slots": None}
     monkeypatch.setattr(_store, "get_reply_draft", _returns(draft))
     monkeypatch.setattr(_store, "lead_message_bodies", _returns(["How much?"]))
-    monkeypatch.setattr(_store, "count_closed_deals", _returns(0))
+    monkeypatch.setattr(_store, "lead_returning", _returns(False))
     monkeypatch.setattr(_store, "is_suppressed", _returns(False))
     assert (await replies.send_reply_dry(21)).ok
     monkeypatch.setenv("AGENCY_REPLY_AUTOSEND", "off")
@@ -167,7 +177,7 @@ async def test_the_reply_autosend_switch_holds_in_the_guard(monkeypatch):
     from atlas.kernel import idempotency
     token = idempotency._RUN.set("proposal:5")
     try:
-        assert (await replies.send_reply_dry(21)).ok          # Miro's yes is the answer
+        assert (await replies.send_reply_dry(21)).ok          # the owner's yes is the answer
     finally:
         idempotency._RUN.reset(token)
 
@@ -201,7 +211,7 @@ def _draft_fakes(monkeypatch, reply_text: str, *, intent: str, slots):
     monkeypatch.setattr(_store, "lead_message_bodies", _returns(["when can we talk?"]))
     monkeypatch.setattr(_store, "lead_email", _returns("joe@example.com"))
     monkeypatch.setattr(_store, "is_suppressed", _returns(False))
-    monkeypatch.setattr(_store, "count_closed_deals", _returns(0))
+    monkeypatch.setattr(_store, "lead_returning", _returns(False))
     monkeypatch.setattr(_store, "lead_links", _returns({"domain": "joes.example"}))
     monkeypatch.setattr(meetings, "free_times", _returns(slots))
     from atlas.modules.agency.audit import Audit
@@ -223,7 +233,7 @@ def _draft_fakes(monkeypatch, reply_text: str, *, intent: str, slots):
 async def test_an_interested_lead_is_offered_the_real_slots_and_they_are_stored(
         monkeypatch):
     seen = _draft_fakes(
-        monkeypatch, "Happy to set up a call. Miro could do Tuesday 6 Oct at 14:00 in "
+        monkeypatch, "Happy to set up a call. the owner could do Tuesday 6 Oct at 14:00 in "
                      "the afternoon or Wednesday 7 Oct at 11:00 in the morning.",
         intent="interested", slots=(OFFERED, None))
     result = await replies.draft_reply(7, "email")
@@ -235,7 +245,7 @@ async def test_an_interested_lead_is_offered_the_real_slots_and_they_are_stored(
 
 
 async def test_a_draft_naming_a_time_outside_the_offer_is_refused(monkeypatch):
-    _draft_fakes(monkeypatch, "Miro could do Friday at 10 or Tuesday at 2.",
+    _draft_fakes(monkeypatch, "the owner could do Friday at 10 or Tuesday at 2.",
                  intent="interested", slots=(OFFERED, None))
     result = await replies.draft_reply(7, "email")
     assert not result.ok and "Friday at 10" in result.detail
@@ -243,7 +253,7 @@ async def test_a_draft_naming_a_time_outside_the_offer_is_refused(monkeypatch):
 
 
 async def test_an_unreadable_calendar_offers_nothing_and_a_time_is_refused(monkeypatch):
-    seen = _draft_fakes(monkeypatch, "Miro will send you a couple of times himself.",
+    seen = _draft_fakes(monkeypatch, "the owner will send you a couple of times himself.",
                         intent="interested", slots=(None, "401"))
     result = await replies.draft_reply(7, "email")
     assert result.ok and seen["offered_slots"] is None
@@ -264,7 +274,7 @@ async def test_a_question_gets_no_slots_and_may_name_no_time(monkeypatch):
 
 
 def test_the_slot_check_is_lenient_on_form_and_strict_on_the_set():
-    ok = ("Miro can do Tuesday 6 Oct at 14:00 in the afternoon, Wed, Oct 7, 11am "
+    ok = ("the owner can do Tuesday 6 Oct at 14:00 in the afternoon, Wed, Oct 7, 11am "
           "or Thursday at 3:30pm.")
     assert meetings.slot_refusal(ok, OFFERED) is None
     assert meetings.slot_refusal("Thursday at 3", OFFERED)        # 3:30 is not 3
@@ -331,7 +341,8 @@ def test_a_number_beyond_the_offer_is_no_pick():
 
 # ============================================================ accepting a price
 
-TERMS = pricing.Terms(500, 300, 100, 0)
+TERMS = pricing.Terms(500, 300, returning=False)
+RETURNING = pricing.Terms(500, 300, returning=True)
 
 
 @pytest.mark.parametrize(("said", "want"), [
@@ -343,7 +354,7 @@ TERMS = pricing.Terms(500, 300, 100, 0)
     ("Please send over the agreement and the invoice.", 500),
     ("I'll take it", 500),
     ("Yes, $500 works, send the agreement.", 500),
-    ("Sure, let's do it at $300.", 300),
+    ("Sure, let's do it at $300.", None),         # not a new client's price
     ("where do we pay?", None),                   # a question mark is a question
     ("Yes but can you do it for $400?", None),    # a counter-offer
     ("How about $300?", None),                    # a counter-offer, not a yes
@@ -357,8 +368,16 @@ TERMS = pricing.Terms(500, 300, 100, 0)
     ("We already have someone.", None),
 ])
 def test_acceptance_is_read_in_code(said, want):
-    """Against a reply that quoted the list price."""
-    assert pricing.accepted_price(said, TERMS, objection=False, quoted=[500]) == want
+    """Against a reply that quoted a new client's price."""
+    assert pricing.accepted_price(said, TERMS, quoted=[500]) == want
+
+
+def test_a_returning_client_accepts_300_only():
+    assert pricing.accepted_price("Sure, let's do it at $300.", RETURNING) == 300
+    assert pricing.accepted_price("yes", RETURNING, quoted=[300]) == 300
+    assert pricing.accepted_price("yes", RETURNING, quoted=[500]) is None
+    unread = pricing.Terms(500, 300, returning=None)
+    assert pricing.accepted_price("yes", unread, quoted=[500]) is None
 
 
 @pytest.mark.parametrize("said", ["Yes", "Great work, love it!", "Perfect, thanks",
@@ -366,31 +385,26 @@ def test_acceptance_is_read_in_code(said, want):
 def test_assent_to_no_price_is_no_agreement(said):
     """Nobody put a price to them (the free preview, a reply that named
     none): "Great work!" is not a yes to $500."""
-    assert pricing.accepted_price(said, TERMS, objection=False) is None
-    assert pricing.accepted_price(said, TERMS, objection=False, quoted=[]) is None
+    assert pricing.accepted_price(said, TERMS) is None
+    assert pricing.accepted_price(said, TERMS, quoted=[]) is None
 
 
 def test_a_counter_offer_below_the_floor_is_never_an_acceptance():
     assert pricing.counter_offer("I'd do it for $150, final offer") == [150]
-    assert pricing.accepted_price("ok, I'd do it for $150, final offer", TERMS,
-                                  objection=True) is None
+    assert pricing.accepted_price("ok, I'd do it for $150, final offer", TERMS) is None
 
 
 def test_a_plain_yes_accepts_the_one_price_we_quoted():
-    """After an objection our reply quoted $100 (first sale); their "yes" is
-    to that, not to the list price. Two figures quoted: ambiguous."""
-    assert pricing.accepted_price("yes let's go", TERMS, objection=True,
-                                  quoted=[100]) == 100
-    assert pricing.accepted_price("yes let's go", TERMS, objection=True,
-                                  quoted=[500, 300]) is None
-    # A quoted first-sale price that a deal since has closed is not allowed now.
-    closed = pricing.Terms(500, 300, 100, 1)
-    assert pricing.accepted_price("yes", closed, objection=True, quoted=[100]) is None
+    """Their "yes" is to the one figure our reply named, and only when it is
+    this client's price. Two figures quoted: ambiguous."""
+    assert pricing.accepted_price("yes let's go", TERMS, quoted=[500]) == 500
+    assert pricing.accepted_price("yes let's go", TERMS, quoted=[100]) is None
+    assert pricing.accepted_price("yes let's go", TERMS, quoted=[500, 300]) is None
 
 
 def test_no_price_configured_means_no_agreement():
-    assert pricing.accepted_price("yes let's do it", pricing.Terms(None, None, None, 0),
-                                  objection=False) is None
+    assert pricing.accepted_price("yes let's do it",
+                                  pricing.Terms(None, None, returning=False)) is None
 
 
 # ========================================================= intake queues them
@@ -401,7 +415,7 @@ def _intake(monkeypatch, *, last_reply, intent="interested", email="joe@example.
     monkeypatch.setattr(_store, "insert_lead_message", _returns(12))
     monkeypatch.setattr(_store, "set_message_intent", _returns(None))
     monkeypatch.setattr(_store, "mark_message_alerted", _returns(None))
-    monkeypatch.setattr(_store, "count_closed_deals", _returns(0))
+    monkeypatch.setattr(_store, "lead_returning", _returns(False))
     monkeypatch.setattr(_store, "lead_links", _returns({}))
     monkeypatch.setattr(_store, "consent_for_lead", _returns(None))
     monkeypatch.setattr(_store, "lead_email", _returns(email))
@@ -543,7 +557,7 @@ async def test_an_unverified_lead_gets_neither(monkeypatch):
 HELD = ActionResult(True, "held Tue 06 Oct 14:00 EDT for Joe's Plumbing",
                     evidence={"meeting_id": 4, "event_id": "ev1",
                               "email": "joe@example.com"})
-INVITED = ActionResult(True, "invited joe@example.com to the call with Miro",
+INVITED = ActionResult(True, "invited joe@example.com to the call with the owner",
                        evidence={"to": "joe@example.com"})
 
 
@@ -555,20 +569,23 @@ def _booking_world(monkeypatch, hold=HELD, invite=INVITED, existing=None) -> Wor
     return world
 
 
-async def test_a_booking_holds_then_invites_and_receipts(monkeypatch):
+async def test_a_booking_holds_then_raises_one_invite_card(monkeypatch):
     world = _booking_world(monkeypatch)
-    assert await lead_followup.bookings() == 0
-    assert world.ran == [("agency.hold_meeting", {"lead_id": 7, "start": TUE_2PM.isoformat()}),
-                         ("agency.send_invite", {"meeting_id": 4})]
-    [receipt] = world.slack
-    assert receipt.title == "Booked Joe's Plumbing: Tuesday at 2 in the afternoon"
-    assert "joe@example.com" in receipt.body and receipt.kind == "receipt"
-    assert world.cards == [] and world.released == []
+    assert await lead_followup.bookings() == 1
+    assert world.ran == [("agency.hold_meeting",
+                          {"lead_id": 7, "start": TUE_2PM.isoformat()})]
+    assert world.previewed == [("agency.send_invite", {"meeting_id": 4})]
+    [(action, params, reason, kw)] = world.cards
+    assert action == "agency.send_invite" and params == {"meeting_id": 4}
+    assert not reason.startswith("Held for you")
+    assert "Tuesday at 2 in the afternoon" in reason
+    assert kw["dedup_key"] == "agency.send_invite:4" and kw["automatic"] is True
+    assert world.slack == [] and world.released == []
 
 
 async def test_a_taken_slot_is_the_card_with_the_reason(monkeypatch):
     world = _booking_world(monkeypatch, hold=_refused(
-        "Tue 06 Oct 14:00 is not an open business-hours slot on Miro's calendar"))
+        "Tue 06 Oct 14:00 is not an open business-hours slot on the owner's calendar"))
     assert await lead_followup.bookings() == 1
     [(action, params, reason, kw)] = world.cards
     assert action == "agency.hold_meeting" and params["start"] == TUE_2PM.isoformat()
@@ -579,55 +596,71 @@ async def test_a_taken_slot_is_the_card_with_the_reason(monkeypatch):
                                                   "start": TUE_2PM.isoformat()})]
 
 
-async def test_a_refused_invite_is_a_card_and_the_hold_stays(monkeypatch):
+async def test_a_refused_invite_dry_run_is_held_for_you_on_the_card(monkeypatch):
     world = _booking_world(monkeypatch, invite=_refused(
         "joe@example.com is on the suppression list"))
     assert await lead_followup.bookings() == 1
-    [(action, params, reason, _kw)] = world.cards
+    [(action, params, reason, kw)] = world.cards
     assert action == "agency.send_invite" and params == {"meeting_id": 4}
     assert reason.startswith("Held for you: joe@example.com is on the suppression list")
+    assert kw["evidence"]["held"] == "joe@example.com is on the suppression list"
 
 
 async def test_a_hold_before_the_calendar_hold_releases_the_claim(monkeypatch):
     world = _booking_world(monkeypatch, hold=_held_result())
     assert await lead_followup.bookings() == 0
     assert world.released == [("booking", 12)] and world.ran[-1][0] == "agency.hold_meeting"
+    assert world.cards == []
 
 
-async def test_a_hold_at_the_invite_releases_and_the_next_tick_only_invites(monkeypatch):
-    world = _booking_world(monkeypatch, invite=_held_result())
-    assert await lead_followup.bookings() == 0
-    assert world.released == [("booking", 12)]
-    # The next tick finds the hold already on the calendar: no second hold.
+async def test_an_existing_hold_gets_only_the_card_and_an_invited_one_nothing(
+        monkeypatch):
     world = _booking_world(monkeypatch, existing={"id": 4, "status": "held"})
-    assert await lead_followup.bookings() == 0
-    assert world.ran == [("agency.send_invite", {"meeting_id": 4})]
+    assert await lead_followup.bookings() == 1
+    assert world.ran == [] and [c[0] for c in world.cards] == ["agency.send_invite"]
     world = _booking_world(monkeypatch, existing={"id": 4, "status": "invited"})
-    assert await lead_followup.bookings() == 0 and world.ran == []
+    assert await lead_followup.bookings() == 0 and world.ran == [] and world.cards == []
+
+
+async def test_an_existing_card_is_not_raised_twice(monkeypatch):
+    """propose dedups on the key: a second tick gets the same card id back
+    and nothing is sent either time."""
+    world = _booking_world(monkeypatch, existing={"id": 4, "status": "held"})
+    await lead_followup.bookings()
+    await lead_followup.bookings()
+    keys = {kw["dedup_key"] for *_x, kw in world.cards}
+    assert keys == {"agency.send_invite:4"} and world.ran == []
 
 
 # ========================================================== the agreement pass
 
 def _agreement_world(monkeypatch, send: ActionResult) -> World:
-    world = World(monkeypatch, {"agency.send_agreement": send})
+    # The proposal is drafted (Tier 1) for the card; here it fails, and the
+    # card is raised without one.
+    world = World(monkeypatch, {"agency.send_agreement": send,
+                                "sales.draft_proposal": ActionResult(False, "no price")})
     monkeypatch.setattr(_store, "agreements_awaiting", _returns(
         [{"id": 12, "lead_id": 7, "agreement_price": 500}]))
     return world
 
 
-async def test_an_accepted_price_sends_the_agreement_by_email(monkeypatch):
+async def test_an_accepted_price_raises_one_agreement_card(monkeypatch):
     world = _agreement_world(monkeypatch, ActionResult(
-        True, "emailed the agreement ($500) to joe@example.com",
-        evidence={"to": "joe@example.com", "price": 500}))
-    assert await lead_followup.agreements() == 0
-    assert world.ran == [("agency.send_agreement",
-                          {"lead_id": 7, "price": 500, "channel": "email"})]
-    [receipt] = world.slack
-    assert receipt.title == "Sent Joe's Plumbing the agreement ($500)"
-    assert "payment link for $500" in receipt.body and world.cards == []
+        True, "would email the agreement ($500) to joe@example.com",
+        evidence={"to": "joe@example.com", "price": 500, "text": "Agreement..."}))
+    assert await lead_followup.agreements() == 1
+    assert world.ran == [("sales.draft_proposal", {"lead_id": 7})]
+    assert world.previewed == [("agency.send_agreement",
+                                {"lead_id": 7, "price": 500, "channel": "email"})]
+    [(action, params, reason, kw)] = world.cards
+    assert action == "agency.send_agreement" and params["price"] == 500
+    assert not reason.startswith("Held for you")
+    assert kw["dedup_key"] == "agency.send_agreement:12" and kw["automatic"] is True
+    assert kw["evidence"]["dry_run"]["to"] == "joe@example.com"
+    assert world.slack == []
 
 
-async def test_no_payment_link_is_the_card_not_a_send(monkeypatch):
+async def test_no_payment_link_is_held_for_you_on_the_card(monkeypatch):
     world = _agreement_world(monkeypatch, _refused(
         "no payment link for $500 in AGENCY_PAYMENT_LINKS"))
     assert await lead_followup.agreements() == 1
@@ -635,12 +668,22 @@ async def test_no_payment_link_is_the_card_not_a_send(monkeypatch):
     assert action == "agency.send_agreement" and params["price"] == 500
     assert reason.startswith("Held for you: no payment link for $500")
     assert kw["dedup_key"] == "agency.send_agreement:12" and world.released == []
+    assert world.ran == [("sales.draft_proposal", {"lead_id": 7})]
 
 
-async def test_a_held_agreement_releases_the_claim(monkeypatch):
-    world = _agreement_world(monkeypatch, _held_result("paused"))
-    assert await lead_followup.agreements() == 0
-    assert world.released == [("agreement", 12)] and world.cards == []
+async def test_an_autosend_hold_is_not_held_for_you(monkeypatch):
+    """The autosend holds are what the card itself answers."""
+    world = _agreement_world(monkeypatch, _refused(
+        "held for you: automatic sending is off"))
+    world.cards.clear()
+    from atlas.kernel import executor
+
+    async def preview(action, params):
+        return ActionResult(False, "held for you: automatic sending is off")
+    monkeypatch.setattr(executor, "preview", preview)
+    assert await lead_followup.agreements() == 1
+    [(_a, _p, reason, kw)] = world.cards
+    assert not reason.startswith("Held for you") and kw["evidence"]["held"] is None
 
 
 async def test_the_agreement_rollback_is_honest(monkeypatch):
@@ -686,7 +729,7 @@ def _call_world(monkeypatch, call: ActionResult, *, guard_ok=True) -> World:
     async def guard(lead_id, channel, *, now=None):
         if guard_ok:
             return SimpleNamespace(lead=LEAD, phone="+17185550199",
-                                   opening="Hi, this is Miro's assistant"), None
+                                   opening="Hi, this is the owner's assistant"), None
         return None, ("no consent on record for a call to lead 7: ATLAS texts or "
                       "calls only a lead who asked for it (TCPA)")
     monkeypatch.setattr(consent, "contact_guard", guard)
@@ -838,3 +881,14 @@ def test_the_slot_window_is_in_the_future(monkeypatch):
     says `booking_slot > now()`); the pass also refuses a naive datetime."""
     now = datetime.now(UTC)
     assert (TUE_2PM - now) < timedelta(days=365)      # a sanity bound on the fixture
+
+
+def test_no_outreach_email_leaves_without_a_card():
+    """Every outreach email is a card whatever AGENCY_OUTREACH_AUTOSEND says;
+    a reply is held by AGENCY_REPLY_AUTOSEND=off (the guard test above)."""
+    from atlas.kernel.contracts import Tier
+    from atlas.modules.agency import AgencyModule
+    actions = {a.name: a for a in AgencyModule().actions()}
+    send = actions["agency.send_outreach"]
+    assert send.tier is Tier.ASK and send.card_only
+    assert actions["agency.send_reply"].tier is Tier.AUTO     # held by the env switch

@@ -1,6 +1,6 @@
 """Which backend renders a reel, and the two that run on this box.
 
-Chosen per call, in this order (Task 55, Miro's ruling):
+Chosen per call, in this order (Task 55, the owner's ruling):
 
   1. **veo** -- `GEMINI_API_KEY` set, ffmpeg on the box, and the WHOLE
      story (beats x 8 s) fits under `VEO_MONTHLY_SECONDS`. Real motion: one
@@ -10,7 +10,7 @@ Chosen per call, in this order (Task 55, Miro's ruling):
      timings, burned in with libass. The cap is checked for the whole story
      BEFORE the first clip is asked for: a story is never half-rendered at
      the cap, it goes to the next backend instead.
-     **veo+higgsfield** (Miro, 2026-09-29) -- when Higgsfield is keyed and
+     **veo+higgsfield** (the owner, 2026-09-29) -- when Higgsfield is keyed and
      Veo's month or day (`VEO_DAILY_CLIPS`, reserve included) cannot make
      every beat, Veo makes what it can and Higgsfield the rest, every
      overflow clip's price reserved under `HIGGSFIELD_MONTHLY_USD` before
@@ -73,7 +73,7 @@ class Choice:
 
 
 VEO_AND_HIGGSFIELD = "veo+higgsfield"
-# Miro, 2026-09-30 (relayed by the Full-Upgrade session): "don't use veo, use
+# the owner, 2026-09-30 (relayed by the Full-Upgrade session): "don't use veo, use
 # higgsfield instead only". `REELS_RENDERER=higgsfield` turns Veo OFF -- not
 # first, not a fallback: every beat is made on Higgsfield under its cap, and
 # when Higgsfield cannot (no credits, the cap, no keys) the story fails and
@@ -153,7 +153,7 @@ async def choose_backend(script: Script) -> Choice:
     set; else local. Reads only: no estimate is asked for here."""
     passed: list[str] = []
     if higgsfield_only():
-        # Veo is off by Miro's word; `render_veo` refuses when Higgsfield
+        # Veo is off by the owner's word; `render_veo` refuses when Higgsfield
         # cannot make the story, rather than reaching for anything else.
         return Choice(HIGGSFIELD_ONLY,
                       f"Veo off ({RENDERER_ENV}={HIGGSFIELD_ONLY}): every beat on "
@@ -317,10 +317,10 @@ def is_arabic(script: Script) -> bool:
     return ARABIC_MARK in str(getattr(script, "format", "") or "").lower()
 
 
-# Miro, 2026-09-27: "action and movement for all characters and 3D
+# the owner, 2026-09-27: "action and movement for all characters and 3D
 # movement -- not slides". Every Veo clip, daily reel or calendar, is asked
 # for it in these words.
-# Miro's reference reels (2026-09-27, two TikToks he sent): the look every
+# the owner's reference reels (2026-09-27, two TikToks he sent): the look every
 # clip asks for. Taken: the craft. Not taken: their real car brands and a
 # famous studio's look (guard.ip_refusal refuses both in code).
 STYLE = ("LOOK: high-end stylized 3D animation, photoreal materials and "
@@ -349,7 +349,7 @@ def beat_prompt(sheet: str, index: int, total: int, beat: str,
                 dialogue: bool = False) -> str:
     """The character sheet FIRST, then the beat, then the motion rule. A
     dialogue beat ("Name: line") is spoken by the characters to each other,
-    on camera, lip-synced -- no narrator (Miro, 2026-09-27). An older
+    on camera, lip-synced -- no narrator (the owner, 2026-09-27). An older
     narrated draft keeps its narrator; with `own_voice` false the chosen
     Fish voice is laid over it, so Veo is asked for no speech at all."""
     tongue = "Egyptian Arabic" if arabic else "English"
@@ -699,14 +699,14 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
                     tag=reels.screen_tag(script.format),
                     source=football.source_of(script.caption)))
             elif not series:
-                # Miro, 2026-09-27: captions on series only. The AI tag stays.
+                # the owner, 2026-09-27: captions on series only. The AI tag stays.
                 words, no_words = None, "not a series, so no captions"
                 await asyncio.to_thread(_write, ass, captions.build_scripted_ass(
                     [], total, arabic=False, tag=reels.screen_tag(script.format),
                     end_text=script.end_card))
             elif script.dialogue and (script.scripted or not is_arabic(script)):
                 # The script's own lines, each speaker in its own colour, over
-                # its beat -- exact words, not a transcription (Miro,
+                # its beat -- exact words, not a transcription (the owner,
                 # 2026-09-27: colour-coded per character).
                 cues = captions.dialogue_cues(script.exchanges()[:len(beats)],
                                               float(veo.CLIP_SECONDS))
@@ -716,7 +716,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
                     cues, total, arabic=False, tag=reels.screen_tag(script.format),
                     end_text=script.end_card))
             elif is_arabic(script):
-                # Arabic voice, English captions (Miro, 2026-09-27).
+                # Arabic voice, English captions (the owner, 2026-09-27).
                 english, no_words = await captions.english_segments(heard)
                 words = english
                 await asyncio.to_thread(_write, ass, captions.build_scripted_ass(

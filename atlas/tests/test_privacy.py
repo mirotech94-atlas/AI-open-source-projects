@@ -185,7 +185,7 @@ async def test_a_fresh_source_never_cut_is_kept(clips, memory_backend):
 @pytest.mark.parametrize("card", ["declined", "expired"])
 async def test_a_clip_whose_card_got_a_no_no_longer_blocks_the_purge(
         clips, memory_backend, card):
-    """Declined, or expired unanswered: Miro's "no" is final for the purge,
+    """Declined, or expired unanswered: the owner's "no" is final for the purge,
     like a withdrawn clip. The clip file itself stays in out/."""
     vod = clips / SLUG / "source" / "vod.mp4"
     vod.write_bytes(VOD)

@@ -1,12 +1,12 @@
 """The series engine: a series is planned whole, then made part by part.
 
-Miro, 2026-09-27 (relayed): "make all the parts without me having to tell
+the owner, 2026-09-27 (relayed): "make all the parts without me having to tell
 you, and finish the video correctly." A series is never left on a "Part 2"
 forever:
 
   * **Planned up front.** `plan_series` (Tier AUTO) writes the whole arc --
     3 to 8 parts with a real ending -- and a fixed character sheet, and
-    stores it (`reel_series`). Miro's own series are seeded with his
+    stores it (`reel_series`). the owner's own series are seeded with his
     outline instead (`SEEDS`).
   * **Made in order.** `draft_part` (Tier AUTO) drafts the next part from
     the stored outline, the synopses of the parts before it and the same
@@ -17,7 +17,7 @@ forever:
     posted; when the finale posts, the series is done and the next queued
     one starts (`kernel.reels.series_step`).
 
-Series text is ATLAS's own (Miro's outline or a plan it drafted); a plan
+Series text is ATLAS's own (the owner's outline or a plan it drafted); a plan
 drafted from research quotes that research as untrusted, like every draft.
 """
 from __future__ import annotations
@@ -42,7 +42,7 @@ log = logging.getLogger("atlas.content")
 MIN_PARTS, MAX_PARTS = 3, 8
 ARABIC = "Egyptian Arabic"
 
-# Miro's own series, seeded once (by title) with his outline.
+# the owner's own series, seeded once (by title) with his outline.
 SEEDS: tuple[dict[str, Any], ...] = (
     {
         "title": "Emergency Room: Code Chaos",
@@ -72,7 +72,7 @@ SEEDS: tuple[dict[str, Any], ...] = (
              "Sayed is discharged, 'dies' again at the door, and everyone "
              "laughs. The end."),
         ],
-        # Being rendered by hand, one part a day Sep 28 - Oct 2, by Miro's
+        # Being rendered by hand, one part a day Sep 28 - Oct 2, by the owner's
         # engine session (relayed 2026-09-28): registered as made, so this
         # engine never remakes it and starts The Parking Spot after it.
         "status": "done",
@@ -90,8 +90,8 @@ PACKAGE = Path(__file__).parent / "calendars" / "series-v1.json"
 
 @lru_cache(maxsize=1)
 def package() -> list[dict[str, Any]]:
-    """Fourteen series, 56 episodes, written in full by Miro's engine-setup
-    session (2026-09-28) and handed to this engine when Miro chose ATLAS's
+    """Fourteen series, 56 episodes, written in full by the owner's engine-setup
+    session (2026-09-28) and handed to this engine when the owner chose ATLAS's
     pipeline to own the reels. Each part is 8 beats: the scene with its
     quoted spoken line, the speaker, and the English caption. Checked against
     the brand and IP guards when they were taken in."""
@@ -314,7 +314,7 @@ async def draft_part_rollback(token: str) -> ActionResult:
 
 # ------------------------------------------------------------------ results
 #
-# Miro, 2026-09-29: the AI-stories reels "improve over time with each video",
+# the owner, 2026-09-29: the AI-stories reels "improve over time with each video",
 # so a new series is planned from what the ones before it earned. Linkage: a
 # posted part's `reel_series_parts.media_id` is the `reel_posts.media_id` of
 # each platform it went to, and each post's figures are its LATEST
@@ -585,7 +585,7 @@ async def plan_series_rollback(token: str) -> ActionResult:
 
 async def redo(series_id: int, part_no: int) -> None:
     """A part that failed a quality check is rendered again, once, from the
-    same draft; a second failure is a card for Miro."""
+    same draft; a second failure is a card for the owner."""
     await execute_sql(
         """UPDATE reel_series_parts SET status = 'drafted', media_id = NULL,
                   redos = redos + 1 WHERE series_id = $1 AND part_no = $2""",

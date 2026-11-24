@@ -1,7 +1,7 @@
 """The leg sync (content/legsync.py): a reel that posted to some platforms
 and not others gets ONLY its missing leg, once, through the executor.
 
-Miro, 2026-09-29: media 12 (Emergency Room: Code Chaos -- Part 2) auto-posted
+the owner, 2026-09-29: media 12 (Emergency Room: Code Chaos -- Part 2) auto-posted
 to TikTok at 07:32 UTC while its Instagram leg was refused with Graph HTTP
 401. What is load-bearing:
 
@@ -240,7 +240,7 @@ async def test_a_leg_that_exists_is_never_posted(world, legs_posted, hands):
     "refused: the caption names a real brand (Pepsi)",
     "refused: every leg carries the AI label",
     "Instagram could not process the reel (container ERROR)",
-    "instagram.publish is paused since Tue 29 Sep 07:00 UTC by miro",
+    "instagram.publish is paused since Tue 29 Sep 07:00 UTC by owner",
 ])
 async def test_a_content_or_guard_refusal_is_not_retried(world, legs_posted, hands,
                                                          said):
@@ -266,7 +266,7 @@ async def test_a_content_or_guard_refusal_is_not_retried(world, legs_posted, han
     ("Graph API HTTP 429 on /x/media", True),
     ("refused: the caption names a real person", False),
     ("Graph API HTTP 400 on /x/media: Invalid parameter", False),
-    ("the Instagram module is paused since Tue 29 Sep by miro", False),
+    ("the Instagram module is paused since Tue 29 Sep by owner", False),
 ])
 def test_what_is_retryable(said, retry):
     assert legsync.classify(crosspost.REFUSED, said) is retry

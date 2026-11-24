@@ -408,8 +408,16 @@ async def queue_for_brief(msg) -> None:
     )
 
 
-async def last_evidence(property_name: str, check_name: str) -> dict[str, Any]:
-    """The `evidence` of the most recent observation for one check.
+async def last_evidence_read(property_name: str,
+                             check_name: str) -> tuple[dict[str, Any], bool]:
+    """`last_evidence` plus whether the history could be READ at all.
+
+    `({}, True)`: the history was read and there is none. `({}, False)`: the
+    read failed (no Postgres, an error), so nobody knows -- a caller that
+    would assert "nothing arrived" must answer UNKNOWN, not baseline again.
+    The rest of this docstring is `last_evidence`'s.
+
+    The `evidence` of the most recent observation for one check.
 
     A check that must answer "is this new?" needs to know what it saw last
     time. The alternative is trusting a timestamp field on the remote object,
@@ -450,13 +458,20 @@ async def last_evidence(property_name: str, check_name: str) -> dict[str, Any]:
     except Exception:
         log.debug("last_evidence unavailable for %s.%s",
                   property_name, check_name, exc_info=True)
-        return {}
+        return {}, False
     if row is None:
-        return {}
+        return {}, True
     value = row[0] if not isinstance(row, dict) else row.get("evidence")
     if isinstance(value, str):
         try:
             value = json.loads(value)
         except ValueError:
-            return {}
-    return value if isinstance(value, dict) else {}
+            return {}, False
+    return (value, True) if isinstance(value, dict) else ({}, False)
+
+
+async def last_evidence(property_name: str, check_name: str) -> dict[str, Any]:
+    """The newest measured `evidence` for a check, `{}` for "no history" or a
+    failed read. Callers that must tell those apart use `last_evidence_read`."""
+    evidence, _ok = await last_evidence_read(property_name, check_name)
+    return evidence

@@ -30,13 +30,13 @@ gave, a tracker the privacy page doesn't mention) refuses the deploy by
 name; there is no override parameter, because the fix is a rebuild, not a
 flag. NEEDS_CLIENT items (reviews, case studies, a team photo, a stated
 response time...) are listed on the card and do not block: approving the
-card is Miro deciding the site can go live without them. The second check
+card is the owner deciding the site can go live without them. The second check
 exists because files can change between the card and the click.
 
 **Local target: Mapfront (2026-09-29).** With `AGENCY_DEPLOY_HOST` unset or
 `local`, the site is published on this box instead of rsynced anywhere:
 copied into a new release under `hosting.PUBLISH_ROOT` and made live by
-swapping one relative symlink, served by Caddy at `https://<slug>.mapfront.io`
+swapping one relative symlink, served by Caddy at `https://agency.example.com/preview/<slug>/`
 (`hosting.py` has the layout and what it refuses). The launch check runs a
 third time there, on the release copy, before the swap -- the bytes it
 approves are the bytes that go live. Rollback points the link back at the
@@ -141,12 +141,43 @@ async def _run(argv: list[str]) -> tuple[bool, str]:
     return True, ""
 
 
+# the owner, 2026-10-30: client demos and previews go live on Vercel only
+# (`agency.publish_vercel`, a card). This box no longer serves them at
+# agency.example.com/preview/<slug>/, whatever AGENCY_DEPLOY_HOST says.
+VERCEL_ONLY = True
+VERCEL_REFUSAL = ("previews publish on Vercel only, through agency.publish_vercel "
+                  "(a card); this box no longer serves <slug> sites")
+
+
+def _not_built(slug: str, site: dict) -> str | None:
+    """Why this row may not go through `agency.deploy_site` (Tier AUTO), on
+    any path: only a 'built' row with a build path. A demo is Tier ASK
+    (`agency.deploy_demo`); an app is never deployed by ATLAS."""
+    kind = site.get("kind") or "built"
+    if kind != "built":
+        return (f"{slug} is a {kind} row, not a built site: a demo goes through "
+                "agency.deploy_demo, an app is never deployed by ATLAS")
+    if not str(site.get("path") or "").strip():
+        return f"{slug} has no build path on record"
+    return None
+
+
 async def deploy_site(slug: str) -> ActionResult:
-    if hosting.local_mode():
-        return await _deploy_local(slug)
+    if VERCEL_ONLY:
+        return ActionResult(False, VERCEL_REFUSAL)
+    local = hosting.local_mode()
+    if local:
+        problem = _local_problem(slug)
+        if problem:
+            return ActionResult(False, problem)
     site = await _store.get_site(slug)
     if site is None:
         return ActionResult(False, f"no such site: {slug}")
+    refusal = _not_built(slug, site)
+    if refusal:
+        return ActionResult(False, refusal)
+    if local:
+        return await _deploy_local(slug, site)
 
     host = os.getenv("AGENCY_DEPLOY_HOST")
     remote_root = os.getenv("AGENCY_DEPLOY_ROOT")
@@ -185,6 +216,8 @@ async def deploy_site(slug: str) -> ActionResult:
 
 
 async def deploy_dry(slug: str) -> ActionResult:
+    if VERCEL_ONLY:
+        return ActionResult(False, VERCEL_REFUSAL)
     local = hosting.local_mode()
     if local:
         problem = _local_problem(slug)
@@ -193,6 +226,9 @@ async def deploy_dry(slug: str) -> ActionResult:
     site = await _store.get_site(slug)
     if site is None:
         return ActionResult(False, f"no such site: {slug}")
+    refusal = _not_built(slug, site)
+    if refusal:
+        return ActionResult(False, refusal)
     host = os.getenv("AGENCY_DEPLOY_HOST")
     remote_root = os.getenv("AGENCY_DEPLOY_ROOT")
     if not local and (not host or not remote_root):
@@ -291,18 +327,29 @@ def _local_problem(slug: str) -> str | None:
     return hosting.root_problem(hosting.PUBLISH_ROOT, build.SITES_DIR)
 
 
+def _published_here(site: dict) -> bool:
+    slug = site.get("slug")
+    return bool((hosting.local_mode() or hosting.vercel_mode())
+                and site.get("deployed_at") and hosting.slug_problem(slug) is None)
+
+
 def published_domain(site: dict) -> str | None:
-    """Where a site row is live: its own `domain`, else -- for a site this
-    box published (local target, deployed) -- `<slug>.<AGENCY_SITES_DOMAIN>`.
-    The read-back and the site check use this, so a Mapfront deploy is read
-    back at the URL it actually went to rather than reading UNKNOWN."""
+    """Where a site row is live, as a HOST, for the site check: its own
+    `domain`, else -- for a site this box published (local target,
+    deployed) -- the preview host, `agency.example.com`. Never a link for a
+    lead: `outreach.preview_url` takes the recorded domain only."""
     if site.get("domain"):
         return str(site["domain"])
-    slug = site.get("slug")
-    if (hosting.local_mode() and site.get("deployed_at")
-            and hosting.slug_problem(slug) is None):
-        return hosting.public_host(str(slug))
-    return None
+    return hosting.public_host(str(site.get("slug"))) if _published_here(site) else None
+
+
+def published_url(site: dict) -> str | None:
+    """The page URL the read-back fetches: `https://<domain>/` for a site
+    with its own domain, else the path-based preview URL
+    `https://agency.example.com/preview/<slug>/` for one this box published."""
+    if site.get("domain"):
+        return f"https://{str(site['domain']).strip('/')}/"
+    return hosting.public_url(str(site.get("slug"))) if _published_here(site) else None
 
 
 def _stamp() -> str:
@@ -323,18 +370,16 @@ def _publish(local_dir: Path, slug: str, stamp: str) -> tuple[str | None, Launch
     if not check.ready:
         hosting.discard_release(root, slug, stamp)
         return previous, check
+    # Audited as built; now moved under /preview/<slug>/ before it goes live.
+    hosting.prefix_release(release, slug)
     hosting.point_at(root, slug, stamp)
     hosting.prune_releases(root, slug, keep={stamp} | ({previous} if previous else set()))
     return previous, check
 
 
-async def _deploy_local(slug: str) -> ActionResult:
-    problem = _local_problem(slug)
-    if problem:
-        return ActionResult(False, problem)
-    site = await _store.get_site(slug)
-    if site is None:
-        return ActionResult(False, f"no such site: {slug}")
+async def _deploy_local(slug: str, site: dict) -> ActionResult:
+    """`deploy_site` has already checked the slug, the publish root and
+    that the row is a built site with a path."""
     local_dir = Path(site["path"])
     if not local_dir.is_dir():
         return ActionResult(False, f"built site not found on disk: {local_dir}")
@@ -348,8 +393,8 @@ async def _deploy_local(slug: str) -> ActionResult:
     except PermissionError as exc:
         return ActionResult(False, (
             f"publish failed, nothing went live: {exc}. The publish root must be "
-            "writable by the api (uid 10001): on the host, "
-            "`install -d -o 10001 -g 10001 /opt/atlas/data/app/sites`"))
+            "writable by the api (uid 10001): on the Mac, "
+            "`install -d -o 10001 -g 10001 ~/atlas-agency/data/app/sites`"))
     except (ValueError, OSError) as exc:
         return ActionResult(False, f"publish failed, nothing went live: {exc}")
     if not check.ready:

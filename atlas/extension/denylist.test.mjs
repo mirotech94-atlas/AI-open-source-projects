@@ -1,7 +1,7 @@
 /**
  * Deny-list tests. Run: node extension/denylist.test.mjs
  *
- * This is the privacy boundary. A false negative here means something Miro
+ * This is the privacy boundary. A false negative here means something the owner
  * explicitly excluded gets recorded, so the cases below are deliberately
  * adversarial.
  */
@@ -45,7 +45,7 @@ check("an unrelated site is allowed", () => {
 });
 
 check("non-http schemes are never recorded", () => {
-  for (const url of ["file:///Users/mac/secret.txt", "chrome://extensions",
+  for (const url of ["file:///home/user/secret.txt", "chrome://extensions",
                      "chrome-extension://abc/page.html", "data:text/html,hi",
                      "about:blank", "javascript:alert(1)"]) {
     assert.equal(isDenied(url, []), true, url);

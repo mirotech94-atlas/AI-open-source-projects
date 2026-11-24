@@ -116,7 +116,7 @@ async def test_a_failing_check_leads_all_the_way_to_an_action(
             check="flycheap.affiliate_links", health=Health.FAILING,
             value=0.0, unit="links",
             detail="0/6 affiliate links intact",
-            evidence={"broken": ["https://flycheap.live/go/abc"]})
+            evidence={"broken": ["https://flycheap.example/go/abc"]})
 
     REGISTRY.checks["flycheap.affiliate_links"] = Check(
         name="affiliate_links", run=failing, interval=timedelta(minutes=5),
@@ -166,7 +166,7 @@ async def test_a_tier2_action_still_waits_for_approval(armed):
     assert log == []
 
     approved = await execute(ExecutionRequest(
-        "instagram.publish", {}, "x", approved_by="miro"))
+        "instagram.publish", {}, "x", approved_by="owner"))
     assert approved.ok
     assert [step for step, _ in log] == ["dry", "ran"]
 
@@ -176,7 +176,7 @@ async def test_a_denied_action_is_refused_even_when_armed(armed):
     log: list = []
     build_action(log, name="stripe.payout_create", tier=Tier.ASK)
     result = await execute(ExecutionRequest(
-        "stripe.payout_create", {}, "x", approved_by="miro"))
+        "stripe.payout_create", {}, "x", approved_by="owner"))
     assert not result.ok
     assert "money out" in result.detail
     assert log == []

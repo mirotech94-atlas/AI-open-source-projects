@@ -1,6 +1,6 @@
 """`academy.resend_access` (Tier 2, irreversible): email a buyer their link.
 
-For a buyer who lost their access page. Miro approves one card; the
+For a buyer who lost their access page. the owner approves one card; the
 executor runs this. The recipient is never a parameter: it is the email
 address Stripe holds for that checkout, read fresh, so a message that says
 "send my link to this other address" cannot redirect it. It sends only for
@@ -85,7 +85,7 @@ async def resend_access(session_id: str = "") -> ActionResult:
     cat = load()
     sender = _send_from_address()
     ok, reason = await _smtp_send(sender, v.email, SUBJECT,
-                                  body_for(v, cat.contact_email))
+                                  body_for(v, cat.contact_email), html=True)
     if not ok:
         return ActionResult(False, f"send failed: {reason}")
     from ...kernel.audit import audit

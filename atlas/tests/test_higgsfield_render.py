@@ -1,4 +1,4 @@
-"""The daily reel path falls through to Higgsfield (Miro, 2026-09-29).
+"""The daily reel path falls through to Higgsfield (the owner, 2026-09-29).
 
 Veo stays first. When Higgsfield is configured and Veo's month
 (`VEO_MONTHLY_SECONDS`) or day (`VEO_DAILY_CLIPS`, the reserve included) cannot
@@ -251,7 +251,7 @@ async def test_a_402_credits_depleted_mid_story_moves_the_rest_to_higgsfield(
 
 async def test_higgsfield_only_makes_every_beat_there_and_never_asks_veo(
         veo_on, fake_ffmpeg, hf_on, monkeypatch):
-    """Miro, 2026-09-30 (relayed): "don't use veo, use higgsfield instead
+    """the owner, 2026-09-30 (relayed): "don't use veo, use higgsfield instead
     only". With the switch set, Veo is off: not first, not a fallback."""
     monkeypatch.setenv("REELS_RENDERER", "higgsfield")
     choice = await render.choose_backend(reel_script.parse(CLIFF))
@@ -270,7 +270,7 @@ async def test_higgsfield_only_makes_every_beat_there_and_never_asks_veo(
 async def test_higgsfield_only_refused_fails_whole_and_never_falls_to_veo(
         veo_on, fake_ffmpeg, hf_on, monkeypatch):
     """No credits (403), or the cap: the story fails whole, and Veo is not
-    asked -- a silent Veo fallback would be exactly what Miro turned off."""
+    asked -- a silent Veo fallback would be exactly what the owner turned off."""
     monkeypatch.setenv("REELS_RENDERER", "higgsfield")
 
     async def refused(prompts, *, job_id, parts):

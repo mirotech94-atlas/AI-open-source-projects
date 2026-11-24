@@ -1,0 +1,154 @@
+{
+  "about": "The four YouTube videos proposed in the owner's competitor report (\"Compete through useful results\", 11 Oct 2026, section 05), as catalog entries for the tutorial lane to script later. Not wired into tutorial_series.py: a proposal has no scenes and nothing renders from it. Each one teaches one task for free and names one product as the next step. Demo data is made up and labelled so on screen; every fact in a demo was read from the product's own files on 11 Oct 2026 (the `source` lines). Titles follow tutorial_series.py's rules: at most 100 characters, a benefit or a clear task, no income claim, no other creator's name.",
+  "proposals": [
+    {
+      "key": "customer-reply-draft-awaiting-approval",
+      "status": "proposed",
+      "series": "business",
+      "level": 1,
+      "title": "Build a Customer-Reply Draft That Waits for Your Approval (n8n, Beginner)",
+      "thumb_title": "Draft first,\nyou approve",
+      "hook": "A new lead arrives, the reply is already written, and nothing is sent until you read it.",
+      "summary": "A contact-form lead goes into n8n, gets checked, and comes back as a drafted reply in a plain text file with sent: false. The owner reads it and sends it from their own email. Built with made-up data only.",
+      "outline": [
+        "The one rule: draft, never send, and why an automation that can send can also send the wrong text a hundred times",
+        "The flow: Webhook, Validate & draft, Input valid?, append the lead to a file, respond with the draft",
+        "Test it with a made-up lead on the Test URL (one call per click)",
+        "Send a bad lead with no phone: a 400 with the list of problems, and no row written",
+        "Read the draft in Leads.md and change the placeholders to your own words",
+        "The approval step: you read it and send it yourself; there is no send node",
+        "Recap, and where the full pack goes further"
+      ],
+      "demo": {
+        "description": "The sample inquiry, the draft and the deliberate review step, on a local n8n.",
+        "input": "{\"name\":\"Dana Reyes\",\"email\":\"dana@example.com\",\"phone\":\"+1 (555) 010-2233\",\"message\":\"Need a quote for a kitchen faucet repair\"}",
+        "expected_output": "{\"status\":\"draft\",\"sent\":false,...,\"next\":\"owner approves before anything is sent\"}, and one new row in inbox/Leads.md",
+        "bad_input": "{\"name\":\"Dana\",\"email\":\"dana@example.com\"}",
+        "bad_expected_output": "{\"error\":\"invalid input\",\"details\":[\"phone is required\"],\"sent\":false,...} and no new row",
+        "source": "Products/Local Business Automation Pack/guide/Chapter 4 - Workflow 2, Lead form to drafted reply.md; VERIFY-LOG.md (1 Oct 2026, n8n 2.40.7)"
+      },
+      "free_exercise": "Write your own first-reply draft and send one good and one bad made-up lead to the Test URL.",
+      "product": "local-business-automation-pack",
+      "next_step": "The pack adds three more workflows (site health check, missed-call text-back draft, review request), a 29-page guide that explains every node, a docker-compose file that fences file access, and a troubleshooting chapter.",
+      "hashtags": ["#n8n", "#SmallBusiness", "#Automation"],
+      "cautions": [
+        "Not the scripted \"Auto-Reply to Website Leads\" episode: that one sends a fixed first reply by Gmail. This one never sends.",
+        "Say on screen that a form on the public internet can't reach localhost; hosting is outside the video.",
+        "TO DECIDE (the owner): whether the video shows the pack's own workflow file or builds a smaller one on screen."
+      ]
+    },
+    {
+      "key": "organize-client-notes-claude-obsidian",
+      "status": "proposed",
+      "series": "claude",
+      "level": 1,
+      "title": "Organize Client Notes with Claude + Obsidian: From a Messy Note to a Weekly Review",
+      "thumb_title": "Messy notes,\nsorted",
+      "hook": "A rough note from a client call becomes a clean client note, with the client's own words kept and the gaps listed.",
+      "summary": "Open a folder as an Obsidian vault, give Claude house rules in a CLAUDE.md, and turn a made-up conversation note into a client note and a weekly review that only uses numbers you can check.",
+      "outline": [
+        "Open a folder as a vault in Obsidian, and run Claude Code in the same folder",
+        "House rules in CLAUDE.md: keep the client's words, mark summaries, never invent a number, draft rather than send",
+        "Paste a made-up conversation note and ask Claude to fill a client note from the template",
+        "Check the result: the client's own words in their own section, blanks left blank, gaps listed",
+        "Link a project note to the client",
+        "A weekly review where money lines hold only numbers you can check",
+        "Sorting the inbox: Claude shows the plan and waits for your yes"
+      ],
+      "demo": {
+        "description": "Turn a clearly fictional rough note into a client note and a weekly-review entry.",
+        "input": "A short made-up call note, written for the video and labelled fictional on screen (no real client, no figures).",
+        "expected_checks": [
+          "The client's words appear unchanged under \"The problem, in their words\"",
+          "Claude's own summaries are marked as summaries",
+          "Fields the note doesn't answer are left blank and listed as gaps",
+          "No figure appears that isn't in the note"
+        ],
+        "source": "Products/Vault Kit/CLAUDE.md; Products/Vault Kit/Clients/Client template.md; Products/Vault Kit/Weekly Review.md; Products/Vault Kit/Prompts/Prompt library.md (prompts 5 and 14)"
+      },
+      "free_exercise": "Paste a made-up conversation note into Claude with a 'turn this into a client note' prompt, and check the client's words stayed theirs.",
+      "product": "claude-obsidian-vault-kit",
+      "next_step": "The kit adds the whole linked vault: client, project and idea templates, a content calendar, the weekly review, 16 prompts and the CLAUDE.md house rules.",
+      "hashtags": ["#ClaudeAI", "#Obsidian", "#Freelance"],
+      "cautions": [
+        "Claude's output in the video must be what Claude actually returned on the day; don't script it.",
+        "CLAUDE.md is an instruction, not a lock: say so when showing the inbox-sorting step.",
+        "The kit hasn't yet been opened in a fresh Obsidian install (its own checklist); do that before recording."
+      ]
+    },
+    {
+      "key": "test-n8n-workflow-before-real-customer-info",
+      "status": "proposed",
+      "series": "n8n",
+      "level": 2,
+      "title": "Test Your n8n Workflow Before It Touches Real Customer Data",
+      "thumb_title": "Test it\nfirst",
+      "hook": "Three made-up inputs show whether a workflow is ready: a good one, a bad one and a hostile one.",
+      "summary": "How to test an n8n workflow with made-up data before real customers reach it: Test URL versus Production URL, good and bad inputs, a hostile input that must be escaped, and reading the Executions tab when something fails.",
+      "outline": [
+        "Made-up data only: example.com addresses and 555 phone numbers",
+        "Test URL versus Production URL, and why a test webhook answers one call per click",
+        "A good input and the output you expect",
+        "A bad input: the workflow should refuse it with a 400 and write nothing",
+        "A hostile input: HTML, a link and table characters, escaped in the file",
+        "When a run fails: Executions, the red node, Debug in editor",
+        "A quiet failure: success, but the wrong answer",
+        "Only then publish, and watch the first real runs"
+      ],
+      "demo": {
+        "description": "Sample inputs, the expected output and the failure handling, on a local n8n.",
+        "input": "A lead named \"Eve | Mallory\" whose message is <img src=https://evil.example/p.png> [[Secret note]] **bold**",
+        "expected_output": "HTTP 200, and the row shows Eve \\| Mallory and the message escaped (&lt;img ...&gt; \\[\\[Secret note\\]\\] \\*\\*bold\\*\\*)",
+        "bad_input": "A missed call from 555-0102",
+        "bad_expected_output": "HTTP 400 with [\"from must be an E.164 number, e.g. +15551234567\"] and no row written",
+        "quiet_failure": "An If condition that reads {{ $json.minute }} instead of minutes: status success, wrong advice",
+        "source": "Products/Local Business Automation Pack/VERIFY-LOG.md (1 Oct 2026); guide/Chapter 8 - When something goes wrong.md; Products/AI for Every Age/adults/Lesson 7.10 - Fixing problems with Executions.md"
+      },
+      "free_exercise": "Send one good, one bad and one hostile made-up input to your own workflow's Test URL, and write down what you expected before you send each.",
+      "product": "local-business-automation-pack",
+      "also_relevant": "ai-for-every-age",
+      "next_step": "The pack ships four workflows already tested this way, with the test calls, what came back, and a chapter on the six usual problems.",
+      "hashtags": ["#n8n", "#Automation", "#Testing"],
+      "cautions": [
+        "Never paste a real customer's details, an inbox file or a key into a forum post or an AI tool when asking for help; the guide says the same.",
+        "Execution records can hold whatever passed through the workflow: test with made-up data."
+      ]
+    },
+    {
+      "key": "family-callback-rule-practice",
+      "status": "proposed",
+      "series": "",
+      "level": 0,
+      "title": "Practise a Family Callback Rule for Suspicious Calls (A Calm Drill)",
+      "thumb_title": "Hang up,\ncall back",
+      "hook": "One rule your family can practise at the kitchen table: stop, hang up, and call back on a number you already know.",
+      "summary": "A calm household exercise with clearly fictional names: the callback rule, the four steps, and one announced practice call. A plan made ahead of time, not a promise that it stops every scam.",
+      "outline": [
+        "The rule: if a call or message asks for money, a code or personal details, stop, hang up, and call back on a number you already know",
+        "Why caller ID isn't proof, in the FTC's words",
+        "The four steps, and what you should see after each",
+        "Ground rules for practice: always announced, \"This is a drill\", made-up names, never your real safe word",
+        "Drill 1 with fictional names: ask for the family word, \"I'll call you right back\", hang up, say who you'd call",
+        "Long-distance families: arrange the practice call first, and ring back as yourself",
+        "One thing to do today: save your bank's number from the back of your card"
+      ],
+      "demo": {
+        "description": "Walk through a calm household exercise using clearly fictional examples.",
+        "input": "Caller reads: \"This is a drill. ... Grandma? It's me. I've had an accident and I'm in real trouble. I need you to send money today. Please don't tell Mom and Dad.\"",
+        "expected_output": "The answerer asks \"What's our word?\", says \"I'll call you right back\", puts the phone down, and says out loud who they would call and where the number is.",
+        "source": "Products/Family AI-Scam Defense Workbook/workbook/Part 3 - The callback rule.md; Part 7 - Family drills.md; VERIFY-LOG.md (FTC and FBI pages read 5 Oct 2026)"
+      },
+      "free_exercise": "Agree on one phrase that ends a call, say it out loud once, and save one number you already know under a clear name.",
+      "product": "family-ai-scam-defence-workbook",
+      "also_relevant": "ai-for-every-age",
+      "next_step": "The workbook adds the safe word, a never-paste list, six stop signs, seven announced drills with script cards, who to contact if a scam gets through, and seven pages to keep by the phone.",
+      "hashtags": ["#ScamAwareness", "#FamilySafety"],
+      "cautions": [
+        "No statistics or case stories: the workbook prints none, and the video shouldn't either.",
+        "Never suggest testing a relative with an unannounced call.",
+        "US reporting sites only; say so if any are shown.",
+        "Not an AI or automation topic: the owner to decide which playlist, if any, it joins (series is empty)."
+      ]
+    }
+  ]
+}

@@ -1,17 +1,17 @@
 """Shop -- a product for every reel, and the money it brings in.
 
-Miro, 2026-09-28: "create own plan to make money per reel". The plan lives
+the owner, 2026-09-28: "create own plan to make money per reel". The plan lives
 in his vault (Plans/Money per reel.md); this is its Seller. Each reel type
 points to one product; a caption carries that product's call to action
 (link in bio -- caption links are not clickable on Instagram); a product
-is sold through a Stripe Payment Link that Miro approved on a Tier 2 card;
+is sold through a Stripe Payment Link that the owner approved on a Tier 2 card;
 a digital product is handed over at /deliver/{checkout session}, only after
 Stripe says that session is paid.
 
 Money comes IN here. Nothing refunds, pays out or changes a price after
 the fact: those stay denied or his to do in Stripe.
 
-The Stripe key is STRIPE_SHOP_<ACCOUNT>_KEY -- a restricted key Miro makes
+The Stripe key is STRIPE_SHOP_<ACCOUNT>_KEY -- a restricted key the owner makes
 with write access to Products, Prices and Payment Links and read access to
 Checkout Sessions. ATLAS's existing Stripe keys are read-only and are not
 used to write.
@@ -35,7 +35,7 @@ from ...kernel.contracts import (
 )
 
 API = "https://api.stripe.com/v1"
-ACCOUNTS = ("miro", "guardian", "flycheap")   # miro: his own new account
+ACCOUNTS = ("owner",)   # his own account; guardian/flycheap removed 2026-10-29
 REEL_TYPES = ("business", "tech", "travel", "stories")
 
 # What each reel type says at the end of its caption. A product that is not
@@ -45,7 +45,7 @@ FOLLOW = "Follow for the next one."
 CTA = {
     "business": "All 30 lessons in one guide: link in bio.",
     "tech": "Get the Claude + Obsidian vault kit: link in bio.",
-    "travel": "Track fares with FlyCheap: link in bio.",
+    "travel": FOLLOW,
     "stories": "Follow for the next part.",
 }
 
@@ -295,7 +295,7 @@ class ShopModule:
                    summary="Put a product on sale with a Stripe payment link",
                    run=create_link, dry_run=create_link_dry, rollback=deactivate_link,
                    params={"product_key": "the shop product, e.g. business_guide",
-                           "account": "miro, guardian or flycheap: the Stripe account",
+                           "account": "owner: the Stripe account",
                            "price_cents": "the price in cents, e.g. 1900"},
                    card_only=True, max_per_hour=4),
         )

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 # Reconcile .env with .env.example after an upgrade.
 #
 # New releases add variables. This appends any key that .env.example has and

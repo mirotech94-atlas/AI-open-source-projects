@@ -1,6 +1,6 @@
 """agency.sitebooking -- the booking request on every designed client site.
 
-**Why (2026-09-30).** Miro, from the phone review of the new templates:
+**Why (2026-09-30).** the owner, from the phone review of the new templates:
 "design it better with buttons, reservations if it's a restaurant or
 booking system that will be good for them". Every family now leads with one
 booking action, in the hero and in the sticky bar, and the page carries the

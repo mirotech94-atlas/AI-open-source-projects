@@ -1,6 +1,6 @@
 """One-time login helper. Run it through bootstrap/fiverr-login.sh.
 
-Opens a real browser window so Miro logs in himself, including any 2FA, and
+Opens a real browser window so the owner logs in himself, including any 2FA, and
 ATLAS never handles the Fiverr password.
 
 It waits by WATCHING rather than by asking. The old version blocked on

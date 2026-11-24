@@ -102,3 +102,59 @@ async def test_an_agent_run_is_announced_when_it_starts_and_when_it_ends(
     got = [(e.kind, e.data) for e in drain(stream)]
     assert got == [("agent", {"agent": "ops", "phase": "started"}),
                    ("agent", {"agent": "ops", "phase": "finished"})]
+
+
+
+# ---------------------------------------------------------------- HUD nudges
+
+async def test_an_execute_audit_publishes_its_event_name_only(stream, memory_backend):
+    from atlas.kernel.audit import audit
+    await audit("execute.start", "gitlab.open_issue", {"params": {"token": "t" * 40}})
+    [event] = drain(stream)
+    assert event.kind == "audit"
+    assert event.data == {"event": "execute.start"}
+
+
+@pytest.mark.parametrize("name", ["rollback.start", "intent.accepted"])
+async def test_rollback_and_intent_audits_publish_too(stream, memory_backend, name):
+    from atlas.kernel.audit import audit
+    await audit(name, "x")
+    assert [e.data for e in drain(stream)] == [{"event": name}]
+
+
+async def test_other_audits_publish_nothing(stream, memory_backend):
+    from atlas.kernel.audit import audit
+    await audit("slack.event", "Ev123")
+    await audit("proposal.created", "gitlab.open_issue")
+    assert drain(stream) == []
+
+
+async def test_an_audit_whose_publish_raises_still_writes_the_row(
+        monkeypatch, memory_backend):
+    from atlas.kernel import audit as audit_module
+
+    def boom(*_a, **_kw):
+        raise RuntimeError("queue exploded")
+
+    monkeypatch.setattr(audit_module, "publish", boom)
+    await audit_module.audit("execute.finish", "mac.x")
+    rows = await memory_backend.read_audit()
+    assert [r.event for r in rows] == ["execute.finish"]
+
+
+async def test_a_read_tool_publishes_names_only(stream, monkeypatch):
+    from atlas.kernel import tools
+
+    async def read(**params):
+        return "SECRET-RESULT"
+
+    monkeypatch.setitem(tools.TOOLS, "gitlab_probe", tools.Tool(
+        "gitlab_probe", "d", {"type": "object"}, read=read))
+    result = await tools.invoke("gitlab_probe", {"token": "t" * 40},
+                                agent="sites", allowed={"gitlab_probe"})
+    assert result.ok
+    got = [e for e in drain(stream) if e.kind == "tool"]
+    assert [e.data for e in got] == [
+        {"agent": "sites", "tool": "gitlab_probe", "phase": "start"},
+        {"agent": "sites", "tool": "gitlab_probe", "phase": "end"}]
+    assert "SECRET" not in repr(got) and "t" * 40 not in repr(got)

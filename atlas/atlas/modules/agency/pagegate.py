@@ -1,6 +1,6 @@
 """The hard gate every client page passes before it is written or deployed.
 
-2026-09-30: a preview published at eco-electrical-services-llc-38.mapfront.io
+2026-09-30: a preview published for eco-electrical-services-llc-38
 had, as its body copy, a model's summary of the raw design-tool output it had
 been handed ("The data contains a JSON object ... an error message from a
 tool called GetLayers, indicating an input validation issue"). Nothing between

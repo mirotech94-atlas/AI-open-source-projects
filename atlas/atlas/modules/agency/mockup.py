@@ -24,9 +24,13 @@ checked in as `templates/`. This action:
 4. writes the page, the validated copy beside it (`<id>.copy.json`, what
    `agency.build_site` re-renders from) and the self-hosted font.
 
+A page designed by hand (`MOCKUP_DIR/<lead>/index.html`) takes a separate path
+that needs no licence flag -- nothing of GetLayers is in it -- but goes through
+the same `pagegate`, and `agency.build_site` copies it rather than re-rendering.
+
 Nothing here calls GetLayers at run time. `AGENCY_GETLAYERS_LICENCE_OK`
 still gates it -- the templates are GetLayers-derived client work, and
-it is the switch Miro uses to pause site builds -- read fresh every call.
+it is the switch the owner uses to pause site builds -- read fresh every call.
 
 The three GetLayers tool names and `_find_tools` stay: `build.py`'s
 one-product store page still uses them.
@@ -61,6 +65,16 @@ _REQUIRED_TOOLS = (SEARCH_TOOL, COMPOSITIONS_TOOL, MATERIALIZE_TOOL)
 _LICENCE_MISSING = (
     "GetLayers commercial licence not confirmed: set "
     "AGENCY_GETLAYERS_LICENCE_OK=true after checking it covers client work")
+
+
+DESIGN_FILE = "index.html"
+DESIGN_LAYER = "design:hand"
+
+
+def designed_path(lead_id: int) -> Path:
+    """Where a hand-designed page for this lead lives: `<MOCKUP_DIR>/<lead>/
+    index.html`, with its own assets beside it."""
+    return MOCKUP_DIR / str(lead_id) / DESIGN_FILE
 
 
 def _licence_ok() -> bool:
@@ -143,7 +157,52 @@ async def write_copy(client: ClientData, family: str) -> tuple[SiteCopy, list[st
     return sitetemplate.parse_copy(completion.text, client, family)
 
 
+def read_design(path: Path) -> tuple[str | None, str | None]:
+    """Blocking. (page, refusal) for a hand-designed page on disk."""
+    try:
+        html = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        return None, f"the designed page {path} could not be read: {exc}"
+    problem = pagegate.page_problem(html)
+    if problem is not None:
+        return None, f"refused the designed page {path}: it is {problem}"
+    return html, None
+
+
+async def _register_designed(lead_id: int, lead: dict, path: Path) -> ActionResult:
+    """A page designed by hand (no GetLayers, so no licence switch):
+    pagegate still reads it, then it is registered as the lead's mockup.
+    `agency.build_site` copies it into a site instead of re-rendering."""
+    _html, problem = await asyncio.to_thread(read_design, path)
+    if problem is not None:
+        return ActionResult(False, problem)
+    screenshot_path, screenshot_note = await _screenshot(path)
+    previous_status = lead.get("status")
+    mockup_id = await _store.insert_mockup(
+        lead_id, str(path), screenshot_path, [DESIGN_LAYER])
+    await _store.set_lead_status(lead_id, "mocked")
+    detail = f"registered the hand-designed page {path} as the mockup for lead {lead_id}"
+    if screenshot_note:
+        detail += f"; {screenshot_note}"
+    # No html_path in the token: the design is the source, a rollback must
+    # not delete it.
+    token = json.dumps({"lead_id": lead_id, "mockup_id": mockup_id,
+                        "previous_status": previous_status, "html_path": None,
+                        "copy_path": None, "screenshot_path": screenshot_path})
+    return ActionResult(
+        True, detail,
+        evidence={"path": str(path), "screenshot": screenshot_path,
+                  "family": DESIGN_LAYER},
+        rollback_token=token)
+
+
 async def make_mockup(lead_id: int) -> ActionResult:
+    designed = designed_path(lead_id)
+    if designed.is_file():
+        lead = await _store.get_lead(lead_id)
+        if lead is None:
+            return ActionResult(False, f"no such lead: {lead_id}")
+        return await _register_designed(lead_id, lead, designed)
     if not _licence_ok():
         return ActionResult(False, _LICENCE_MISSING)
 
@@ -200,6 +259,15 @@ async def make_mockup(lead_id: int) -> ActionResult:
 
 
 async def make_mockup_dry(lead_id: int) -> ActionResult:
+    designed = designed_path(lead_id)
+    if designed.is_file():
+        if await _store.get_lead(lead_id) is None:
+            return ActionResult(False, f"no such lead: {lead_id}")
+        _html, problem = await asyncio.to_thread(read_design, designed)
+        if problem is not None:
+            return ActionResult(False, problem)
+        return ActionResult(True, f"would register the hand-designed page {designed} "
+                                  f"as lead {lead_id}'s mockup (pagegate passed)")
     if not _licence_ok():
         return ActionResult(False, _LICENCE_MISSING)
     lead = await _store.get_lead(lead_id)

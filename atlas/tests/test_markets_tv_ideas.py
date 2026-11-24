@@ -1,12 +1,12 @@
 """A TradingView alert runs Ivan's idea rules on that one ticker, once
 (ideas.check_alert), and its one-line verdict rides on the alert's Slack
 line (alerts.tradingview_events). A rule that fires raises the normal
-paper idea card, marked "Triggered by your TradingView alert". Miro,
+paper idea card, marked "Triggered by your TradingView alert". the owner,
 2026-09-30: "make sure these alerts work and alert me in slack ... to sell
 or buy". Paper only; the alert line itself stays factual."""
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, time
 
 import pytest
 from acceptance_support import needs_pg, pg_fixture, registries_fixture  # noqa: F401
@@ -81,10 +81,13 @@ async def test_the_daily_cap_and_a_held_ticker_are_said_not_bypassed(clean, worl
     assert len(world.cards) == 2
     held = {r["ticker"] for r in await ideas.ideas()}
     other = ({"XLK", "XLE", "SPY"} - held).pop()
-    note = await ideas.check_alert(await _alert(other), other)
+    # The scan ran on world.end(), the last weekday; the cap counts that day's
+    # ideas, so the check runs on the same day (not on a weekend's real "today").
+    now = datetime.combine(world.end(), time(12), ideas.TZ)
+    note = await ideas.check_alert(await _alert(other), other, now=now)
     assert note == "Ivan checked: a rule setup, but the daily idea cap is used."
     carded = held.pop()
-    note = await ideas.check_alert(await _alert(carded), carded)
+    note = await ideas.check_alert(await _alert(carded), carded, now=now)
     assert note == f"Ivan checked: {carded} is already carded or held in the paper book."
     assert len(world.cards) == 2
 

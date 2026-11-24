@@ -10,7 +10,7 @@ from atlas.modules import markets
 
 
 def test_there_is_nothing_that_can_trade():
-    """The alert sends Miro a message; the two paper actions move PAPER books
+    """The alert sends the owner a message; the two paper actions move PAPER books
     on his approval: Tier 2, card-only (never offered to a model),
     reversible. No name says trade, and none may be added: money out is
     Tier 3, permanently denied. That the paper ones make no network write
@@ -66,9 +66,3 @@ async def test_a_bad_answer_reads_as_none():
         assert await markets.quote(c, "MSFT") is None
 
 
-def test_the_markets_agent_has_no_way_to_act():
-    from atlas.kernel.agents import ROSTER, build_roster
-    build_roster()
-    agent = ROSTER["markets"]
-    assert not any("." in t for t in agent.tools)   # no catalog actions, reads only
-    assert "NEVER trade" in agent.system

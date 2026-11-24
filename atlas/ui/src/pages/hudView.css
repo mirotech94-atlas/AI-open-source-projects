@@ -1,0 +1,20 @@
+/* The HUD. Every rule is scoped under .hud-view; colours come from the tokens. */
+.hud-view { background: var(--bg); color: var(--text-hot); padding: 16px; min-height: 100%; }
+.hud-view h1, .hud-view h2, .hud-view h3 { margin: 0 0 8px; font-weight: 600; }
+.hud-view h2 { margin-top: 20px; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--royal); }
+.hud-view .hud-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.hud-view .hud-banner { border: 1px solid var(--royal); color: var(--royal-bright, var(--royal));
+  padding: 8px 12px; margin: 12px 0; }
+.hud-view .hud-block { border: 1px solid color-mix(in srgb, var(--royal) 35%, transparent);
+  padding: 12px; }
+.hud-view .hud-big { font-size: 2rem; margin: 0; }
+.hud-view .hud-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.hud-view .hud-list li { padding: 4px 0; }
+.hud-view .hud-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.hud-view .hud-tile { display: flex; gap: 10px; border: 1px solid color-mix(in srgb, var(--royal) 35%, transparent);
+  padding: 10px; }
+.hud-view .hud-tile[data-state="unknown"] { border-style: dashed; opacity: 0.8; }
+.hud-view .hud-tile[data-state="working"] { border-color: var(--royal); }
+.hud-view .stamp { font-size: 0.8rem; opacity: 0.7; }
+@media (max-width: 520px) { .hud-view { padding: 12px; } }

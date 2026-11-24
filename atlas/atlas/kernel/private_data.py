@@ -1,4 +1,4 @@
-"""Which modules hold Miro's personal content, and who may read it.
+"""Which modules hold the owner's personal content, and who may read it.
 
 Commit 7da37bf's rule, extended to the read tools: private work stays on
 the local model. `module_brief` returns a module's inbox (mail senders and
@@ -14,6 +14,8 @@ READS, not how it is configured; add one by adding its name.
 """
 from __future__ import annotations
 
+from contextvars import ContextVar
+
 PRIVATE_MODULES: frozenset[str] = frozenset({
     "mail",          # his mailboxes
     "messages",      # Instagram DMs
@@ -23,7 +25,17 @@ PRIVATE_MODULES: frozenset[str] = frozenset({
     "vault",         # his documents and reading log
     "school",        # coursework, grades
     "calendar",      # his calendar
+    "cameras",       # the cameras at his home
 })
+
+
+# The free-text assistant is one agent that is sometimes a PRIVATE run (the
+# question is about the owner's own content, or the chat window it replays holds a
+# private turn). A ROSTER entry would be scheduled and listed everywhere, so the
+# run itself carries the fact: set by `assistant.loop` alone, around a run
+# routed to the local model, reset in a finally. Default False = fails closed.
+PRIVATE_RUN: ContextVar[bool] = ContextVar("atlas_private_run", default=False)
+PRIVATE_RUN_AGENTS: frozenset[str] = frozenset({"assistant"})
 
 
 def calling_agent() -> str | None:
@@ -36,6 +48,8 @@ def agent_is_private(name: str | None) -> bool:
     """True only for a registered agent whose work routes to the local model."""
     if not name:
         return False
+    if name in PRIVATE_RUN_AGENTS and PRIVATE_RUN.get():
+        return True
     from .agents import ROSTER
     from .llm import Need
     agent = ROSTER.get(name)
@@ -53,7 +67,7 @@ def refusal(module: str) -> dict | None:
     who = calling_agent()
     if agent_is_private(who):
         return None
-    return {"error": (f"{module} holds Miro's personal content and stays on the "
+    return {"error": (f"{module} holds the owner's personal content and stays on the "
                       f"local model; {who or 'this caller'} is not a local-model "
                       f"agent, so it is not read here. Ask the inbox agent."),
             "refused": "private_module"}

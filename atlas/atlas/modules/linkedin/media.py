@@ -1,6 +1,6 @@
 """Generated media for the `image` and `video` post kinds.
 
-Task 64: Miro wants pictures, not just a link and some words. This module
+Task 64: the owner wants pictures, not just a link and some words. This module
 makes the picture -- one square Gemini still for `image`, a short silent
 slideshow of two stills for `video` -- by calling straight into
 `atlas.modules.content.stills` (the Gemini image call Task 55 already built
@@ -14,7 +14,7 @@ Every prompt this module builds says, in words, what the image or video may
 never be: a real person, a fake screenshot, a fake statistic or chart, a
 readable logo. The brand-look line is baked in here, not left to whoever
 calls it -- and it names Vault, never Guardian (Task 64: the product was
-renamed; the LinkedIn page's own name is Miro's separate call to make).
+renamed; the LinkedIn page's own name is the owner's separate call to make).
 
 Never raises. A failed still or a missing ffmpeg is `(None, reason)`; the
 caller (`sweep.fill_media_for`) leaves the draft as `needs_media` and says
@@ -27,7 +27,7 @@ import os
 import uuid
 from pathlib import Path
 
-from . import PAGES
+from . import KNOWN_PAGES
 
 MEDIA_DIR = Path(os.getenv("LINKEDIN_MEDIA_DIR", "/app/data/linkedin-agent/media"))
 
@@ -58,14 +58,14 @@ def _forbidden() -> str:
 
 
 def image_prompt(page: str, hook: str) -> str:
-    spec = PAGES[page]
+    spec = KNOWN_PAGES[page]
     return (f"A square 1:1 illustration for a LinkedIn post from "
             f"{spec['name']}, about: {hook[:160]}. {brand_look(page)}. "
             f"{_forbidden()}")
 
 
 def video_prompt(page: str, hook: str) -> str:
-    spec = PAGES[page]
+    spec = KNOWN_PAGES[page]
     return (f"A square 1:1 short video scene for a LinkedIn post from "
             f"{spec['name']}, about: {hook[:160]}. {brand_look(page)}. "
             f"{_forbidden()}")

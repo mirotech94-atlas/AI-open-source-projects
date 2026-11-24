@@ -1,6 +1,6 @@
 """One-time login helper. Run it through bootstrap/linkedin-login.sh.
 
-Opens a real browser window so Miro signs in himself, including any
+Opens a real browser window so the owner signs in himself, including any
 verification LinkedIn asks for, and ATLAS never sees the password. It waits
 by watching for the feed to load signed-in, so nobody has to press Enter in
 a terminal. Tick "Keep me signed in".

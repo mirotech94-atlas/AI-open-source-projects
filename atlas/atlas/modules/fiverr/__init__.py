@@ -4,7 +4,7 @@ STATUS, 2026-09-22: BLOCKED BY FIVERR, and this is a finding, not a bug.
 
 Fiverr fronts its seller pages with PerimeterX. A headless Chromium hits the
 challenge page ("It needs a human touch", PXCR10002539) at every seller URL
--- from the server AND from Miro's own Mac with his own live session, so
+-- from the server AND from the owner's own Mac with his own live session, so
 it is the automated browser being fingerprinted, not the IP. There is no
 selector to fix. The same ruling LinkedIn reached applies here: driving a
 site that actively blocks automation is how a seller account gets
@@ -30,7 +30,7 @@ from mail.
 Two rules this module was built around still hold:
 
 1. **Be gentle.** Human-paced, a few times a day, never a scraping cadence.
-2. **Never send.** Buyer messages are drafted and shown to Miro. A bot reply
+2. **Never send.** Buyer messages are drafted and shown to the owner. A bot reply
    to a buyer is both a policy risk and a reputation risk on the thing his
    gig ranking depends on.
 """
@@ -92,13 +92,15 @@ def _backing_off() -> str | None:
 
 async def _browser():
     """Returns (playwright, browser, context) with the saved session."""
-    from playwright.async_api import async_playwright
+    # The session file first: "never logged in" is the actionable reason, and
+    # playwright is an optional extra that a missing import would mask it with.
     if not STATE.exists():
         raise RuntimeError(
             f"no saved Fiverr session at {STATE}. Run the login helper "
             f"once: ./bootstrap/fiverr-login.sh — not "
             f"`python -m atlas.modules.fiverr.login` from a home "
             f"directory, which picks up whatever python means there.")
+    from playwright.async_api import async_playwright
     pw = await async_playwright().start()
     browser = await pw.chromium.launch(
         headless=True,
@@ -353,7 +355,7 @@ async def check_gig_stats() -> Observation:
 
 
 async def draft_buyer_reply(conversation: str, body: str) -> ActionResult:
-    """Stores the draft for Miro. Deliberately does NOT type it into Fiverr:
+    """Stores the draft for the owner. Deliberately does NOT type it into Fiverr:
     a draft sitting in a text box is one misclick from being sent."""
     import hashlib
 
@@ -423,7 +425,7 @@ class FiverrModule:
             Action(
                 name="fiverr.draft_buyer_reply",
                 tier=Tier.AUTO,     # it only stores a draft; nothing is sent
-                summary="Prepare a reply to a Fiverr buyer for Miro to send",
+                summary="Prepare a reply to a Fiverr buyer for the owner to send",
                 run=draft_buyer_reply, dry_run=draft_dry,
                 rollback=lambda t: draft_dry(t, "x"),
                 params={"conversation": "buyer username or conversation id",

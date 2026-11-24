@@ -13,6 +13,7 @@
  */
 import { normaliseHealth, type Health, type ModuleTile, type Models } from "../api";
 import { deploymentDot, shortModel } from "./liveModel";
+import { safeText } from "./retired";
 
 // ------------------------------------------------------------ overall
 
@@ -47,7 +48,7 @@ export function overall(modules: ModuleTile[] | null): Overall {
 /** The header pill: never "all systems operational" while anything is
  *  unknown or nothing has been read. */
 export function statusPill(o: Overall, readFailed: boolean): { health: Health; text: string } {
-  if (readFailed) return { health: "unknown", text: "Unknown: checks unreadable" };
+  if (readFailed) return { health: "unknown", text: "Unknown: checks unreachable" };
   const blind = o.unknown > 0 ? ` · ${o.unknown} unknown` : "";
   if (o.failing > 0) {
     return { health: "failing", text: `${o.failing + o.degraded} need attention${blind}` };
@@ -65,7 +66,7 @@ export type ServiceState = "online" | "degraded" | "down" | "unknown";
 
 export interface ServiceSpec {
   name: string;
-  /** "guardian" (the module's own colour) or "comms.slack_auth" (one check). */
+  /** "agency" (the module's own colour) or "comms.slack_auth" (one check). */
   source: string | null;
   /** Why it is unknown when nothing reads it. */
   unread?: string;
@@ -75,28 +76,19 @@ export interface ServiceSpec {
   to?: string;
 }
 
-/** The services Miro checks, and what reads each one. A service with no
+/** The services the owner checks, and what reads each one. A service with no
  *  `source` is not read by any check today, so it is always Unknown. */
 export const SERVICES: readonly ServiceSpec[] = [
-  { name: "Guardian", source: "guardian", to: "/status?focus=guardian" },
-  { name: "FlyCheap", source: "flycheap", to: "/status?focus=flycheap" },
-  { name: "Mapfront", source: "agency", to: "/leads" },
-  { name: "Academy store", source: "shop", to: "/marketing" },
-  { name: "Slack", source: "comms.slack_auth", to: "/status?focus=comms" },
-  { name: "Calendar", source: "calendar", to: "/calendar" },
-  { name: "Gmail", source: "mail", to: "/status?focus=mail" },
-  { name: "Instagram", source: "instagram", to: "/status?focus=instagram" },
-  { name: "TikTok", source: "tiktok", to: "/status?focus=tiktok" },
-  // shorts_lane asks Postiz for the YouTube channel on every run -- unless
-  // the lane is off, when it contacts nothing.
-  { name: "YouTube", source: "content.shorts_lane", to: "/status?focus=content",
-    notProbed: /^Shorts are off/ },
-  // content.reel_legs reads configuration only, so it says nothing about
-  // whether Postiz answers.
-  { name: "Postiz", source: null,
-    unread: "no check probes Postiz (reel_legs reads configuration only)" },
-  { name: "Whop", source: null, unread: "no check reads Whop" },
-  { name: "Twilio", source: "comms.twilio_auth", to: "/status?focus=comms" },
+  { name: "Mapfront", source: "agency", to: "/agency#seat-websites" },
+  { name: "Academy store", source: "shop" },
+  { name: "Slack", source: "comms.slack_auth" },
+  { name: "Gmail", source: "mail", to: "/agency#seat-personal" },
+  { name: "Calendar", source: "calendar", to: "/agency#seat-personal" },
+  // The Academy channel is the youtube module's own channel key; it is shown
+  // as its name, never as the key.
+  { name: "Atlas Academy YouTube", source: "youtube.clips_stats", to: "/agency#seat-academy" },
+  { name: "Search Console", source: "seo.search_console" },
+  { name: "Twilio", source: "comms.twilio_auth" },
 ];
 
 export interface Service {
@@ -120,7 +112,7 @@ export function service(spec: ServiceSpec, modules: ModuleTile[] | null,
                         readError: string | null): Service {
   const base = { name: spec.name, to: spec.to ?? null };
   const unknown = (why: string, readAt: string | null = null): Service =>
-    ({ ...base, state: "unknown", word: "Unknown", why, readAt });
+    ({ ...base, state: "unknown", word: "Unknown", why: safeText(why), readAt });
   if (spec.source === null) return unknown(spec.unread ?? "not read by any check");
   if (modules === null) return unknown(readError ? `checks unreadable: ${readError}` : "not read yet");
   const [mod, check] = spec.source.split(".");
@@ -148,7 +140,7 @@ export function service(spec: ServiceSpec, modules: ModuleTile[] | null,
 }
 
 function firstClause(detail: string): string {
-  const cut = detail.split(/\s\(|;|\.\s|\n/)[0]?.trim() ?? "";
+  const cut = safeText(detail.split(/\s\(|;|\.\s|\n/)[0]?.trim() ?? "");
   return cut.length > 80 ? `${cut.slice(0, 79)}…` : cut;
 }
 

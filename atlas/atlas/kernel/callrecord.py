@@ -1,6 +1,6 @@
 """A record of every call ATLAS places, and a receipt for the ones he took.
 
-Miro's voice-partner brief asks that a call leave a trail: what it was
+the owner's voice-partner brief asks that a call leave a trail: what it was
 about, what he was asked, what was pressed, and how it ended. Until now a
 decision left a receipt, a missed call left a Slack post, and a call he
 answered without deciding left nothing at all -- the next morning there was

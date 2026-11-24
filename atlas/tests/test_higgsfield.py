@@ -1,4 +1,4 @@
-"""Higgsfield as the reels' overflow generator (Miro, 2026-09-29): Veo first;
+"""Higgsfield as the reels' overflow generator (the owner, 2026-09-29): Veo first;
 past Veo's daily allowance, Higgsfield under a hard monthly dollar cap.
 Every HTTP call is mocked; the credentials are fakes."""
 from __future__ import annotations
@@ -362,7 +362,7 @@ async def test_the_check_reports_spend_cap_and_read_time(keys, monkeypatch,
 def test_the_check_is_registered():
     from atlas.modules import content
     names = [c.name for c in content.ContentModule().checks()]
-    assert "higgsfield_budget" in names
+    assert "higgsfield_budget" not in names   # the owner 2026-11-13: removed
     assert {"HIGGSFIELD_KEY_ID", "HIGGSFIELD_KEY_SECRET",
             "HIGGSFIELD_MONTHLY_USD"} <= set(content.ContentModule.optional_env)
 
@@ -866,10 +866,10 @@ async def test_a_pricing_description_without_rates_is_still_not_read(keys, monke
     assert price.read is False and price.source == "worst case"
 
 
-# ================================================================ mix (Miro, 2026-10-01)
+# ================================================================ mix (the owner, 2026-10-01)
 
 async def test_mix_alternates_the_story_resolution_and_defaults_to_1080p(keys, monkeypatch):
-    """Miro, 2026-10-01: "a mix of both 720 and 1080". HIGGSFIELD_RESOLUTION=mix
+    """the owner, 2026-10-01: "a mix of both 720 and 1080". HIGGSFIELD_RESOLUTION=mix
     gives each STORY one resolution -- odd media ids 1080p, even 720p -- so
     a reel is never half as sharp in some beats; outside a story (the
     check's probe) it reads 1080p, the dearer of the two."""
@@ -920,7 +920,7 @@ async def test_a_clip_past_todays_allowance_waits_for_tomorrow(
 
 
 async def test_a_third_story_in_a_day_waits_for_tomorrow(keys, monkeypatch, memory_backend):
-    """Miro, 2026-10-01: two videos a day on Higgsfield, no more. A story
+    """the owner, 2026-10-01: two videos a day on Higgsfield, no more. A story
     booked today may finish its own clips; a new one waits."""
     monkeypatch.setenv("HIGGSFIELD_MONTHLY_USD", "292")
     monkeypatch.setenv("HIGGSFIELD_DAILY_USD", "100")

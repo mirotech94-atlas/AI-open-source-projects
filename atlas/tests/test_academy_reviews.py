@@ -154,9 +154,9 @@ async def test_a_missing_review_cannot_be_approved(memory_backend):
 
 def test_the_plain_render_carries_no_review_and_an_approved_one_shows():
     cat = cat_mod.load()
-    plain = site.render(cat)["claude-obsidian-vault-kit/index.html"].decode()
+    plain = site.render_root(cat)["claude-obsidian-vault-kit/index.html"].decode()
     assert "From buyers" not in plain and "Verified buyer" not in plain
-    shown = site.render(cat, reviews=[
+    shown = site.render_root(cat, reviews=[
         {"slug": "claude-obsidian-vault-kit", "stars": 4, "name": "Dana",
          "text": "Clear and short.\n\n<b>Not markup</b>", "month": "October 2026"},
         {"slug": "30-business-lessons", "stars": 5, "name": "", "text": "Good.", "month": "October 2026"},
@@ -171,7 +171,7 @@ def test_the_plain_render_carries_no_review_and_an_approved_one_shows():
     assert "From buyers" not in shown["safe-ai-operator/index.html"].decode()
 
 
-# Miro, 2026-10-06: a clean verified-buyer review shows itself.
+# the owner, 2026-10-06: a clean verified-buyer review shows itself.
 
 @pytest.mark.parametrize(("stars", "text", "name", "why"), [
     (5, "Clear, short lessons and the starter agent ran first time.", "Dana", None),
@@ -179,7 +179,7 @@ def test_the_plain_render_carries_no_review_and_an_approved_one_shows():
     (5, "great", "Dana", "too short"),
     (5, "Loved it, see my site www.example.com for more", "Dana", "link"),
     (5, "Email me at dana@example.com if you want the notes.", "Dana", "contact"),
-    (1, "This is a scam and I want a refund now.", "Dana", "Miro should read"),
+    (1, "This is a scam and I want a refund now.", "Dana", "the owner should read"),
     (5, "GREAT COURSE EVERYONE SHOULD BUY IT NOW TODAY", "Dana", "shouting"),
     (5, "Good value for the price and easy to follow.", "Dana 2024", "plain name"),
     (6, "Good value for the price and easy to follow.", "Dana", "stars"),

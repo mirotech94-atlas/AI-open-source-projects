@@ -1,7 +1,7 @@
 """Per-address throttles on the login and on /deliver (audit #20).
 
 The login limiter used to be one global list: a device guessing on the mesh
-locked Miro himself out. /deliver had no limit at all, and every request to it
+locked the owner himself out. /deliver had no limit at all, and every request to it
 costs a Stripe API call. Both are now keyed on the address the mesh guard
 judges -- the forwarded one from our own proxy, not the proxy's.
 """
@@ -73,14 +73,14 @@ def test_login_failures_lock_out_only_the_guessing_address(app):
     with _via_caddy(app) as c:
         for _ in range(auth.MAX_ATTEMPTS):
             r = c.post("/api/login", json={"password": "wrong"},
-                       headers={"X-Forwarded-For": "100.84.1.7"})
+                       headers={"X-Forwarded-For": "100.64.0.7"})
             assert r.status_code == 401
         r = c.post("/api/login", json={"password": PASSWORD},
-                   headers={"X-Forwarded-For": "100.84.1.7"})
+                   headers={"X-Forwarded-For": "100.64.0.7"})
         assert r.status_code == 429
-        # Miro, on another mesh device, still gets in.
+        # the owner, on another mesh device, still gets in.
         r = c.post("/api/login", json={"password": PASSWORD},
-                   headers={"X-Forwarded-For": "100.84.1.8"})
+                   headers={"X-Forwarded-For": "100.64.0.8"})
         assert r.status_code == 200
 
 
@@ -88,24 +88,24 @@ def test_the_server_rendered_login_is_per_address_too(app):
     with _via_caddy(app) as c:
         for _ in range(auth.MAX_ATTEMPTS):
             c.post("/login", data={"password": "wrong", "next": "/"},
-                   headers={"X-Forwarded-For": "100.84.1.7"})
+                   headers={"X-Forwarded-For": "100.64.0.7"})
         r = c.post("/login", data={"password": PASSWORD, "next": "/"},
-                   headers={"X-Forwarded-For": "100.84.1.7"}, follow_redirects=False)
+                   headers={"X-Forwarded-For": "100.64.0.7"}, follow_redirects=False)
         assert r.status_code == 429
         r = c.post("/login", data={"password": PASSWORD, "next": "/"},
-                   headers={"X-Forwarded-For": "100.84.1.8"}, follow_redirects=False)
+                   headers={"X-Forwarded-For": "100.64.0.8"}, follow_redirects=False)
         assert r.status_code == 303
 
 
 def test_a_forged_forwarded_address_does_not_dodge_the_limit(app):
     """X-Forwarded-For is believed only from the proxy, so a direct mesh
     client cannot rotate it to get fresh attempts."""
-    with TestClient(app, client=("100.84.1.7", 40000)) as c:
+    with TestClient(app, client=("100.64.0.7", 40000)) as c:
         for i in range(auth.MAX_ATTEMPTS):
             c.post("/api/login", json={"password": "wrong"},
                    headers={"X-Forwarded-For": f"100.84.2.{i}"})
         r = c.post("/api/login", json={"password": PASSWORD},
-                   headers={"X-Forwarded-For": "100.84.3.1"})
+                   headers={"X-Forwarded-For": "100.64.0.1"})
         assert r.status_code == 429
 
 

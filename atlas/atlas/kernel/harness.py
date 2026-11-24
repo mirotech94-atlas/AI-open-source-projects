@@ -108,7 +108,7 @@ async def think_turn(
 
 
 def local_down(exc: LocalModelUnavailable) -> str:
-    """What Miro is told when PRIVATE work had nowhere local to run."""
+    """What the owner is told when PRIVATE work had nowhere local to run."""
     return f"{LOCAL_DOWN} ({exc.reason})."
 
 
@@ -118,6 +118,20 @@ def local_down(exc: LocalModelUnavailable) -> str:
 # answer and filed as a brief's findings (#204). `answer_text` catches it.
 TOOL_TURN = "(calling tools)"
 NO_ANSWER = "No answer: the model ended without one."
+
+
+NUDGE = ("Your last reply had no content. Using the tool results above, write "
+         "your final answer now in plain text. Do not call tools again unless "
+         "something is still missing.")
+MAX_NUDGES = 2
+
+
+def is_blank_turn(text: str) -> bool:
+    """A reply with no calls that is empty or only the placeholder the model
+    copied from its own history: a stall, not an answer (2026-10-30: Clara,
+    Sage and Felix ended 05:00-06:03 runs this way)."""
+    stripped = (text or "").strip()
+    return not stripped or stripped == TOOL_TURN
 
 
 def answer_text(text: str) -> str:
@@ -146,7 +160,7 @@ async def record_run(
 ) -> None:
     """The one INSERT into `agent_runs`, shared by `run_agent` (reached only
     through `ask_specialist`, a handoff) and `agents.Agent.run()` (the path
-    `route()` takes for every chat and voice turn -- the one Miro actually
+    `route()` takes for every chat and voice turn -- the one the owner actually
     reaches an agent through most of the time). Without this, the fleet
     card's MODEL line stayed "not yet run" for an agent that had been
     answering him the whole time.
@@ -256,6 +270,7 @@ async def run_agent(
                     agent.name, ", ".join(unknown))
 
     turn = 0
+    nudges = 0
     final = ""
     down = False
     for turn in range(1, agent.max_turns + 1):
@@ -274,6 +289,10 @@ async def run_agent(
                            "tool_calls": reply.tool_calls})
 
         if not reply.tool_calls:
+            if is_blank_turn(reply.text) and nudges < MAX_NUDGES and turn < agent.max_turns:
+                nudges += 1
+                messages.append(Message("user", NUDGE))
+                continue
             final = labelled(reply.text, from_memory)
             break
 

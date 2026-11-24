@@ -10,6 +10,14 @@ import pytest
 from atlas.modules.linkedin import identity
 
 
+@pytest.fixture(autouse=True)
+def _guardian_as_fixture_page(monkeypatch):
+    """Guardian is the example page here. It is retired by default (the owner,
+    2026-10-29); that default is pinned in test_linkedin_retired.py."""
+    from atlas.modules import linkedin as _li
+    monkeypatch.setitem(_li.PAGES, "guardian", _li.KNOWN_PAGES["guardian"])
+
+
 def _png(path, w, h):
     raw = b"\x89PNG\r\n\x1a\n"
     ihdr = struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)

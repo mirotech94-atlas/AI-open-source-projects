@@ -5,7 +5,7 @@ to be improved (kernel/improve.py):
 
 * ATLAS itself -- its code, voice, reels, prompts, tiers -- is never queued
   to run anything. Self-modification is Tier 3 whoever would carry it out.
-  It is written up as a note for Miro's supervised coding session.
+  It is written up as a note for the owner's supervised coding session.
 * FlyCheap and Vault become a `nightshift.run` proposal: a card that waits
   for his yes, on a repository taken from NIGHTSHIFT_REPOS, never from what
   was said.
@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,6 +27,22 @@ from atlas.kernel import improve
 SECRET = "v" * 40
 PASSWORD = "a-long-enough-password"
 REPOS = "aicode.example.com/root/flycheap-tracker,aicode.example.com/root/guardian"
+
+
+@pytest.fixture(autouse=True)
+def _stand_in_repos(monkeypatch):
+    """FlyCheap and Vault were the night shift's two repositories until
+    2026-10-29, when both were removed and the list left empty. The handoff
+    mechanics are repository-generic, so these tests keep the two as
+    stand-ins."""
+    monkeypatch.setattr(improve, "_NIGHTSHIFT", (
+        (re.compile(r"\bfly\s*cheap\b", re.IGNORECASE),
+         improve.Target("flycheap", "FlyCheap", "FlyCheap (stand-in)",
+                        ("flycheap",))),
+        (re.compile(r"\bguardian\b|\bvault\b", re.IGNORECASE),
+         improve.Target("guardian", "Vault", "Vault (stand-in)",
+                        ("guardian", "vault"))),
+    ))
 
 
 @pytest.fixture
@@ -307,3 +324,8 @@ async def test_the_reply_says_where_the_note_went(memory_backend, guarded, monke
     got = await improve.handle("improve yourself", source="voice")
     assert got is not None and got.noted
     assert "couldn't send you the note" in got.spoken
+
+
+def test_atlas_target_names_the_local_stack_not_the_old_server():
+    assert "~/atlas-agency" in improve.ATLAS.where
+    assert "/opt/atlas" not in improve.ATLAS.where

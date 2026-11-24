@@ -1,7 +1,7 @@
 """Fare search, price-history judgement and checkout links for flights.
 
 `search_fares` is supposed to call flycheap's own fare-search API, the same
-way `mirotech._api` calls eBay's. It cannot: `atlas/modules/flycheap/__init__.py`
+way `exampleco._api` calls eBay's. It cannot: `atlas/modules/flycheap/__init__.py`
 documents, in detail, that the *only* endpoint flycheap actually exposes is
 the public `/api/health` — built for uptime monitors, not fare lookups. The
 previous flycheap module invented admin endpoints that do not exist
@@ -62,6 +62,6 @@ def checkout_link(option: dict) -> str:
     """The airline/flycheap deep link carried on the option, unchanged.
 
     Not rewritten, not re-signed, not shortened — whatever `option["url"]`
-    is, that is what Miro taps to pay.
+    is, that is what the owner taps to pay.
     """
     return option["url"]

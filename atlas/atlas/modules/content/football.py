@@ -1,7 +1,7 @@
 """The football (soccer) reels lane: stat reels made from API-Football's
 numbers, never from footage.
 
-Miro, 2026-09-29: viral, "fire" short reels about football stars and
+the owner, 2026-09-29: viral, "fire" short reels about football stars and
 stories -- star comparisons, season leaders, the golden-boot race, a big
 club's form -- made ONLY from our own material: animated stats, bold text,
 original stylised visuals. Football is association football, soccer.
@@ -192,7 +192,7 @@ async def ensure_topics() -> dict[str, int]:
                WHERE NOT EXISTS (SELECT 1 FROM reel_formats r
                                   WHERE r.source = $3 AND lower(r.format) = lower($1))
                RETURNING id""",
-            t.name, "chosen by Miro, 2026-09-29: the football lane, numbers "
+            t.name, "chosen by the owner, 2026-09-29: the football lane, numbers "
                     "from API-Football", SOURCE, SEED_WEIGHT, MAX_BEATS)
         if row is None:
             row = await fetch_one(

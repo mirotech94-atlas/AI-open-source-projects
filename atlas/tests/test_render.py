@@ -220,9 +220,15 @@ def test_fleet_and_memory_have_no_server_route(env):
 def test_fleet_and_memory_are_registered_as_spa_routes():
     """The other half of the previous test: the paths must exist somewhere,
     or they would 404 through the SPA catch-all too -- just client-side."""
-    app_tsx = (Path(__file__).parent.parent / "ui" / "src" / "App.tsx").read_text()
-    assert 'path="/fleet"' in app_tsx
-    assert 'path="/memory"' in app_tsx
+    # Since the two-tab dashboard (0449510c) both are client-side redirects:
+    # nav.ts REDIRECTS lists them and App.tsx turns each entry into a Route.
+    src = Path(__file__).parent.parent / "ui" / "src"
+    app_tsx = (src / "App.tsx").read_text()
+    nav_ts = (src / "nav.ts").read_text()
+    assert "Object.entries(REDIRECTS).map" in app_tsx
+    assert "path={from}" in app_tsx
+    assert '"/fleet":' in nav_ts
+    assert '"/memory":' in nav_ts
 
 
 def test_the_built_index_html_carries_no_route_names():

@@ -16,7 +16,7 @@ wrapped by `wrap_untrusted`), and then decides everything else in code:
   two services of the same kind; and "not seen used" -- only from real
   browsing data (`browser_rollup`), and "usage unknown" when there is none.
 
-It NEVER cancels anything and has no action: the report is for Miro to
+It NEVER cancels anything and has no action: the report is for the owner to
 decide. It lands as a monthly report (`reports`, kind `money_leaks`), which
 the vault export turns into a note, and as one plain Signal.
 """
@@ -63,7 +63,7 @@ PASSES = 3
 USAGE_DAYS = 45
 
 SYSTEM = (
-    "This is a receipt, invoice or renewal email of Miro's. Reply with JSON only:\n"
+    "This is a receipt, invoice or renewal email of the owner's. Reply with JSON only:\n"
     '{"merchant": the company charging, exactly as written, or null, '
     '"amount": the amount charged exactly as written, with its currency symbol '
     'or code (e.g. "€9.99"), or null, '

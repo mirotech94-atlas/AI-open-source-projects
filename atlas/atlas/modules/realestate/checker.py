@@ -1,11 +1,11 @@
 """realestate.check_deal -- run, dry run, rollback, and the weekly paragraph.
 
 The action reads RentCast (when keyed), works the numbers (`deal.py`),
-writes one `realestate_deals` row -- ATLAS's own table -- and sends Miro the
+writes one `realestate_deals` row -- ATLAS's own table -- and sends the owner the
 card on the `realestate` topic. That is all it does. It never contacts an
 agent or a seller, never sends anything to a third party, and never
 produces a binding contract; the offer draft and the checklist are text for
-Miro. The dry run never calls RentCast (the executor runs it before `run`,
+the owner. The dry run never calls RentCast (the executor runs it before `run`,
 and a dry run that fetched would spend the month's calls twice).
 """
 from __future__ import annotations
@@ -50,7 +50,7 @@ def inputs(line: str = "", address: str = "", list_price: Any = None,
     When `line` is given -- or an `address` holding '|', a model that put the
     whole command there -- the line IS the input, parsed in code, and every
     other parameter is dropped. The picker model fills parameters from
-    everything Miro typed, pasted listing blurb included, and a blurb's
+    everything the owner typed, pasted listing blurb included, and a blurb's
     "ARV 400k" must never become an "entered" ARV. Only the structured
     surface (the dashboard form, which never sends `line`) sets fields one by
     one."""
@@ -182,7 +182,7 @@ async def check_deal_dry(**params: Any) -> ActionResult:
     arv_from = ("the ARV entered" if deal.money(got.get("arv")) else
                 "RentCast" if rentcast.configured() else "nothing (ARV unknown)")
     return ActionResult(True, f"would check {address}: ARV from {arv_from}; write one "
-                              f"realestate_deals row and send Miro the card. "
+                              f"realestate_deals row and send the owner the card. "
                               f"Sends nothing to anyone else.",
                         evidence={"address": address})
 

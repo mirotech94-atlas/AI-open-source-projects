@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 # Install Docker and prepare ATLAS. Run after 00-harden.sh and 01-netbird.sh.
 set -euo pipefail
 log() { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
 [[ $EUID -eq 0 ]] || { echo "run as root"; exit 1; }
 
-ADMIN_USER="${ADMIN_USER:-miro}"
+ADMIN_USER="${ADMIN_USER:-owner}"
 APP_DIR="${APP_DIR:-/opt/atlas}"
 
 log "Docker"

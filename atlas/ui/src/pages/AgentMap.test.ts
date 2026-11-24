@@ -134,11 +134,11 @@ describe("AgentMap renders the roster it is given", () => {
     const roster = [
       agent({ name: "ops", handoff: ["analyst", "ghost", "ops"], memory_scope: ["infra"] }),
       agent({ name: "analyst", memory_scope: ["infra"] }),
-      agent({ name: "vpsie", handoff: ["ops"], memory_scope: ["infra"] }),
+      agent({ name: "cloudco", handoff: ["ops"], memory_scope: ["infra"] }),
       agent({ name: "inbox", memory_scope: ["infra"] }),
     ];
     expect(detailLinks("ops", roster)).toEqual({
-      out: ["analyst"], in: ["vpsie"], memory: ["analyst", "inbox", "vpsie"],
+      out: ["analyst"], in: ["cloudco"], memory: ["analyst", "inbox", "cloudco"],
     });
     expect(detailLinks("ghost", roster)).toEqual({ out: [], in: [], memory: [] });
   });

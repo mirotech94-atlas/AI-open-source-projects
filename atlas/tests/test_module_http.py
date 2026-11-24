@@ -56,7 +56,7 @@ def test_explain_never_includes_the_query_string():
 
 
 def test_explain_names_a_wrong_path_helpfully():
-    request = httpx.Request("GET", "https://admin.flycheap.live/api/admin/nope")
+    request = httpx.Request("GET", "https://admin.flycheap.example/api/admin/nope")
     response = httpx.Response(404, request=request)
     reason = _http.explain(
         httpx.HTTPStatusError("x", request=request, response=response))

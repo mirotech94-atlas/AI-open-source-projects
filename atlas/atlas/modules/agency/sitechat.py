@@ -1,6 +1,6 @@
 """The AI chat assistant on a Mapfront client site ($500 and $300 packages).
 
-A visitor on `https://<slug>.mapfront.io` opens the chat bubble
+A visitor on `https://agency.example.com/preview/<slug>/` opens the chat bubble
 (`sitechat_widget.js`, written into the site as `mapfront-chat.js` by
 `launch.finish_site`) and asks a question. The widget posts it to ATLAS,
 `POST /public/site-chat/<slug>` (atlas/api/site_chat.py), and shows the
@@ -65,7 +65,9 @@ from ...kernel.contracts import Health, Observation
 from ...kernel.llm import Message, Need, think
 from ...kernel.permissions import wrap_untrusted
 from ...kernel.state import execute_sql, fetch_one
+from .. import store_origin
 from ..research.report import uncited_numbers
+from . import hosting
 from .client import ClientData
 from .sitekit import INDEX, _js, _tel, hours_text, response_time_text
 
@@ -79,7 +81,8 @@ RATE_OUT_ENV = "SITE_CHAT_USD_PER_MTOK_OUT"
 PER_IP_ENV = "SITE_CHAT_PER_IP_PER_MIN"
 PER_SITE_ENV = "SITE_CHAT_PER_SITE_PER_DAY"
 
-DEFAULT_API_BASE = "https://atlas.example.com"
+# atlas.example.com is deleted (2026-10-29); the store host proxies /public/*.
+DEFAULT_API_BASE = store_origin.origin()
 DEFAULT_CAP_USD = Decimal(5)
 # Claude Haiku 4.5's list price per million tokens, the paid end of the
 # TRIVIAL chain: every answer is booked as if Haiku wrote it.
@@ -114,12 +117,6 @@ def enabled() -> bool:
         "off", "0", "false", "no", "disabled")
 
 
-def sites_domain() -> str:
-    """`AGENCY_SITES_DOMAIN`, the same default Mapfront hosting uses."""
-    raw = os.getenv("AGENCY_SITES_DOMAIN", "").strip().lower().strip(".")
-    return raw or "mapfront.io"
-
-
 def api_base() -> str:
     raw = os.getenv(API_BASE_ENV, "").strip().rstrip("/")
     return raw if raw.startswith("https://") else DEFAULT_API_BASE
@@ -129,8 +126,10 @@ def endpoint(slug: str) -> str:
     return f"{api_base()}/public/site-chat/{slug}"
 
 
-def site_origin(slug: str) -> str:
-    return f"https://{slug}.{sites_domain()}"
+def site_origin(slug: str = "") -> str:
+    """The origin every preview is served from (`AGENCY_PREVIEW_ORIGIN`); the
+    slug is in the path, not the host, so it is not part of the origin."""
+    return hosting.preview_origin()
 
 
 def _decimal_env(name: str, default: Decimal) -> Decimal:
@@ -664,7 +663,8 @@ async def converse(facts: Facts, message: str, history: list[Turn], *,
         return _resting(why or "cap")
     try:
         completion = await asyncio.wait_for(
-            think(Need.TRIVIAL, SYSTEM, [Message("user", user)], max_tokens=MAX_TOKENS),
+            think(Need.TRIVIAL, SYSTEM, [Message("user", user)], max_tokens=MAX_TOKENS,
+                  answer=True),
             THINK_TIMEOUT_S)
     except Exception as exc:                                # noqa: BLE001
         # Nothing answered: the provider charged nothing we can know of.

@@ -5,6 +5,8 @@ import { useFresh } from "../hooks/useFresh";
 import { Gauge } from "../components/Gauge";
 import { Feed } from "../components/Feed";
 import { HealthBadge, HealthRail } from "../components/Health";
+import { BoardCheck } from "../components/BoardCheck";
+import { selfTestLine } from "./boardModel";
 
 function rel(iso: string | null): string {
   if (!iso) return "never";
@@ -38,6 +40,12 @@ export function Status({ reloadKey }: { reloadKey: number }): JSX.Element {
   const modules = overview.data?.modules ?? [];
   const watched = modules.filter((m) => m.enabled && !m.setup);
   const c = counters.data;
+  // Parked and retired checks, listed in words: neither reads as OK nor as
+  // UNKNOWN. (UNKNOWN stays on its tile; it is counted in the self-test line.)
+  const oddChecks = modules.flatMap((m) =>
+    m.checks
+      .filter((k) => k.state?.kind === "parked" || k.state?.kind === "retired")
+      .map((check) => ({ module: m.module, check })));
 
   // `?focus=flycheap`: the module a spoken status just named. Its tile is
   // marked and scrolled to -- the same focus the voice card showed.
@@ -74,6 +82,20 @@ export function Status({ reloadKey }: { reloadKey: number }): JSX.Element {
             />
           ))}
         </div>
+      )}
+
+      <div className="bd-lines" data-testid="self-test">
+        {selfTestLine(overview.data?.self_test).map((line) => (
+          <span key={line}>{line}</span>
+        ))}
+      </div>
+      {oddChecks.length > 0 && (
+        <ul className="bd-checks" aria-label="Checks that are not plainly OK">
+          {oddChecks.map(({ module, check }) => (
+            <BoardCheck key={`${module}.${check.name}`}
+                        check={{ ...check, name: `${module}.${check.name}` }} />
+          ))}
+        </ul>
       )}
 
       <div className="status-grid">

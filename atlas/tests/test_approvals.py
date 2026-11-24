@@ -3,6 +3,7 @@ and a tab left open overnight must not approve something that lapsed."""
 from __future__ import annotations
 
 import asyncio
+import json
 from datetime import UTC, datetime, timedelta
 from typing import ClassVar
 
@@ -114,6 +115,114 @@ async def test_an_expired_proposal_is_refused(memory_backend, armed, executed):
     assert not verdict.ok and verdict.outcome == "expired"
     assert "Nothing was done" in verdict.detail
     assert executed == []
+
+
+async def test_a_retired_agents_card_expires_and_never_runs(
+        memory_backend, armed, executed):
+    """2026-10-28: a card a retired agent raised (dedup key `...@agent:markets`)
+    is excluded by the claiming UPDATE itself, so approving it expires it and
+    nothing reaches the executor. A kept agent's card is unaffected."""
+    import fnmatch
+
+    def like_any(key: str, patterns: list[str]) -> bool:
+        return any(fnmatch.fnmatchcase(key, p.replace("%", "*")) for p in patterns)
+
+    cards = {41: "instagram.post@agent:growth", 42: "agency.send_preview@agent:sites"}
+    status = dict.fromkeys(cards, "pending")
+
+    async def fetchrow(sql, *args):
+        flat = " ".join(sql.split())
+        if flat.startswith("UPDATE proposals SET status='approved'"):
+            assert "LIKE ANY($4::text[])" in flat
+            pid, patterns = args[0], args[3]
+            if like_any(cards[pid], patterns):
+                return None
+            status[pid] = "approved"
+            return {"action": cards[pid].split("@")[0], "params": "{}",
+                    "reason": "r", "incident_id": None}
+        if flat.startswith("SELECT status, expires_at"):
+            return {"status": status[args[0]],
+                    "expires_at": datetime.now(UTC) + timedelta(hours=1)}
+        if "FROM restores WHERE fenced_at IS NULL" in flat:
+            return {"due": False}
+        if flat.startswith("SELECT catalog_version, approved_payload_hash"):
+            return {"catalog_version": None, "approved_payload_hash": None,
+                    "dedup_key": None, "evidence": "{}", "rollback_plan": ""}
+        return None
+    memory_backend.fetchrow = fetchrow
+
+    verdict = await decide(41, "approve", via="dashboard")
+    assert not verdict.ok and verdict.outcome == "expired"
+    assert executed == []
+    keys = approvals.retired_agent_keys()
+    assert "%@agent:growth" in keys and "%@agent:sites" not in keys
+    assert len(keys) == 18
+
+
+async def test_a_dropped_reddit_card_expires_and_never_runs(
+        memory_backend, armed, executed):
+    """2026-10-29: the Reddit posting lane is dropped. Its cards carry the key
+    `reddit.submit_post:<draft>` and no agent suffix, so the claim matches the
+    retired action itself: approving one expires it and nothing runs. A kept
+    action's card is unaffected."""
+    import fnmatch
+
+    def like_any(value: str, patterns: list[str]) -> bool:
+        return any(fnmatch.fnmatchcase(value, p.replace("%", "*")) for p in patterns)
+
+    cards = {51: ("reddit.submit_post", "reddit.submit_post:7"),
+             52: ("church.schedule_youtube_shorts", "church:day:1")}
+    status = dict.fromkeys(cards, "pending")
+
+    async def fetchrow(sql, *args):
+        flat = " ".join(sql.split())
+        if flat.startswith("UPDATE proposals SET status='approved'"):
+            assert "action LIKE ANY($5::text[])" in flat
+            pid = args[0]
+            action, key = cards[pid]
+            if like_any(key, args[3]) or like_any(action, args[4]):
+                return None
+            status[pid] = "approved"
+            return {"action": action, "params": "{}", "reason": "r",
+                    "incident_id": None}
+        if flat.startswith("SELECT status, expires_at"):
+            return {"status": status[args[0]],
+                    "expires_at": datetime.now(UTC) + timedelta(hours=1)}
+        if "FROM restores WHERE fenced_at IS NULL" in flat:
+            return {"due": False}
+        if flat.startswith("SELECT catalog_version, approved_payload_hash"):
+            return {"catalog_version": None, "approved_payload_hash": None,
+                    "dedup_key": None, "evidence": "{}", "rollback_plan": ""}
+        return None
+    memory_backend.fetchrow = fetchrow
+
+    verdict = await decide(51, "approve", via="dashboard")
+    assert not verdict.ok and verdict.outcome == "expired"
+    assert executed == []
+    assert approvals.retired_action_patterns() == ["reddit.%"]
+
+
+async def test_expire_stale_expires_a_dropped_reddit_card(monkeypatch):
+    """The sweep expires a pending Reddit card even before its deadline."""
+    seen: list[tuple[str, tuple]] = []
+
+    async def fetch_all(sql, *args):
+        seen.append((" ".join(sql.split()), args))
+        return [{"id": 51, "action": "reddit.submit_post"}]
+
+    async def nothing(*a, **k):
+        return None
+
+    monkeypatch.setattr(approvals, "fetch_all", fetch_all)
+    monkeypatch.setattr(approvals, "audit", nothing)
+    monkeypatch.setattr(approvals, "_expiry_notice", nothing)
+    monkeypatch.setattr(approvals, "_open_cards_notice", nothing)
+    from atlas.kernel import judgment
+    monkeypatch.setattr(judgment, "record_outcome", nothing)
+    assert await approvals.expire_stale() == 1
+    sql, args = seen[0]
+    assert "OR action LIKE ANY($2::text[])" in sql
+    assert args[1] == ["reddit.%"]
 
 
 async def test_an_already_decided_proposal_is_refused(
@@ -242,7 +351,7 @@ def proposing(monkeypatch):
         if "INSERT INTO proposals" in sql:
             next_id[0] += 1
             rows.append({"id": next_id[0], "dedup_key": args[9],
-                         "status": "pending"})
+                         "status": "pending", "evidence": json.loads(args[6])})
             return {"id": next_id[0]}
         return None
 
@@ -279,7 +388,7 @@ async def test_a_different_cause_still_raises_its_own_card(proposing):
     a = await propose("gitlab.open_issue", {"title": "a"}, reason="one",
                       dedup_key="gitlab.open_issue@stripe.flycheap_key")
     b = await propose("gitlab.open_issue", {"title": "b"}, reason="two",
-                      dedup_key="gitlab.open_issue@vpsie.protection")
+                      dedup_key="contact40@example.com")
     assert a != b
     assert len(proposing) == 2
 
@@ -322,8 +431,8 @@ def test_cause_key_joins_checks_blocked_by_one_thing():
     wall = "Fiverr's bot detection (PerimeterX) blocked this request"
     assert (_cause_key(f("fiverr.gig_stats", Health.UNKNOWN, wall))
             == _cause_key(f("fiverr.session", Health.UNKNOWN, wall)))
-    assert (_cause_key(f("vpsie.balance", Health.FAILING, "0.7 months"))
-            == "vpsie.balance")
+    assert (_cause_key(f("cloudco.balance", Health.FAILING, "0.7 months"))
+            == "cloudco.balance")
 
 
 # ------------------------------------- a card that cannot run is not raised
@@ -471,6 +580,7 @@ async def test_a_card_can_land_in_the_channel_a_parameter_names(memory_backend, 
         return ["slack"]
 
     monkeypatch.setattr(approvals, "notify", fake_notify)
+    monkeypatch.setenv("APPROVALS_SLACK", "on")      # the Slack card is opt-in now
     memory_backend.responses["SELECT id FROM proposals"] = None
     memory_backend.responses["INSERT INTO proposals"] = {"id": 5}
     # The never-repeat ledger (lessons.py) reads with fetch_one; the catch-all
@@ -574,7 +684,7 @@ async def test_an_unreadable_restore_fence_runs_nothing(
 
 
 def test_a_routine_card_waits_two_weeks_and_an_urgent_one_does_not():
-    """Miro, 2026-10-06: "cards should never expire". They expire (silence is
+    """the owner, 2026-10-06: "cards should never expire". They expire (silence is
     never consent) but a routine one waits 14 days; urgent clocks stay."""
     from datetime import timedelta
 
@@ -587,49 +697,8 @@ def test_a_routine_card_waits_two_weeks_and_an_urgent_one_does_not():
     assert approvals.TTL[Severity.CRITICAL] == timedelta(minutes=30)
 
 
-async def test_open_cards_are_listed_once_a_day_oldest_first(monkeypatch):
-    from datetime import UTC, datetime, timedelta
-
-    from atlas.kernel import approvals
-
-    now = datetime.now(UTC)
-    state = {"last": now - timedelta(hours=3)}
-    sent, audited, asked = [], [], []
-
-    async def fetch_one(sql, *a):
-        return {"at": state["last"]}
-
-    async def fetch_all(sql, *a):
-        asked.append(a)
-        return [{"id": 293, "action": "linkedin.publish_post",
-                 "created_at": now - timedelta(days=2, hours=1),
-                 "expires_at": now + timedelta(days=11, hours=23)},
-                {"id": 304, "action": "clips.publish_promo",
-                 "created_at": now - timedelta(days=1, hours=2),
-                 "expires_at": now + timedelta(days=12, hours=22)}]
-
-    async def notify(msg):
-        sent.append(msg)
-
-    async def audit(event, subject, data=None):
-        audited.append(event)
-
-    monkeypatch.setattr(approvals, "fetch_one", fetch_one)
-    monkeypatch.setattr(approvals, "fetch_all", fetch_all)
-    monkeypatch.setattr(approvals, "notify", notify)
-    monkeypatch.setattr(approvals, "audit", audit)
-
-    await approvals._open_cards_notice()                # 3 h after the last one
-    assert sent == []
-    state["last"] = now - timedelta(hours=25)
-    await approvals._open_cards_notice()
-    (msg,) = sent
-    assert msg.title == "2 card(s) still waiting for you"
-    assert msg.body.splitlines() == [
-        "#293 linkedin.publish_post -- waiting 2 d, 11 d left",
-        "#304 clips.publish_promo -- waiting 1 d, 12 d left"]
-    assert msg.topic == "decisions" and audited == ["proposal.open_notice"]
-    assert asked[-1][0] < now - timedelta(hours=23), "only cards older than a day"
+# The once-a-day list of waiting cards is now the 9:00 New York digest with
+# the approvals board's text: tests/test_approvals_board.py.
 
 
 async def test_no_open_cards_means_no_notice(monkeypatch):
@@ -649,5 +718,26 @@ async def test_no_open_cards_means_no_notice(monkeypatch):
     monkeypatch.setattr(approvals, "fetch_one", fetch_one)
     monkeypatch.setattr(approvals, "fetch_all", fetch_all)
     monkeypatch.setattr(approvals, "notify", notify)
-    await approvals._open_cards_notice()
+    nine_ny = datetime(2026, 10, 12, 13, 5, tzinfo=UTC)
+    await approvals._open_cards_notice(nine_ny)
 
+
+
+# ------------------------------------------------------------------ urgent
+
+async def test_urgent_is_set_only_by_the_proposer_keyword(proposing):
+    """`evidence.urgent` is what `owner_calls` rings the phone for. It comes from
+    `propose(urgent=True)` in code, never from the evidence dict, which carries
+    collector and ingested text (invariant 4)."""
+    await propose("gitlab.open_issue", {"title": "a"}, reason="r",
+                  evidence={"urgent": True, "subject": "URGENT call me now"},
+                  dedup_key="k1")
+    await propose("gitlab.open_issue", {"title": "b"}, reason="r",
+                  evidence={"note": "x"}, urgent=True, dedup_key="k2")
+    await propose("gitlab.open_issue", {"title": "c"}, reason="r",
+                  evidence={"note": "x"}, urgent="true", dedup_key="k3")   # not a bool
+    await propose("gitlab.open_issue", {"title": "d"}, reason="r", dedup_key="k4")
+    by_key = {r["dedup_key"]: r["evidence"] for r in proposing}
+    assert "urgent" not in by_key["k1"] and by_key["k1"]["subject"].startswith("URGENT")
+    assert by_key["k2"] == {"note": "x", "urgent": True}
+    assert "urgent" not in by_key["k3"] and "urgent" not in by_key["k4"]

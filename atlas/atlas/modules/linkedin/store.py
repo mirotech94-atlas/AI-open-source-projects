@@ -10,6 +10,8 @@ previous good file, and every write also appends a line to the run log.
 """
 from __future__ import annotations
 
+import re
+
 import asyncio
 import contextlib
 import fcntl
@@ -72,16 +74,16 @@ def bank(state: dict[str, Any], page: str) -> tuple[list[dict], dict, dict]:
     """(post_bank, posting, holder) for a page. The two pages keep their
     banks in different places; guessing one shape for both reads an empty
     bank and reports infinite runway."""
-    from . import PAGES
-    spec = PAGES[page]
+    from . import KNOWN_PAGES
+    spec = KNOWN_PAGES[page]
     holder = state.get(spec["bank_key"]) or {}
     return (list(holder.get("post_bank") or []),
             dict(holder.get("posting") or {}), holder)
 
 
 def page_obj(state: dict[str, Any], page: str) -> dict:
-    from . import PAGES
-    return state.setdefault(PAGES[page]["page_key"], {})
+    from . import KNOWN_PAGES
+    return state.setdefault(KNOWN_PAGES[page]["page_key"], {})
 
 
 @contextlib.asynccontextmanager
@@ -113,3 +115,25 @@ async def file_lock(timeout_s: float = 900.0):
         with contextlib.suppress(OSError):
             fcntl.flock(fh.fileno(), fcntl.LOCK_UN)
         fh.close()
+
+
+# Links a post may never carry: the lab hosts (any other example.com name) and
+# the demo/guarder apps. The one public host, agency.example.com, is the agency
+# and Academy home and is the only example.com name a post may link to.
+BANNED_LINKS = ("example.com", "pulsedemo", "my.vault.example", "admin.vault.example")
+PUBLIC_HOST = "agency.example.com"
+
+
+_HOST = re.compile(r"(?:[a-z0-9-]+\.)+[a-z]{2,}")
+
+
+def has_banned_link(text: str) -> bool:
+    """True when a post names a banned app or any example.com host other than the
+    one public host. Host names are read out whole and compared exactly, so
+    `evil.agency.example.com` and `agency.example.com.evil.io` are not the public host."""
+    low = text.lower()
+    for host in _HOST.findall(low):
+        if host != PUBLIC_HOST and "example.com" in host:
+            return True
+    rest = low.replace(PUBLIC_HOST, " ")
+    return any(b in rest for b in BANNED_LINKS if b != "example.com")

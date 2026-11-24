@@ -72,7 +72,7 @@ class Policy:
     daily_stop: float | None = DAILY_STOP        # $ realised, per session
     breaker: float | None = BREAKER              # $ below the marked peak
     # After a breaker, a backtest goes on next session from a reset peak (a
-    # measurement); the forward book stays halted until Miro resumes it.
+    # measurement); the forward book stays halted until the owner resumes it.
     resume_next_session: bool = True
     engines: tuple[str, ...] | None = None       # None: all
 

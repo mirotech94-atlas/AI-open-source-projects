@@ -18,6 +18,16 @@ from atlas.modules.linkedin import media
 
 
 @pytest.fixture(autouse=True)
+def _flycheap_as_fixture_page(monkeypatch):
+    """These tests drive the page mechanics with FlyCheap as their example
+    page. FlyCheap is retired by default (the owner, 2026-10-09); that default is
+    pinned in test_linkedin_retired.py, not here."""
+    from atlas.modules import linkedin as _li
+    monkeypatch.setitem(_li.PAGES, "flycheap", _li.KNOWN_PAGES["flycheap"])
+
+
+
+@pytest.fixture(autouse=True)
 def media_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(media, "MEDIA_DIR", tmp_path / "media")
 

@@ -1,5 +1,9 @@
 # Restore drill (RA-H2)
 
+> Old server, retired 2026-10-28: the `/opt/atlas` paths below are that
+> host's. ATLAS now runs from `~/atlas-agency` on the Mac (backups under
+> `~/atlas-agency/data/app/backups`).
+
 Status 2026-09-28: **scripted, not scheduled, and not yet run on prod.**
 The script is `ops/restore_drill.sh`. A human runs it on the ATLAS host.
 
@@ -49,7 +53,7 @@ read-only `docker inspect atlas-postgres-1`.
 
 Until branch `ra-f4-h2` is merged and deployed, the script is not in
 `/opt/atlas`. Copy it outside the deployed tree first, for example
-`scp ops/restore_drill.sh root@203.0.113.10:/root/restore_drill.sh`, and run
+`scp ops/restore_drill.sh root@203.0.113.191:/root/restore_drill.sh`, and run
 `/root/restore_drill.sh` in place of `ops/restore_drill.sh` below. It needs
 nothing else from the repo.
 
@@ -79,7 +83,7 @@ age -d -i ~/.config/atlas/backup-age.key atlas-X.dump.age > atlas-X.dump  # off-
 docker compose stop api                       # nothing dispatches in between
 docker compose exec -T postgres pg_restore -U atlas -d atlas --clean < atlas-X.dump
 docker compose exec -T postgres psql -U atlas -d atlas -c \
-  "INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'miro')"
+  "INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'owner')"
 docker compose start api
 ```
 
@@ -119,14 +123,14 @@ Read-only facts from the ATLAS host, 2026-09-28 ~21:30Z:
   (DockerRootDir) and `/opt/atlas/data/app/backups` are on that same root
   filesystem. That is worse than the ~92% reported earlier today. The drill
   would refuse on the 5 GB floor, so it was not run, not even `--dry-run`.
-  Freeing space is for Miro to decide; nothing was deleted.
+  Freeing space is for the owner to decide; nothing was deleted.
 - Backups: `atlas-backup.timer` (`/etc/systemd/system/`, `OnCalendar 06:20 UTC`,
   `Persistent=true`) **did fire** at 06:20Z. `status.json` shows
   `dump_ok: true, offsite_ok: true`, file `atlas-20260928-0620.dump`,
   9,812,882 bytes. FINDINGS F §2 ("has not yet fired") is now stale. Dumps on
   the host: `atlas-20260928-0422.dump`, `-0428`, `-0620` (about 9.5–9.8 MB
   each, `pg_dump -Fc`). The off-box copies are age-encrypted
-  `*.dump.age` in `atlasbak@203.0.113.10:/srv/atlas-backups`.
+  `*.dump.age` in `atlasbak@203.0.113.147:/srv/atlas-backups`.
 - The image `pgvector/pgvector:pg16` is already on the host (621 MB), so
   the drill needs no pull. Docker is 29.8.1 and bash is 5.2.
 
@@ -169,9 +173,9 @@ Also verified:
 ## Known gaps
 
 - The drill proves the **local plain dump** restores. It does not prove the
-  off-box `.age` copy decrypts: the age key lives only on Miro's Mac
+  off-box `.age` copy decrypts: the age key lives only on the owner's Mac
   (`~/.config/atlas/backup-age.key`). An off-box drill has to run on the Mac,
-  or on a host Miro chooses, with `age -d` first. That is not scripted here.
+  or on a host the owner chooses, with `age -d` first. That is not scripted here.
 - Locally it has only restored dumps taken by the `postgres` superuser. Prod
   dumps are taken by the `atlas` role. The first prod run is the first
   against a prod-authored dump. If it reports "errors ignored on restore",
@@ -180,3 +184,46 @@ Also verified:
   index usability or media files (`/srv/atlas-backups/media`).
 - RPO is one day, the cadence of the nightly timer. The plan's proposed
   1-hour RPO is not met and is not claimed.
+
+## Running it on the Mac: `--into` (Phase 1, 2026-11-15)
+
+The default mode starts its own `--network none` container. For a Mac where
+that is not wanted, run it into an **existing throwaway Postgres container**:
+
+```
+DRILL_RESULT_FILE=/path/restore_drill.json \
+  ops/restore_drill.sh --into atlas-test-pg-improve --db restore_drill_x \
+  --dump ~/atlas-state/backups/atlas-<stamp>.dump
+```
+
+What it does and refuses:
+
+- It **refuses (exit 2)** a container named `atlas-agency-*`, `atlas-postgres-*`
+  or anything outside `ATLAS_DRILL_INTO_ALLOW` (default `atlas-test-pg-*`), a
+  database not named `restore_drill_[a-z0-9_]+`, and a database that already
+  exists. It only ever drops a database it created itself.
+- It creates the database, `docker cp`s the dump in (no bind mount), restores,
+  verifies exactly as above, then **drops the database and the copy on every
+  exit path**. The container is left running and is never removed.
+- It needs a plain `.dump` (`pg_restore` custom format). The nightly off-box
+  copy is `.dump.age` and has to be decrypted first, with the key on the Mac.
+- A real dump goes in only if the owner says so; the 2026-11-15 test run used a
+  fixture built from `db/schema.sql` in a throwaway `restore_drill_src`
+  database (200 tables, 2 `observations` rows, audit chain intact, 0 entries).
+
+## Where the row counts go
+
+After a real run the counts are in two places:
+
+1. **The report** on screen: the `-- row counts` block (proposals, actions_log,
+   agent_runs, checks, observations, pauses, schedule_runs).
+2. **The result file** `DRILL_RESULT_FILE` (default
+   `<backups dir>/restore_drill.json`; with `--into`, only when you set it), as
+   `{"at", "ok", "dump", "exit", "rows": {"proposals": N, ...}}`. A table that
+   is absent from the dump is simply not listed. The backups check reads
+   `at` and `ok`; `rows` is for humans and for comparing one drill with the
+   next (a count that collapses between drills is the sign to look).
+
+A fixture drill must not write to the real `restore_drill.json`: it would
+read as a passing drill of the real backup. That is why `--into` writes no
+result file unless you name one.

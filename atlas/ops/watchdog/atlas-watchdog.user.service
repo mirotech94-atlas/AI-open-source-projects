@@ -1,0 +1,18 @@
+[Unit]
+Description=ATLAS independent watchdog (healthz, TLS, scheduler heartbeat)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# User unit for the Spark (no sudo, no DynamicUser, no LoadCredential). The
+# webhook file is ~/.config/atlas-watchdog/watchdog.env, mode 0600; the script
+# reads it itself. State and seen.json live in ~/.local/state/atlas-watchdog/.
+ExecStart=/usr/bin/python3 %h/.local/share/atlas-watchdog/atlas_watchdog.py --env-file %h/.config/atlas-watchdog/watchdog.env --state %h/.local/state/atlas-watchdog/state.json
+TimeoutStartSec=60
+# 10 = a check is not OK (already alerted on change): not a unit failure.
+# 2 no route, 3 alert not sent, 4/1 crashed: the unit shows failed.
+SuccessExitStatus=10
+Nice=10
+NoNewPrivileges=yes
+PrivateTmp=yes

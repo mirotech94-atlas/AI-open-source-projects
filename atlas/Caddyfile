@@ -20,84 +20,18 @@
 	# To test against staging, uncomment the line below. A failed issuance
 	# against production counts toward a limit of 5 per hostname per hour.
 	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
-
-	# Mapfront (below) gets its certificates on demand: the first TLS
-	# handshake for a name mints one. Caddy asks the api first and goes on
-	# only on a 200 (atlas/api/tls_ask.py) -- the apex, www, and slugs
-	# agency.deploy_site has published -- so nobody can make this box request
-	# certificates for arbitrary names. Stock Caddy has no request rate
-	# limit (that needs a plugin build); this ask is the guard.
-	on_demand_tls {
-		ask http://api:8080/internal/tls-ask
-	}
 }
 
 atlas.example.com {
 	encode zstd gzip
 
-	# Miro's own devices reach ATLAS off the mesh with a client certificate
-	# from ATLAS's private device CA (its key never leaves
-	# /opt/atlas/data/device-ca on the host). The certificate is REQUESTED,
-	# not verified here: Slack presents its own client certificate whenever
-	# one is asked for, and `verify_if_given` failed every Slack handshake
-	# (2026-09-28 03:34-04:0x: no Slack event or approval arrived). TLS still
-	# proves the client holds the key of whatever certificate it presents, so
-	# the gate is the API's pin: only a fingerprint listed in
-	# ATLAS_DEVICE_FINGERPRINTS, arriving from this proxy, is a device; any
-	# other certificate (Slack's, Twilio's, Meta's) is ignored and the mesh
-	# rule and the login apply as before.
-	tls {
-		client_auth {
-			mode request
-		}
-	}
+	# 2026-10-26 (the owner): the dashboard is no longer served from this host.
+	# It listens on the server's loopback only (docker-compose.yml,
+	# 127.0.0.1:8080) and is reached over `ssh -L 8080:127.0.0.1:8080` as
+	# http://localhost:8080. The mesh rule and the device-certificate route are
+	# gone, so no client certificate is requested here either. What is left is
+	# the signed, tokened or form-only paths below; anything else is "not here".
 
-	# Mesh clients get the dashboard at this hostname with no port.
-	#
-	# `remote_ip` is the address the TCP connection actually came FROM, not a
-	# header, so it cannot be forged from the internet: a spoofed source has no
-	# return path through a TLS handshake. For this to match, NetBird's DNS
-	# must resolve atlas.example.com to this box's wt0 address for your peers, so
-	# the request arrives over the mesh rather than over the public interface.
-	#
-	# The public listener still serves /webhooks/*, /healthz and /media/*
-	# and nothing else to anyone who is not on the mesh.
-	# 172.16.0.0/12 is the Docker bridge, which is the source Caddy sees for a
-	# connection that originated ON this host — including one forwarded in over
-	# SSH. Reaching it that way already requires the server's SSH key, so it is
-	# not a widening: anyone who can open that tunnel can already read the
-	# database. Traffic from the internet keeps its real source address through
-	# Docker's NAT and still gets the 404 below.
-	#
-	# ATLAS_TRUSTED_IPS (.env) adds named public addresses that may reach the
-	# dashboard without the mesh -- Miro's own Mac at home (2026-09-28: "this
-	# Mac should access ATLAS without NetBird; NetBird only for outside
-	# users"). Everyone else still needs the mesh. The API checks the same
-	# addresses through MESH_ALLOWED_CIDRS, and the dashboard login applies.
-	@mesh remote_ip 100.64.0.0/10 10.0.0.0/8 172.16.0.0/12 127.0.0.0/8 {$ATLAS_TRUSTED_IPS:127.0.0.1/32}
-	handle @mesh {
-		reverse_proxy api:8080 {
-			# The API re-checks this independently. Caddy is the outer gate,
-			# not the only one.
-			header_up X-Forwarded-For {remote_host}
-			# The session cookie is marked Secure when this says https
-			# (atlas/api/auth.py::cookie_secure).
-			header_up X-Forwarded-Proto {scheme}
-			header_up -X-Atlas-Device
-		}
-	}
-
-	@device expression `{http.request.tls.client.fingerprint} != ""`
-	handle @device {
-		reverse_proxy api:8080 {
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Atlas-Device {http.request.tls.client.fingerprint}
-		}
-	}
-
-	# Signature-verified integrations. Everything else on this host is
-	# reachable over the NetBird mesh only.
 	handle /webhooks/* {
 		reverse_proxy api:8080 {
 			header_up -X-Atlas-Device
@@ -133,7 +67,7 @@ atlas.example.com {
 		}
 	}
 
-	# Miro's TradingView alerts (atlas/api/tradingview.py). TradingView can
+	# the owner's TradingView alerts (atlas/api/tradingview.py). TradingView can
 	# neither sign a request nor present a certificate, so the gate is the
 	# long random secret in the alert's JSON body, checked by the API; the
 	# API also rate-limits per address (this X-Forwarded-For) and, with
@@ -195,20 +129,29 @@ atlas.example.com {
 		}
 	}
 
-	# The store's contact form posts here (modules/academy/site.py); the API
-	# stores the message, posts it to Slack as untrusted text and redirects
-	# back to the store's "sent" page. Rate-limited per address like the pages.
-	handle /public/academy/contact {
+	# The store's AI help chat (atlas/api/academy_support.py): the store's own
+	# origin only, single-turn, the words never stored. Rate-limited per
+	# address (this X-Forwarded-For). The contact, Help and preview-request
+	# forms open the visitor's mail app since 2026-10-29; no form posts here.
+	handle /public/academy/chat {
 		reverse_proxy api:8080 {
 			header_up X-Forwarded-For {remote_host}
 			header_up -X-Atlas-Device
 		}
 	}
 
-	# The agency landing page's "ask for a free preview" form posts here
-	# (atlas/api/preview_request.py): stored, posted to Slack as untrusted
-	# text, redirected to the landing page's thanks/. Rate-limited per address.
-	handle /public/preview-request {
+	# Self-service recovery (atlas/api/academy.py `recover`): the store's
+	# form posts an email and a Stripe receipt number (body, not URI); a match
+	# is sent to /public/academy/library?t=<signed one-hour token>, a secret in
+	# the URI (`log_skip` below). Both rate-limited per address.
+	handle /public/academy/recover {
+		reverse_proxy api:8080 {
+			header_up X-Forwarded-For {remote_host}
+			header_up -X-Atlas-Device
+		}
+	}
+
+	handle /public/academy/library {
 		reverse_proxy api:8080 {
 			header_up X-Forwarded-For {remote_host}
 			header_up -X-Atlas-Device
@@ -267,90 +210,35 @@ atlas.example.com {
 	# records every request URI, query included, so those requests are not
 	# logged at all -- a log line must never be a way to the file. `log_skip`
 	# is Caddy 2.8+'s name (`skip_log` before); caddy:2-alpine is past it.
-	@secret_path path /webhooks/twilio/audio/* /media/* /deliver/* /public/academy/access /public/academy/file/* /public/academy/review
+	@secret_path path /webhooks/twilio/audio/* /media/* /deliver/* /public/academy/access /public/academy/file/* /public/academy/review /public/academy/recover /public/academy/library
 	log_skip @secret_path
 }
 
-# ------------------------------------------------------------------ Mapfront
-# Miro's web agency. Static files only: nothing under mapfront.io is proxied
-# to the api, and no route here reaches it -- the only api call is Caddy's
-# own TLS ask above, which is internal. The names are hardcoded, not read
-# from AGENCY_SITES_DOMAIN: a directive whose env var expands empty fails to
-# parse and takes the whole public listener down (see the global block).
-#
-# DNS for these names is bootstrap/mapfront-dns.md. Until it points here no
-# certificate is requested: every block is on_demand, so nothing is tried
-# before a real handshake arrives.
-
-# The landing page, checked in at atlas/modules/agency/landing/ and mounted
-# read-only: one HTML file with inline CSS and SVG, plus one self-hosted font
-# in landing/fonts/. The CSP allows inline styles and same-origin images and
-# fonts, nothing else -- no scripts, no third-party requests; its one form
-# posts to the API's preview-request path and nowhere else. `templates`
-# renders exactly one thing into it: the postal address from
-# AGENCY_POSTAL_ADDRESS, HTML-escaped. Templates run on THIS
-# block only -- never on client sites, whose HTML is partly model output and
-# could otherwise print any variable in this container's environment.
-mapfront.io {
-	tls {
-		on_demand
-	}
+# ------------------------------------------------------------- client demos
+# A client demo is a static build (no backend, nothing stored) published by
+# `agency.deploy_demo` (Tier ASK) into the api's data/demos, i.e. the host's
+# ./data/app/demos, mounted READ-ONLY here at /srv/demos. `<slug>` there is a
+# relative link to the live release (atlas/modules/agency/demo_host.py).
+# One explicit site block per hostname, each `import demo_site <slug>`: an
+# ordinary certificate for exactly that name, never on_demand -- there is no
+# ask gate for these zones. Adding a hostname is a CD change after the owner's DNS
+# record exists (docs/client-sites.md). Demos are never indexed: every
+# response, the 404 included, says noindex. No directory listing, no
+# dotfiles, no templates, no proxy.
+(demo_site) {
 	encode zstd gzip
 	@hidden path */.*
 	respond @hidden "not here" 404
-	# Design notes and review screenshots live beside the page but are not
-	# part of the site.
-	@unlisted path /_review/* /DESIGN.md /getlayers.json
-	respond @unlisted "not here" 404
-	root * /srv/landing
-	templates
-	file_server
-	handle_errors {
-		respond "not here" 404
-	}
-	header {
-		Strict-Transport-Security "max-age=31536000"
-		X-Content-Type-Options "nosniff"
-		X-Frame-Options "DENY"
-		Referrer-Policy "strict-origin-when-cross-origin"
-		Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action https://atlas.example.com; frame-ancestors 'none'"
-		Cache-Control "public, max-age=300"
-		-Server
-	}
-}
-
-www.mapfront.io {
-	tls {
-		on_demand
-	}
-	redir https://mapfront.io{uri} permanent
-}
-
-# Client sites: <slug>.mapfront.io serves /srv/sites/<slug>, the api's
-# data/sites mounted read-only, where <slug> is a relative link to the live
-# release (atlas/modules/agency/hosting.py). The Host must be one valid slug
-# label; dotfiles and the release store are never served; a missing slug or
-# file is a 404 (the site's own 404.html when it has one). No directory
-# listing: file_server without `browse`. No CSP: client sites load their
-# own analytics and fonts, and the launch check owns what they contain.
-*.mapfront.io {
-	tls {
-		on_demand
-	}
-	encode zstd gzip
-	@badhost not header_regexp Host ^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?\.mapfront\.io(?::[0-9]+)?$
-	respond @badhost "not here" 404
-	@hidden path */.*
-	respond @hidden "not here" 404
-	root * /srv/sites/{labels.2}
+	root * /srv/demos/{args[0]}
 	file_server {
 		hide .*
 	}
 	handle_errors {
-		rewrite * /404.html
-		file_server
+		header X-Robots-Tag "noindex, nofollow"
+		respond "not here" 404
 	}
 	header {
+		X-Robots-Tag "noindex, nofollow"
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "SAMEORIGIN"
@@ -359,3 +247,16 @@ www.mapfront.io {
 		-Server
 	}
 }
+
+# examplehair concept demo (not the official site). DNS: the owner's A record.
+client-site.example.com {
+	import demo_site examplehair
+}
+
+# ------------------------------------------------------------------ agency
+# 2026-11-14 (the owner): the agency lives on ONE host, https://agency.example.com,
+# served by the public listener (Caddyfile.public, service shop-public):
+# the landing at /, the store at /academy/ and its old paths, prospect
+# previews at /preview/<slug>/. Nothing agency-related is served from this file,
+# and no block here is on-demand, so this box never asks for a certificate on a
+# visitor's say-so.

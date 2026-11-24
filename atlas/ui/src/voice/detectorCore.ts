@@ -216,16 +216,18 @@ export function micBadgeAction(state: {
   mic: MicState;
   handsFree: boolean;
   detector: DetectorKind | null;
-}): "mute" | "unmute" | null {
+}): "mute" | "unmute" | "restart" {
   if (state.mic === "listening" || state.mic === "streaming") return "mute";
   // Pinch never needs the microphone, whether it is off, unavailable, or
   // (Task 47 / G4: a clap composite forces the app mic open for clap's own
   // tap) denied outright -- a denied APP mic says nothing about pinch's own
   // camera permission, which it never asked for in the first place.
   if (state.handsFree && state.detector === "pinch") return "mute";
-  if (state.mic === "denied" || state.mic === "unavailable") return null;
   if (!state.handsFree) return "unmute";
-  return null;
+  // Hands-free is armed but the mic is closed, denied or missing (a detector
+  // that never started, a click-to-talk fallback). The badge says so, so the
+  // tap must try again -- and the badge then shows the real outcome.
+  return "restart";
 }
 
 /** The hand badge's tooltip. Pinch-to-wake shares this camera, and a mute

@@ -12,8 +12,9 @@ order, each refusal saying nothing about the next:
 
     404  not a slug, or no chat facts for it (not built, not a $500/$300
          package, or its package changed)
-    403  an Origin other than https://<slug>.mapfront.io or the client's own
-         `domain` from client.json (POST needs one; GET may omit it)
+    403  an Origin other than https://agency.example.com (`AGENCY_PREVIEW_ORIGIN`),
+         the client's own `domain` from client.json, or `null` (see below);
+         POST needs one, GET may omit it
     429  one address past SITE_CHAT_PER_IP_PER_MIN (default 10) a minute;
          or the site past SITE_CHAT_PER_SITE_PER_DAY (default 300) today
     413  a body over 8 KB
@@ -28,6 +29,16 @@ order, each refusal saying nothing about the next:
          "..."} when the message carried a card or ID number (no model was
          asked, and the widget drops that turn from its history)
 
+`Origin: null` (weakened check, the owner 2026-11-14): previews are served at
+`agency.example.com/preview/<slug>/` under a CSP `sandbox` WITHOUT
+`allow-same-origin`, so their opaque origin makes the browser send
+`Origin: null`. It is accepted only here, where the slug in the URL path has
+chat facts (a published, chat-enabled site), and every other limit stays. It
+no longer proves WHICH page called: any sandboxed page can send `null`. What
+bounds the damage is unchanged: no cookies or credentials (the widget sends
+none), the per-address and per-site daily limits, the spend cap, the kill
+switch and the 8 KB / 500-character bounds.
+
 The client address is the one Caddy forwards, believed only from Caddy
 itself (`peers.effective_client`). The words are never logged or stored:
 the log line is the slug and the outcome.
@@ -41,7 +52,7 @@ import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 
-from ..modules.agency import sitechat
+from ..modules.agency import hosting, sitechat
 from .peers import PerAddressLimiter, effective_client
 
 router = APIRouter()
@@ -89,7 +100,12 @@ def _origin(request: Request, facts: sitechat.Facts) -> tuple[str | None, bool]:
     if given is None:
         return None, True
     given = given.strip().lower().rstrip("/")
-    return (given, True) if given in facts.origins else (None, False)
+    if given == "null":
+        # `facts` exists only for a published slug taken from the URL path.
+        return given, True
+    if given == hosting.preview_origin() or given in facts.origins:
+        return given, True
+    return None, False
 
 
 async def _body(request: Request) -> bytes | None:

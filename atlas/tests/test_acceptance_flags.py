@@ -68,7 +68,7 @@ async def test_ops_off_the_sweep_never_opens_a_workflow(monkeypatch, memory_back
     monkeypatch.setenv("ATLAS_DURABLE_CORE", "on")
     monkeypatch.delenv("ATLAS_DURABLE_FLOWS", raising=False)
     now = datetime(2026, 9, 28, 9, 0, tzinfo=UTC)
-    memory_backend.responses["DISTINCT ON (o.check_id)"] = [
+    memory_backend.responses["DISTINCT ON (check_id)"] = [
         {"module": "guardian", "check": "open_alerts", "health": "degraded",
          "detail": "d", "last_ok": now - timedelta(hours=5),
          "first_seen": now - timedelta(days=3)}]

@@ -13,24 +13,24 @@ def _mesh(monkeypatch, peers):
 
 
 PEERS = [{"name": "atlas", "connected": True},
-         {"name": "iPhone-mirotech94", "connected": False},
-         {"name": "miro", "connected": True}]
+         {"name": "iPhone-owner", "connected": False},
+         {"name": "owner", "connected": True}]
 
 
 async def test_an_optional_peer_offline_is_ok_and_named(monkeypatch):
-    monkeypatch.setenv("NETBIRD_OPTIONAL_PEERS", "iphone-mirotech94")
+    monkeypatch.setenv("NETBIRD_OPTIONAL_PEERS", "iphone-owner")
     _mesh(monkeypatch, PEERS)
     obs = await netbird.check_peers()
     assert obs.health is Health.OK
-    assert "optional and off: iPhone-mirotech94" in obs.detail
+    assert "optional and off: iPhone-owner" in obs.detail
 
 
 async def test_any_other_peer_offline_still_degrades(monkeypatch):
-    monkeypatch.setenv("NETBIRD_OPTIONAL_PEERS", "iphone-mirotech94")
-    _mesh(monkeypatch, [*PEERS[:2], {"name": "miro", "connected": False}])
+    monkeypatch.setenv("NETBIRD_OPTIONAL_PEERS", "iphone-owner")
+    _mesh(monkeypatch, [*PEERS[:2], {"name": "owner", "connected": False}])
     obs = await netbird.check_peers()
     assert obs.health is Health.DEGRADED
-    assert obs.detail.startswith("1 of 3 peers offline: miro")
+    assert obs.detail.startswith("1 of 3 peers offline: owner")
 
 
 async def test_without_the_setting_nothing_changes(monkeypatch):

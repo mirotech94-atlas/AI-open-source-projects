@@ -21,6 +21,7 @@ from atlas.kernel.memory import Kind, recall
 def no_embeddings(monkeypatch):
     """No Ollama, so recall takes the ILIKE branch and never leaves the box."""
     monkeypatch.delenv("OLLAMA_URL", raising=False)
+    monkeypatch.delenv("ATLAS_EMBED_URL", raising=False)
 
 
 @pytest.fixture
@@ -127,7 +128,7 @@ async def test_the_kind_filter_still_reaches_the_query(monkeypatch, logged):
 
     assert seen[0][0] == ["people"]
     assert seen[0][1] == ["semantic"]
-    assert seen[0][3] == 3
+    assert seen[0][3] >= 3          # over-fetched, then re-ranked down to 3
 
 
 async def test_an_agent_run_attributes_its_recall_to_that_agent(monkeypatch):
@@ -168,7 +169,7 @@ async def test_learn_fact_dedupe_is_bookkeeping_not_a_read(monkeypatch, logged):
 
     monkeypatch.setattr(memory, "fetch_all", fake_fetch_all)
     monkeypatch.setattr(memory, "fetch_one", fake_fetch_one)
-    await memory.learn_fact("preferences", "Miro takes his coffee black")
+    await memory.learn_fact("preferences", "the owner takes his coffee black")
 
     assert not [sql for sql, _ in logged if "memory_reads" in sql]
 
@@ -233,7 +234,7 @@ async def test_when_does_my_insurance_renew_finds_the_chunk_without_ollama(
     assert "%insurance%" in patterns and "%renew%" in patterns
     for stop in ("when", "does", "my"):
         assert f"%{stop}%" not in patterns
-    assert found.degraded == "OLLAMA_URL unset"
+    assert found.degraded == "ATLAS_EMBED_URL unset"
 
 
 async def test_keyword_recall_ranks_by_the_number_of_matching_terms(keyword_db):
@@ -247,7 +248,7 @@ async def test_a_query_of_only_stop_words_asks_nothing_and_says_why(keyword_db):
     found = await recall("what is it?", ["vault"])
     assert found == []
     assert keyword_db == []
-    assert found.degraded == "OLLAMA_URL unset"
+    assert found.degraded == "ATLAS_EMBED_URL unset"
 
 
 async def test_an_embedding_that_fails_is_degraded_with_its_own_reason(

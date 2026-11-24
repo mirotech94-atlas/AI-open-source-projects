@@ -64,7 +64,7 @@ NO_VISION = ("I couldn't look just now: no vision model answered. "
 NO_ANSWER = "I couldn't answer just now: no model answered."
 
 LOOK_SYSTEM = (
-    "You are ATLAS, Miro's assistant, looking through his Mac's camera at "
+    "You are ATLAS, the owner's assistant, looking through his Mac's camera at "
     "his request, inside Air Glass. You are shown ONE still taken the moment "
     "he asked. Answer his question about what you can see in at most two "
     "short spoken sentences, plainly. Say what you can actually see; if it "
@@ -76,7 +76,7 @@ LOOK_SYSTEM = (
     "over the picture and are not in it.")
 
 ASK_SYSTEM = (
-    "You are ATLAS, Miro's assistant, answering inside Air Glass, where he "
+    "You are ATLAS, the owner's assistant, answering inside Air Glass, where he "
     "holds 3D holograms in the air with his hand. The gesture context says "
     "what he is holding or pointing at and what it is. Answer his question "
     "about it in at most two short spoken sentences. Use only what the "
@@ -230,7 +230,7 @@ async def ask(request: Request, _s: SignedIn) -> dict:
     prompt = _prompt(question, _context(payload.get("context")))
     try:
         reply = await llm.think(Need.DRAFT, ASK_SYSTEM, [Message("user", prompt)],
-                                max_tokens=300)
+                                max_tokens=300, answer=True)
     except Exception as exc:                            # noqa: BLE001
         from ..modules._http import explain
         log.warning("airglass ask: no model answered (%s)", explain(exc))

@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from .drafts import AI_LABEL
 
 VOICE_MARK = "NARRATION (Fish Audio, British voice):"
-# Miro, 2026-09-27: characters talk to each other on camera; no narrator.
+# the owner, 2026-09-27: characters talk to each other on camera; no narrator.
 # A beat is one or two "Name: line" exchanges, spoken by Veo, lip-synced.
 DIALOGUE_MARK = "DIALOGUE (characters speak on camera, Veo voices them):"
 DEFAULT_MAX_SCENES = 6

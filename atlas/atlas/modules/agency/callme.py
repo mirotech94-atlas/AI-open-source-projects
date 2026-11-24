@@ -1,6 +1,6 @@
 """agency.callme -- "Have Mapfront call me", the written consent an AI call needs.
 
-Miro, 2026-09-30: "once I approve [a site], you should call them and do a
+the owner, 2026-09-30: "once I approve [a site], you should call them and do a
 proposal instead of me". `agency.call_lead` may ring only a lead with prior
 express consent on record (TCPA; FCC, February 2024: an AI voice is an
 artificial voice, and marketing needs the consent in writing). That gate is
@@ -33,7 +33,7 @@ writing:
     to learn who opted out.
   * **The form IS the consent, and the consent is the gate.**
     `kernel.lead_followup.call_due` places the `agency.call_lead` call
-    through the executor (Tier 1 since 2026-10-06, Miro: "call them as
+    through the executor (Tier 1 since 2026-10-06, the owner: "call them as
     well"), only while `consent.contact_guard` passes (verified lead, calls
     on, 08:00-21:00 lead time, under the cap, not suppressed); outside
     calling hours it waits for the next tick inside them, and a refusal is
@@ -51,6 +51,7 @@ from pathlib import Path
 from typing import Any
 
 from . import _store, consent, sitechat
+from . import client as _client
 from .client import ClientData
 
 log = logging.getLogger("atlas.agency.callme")
@@ -82,7 +83,7 @@ BODY_MAX = 4 * 1024
 PER_IP = 3               # submissions per address ...
 PER_IP_WINDOW_S = 600.0  # ... per ten minutes
 PER_SITE = 20            # submissions per site per day
-DONE_MESSAGE = ("Thanks. Mapfront has your request, and Miro reviews every one "
+DONE_MESSAGE = ("Thanks. Mapfront has your request, and the owner reviews every one "
                 "before anyone calls.")
 
 
@@ -95,8 +96,9 @@ def endpoint(slug: str) -> str:
 def wanted(client: ClientData) -> bool:
     """Only a preview carries the form: once a client has bought, their own
     customers must never see "Have Mapfront call me". And only a designed
-    template page (`client.theme`), the one with the `$callme` slot."""
-    return client.package is None and bool(client.theme)
+    template page (`client.theme`), the one with the `$callme` slot. And
+    only while the endpoint has a public door (`client.PUBLIC_DOOR`)."""
+    return _client.PUBLIC_DOOR and client.package is None and bool(client.theme)
 
 
 def slot(client: ClientData) -> str:
@@ -252,3 +254,6 @@ async def alert(lead: dict[str, Any], sub: Submitted, card: str, *,
             body=body, severity=Severity.HIGH, topic="agency", kind="alert"))
     except Exception as exc:                            # noqa: BLE001
         log.warning("callme: alert not posted: %s", type(exc).__name__)
+    from . import owner_wa
+    await owner_wa.notify_owner(
+        "portal", f"{lead.get('name')} asked Mapfront to call them at {sub.phone}.")

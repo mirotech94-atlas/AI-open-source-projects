@@ -13,9 +13,20 @@
 # already happened once here.
 set -euo pipefail
 
-HOST="${ATLAS_SSH_HOST:-root@atlas.example.com}"
-ENV_PATH="${ATLAS_ENV_PATH:-/opt/atlas/.env}"
-COMPOSE_DIR="${ATLAS_COMPOSE_DIR:-/opt/atlas}"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+# "local" (ATLAS on this Mac, OrbStack) unless ATLAS_SSH_HOST says otherwise
+# or this machine is the old server: see atlas-host.sh. Local is the same
+# prompt, the same refusals and the same envlock.py, with no ssh; the .env
+# and the compose project default to this checkout.
+. "$HERE/atlas-host.sh"
+HOST="$(atlas_host)"
+if [ "$HOST" = "local" ]; then
+    ENV_PATH="${ATLAS_ENV_PATH:-$(dirname "$HERE")/.env}"
+    COMPOSE_DIR="${ATLAS_COMPOSE_DIR:-$(dirname "$HERE")}"
+else
+    ENV_PATH="${ATLAS_ENV_PATH:-/opt/atlas/.env}"
+    COMPOSE_DIR="${ATLAS_COMPOSE_DIR:-/opt/atlas}"
+fi
 
 NAME="${1:-}"
 if [ -z "$NAME" ]; then
@@ -48,6 +59,11 @@ case "$NAME" in
         exit 2 ;;
 esac
 
+if [ "$HOST" = "local" ] && [ ! -f "$ENV_PATH" ]; then
+    echo "$ENV_PATH does not exist; create it from .env.example (chmod 600) first" >&2
+    exit 1
+fi
+
 printf 'Paste the value for %s (it will not be shown): ' "$NAME" >&2
 IFS= read -rs VALUE
 printf '\n' >&2
@@ -61,6 +77,33 @@ printf '\n' >&2
 case "$VALUE" in
     *$'\n'*) echo "value contains a newline; .env cannot hold that" >&2; exit 1 ;;
 esac
+
+if [ "$HOST" = "local" ]; then
+    # The value goes over a pipe into envlock.py (not argv, not history),
+    # which doubles any '$' and prints only the name and the length.
+    printf '%s=%s\n' "$NAME" "$VALUE" \
+        | ATLAS_ENV_PATH="$ENV_PATH" python3 "$HERE/envlock.py"
+    unset VALUE
+    if [ "${ATLAS_NO_RESTART:-0}" = "1" ]; then
+        echo "ATLAS_NO_RESTART=1: not restarting the API" >&2
+        exit 0
+    fi
+    # Always both files, from the same directory: another directory or a
+    # missing -f is another compose project, i.e. a second Postgres.
+    compose() {
+        (cd "$COMPOSE_DIR" && docker compose -f docker-compose.yml \
+            -f docker-compose.local.yml "$@")
+    }
+    echo "restarting the API so it picks the value up..." >&2
+    compose up -d api >/dev/null 2>&1 \
+        || { echo "docker compose up failed; is OrbStack running?" >&2; exit 1; }
+    sleep "${ATLAS_RESTART_WAIT:-6}"
+    echo >&2
+    echo "re-running checks:" >&2
+    compose exec -T api python -m atlas.cli connect \
+        || echo "(could not reach the API; check it started)" >&2
+    exit 0
+fi
 
 # Write remotely, under the server's .env lock. The value travels over
 # ssh's stdin, so it is not in the command line, not in `ps`, and not in

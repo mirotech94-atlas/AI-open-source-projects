@@ -3,8 +3,11 @@
 The role agents already cover infrastructure, content and money across every
 property at once. A business agent is narrower on purpose: it answers for one
 name only, and everything here is about proving that narrowness actually
-holds — its tools resolve to real, non-Tier-3 capabilities, and both the
-router and the concierge actually know it exists.
+holds — its tools resolve to real, non-Tier-3 capabilities.
+
+Since 2026-10-28 no business agent sits on the roster (eight agents remain,
+kernel/agents.py); the Business records stay as data the modules and the
+kept agents read, and these tests check the records themselves.
 """
 from __future__ import annotations
 
@@ -38,26 +41,24 @@ def _fresh_roster_and_tools():
 
 # -------------------------------------------------------- one agent, each
 
-def test_every_business_is_a_real_module_with_its_own_agent():
+def test_every_business_is_a_real_module_and_not_a_roster_agent():
     for biz in BUSINESSES:
         assert (MODULES_ROOT / biz.name / "__init__.py").is_file(), (
             f"{biz.name!r} is in BUSINESSES but atlas/modules/{biz.name}/ "
             "does not exist")
-        assert biz.name in ROSTER, f"no agent named {biz.name!r} after build_roster()"
-        assert ROSTER[biz.name].name == biz.name
+        assert biz.name not in ROSTER, f"{biz.name!r} is retired from the roster"
 
 
 def test_each_business_agents_memory_starts_with_its_own_namespace():
     for biz in BUSINESSES:
         assert biz.memory[0] == biz.name
-        assert ROSTER[biz.name].memory_scope == biz.memory
 
 
 def test_the_standing_rules_land_verbatim_in_every_system_prompt():
     for biz in BUSINESSES:
         expected = STANDING_RULES.format(title=biz.title)
-        assert expected in ROSTER[biz.name].system
-        assert biz.what in ROSTER[biz.name].system
+        assert expected in biz.system()
+        assert biz.what in biz.system()
 
 
 # --------------------------------------------------------- closed tools
@@ -67,13 +68,13 @@ def test_every_business_agents_tools_are_registered_tools():
     tool name that register_all() never created would fail silently the
     first time it tried to call it."""
     for biz in BUSINESSES:
-        unknown = ROSTER[biz.name].tools - set(TOOLS)
+        unknown = (set(biz.reads) | set(biz.writes)) - set(TOOLS)
         assert not unknown, f"{biz.name}: unregistered tools {unknown}"
 
 
 def test_no_business_write_tool_names_a_tier_3_action():
     for biz in BUSINESSES:
-        for tool_name in ROSTER[biz.name].tools:
+        for tool_name in set(biz.reads) | set(biz.writes):
             tool = TOOLS[tool_name]
             if tool.action is None:
                 continue                                  # a read tool
@@ -115,25 +116,11 @@ def loaded_registry(memory_backend):
             d.update(v)
 
 
-@pytest.fixture
-def write_token_set(monkeypatch):
-    """`guardian.contain` is declared only when GUARDIAN_WRITE_TOKEN is
-    deliberately set (Task 37): without it the action does not exist and the
-    `guardian_contain` tool answers "not in the catalog". Set it BEFORE the
-    registry loads, so the question this test asks -- does every write tool
-    name an action some module can declare? -- is asked of the full catalog."""
-    monkeypatch.setenv("GUARDIAN_WRITE_TOKEN", "test-write-token-not-real")
-
-
 def test_every_business_write_tool_names_an_action_a_real_module_declares(
-        write_token_set, loaded_registry):
+        loaded_registry):
     """A write tool a business holds is only as real as the action it names.
-    `agency_send_outreach` / `agency_deploy_site` are pre-registered in
-    builtin.py's writes list against `agency.send_outreach` /
-    `agency.deploy_site`, both Tier 2 — but Task 3, which makes the agency
-    module actually declare them, has not merged into this branch yet. This
-    assertion is expected to fail for exactly those two until it does; see
-    the report rather than loosening this check."""
+    (`agency_send_outreach` was removed 2026-10-27: an outreach email is a
+    card raised by the pass, never a tool an agent calls.)"""
     missing = [
         (biz.name, tool_name, TOOLS[tool_name].action)
         for biz in BUSINESSES
@@ -147,12 +134,12 @@ def test_every_business_write_tool_names_an_action_a_real_module_declares(
 
 # ------------------------------------------------------------- routing
 
-async def test_route_menu_lists_every_business_name(monkeypatch):
+async def test_route_menu_lists_no_retired_business(monkeypatch):
     seen_system: list[str] = []
 
     async def fake_think(need, system, messages, tools=None, max_tokens=2048):
         seen_system.append(system)
-        return Completion(text="concierge", provider="fake", model="fake")
+        return Completion(text="inbox", provider="fake", model="fake")
 
     monkeypatch.setattr("atlas.kernel.agents.think", fake_think)
     await route("what's going on today")
@@ -160,11 +147,8 @@ async def test_route_menu_lists_every_business_name(monkeypatch):
     assert seen_system, "route() never called think()"
     menu = seen_system[0]
     for name in BUSINESS_NAMES:
-        assert f"{name}:" in menu, f"{name!r} missing from the router menu"
+        assert f"\n{name}:" not in menu, f"{name!r} is retired but still offered"
 
-
-def test_concierge_can_hand_off_to_every_business():
-    assert BUSINESS_NAMES <= ROSTER["concierge"].handoff
 
 
 # --------------------------------------------------------- the two tools
@@ -175,9 +159,9 @@ async def test_module_status_carries_observed_at_on_every_check(monkeypatch):
                  "detail": "", "observed_at": datetime(2026, 9, 24, 7, 12, tzinfo=UTC)}]
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", fake_fetch_all)
-    result = await module_status("flycheap")
+    result = await module_status("inroots")
 
-    assert result["module"] == "flycheap"
+    assert result["module"] == "inroots"
     assert result["checks"][0]["observed_at"] == "2026-09-24T07:12:00+00:00"
 
 
@@ -187,7 +171,7 @@ async def test_module_status_defaults_a_missing_health_to_unknown(monkeypatch):
                  "unit": None, "detail": None, "observed_at": None}]
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", fake_fetch_all)
-    result = await module_status("flycheap")
+    result = await module_status("inroots")
 
     assert result["checks"][0]["health"] == "unknown"
     assert result["checks"][0]["observed_at"] is None
@@ -198,7 +182,7 @@ async def test_module_status_says_so_when_nothing_is_recorded(monkeypatch):
         return []
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", empty)
-    result = await module_status("flycheap")
+    result = await module_status("inroots")
     assert "error" in result
 
 
@@ -258,7 +242,7 @@ def _imports_of(path: pathlib.Path) -> set[str]:
 @pytest.mark.parametrize("path", [
     pathlib.Path(__file__).resolve().parent.parent / "atlas" / "kernel" / "businesses.py",
     *sorted((SKILLS_ROOT / f"{n}.py") for n in
-            ("flycheap", "guardian", "mirotech", "fiverr", "agency")),
+            ("exampleco", "fiverr", "agency")),
 ])
 def test_no_file_here_imports_the_executor(path: pathlib.Path):
     """Invariant 1: collectors and skills only read. A business agent

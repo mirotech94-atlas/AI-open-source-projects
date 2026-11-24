@@ -13,7 +13,7 @@ register(Skill(
     name="Running a marketing experiment",
     triggers=("experiment", "playbook", "variant", "hypothesis", "a/b",
               "48h", "baseline post", "what worked"),
-    agents=("marketing", "growth", "analyst"),
+    agents=("content", "research"),
     priority=86,
     body="""
 An experiment is one hypothesis, one variant, one metric, one deadline. If you
@@ -38,7 +38,7 @@ Three honest outcomes and one dishonest one:
   acceptable. It reads as a result and is not one. If the read failed, the
   answer is that the read failed.
 
-Publishing is never yours. The draft is written, the card goes to Miro, and
+Publishing is never yours. The draft is written, the card goes to the owner, and
 nothing reaches a feed until he answers it. That is true however good the
 hypothesis is and however strong the approval record looks. If the approval
 record is strong enough that the judgment layer drafted a standing rule, show
@@ -50,7 +50,7 @@ register(Skill(
     triggers=("monetize", "monetization", "monetisation", "affiliate",
               "sponsorship", "partner program", "partner programme",
               "revenue idea"),
-    agents=("marketing", "analyst", "commerce"),
+    agents=("content", "research", "sales"),
     priority=85,
     body="""
 An idea rests on measured facts or it does not get written down. Each fact
@@ -65,16 +65,12 @@ mechanism and what would have to be true instead.
 
 Know what is actually measured before leaning on it:
 
-- flycheap measures users, routes, poll freshness and delivery. It measures no
-  affiliate clicks and no bookings. Audience size is evidence; conversion is
-  not, and "low conversion" is not a finding you can make.
-- Guardian measures a security score, networks and open alerts. It measures no
-  subscriber count, so there is no audience figure for a sponsorship pitch.
-- Mirotech's price check returns eBay active asks. Sold prices are the market
+- ExampleCo's price check returns eBay active asks. Sold prices are the market
   and they are not measured; quote the caveat or quote nothing.
-- YouTube partner eligibility is measured on subscribers only. The watch-hours
-  and Shorts-views paths are not measured, so eligibility is never claimed on
-  them — Studio is the only place that confirms it.
+- YouTube partner eligibility here compares subscribers only. The watch-hours
+  and Shorts-views paths are measured channel-wide by academy.ypp_progress
+  (Analytics) in the Monday digest; quote those figures with their read time,
+  never claim eligibility from them — Studio → Earn is the authority.
 
 Rank by evidence strength times how little it asks of him. A toggle in a
 console he already owns beats a contract he would have to negotiate.

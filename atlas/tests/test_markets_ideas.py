@@ -1,4 +1,4 @@
-"""Trade idea cards: ATLAS suggests, Miro approves or declines, on PAPER.
+"""Trade idea cards: ATLAS suggests, the owner approves or declines, on PAPER.
 
 Deterministic long-only rules over bars ATLAS read; a model may only rank
 them; Tier 2 card_only cards in #trades carrying the disclaimer and a plain
@@ -346,6 +346,7 @@ async def world_fixture(pg, monkeypatch):
         return ["test"]
 
     monkeypatch.setattr(approvals, "notify", notify)
+    monkeypatch.setenv("APPROVALS_SLACK", "on")      # the Slack card is opt-in now
     await state.execute_sql("TRUNCATE markets_ideas, markets_idea_scans, "
                             "markets_idea_marks RESTART IDENTITY")
     REGISTRY.load("atlas.modules.markets", "markets")
@@ -491,7 +492,7 @@ async def test_approve_books_at_the_next_close_and_rollback_cancels_before(world
     await ideas.scan(end)
     (idea,) = await _ideas()
     card = (await _rows("SELECT id FROM proposals"))[0]["id"]
-    verdict = await approvals.decide(card, "approve", "slack:UMIRO")
+    verdict = await approvals.decide(card, "approve", "slack:UOWNER")
     assert verdict.ok and verdict.outcome == "executed", verdict.detail
     (idea,) = await _ideas()
     assert idea["status"] == "approved" and idea["entry_day"] is None
@@ -511,7 +512,7 @@ async def test_booked_at_the_close_after_approval_then_rollback_refuses(world):
     end = world.end()
     await ideas.scan(end)
     card = (await _rows("SELECT id FROM proposals"))[0]["id"]
-    await approvals.decide(card, "approve", "slack:UMIRO")
+    await approvals.decide(card, "approve", "slack:UOWNER")
     days = weekdays(6, end)
     approved = datetime.combine(days[0], datetime.min.time(), tzinfo=ideas.TZ) \
         + timedelta(hours=11)
@@ -530,7 +531,7 @@ async def test_a_declined_idea_books_nothing_but_is_tracked(world):
     end = world.end()
     await ideas.scan(end)
     card = (await _rows("SELECT id FROM proposals"))[0]["id"]
-    assert (await approvals.decide(card, "decline", "slack:UMIRO")).outcome == "declined"
+    assert (await approvals.decide(card, "decline", "slack:UOWNER")).outcome == "declined"
     await ideas._sync_cards()
     (idea,) = await _ideas()
     assert idea["status"] == "declined" and idea["decided_at"] is not None

@@ -1,13 +1,13 @@
 {
-  "source": "ATLAS Vault/Products/Build a Safe AI Operator/Outline.md, copied 2026-09-29 (Miro's own course; the server cannot read the vault, so the hooks and lesson lines live here as data); the blog sections are verbatim 'The story' sections of the lesson files named beside them, copied 2026-09-29",
+  "source": "ATLAS Vault/Products/Build a Safe AI Operator/Outline.md, copied 2026-09-29 (the owner's own course; the server cannot read the vault, so the hooks and lesson lines live here as data); the blog sections are verbatim 'The story' sections of the lesson files named beside them, copied 2026-09-29",
   "business": "course",
-  "owner": "Miro",
+  "owner": "the owner",
   "product": {
     "title": "The AI That Can't Burn Your Business: Build a Safe AI Operator",
     "short": "Build a Safe AI Operator",
-    "store": "https://atlasacademy-ai.myshopify.com",
-    "url": "https://atlasacademy-ai.myshopify.com/products/build-a-safe-ai-operator-the-course",
-    "blog": "https://atlasacademy-ai.myshopify.com/blogs/news/5-things-my-ai-agent-will-never-do-even-if-i-beg-it"
+    "store": "https://academy-store.myshopify.example",
+    "url": "https://academy-store.myshopify.example/products/build-a-safe-ai-operator-the-course",
+    "blog": "https://academy-store.myshopify.example/blogs/news/5-things-my-ai-agent-will-never-do-even-if-i-beg-it"
   },
   "hashtags": "#aiagents #aisafety #smallbusiness #automation",
   "modules": [

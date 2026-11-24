@@ -1,0 +1,13 @@
+# Extra rules for ops/test_changed.py: "<changed path or glob>: <test globs>".
+# The lane already selects tests that import a changed module or are named for
+# it; these rules add what an import search cannot see (SQL, config, images).
+# A path rule matches by fnmatch or as a prefix.
+
+db/schema.sql: tests/test_*_pg.py tests/test_acceptance_*.py tests/test_init_db*.py tests/test_schema*.py
+constraints.txt: tests/test_image_pins.py
+Dockerfile: tests/test_image_pins.py
+.dockerignore: tests/test_image_pins.py
+pyproject.toml: tests/test_image_pins.py
+docker-compose.yml: tests/test_image_pins.py
+ops/test_changed.py: tests/test_changed_lane.py
+ops/test_map.txt: tests/test_changed_lane.py

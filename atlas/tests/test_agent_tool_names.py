@@ -35,7 +35,6 @@ def everything(monkeypatch, memory_backend):
                          "MODULE", None)
         for name in getattr(module, "requires_env", ()) or ():
             monkeypatch.setenv(name, "x-test-value-not-real")
-    monkeypatch.setenv("GUARDIAN_WRITE_TOKEN", "x-test-value-not-real")
     saved = {k: dict(getattr(REGISTRY, k)) for k in
              ("modules", "checks", "actions", "decisions", "disabled")}
     for k in saved:

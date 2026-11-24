@@ -57,15 +57,18 @@ def _sync_unreplied(host: str, port: int, user: str, password: str,
         # rather than report that.
         for mid in reversed(ids[-60:]):
             typ, payload = conn.fetch(
-                mid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
+                mid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE REPLY-TO "
+                     "LIST-UNSUBSCRIBE PRECEDENCE AUTHENTICATION-RESULTS)])")
             if typ != "OK" or not payload or not isinstance(payload[0], tuple):
                 continue
             headers = payload[0][1].decode("utf-8", "replace")
+            from . import spam
             fields: dict[str, str] = {}
-            for line in headers.splitlines():
-                if ":" in line:
-                    key, _, value = line.partition(":")
-                    fields[key.strip().lower()] = value.strip()
+            auth_values: list[str] = []
+            for key, value in spam.unfold_headers(headers):
+                fields[key] = value
+                if key == "authentication-results":
+                    auth_values.append(value)
 
             frm = _decode(fields.get("from")).lower()
             # Any address that delivers here means he wrote it; nothing is
@@ -75,6 +78,17 @@ def _sync_unreplied(host: str, port: int, user: str, password: str,
             if automated(frm):
                 continue                 # a machine wrote it; nobody is waiting
             if any(a.lower() in frm for a in (mine or (user,))):
+                continue
+            # Spam or unsure mail is not "waiting on you". Rules over the
+            # headers only (no database, no model in this thread).
+            verdict = spam.assess({
+                "sender": frm, "reply_to": _decode(fields.get("reply-to")),
+                "subject": _decode(fields.get("subject")),
+                "list_unsubscribe": bool(fields.get("list-unsubscribe")),
+                "bulk": fields.get("precedence", "").lower() in ("bulk", "list"),
+                "auth": spam.trusted_auth(auth_values, spam.authserv_for_host(host)),
+            })
+            if verdict.verdict in (spam.SPAM, spam.UNSURE):
                 continue
             try:
                 when = email.utils.parsedate_to_datetime(fields.get("date", ""))
@@ -91,8 +105,8 @@ def _sync_unreplied(host: str, port: int, user: str, password: str,
     finally:
         try:
             conn.logout()
-        except Exception:                               # noqa: BLE001
-            pass
+        except Exception as exc:                        # noqa: BLE001
+            logging.getLogger("atlas.mail.imap").debug("imap logout failed: %s", exc)
 
 
 async def unreplied(account, *, days: int = 7,
@@ -112,6 +126,8 @@ def _sync_unread_headers(host: str, port: int, user: str, password: str,
     try:
         conn.login(user, password)
         conn.select("INBOX", readonly=True)
+        from . import spam
+        validity = spam.uidvalidity(conn)
         since = (datetime.now(UTC) - timedelta(days=days)).strftime("%d-%b-%Y")
         # UIDs, not sequence numbers: a sequence number shifts when mail is
         # removed from the mailbox, and the id keys a cached classification.
@@ -124,7 +140,8 @@ def _sync_unread_headers(host: str, port: int, user: str, password: str,
             typ, payload = conn.uid(
                 "FETCH", mid,
                 "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE LIST-UNSUBSCRIBE "
-                "PRECEDENCE MESSAGE-ID)] BODY.PEEK[TEXT]<0.1500>)")
+                "PRECEDENCE MESSAGE-ID REPLY-TO AUTHENTICATION-RESULTS)] "
+                "BODY.PEEK[TEXT]<0.1500>)")
             if typ != "OK" or not payload:
                 continue
             header_raw, text_raw = b"", b""
@@ -135,11 +152,13 @@ def _sync_unread_headers(host: str, port: int, user: str, password: str,
                     header_raw = part[1]
                 else:
                     text_raw = part[1]
+            from . import spam
             fields: dict[str, str] = {}
-            for line in header_raw.decode("utf-8", "replace").splitlines():
-                if ":" in line and not line[:1].isspace():
-                    key, _, value = line.partition(":")
-                    fields[key.strip().lower()] = value.strip()
+            auth_values: list[str] = []
+            for key, value in spam.unfold_headers(header_raw.decode("utf-8", "replace")):
+                fields[key] = value
+                if key == "authentication-results":
+                    auth_values.append(value)
             try:
                 when = email.utils.parsedate_to_datetime(fields.get("date", ""))
             except (TypeError, ValueError):
@@ -148,12 +167,16 @@ def _sync_unread_headers(host: str, port: int, user: str, password: str,
                 when = when.replace(tzinfo=UTC)
             out.append({
                 "id": fields.get("message-id") or f"uid:{mid.decode()}",
+                "validity": validity, "uid": mid.decode(),
                 "sender": _decode(fields.get("from")),
                 "subject": _decode(fields.get("subject")),
                 "at": when,
                 "list_unsubscribe": bool(fields.get("list-unsubscribe")),
                 "bulk": fields.get("precedence", "").lower() in ("bulk", "list"),
                 "snippet": text_raw.decode("utf-8", "replace")[:1500],
+                "reply_to": _decode(fields.get("reply-to")),
+                # only a receiver we trust stamps a result worth reading
+                "auth": spam.trusted_auth(auth_values, spam.authserv_for_host(host)),
             })
         return out
     finally:
@@ -164,6 +187,13 @@ def _sync_unread_headers(host: str, port: int, user: str, password: str,
 
 
 async def unread_headers(account, *, days: int = 7, limit: int = 40) -> list[dict]:
-    return await asyncio.to_thread(
+    from . import spam
+    items = await asyncio.to_thread(
         _sync_unread_headers, account.host, account.port, account.email,
         account.password, days, limit)
+    for item in items:
+        # the verdict key: the server's UIDVALIDITY+UID, else the hashed
+        # Message-ID in its own namespace. `id` stays what drafting looks up.
+        item["key"] = spam.imap_key(account.name, item.pop("validity", ""),
+                                    item.pop("uid", ""), item.get("id"))
+    return items

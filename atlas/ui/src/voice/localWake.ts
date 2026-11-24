@@ -18,6 +18,8 @@
  * module, so importing it from a test costs nothing.
  */
 
+import { isWakePhrase } from "./wakePhrase";
+
 /** Whisper's native rate. */
 export const TARGET_RATE = 16000;
 /** Each look at the audio covers this much of it... */
@@ -36,13 +38,15 @@ export interface WakeGate {
 }
 
 /**
- * "atlas" as a whole word, any case, any punctuation around it. Whisper
+ * "Atlas" or "Hey Atlas", any case, any punctuation around it (the rule is
+ * `wakePhrase.ts`, shared with the browser recogniser: the bare word wakes
+ * him when addressed to him, not inside "the atlas report"). Whisper
  * writes "Atlas," and "ATLAS." and "hey atlas" -- all of those wake him.
  * It also writes "At last," for a phrase that genuinely is "at last", and
  * that must NOT wake him; nor must "atlases" or "Atlassian".
  */
 export function containsWake(text: string): boolean {
-  return /\batlas\b/i.test(text);
+  return isWakePhrase(text);
 }
 
 /**

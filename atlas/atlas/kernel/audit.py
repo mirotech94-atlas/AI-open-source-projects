@@ -16,10 +16,19 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from datetime import UTC, datetime
 from typing import Any
 
+from .events import publish
 from .state import GENESIS, AuditRow, backend, canonical_at
+
+log = logging.getLogger("atlas.audit")
+
+# Which audit events nudge the portal HUD to re-read. An allow-list, and the
+# nudge carries the event NAME only: `subject` can be a Slack event id or free
+# text and `data` is the payload, so neither is ever sent.
+LIVE_PREFIXES = ("execute.", "rollback.", "intent.")
 
 
 def _digest(prev: str, payload: str, at: str) -> str:
@@ -41,6 +50,13 @@ async def audit(event: str, subject: str, data: dict[str, Any] | None = None) ->
         at, event, subject, payload,
         lambda prev, at_text: _digest(prev, payload, at_text),
     )
+    if event.startswith(LIVE_PREFIXES):
+        # After the row is written, and never able to fail it: audit runs on
+        # the executor's path.
+        try:
+            publish("audit", event=event)
+        except Exception:
+            log.debug("audit nudge failed", exc_info=True)
 
 
 def verify_rows(rows: list[AuditRow]) -> tuple[bool, str]:

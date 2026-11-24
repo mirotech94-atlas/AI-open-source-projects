@@ -39,7 +39,7 @@ from tests.acceptance_support import (
 
 SECRET = "s" * 40
 PASSWORD = "a-long-enough-password"
-HAZEL_ASK = "how is Hazel doing on the 50 websites?"
+HAZEL_ASK = "how is Felix doing on the 50 websites?"
 
 
 @pytest.fixture
@@ -96,15 +96,16 @@ def test_every_roster_agent_has_a_seat_and_modules_are_placed_once_per_departmen
     seats = workboard.seats()
     names = {s["name"] for s in seats}
     assert set(agent_module.ROSTER) <= names
+    assert names - {YOU} == set(agent_module.AGENT_NAMES)
     assert YOU in names
-    hazel = next(s for s in seats if s["name"] == "agency")
-    assert "agency" in hazel["modules"] and hazel["department"] == "sales"
-    marcus = next(s for s in seats if s["name"] == "ops")
-    assert marcus["head"] and "nightshift" in marcus["modules"]
-    nora = next(s for s in seats if s["name"] == "marketing")
-    assert nora["head"] and "agency" in nora["oversees"] and "agency" not in nora["modules"]
-    ava = next(s for s in seats if s["name"] == "concierge")
-    assert "research" in ava["modules"]
+    felix = next(s for s in seats if s["name"] == "sites")
+    assert "agency" in felix["modules"] and felix["department"] == "sales"
+    quinn = next(s for s in seats if s["name"] == "qa")
+    assert quinn["head"] and "nightshift" in quinn["modules"]
+    sam = next(s for s in seats if s["name"] == "sales")
+    assert sam["head"] and "agency" in sam["oversees"] and "agency" not in sam["modules"]
+    rex = next(s for s in seats if s["name"] == "research")
+    assert rex["head"] and "research" in rex["modules"]
     # Every module of every department is somebody's own, exactly once.
     from atlas.kernel.departments import DEPARTMENTS
     for d in DEPARTMENTS:
@@ -179,7 +180,7 @@ async def _seed_hazel(request: str = "build 50 websites for local businesses"):
     await state.execute_sql(
         """INSERT INTO missions (agent, recipe, request, channel, slots, status, phase,
                                  state, deadline)
-           VALUES ('agency', 'agency.sites', $1, 'voice', $2::jsonb, 'running',
+           VALUES ('sites', 'agency.sites', $1, 'voice', $2::jsonb, 'running',
                    'build', $3::jsonb, now() + interval '2 days')""",
         request, json.dumps({"n": 50}),
         json.dumps({"lead_ids": [a, b, c],
@@ -195,7 +196,7 @@ async def _seed_hazel(request: str = "build 50 websites for local businesses"):
                    'pending')""")
     await state.execute_sql(
         """INSERT INTO pauses (scope, paused_by, reason)
-           VALUES ('agency', 'miro', 'holiday')""")
+           VALUES ('agency', 'owner', 'holiday')""")
     return a, b, c
 
 
@@ -208,7 +209,7 @@ async def test_seeded_work_lands_on_the_right_seats(world):
     await _seed_hazel()
     await state.execute_sql(
         """INSERT INTO nightshift_jobs (task, repo, branch, status)
-           VALUES ('add the board', 'Miro/ai', 'board', 'running')""")
+           VALUES ('add the board', 'the owner/ai', 'board', 'running')""")
     await state.execute_sql(
         """INSERT INTO proposals (expires_at, action, tier, reason, status)
            VALUES (now() + interval '1 hour', 'retired.thing', 2, 'stray', 'pending')""")
@@ -221,8 +222,8 @@ async def test_seeded_work_lands_on_the_right_seats(world):
     assert out["totals"]["in_flight"] == 3          # mission, outbox row, nightshift
     assert out["totals"]["paused"] == 1
 
-    hazel = _seat(out, "agency")
-    assert hazel["label"] == "Hazel" and hazel["department"] == "sales"
+    hazel = _seat(out, "sites")
+    assert hazel["label"] == "Felix" and hazel["department"] == "sales"
     assert hazel["unread"] == []
     kinds = {r["kind"]: r for r in hazel["in_flight"]}
     assert set(kinds) == {"mission", "outbox"}
@@ -242,11 +243,11 @@ async def test_seeded_work_lands_on_the_right_seats(world):
     assert figs["leads audited"] == 3 and figs["leads new"] == 0
     assert all(f["read_at"] for f in prog["figures"])
 
-    nora = _seat(out, "marketing")
+    nora = _seat(out, "sales")
     assert nora["counts"]["waiting"] == 0           # Hazel's card is Hazel's
     assert any(p["module"] == "agency" and p["oversight"] for p in nora["progress"])
 
-    marcus = _seat(out, "ops")
+    marcus = _seat(out, "qa")
     night = [r for r in marcus["in_flight"] if r["kind"] == "nightshift"]
     assert len(night) == 1 and night[0]["status"] == "running"
     assert night[0]["summary"] == "add the board"
@@ -255,12 +256,14 @@ async def test_seeded_work_lands_on_the_right_seats(world):
     you = _seat(out, YOU)
     assert you["label"] == "You" and you["counts"]["waiting"] == 1
     assert you["waiting"][0]["action"] == "retired.thing"
+    # YOU heads two departments now (money, strategy): one seat each; the brief
+    # job sits on the strategy one.
     assert any(j["name"] == "brief" and j["recorded"] and j["next_due"]
-               for j in you["jobs"])
+               for s in out["agents"] if s["name"] == YOU for j in s["jobs"])
     placed = sum(a["counts"]["waiting"] or 0 for a in out["agents"])
     assert placed == out["totals"]["waiting_on_you"]
 
-    ivan = _seat(out, "markets")
+    ivan = _seat(out, "research")
     assert ivan["counts"] == {"in_flight": 0, "waiting": 0}
     assert ivan["headline"].startswith("nothing in hand")
 
@@ -272,7 +275,7 @@ async def test_empty_tables_are_zeros_and_an_unreadable_table_is_unknown(
     assert out["errors"] == {}
     assert out["totals"] == {"waiting_on_you": 0, "in_flight": 0, "agents_busy": 0,
                              "paused": 0}
-    hazel = _seat(out, "agency")
+    hazel = _seat(out, "sites")
     assert hazel["counts"] == {"in_flight": 0, "waiting": 0}
     assert hazel["in_flight"] == [] and hazel["waiting"] == [] and hazel["unread"] == []
     figs = {f["label"]: f["value"] for p in hazel["progress"] for f in p["figures"]}
@@ -288,7 +291,7 @@ async def test_empty_tables_are_zeros_and_an_unreadable_table_is_unknown(
     assert set(out["errors"]) == {"missions", "waiting_on_you"}
     assert out["totals"]["waiting_on_you"] is None
     assert out["totals"]["in_flight"] is None
-    hazel = _seat(out, "agency")
+    hazel = _seat(out, "sites")
     assert hazel["counts"] == {"in_flight": None, "waiting": None}
     assert hazel["waiting"] is None
     assert {"missions", "proposals"} <= set(hazel["unread"])
@@ -311,10 +314,10 @@ async def test_a_site_count_that_cannot_be_read_leaves_progress_unknown(
 
     monkeypatch.setattr(workboard, "_read_site_leads", broken)
     out = await workboard.board()
-    mission = next(r for r in _seat(out, "agency")["in_flight"]
+    mission = next(r for r in _seat(out, "sites")["in_flight"]
                    if r["kind"] == "mission")
     assert mission["progress"] == {"done": None, "total": 50, "unit": "sites"}
-    assert "agency_sites" in _seat(out, "agency")["unread"]
+    assert "agency_sites" in _seat(out, "sites")["unread"]
     text = await workboard.context_text(HAZEL_ASK)
     assert "?/50 sites built" in text
 
@@ -325,28 +328,28 @@ async def test_context_text_gives_hazel_in_full_when_asked_and_a_line_otherwise(
     text = await workboard.context_text(HAZEL_ASK)
     assert text.startswith("AGENTS' WORK, read at ")
     assert "answer from this; a figure not here is unknown" in text
-    assert "== Hazel (agency) — Sales & Course, head Nora" in text
+    assert "== Felix (sites) — Sales & Sites, head Sam" in text
     assert "2/50 sites built" in text
     assert "sites built 2, sites live 1, site builds failed 1" in text
     assert "card #1 agency.send_outreach Tier 2" in text
     assert "outbox #1 agency.deploy_site pending" in text
     assert "paused: the agency module is paused" in text
-    assert "<untrusted_data source='workboard.agency'>" in text
+    assert "<untrusted_data source='workboard.sites'>" in text
     assert "build 50 websites for local businesses" in text
     # One line for everyone, always.
-    for label in ("Ivan (markets", "Marcus (ops", "Ava (concierge", "You (you"):
+    for label in ("Rex (research", "Quinn (qa", "Clara (inbox", "You (you"):
         assert label in text, label
     assert text.count("== ") >= 1
 
     by_alias = await workboard.context_text("any progress on the websites?")
-    assert "== Hazel (agency)" in by_alias and "2/50 sites built" in by_alias
+    assert "== Felix (sites)" in by_alias and "2/50 sites built" in by_alias
 
-    other = await workboard.context_text("how is Ivan doing on the trades?")
-    assert "Hazel (agency, Sales & Course): 2 in flight, 1 waiting on Miro — " \
+    other = await workboard.context_text("how is Rex doing on the research?")
+    assert "Felix (sites, Sales & Sites): 2 in flight, 1 waiting on the owner — " \
            "mission #1 agency.sites: 2/50 sites, running" in other
-    assert "== Hazel (agency)" not in other
+    assert "== Felix (sites)" not in other
     assert "build 50 websites" not in other
-    assert "== Ivan (markets)" in other
+    assert "== Rex (research)" in other
 
 
 @needs_pg
@@ -365,9 +368,9 @@ async def test_max_chars_is_respected_and_the_one_liners_survive(world):
     text = await workboard.context_text(HAZEL_ASK, max_chars=900)
     assert len(text) <= 900
     assert text.startswith("AGENTS' WORK")
-    assert "Hazel (agency, Sales & Course)" in text
+    assert "Felix (sites, Sales & Sites)" in text
     full = await workboard.context_text(HAZEL_ASK, max_chars=20000)
-    assert len(full) > 900 and "== Hazel (agency)" in full
+    assert len(full) > 900 and "== Felix (sites)" in full
 
 
 @needs_pg
@@ -376,11 +379,11 @@ async def test_the_window_bounds_recent_results(world):
     await state.execute_sql(
         """INSERT INTO missions (agent, recipe, request, status, created_at,
                                  updated_at, finished_at)
-           VALUES ('agency', 'single', 'old job', 'done', $1, $1, $1)""", old)
+           VALUES ('sites', 'single', 'old job', 'done', $1, $1, $1)""", old)
     await state.execute_sql(
         """INSERT INTO missions (agent, recipe, request, status, finished_at)
-           VALUES ('agency', 'single', 'fresh job', 'done', now())""")
+           VALUES ('sites', 'single', 'fresh job', 'done', now())""")
     out = await workboard.board()
-    recent = _seat(out, "agency")["recent"]["missions"]
+    recent = _seat(out, "sites")["recent"]["missions"]
     assert [m["summary"] for m in recent] == ["fresh job"]
-    assert _seat(out, "agency")["counts"]["in_flight"] == 0
+    assert _seat(out, "sites")["counts"]["in_flight"] == 0

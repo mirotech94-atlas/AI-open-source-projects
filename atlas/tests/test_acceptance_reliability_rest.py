@@ -80,23 +80,23 @@ def test_R09_a_revoked_or_unscoped_credential_is_classed_auth(status):
 async def test_R09_an_auth_refusal_is_never_resent_blind_or_as_someone_else(pg):
     runs: list[str] = []
     _revoked(runs)
-    got = await outbox.enqueue(STUBAUTH, {"target": "C0VPSIE"}, destination="slack",
-                               occurrence="R09:effect", approved_by="slack:UMIRO")
+    got = await outbox.enqueue(STUBAUTH, {"target": "C0CLOUDCO"}, destination="slack",
+                               occurrence="R09:effect", approved_by="slack:UOWNER")
     first = await outbox.dispatch_once(only_id=got.outbox_id)
     assert first.status == "reconciling" and REVOKED in first.detail
     for _ in range(3):                       # later passes find nothing due
         await outbox.dispatch()
     settled = await outbox.reconcile_once()
     assert settled.status == "needs_human"   # no reconciler: a person checks it
-    assert runs == ["C0VPSIE"]               # one attempt, never resent blind
+    assert runs == ["C0CLOUDCO"]               # one attempt, never resent blind
     [row] = await outbox_rows()
     assert row["status"] == "needs_human"
-    assert row["approved_by"] == "slack:UMIRO"      # no alternate identity
+    assert row["approved_by"] == "slack:UOWNER"      # no alternate identity
 
 
 @pytest.fixture(name="told")
 def told_fixture(monkeypatch):
-    """What reached Miro through comms.notify."""
+    """What reached the owner through comms.notify."""
     said: list = []
 
     async def notify(msg):
@@ -115,7 +115,7 @@ async def test_R09_a_revoked_token_blocks_the_capability_with_no_retry_storm(
     for n in range(3):
         await outbox.enqueue(STUBAUTH, {"target": f"C0{n}"}, destination="slack",
                              occurrence=f"R09:notice:{n}", kind="notice",
-                             approved_by="slack:UMIRO")
+                             approved_by="slack:UOWNER")
     for _ in range(8):                       # a day of scheduler passes
         await state.execute_sql(
             "UPDATE outbox SET next_attempt_at = now() WHERE status = 'pending'")
@@ -141,7 +141,7 @@ async def test_R09_a_revoked_token_blocks_the_capability_with_no_retry_storm(
 @needs_pg
 async def test_R09_after_reconnect_and_resume_the_held_rows_go_once(
         pg, told, registries):
-    """Positive control: the pause is a normal one. Resumed by Miro, with the
+    """Positive control: the pause is a normal one. Resumed by the owner, with the
     login fixed, the held siblings are each sent once."""
     from atlas.kernel import pause
     from atlas.kernel.registry import REGISTRY
@@ -150,7 +150,7 @@ async def test_R09_after_reconnect_and_resume_the_held_rows_go_once(
     for n in range(3):
         await outbox.enqueue(STUBAUTH, {"target": f"C0{n}"}, destination="slack",
                              occurrence=f"R09:resume:{n}", kind="notice",
-                             approved_by="slack:UMIRO")
+                             approved_by="slack:UOWNER")
     await outbox.dispatch(limit=10)
     assert runs == ["C00"]
 
@@ -161,7 +161,7 @@ async def test_R09_after_reconnect_and_resume_the_held_rows_go_once(
     REGISTRY.actions[STUBAUTH] = dataclasses.replace(REGISTRY.actions[STUBAUTH],
                                                      run=fixed)
     REGISTRY.modules["stubauth"] = object()
-    assert "Resumed" in await pause.resume("stubauth", "slack:UMIRO")
+    assert "Resumed" in await pause.resume("stubauth", "slack:UOWNER")
     await state.execute_sql(
         "UPDATE outbox SET next_attempt_at = now() WHERE status = 'pending'")
     done = await outbox.dispatch(limit=10)
@@ -291,7 +291,7 @@ async def test_R09_a_plain_module_pause_still_blocks_every_account(
     from atlas.kernel import pause
     runs: list[tuple[str, str]] = []
     _accounts(runs, dead=set())
-    await pause.pause("instagram", "slack:UMIRO", "hold everything")
+    await pause.pause("instagram", "slack:UOWNER", "hold everything")
     for account in ("clips", "main", "flycheap"):
         await _queue_ig(account, 0)
     await _pass()
@@ -314,7 +314,7 @@ async def test_R09_resuming_the_scoped_pause_sends_the_held_rows(
         next(p for p in await pause.active()).says()]
     assert "instagram module's clips account is paused" in (await pause.lines())[0]
     _accounts(runs, dead=set())                  # he reconnected the login
-    said = await pause.command("resume instagram:clips", "slack:UMIRO")
+    said = await pause.command("resume instagram:clips", "slack:UOWNER")
     assert said == "Resumed the instagram module's clips account."
     await _pass()
     assert runs == [("clips", "clips0"), ("clips", "clips1"), ("clips", "clips2")]
@@ -403,8 +403,8 @@ def test_R09_which_credential_each_action_names():
     assert pause.account_of("instagram.publish", {"account": "../clips"}) == \
         pause.ANY_ACCOUNT
     assert pause.credential_scope("instagram.publish", {"account": "../x"}) is None
-    assert pause.account_of("vpsie.restart_instance", {"account": "../x"}) is None
-    assert pause.credential_scope("vpsie.restart_instance", {}) == "vpsie"
+    assert pause.account_of("cloudco.restart_instance", {"account": "../x"}) is None
+    assert pause.credential_scope("cloudco.restart_instance", {}) == "cloudco"
     # A scoped form never names a shadow row, from Slack or anywhere.
     assert pause.parse("resume shadow:all") is None
     assert pause.parse("resume instagram:clips") == ("resume", "instagram:clips", "")
@@ -422,9 +422,9 @@ async def test_R10_a_draft_burst_meets_backpressure_and_his_own_ask_still_drafts
     assert all("cap is 3" in r.detail for r in made[3:])
     assert len(drafts_world.thought) == 3        # the refused nine cost nothing
     # What he asks for himself is never held back by the automatic backlog.
-    for source in ("voice:42", "slack:C0MIRO/1700000000.1"):
+    for source in ("voice:42", "slack:C0OWNER/1700000000.1"):
         assert (await drafts.draft("short_script", source)).ok
-    assert drafts_world.made[-2:] == ["voice:42", "slack:C0MIRO/1700000000.1"]
+    assert drafts_world.made[-2:] == ["voice:42", "slack:C0OWNER/1700000000.1"]
 
 
 @needs_pg
@@ -583,7 +583,7 @@ async def test_R12_after_the_fence_new_work_runs_and_a_second_fence_is_a_no_op(p
     assert done.status == "delivered" and world.count() == 1
     pid = await approvals.propose(CARD, media_params(76), "reel card",
                                   dedup_key="R12:after")
-    verdict = await approvals.decide(pid, "approve", "slack:UMIRO")
+    verdict = await approvals.decide(pid, "approve", "slack:UOWNER")
     assert verdict.outcome == "executed" and len(world.runs) == 2
 
 
@@ -595,12 +595,12 @@ async def test_R12_a_restored_pending_card_is_not_run_again_blindly(pg):
     pid = await approvals.propose(CARD, params, "reel card", dedup_key="R12")
     world.posted.setdefault("card", []).append("card-73")    # ran after the dump
     await restore.mark("atlas-20260928-0620.dump", "test")     # the procedure
-    verdict = await approvals.decide(pid, "approve", "slack:UMIRO")
+    verdict = await approvals.decide(pid, "approve", "slack:UOWNER")
     assert world.runs == [], "a card that already ran was run again"
     assert not verdict.ok and "backup restore" in verdict.detail
     row = await state.fetch_one("SELECT status FROM proposals WHERE id = $1", pid)
     assert row["status"] == "held"
-    again = await approvals.decide(pid, "approve", "slack:UMIRO")     # still no
+    again = await approvals.decide(pid, "approve", "slack:UOWNER")     # still no
     assert not again.ok and "can't be approved" in again.detail
     assert world.runs == []
 
@@ -619,11 +619,11 @@ async def test_R12_a_held_card_can_be_declined_to_resolve_it(pg):
     await state.execute_sql(
         "UPDATE proposals SET expires_at = now() - interval '1 hour' WHERE id = $1",
         pid)
-    said = await approvals.decide(pid, "decline", "slack:UMIRO")
+    said = await approvals.decide(pid, "decline", "slack:UOWNER")
     assert said.ok and said.outcome == "declined"
     row = await state.fetch_one("SELECT status FROM proposals WHERE id = $1", pid)
     assert row["status"] == "declined"
-    after = await approvals.decide(pid, "approve", "slack:UMIRO")
+    after = await approvals.decide(pid, "approve", "slack:UOWNER")
     assert not after.ok and world.runs == []
 
 
@@ -659,7 +659,7 @@ async def test_R12_a_missing_restores_table_sends_and_runs_nothing(pg):
     try:
         assert await outbox.dispatch() == []
         assert await outbox.dispatch_once(only_id=got.outbox_id) is None
-        verdict = await approvals.decide(pid, "approve", "slack:UMIRO")
+        verdict = await approvals.decide(pid, "approve", "slack:UOWNER")
         assert not verdict.ok and "restored" in verdict.detail
         assert world.runs == []
         row = await state.fetch_one("SELECT status FROM proposals WHERE id = $1", pid)
@@ -667,4 +667,4 @@ async def test_R12_a_missing_restores_table_sends_and_runs_nothing(pg):
     finally:
         await cli.init_db()
     assert (await outbox.dispatch_once(only_id=got.outbox_id)).status == "delivered"
-    assert (await approvals.decide(pid, "approve", "slack:UMIRO")).outcome == "executed"
+    assert (await approvals.decide(pid, "approve", "slack:UOWNER")).outcome == "executed"

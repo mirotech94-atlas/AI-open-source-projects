@@ -110,9 +110,15 @@ def stripe_env(monkeypatch):
     monkeypatch.setenv("STRIPE_GUARDIAN_KEY", SECRET)
     import importlib
 
+    from atlas.modules import stripe_billing
     from atlas.modules.stripe_billing import readback
     if "stripe.retry_invoice" not in v._VERIFIERS:     # the loader test ran first
         importlib.reload(readback)
+    # Stripe watches no business since 2026-10-29; the read-back is
+    # business-generic, so the test declares a stand-in one.
+    monkeypatch.setattr(stripe_billing, "BUSINESSES", ("guardian",))
+    monkeypatch.setattr(readback, "BUSINESSES", ("guardian",))
+    monkeypatch.setitem(stripe_billing.ENV_FOR, "guardian", "STRIPE_GUARDIAN_KEY")
 
 
 def _invoice(**over):
@@ -317,19 +323,19 @@ def mx(monkeypatch):
     monkeypatch.setenv("MATRIX_TOKEN", SECRET)
 
 
-MX_PARAMS = {"room_id": "!r:example.org", "body": "deployed at 4", "room_name": "ops",
-             "to": "@sam:example.org"}
-MX_RESULT = ActionResult(True, "sent to ops", rollback_token="!r:example.org|$e1")
+MX_PARAMS = {"room_id": "!r:internal.example", "body": "deployed at 4", "room_name": "ops",
+             "to": "@sam:internal.example"}
+MX_RESULT = ActionResult(True, "sent to ops", rollback_token="!r:internal.example|$e1")
 
 
 def _event(**over):
-    return {"event_id": "$e1", "sender": "@miro:example.org", "type": "m.room.message",
+    return {"event_id": "$e1", "sender": "@owner:internal.example", "type": "m.room.message",
             "content": {"msgtype": "m.text", "body": "deployed at 4"},
             "origin_server_ts": int(T0.timestamp() * 1000) + 5000, **over}
 
 
 def _whoami(net):
-    net.on(r"/account/whoami$", body={"user_id": "@miro:example.org"})
+    net.on(r"/account/whoami$", body={"user_id": "@owner:internal.example"})
 
 
 async def test_matrix_verified(net, mx):
@@ -502,107 +508,6 @@ async def test_reply_comment_raises_and_reconcile(net, ig_env, monkeypatch):
     assert got.state is v.State.UNKNOWN and "raised" in got.reason
 
 
-# ================================================================== guardian
-
-WRITE_SECRET = SECRET + "-write"
-
-
-@pytest.fixture
-def gd(monkeypatch, net):
-    monkeypatch.setenv("GUARDIAN_API_TOKEN", SECRET)
-    monkeypatch.setenv("GUARDIAN_WRITE_TOKEN", WRITE_SECRET)
-    accounts = {SECRET: "acme", WRITE_SECRET: "acme"}
-
-    def whoami(request):
-        token = request.headers["Authorization"].removeprefix("Bearer ")
-        return {"account": accounts[token], "scope": "read", "role": "owner"}
-
-    net.on(r"/v1/whoami$", body=whoami)
-    return accounts
-
-
-AO_PARAMS = {"alert_key": "dns:beacon:1.2.3.4:evil.example", "op": "ack"}
-
-
-async def test_guardian_alert_op_verified_and_contradicted(net, gd):
-    net.on(r"/v1/alerts/", body={"status": "acked"})
-    got = await v.verify("guardian.alert_op", AO_PARAMS, ActionResult(True))
-    assert got.state is v.State.VERIFIED and got.evidence["account"] == "acme"
-    assert "evil.example" not in json.dumps(got.as_audit())
-    _no_secret(got)
-    assert WRITE_SECRET not in json.dumps(got.as_audit())
-
-    net.on(r"/v1/alerts/", body={"status": "open"})
-    got = await v.verify("guardian.alert_op", AO_PARAMS, ActionResult(True))
-    assert got.state is v.State.CONTRADICTED
-    got = await v.reconcile_unknown("guardian.alert_op", AO_PARAMS, {"at": T0})
-    assert got.state is v.State.CONTRADICTED
-
-
-async def test_guardian_other_tenant_is_unknown_security(net, gd):
-    gd[WRITE_SECRET] = "someone-else"
-    net.on(r"/v1/alerts/", body={"status": "acked"})
-    got = await v.verify("guardian.alert_op", AO_PARAMS, ActionResult(True))
-    assert got.state is v.State.UNKNOWN
-    assert got.failure_class is v.FailureClass.SECURITY
-    assert not any("/v1/alerts/" in p for p in net.seen)
-
-
-async def test_guardian_mark_untrusted_has_no_verifier():
-    """Trust changes are suggest-only (Miro, 2026-09-28): nothing to verify."""
-    assert not v.has_verifier("guardian.mark_untrusted")
-    assert not v.has_reconciler("guardian.mark_untrusted")
-
-
-async def test_guardian_rescan(net, gd):
-    result = ActionResult(True, "queued", evidence={"job": "j1"})
-    net.on(r"/v1/jobs/j1$", body={"id": "j1", "status": "running", "ok": None})
-    got = await v.verify("guardian.rescan", {"network": "home"}, result)
-    assert got.state is v.State.VERIFIED
-    net.on(r"/v1/jobs/j1$", body={"id": "j1", "status": "failed", "ok": False})
-    got = await v.verify("guardian.rescan", {"network": "home"}, result)
-    assert got.state is v.State.CONTRADICTED
-    net.on(r"/v1/jobs/j1$", body={"id": "j1", "status": "weird"})
-    got = await v.verify("guardian.rescan", {"network": "home"}, result)
-    assert got.state is v.State.UNKNOWN
-    net.on(r"/v1/jobs/j1$", 404, {"detail": "job not found"})
-    got = await v.verify("guardian.rescan", {"network": "home"}, result)
-    assert got.state is v.State.CONTRADICTED
-    got = await v.verify("guardian.rescan", {}, ActionResult(True))
-    assert got.state is v.State.UNKNOWN
-
-
-async def test_guardian_rescan_raises_is_unknown(net, gd, monkeypatch):
-    def boom(_data):
-        raise RuntimeError("hub parse error")
-
-    monkeypatch.setattr("atlas.modules.guardian.incident.safe_job_id", boom)
-    got = await v.verify("guardian.rescan", {"network": "home"},
-                         ActionResult(True, evidence={"job": "j1"}))
-    assert got.state is v.State.UNKNOWN and "raised" in got.reason
-
-
-async def test_guardian_contain_can_never_have_happened(net):
-    got = await v.verify("guardian.contain",
-                         {"alert_id": "a", "target": "1.2.3.4", "kind": "block_ip"},
-                         ActionResult(True))
-    assert got.state is v.State.CONTRADICTED and net.seen == []
-    got = await v.reconcile_unknown("guardian.contain", {"kind": "<script>"},
-                                    {"at": T0})
-    assert got.state is v.State.CONTRADICTED and got.evidence["kind"] is None
-
-
-async def test_guardian_raises_is_unknown(gd, monkeypatch):
-    from atlas.modules.guardian import readback
-
-    async def boom():
-        raise RuntimeError("hub parse error")
-
-    monkeypatch.setattr(readback, "same_tenant", boom)
-    got = await v.verify("guardian.alert_op", AO_PARAMS, ActionResult(True))
-    assert got.state is v.State.UNKNOWN and "raised" in got.reason
-
-
 # ================================================================== delegate
 
 DG_RESULT = ActionResult(True, "queued", evidence={"handoff_id": 4},
@@ -762,7 +667,7 @@ async def test_send_outreach_stamps_and_records_a_message_id(monkeypatch):
     from atlas.modules.agency import _store, outreach
     sent = {}
 
-    async def smtp(from_address, to_address, subject, body, message_id=None):
+    async def gmail(to_address, subject, body, message_id=None):
         sent["message_id"] = message_id
         return True, None
 
@@ -773,12 +678,12 @@ async def test_send_outreach_stamps_and_records_a_message_id(monkeypatch):
     async def nothing(*_a, **_kw):
         return None
 
-    monkeypatch.setenv("AGENCY_SEND_FROM", "out@send.example")
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "app-pass-for-test")
     monkeypatch.setattr(outreach, "_guarded", guarded)
-    monkeypatch.setattr(outreach, "_smtp_send", smtp)
+    monkeypatch.setattr(outreach, "_gmail_send", gmail)
     monkeypatch.setattr(outreach, "_lead_features_for", nothing)
     monkeypatch.setattr(_store, "mark_outreach_sent", nothing)
     got = await outreach.send_outreach(7)
     assert got.ok
-    assert sent["message_id"].endswith("@send.example>")
+    assert sent["message_id"].endswith("@gmail.com>")
     assert got.evidence["message_id"] == sent["message_id"]

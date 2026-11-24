@@ -52,7 +52,7 @@ DNS: dict[str, list[str] | Exception] = {
     "169.254.169.254.nip.io": ["169.254.169.254"],
     "meta.nip.io": ["169.254.169.254"],
     "mixed.example": [PUBLIC, "10.0.0.7"],
-    "mesh.example": ["100.92.10.4"],
+    "mesh.example": ["100.64.0.4"],
     "ula.example": ["fd12:3456::1"],
     "nxdomain.example": socket.gaierror(8, "nodename nor servname provided"),
 }
@@ -115,7 +115,7 @@ class FakeWorld:
         self.closed_popups: list[str] = []
         self.selectors: dict[str, str] = {}        # selector -> input type
         self.form_password = False
-        self.form_action: str | None = "https://joespizza.co.uk/contact/send"
+        self.form_action: str | None = "https://pizza.example.uk/contact/send"
         self.post_to: str | None = None            # where the submit really goes
         self.launches: list[dict] = []
         self.in_flight = 0
@@ -461,7 +461,7 @@ def test_the_extension_list_is_mirrored_exactly():
     "https://secure.chase.com/accounts",
     "https://www.mybank.co.uk/",                     # category word, host label
     "https://www.foodbank.org/",                     # the extension's rule, as is
-    "https://stmaryshealth.org/",
+    "https://example-health.org/",
     "https://www.paypal.com/myaccount",
     "https://www.pornhub.com/",
     "https://xvideos.com/",
@@ -481,7 +481,7 @@ def test_denied_by_host(monkeypatch, url):
 
 
 @pytest.mark.parametrize("url", [
-    "https://www.joespizza.co.uk/menu",
+    "https://www.pizza.example.uk/menu",
     "https://www.instagram.com/joespizza/",
     "http://example.com/",
     "https://www.google.com/maps/place/Joe's",
@@ -559,7 +559,7 @@ def test_anything_but_http_is_denied(url):
 @pytest.mark.parametrize("url", [
     "http://localhost:8080/api/health",
     "http://127.0.0.1/", "http://10.0.0.5/", "http://192.168.1.1/",
-    "http://100.64.1.2:8080/", "http://169.254.169.254/latest/meta-data/",
+    "http://100.64.0.2:8080/", "http://169.254.169.254/latest/meta-data/",
     "http://[::1]/", "http://atlas.local/",
     "http://0x7f000001/", "http://2130706433/", "http://0/", "http://127.1/",
     "http://0177.0.0.1/",
@@ -575,7 +575,7 @@ def test_browser_deny_extends_the_defaults(monkeypatch):
     assert policy.allowed("https://sub.example.org/x")[0] is False
     assert policy.allowed("https://www.facebook.com/joes")[0] is False
     assert policy.allowed("https://chase.com/")[0] is False       # still denied
-    assert policy.allowed("https://joespizza.co.uk/")[0] is True
+    assert policy.allowed("https://pizza.example.uk/")[0] is True
 
 
 def test_browser_deny_is_read_on_every_call(monkeypatch):
@@ -625,13 +625,13 @@ async def test_a_literal_ip_is_checked_without_dns(resolver):
 
 
 async def test_resolutions_are_cached_for_a_minute(resolver, monkeypatch):
-    await _netguard.assert_public("https://joespizza.co.uk/a")
-    await _netguard.assert_public("https://joespizza.co.uk/b")
-    assert resolver == ["joespizza.co.uk"]
+    await _netguard.assert_public("https://pizza.example.uk/a")
+    await _netguard.assert_public("https://pizza.example.uk/b")
+    assert resolver == ["pizza.example.uk"]
     real = time.monotonic()
     monkeypatch.setattr(_netguard.time, "monotonic", lambda: real + 61)
-    await _netguard.assert_public("https://joespizza.co.uk/c")
-    assert resolver == ["joespizza.co.uk", "joespizza.co.uk"]
+    await _netguard.assert_public("https://pizza.example.uk/c")
+    assert resolver == ["pizza.example.uk", "pizza.example.uk"]
 
 
 async def test_the_resolution_cache_is_bounded(monkeypatch):
@@ -712,7 +712,7 @@ async def test_the_web_fetch_tool_refuses_the_local_api(monkeypatch):
 # ------------------------------------------------------------------ open()
 
 async def test_open_without_playwright_says_how_to_install(no_playwright, rows):
-    assert await session.open("https://joespizza.co.uk/") == (None, MISSING)
+    assert await session.open("https://pizza.example.uk/") == (None, MISSING)
 
 
 async def test_open_refuses_a_denied_url_before_launching(world, rows):
@@ -746,11 +746,11 @@ async def test_carter_plumbing_is_opened(world, rows):
 
 
 async def test_open_reads_a_page_wraps_it_and_keeps_a_record(world, rows, tmp_path):
-    page, reason = await session.open("https://joespizza.co.uk/?utm_source=x",
+    page, reason = await session.open("https://pizza.example.uk/?utm_source=x",
                                       agent="concierge")
     assert reason is None
     assert page["status"] == 200
-    assert "<untrusted_data source='https://joespizza.co.uk/'>" in page["text"]
+    assert "<untrusted_data source='https://pizza.example.uk/'>" in page["text"]
     assert "Open 11-22" in page["text"]
     assert "<untrusted_data" in page["title"] and "Joe's Pizza" in page["title"]
 
@@ -761,14 +761,14 @@ async def test_open_reads_a_page_wraps_it_and_keeps_a_record(world, rows, tmp_pa
 
     sql = [s for s, _ in rows]
     assert sql[0].startswith("INSERT INTO browser_sessions") and "RETURNING id" in sql[0]
-    assert rows[0][1][0] == "https://joespizza.co.uk/"          # no query stored
+    assert rows[0][1][0] == "https://pizza.example.uk/"          # no query stored
     assert rows[0][1][4] == "concierge"
     assert any(s.startswith("UPDATE browser_sessions") for s in sql)
 
 
 async def test_every_open_gets_a_fresh_context_with_nothing_in_it(world, rows):
-    await session.open("https://joespizza.co.uk/")
-    await session.open("https://joespizza.co.uk/menu")
+    await session.open("https://pizza.example.uk/")
+    await session.open("https://pizza.example.uk/menu")
     assert len(world.launches) == 2 and len(world.contexts) == 2
     for launch in world.launches:
         assert launch.get("headless", True) is True
@@ -783,7 +783,7 @@ async def test_every_open_gets_a_fresh_context_with_nothing_in_it(world, rows):
 
 async def test_one_browser_at_a_time(world, rows):
     world.goto_delay = 0.02
-    results = await asyncio.gather(*(session.open(f"https://joespizza.co.uk/{i}")
+    results = await asyncio.gather(*(session.open(f"https://pizza.example.uk/{i}")
                                      for i in range(4)))
     assert all(reason is None for _page, reason in results)
     assert world.max_in_flight == 1 and len(world.launches) == 4
@@ -793,7 +793,7 @@ async def test_a_call_that_only_waited_is_told_the_browser_is_busy(world, rows,
                                                                    monkeypatch):
     monkeypatch.setattr(session, "OPEN_WALL_S", 0.05)
     async with session.lock():                      # another page, in use
-        page, reason = await session.open("https://joespizza.co.uk/b")
+        page, reason = await session.open("https://pizza.example.uk/b")
     assert page is None and reason == session.BUSY
     assert world.launches == []
 
@@ -806,7 +806,7 @@ async def test_requests_are_checked_and_denied_ones_aborted(world, rows):
         "http://localtest.me:8080/api/memory",       # resolves to loopback
         "https://mixed.example/x.js",
     ]
-    _page, reason = await session.open("https://joespizza.co.uk/")
+    _page, reason = await session.open("https://pizza.example.uk/")
     assert reason is None
     assert world.sub_outcomes == {
         "https://tracker.chase.com/p.gif": "abort",
@@ -830,10 +830,10 @@ async def test_a_redirect_to_a_sign_in_page_is_refused_not_read(world, rows, tmp
 
 async def test_a_302_through_a_denied_hop_is_refused(world, rows, tmp_path):
     """The hop never reaches the route guard; it is caught after load."""
-    world.chains["https://joespizza.co.uk/go"] = [
-        "https://joespizza.co.uk/go", "http://localtest.me:8080/api/memory",
-        "https://joespizza.co.uk/landed"]
-    page, reason = await session.open("https://joespizza.co.uk/go")
+    world.chains["https://pizza.example.uk/go"] = [
+        "https://pizza.example.uk/go", "http://localtest.me:8080/api/memory",
+        "https://pizza.example.uk/landed"]
+    page, reason = await session.open("https://pizza.example.uk/go")
     assert page is None and "localtest.me" in reason
     assert _files(tmp_path) == []
 
@@ -841,20 +841,20 @@ async def test_a_302_through_a_denied_hop_is_refused(world, rows, tmp_path):
 async def test_a_frame_on_a_denied_host_is_refused_with_no_screenshot(world, rows,
                                                                       tmp_path):
     world.frames = ["https://secure.chase.com/widget"]
-    page, reason = await session.open("https://joespizza.co.uk/")
+    page, reason = await session.open("https://pizza.example.uk/")
     assert page is None and "chase.com" in reason and "part of the page" in reason
     assert _files(tmp_path) == []
 
 
 async def test_a_frame_that_resolves_locally_is_refused(world, rows, tmp_path):
     world.frames = ["http://127.0.0.1.nip.io:8080/api/memory"]
-    page, reason = await session.open("https://joespizza.co.uk/")
+    page, reason = await session.open("https://pizza.example.uk/")
     assert page is None and "127.0.0.1.nip.io" in reason and _files(tmp_path) == []
 
 
 async def test_a_maps_embed_with_a_key_is_not_a_refusal(world, rows):
     world.frames = ["https://www.google.com/maps/embed/v1/place?key=AIzaSyAbcdefghij1234"]
-    page, reason = await session.open("https://joespizza.co.uk/")
+    page, reason = await session.open("https://pizza.example.uk/")
     assert reason is None and page["status"] == 200
 
 
@@ -862,8 +862,8 @@ async def test_a_late_redirect_during_capture_discards_the_capture(world, rows, 
     """R1: a timer navigates through a redirect to a private address while
     the text and screenshot are being taken. Checked before the capture, it
     was missed; checked after, the capture is thrown away."""
-    world.capture_hops = ["https://joespizza.co.uk/r", "http://localtest.me:8080/api/memory"]
-    page, reason = await session.open("https://joespizza.co.uk/late")
+    world.capture_hops = ["https://pizza.example.uk/r", "http://localtest.me:8080/api/memory"]
+    page, reason = await session.open("https://pizza.example.uk/late")
     assert page is None and "localtest.me" in reason
     assert _files(tmp_path) == []
 
@@ -872,7 +872,7 @@ async def test_a_frame_that_navigates_late_is_checked(world, rows, tmp_path):
     """R2: the frame's URL is '' at load and becomes a private hop while the
     screenshot is taken."""
     world.late_frames = ["http://127.0.0.1.nip.io:8080/secret"]
-    page, reason = await session.open("https://joespizza.co.uk/iframe")
+    page, reason = await session.open("https://pizza.example.uk/iframe")
     assert page is None and "127.0.0.1.nip.io" in reason
     assert _files(tmp_path) == []
 
@@ -880,10 +880,10 @@ async def test_a_frame_that_navigates_late_is_checked(world, rows, tmp_path):
 async def test_a_sub_resource_redirect_hop_is_checked(world, rows, tmp_path):
     """R3: fetch('/r') is same-origin and allowed; its hop to a private
     address is never routed. Recorded, it refuses the read."""
-    world.subresources = ["https://joespizza.co.uk/r"]
-    world.sub_hops = {"https://joespizza.co.uk/r": ["http://localtest.me:8080/api/memory"]}
-    page, reason = await session.open("https://joespizza.co.uk/fetch")
-    assert world.sub_outcomes["https://joespizza.co.uk/r"] == "continue"
+    world.subresources = ["https://pizza.example.uk/r"]
+    world.sub_hops = {"https://pizza.example.uk/r": ["http://localtest.me:8080/api/memory"]}
+    page, reason = await session.open("https://pizza.example.uk/fetch")
+    assert world.sub_outcomes["https://pizza.example.uk/r"] == "continue"
     assert page is None and "localtest.me" in reason
     assert _files(tmp_path) == []
 
@@ -893,9 +893,9 @@ async def test_a_hop_to_an_already_aborted_url_is_still_checked(world, rows, tmp
     the same URL through a redirect hop, which is a different request and is
     never routed. Aborts are judged per request, not per URL."""
     private = "http://localtest.me:8080/api/memory"
-    world.subresources = [private, "https://joespizza.co.uk/r"]
-    world.sub_hops = {"https://joespizza.co.uk/r": [private]}
-    page, reason = await session.open("https://joespizza.co.uk/collide")
+    world.subresources = [private, "https://pizza.example.uk/r"]
+    world.sub_hops = {"https://pizza.example.uk/r": [private]}
+    page, reason = await session.open("https://pizza.example.uk/collide")
     assert world.sub_outcomes[private] == "abort"
     assert page is None and "localtest.me" in reason
     assert _files(tmp_path) == []
@@ -907,7 +907,7 @@ async def test_a_frame_on_an_already_aborted_url_is_still_checked(world, rows, t
     private = "http://127.0.0.1.nip.io:8080/secret"
     world.subresources = [private]
     world.late_frames = [private]
-    page, reason = await session.open("https://joespizza.co.uk/collide-iframe")
+    page, reason = await session.open("https://pizza.example.uk/collide-iframe")
     assert world.sub_outcomes[private] == "abort"
     assert page is None and "127.0.0.1.nip.io" in reason
     assert _files(tmp_path) == []
@@ -919,9 +919,9 @@ async def test_s1_the_requests_loop_alone_judges_aborts_per_request(world, rows,
     URL has a request event and nothing else — no response, no frame. A
     regression to URL-based skipping in that loop fails here."""
     private = "http://localtest.me:8080/api/memory"
-    world.subresources = [private, "https://joespizza.co.uk/r"]
-    world.silent_hops = {"https://joespizza.co.uk/r": [private]}
-    page, reason = await session.open("https://joespizza.co.uk/collide")
+    world.subresources = [private, "https://pizza.example.uk/r"]
+    world.silent_hops = {"https://pizza.example.uk/r": [private]}
+    page, reason = await session.open("https://pizza.example.uk/collide")
     assert page is None and "localtest.me" in reason
     assert _files(tmp_path) == []
 
@@ -933,7 +933,7 @@ async def test_s1_the_frames_loop_never_skips_an_aborted_url(world, rows, tmp_pa
     private = "http://127.0.0.1.nip.io:8080/secret"
     world.subresources = [private]
     world.bare_frame_navs = [private]
-    page, reason = await session.open("https://joespizza.co.uk/collide-frame")
+    page, reason = await session.open("https://pizza.example.uk/collide-frame")
     assert world.sub_outcomes[private] == "abort"
     assert page is None and "127.0.0.1.nip.io" in reason
     assert _files(tmp_path) == []
@@ -943,25 +943,25 @@ async def test_a_workers_websocket_is_checked_after_capture(world, rows, tmp_pat
     """T2: a dedicated Worker's socket skips route_web_socket; the page's
     websocket event still records it, and a private one refuses the read."""
     world.worker_sockets = ["ws://127.0.0.1.nip.io:8080/ws-from-worker"]
-    page, reason = await session.open("https://joespizza.co.uk/worker-ws")
+    page, reason = await session.open("https://pizza.example.uk/worker-ws")
     assert page is None and "127.0.0.1.nip.io" in reason
     assert _files(tmp_path) == []
 
 
 async def test_a_public_workers_websocket_is_fine(world, rows):
-    world.worker_sockets = ["wss://chat.joespizza.co.uk/ws"]
-    page, reason = await session.open("https://joespizza.co.uk/")
+    world.worker_sockets = ["wss://chat.pizza.example.uk/ws"]
+    page, reason = await session.open("https://pizza.example.uk/")
     assert reason is None and page["status"] == 200
 
 
 async def test_a_popups_worker_socket_refuses_the_read(world, rows, tmp_path):
     """U1: a window the page opened runs a worker whose WebSocket reaches a
     private address. The window is closed and the read refused."""
-    world.popups = [("https://joespizza.co.uk/popws-inner",
+    world.popups = [("https://pizza.example.uk/popws-inner",
                      ["ws://127.0.0.1.nip.io:8080/ws-from-popup-worker"])]
-    page, reason = await session.open("https://joespizza.co.uk/open-ws")
+    page, reason = await session.open("https://pizza.example.uk/open-ws")
     assert page is None and "page opened a new window" in reason
-    assert world.closed_popups == ["https://joespizza.co.uk/popws-inner"]
+    assert world.closed_popups == ["https://pizza.example.uk/popws-inner"]
     assert _files(tmp_path) == []
 
 
@@ -969,7 +969,7 @@ async def test_any_window_the_page_opens_refuses_the_read(world, rows, tmp_path)
     """A read-only browser has no use for windows the page opens, even a
     blank, harmless-looking one."""
     world.popups = [("about:blank", [])]
-    page, reason = await session.open("https://joespizza.co.uk/")
+    page, reason = await session.open("https://pizza.example.uk/")
     assert page is None and "page opened a new window" in reason
     assert world.closed_popups == ["about:blank"]
     assert _files(tmp_path) == []
@@ -978,15 +978,15 @@ async def test_any_window_the_page_opens_refuses_the_read(world, rows, tmp_path)
 async def test_every_page_gets_the_frame_and_socket_listeners(world, rows):
     """Registered on the context before the first page opens, so recording
     never depends on which page fired."""
-    await session.open("https://joespizza.co.uk/")
+    await session.open("https://pizza.example.uk/")
     ctx = world.contexts[0]
     assert len(ctx.page_listeners) == 1
 
 
 async def test_a_submit_that_opens_a_window_keeps_no_capture(world, rows):
     world.selectors = {"#name": "text"}
-    world.popups = [("https://joespizza.co.uk/thanks", [])]
-    result = await session.submit_form("https://joespizza.co.uk/contact", "#name=M")
+    world.popups = [("https://pizza.example.uk/thanks", [])]
+    result = await session.submit_form("https://pizza.example.uk/contact", "#name=M")
     assert result.ok is True                          # it was sent; that stands
     assert "shot_path" not in result.evidence
     assert "new window" in result.evidence["after_refused"]
@@ -995,7 +995,7 @@ async def test_a_submit_that_opens_a_window_keeps_no_capture(world, rows):
 async def test_shared_workers_are_disabled_at_launch(world, rows):
     """T1: Playwright neither routes nor reports a SharedWorker's requests,
     so they are switched off in Chromium itself, for every launch."""
-    await session.open("https://joespizza.co.uk/")
+    await session.open("https://pizza.example.uk/")
     await session.check_engine()
     assert len(world.launches) == 2
     for launch in world.launches:
@@ -1006,25 +1006,25 @@ async def test_an_aborted_request_does_not_refuse_the_page(world, rows):
     """What the guard stopped never loaded: a blocked tracker is not a reason
     to refuse the page."""
     world.subresources = ["https://tracker.chase.com/p.gif"]
-    page, reason = await session.open("https://joespizza.co.uk/")
+    page, reason = await session.open("https://pizza.example.uk/")
     assert reason is None and page["status"] == 200
 
 
 async def test_websockets_are_guarded(world, rows):
     """R4: a WebSocket never passes context.route and CORS does not bind it."""
     world.websockets = ["ws://127.0.0.1.nip.io:8080/ws", "wss://secure.chase.com/ws",
-                        "wss://chat.joespizza.co.uk/ws"]
-    page, reason = await session.open("https://joespizza.co.uk/")
+                        "wss://chat.pizza.example.uk/ws"]
+    page, reason = await session.open("https://pizza.example.uk/")
     assert reason is None and page["status"] == 200
     assert world.ws_outcomes == {"ws://127.0.0.1.nip.io:8080/ws": "closed",
                                  "wss://secure.chase.com/ws": "closed",
-                                 "wss://chat.joespizza.co.uk/ws": "connected"}
+                                 "wss://chat.pizza.example.uk/ws": "connected"}
 
 
 async def test_a_late_hop_after_submit_discards_the_capture(world, rows):
     world.selectors = {"#name": "text"}
     world.capture_hops = ["http://localtest.me:8080/api/memory"]
-    result = await session.submit_form("https://joespizza.co.uk/contact", "#name=M")
+    result = await session.submit_form("https://pizza.example.uk/contact", "#name=M")
     assert result.ok is True                         # it was sent; that stands
     assert "shot_path" not in result.evidence
     assert "localtest.me" in result.evidence["after_refused"]
@@ -1032,14 +1032,14 @@ async def test_a_late_hop_after_submit_discards_the_capture(world, rows):
 
 async def test_a_page_with_a_password_box_says_it_cannot_read_past_it(world, rows):
     world.selectors["#pw"] = "password"
-    page, reason = await session.open("https://joespizza.co.uk/")
+    page, reason = await session.open("https://pizza.example.uk/")
     assert reason is None
     assert "never signs in" in page["note"]
 
 
 async def test_page_text_is_trimmed_to_20k(world, rows):
     world.text = "x" * 50_000
-    page, _ = await session.open("https://joespizza.co.uk/")
+    page, _ = await session.open("https://pizza.example.uk/")
     assert pathlib.Path(page["shot_path"]).with_suffix(".txt").read_text() == "x" * 20_000
 
 
@@ -1058,7 +1058,7 @@ async def test_a_page_that_fails_to_load_is_a_reason_not_an_exception(world, row
 async def test_a_page_that_hangs_is_a_reason_not_a_stall(world, rows, monkeypatch):
     world.goto_delay = 0.5
     monkeypatch.setattr(session, "OPEN_WALL_S", 0.05)
-    page, reason = await session.open("https://joespizza.co.uk/")
+    page, reason = await session.open("https://pizza.example.uk/")
     assert page is None and "within" in reason
 
 
@@ -1070,7 +1070,7 @@ async def test_search_uses_brave_when_there_is_a_key(monkeypatch):
 
     async def fake_search(query, limit=5):
         seen["q"] = query
-        return [{"title": "Joe's Pizza", "url": "https://joespizza.co.uk/",
+        return [{"title": "Joe's Pizza", "url": "https://pizza.example.uk/",
                  "snippet": "Best pizza in Ancoats"}], None
 
     async def no_ddg(query):
@@ -1080,7 +1080,7 @@ async def test_search_uses_brave_when_there_is_a_key(monkeypatch):
     monkeypatch.setattr(session, "_duckduckgo_html", no_ddg)
     hits, reason = await session.search("pizza ancoats")
     assert reason is None and seen["q"] == "pizza ancoats"
-    assert hits[0]["url"] == "https://joespizza.co.uk/"
+    assert hits[0]["url"] == "https://pizza.example.uk/"
     assert hits[0]["engine"] == "brave"
     assert "<untrusted_data" in hits[0]["text"] and "Best pizza" in hits[0]["text"]
 
@@ -1091,7 +1091,7 @@ DDG_HTML = """
 </div>
 <div class="result">
   <h2><a rel="nofollow" class="result__a"
-     href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.joespizza.co.uk%2F&amp;rut=abc">Joe&#x27;s <b>Pizza</b></a></h2>
+     href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.pizza.example.uk%2F&amp;rut=abc">Joe&#x27;s <b>Pizza</b></a></h2>
   <a class="result__snippet" href="//duckduckgo.com/l/?uddg=x">Wood-fired pizza in <b>Ancoats</b></a>
 </div>
 <div class="result">
@@ -1119,7 +1119,7 @@ async def test_search_falls_back_to_duckduckgo_and_unwraps_its_links(monkeypatch
     hits, reason = await session.search("joes pizza ancoats", limit=5)
     assert reason is None
     urls = [h["url"] for h in hits]
-    assert urls == ["https://www.joespizza.co.uk/",
+    assert urls == ["https://www.pizza.example.uk/",
                     "https://www.yelp.co.uk/biz/joes-pizza",
                     "https://www.chase.com/offers",
                     "http://localtest.me:8080/api/memory"]
@@ -1161,7 +1161,7 @@ async def test_find_business_skips_directories_and_opens_the_real_site(monkeypat
             {"url": "https://www.facebook.com/joespizza", "openable": True},
             {"url": "https://www.google.com/maps/place/joes", "openable": True},
             {"url": "https://www.tripadvisor.co.uk/x", "openable": True},
-            {"url": "https://www.joespizza.co.uk/", "openable": True},
+            {"url": "https://www.pizza.example.uk/", "openable": True},
             {"url": "https://www.other.co.uk/", "openable": True},
         ], None
 
@@ -1175,7 +1175,7 @@ async def test_find_business_skips_directories_and_opens_the_real_site(monkeypat
     monkeypatch.setattr(session, "open", fake_open)
     page, reason = await session.find_business("Joe's Pizza", "Ancoats", agent="agency")
     assert reason is None
-    assert opened == [("https://www.joespizza.co.uk/", "agency")]
+    assert opened == [("https://www.pizza.example.uk/", "agency")]
     assert page["query"] == "Joe's Pizza Ancoats" and page["status"] == 200
 
 
@@ -1185,7 +1185,7 @@ async def test_find_business_never_skips_a_denied_hit_in_silence(monkeypatch):
     async def fake_search(query, limit=5):
         return [
             {"url": "https://www.yelp.com/biz/x", "openable": True},
-            {"url": "https://www.stmaryshealth.org/", "openable": False,
+            {"url": "https://www.example-health.org/", "openable": False,
              "not_opened": "denied by policy (health)"},
             {"url": "https://www.competitor.co.uk/", "openable": True},
         ], None
@@ -1197,7 +1197,7 @@ async def test_find_business_never_skips_a_denied_hit_in_silence(monkeypatch):
     monkeypatch.setattr(session, "open", never)
     result, reason = await session.find_business("St Mary's", "Leeds")
     assert reason is None
-    assert result["denied"] == "denied: www.stmaryshealth.org"
+    assert result["denied"] == "denied: www.example-health.org"
     assert [h["url"] for h in result["hits"]] == ["https://www.competitor.co.uk/"]
     assert "title" not in result and "text" not in result
 
@@ -1260,7 +1260,7 @@ def test_fields_that_name_nothing_are_refused(bad):
 async def test_dry_run_reports_which_selectors_exist_and_touches_nothing(world, rows):
     world.selectors = {"#name": "text", "#email": "email"}
     result = await session.submit_form_dry(
-        "https://joespizza.co.uk/contact", "#name=Miro;#email=m@x.com;#phone=1")
+        "https://pizza.example.uk/contact", "#name=the owner;#email=m@x.com;#phone=1")
     assert result.ok is False                       # one selector is missing
     assert "#phone" in result.detail and "#name" in result.detail
     assert result.evidence["found"] == ["#name", "#email"]
@@ -1270,10 +1270,10 @@ async def test_dry_run_reports_which_selectors_exist_and_touches_nothing(world, 
 
 async def test_dry_run_shows_where_the_form_posts(world, rows):
     world.selectors = {"#name": "text"}
-    result = await session.submit_form_dry("https://joespizza.co.uk/contact", "#name=M")
+    result = await session.submit_form_dry("https://pizza.example.uk/contact", "#name=M")
     assert result.ok is True and world.submitted == 0
-    assert "POSTs to https://joespizza.co.uk/contact/send" in result.detail
-    assert result.evidence["action"] == "https://joespizza.co.uk/contact/send"
+    assert "POSTs to https://pizza.example.uk/contact/send" in result.detail
+    assert result.evidence["action"] == "https://pizza.example.uk/contact/send"
     assert result.evidence["method"] == "post"
 
 
@@ -1283,7 +1283,7 @@ async def test_a_form_that_posts_somewhere_denied_is_refused(world, rows, action
     world.selectors = {"#name": "text"}
     world.form_action = action
     for fn in (session.submit_form_dry, session.submit_form):
-        result = await fn("https://joespizza.co.uk/contact", "#name=M")
+        result = await fn("https://pizza.example.uk/contact", "#name=M")
         assert result.ok is False and "not opened" in result.detail
     assert world.filled == [] and world.submitted == 0
 
@@ -1291,9 +1291,9 @@ async def test_a_form_that_posts_somewhere_denied_is_refused(world, rows, action
 async def test_submit_fills_and_submits(world, rows):
     world.selectors = {"#name": "text", "#msg": "textarea"}
     result = await session.submit_form(
-        "https://joespizza.co.uk/contact", "#name=Miro;#msg=Table for 4?")
+        "https://pizza.example.uk/contact", "#name=the owner;#msg=Table for 4?")
     assert result.ok is True, result.detail
-    assert world.filled == [("#name", "Miro"), ("#msg", "Table for 4?")]
+    assert world.filled == [("#name", "the owner"), ("#msg", "Table for 4?")]
     assert world.submitted == 1
     assert pathlib.Path(result.evidence["shot_path"]).exists()
 
@@ -1303,24 +1303,24 @@ async def test_a_blocked_submission_is_a_failure(world, rows):
     so the result must not say it was sent."""
     world.selectors = {"#name": "text"}
     world.post_to = "https://www.chase.com/collect"
-    result = await session.submit_form("https://joespizza.co.uk/contact", "#name=M")
+    result = await session.submit_form("https://pizza.example.uk/contact", "#name=M")
     assert result.ok is False and "blocked" in result.detail
 
 
 async def test_submit_never_types_into_a_password_field(world, rows):
     world.selectors = {"#user": "text", "#pw": "password"}
     for fn in (session.submit_form, session.submit_form_dry):
-        result = await fn("https://joespizza.co.uk/contact", "#user=m;#pw=hunter2")
+        result = await fn("https://pizza.example.uk/contact", "#user=m;#pw=hunter2")
         assert result.ok is False and "password" in result.detail
     assert world.filled == [] and world.submitted == 0
 
 
 async def test_submit_never_submits_a_form_that_holds_a_password(world, rows):
-    """#user=miro on a login form would sign in with an empty password."""
+    """#user=owner on a login form would sign in with an empty password."""
     world.selectors = {"#user": "text"}
     world.form_password = True
     for fn in (session.submit_form, session.submit_form_dry):
-        result = await fn("https://joespizza.co.uk/signup", "#user=miro")
+        result = await fn("https://pizza.example.uk/signup", "#user=owner")
         assert result.ok is False and "password" in result.detail
     assert world.filled == [] and world.submitted == 0
 
@@ -1332,14 +1332,14 @@ async def test_submit_refuses_a_denied_url_without_launching(world, rows):
 
 async def test_submit_with_a_missing_selector_submits_nothing(world, rows):
     world.selectors = {"#name": "text"}
-    result = await session.submit_form("https://joespizza.co.uk/c", "#name=M;#x=1")
+    result = await session.submit_form("https://pizza.example.uk/c", "#name=M;#x=1")
     assert result.ok is False and world.filled == [] and world.submitted == 0
 
 
 async def test_submit_without_a_form_reports_nothing_was_sent(world, rows):
     world.selectors = {"#name": "text"}
     world.form_action = None
-    result = await session.submit_form("https://joespizza.co.uk/c", "#name=M")
+    result = await session.submit_form("https://pizza.example.uk/c", "#name=M")
     assert result.ok is False and "nothing was submitted" in result.detail
     assert world.submitted == 0
 
@@ -1349,7 +1349,7 @@ async def test_a_form_that_hangs_before_submitting_submitted_nothing(world, rows
     world.selectors = {"#name": "text"}
     world.goto_delay = 0.5
     monkeypatch.setattr(session, "FORM_WALL_S", 0.05)
-    result = await session.submit_form("https://joespizza.co.uk/c", "#name=M")
+    result = await session.submit_form("https://pizza.example.uk/c", "#name=M")
     assert result.ok is False and "nothing was submitted" in result.detail
 
 
@@ -1358,13 +1358,13 @@ async def test_a_form_that_hangs_after_submitting_says_it_was_sent(world, rows,
     world.selectors = {"#name": "text"}
     world.after_submit_delay = 0.5
     monkeypatch.setattr(session, "FORM_WALL_S", 0.1)
-    result = await session.submit_form("https://joespizza.co.uk/c", "#name=M")
+    result = await session.submit_form("https://pizza.example.uk/c", "#name=M")
     assert result.ok is True and "submitted" in result.detail
     assert world.submitted == 1
 
 
 async def test_submit_without_playwright_says_how_to_install(no_playwright):
-    result = await session.submit_form("https://joespizza.co.uk/c", "#name=M")
+    result = await session.submit_form("https://pizza.example.uk/c", "#name=M")
     assert result.ok is False and result.detail == MISSING
 
 
@@ -1445,13 +1445,13 @@ def test_tools_are_registered():
     assert set(TOOLS["browser_submit"].schema["required"]) == {"url", "fields"}
 
 
-def test_the_named_agents_hold_the_read_tools_and_none_holds_submit():
+def test_no_agent_holds_submit():
     from atlas.kernel import agents
 
     agents.ROSTER.clear()
     agents.build_roster()
-    for name in ("concierge", "ops", "growth", "commerce", "scheduler", "agency"):
-        assert READS <= agents.ROSTER[name].tools, name
+    # The agents that held the browser reads left the roster on 2026-10-28;
+    # the module and its tools stay registered for whoever is given them.
     for agent in agents.ROSTER.values():
         assert "browser_submit" not in agent.tools, agent.name
 

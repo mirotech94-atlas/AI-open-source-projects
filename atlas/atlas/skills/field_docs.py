@@ -12,7 +12,7 @@ register(Skill(
     triggers=("lld", "hld", "installation guide", "install guide", "runbook",
               "rack diagram", "cabling", "bom", "shipment", "racking",
               "deployment doc"),
-    agents=("ops", "concierge"),
+    agents=("qa",),
     priority=82,
     body="""
 The inventory sheet is the source of truth; every other document derives from

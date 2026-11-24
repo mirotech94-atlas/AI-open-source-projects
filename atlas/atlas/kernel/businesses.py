@@ -1,10 +1,10 @@
 """One specialist agent per business.
 
 The role agents in `agents.py` (ops, growth, commerce, ...) cut across every
-property Miro owns. That is right for infrastructure or content, where the
-same judgement applies everywhere. It is wrong for "how is flycheap doing" —
+property the owner owns. That is right for infrastructure or content, where the
+same judgement applies everywhere. It is wrong for "how is inroots doing" —
 that question has one true owner, and routing it through commerce (which also
-answers for Fiverr and Mirotech) or through the general analyst dilutes both
+answers for Fiverr and ExampleCo) or through the general analyst dilutes both
 the answer and the accountability for it.
 
 So every module in `atlas/modules/` that is a business, rather than a
@@ -14,7 +14,7 @@ memory namespace. Nothing about the kernel changes — `register_all()` builds
 ordinary `Agent` objects and hands them to `agents.register()`, the same path
 every role agent already goes through.
 
-Task 53: each business also owns its model. Miro's ask was "Hermes agentic
+Task 53: each business also owns its model. the owner's ask was "Hermes agentic
 agents for each business" — read narrowly, on purpose. Hermes (Nous
 Research's tool-calling model, served through OpenRouter) is the brain every
 business agent reasons with by default; the Hermes Agent framework itself
@@ -56,7 +56,7 @@ STANDING_RULES = (
     "call made in this turn, spoken with the time it was read. If a tool "
     "cannot reach the source, say the source is unreachable — never "
     "estimate. You propose actions by name from your tools; you cannot run "
-    "them. When Miro asks what to handle first, rank by what is measured, "
+    "them. When the owner asks what to handle first, rank by what is measured, "
     "not by what sounds important."
 )
 
@@ -107,68 +107,10 @@ class Business:
 
 BUSINESSES: tuple[Business, ...] = (
     Business(
-        name="flycheap",
-        title="FlyCheap",
-        what=(
-            "FlyCheap is the fare tracker. Its own /api/health endpoint is "
-            "the one source of truth: the database, minutes since the last "
-            "fare poll, how many fare providers are configured, when an "
-            "alert last went out, and delivery of alert emails through "
-            "Resend. It answers 200 even when degraded, so the `ok` field "
-            "decides health, never the status code — and a 503 means only "
-            "that the database is unreachable. There are no actions: the "
-            "two that used to exist called endpoints that never existed, "
-            "and one of them regenerated affiliate links — revenue, which "
-            "is Miro's to touch, not an agent's."
-        ),
-        kpis=("api", "public", "cert"),
-        reads=BASE_READS | {"http_probe"},
-        writes=frozenset(),
-        memory=("flycheap", "incidents"),
-        handoff=frozenset({"analyst", "growth"}),
-    ),
-    Business(
-        name="guardian",
-        title="Guardian",
-        what=(
-            "Guardian is the network watchdog, served from my.guarder.io — "
-            "guarder.io is the marketing site and 404s everything this "
-            "module needs. It watches the hub API, the marketing site, "
-            "certificate expiry, the account's security score, whether "
-            "every network's sensors are still reporting, and open alerts. "
-            "It also checks its own credential: `label` and `trusted` are "
-            "human vouches that exempt a device from the rogue-uplink and "
-            "risky-port checks, and only a write-scope token can set them, "
-            "so a read-scope token makes that rule unbreakable from here — "
-            "a write-scope token is reported as a finding in its own right. "
-            "When an incident opens it reads the alert, the alert history and "
-            "the fix log, lays out the vectors, classifies the operator, and "
-            "proposes a rescan when the hub names the network. It never "
-            "changes a device's trust label (Miro, 2026-09-28: suggest "
-            "only): for a beaconing device the hub names by mac and "
-            "network it SUGGESTS marking it untrusted, with a link to the "
-            "device in Vault, for Miro to do himself. "
-            "Guardian's v1 has no containment route at all, so block_ip and "
-            "isolate_host are MANUAL — do it on the router yourself — the "
-            "same as a named account, which is credential revocation, Tier "
-            "3 for ATLAS. Three writes exist, all Tier 2, all present only "
-            "when a separate write token has been deliberately set: "
-            "alert_op (ack/snooze/resolve/reopen, reversible), rescan "
-            "(irreversible — a scan cannot be un-run) and contain, which "
-            "now always refuses."
-        ),
-        kpis=("hub_api", "token_scope", "open_alerts", "open_incidents"),
-        reads=BASE_READS | {"http_probe", "guardian_incident"},
-        writes=frozenset({"guardian_contain", "guardian_alert_op",
-                          "guardian_rescan"}),
-        memory=("guardian", "incidents", "security"),
-        handoff=frozenset({"sentinel", "ops"}),
-    ),
-    Business(
         name="inroots",
         title="inRoots",
         what=(
-            "inRoots is the attendance and standup platform at status.example.org. "
+            "inRoots is the attendance and standup platform at status.internal.example. "
             "It watches whether the service and its Matrix bot are up, disk "
             "and memory on the host, the 90-day purge job that keeps "
             "http_log from growing unbounded and unnoticed, open bot "
@@ -179,7 +121,7 @@ BUSINESSES: tuple[Business, ...] = (
             "read-scoped k9_ token is refused on every non-GET before the "
             "route even runs, so it is not coming back as a workaround "
             "either. Posting into attendance or standup rooms stays "
-            "something only Miro does."
+            "something only the owner does."
         ),
         kpis=("up", "http_log_retention", "open_errors"),
         reads=BASE_READS | {"http_probe"},
@@ -188,18 +130,18 @@ BUSINESSES: tuple[Business, ...] = (
         handoff=frozenset({"analyst", "ops"}),
     ),
     Business(
-        name="vpsie",
-        title="VPSie",
+        name="cloudco",
+        title="CloudCo",
         what=(
-            "VPSie is the account ATLAS itself runs in. It watches whether "
+            "CloudCo is the account ATLAS itself runs in. It watches whether "
             "its own credentials are accepted, whether every instance is "
             "running, whether anything exists to restore an instance from, "
             "whether every billed server is visible to it, and account "
             "balance. A rejected or disabled credential comes back as an "
-            "HTTP 500 with VPSie's own error envelope, so the body has to "
+            "HTTP 500 with CloudCo's own error envelope, so the body has to "
             "be read rather than trusting the status code — otherwise "
-            "'your credentials are wrong' reads as 'VPSie is down', which "
-            "sends Miro to look at the wrong thing. The only action is "
+            "'your credentials are wrong' reads as 'CloudCo is down', which "
+            "sends the owner to look at the wrong thing. The only action is "
             "taking a snapshot, which is additive and cannot take an "
             "instance down; restart, stop and resize are deliberately left "
             "out, because a mistake against the account doing the "
@@ -208,14 +150,14 @@ BUSINESSES: tuple[Business, ...] = (
         kpis=("auth", "instances", "balance"),
         reads=BASE_READS,
         writes=frozenset(),
-        memory=("vpsie", "infra"),
+        memory=("cloudco", "infra"),
         handoff=frozenset({"ops"}),
     ),
     Business(
-        name="mirotech",
-        title="Mirotech",
+        name="exampleco",
+        title="ExampleCo",
         what=(
-            "Mirotech is Miro's eBay reselling of IT and networking "
+            "ExampleCo is the owner's eBay reselling of IT and networking "
             "hardware. It watches active listings, orders awaiting "
             "fulfilment, and listings that have sat unsold for more than 60 "
             "days — usually a pricing problem. Every price comparison is "
@@ -226,14 +168,14 @@ BUSINESSES: tuple[Business, ...] = (
         kpis=("listings", "stale_listings", "orders"),
         reads=BASE_READS | {"web_search"},
         writes=frozenset(),
-        memory=("mirotech", "pricing", "inventory"),
+        memory=("exampleco", "pricing", "inventory"),
         handoff=frozenset({"commerce", "growth"}),
     ),
     Business(
         name="fiverr",
         title="Fiverr",
         what=(
-            "Fiverr is Miro's freelance gig business. Fiverr fronts every "
+            "Fiverr is the owner's freelance gig business. Fiverr fronts every "
             "seller page with PerimeterX, which fingerprints and blocks the "
             "automated browser regardless of whose session or IP drives "
             "it, so the session check honestly reports unmeasured rather "
@@ -266,31 +208,33 @@ BUSINESSES: tuple[Business, ...] = (
             "outreach drafted with the audit finding first and sent only as "
             "a Tier 2 proposal against a suppression list and a daily cap, "
             "and a site built and deployed to a client's own production "
-            "only on Miro's word. Buying the domain is the one step this "
+            "only on the owner's word. Buying the domain is the one step this "
             "never does itself — that is money out, and permanently "
             "denied whatever the pipeline otherwise clears."
         ),
         kpis=("prospect_budget", "leads_waiting"),
         reads=(BASE_READS | {"web_fetch", "web_search"}
                | PERPLEXITY_READS | BROWSER_READS),
-        writes=frozenset({"agency_send_outreach", "agency_deploy_site"}),
+        writes=frozenset({"agency_deploy_site"}),  # outreach is a card, not a tool
         memory=("agency", "leads"),
         handoff=frozenset({"growth", "analyst"}),
     ),
     Business(
         name="school",
-        title="College (CUNY, Fall 2026)",
+        title="College (the university, Fall 2026)",
         what=(
-            "School is Miro's college term at CUNY, read through the two "
+            "School is the owner's college term at the university, read through the two "
             "doors Brightspace leaves open without a login: the calendar "
             "subscription feed, which carries every course's due dates, and "
             "the instant notification emails for grades, news, assignments "
             "and updates that land in his Gmail. A Valence API path exists "
-            "but stays unmeasured until CUNY grants it. Each course has a "
-            "work kind he confirmed — PHY 120 handwritten, MAT on WebWork, "
-            "CSC 221 as files, PHY 121 as a typed lab report — and drafts "
-            "are written to match it. ATLAS drafts; Miro writes, types and "
-            "submits. Nothing is ever submitted to Brightspace, and his "
+            "but stays unmeasured until the university grants it. Each course has a "
+            "work kind he confirmed — PHY 120 handwritten, MTH 311 on "
+            "WebWork, CSC 221 and CSC 326 as files, PHY 121 as a typed lab "
+            "report. ATLAS is his study partner, never his ghostwriter "
+            "(the university's Academic Integrity Policy): it plans, explains, quizzes "
+            "and gives hints and scaffolds; the owner writes, types and submits "
+            "his own work. Nothing is ever submitted to Brightspace, and his "
             "coursework stays on the box."
         ),
         kpis=("calendar_feed", "notifications", "grades"),
@@ -312,7 +256,7 @@ BY_NAME: dict[str, Business] = {b.name: b for b in BUSINESSES}
 def resolved_model(biz: Business) -> str | None:
     """The `"provider:model"` pin this business's agent runs on.
 
-    Resolution order: `ATLAS_AGENT_MODEL_<NAME>` (Miro's own override, upper-
+    Resolution order: `ATLAS_AGENT_MODEL_<NAME>` (the owner's own override, upper-
     cased business name) beats `Business.model` beats `DEFAULT_MODEL` — every
     non-PRIVATE business that says nothing runs Hermes 4 405B on OpenRouter.
 

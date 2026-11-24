@@ -1,7 +1,7 @@
 """No real brand, no real person, in anything ATLAS asks a video or image
 model to make for the AI-stories account.
 
-Miro's rule (Task 55): the stories are fiction, and a prompt that names a
+the owner's rule (Task 55): the stories are fiction, and a prompt that names a
 real brand or a real person is refused, not softened. This is deliberately
 simple and says what it caught, so a false positive is one glance to
 understand and one edit to fix:
@@ -24,6 +24,8 @@ prompt asks for none in the first place; this is the code half of that.
 from __future__ import annotations
 
 import re
+
+from .. import store_origin
 
 BRANDS: tuple[str, ...] = (
     "adidas", "amazon", "apple", "audi", "barbie", "bmw", "bugatti",
@@ -91,6 +93,13 @@ _TRADEMARK = re.compile(r"\S*[™®©]\S*")
 # not an ALL-CAPS word, not a sentence-initial capital.
 _INNER_CAPITAL = re.compile(r"\b[A-Za-z]*[a-z][A-Z][A-Za-z]*\b")
 _HASHTAG = re.compile(r"(?<!\w)#\w+")
+# Final review M1: a video, a Short or a playlist, or our store -- never any
+# YouTube path (a creator's /@Handle is a name).
+_LINK = re.compile(
+    r"https?://youtu\.be/[\w-]+"
+    r"|https?://www\.youtube\.com/(?:watch\?v=[\w-]+|shorts/[\w-]+"
+    r"|playlist\?list=[\w-]+)"
+    r"|https?://" + re.escape(store_origin.host()) + r"/\S+")
 
 
 def caught(text: str) -> list[str]:
@@ -100,7 +109,14 @@ def caught(text: str) -> list[str]:
     # #ServiceBusiness): that is a tag's spelling, not a brand's (seen live
     # 2026-10-05: every business lesson failed the gate on its own tags). A
     # LISTED brand or person inside a tag (#Nike) is still caught above.
-    plain = _HASHTAG.sub(" ", text or "")
+    # A link to our own video or store is an address, not a name (2026-10-13,
+    # growth plan task 7): a teaching Short links its full video, and a
+    # YouTube id is mixed case (youtu.be/iRyhxkLk-Yo). Only a video, Short or
+    # playlist link on YouTube and our store's links, and only the
+    # inner-capital rule skips them; any other link (a channel's /@Handle
+    # included) is read as text, and a LISTED brand in a link (nike.com) is
+    # still caught above.
+    plain = _LINK.sub(" ", _HASHTAG.sub(" ", text or ""))
     hits = (_listed(text) + [m.group(0) for m in _TRADEMARK.finditer(text or "")]
             + [m.group(0) for m in _INNER_CAPITAL.finditer(plain)])
     for word in hits:
@@ -122,7 +138,7 @@ def refusal(text: str) -> str | None:
 
 # ------------------------------------------------ studio styles and characters
 #
-# Relayed from Miro's engine session, 2026-09-27: "Pixar-style 3D" plus "an
+# Relayed from the owner's engine session, 2026-09-27: "Pixar-style 3D" plus "an
 # old rusty tow truck with a hook" produced a near-copy of a famous film
 # character, and a gold sedan drifted toward another. A public account
 # cannot post that. So no prompt names a studio or a film's style, and the
@@ -162,7 +178,7 @@ def ip_refusal(text: str) -> str | None:
 
 # ------------------------------------------------------------- football lane
 #
-# Miro, 2026-09-29: a football (soccer) lane of stat reels. Real players and
+# the owner, 2026-09-29: a football (soccer) lane of stat reels. Real players and
 # clubs may be NAMED in the on-screen text, the post caption and a voice-over
 # script -- that is what the numbers are about -- but nothing sent to a video
 # model may depict a real person, and no club or league crest, badge or logo
@@ -251,7 +267,7 @@ def football_visual_refusal(text: str, names: list[str] | tuple[str, ...] = ()
 
 # ------------------------------------------------------------- course lane
 #
-# Miro, 2026-09-29: two course-promo reels a week on the AI-stories accounts
+# the owner, 2026-09-29: two course-promo reels a week on the AI-stories accounts
 # (`content.course`), honest by rule. Two rules live here so every door can
 # reach them without importing the lane:
 #

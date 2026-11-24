@@ -1,4 +1,4 @@
-"""The comment-keyword -> DM funnel (Miro, 2026-09-30, from a reel: post a
+"""The comment-keyword -> DM funnel (the owner, 2026-09-30, from a reel: post a
 talking-head clip, viewers comment a keyword, they get a DM with the free
 roadmap, the roadmap leads to the course).
 
@@ -6,7 +6,7 @@ What it is, in ATLAS's terms:
 
 * **A funnel is a row** (`ig_funnels`): account, keyword, media scope, the
   public reply, the private reply (the DM, with the link), a daily cap, a
-  timezone. It exists only once Miro approved it on an
+  timezone. It exists only once the owner approved it on an
   `instagram.funnel_set` card (Tier 2, card-only) that shows the EXACT
   texts. No model writes either text; `text_hash` (sha256 of both, as
   approved) is checked again before every send, and a mismatch refuses.
@@ -45,14 +45,14 @@ What it is, in ATLAS's terms:
   counted on the account's local day) is ATLAS's own number. Meta's own
   messaging limits are published under "Rate limiting" in the Graph API
   docs and change; this module asserts none it did not read (invariant 6)
-  -- Miro sets the cap under whatever that page says today. The executor's
+  -- the owner sets the cap under whatever that page says today. The executor's
   ceilings still apply (`max_per_hour`, `ATLAS_MODULE_MAX_PER_HOUR`,
   default 10 an hour for the whole instagram module), so the practical
   rate is the smallest of them. A 429, or Graph code 4/17/32/613, backs the
   send off (`FailureClass.TRANSIENT`, the outbox's own backoff curve); a
   401/403 or code 190 pauses that credential (`kernel.pause.
   block_capability`, scope `instagram:<account>`); a policy or block error
-  (code 368, 10, 200-299) stops the funnel and tells Miro.
+  (code 368, 10, 200-299) stops the funnel and tells the owner.
 * **Quiet hours**: no DM between 22:00 and 08:00 in the funnel's timezone
   (America/New_York by default). Comments are still read; the sends wait.
 
@@ -569,7 +569,7 @@ async def funnel_reply(account: str, funnel_id: Any, comment_id: str,
     nothing here is decided at run time: the two texts were approved once
     on the Tier 2 `instagram.funnel_set` card and are hash-checked on every
     send, and the recipient asked for it by commenting the keyword. What a
-    person receives is exactly what Miro read, to exactly who asked."""
+    person receives is exactly what the owner read, to exactly who asked."""
     preview = await funnel_reply_dry(account, funnel_id, comment_id, now=now)
     if not preview.ok:
         return ActionResult(False, f"refused: {preview.detail}",
@@ -800,7 +800,7 @@ async def _record_error(funnel_id: int, error: str) -> None:
 
 async def stop_funnel(funnel_id: int, why: str) -> None:
     """A policy or block error from Meta: the funnel stops (active stays
-    as it was; `stopped_at` blocks every send) and Miro is told."""
+    as it was; `stopped_at` blocks every send) and the owner is told."""
     await execute_sql(
         """UPDATE ig_funnels SET stopped_at = $3, stopped_why = $2,
                                 last_error = $2, last_error_at = $3
@@ -815,7 +815,7 @@ async def stop_funnel(funnel_id: int, why: str) -> None:
                  f"set the funnel again to restart it.",
             severity=Severity.HIGH, topic=TOPIC))
     except Exception:                                   # noqa: BLE001
-        log.warning("funnel #%s stopped; Miro not told", funnel_id)
+        log.warning("funnel #%s stopped; the owner not told", funnel_id)
 
 
 async def sweep(now: datetime | None = None) -> tuple[list[dict[str, Any]],

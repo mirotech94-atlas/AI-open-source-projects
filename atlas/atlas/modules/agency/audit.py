@@ -29,7 +29,7 @@ Reputation (Task 42): `reputation(lead)` asks Perplexity's search what public
 reviews and local news say about the business — one call per lead, cached
 30 days in `agency_leads.meta["reputation"]` with the time it was read — and
 `agency.audit` carries it in its evidence. It is untrusted third-party text
-(wrapped as `perplexity`) with its Sources, background for Miro, never a
+(wrapped as `perplexity`) with its Sources, background for the owner, never a
 figure ATLAS measured. The question carries the lead's public name and
 address only; its phone number is never put in it, and the scrub would strip
 one anyway. The name rule is off for this one caller: the subject is a

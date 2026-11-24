@@ -34,7 +34,7 @@ function run(state: BargeInState, from: number, ms: number, frame: Frame):
   return { state: s, fired, end: t };
 }
 
-/** The first moments of an answer, with Miro quiet: ATLAS at `speaker`, the
+/** The first moments of an answer, with the owner quiet: ATLAS at `speaker`, the
  *  mic hearing `leak` of it. */
 function warmed(leak: number, speaker = 0.6): { state: BargeInState; end: number } {
   const warm = run(initialBargeIn(), START, WARMUP_MS + 4 * FRAME,

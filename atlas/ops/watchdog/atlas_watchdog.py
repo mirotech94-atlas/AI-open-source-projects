@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """ATLAS independent watchdog (RA-F4). Standard library only.
 
-Runs every 5 minutes on a host that is NOT the ATLAS box (the FlyCheap VPS),
-so a dead ATLAS process, a stalled scheduler or a dead host is still reported:
+Runs every 5 minutes on a host that is NOT the ATLAS box (the Spark, host
+cloudco-spark; the FlyCheap VPS before it), so a dead ATLAS process, a stalled scheduler or a dead host is still reported:
 nothing here depends on ATLAS's own worker, database or Slack bot.
 
 Three checks, each OK / FAIL / UNKNOWN (a check that cannot run is UNKNOWN,
@@ -10,7 +10,8 @@ never OK -- ATLAS invariant 7):
 
   healthz    GET <url> answers 200 within 10 s with {"ok": true}.
   tls        the certificate verifies for the hostname and has more than
-             WARN_DAYS left.
+             WARN_DAYS left. Skipped for plain http to loopback (the local
+             ATLAS default), which has no certificate.
   heartbeat  the scheduler cycle and the newest observation are recent. Read
              from the `heartbeat` object in the /healthz body
              ({"cycle_age_s": N, "observation_age_s": N}, docs/watchdog.md):
@@ -19,9 +20,17 @@ never OK -- ATLAS invariant 7):
 
 It alerts ONLY when a check's state changes, through a Slack *incoming
 webhook* read from a local env file on this host. That is a separate route
-from ATLAS's Slack bot token, which is never used here. With no webhook
+from ATLAS's running process. Absent a webhook, an opt-in second route posts with
+the bot token to one alerts channel (ATLAS_WATCHDOG_SLACK_TOKEN/_CHANNEL). With no route
 configured it still runs and logs the checks, then logs
 "no alternate route configured" and exits non-zero.
+
+Reverse heartbeat: every run, before it looks at the webhook, writes
+`seen.json` next to the state file ({at, last_healthz_ok_at, healthz_state,
+route_configured}). A host job on the ATLAS side copies that one file (with
+its own key) so the ATLAS check `watchdog_seen` can say whether the watchdog
+is still reading /healthz. No credential is shared and the file holds no URL
+or webhook.
 
 State lives in one JSON file, replaced atomically. If the alert cannot be
 delivered the new state is NOT saved, so the next run sees the same
@@ -55,9 +64,13 @@ log = logging.getLogger("atlas_watchdog")
 
 OK, FAIL, UNKNOWN = "OK", "FAIL", "UNKNOWN"
 
-DEFAULT_URL = "https://atlas.example.com/healthz"
-DEFAULT_ENV_FILE = "/etc/atlas-watchdog/watchdog.env"
+# ATLAS runs locally since the server (atlas.example.com) was deleted on
+# 2026-10-27: the api publishes 127.0.0.1:8080 (docker-compose.yml).
+DEFAULT_URL = "http://127.0.0.1:8080/healthz"
+LOOPBACK = ("127.0.0.1", "localhost", "::1")
+DEFAULT_ENV_FILE = "/etc/atlas-watchdog/watchdog.env"      # root (system unit)
 DEFAULT_STATE = "/var/lib/atlas-watchdog/state.json"
+SEEN_NAME = "seen.json"
 TIMEOUT_S = 10.0
 WEBHOOK_PREFIX = "https://hooks.slack.com/"
 NO_ROUTE = "no alternate route configured"
@@ -81,6 +94,19 @@ class Config:
     tls_warn_days: int
     heartbeat_max_s: int
     label: str
+    seen_path: Path | None = None   # default: seen.json next to the state file
+    # Second route (the owner 2026-11-17): the Slack bot token + one alerts channel,
+    # used only when no webhook is set. Own keys, own file, posted from this host.
+    slack_token: str | None = None
+    slack_channel: str | None = None
+
+    @property
+    def route(self) -> bool:
+        return self.webhook is not None or bool(self.slack_token and self.slack_channel)
+
+    def __post_init__(self) -> None:
+        if self.seen_path is None:
+            self.seen_path = self.state_path.parent / SEEN_NAME
 
 
 # ------------------------------------------------------------------ config
@@ -105,13 +131,30 @@ def read_env_file(path: Path) -> dict[str, str]:
     return out
 
 
+def default_env_file() -> Path:
+    """Root keeps the system path; anyone else (the Spark has no sudo) gets the
+    XDG config path under their own home."""
+    if os.geteuid() == 0:
+        return Path(DEFAULT_ENV_FILE)
+    base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
+    return Path(base) / "atlas-watchdog" / "watchdog.env"
+
+
+def default_state() -> Path:
+    if os.geteuid() == 0:
+        return Path(DEFAULT_STATE)
+    base = os.environ.get("XDG_STATE_HOME") or str(Path.home() / ".local" / "state")
+    return Path(base) / "atlas-watchdog" / "state.json"
+
+
 def env_file_path(arg: str | None) -> Path:
     if arg:
         return Path(arg)
     creds = os.environ.get("CREDENTIALS_DIRECTORY")   # systemd LoadCredential=
     if creds and (Path(creds) / "watchdog.env").exists():
         return Path(creds) / "watchdog.env"
-    return Path(os.environ.get("ATLAS_WATCHDOG_ENV_FILE", DEFAULT_ENV_FILE))
+    explicit = os.environ.get("ATLAS_WATCHDOG_ENV_FILE")
+    return Path(explicit) if explicit else default_env_file()
 
 
 def check_webhook(value: str | None) -> tuple[str | None, str | None]:
@@ -144,11 +187,16 @@ def load_config(env_file: str | None, state: str | None) -> Config:
 
     webhook, problem = check_webhook(
         os.environ.get("ATLAS_WATCHDOG_WEBHOOK") or values.get("ATLAS_WATCHDOG_WEBHOOK"))
+    token = get("ATLAS_WATCHDOG_SLACK_TOKEN", "").strip()
+    channel = get("ATLAS_WATCHDOG_SLACK_CHANNEL", "").strip()
+    if token and not token.startswith("xoxb-"):
+        token = ""
     return Config(
+        slack_token=token or None, slack_channel=channel or None,
         url=get("ATLAS_WATCHDOG_URL", DEFAULT_URL),
         webhook=webhook,
         webhook_problem=problem,
-        state_path=Path(state or get("ATLAS_WATCHDOG_STATE", DEFAULT_STATE)),
+        state_path=Path(state or get("ATLAS_WATCHDOG_STATE", str(default_state()))),
         tls_warn_days=int(get("ATLAS_WATCHDOG_TLS_WARN_DAYS", "14")),
         heartbeat_max_s=int(get("ATLAS_WATCHDOG_HEARTBEAT_MAX_S", "900")),
         label=get("ATLAS_WATCHDOG_LABEL", socket.gethostname()),
@@ -254,13 +302,21 @@ def check_tls(url: str, warn_days: int, now: float | None = None) -> Result:
     return Result("tls", OK, f"{days:.0f} days left ({when})")
 
 
+def tls_applies(url: str) -> bool:
+    """Plain http to this machine's loopback carries no certificate, so there
+    is no TLS check to run. Plain http to any other host still runs it and
+    reads UNKNOWN ("not an https URL"), never OK."""
+    parts = urlsplit(url)
+    return not (parts.scheme == "http" and parts.hostname in LOOPBACK)
+
+
 def run_checks(cfg: Config) -> list[Result]:
     healthz, body = fetch_healthz(cfg.url)
-    return [
-        healthz,
-        check_tls(cfg.url, cfg.tls_warn_days),
-        check_heartbeat(healthz, body, cfg.heartbeat_max_s),
-    ]
+    results = [healthz]
+    if tls_applies(cfg.url):
+        results.append(check_tls(cfg.url, cfg.tls_warn_days))
+    results.append(check_heartbeat(healthz, body, cfg.heartbeat_max_s))
+    return results
 
 
 # ------------------------------------------------------------------- state
@@ -282,8 +338,34 @@ def save_state(path: Path, results: list[Result], previous: dict[str, Any]) -> N
         since = prior.get("since") if prior.get("state") == r.state else now
         checks[r.name] = {"state": r.state, "detail": r.detail, "since": since or now}
     data = {"at": now, "checks": checks}
+    _atomic_json(path, data)
+
+
+def save_seen(cfg: Config, results: list[Result]) -> None:
+    """The reverse heartbeat. Written on EVERY run, before the webhook branch,
+    so it exists even while no route is configured (then route_configured is
+    false and ATLAS reads UNKNOWN, never OK). `last_healthz_ok_at` moves only
+    when /healthz itself answered OK: a run that could not read it keeps the
+    previous good time, so ATLAS sees how long the watchdog has been blind."""
+    assert cfg.seen_path is not None
+    now = datetime.now(UTC).isoformat(timespec="seconds")
+    healthz = next((r for r in results if r.name == "healthz"), None)
+    state = healthz.state if healthz else UNKNOWN
+    last_ok = now if state == OK else None
+    if last_ok is None:
+        try:
+            prior = json.loads(cfg.seen_path.read_text())
+            last_ok = prior.get("last_healthz_ok_at") if isinstance(prior, dict) else None
+        except (OSError, ValueError):
+            last_ok = None
+    data = {"at": now, "last_healthz_ok_at": last_ok, "healthz_state": state,
+            "route_configured": cfg.route, "label": cfg.label}
+    _atomic_json(cfg.seen_path, data)
+
+
+def _atomic_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".state-")
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
     try:
         with os.fdopen(fd, "w") as f:
             json.dump(data, f, indent=1, sort_keys=True)
@@ -325,6 +407,25 @@ def post_slack(webhook: str, text: str) -> None:
             raise RuntimeError(f"Slack webhook answered HTTP {resp.status}")
 
 
+def post_bot(token: str, channel: str, text: str) -> None:
+    data = json.dumps({"channel": channel, "text": text}).encode()
+    req = urllib.request.Request(
+        "https://slack.com/api/chat.postMessage", data=data, method="POST",
+        headers={"Content-Type": "application/json; charset=utf-8",
+                 "Authorization": f"Bearer {token}"})
+    with urllib.request.urlopen(req, timeout=TIMEOUT_S) as resp:
+        body = json.loads(resp.read() or b"{}")
+    if resp.status != 200 or not body.get("ok"):
+        raise RuntimeError(f"Slack chat.postMessage failed: {body.get('error', resp.status)}")
+
+
+def send(cfg: Config, text: str) -> None:
+    if cfg.webhook is not None:
+        post_slack(cfg.webhook, text)
+    else:
+        post_bot(cfg.slack_token or "", cfg.slack_channel or "", text)
+
+
 # -------------------------------------------------------------------- main
 
 def run(cfg: Config) -> int:
@@ -332,8 +433,9 @@ def run(cfg: Config) -> int:
     for r in results:
         log.info("%s %s: %s", r.name, r.state, r.detail)
     healthy = all(r.state == OK for r in results)
+    save_seen(cfg, results)      # before any early exit: ATLAS reads this
 
-    if cfg.webhook is None:
+    if not cfg.route:
         # The checks still ran and are in the log, but with nowhere to send a
         # transition the state is not advanced: once a webhook is configured,
         # the first run announces whatever is wrong at that moment.
@@ -345,10 +447,10 @@ def run(cfg: Config) -> int:
     if changed:
         text = message(cfg.label, cfg.url, changed, results)
         try:
-            post_slack(cfg.webhook, text)
+            send(cfg, text)
         except Exception as e:  # noqa: BLE001 -- any failure means "not delivered"
             log.error("alert NOT delivered, state kept for retry: %s",
-                      redact(f"{type(e).__name__}: {e}", cfg.webhook))
+                      redact(redact(f"{type(e).__name__}: {e}", cfg.webhook), cfg.slack_token))
             return EXIT_SEND_FAILED
         log.info("alert delivered: %s", ", ".join(f"{r.name}->{r.state}" for r in changed))
     save_state(cfg.state_path, results, previous)
@@ -357,9 +459,11 @@ def run(cfg: Config) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
-    ap.add_argument("--env-file", help=f"default: $CREDENTIALS_DIRECTORY/watchdog.env "
-                                       f"or {DEFAULT_ENV_FILE}")
-    ap.add_argument("--state", help=f"default: {DEFAULT_STATE}")
+    ap.add_argument("--env-file", help="default: $CREDENTIALS_DIRECTORY/watchdog.env, "
+                                       f"else {DEFAULT_ENV_FILE} as root, else "
+                                       "~/.config/atlas-watchdog/watchdog.env")
+    ap.add_argument("--state", help=f"default: {DEFAULT_STATE} as root, else "
+                                    "~/.local/state/atlas-watchdog/state.json")
     args = ap.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s",
                         stream=sys.stderr)

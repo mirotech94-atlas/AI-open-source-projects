@@ -16,7 +16,7 @@ and reads what came back:
                                    this funnel for the tick
 * auth (401/403, code 190)      -> `pause.block_capability`, scope
                                    `instagram:<account>`; stop
-* policy (code 368, 10, 2xx)    -> the funnel is stopped and Miro told
+* policy (code 368, 10, 2xx)    -> the funnel is stopped and the owner told
 * transient (429, code 4/17/32) -> the run already backed the row off;
                                    stop this funnel for the tick
 * anything else                 -> recorded on the funnel; next row

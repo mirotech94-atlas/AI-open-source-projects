@@ -34,6 +34,19 @@ from atlas.modules import clips
 from atlas.modules.clips import campaigns, captions, cut, posting, sources, status
 from atlas.modules.content import captions as reel_captions
 
+
+@pytest.fixture(autouse=True)
+def _youtube_leg_on(monkeypatch):
+    """These tests cover the YouTube leg; the owner turned it off in production
+    on 2026-10-11 (CLIPS_YOUTUBE), tested separately below."""
+    monkeypatch.setenv("CLIPS_YOUTUBE", "on")
+
+
+def test_campaign_clips_skip_youtube_by_default(monkeypatch):
+    from atlas.modules.clips import cut
+    monkeypatch.delenv("CLIPS_YOUTUBE", raising=False)
+    assert "youtube" not in cut.lane_platforms()
+    assert cut.lane_platforms() == ("instagram", "tiktok")
 PKG = pathlib.Path(clips.__file__).resolve().parent
 
 
@@ -56,7 +69,7 @@ EXPECTED_TIERS = {
     "clips.cut": Tier.AUTO,
     "clips.record_budget": Tier.AUTO,
     "clips.record_link": Tier.AUTO,
-    # Miro, 2026-09-29: the Mac agent records its Whop submissions
+    # the owner, 2026-09-29: the Mac agent records its Whop submissions
     # (tests/test_clips_whop.py).
     "clips.record_whop_submission": Tier.AUTO,
     # Irubyana, 2026-10-01: the Mac agent records a draft uploaded on Whop
@@ -64,15 +77,15 @@ EXPECTED_TIERS = {
     "clips.record_draft_submitted": Tier.AUTO,
     "clips.record_draft_decision": Tier.AUTO,
     "clips.set_campaign_status": Tier.ASK,
-    # Miro, 2026-09-30: clips post themselves, the reels lane's way -- gated
+    # the owner, 2026-09-30: clips post themselves, the reels lane's way -- gated
     # in code (posting.py, "automatic"); a held clip is a card.
     "clips.publish_clip": Tier.AUTO,
     "clips.publish_clip_tiktok": Tier.AUTO,
     "clips.publish_clip_youtube_postiz": Tier.AUTO,
     "clips.publish_clip_youtube": Tier.ASK,
     "clips.hand_off": Tier.ASK,
-    "clips.submit_to_whop": Tier.AUTO,  # Miro, 2026-10-06: no card
-    # Miro, 2026-10-05: the store promo on the clips accounts, by his tap.
+    "clips.submit_to_whop": Tier.AUTO,  # the owner, 2026-10-06: no card
+    # the owner, 2026-10-05: the store promo on the clips accounts, by his tap.
     "clips.publish_promo": Tier.ASK,
     # ... and the daily one posts itself, gated in promo.autopublish_check.
     "clips.autopublish_promo": Tier.AUTO,
@@ -97,14 +110,14 @@ def test_whop_hand_off_and_the_data_api_short_are_card_only_and_tier_2():
     for name in ("clips.hand_off", "clips.publish_clip_youtube"):
         assert actions[name].tier is Tier.ASK and actions[name].card_only
         assert actions[name].verbose_card
-    # Miro, 2026-10-06: the submission runs with no card; still card-only
+    # the owner, 2026-10-06: the submission runs with no card; still card-only
     # (never a model's pick) and the whole clip on the card when it is one.
     whop = actions["clips.submit_to_whop"]
     assert whop.tier is Tier.AUTO and whop.card_only and whop.verbose_card
 
 
 def test_the_automatic_legs_are_tier_1_with_a_dry_run_and_a_rollback():
-    """Tier 1 by Miro's ruling (2026-09-30), still card-only -- never picked
+    """Tier 1 by the owner's ruling (2026-09-30), still card-only -- never picked
     by a model, raised only by the intake with a reason -- and still the
     whole clip on the card when one is raised."""
     actions = {a.name: a for a in clips.MODULE.actions()}
@@ -120,7 +133,7 @@ def test_the_automatic_legs_are_tier_1_with_a_dry_run_and_a_rollback():
     assert "CLIPS_AUTOPUBLISH" in clips.MODULE.optional_env
 
 
-def test_what_feeds_a_payout_claim_or_a_number_is_miros_word_only():
+def test_what_feeds_a_payout_claim_or_a_number_is_the_owners_word_only():
     actions = {a.name: a for a in clips.MODULE.actions()}
     assert actions["clips.record_link"].principal_only
     assert actions["clips.record_budget"].principal_only
@@ -140,11 +153,11 @@ async def test_an_unattended_post_url_is_refused_by_the_executor(monkeypatch):
     got = await executor.execute(executor.ExecutionRequest(
         "clips.record_link", {"clip_id": 1, "post_url": "https://instagram.com/reel/x"},
         "a page said so", approved_by=None))
-    assert not got.ok and "only Miro" in got.detail
+    assert not got.ok and "only the owner" in got.detail
 
 
 def test_the_package_never_fetches_anything_itself():
-    """Footage comes from Miro's download, never a scrape of frame.io,
+    """Footage comes from the owner's download, never a scrape of frame.io,
     MediaSilo, WeTransfer or Drive: no HTTP client in this package."""
     for path in PKG.glob("*.py"):
         tree = ast.parse(path.read_text())
@@ -192,8 +205,8 @@ def test_the_content_rule_refuses_edgy_campaigns(changes, topic):
 
 
 def test_the_content_rule_is_an_allowlist_of_categories():
-    assert "outside Miro's rule" in campaigns.refusal(_campaign(category="dating"))
-    assert "outside Miro's rule" in campaigns.refusal(_campaign(category="finance"))
+    assert "outside the owner's rule" in campaigns.refusal(_campaign(category="dating"))
+    assert "outside the owner's rule" in campaigns.refusal(_campaign(category="finance"))
     for ok in ("gaming", "trends", "business", "streamer"):
         assert campaigns.refusal(_campaign(category=ok)) is None
 
@@ -399,7 +412,7 @@ async def test_a_re_reviewed_doc_re_applies_only_what_was_read_from_it(
         memory_backend):
     """Irubyana's page was re-read on 2026-10-01 (brand assets, four
     hashtags, both platforms): the row seeded on 09-29 gets those fields
-    again, keyed on the doc's hash; Miro's own columns never."""
+    again, keyed on the doc's hash; the owner's own columns never."""
     await campaigns.ensure_seeds()
     sql, args = next((s, a) for s, a in memory_backend.sql_log
                      if s.startswith("UPDATE clip_campaigns") and a[0] == IRUBYANA
@@ -535,7 +548,7 @@ def test_each_clip_gets_a_caption_per_platform_the_lane_posts_and_the_campaign_p
 def test_irubyana_is_seeded_from_her_campaign_page_as_reviewed():
     c = _campaign(slug=IRUBYANA)
     url = "https://contentrewards.com/discover/d8f10d9f-5207-4268-8069-b6da45a23b67"
-    # The rules are her Content Rewards page; the Whop campaign Miro joined
+    # The rules are her Content Rewards page; the Whop campaign the owner joined
     # (2026-10-01) is where the Mac submitter files each post.
     assert c.rules_doc_id == url
     assert c.whop_url == "https://whop.com/rubyanaclips/exp_qOpYZgW2DMo0F9/app/"
@@ -561,7 +574,7 @@ def test_irubyana_is_seeded_from_her_campaign_page_as_reviewed():
     assert (c.min_seconds, c.max_seconds) == (15, 60)
     assert c.preset == "blur" and c.max_accounts == 1
     # "post on tiktok and instagram reels": both, and nothing forbids the
-    # same clip on each; her clips go to both (Miro, 2026-10-01).
+    # same clip on each; her clips go to both (the owner, 2026-10-01).
     assert c.cross_post_allowed and not c.music_allowed
 
 
@@ -587,13 +600,13 @@ def test_every_irubyana_caption_tags_her_with_her_hashtags(platform):
         got = captions.build_caption(c, captions.sample(c, key), platform,
                                      rules["default_hashtags"])
         lines = got.split("\n")
-        assert "@irubyana" in lines[0] and lines[-1] == "@irubyana"
+        assert "@example_handle" in lines[0] and lines[-1] == "@example_handle"
         assert lines[2] == "#Ad"
         # All four, every time (her page, re-read 2026-10-01), after #Ad.
         assert lines[3] == "#irubyana #irubyanaclips #twitch #twitchlive"
         captions.validate(c, got, platform)
         title = captions.youtube_title(c, captions.sample(c, key))
-        assert title.endswith("#Ad @irubyana") and len(title) <= captions.TITLE_MAX
+        assert title.endswith("#Ad @example_handle") and len(title) <= captions.TITLE_MAX
     assert captions.max_hashtags(c) == 4 and captions.max_hashtags(
         _campaign(slug=COD)) == 3
     # The cut's default tags are those four, and nothing is added to them.
@@ -607,7 +620,7 @@ def test_every_irubyana_caption_tags_her_with_her_hashtags(platform):
     with pytest.raises(captions.CaptionError, match="at most 4"):
         captions.build_caption(c, captions.sample(c, "general"), platform,
                                [*tags, "#fyp"])
-    with pytest.raises(captions.CaptionError, match="@irubyana"):
+    with pytest.raises(captions.CaptionError, match="@example_handle"):
         captions.build_caption(c, "Best stream moments", platform, tags)
     with pytest.raises(captions.CaptionError, match="related"):
         captions.build_caption(c, captions.sample(c, "general"), platform,
@@ -615,7 +628,7 @@ def test_every_irubyana_caption_tags_her_with_her_hashtags(platform):
     # validate re-reads a finished caption against the same rule: one with
     # three tags is refused, #Ad still alone on its line.
     three = "\n".join([captions.sample(c, "general"), "", "#Ad",
-                       "#irubyana #irubyanaclips #twitch", "@irubyana"])
+                       "#irubyana #irubyanaclips #twitch", "@example_handle"])
     with pytest.raises(captions.CaptionError, match="must carry #twitchlive"):
         captions.validate(c, three, platform)
 
@@ -631,7 +644,7 @@ def test_irubyana_clips_run_20_to_60_seconds_on_every_platform():
     legs, skipped = cut.leg_captions(c, "general", tags)
     assert list(legs) == ["instagram", "tiktok", "youtube"] and skipped == []
     # Her brief asks for TikTok and Instagram both: every clip gets a row
-    # per platform (Miro, 2026-10-01), not one in turn.
+    # per platform (the owner, 2026-10-01), not one in turn.
     assert cut.platforms_for(c, list(legs), 1) == ["instagram", "tiktok", "youtube"]
     assert cut.one_platform_note(c, list(legs)) == ""
 
@@ -1486,7 +1499,7 @@ def clips_account(monkeypatch):
 def test_an_unset_clips_account_is_not_configured_and_says_which_env(
         no_clips_account):
     gap = posting.autopost_gap()
-    assert "@atlas.clipsdrop" in gap and "not configured" in gap
+    assert "@example_handle" in gap and "not configured" in gap
     assert "INSTAGRAM_CLIPS_ACCOUNT_ID" in gap and "INSTAGRAM_CLIPS_TOKEN" in gap
 
 
@@ -1558,7 +1571,7 @@ def test_the_clips_account_refuses_a_caption_without_its_disclosure_line(
 async def test_the_clips_account_posts_only_what_the_lane_minted(url, kind,
                                                                  clips_account):
     """A card for instagram.publish itself cannot put an outside video on
-    @atlas.clipsdrop by calling it a campaign clip."""
+    @example_handle by calling it a campaign clip."""
     from atlas.modules import instagram
     caption = _clip_caption()
     got = _vet(account="clips", content_kind="campaign_clip", caption=caption,
@@ -1675,7 +1688,7 @@ async def test_publish_clip_refuses_while_the_account_is_not_configured(
     assert not any("media_token" in sql for sql, _ in memory_backend.sql_log)
 
 
-async def test_a_clip_handed_to_miro_is_never_posted_again_by_atlas(
+async def test_a_clip_handed_to_owner_is_never_posted_again_by_atlas(
         monkeypatch, clips_root, memory_backend, clips_account):
     _publishable(monkeypatch, clips_root, status="handed_off")
     for fn in (posting.publish_clip_dry, posting.publish_clip):
@@ -1780,7 +1793,7 @@ async def test_an_unread_permalink_is_posted_and_asks_for_the_link(
 
 async def test_a_configured_account_makes_the_clip_the_intakes_not_a_card(
         monkeypatch, clips_account):
-    """Miro, 2026-09-30: once @atlas.clipsdrop is reachable the clip is the
+    """the owner, 2026-09-30: once @example_handle is reachable the clip is the
     intake's to post (`ready_to_post`), and the signals pass offers no card
     for it -- the intake raises one itself only with a reason."""
     async def load_all():
@@ -1911,7 +1924,7 @@ async def test_hand_off_marks_the_clips_it_lists(monkeypatch, memory_backend,
                               "platform": "instagram", "caption": "c",
                               "status": "made", "post_url": None}])
     got = await posting.hand_off(COD, "1")
-    assert got.ok and "@atlas.clipsdrop" in got.detail
+    assert got.ok and "@example_handle" in got.detail
     marked = next(a for sql, a in memory_backend.sql_log
                   if "status = 'handed_off'" in sql)
     assert marked == (1, "instagram:clips")
@@ -2317,7 +2330,7 @@ def test_an_unset_clips_tiktok_is_not_configured_and_says_which_env(tt_account,
     assert posting.autopost_gap("tiktok") is None
     monkeypatch.delenv(unset)
     gap = posting.autopost_gap("tiktok")
-    assert gap is not None and unset in gap and "@atlasclips12" in gap
+    assert gap is not None and unset in gap and "@example_handle" in gap
 
 
 async def test_publish_tiktok_refuses_while_the_account_is_not_configured(
@@ -2352,7 +2365,7 @@ async def test_a_clip_posts_to_tiktok_on_one_approval(monkeypatch, clips_root,
     row = _tiktok(monkeypatch, clips_root)
     fake = FakePostiz(monkeypatch)
     dry = await posting.publish_clip_tiktok_dry(21)
-    assert dry.ok and "@atlasclips12" in dry.detail
+    assert dry.ok and "@example_handle" in dry.detail
     assert fake.calls == [("ready", "clips")]
     got = await posting.publish_clip_tiktok(21)
     assert got.ok and "record_link" in got.detail          # no URL came back
@@ -2368,7 +2381,7 @@ async def test_a_clip_posts_to_tiktok_on_one_approval(monkeypatch, clips_root,
 async def test_a_tiktok_url_postiz_returned_is_recorded(monkeypatch, clips_root,
                                                         memory_backend, tt_account):
     _tiktok(monkeypatch, clips_root)
-    url = "https://www.tiktok.com/@atlasclips12/video/7400000000001"
+    url = "https://www.tiktok.com/@example_handle/video/7400000000001"
     FakePostiz(monkeypatch, status="posted", url=url)
     got = await posting.publish_clip_tiktok(21)
     assert got.ok and url in got.detail
@@ -2411,10 +2424,10 @@ async def test_a_tiktok_clip_is_handed_off_while_unconfigured(monkeypatch, clips
     sig, = await posting.signals()
     assert sig.suggests == "clips.hand_off" and sig.params["clip_ids"] == "21"
     assert row["caption"] in sig.body and ".tiktok.txt" in sig.body
-    assert "@atlasclips12" in sig.body and "POSTIZ_TIKTOK_CLIPS_INTEGRATION" in sig.body
+    assert "@example_handle" in sig.body and "POSTIZ_TIKTOK_CLIPS_INTEGRATION" in sig.body
     _clip_rows(monkeypatch, [row])
     got = await posting.hand_off(COD, "21")
-    assert got.ok and "@atlasclips12" in got.detail
+    assert got.ok and "@example_handle" in got.detail
 
 
 async def test_a_configured_tiktok_is_the_intakes_and_its_card_is_whole(
@@ -2461,7 +2474,7 @@ async def test_a_live_clip_without_a_link_is_told_not_carded(monkeypatch, tt_acc
                  "post_ref": "pz-1"},
                 {"id": 22, "campaign": COD, "filename": "b.mp4", "platform": "tiktok",
                  "caption": "c", "status": "posted", "post_ref": "pz-2",
-                 "post_url": "https://www.tiktok.com/@atlasclips12/video/7"}]
+                 "post_url": "https://www.tiktok.com/@example_handle/video/7"}]
 
     monkeypatch.setattr(campaigns, "load_all", load_all)
     monkeypatch.setattr(posting, "fetch_all", fetch_all)
@@ -2469,10 +2482,10 @@ async def test_a_live_clip_without_a_link_is_told_not_carded(monkeypatch, tt_acc
     assert told.suggests is None and "Send ATLAS the link" in told.body
     assert whop.suggests == "clips.submit_to_whop"
     assert whop.params == {"clip_id": 22,
-                           "post_url": "https://www.tiktok.com/@atlasclips12/video/7"}
+                           "post_url": "https://www.tiktok.com/@example_handle/video/7"}
 
 
-async def test_a_tiktok_link_is_miros_word_and_then_the_whop_card(monkeypatch,
+async def test_a_tiktok_link_is_the_owners_word_and_then_the_whop_card(monkeypatch,
                                                                   memory_backend):
     _clip_rows(monkeypatch, [{"id": 21, "campaign": COD, "filename": "a.mp4",
                               "platform": "tiktok", "caption": "c",
@@ -2481,7 +2494,7 @@ async def test_a_tiktok_link_is_miros_word_and_then_the_whop_card(monkeypatch,
     wrong = await posting.record_link(21, "https://www.instagram.com/reel/abc/")
     assert not wrong.ok
     right = await posting.record_link(
-        21, "https://www.tiktok.com/@atlasclips12/video/7400000000001")
+        21, "https://www.tiktok.com/@example_handle/video/7400000000001")
     assert right.ok and "Whop" in right.detail
 
 
@@ -2598,7 +2611,7 @@ async def test_the_legs_check_is_unknown_until_every_account_is_set(
         monkeypatch, no_clips_account, no_tt_account, no_yt_channel):
     obs = await status.check_legs()
     assert obs.health is Health.UNKNOWN
-    assert "@atlasclips12 (TikTok)" in obs.detail and "hand-off" in obs.detail
+    assert "@example_handle (TikTok)" in obs.detail and "hand-off" in obs.detail
     assert "POSTIZ_TIKTOK_CLIPS_INTEGRATION" in obs.detail
 
 
@@ -3066,7 +3079,7 @@ async def test_a_rolled_back_registration_is_not_brought_back(clips_root, monkey
 
 async def test_the_intakes_registration_never_brings_a_retired_file_back(
         clips_root, monkeypatch):
-    """One new file beside one Miro rolled back: with the intake's params
+    """One new file beside one the owner rolled back: with the intake's params
     only the new one is registered. By hand the retired one comes back."""
     _drop(clips_root, COD, "retired.mp4", b"rolled back")
     _drop(clips_root, COD, "new.mp4", b"fresh")
@@ -3719,7 +3732,7 @@ def test_the_clips_youtube_env_is_not_the_reels_or_tiktok_path():
 
 # --------------------------------------------------------- automatic posting
 #
-# Miro, 2026-09-30: Whop clips post themselves, the reels lane's way. The
+# the owner, 2026-09-30: Whop clips post themselves, the reels lane's way. The
 # three automatic legs are Tier 1, gated in code; a held clip is a card
 # with the reason; the intake runs them through the executor.
 
@@ -4000,7 +4013,7 @@ async def test_a_ready_clip_posts_through_the_executor_with_a_receipt(
     receipt, = db.receipts
     assert receipt.topic == "clips" and receipt.title == "Posted clip 21 on its own"
     first = ready[1]["caption"].split("\n")[0]
-    assert "@atlasclips12 (TikTok)" in receipt.body and "clip 21" in receipt.body
+    assert "@example_handle (TikTok)" in receipt.body and "clip 21" in receipt.body
     assert first in receipt.body and "CLIPS_AUTOPUBLISH=off" in receipt.body
     ok, detail = db.runs[COD]
     assert ok is True and "clip 21 posted on tiktok" in detail
@@ -4008,10 +4021,31 @@ async def test_a_ready_clip_posts_through_the_executor_with_a_receipt(
 
 @pytest.mark.parametrize("refusal", [
     "held for you: today's 6 post(s) on tiktok are done (CLIPS_DAILY_CAP)",
+    ("held for you: today's posts on tiktok could not be counted, so nothing "
+     "posts itself"),
+])
+async def test_a_count_hold_waits_for_tomorrow_never_a_card(
+        clips_root, monkeypatch, refusal):
+    """the owner, 2026-09-30 and 2026-10-12 (memory approval-policy): clips post
+    themselves, no cards. The day's cap is kept -- the clip waits, the
+    reels lane's way -- and is never a card that asks him to break it."""
+    from atlas.kernel import clip_intake
+    from atlas.kernel.contracts import ActionResult
+    campaign, row, action = _ready()
+    db = IntakeDB(monkeypatch, _live(), ready=[(campaign, row, action)], results={
+        action: ActionResult(False, f"dry run refused: {refusal}")})
+    await clip_intake.tick()
+    assert db.calls == [(action, {"clip_id": 21})]
+    assert db.proposed == [] and db.receipts == []
+    ok, detail = db.runs[COD]
+    assert ok is True and "clip 21 waits" in detail
+
+
+@pytest.mark.parametrize("refusal", [
     "caption refused: #Ad must stand alone on the line after the blank line",
     "clip 21: the clip has no sound",
     "Call of Duty: Modern Warfare 4 / Warzone is paused; nothing of it posts",
-    "@atlasclips12 (TikTok): not configured -- set POSTIZ_TIKTOK_CLIPS_INTEGRATION",
+    "@example_handle (TikTok): not configured -- set POSTIZ_TIKTOK_CLIPS_INTEGRATION",
 ])
 async def test_a_refused_dry_run_is_a_card_with_the_reason_never_a_post(
         clips_root, monkeypatch, refusal):
@@ -4040,7 +4074,7 @@ def test_the_cards_cause_is_the_one_the_signals_pass_used():
     same key: the intake finds them, and never doubles them."""
     campaign, row, action = _ready()
     assert _key(campaign, row, action) == (
-        f"clips.publish_clip_tiktok@Post clip 21 to @atlasclips12: {campaign.name}")
+        f"clips.publish_clip_tiktok@Post clip 21 to @example_handle: {campaign.name}")
 
 
 async def test_with_the_switch_off_every_clip_is_a_card_and_nothing_runs(
@@ -4087,6 +4121,36 @@ async def test_a_pending_card_holds_the_clip_and_a_declined_one_ends_it(
         assert db.calls == [(action, {"clip_id": 21})], state
 
 
+@pytest.mark.parametrize("refusal", [
+    "clip 21 on TikTok: already sent for this run; not sent again",
+    ("clip 21 on TikTok: an earlier attempt for this run never confirmed; not "
+     "sending again -- check by hand"),
+])
+async def test_a_spent_claim_sets_the_clip_aside_and_is_never_a_card(
+        clips_root, monkeypatch, refusal):
+    """2026-10-12, cards #360, #362 and #365: clip 4 was put back to waiting
+    by hand while its TikTok claim stayed "sent". Every tick refused it,
+    carded it, and the approval failed. No approval can post a spent or
+    in-doubt claim, so it is set aside once and never carded."""
+    from atlas.kernel import clip_intake
+    from atlas.kernel.contracts import ActionResult
+    campaign, row, action = _ready()
+    db = IntakeDB(monkeypatch, _live(), ready=[(campaign, row, action)], results={
+        action: ActionResult(False, refusal, dispatched=True)})
+    aside: list[tuple] = []
+
+    async def execute_sql(sql, *args):
+        assert "status = 'withdrawn'" in sql and "IN ('made', 'draft_approved')" in sql
+        aside.append(args)
+    monkeypatch.setattr(clip_intake, "execute_sql", execute_sql)
+    await clip_intake.tick()
+    assert db.proposed == [] and db.receipts == []
+    (cid, note), = aside
+    assert cid == 21 and "set aside by the intake" in note
+    ok, detail = db.runs[COD]
+    assert ok is False and "clip 21 set aside, not carded" in detail
+
+
 async def test_an_hourly_limit_waits_for_the_next_tick_no_card(clips_root,
                                                                monkeypatch):
     from atlas.kernel import clip_intake
@@ -4106,12 +4170,12 @@ async def test_a_run_that_failed_is_not_ok_and_still_a_card(clips_root, monkeypa
     from atlas.kernel.contracts import ActionResult
     campaign, row, action = _ready()
     db = IntakeDB(monkeypatch, _live(), ready=[(campaign, row, action)], results={
-        action: ActionResult(False, "clip 21 not posted to @atlasclips12: "
+        action: ActionResult(False, "clip 21 not posted to @example_handle: "
                                     "Postiz HTTP 500", dispatched=True)})
     await clip_intake.tick()
     assert db.receipts == []
     (_name, _params, reason, _kw), = db.proposed
-    assert reason.startswith("Held for you: clip 21 not posted to @atlasclips12: "
+    assert reason.startswith("Held for you: clip 21 not posted to @example_handle: "
                              "Postiz HTTP 500.")
     ok, detail = db.runs[COD]
     assert ok is False and "Postiz HTTP 500" in detail
@@ -4217,7 +4281,7 @@ def test_the_departments_page_names_the_posting_legs_on_the_clips_job():
 
 # --------------------------------------------------- two legs from one cut
 #
-# Miro, 2026-10-01: clip reels on Instagram AND TikTok. A campaign whose
+# the owner, 2026-10-01: clip reels on Instagram AND TikTok. A campaign whose
 # reviewed rules allow the same clip on more than one account gets a row,
 # a caption, a post and a Whop link per platform from the one cut; each leg
 # is claimed once. A campaign whose rules forbid it stays on one.
@@ -4485,7 +4549,7 @@ async def test_whop_offers_one_link_per_platform(monkeypatch):
     at = datetime(2026, 10, 1, 9, 0, tzinfo=UTC)
     rows = [
         {"id": 21, "campaign": COD, "platform": "tiktok", "posted_at": at,
-         "post_url": "https://www.tiktok.com/@atlasclips12/video/7400000000001",
+         "post_url": "https://www.tiktok.com/@example_handle/video/7400000000001",
          "post_url_source": "tiktok"},
         {"id": 22, "campaign": COD, "platform": "instagram", "posted_at": at,
          "post_url": "https://www.instagram.com/reel/Cxyz/",
@@ -4504,10 +4568,10 @@ async def test_whop_offers_one_link_per_platform(monkeypatch):
 
 # ------------------------------------------------- brand assets (Irubyana)
 #
-# Miro, 2026-10-01: "make sure the irubyana clips are coming and never
+# the owner, 2026-10-01: "make sure the irubyana clips are coming and never
 # paused". Her page asks for her logo and a Twitch banner on every clip:
 # the cut composites logo.png and banner.png from the campaign's own brand/
-# folder (placed by Miro, never fetched) and cuts nothing without them; a
+# folder (placed by the owner, never fetched) and cuts nothing without them; a
 # clip cut without them never posts.
 
 def _brand(clips_root, slug=IRUBYANA, *names):
@@ -4890,8 +4954,8 @@ def test_the_schema_backs_the_draft_states():
 # ------------------------------------------ Whop's connected accounts
 
 def test_a_youtube_leg_of_a_draft_campaign_is_never_cut_and_an_old_one_holds():
-    """Whop takes a draft from a connected account -- TikTok @atlasclips12 and
-    Instagram @atlas.clipsdrop, not YouTube (read there 2026-10-01)."""
+    """Whop takes a draft from a connected account -- TikTok @example_handle and
+    Instagram @example_handle, not YouTube (read there 2026-10-01)."""
     from atlas.modules.clips import whop
     assert whop.CONNECTED_ACCOUNTS == ("tiktok", "instagram")
     assert whop.not_connected("tiktok") is None and whop.not_connected("instagram") is None

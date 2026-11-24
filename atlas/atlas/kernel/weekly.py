@@ -9,7 +9,7 @@ use out loud.
 So this deliberately does NOT reuse the brief's renderer. It counts and
 consequences: "FlyCheap was fine all week" rather than eleven check names,
 and "no backups exist, and that has been true for seven days" rather than
-`vpsie.protection: failing`. Same discipline as the phone greeting — a thing
+`cloudco.protection: failing`. Same discipline as the phone greeting — a thing
 read once cannot be skimmed for the important line, so the important line has
 to be the one that is said.
 
@@ -237,7 +237,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
     except Exception:                                   # noqa: BLE001
         log.warning("weekly: could not read the daily reviews")
 
-    # --- what has earned the offer to run on its own (Miro: "earn it") --
+    # --- what has earned the offer to run on its own (the owner: "earn it") --
     try:
         from . import promotion
         cands = await promotion.candidates()
@@ -246,7 +246,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
     except Exception:                                   # noqa: BLE001
         log.warning("weekly: could not read the promotion candidates")
 
-    # --- content: what posted itself (Miro, 2026-10-06: no cards, the
+    # --- content: what posted itself (the owner, 2026-10-06: no cards, the
     # weekly is where posts are reported) -------------------------------
     try:
         from . import reels
@@ -255,6 +255,14 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
         log.exception("weekly: the content section failed")
         paragraphs.append("*Content this week*\nI could not read the posting "
                           "ledgers, so this week's count is UNKNOWN — not zero.")
+
+    # --- the Academy's Shorts, each with its links and 7-day numbers (the owner,
+    # 2026-10-12, the growth plan: "weekly 7-day performance log") ------
+    try:
+        from ..modules.academy import growth_log
+        paragraphs.append(await growth_log.week_section(days))
+    except Exception:
+        log.exception("weekly: the Academy Shorts section failed")
 
     # --- money per reel: the Analyst's table, the Improver's decision ---
     try:
@@ -277,7 +285,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                           "week, so every figure is UNKNOWN — not zero. Alinea "
                           "trades on its own; ATLAS only reads its emails.")
 
-    # --- deals Miro checked (modules/realestate); it never raises ------
+    # --- deals the owner checked (modules/realestate); it never raises ------
     try:
         from ..modules import realestate
         deals = await realestate.weekly_section(now)

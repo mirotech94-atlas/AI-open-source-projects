@@ -4,7 +4,7 @@ The business line (`reception.py`) answers leads who ring in; this is the
 other direction, and it exists only because the lead asked
 (`agency.consent`). Its own routes -- `/webhooks/twilio/agency/voice`,
 `/turn`, `/status` in `main.py` -- so nothing here can approve a card by
-keypad, and an unanswered lead call never counts as Miro declining.
+keypad, and an unanswered lead call never counts as the owner declining.
 
 **Admission.** A webhook is heard only when its `c` (the `agency_contacts`
 row) and `t` (the per-call secret, compared against the stored SHA-256)
@@ -12,23 +12,23 @@ match, the row is a call still open, Twilio's `To` is the number the lead
 consented on, and the CallSid is the one the row recorded. Otherwise 403.
 
 **The opening is the identification**, built in code (`consent.disclosure`)
-and spoken first (Miro, 2026-10-01): "Hi, this is Miro's assistant from
-ATLAS Academy, calling about <business>. We saw your website needed help /
+and spoken first (the owner, 2026-10-01): "Hi, this is the owner's assistant from
+ATLAS Agency, calling about <business>. We saw your website needed help /
 you didn't have a website, so we built you a free preview at <url>." --
 then how to stop the calls and the number to call back on (47 CFR
 64.1200(b)), then "Do you have five minutes? I can put you through to the
-owner, Miro." The opening does not say "AI"; asked whether it is a bot, an
+owner, the owner." The opening does not say "AI"; asked whether it is a bot, an
 AI or a recording (`reception.AI_QUESTION`), the line answers plainly that
-it is Miro's AI assistant (`DISCLOSE_AGAIN`), before any model, and never
-claims to be Miro or a person.
+it is the owner's AI assistant (`DISCLOSE_AGAIN`), before any model, and never
+claims to be the owner or a person.
 
 **Yes to the owner is a warm transfer** (`transfer_twiml`): the call
-bridges to Miro's phone (AGENCY_ESCALATION_PHONE, else TWILIO_TO) with
+bridges to the owner's phone (AGENCY_ESCALATION_PHONE, else TWILIO_TO) with
 Twilio `<Dial>`, a short whisper to him first ("<business>, from the
 preview call", `whisper_twiml`, on its own signed route) so he knows who is
 on the line before it connects. If he does not pick up within
 `DIAL_TIMEOUT_S` (25 s), the Dial's action route (`dial_result`) tells the
-lead Miro will call back today, records the request on the lead, and
+lead the owner will call back today, records the request on the lead, and
 posts "CALL BACK: <business> <phone> agreed to talk — <time>" to Slack as
 an alert. "Yes" and "no" right after that question are matched in code
 (`_YES`, `_NO`); the model's `transfer` and `decline` moves cover the
@@ -51,35 +51,33 @@ and checked in code:
   * ``talk`` -- answer from the lead brief, handle an objection, negotiate.
     Its words pass the same checks a written reply does: every figure within
     the price rules for this moment (`pricing.price_refusal`), no promise
-    the build does not keep, no false urgency, never "I'm Miro" or "I'm a
+    the build does not keep, no false urgency, never "I'm the owner" or "I'm a
     person" -- plus no delivery date. A line that fails is replaced with
-    "Let me have Miro confirm that one for you in writing."
-  * ``offer_times`` -- they'd like to talk to Miro: 2-3 real free
+    "Let me have the owner confirm that one for you in writing."
+  * ``offer_times`` -- they'd like to talk to the owner: 2-3 real free
     half-hours read live from his calendar (`agency.meetings`), spoken by
-    code. Calendar unreadable: "Miro will text you some times" -- never an
+    code. Calendar unreadable: "the owner will text you some times" -- never an
     invented slot.
   * ``pick_time`` -- they chose one of the offered times (by number, from
     the closed list): `agency.hold_meeting` (Tier 1) runs through the
     kernel's unattended door (`kernel.unattended.run_tier1`, the executor
-    behind it), then `agency.send_invite` (Tier 1 since 2026-10-06) through
-    the same door, off the turn; a refusal falls back to the Tier 2 card.
-    A lead with no email on record gets no invite; the summary says Miro
+    behind it), then the `agency.send_invite` card (Tier 2 since
+    2026-10-27), off the turn; nothing is sent until the owner approves.
+    A lead with no email on record gets no invite; the summary says the owner
     books it.
-  * ``send_link`` -- the site link: texting leads is off (Miro,
-    2026-09-30), so "Miro will send you the link himself".
+  * ``send_link`` -- the site link: texting leads is off (the owner,
+    2026-09-30), so "the owner will send you the link himself".
   * ``agree`` -- the lead said yes at an allowed price: `agency.send_agreement`
-    (Tier 1 since 2026-10-06, Miro: "approve invoices too") runs through
-    the unattended door -- the agreement text written by code and Miro's
-    own payment link for exactly that price, past every guard -- and the
-    line says it was emailed only when it actually was; a refusal falls
-    back to the Tier 2 card and "Miro signs off on it first".
+    becomes a card (Tier 2 since 2026-10-27): the agreement text written by
+    code and the owner's own payment link for exactly that price, dry-run now and
+    sent only when he approves; the line says "the owner signs off on it first".
   * ``end`` -- say goodbye.
 
-Anything else is "Let me have Miro get back to you on that." Before any
+Anything else is "Let me have the owner get back to you on that." Before any
 model: a STOP/"don't call" revokes consent and ends the call; "are you a
 bot?" gets the disclosure word for word; a complaint, a legal threat or a
 request outside the rules (a price below the floor, custom terms, a refund)
-rings Miro through `agency.escalate`, the only path that does. A system
+rings the owner through `agency.escalate`, the only path that does. A system
 failure mid-call does the same.
 
 The lead's words are untrusted (invariant 4): quoted to the model inside
@@ -107,36 +105,33 @@ log = logging.getLogger("atlas.lead_call")
 MOVES = ("talk", "offer_times", "pick_time", "send_link", "agree", "transfer",
          "decline", "end")
 ASK_TIME = "Is now an OK time for a quick chat?"
-ASK_OWNER = "Do you have five minutes? I can put you through to the owner, Miro."
+ASK_OWNER = "Do you have five minutes? I can put you through to the owner, the owner."
 STOP_ANYTIME = "Just say stop anytime and we won't call again."
-DISCLOSE_AGAIN = ("Yep, I'm an AI, Miro's assistant at ATLAS Academy. I pass "
+DISCLOSE_AGAIN = ("Yep, I'm an AI, the owner's assistant at ATLAS Agency. I pass "
                   "everything on to him, and he'll follow up himself. What can I "
                   "help with?")
-CONNECTING = "Great, one moment while I put you through to Miro."
+CONNECTING = "Great, one moment while I put you through to the owner."
 AFTER_TRANSFER = "Thanks again, bye now."
-MIRO_CALLBACK = ("Miro isn't free right now, but he'll call you back today on this "
+OWNER_CALLBACK = ("the owner isn't free right now, but he'll call you back today on this "
                  "number. Thanks for your time, bye now.")
 DECLINED = "No problem, thanks for your time. We won't call again. Bye now."
 DIAL_TIMEOUT_S = 25
-HOLD = "Let me have Miro get back to you on that."
-CONFIRM_IN_WRITING = "Let me have Miro confirm that one for you in writing."
-LINK_BY_EMAIL = "Miro will send you the link himself."
-NO_TIMES = "I can't see Miro's calendar right now, so he'll text you some times."
-NONE_FREE = "Miro's pretty booked this week, so he'll text you some times."
-HELD_LINE = ("Perfect, you're down for {slot}. Miro will send the calendar invite "
+HOLD = "Let me have the owner get back to you on that."
+CONFIRM_IN_WRITING = "Let me have the owner confirm that one for you in writing."
+LINK_BY_EMAIL = "the owner will send you the link himself."
+NO_TIMES = "I can't see the owner's calendar right now, so he'll text you some times."
+NONE_FREE = "the owner's pretty booked this week, so he'll text you some times."
+HELD_LINE = ("Perfect, you're down for {slot}. the owner will send the calendar invite "
              "shortly.")
 TAKEN = "Ah, that one just went. How about {slots}?"
-AGREED_LINE = ("Great. I'll send over the agreement and the payment link. Miro "
+AGREED_LINE = ("Great. I'll send over the agreement and the payment link. the owner "
                "signs off on it first, so you'll have it shortly.")
-AGREED_SENT_LINE = ("Great. I've just emailed you the agreement and the payment "
-                    "link. Have a read, and reply to that email with any question "
-                    "before you pay.")
 OPTED_OUT = "Understood. We won't call again. Sorry to bother you, bye now."
-ESCALATED = "I'm sorry about that. I'll have Miro call you back himself today."
-OUTSIDE = "That one's for Miro himself. I'll have him get back to you today."
-GOODBYE = "Thanks for your time. Miro will be in touch. Bye for now."
+ESCALATED = "I'm sorry about that. I'll have the owner call you back himself today."
+OUTSIDE = "That one's for the owner himself. I'll have him get back to you today."
+GOODBYE = "Thanks for your time. the owner will be in touch. Bye for now."
 UNSURE = "Sorry, I didn't catch that. Could you say it again?"
-FAILED = "Sorry, I'm having trouble on my end. Miro will call you back himself."
+FAILED = "Sorry, I'm having trouble on my end. the owner will call you back himself."
 REPLY_MAX = 260
 MAX_TURNS = 16
 MAX_CALL_S = 10 * 60
@@ -144,15 +139,15 @@ MODEL_BUDGET_S = 8.0
 CALL_TTL_S = 2 * 3600
 
 _DATE_PROMISE = re.compile(
-    r"\b(?:i|we|miro)\s+(?:can|will|'ll)\s+(?:have\s+it|deliver|finish|launch|get\s+it"
+    r"\b(?:i|we|owner)\s+(?:can|will|'ll)\s+(?:have\s+it|deliver|finish|launch|get\s+it"
     r"\s+(?:done|live))\s+(?:by|on|in|tomorrow|today|this|next)\b", re.IGNORECASE)
 
 SYSTEM = (
-    "You are on a phone call as Miro's assistant from {agency}. You are an AI "
+    "You are on a phone call as the owner's assistant from {agency}. You are an AI "
     "assistant: if asked whether you are a person, a bot or an AI, say "
-    "plainly that you are Miro's AI assistant; never claim to be Miro or a "
+    "plainly that you are the owner's AI assistant; never claim to be the owner or a "
     "person. The lead asked for this call, and you opened by offering to put "
-    "them through to the owner, Miro. Speak like a relaxed, friendly person "
+    "them through to the owner, the owner. Speak like a relaxed, friendly person "
     "on the phone: one or two short sentences, contractions, a brief natural "
     "acknowledgement when it fits (\"Got it.\", \"Sure.\", \"Makes sense.\"), "
     "no lists, no markdown, nothing robotic. Let them finish; never talk over "
@@ -163,9 +158,9 @@ SYSTEM = (
     "for pick_time}}.\n"
     "- talk: answer from the LEAD facts, handle objections, negotiate within "
     "the price rules.\n"
-    "- transfer: they said yes to speaking with Miro now; leave say empty.\n"
+    "- transfer: they said yes to speaking with the owner now; leave say empty.\n"
     "- decline: they are not interested; leave say empty.\n"
-    "- offer_times: they're interested but would rather talk to Miro another "
+    "- offer_times: they're interested but would rather talk to the owner another "
     "time; the times are read from his calendar for you, so leave say empty.\n"
     "- pick_time: they chose one of the TIMES OFFERED; give its number as "
     "choice.\n"
@@ -284,7 +279,7 @@ def listen(text: str, clip_token: str | None, host: str, call: LeadCall,
 # ------------------------------------------------------------ the transfer
 
 def escalation_number() -> str | None:
-    """Miro's own phone, E.164: AGENCY_ESCALATION_PHONE, else TWILIO_TO (the
+    """the owner's own phone, E.164: AGENCY_ESCALATION_PHONE, else TWILIO_TO (the
     number ATLAS already rings him on). None when neither is set."""
     from ..modules.agency import consent
     raw = (os.getenv("AGENCY_ESCALATION_PHONE", "").strip()
@@ -293,7 +288,7 @@ def escalation_number() -> str | None:
 
 
 def whisper_line(call: LeadCall) -> str:
-    """What Miro hears before the bridge, and the lead does not."""
+    """What the owner hears before the bridge, and the lead does not."""
     who = " ".join(str(call.lead.get("name") or "a lead").split())[:80]
     return f"{who}, from the preview call."
 
@@ -306,7 +301,7 @@ def whisper_twiml(call: LeadCall, clip_token: str | None, host: str) -> str:
 
 def transfer_twiml(call: LeadCall, clip_token: str | None, host: str,
                    token: str) -> str:
-    """Bridge the lead to Miro: `<Dial>` his number with the whisper on the
+    """Bridge the lead to the owner: `<Dial>` his number with the whisper on the
     `<Number>`'s own signed URL, the business line as caller id, and the
     Dial's outcome posted to the dial route, which speaks the last line."""
     from .phone import _speak
@@ -325,7 +320,7 @@ def transfer_twiml(call: LeadCall, clip_token: str | None, host: str,
 async def admit_whisper(contact_id: str, token: str, parent_sid: str,
                         to: str) -> LeadCall | None:
     """The whisper leg is a child call: its CallSid is new, its `To` is
-    Miro's number. It is admitted on its ParentCallSid being a lead call
+    the owner's number. It is admitted on its ParentCallSid being a lead call
     this process is holding, the secret matching, and `To` being the
     escalation number -- never any other number."""
     if not (contact_id.isdigit() and token and parent_sid):
@@ -372,7 +367,7 @@ async def _callback_alert(call: LeadCall) -> None:
 
 
 async def _callback(call: LeadCall, call_sid: str) -> str:
-    """Miro did not answer (or cannot be dialled): the lead is told he will
+    """the owner did not answer (or cannot be dialled): the lead is told he will
     call back today, the request is on the lead, and Slack is alerted."""
     from ..kernel.background import spawn
     call.outcome = "callback"
@@ -381,7 +376,7 @@ async def _callback(call: LeadCall, call_sid: str) -> str:
     call.notes.append(f"Agreed to talk to you; you did not answer the transfer, so "
                       f"they were told you will call back today on {call.phone}.")
     spawn(_callback_alert(call), "call-back alert")
-    return MIRO_CALLBACK
+    return OWNER_CALLBACK
 
 
 async def _transfer(call: LeadCall, call_sid: str) -> tuple[str, bool]:
@@ -410,7 +405,7 @@ async def _decline(call: LeadCall, call_sid: str) -> tuple[str, bool]:
 
 async def dial_result(call: LeadCall, call_sid: str, status: str,
                       duration: str = "") -> tuple[str, bool]:
-    """What the lead hears once the Dial ends. `completed` means Miro
+    """What the lead hears once the Dial ends. `completed` means the owner
     answered and the two talked; anything else is the call-back path."""
     status = (status or "").strip().lower()
     call.transferring = False
@@ -446,17 +441,21 @@ def callback_line() -> str:
 
 
 def spoken_url(url: str) -> str:
-    """https://joes-plumbing-7.mapfront.io/ -> joes-plumbing-7 dot mapfront dot io"""
-    host = url.split("://", 1)[-1].strip("/").split("/", 1)[0]
-    return host.replace(".", " dot ")
+    """https://agency.example.com/preview/joes-plumbing-7/ ->
+    agency dot 18dn dot com slash preview slash joes-plumbing-7"""
+    rest = url.split("://", 1)[-1].split("?", 1)[0].split("#", 1)[0].strip("/")
+    host, _, path = rest.partition("/")
+    parts = [host.replace(".", " dot ")]
+    parts += [seg.replace(".", " dot ") for seg in path.split("/") if seg]
+    return " slash ".join(parts)
 
 
 def preview_line(lead: dict[str, Any], links: dict[str, Any]) -> str:
-    """Miro's wording (2026-10-01). Only a lead with a website on record
+    """the owner's wording (2026-10-01). Only a lead with a website on record
     hears that we saw it; a business with none hears that it had none."""
     from ..modules.agency.outreach import preview_url
     url = preview_url(links)
-    where = f"at {spoken_url(url)}" if url else "for you; Miro will send you the link"
+    where = f"at {spoken_url(url)}" if url else "for you; the owner will send you the link"
     if lead.get("website"):
         return f"We saw your website needed help, so we built you a free preview {where}."
     return f"You didn't have a website, so we built you one, a free preview {where}."
@@ -471,10 +470,10 @@ def opening_line(call: LeadCall) -> str:
 
 
 def voicemail_line(call: LeadCall) -> str:
-    from ..modules.agency.outreach import _send_from_address
-    email = _send_from_address().replace("@", " at ").replace(".", " dot ")
+    from ..modules.agency.outreach import agency_sender
+    email = agency_sender().replace("@", " at ").replace(".", " dot ")
     parts = [call.opening,
-             ("Sorry I missed you. Miro will follow up by email, "
+             ("Sorry I missed you. the owner will follow up by email, "
               f"or you can write to him at {email}."),
              callback_line(),
              "If you'd rather we didn't call again, just tell us and we won't."]
@@ -492,7 +491,12 @@ async def opening(call: LeadCall, call_sid: str, answered_by: str, host: str,
         call.turns.append(("atlas", line))
         return hang_up(line, await phone.clip(line), host)
     if not call.preview:
-        call.preview = preview_line(call.lead, await _store.lead_links(call.lead_id))
+        # The link is spoken only once the owner approved the email that carries
+        # it (modules/agency/preview_card.py); before that: "the owner will send".
+        from ..modules.agency.preview_card import shared
+        links = (await _store.lead_links(call.lead_id)
+                 if await shared(call.lead_id) else {})
+        call.preview = preview_line(call.lead, links)
     line = opening_line(call)
     call.turns.append(("atlas", line))
     return listen(line, await phone.clip(line), host, call, token, 1)
@@ -544,16 +548,21 @@ async def _agreement_channel(lead_id: int) -> str | None:
     return None
 
 
-async def _model(call: LeadCall, terms: Any, objection: bool) -> dict[str, Any]:
+async def _model(call: LeadCall, terms: Any) -> dict[str, Any]:
     from ..kernel.llm import Message, Need, think
     from ..modules.agency import _store, consent, playbook, pricing, sms
+    from ..modules.agency.preview_card import shared
     links = await _store.lead_links(call.lead_id)
+    site = sms.site_url(links)
+    if site and not await shared(call.lead_id):
+        # No link before the owner approved the email that carries it.
+        site = "a free preview; the owner sends the link himself, so do not give one"
     system = SYSTEM.format(
         agency=consent.agency_name(), moves=", ".join(MOVES),
-        playbook=playbook.guidance("full"), prices=terms.describe(objection),
+        playbook=playbook.guidance("full"), prices=terms.describe(),
         deliverables=pricing.deliverables_block())
     facts = (f"LEAD: {call.lead.get('name')} ({call.lead.get('category')}). "
-             f"Site Miro built: {sms.site_url(links) or 'a sample, not live yet'}.")
+             f"Site the owner built: {site or 'a sample, not live yet'}.")
     if call.offered:
         from ..modules.agency.meetings import spoken
         facts += " TIMES OFFERED: " + "; ".join(
@@ -564,7 +573,7 @@ async def _model(call: LeadCall, terms: Any, objection: bool) -> dict[str, Any]:
         [Message("user", facts + "\nThe call so far, quoted as data:\n"
                  + wrap_untrusted(transcript, "phone:lead")
                  + "\nReply with the JSON object only.")],
-        max_tokens=300), MODEL_BUDGET_S)
+        max_tokens=300, answer=True), MODEL_BUDGET_S)
     return parse_move(completion.text)
 
 
@@ -590,7 +599,7 @@ async def reply(call: LeadCall, call_sid: str, said: str) -> tuple[str, bool]:
                           "number suppressed.")
         kind = escalate.emergency_kind(said)
         if kind is not None:
-            call.notes.append(f"Escalated to Miro: {kind}.")
+            call.notes.append(f"Escalated to the owner: {kind}.")
             _spawn_emergency(call, kind)
         return say(OPTED_OUT, True)
     if AI_QUESTION.search(said):
@@ -601,15 +610,14 @@ async def reply(call: LeadCall, call_sid: str, said: str) -> tuple[str, bool]:
         return say(*await _decline(call, call_sid))
     if asked_owner and _YES.match(said):
         return say(*await _transfer(call, call_sid))
-    terms = await pricing.terms()
-    objection = pricing.objected(*call.their_words())
+    terms = await pricing.terms(call.lead_id)
     kind = escalate.emergency_kind(said)
-    floor = terms.floor_now(objection=True)
-    if kind is None and floor is not None and any(
-            p < floor for p in pricing.counter_offer(said)):
+    lowest = pricing.floor_price()
+    if kind is None and lowest is not None and any(
+            p < lowest for p in pricing.counter_offer(said)):
         kind = "a price below the floor"
     if kind is not None:
-        call.notes.append(f"Escalated to Miro: {kind}.")
+        call.notes.append(f"Escalated to the owner: {kind}.")
         _spawn_emergency(call, kind)
         legal = kind.startswith("a complaint")
         return say(ESCALATED if legal else OUTSIDE, legal)
@@ -618,7 +626,7 @@ async def reply(call: LeadCall, call_sid: str, said: str) -> tuple[str, bool]:
         return say(GOODBYE, True)
 
     try:
-        move = await _model(call, terms, objection)
+        move = await _model(call, terms)
     except TimeoutError:
         return say(HOLD)
     except Exception as exc:                            # noqa: BLE001
@@ -646,7 +654,7 @@ async def reply(call: LeadCall, call_sid: str, said: str) -> tuple[str, bool]:
         except (TypeError, ValueError):
             price = -1
         channel = await _agreement_channel(call.lead_id)
-        if price not in terms.allowed(objection):
+        if price not in terms.allowed():
             call.notes.append(f"They wanted to agree at a price outside the rules "
                               f"({move['price']!r}).")
             _spawn_emergency(call, "a request outside the rules")
@@ -658,9 +666,9 @@ async def reply(call: LeadCall, call_sid: str, said: str) -> tuple[str, bool]:
         return say(await _agree(call, call_sid, price, channel))
     if not move["move"] or not text:
         return say(HOLD)
-    why = replies.refusal(text, terms, objection=objection)
+    why = replies.refusal(text, terms)
     spoken = [p for p in pricing.spoken_prices(text)
-              if p not in terms.allowed(objection)]
+              if p not in terms.allowed()]
     if why is None and spoken:
         why = f"a spoken figure outside the price rules ({spoken[0]})"
     if why is not None or _DATE_PROMISE.search(text):
@@ -670,27 +678,36 @@ async def reply(call: LeadCall, call_sid: str, said: str) -> tuple[str, bool]:
 
 
 async def _agree(call: LeadCall, call_sid: str, price: int, channel: str) -> str:
-    """Send the agreement through the executor (Tier 1, 2026-10-06); the
-    spoken line says it was sent only when it was. A refusal falls back to
-    the Tier 2 card, and the line says Miro signs off first."""
-    from ..kernel.unattended import run_tier1
+    """The agreement is a card (Tier 2, six agents 2026-10-27): drafted and
+    checked by the dry run, sent only when the owner approves. The spoken line
+    never says it was sent."""
     params = {"lead_id": call.lead_id, "price": price, "channel": channel}
     reason = f"the lead agreed at ${price} on a call ({call_sid})"
-    result = await run_tier1("agency.send_agreement", params, reason)
-    if result.ok:
-        call.notes.append(f"Agreed at ${price}; the agreement and your payment link "
-                          f"went by {channel} ({result.detail}).")
-        return AGREED_SENT_LINE if channel == "email" else AGREED_LINE
-    held = _held_reason(result.detail)
+    held = await _preview_held("agency.send_agreement", params)
     card = await _propose("agency.send_agreement", params,
-                          f"Held for you: {held}\n{reason}",
+                          f"Held for you: {held}\n{reason}" if held else reason,
                           {"agreed_on_call": call_sid, "price": price, "held": held},
                           f"lead-call:{call_sid}:agree")
-    call.notes.append(f"Agreed at ${price}; the agreement was not sent "
-                      f"({held}); card {card or 'could not be raised'}.")
+    call.notes.append(f"Agreed at ${price}; the agreement waits for your approval "
+                      f"(card {card or 'could not be raised'})"
+                      + (f"; held: {held}." if held else "."))
     if card:
         call.cards.append(card)
     return AGREED_LINE
+
+
+async def _preview_held(action: str, params: dict[str, Any]) -> str | None:
+    """The dry run's refusal for the card, or None when it would go. An
+    autosend hold (HELD:) is what the card itself answers, so it is not one."""
+    from ..kernel import executor
+    try:
+        result = await executor.preview(action, params)
+    except Exception as exc:                            # noqa: BLE001
+        return f"the dry run could not run ({type(exc).__name__})"
+    from ..modules.agency.outreach import HELD
+    if result.ok or str(result.detail).lower().startswith(HELD):
+        return None
+    return _held_reason(str(result.detail))
 
 
 def _held_reason(detail: str) -> str:
@@ -718,7 +735,7 @@ async def _offer(call: LeadCall) -> str:
         call.notes.append("Wanted a call with you; no free slot in business hours "
                           "this week.")
         return NONE_FREE
-    return (f"Miro could do {_say_times(call.offered)}. "
+    return (f"the owner could do {_say_times(call.offered)}. "
             f"{'Which' if len(call.offered) > 1 else 'Does that'} work for you?")
 
 
@@ -748,7 +765,7 @@ async def _book(call: LeadCall, call_sid: str, choice: Any) -> str:
                 return TAKEN.format(slots=_say_times(call.offered))
         call.notes.append(f"They picked {meetings.spoken(slot)}; the hold was not "
                           f"made ({result.detail}). Book it yourself.")
-        return "Great, Miro will confirm that time with you himself."
+        return "Great, the owner will confirm that time with you himself."
     evidence = result.evidence or {}
     call.meeting = f"{meetings.spoken(slot)} (held on your calendar)"
     if evidence.get("email") and evidence.get("meeting_id"):
@@ -766,29 +783,25 @@ async def _book(call: LeadCall, call_sid: str, choice: Any) -> str:
 
 async def _invite(call: LeadCall, call_sid: str, meeting_id: int, email: str,
                   slot: Any) -> None:
-    """The invite through the executor (Tier 1, 2026-10-06), with the Tier 2
-    card as the fallback when it is refused."""
-    from ..kernel.unattended import run_tier1
+    """The invite is a card (Tier 2, six agents 2026-10-27); it goes to the
+    lead only when the owner approves."""
     from ..modules.agency import meetings
     reason = f"invite the lead to the call they booked ({call_sid})"
-    result = await run_tier1("agency.send_invite", {"meeting_id": meeting_id}, reason)
-    if result.ok:
-        call.notes.append(f"Booked {meetings.spoken(slot)}; the invite went to "
-                          f"{email}.")
-        return
-    held = _held_reason(result.detail)
-    card = await _propose("agency.send_invite", {"meeting_id": meeting_id},
-                          f"Held for you: {held}\n{reason}",
+    params = {"meeting_id": meeting_id}
+    held = await _preview_held("agency.send_invite", params)
+    card = await _propose("agency.send_invite", params,
+                          f"Held for you: {held}\n{reason}" if held else reason,
                           {"to": email, "start": slot.isoformat(), "held": held},
                           f"lead-call:{call_sid}:invite")
     if card:
         call.cards.append(card)
-    call.notes.append(f"Booked {meetings.spoken(slot)}; the invite was not sent "
-                      f"({held}); card {card or 'could not be raised'}.")
+    call.notes.append(f"Booked {meetings.spoken(slot)}; the invite to {email} waits "
+                      f"for your approval (card {card or 'could not be raised'})"
+                      + (f"; held: {held}." if held else "."))
 
 
 # A turn's whole budget, under Twilio's fifteen seconds with room for the
-# voice: past it the lead hears "let me have Miro get back to you", never
+# voice: past it the lead hears "let me have the owner get back to you", never
 # Twilio's application error. Work that must not be cut short mid-write --
 # the calendar hold -- is shielded and finishes in the background.
 TURN_BUDGET_S = 11.0
@@ -802,7 +815,7 @@ async def reply_in_time(call: LeadCall, call_sid: str, said: str) -> tuple[str, 
         from ..kernel.background import track
         track(task, "a slow lead-call turn")
         call.notes.append("A turn ran past its time budget; the lead was told "
-                          "Miro would follow up.")
+                          "the owner would follow up.")
         call.turns.append(("atlas", HOLD))
         return HOLD, False
 

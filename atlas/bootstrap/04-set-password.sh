@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 # Set the dashboard password, end to end, in one command.
 #
 # The password is read from your terminal, piped to the container on stdin, and

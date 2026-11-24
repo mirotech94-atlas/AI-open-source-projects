@@ -128,14 +128,14 @@ def test_every_roster_agent_takes_a_turn_under_its_persona(
             assert turn[key]["text"], (turn["agent"], key)
 
 
-def test_concierge_speaks_first_and_no_line_stutters(
+def test_the_front_door_agent_speaks_first_and_no_line_stutters(
         signed_in, memory_backend, monkeypatch):
     all_ready(monkeypatch)
     stub_runs(memory_backend, latest=[
-        {"agent": "analyst", "at": datetime.now(UTC) - timedelta(days=3),
+        {"agent": "research", "at": datetime.now(UTC) - timedelta(days=3),
          "model": "m", "provider": "p", "outcome": "Revenue was flat week on week."}])
     turns = signed_in.get("/api/agency/meeting").json()["turns"]
-    assert turns[0]["agent"] == "concierge"
+    assert turns[0]["agent"] == agent_module.DEFAULT_AGENT
     for t in turns:
         assert ".." not in t["speech"], t["speech"]
 
@@ -145,7 +145,7 @@ def test_an_agent_with_no_runs_is_idle_and_nothing_is_invented(
     all_ready(monkeypatch)
     stub_runs(memory_backend)
     body = signed_in.get("/api/agency/meeting").json()
-    ops = next(t for t in body["turns"] if t["agent"] == "ops")
+    ops = next(t for t in body["turns"] if t["agent"] == "qa")
     assert ops["status"] == "idle"
     assert ops["did"]["runs_24h"] == 0
     assert ops["did"]["last_at"] is None and ops["did"]["last_outcome"] is None
@@ -160,13 +160,13 @@ def test_runs_and_the_last_outcome_come_from_the_record(
     at = datetime.now(UTC) - timedelta(hours=2)
     stub_runs(
         memory_backend,
-        counts=[{"agent": "ops", "runs": 3, "self_tests": 1, "shifts": 1,
+        counts=[{"agent": "qa", "runs": 3, "self_tests": 1, "shifts": 1,
                  "failed": 0, "total": 4}],
-        latest=[{"agent": "ops", "at": at, "model": "claude", "provider": "anthropic",
+        latest=[{"agent": "qa", "at": at, "model": "claude", "provider": "anthropic",
                  "outcome": "**All four servers** answered. Disk on vps2 is 81%."}],
     )
     ops = next(t for t in signed_in.get("/api/agency/meeting").json()["turns"]
-               if t["agent"] == "ops")
+               if t["agent"] == "qa")
     assert ops["status"] == "worked"
     assert ops["did"]["runs_24h"] == 3
     assert ops["did"]["self_tests_24h"] == 1
@@ -183,15 +183,15 @@ def test_a_failed_run_is_an_issue_and_drives_what_to_improve(
     at = datetime.now(UTC) - timedelta(minutes=30)
     stub_runs(
         memory_backend,
-        counts=[{"agent": "analyst", "runs": 2, "self_tests": 0, "shifts": 0,
+        counts=[{"agent": "research", "runs": 2, "self_tests": 0, "shifts": 0,
                  "failed": 1, "total": 2}],
-        latest=[{"agent": "analyst", "at": at, "model": "", "provider": "",
+        latest=[{"agent": "research", "at": at, "model": "", "provider": "",
                  "outcome": "The local model is down. Try later."}],
-        failures=[{"agent": "analyst", "at": at, "model": "",
+        failures=[{"agent": "research", "at": at, "model": "",
                    "outcome": "The local model is down. Try later."}],
     )
     analyst = next(t for t in signed_in.get("/api/agency/meeting").json()["turns"]
-                   if t["agent"] == "analyst")
+                   if t["agent"] == "research")
     assert analyst["issues"]["failed_24h"] == 1
     assert analyst["issues"]["last_failure_at"] == at.isoformat()
     assert "1 of 2 runs in the last 24 hours failed" in analyst["issues"]["text"]
@@ -201,36 +201,36 @@ def test_a_failed_run_is_an_issue_and_drives_what_to_improve(
 
 def test_a_blocked_agent_names_its_reason_and_has_no_shift(
         signed_in, memory_backend, monkeypatch):
-    all_ready(monkeypatch, blocked={"fiverr": ["browser disabled — missing env: X"]})
+    all_ready(monkeypatch, blocked={"sales": ["browser disabled — missing env: X"]})
     stub_runs(memory_backend)
     body = signed_in.get("/api/agency/meeting").json()
-    fiverr = next(t for t in body["turns"] if t["agent"] == "fiverr")
+    fiverr = next(t for t in body["turns"] if t["agent"] == "sales")
     assert fiverr["status"] == "blocked" and fiverr["ready"] is False
     assert "browser disabled" in fiverr["issues"]["text"]
     assert fiverr["improve"]["text"].startswith("Clear the blocker: browser disabled")
     assert fiverr["next"]["at"] is None
     assert "until it is ready" in fiverr["next"]["text"]
-    assert personas.PERSONAS["fiverr"].name in body["closing"]["text"]
+    assert personas.PERSONAS["sales"].name in body["closing"]["text"]
 
 
 def test_the_next_shift_is_the_scheduler_s_own(signed_in, memory_backend, monkeypatch):
     all_ready(monkeypatch)
-    monkeypatch.setenv("AGENT_SHIFT_OPS", "6")
+    monkeypatch.setenv("AGENT_SHIFT_QA", "6")
     last = datetime.now(UTC) - timedelta(hours=1)
-    stub_runs(memory_backend, shifts=[{"agent": "ops", "at": last}])
-    monkeypatch.setenv("AGENT_SHIFT_SENTINEL", "0")
+    stub_runs(memory_backend, shifts=[{"agent": "qa", "at": last}])
+    monkeypatch.setenv("AGENT_SHIFT_SEO", "0")
     turns = {t["agent"]: t for t in signed_in.get("/api/agency/meeting").json()["turns"]}
-    expected = agent_module.next_shift_at("ops", last, datetime.now(UTC).astimezone())
-    assert turns["ops"]["next"]["at"] == expected.isoformat()
-    assert turns["ops"]["next"]["text"] == "Next shift in 4 hours."
-    assert turns["sentinel"]["next"] == {"at": None, "text": "No shift."}
+    expected = agent_module.next_shift_at("qa", last, datetime.now(UTC).astimezone())
+    assert turns["qa"]["next"]["at"] == expected.isoformat()
+    assert turns["qa"]["next"]["text"] == "Next shift in 4 hours."
+    assert turns["seo"]["next"] == {"at": None, "text": "No shift."}
 
 
 def test_the_closing_buckets_are_disjoint_and_add_up(
         signed_in, memory_backend, monkeypatch):
-    all_ready(monkeypatch, blocked={"school": ["no provider resolves private work"]})
+    all_ready(monkeypatch, blocked={"inbox": ["no provider resolves private work"]})
     stub_runs(memory_backend, counts=[
-        {"agent": "ops", "runs": 1, "self_tests": 0, "shifts": 0, "failed": 0,
+        {"agent": "qa", "runs": 1, "self_tests": 0, "shifts": 0, "failed": 0,
          "total": 1}])
     body = signed_in.get("/api/agency/meeting").json()
     c = body["closing"]["counts"]
@@ -249,9 +249,9 @@ def test_a_secret_in_an_outcome_never_reaches_the_room(
     at = datetime.now(UTC)
     stub_runs(
         memory_backend,
-        counts=[{"agent": "ops", "runs": 1, "self_tests": 0, "shifts": 0,
+        counts=[{"agent": "qa", "runs": 1, "self_tests": 0, "shifts": 0,
                  "failed": 0, "total": 1}],
-        latest=[{"agent": "ops", "at": at, "model": "m", "provider": "p",
+        latest=[{"agent": "qa", "at": at, "model": "m", "provider": "p",
                  "outcome": f"Called fish with {key} and it worked."}])
     response = signed_in.get("/api/agency/meeting")
     assert key not in response.text

@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import os
 import pathlib
+import re
 import sys
 
 from .boot import boot
@@ -161,7 +162,7 @@ async def connect() -> None:
     if target not in names:
         raise SystemExit(f"no such module: {target}. One of: {', '.join(names)}")
 
-    # The comms module asks "can ATLAS reach Miro", and the answer depends on
+    # The comms module asks "can ATLAS reach the owner", and the answer depends on
     # the channels having been imported. Without this it reported "no
     # channels are registered at all" -- a broken reporting path, when the
     # truth was that this command had not loaded them.
@@ -232,7 +233,7 @@ async def _resolve_homeserver(candidate: str) -> str:
     """Turn whatever was typed into the client API base URL.
 
     A Matrix *server name* and its *client base URL* are different things:
-    `example.org` is the server name, the API lives at `https://chat.example.org`, and the
+    `internal.example` is the server name, the API lives at `https://chat.internal.example`, and the
     only correct way to get from one to the other is the well-known lookup.
     Guessing wrong produces a 404 that looks like a broken homeserver.
     """
@@ -312,7 +313,7 @@ async def _pick_room_and_write(homeserver: str, token: str, who: str) -> None:
         print(f"  {index:>2}. {label or '(unnamed)'}")
         print(f"      {room}")
 
-    # Alerts already go to Slack. Posting them here AS MIRO would put
+    # Alerts already go to Slack. Posting them here AS OWNER would put
     # ATLAS's messages under his name in front of colleagues, in rooms that
     # are theirs -- the opposite of "private to me". So the honest default
     # is no alert room at all: Matrix is read-and-draft only, and a reply
@@ -335,24 +336,52 @@ async def _pick_room_and_write(homeserver: str, token: str, who: str) -> None:
     # start and the running process never sees the file. So this writes to
     # the SERVER's .env over ssh, through envlock.py, the same way every
     # other secret lands. That also means this command is run on the Mac,
-    # not inside the container -- it is just HTTPS to chat.example.org.
+    # not inside the container -- it is just HTTPS to chat.internal.example.
     import os as _os
     import subprocess as _subprocess
 
-    host = _os.getenv("ATLAS_SSH_HOST", "root@atlas.example.com")
+    host = _atlas_host()
     pairs = (f"MATRIX_HOMESERVER={homeserver}\nMATRIX_USER={who}\n"
              f"MATRIX_TOKEN={token}\nMATRIX_ALERT_ROOM={room_id}\n")
-    _subprocess.run(
-        ["ssh", host, "cd /opt/atlas && python3 envlock.py && "
-                      "docker compose up -d api >/dev/null 2>&1"],
-        input=pairs, text=True, check=True)
-    env_path = f"{host}:/opt/atlas/.env"
+    if host == "local":
+        repo = pathlib.Path(__file__).resolve().parent.parent
+        env_path = _os.getenv("ATLAS_ENV_PATH") or str(repo / ".env")
+        _subprocess.run(  # noqa: ASYNC221 -- a one-shot CLI on the Mac
+            [sys.executable, str(repo / "bootstrap" / "envlock.py")],
+            input=pairs, text=True, check=True,
+            env={**_os.environ, "ATLAS_ENV_PATH": env_path})
+        _subprocess.run(  # noqa: ASYNC221
+            ["docker", "compose", "-f", "docker-compose.yml",
+             "-f", "docker-compose.local.yml", "up", "-d", "api"],
+            cwd=_os.getenv("ATLAS_COMPOSE_DIR") or str(repo),
+            capture_output=True, check=False)
+    else:
+        _subprocess.run(  # noqa: ASYNC221
+            ["ssh", host, ("cd /opt/atlas && python3 envlock.py && "
+                           "docker compose up -d api >/dev/null 2>&1")],
+            input=pairs, text=True, check=True)
+        env_path = f"{host}:/opt/atlas/.env"
 
     print(f"\nWritten to {env_path}. The token was not printed.")
     print("Restart and test:")
     print("  docker compose up -d api")
     print("  docker compose exec api python -m atlas.cli test-channels\n")
 
+
+
+def _atlas_host() -> str:
+    """Where ATLAS's .env lives, by bootstrap/google_login.py default_host()'s
+    rule: ATLAS_SSH_HOST if set; else "local" when this machine is not the old
+    server (no /opt/atlas) and the checkout runs ATLAS itself
+    (docker-compose.local.yml); else the old server, deleted 2026-10-27."""
+    explicit = os.getenv("ATLAS_SSH_HOST", "").strip()
+    if explicit:
+        return explicit
+    repo = pathlib.Path(__file__).resolve().parent.parent
+    if (not pathlib.Path(os.getenv("ATLAS_OPT_DIR", "/opt/atlas")).exists()
+            and (repo / "docker-compose.local.yml").is_file()):
+        return "local"
+    return "root@atlas.example.com"
 
 MATRIX_SETUP_HELP = """
 matrix-setup — wire the Matrix channel and write .env
@@ -366,14 +395,14 @@ matrix-setup — wire the Matrix channel and write .env
         docker compose exec -e MATRIX_TOKEN="$TOKEN" -it api \\
           python -m atlas.cli matrix-setup
 
-  --admin-token TOKEN --user @atlas:example.org
+  --admin-token TOKEN --user @atlas:internal.example
       Mint a fresh token for that user through the Synapse admin API. Needs a
       server admin token. No user password is involved.
 
   --homeserver URL
       Defaults to MATRIX_HOMESERVER from .env, then to prompting. A server
-      name is resolved to its client API through .well-known, so `example.org`
-      becomes `https://chat.example.org` on its own.
+      name is resolved to its client API through .well-known, so `internal.example`
+      becomes `https://chat.internal.example` on its own.
 
   (no flags)
       Interactive password login. Works, but gives ATLAS a session for
@@ -415,7 +444,7 @@ async def matrix_setup() -> None:
     # API base URL — resolve whatever we are given rather than trusting it.
     candidate = (flag("--homeserver") or os.getenv("MATRIX_HOMESERVER") or "")
     if not candidate:
-        candidate = input("Homeserver (e.g. example.org): ").strip()
+        candidate = input("Homeserver (e.g. internal.example): ").strip()
     homeserver = await _resolve_homeserver(candidate)
 
     # --- a token we were handed -----------------------------------------
@@ -451,14 +480,14 @@ async def matrix_setup() -> None:
 
     # --- last resort: password login -------------------------------------
     print("\nThis logs in with a password and holds a session for that account.")
-    print("Miro's decision, 2026-09-22: ATLAS reads as HIS account, @miro:example.org.")
+    print("the owner's decision, 2026-09-22: ATLAS reads as HIS account, @owner:internal.example.")
     print("It never sends on its own -- a reply becomes a draft he approves in")
     print("Slack, and only then goes out, under his name, because ATLAS is")
     print("private to him. Read receipts are his, so \"not seen by me\" is")
-    print("literally his. The password is typed here, sent to chat.example.org once,")
+    print("literally his. The password is typed here, sent to chat.internal.example once,")
     print("and never stored; ATLAS keeps only the session token.\n")
 
-    user = input("Matrix user [@miro:example.org]: ").strip() or user or "@miro:example.org"
+    user = input("Matrix user [@owner:internal.example]: ").strip() or user or "@owner:internal.example"
     if not user:
         raise SystemExit("no user given")
     # A paste into a getpass prompt on macOS Terminal can arrive as an empty
@@ -537,7 +566,7 @@ async def warm_agents() -> None:
         python -m atlas.cli warm-agents
 
     Fills in the Agents map's LAST RUN and MODEL with the truth, one row per
-    specialist, instead of waiting for Miro to happen to ask each one a real
+    specialist, instead of waiting for the owner to happen to ask each one a real
     question. Sequential, on purpose -- this is an operator running it by
     hand, not a stampede of concurrent LLM calls. Never fabricates a result:
     an agent whose model could not be reached prints why, not a made-up
@@ -737,8 +766,255 @@ async def restore_fence_cmd() -> None:
           f"{len(got.cards)} card(s) held")
 
 
+_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+
+
+def parse_sites_add(args: list[str]) -> tuple[str, str, str, str]:
+    """(slug, hostname, kind, source) from `sites-add` arguments, or
+    ValueError naming what is wrong. Only 'demo' and 'app' rows are added
+    by hand: a 'built' row comes from `agency.build_site`."""
+    from .modules.agency import hosting
+    if len(args) != 4:
+        raise ValueError("usage: python -m atlas.cli sites-add <slug> <hostname> "
+                         "<demo|app> <source>")
+    slug, host, kind, source = args[0], args[1].strip().lower().rstrip("."), \
+        args[2], args[3].strip()
+    problem = hosting.slug_problem(slug)
+    if problem:
+        raise ValueError(problem)
+    if kind not in ("demo", "app"):
+        raise ValueError(f"kind {kind!r}: only 'demo' or 'app' (a built site's row "
+                         "comes from agency.build_site)")
+    labels = host.split(".")
+    if len(host) > 253 or len(labels) < 2 or not all(_HOST_LABEL.fullmatch(x)
+                                                     for x in labels) \
+            or labels[-1].isdigit():
+        raise ValueError(f"hostname {host[:80]!r} is not a DNS name")
+    if not source or len(source) > 200 or any(c in source for c in "\r\n\0"):
+        raise ValueError("source: one line, at most 200 characters "
+                         "(e.g. repo@commit)")
+    return slug, host, kind, source
+
+
+async def sites_add_cmd() -> None:
+    """Register a client demo or app (operator, on the host). Writes the
+    registry row only; nothing is published until the card is approved.
+
+        python -m atlas.cli sites-add examplehair client-site.example.com \\
+            demo "royal-hairstyles-site-demo@176c272"
+    The site's up/cert check starts after the next api restart.
+    """
+    from .modules.agency import _store, demo_host
+    try:
+        slug, host, kind, source = parse_sites_add(sys.argv[2:])
+    except ValueError as exc:
+        print(exc)
+        sys.exit(1)
+    path = str(demo_host.INTAKE_ROOT / slug) if kind == "demo" else ""
+    added = await _store.add_site_row(slug, host, kind, source, path)
+    if added is None:
+        print(f"{slug}: a row already exists; nothing changed")
+        sys.exit(1)
+    print(f"added {kind} {slug} at {host} (row {added}); its check starts after "
+          "the next api restart")
+
+
+def parse_sites_doc(args: list[str]) -> tuple[str, str, str, str, str]:
+    """`<slug> <kind> <title> <body-file> [client-text-file]` -> the
+    agency.draft_doc arguments. Raises ValueError with the usage line."""
+    usage = ("usage: sites-doc <slug> <brief|handoff|report|proposal|client_guide> "
+             "<title> <body-file> [client-text-file]")
+    if len(args) not in (4, 5):
+        raise ValueError(usage)
+    slug, kind, title, body_file = args[:4]
+    try:
+        body = pathlib.Path(body_file).read_text(encoding="utf-8")
+        client = (pathlib.Path(args[4]).read_text(encoding="utf-8")
+                  if len(args) == 5 else "")
+    except OSError as exc:
+        raise ValueError(f"{exc}\n{usage}") from exc
+    return slug, kind, title, body, client
+
+
+async def sites_doc_cmd() -> None:
+    """Draft a client-site document and raise its Tier ASK publish card
+    (operator, on the host). The same store-and-propose path the sites
+    agent's sites_draft_doc tool takes; nothing is published here -- the
+    approved card hands it to the coding agent, which makes the Claude Docs
+    artifact.
+
+        python -m atlas.cli sites-doc examplehair brief \\
+            "examplehair site brief" brief.md client-email.txt
+    """
+    from .modules.agency import sitedocs
+    try:
+        slug, kind, title, body, client = parse_sites_doc(sys.argv[2:])
+    except ValueError as exc:
+        print(exc)
+        sys.exit(1)
+    await boot()          # the policy decisions a card is checked against
+    result = await sitedocs.draft_doc(slug, kind, title, body, client)
+    print(result.detail)
+    if not result.ok:
+        sys.exit(1)
+
+
+async def shop_build() -> None:
+    """Build the ATLAS Academy storefront into `<build root>/<stamp>`
+    (ACADEMY_BUILD_DIR, default data/academy/build), keep it, and point
+    `<build root>/current` at it. Nothing is published: it never writes
+    under AGENCY_PUBLISH_DIR. The local `shop` service serves `current`;
+    academy.publish_shop_remote (Tier 2) pushes it to the store VM.
+
+        python -m atlas.cli shop-build
+    """
+    from datetime import UTC, datetime
+
+    from .modules.academy import publish
+    from .modules.agency import hosting
+    build = publish.build_root()
+    why = hosting.root_problem(hosting.PUBLISH_ROOT, build)
+    if why is not None:
+        print(f"REFUSED: {why}")
+        sys.exit(1)
+    reviews = await publish._approved_reviews()
+    videos = await publish.public_videos()
+    lessons = await publish.published_lessons()
+    read_at = datetime.now(UTC)
+    if videos is None:
+        print(f"REFUSED: {publish.VIDEOS_UNREADABLE}")
+        sys.exit(1)
+    stamp = publish._stamp()
+    try:
+        out = await asyncio.to_thread(publish._build, stamp, reviews, videos, lessons)
+        await asyncio.to_thread(publish.point_current, build, stamp)
+    except Exception as exc:                            # noqa: BLE001
+        print(f"REFUSED: build failed: {type(exc).__name__}: {str(exc)[:200]}")
+        sys.exit(1)
+    files = await asyncio.to_thread(lambda: sum(1 for p in out.rglob("*")
+                                                if p.is_file()))
+    print(f"built {files} files at {out.resolve()} ({build / 'current'} -> {stamp}); "
+          f"{len(videos)} public video(s), {len(lessons)} lesson(s), "
+          f"{len(reviews)} review(s), DB read at "
+          f"{read_at.strftime('%Y-%m-%d %H:%M:%S UTC')}")
+
+
+async def rebuild_tutorials() -> None:
+    """Rebuild academy_tutorial_posts / _comments rows the restored database
+    lacks from what YouTube shows (read-only). --dry-run inserts nothing.
+
+        python -m atlas.cli rebuild-tutorials --dry-run
+        python -m atlas.cli rebuild-tutorials --apply
+    """
+    args = sys.argv[2:]
+    if sorted(args) not in (["--dry-run"], ["--apply"]):
+        print("usage: python -m atlas.cli rebuild-tutorials --dry-run|--apply")
+        sys.exit(1)
+    from .modules._http import install_log_redaction
+    from .modules.academy import rebuild
+    install_log_redaction()
+    report = await rebuild.run(apply=args == ["--apply"])
+    for line in report.lines:
+        print(line)
+    if not report.ok:
+        sys.exit(1)
+
+
+async def channel_study() -> None:
+    """Read-only study of one YouTube channel, written to `reports`.
+
+        python -m atlas.cli channel-study --channel clips|ecc
+    """
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="atlas.cli channel-study")
+    ap.add_argument("--channel", required=True, choices=("clips", "ecc"))
+    a = ap.parse_args(sys.argv[2:])
+    await boot()
+    from .modules._http import install_log_redaction
+    from .modules.youtube import study
+    install_log_redaction()
+    rid, text = await study.run(a.channel)
+    print(text)
+    print(f"report {rid}" if rid is not None else "no report written")
+
+
+async def research_cmd() -> None:
+    """Seed the academy competitor list from a saved YouTube search export.
+    The file is opened read-only and never written; a second run adds nothing.
+
+        python -m atlas.cli research seed --file .claude/competitors-2026-10-10.json
+    """
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="atlas.cli research")
+    ap.add_argument("sub", choices=("seed",))
+    ap.add_argument("--file", required=True)
+    a = ap.parse_args(sys.argv[2:])
+    await boot()
+    from .modules.research import seed
+    out = await seed.import_seed(a.file)
+    print(f"added {out['added']}, already listed {out['skipped']}")
+
+
+async def cameras_forget() -> None:
+    """Delete stored household face data. the owner's own command: not an action, so
+    no model can run it.
+
+        python -m atlas.cli cameras-forget all
+        python -m atlas.cli cameras-forget person <slot 1-5>
+    """
+    args = sys.argv[2:]
+    if args[:1] == ["all"] and len(args) == 1:
+        scope, slot = "all", None
+    elif args[:1] == ["person"] and len(args) == 2 and args[1] in "12345" and len(args[1]) == 1:
+        scope, slot = "slot", int(args[1])
+    else:
+        print("usage: python -m atlas.cli cameras-forget all | person <1-5>")
+        sys.exit(1)
+    await boot()
+    from .modules.cameras import people
+    removed = await people.REPO.forget(scope, slot)
+    print(f"deleted {removed} face group(s) and their stored vectors"
+          + (f" for person slot {slot}" if slot else ""))
+
+
+async def memory_wipe_cmd() -> None:
+    """Hard-delete remembered notes. Typed by hand only; never reachable from
+    chat, the dashboard or a model.
+
+        python -m atlas.cli memory-wipe --hidden          # notes already hidden
+        python -m atlas.cli memory-wipe --id 12 --id 40
+        python -m atlas.cli memory-wipe --everything --yes
+    """
+    import argparse
+
+    ap = argparse.ArgumentParser(prog="atlas.cli memory-wipe")
+    ap.add_argument("--hidden", action="store_true")
+    ap.add_argument("--id", type=int, action="append", dest="ids")
+    ap.add_argument("--everything", action="store_true")
+    ap.add_argument("--yes", action="store_true")
+    a = ap.parse_args(sys.argv[2:])
+    await boot()
+    from .kernel import memory_wipe
+    try:
+        n = await memory_wipe.wipe(hidden=a.hidden, ids=a.ids,
+                                   everything=a.everything, confirmed=a.yes)
+    except ValueError as e:
+        raise SystemExit(str(e)) from e
+    print(f"wiped {n} note(s)")
+
+
 COMMANDS = {
+    "cameras-forget": cameras_forget,
+    "memory-wipe": memory_wipe_cmd,
+    "channel-study": channel_study,
+    "research": research_cmd,
     "init-db": init_db,
+    "shop-build": shop_build,
+    "rebuild-tutorials": rebuild_tutorials,
+    "sites-add": sites_add_cmd,
+    "sites-doc": sites_doc_cmd,
     "model": model,
     "selftest": selftest,
     "check": run_checks_once,

@@ -1,6 +1,6 @@
 """Twilio: a voice call, for CRITICAL only.
 
-A phone call that is not urgent teaches Miro to ignore phone calls, so `voice`
+A phone call that is not urgent teaches the owner to ignore phone calls, so `voice`
 is deliberately reached by CRITICAL routing and nothing else. Messages go over
 Slack.
 

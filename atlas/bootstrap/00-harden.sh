@@ -5,7 +5,7 @@
 set -euo pipefail
 
 SSH_PORT="${SSH_PORT:-2202}"
-ADMIN_USER="${ADMIN_USER:-miro}"
+ADMIN_USER="${ADMIN_USER:-owner}"
 
 log() { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
 

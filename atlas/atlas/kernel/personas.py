@@ -8,6 +8,11 @@ Agents map read these so ATLAS's team reads as people meeting with him, and
 `/api/voice/speak` turns `voice` into one of three fixed Fish voices --
 never a voice id taken from the browser.
 
+Male voices only. the owner, 2026-10-11: "don't use the girl voice, only use the
+guy voice at all times." Every persona speaks with "male"; "female" stays in
+the closed set `VOICES` only so an older browser asking for it still gets a
+200, and `/api/voice/speak` answers it in ATLAS's own (male) voice.
+
 Deterministic: a fixed table, no randomness, no hashing. The specialty is
 written from each agent's own `title` and `brief` in `agents.py` /
 `businesses.py`; a roster agent added later without an entry here still gets
@@ -39,43 +44,30 @@ def _p(agent: str, name: str, specialty: str, voice: Voice) -> Persona:
     return Persona(agent=agent, name=name, specialty=specialty, voice=voice)
 
 
-# Nine female, ten male. Every name is unique, and none is an agent key, a
-# map display name ("Vault", "College") or "Atlas".
+# Every voice is male (the owner, 2026-10-11; see above). Every name is unique, and none is an agent key, a
+# map display name ("Vault", "College") or "Atlas" -- except its own agent's key: the
+# mmt agent is called "MMT" (the owner, 2026-11-10).
 PERSONAS: dict[str, Persona] = {p.agent: p for p in (
-    # the lead
-    _p("concierge", "Ava", "General conversation and anything that has no "
-       "obvious specialist", "female"),
-    # role agents
-    _p("ops", "Marcus", "Infrastructure, incidents, uptime and remediation", "male"),
-    _p("inbox", "Clara", "Email triage, reply drafts, commitments and follow-ups",
-       "female"),
-    _p("growth", "Leo", "LinkedIn, Instagram, TikTok, SEO and content drafting",
+    # The eight (the owner, 2026-10-28). The retired agents' personas went with them.
+    _p("inbox", "Clara", "Personal ops: mail, reply drafts, commitments, his calendar",
        "male"),
-    _p("reels", "Isla", "The AI-stories reels: series, daily cuts, captions and pace",
-       "female"),
-    _p("markets", "Ivan", "The AI stock basket and the paper basket: watch only",
+    _p("sites", "Felix", "Website clients: sites, demos, previews and owner emails",
        "male"),
-    _p("marketing", "Nora", "Marketing experiments, the playbook and Miro's course",
-       "female"),
-    _p("commerce", "Owen", "Fiverr orders, eBay listings, pricing and buyers", "male"),
-    _p("scheduler", "Grace", "Calendar, bookings, travel, deadlines and coursework",
-       "female"),
-    _p("analyst", "Theo", "Numbers, trends and correlation across the properties",
+    _p("content", "Mark", "ECC and Academy YouTube, the church calendar, Reddit drafts",
        "male"),
-    _p("sentinel", "Victor", "Security posture, credentials, injection and exposure",
+    _p("sales", "Sam", "Sales & Lead Gen: leads, outreach drafts, proposals",
        "male"),
-    # one per business
-    _p("flycheap", "Sofia", "FlyCheap, the fare tracker", "female"),
-    _p("guardian", "Elliot", "Vault, the network watchdog at my.guarder.io", "male"),
-    _p("inroots", "Maya", "inRoots, attendance and standups at status.example.org",
-       "female"),
-    _p("vpsie", "Daniel", "VPSie, the account ATLAS itself runs in", "male"),
-    _p("mirotech", "Ruby", "Mirotech, eBay reselling of IT and networking hardware",
-       "female"),
-    _p("fiverr", "Jasper", "Fiverr, the freelance gig business", "male"),
-    _p("agency", "Hazel", "Agency, local businesses with a website worth fixing",
-       "female"),
-    _p("school", "Henry", "College at CUNY: due dates, grades and notices", "male"),
+    _p("bizops", "Bea", "Business automation: onboarding, test invoices, reminders",
+       "male"),
+    _p("seo", "Sage", "SEO & Growth: audits, ranks, blog drafts, the TutorSite page calendar",
+       "male"),
+    _p("research", "Rex", "Market Research: competitor watches, profiles, prices",
+       "male"),
+    _p("qa", "Quinn", "The QA gate: drafts, sites, passive security, missed runs",
+       "male"),
+    # Nine with mmt (the owner, 2026-11-10).
+    _p("mmt", "MMT", "TutorSite: LinkedIn page posts, tutoring-centre prospects, intros",
+       "male"),
 )}
 
 _MAX_SPECIALTY = 90

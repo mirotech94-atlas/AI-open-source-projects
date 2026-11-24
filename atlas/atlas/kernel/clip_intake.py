@@ -8,14 +8,14 @@ named, content rule passed, format known, rules reviewed
   1. **Register** -- when its `source/` folder holds a file whose sha256 is
      not on file for that campaign in any state, `clips.register_sources`
      runs. Never otherwise: a Tier 1 run spends the clips module's hourly
-     allowance, which Miro's card approvals share.
+     allowance, which the owner's card approvals share.
   2. **Cut** -- the oldest registered source never cut, while the
      campaign's daily cap (`CLIPS_DAILY_CAP`, clips since midnight UTC) has
      room: `clips.cut` with `max_clips` set to what is left. At most ONE
      cut per tick across all campaigns: a cut is minutes of transcription
      and ffmpeg.
 
-  3. **Post** (Miro, 2026-09-30: clips post themselves, the reels lane's
+  3. **Post** (the owner, 2026-09-30: clips post themselves, the reels lane's
      way) -- the oldest waiting clip per platform whose account ATLAS can
      reach (`posting.ready_to_post`): `clips.publish_clip`,
      `clips.publish_clip_tiktok` or `clips.publish_clip_youtube_postiz`,
@@ -58,7 +58,7 @@ from .comms import Outbound, attach_to_card, notify
 from .contracts import Severity, Signal, Tier
 from .executor import ExecutionRequest, execute, watch_only
 from .registry import REGISTRY
-from .state import fetch_one
+from .state import execute_sql, fetch_one
 
 log = logging.getLogger("atlas.clip_intake")
 
@@ -77,7 +77,7 @@ def _ready() -> str | None:
         if name not in REGISTRY.actions or decision is None or not decision.allowed:
             return f"{name} is not in the catalog (clips module not loaded)"
         if decision.tier is not Tier.AUTO:
-            return f"{name} is not Tier 1; the intake runs nothing that needs Miro"
+            return f"{name} is not Tier 1; the intake runs nothing that needs the owner"
     return None
 
 
@@ -164,7 +164,7 @@ async def tick() -> list[str]:
             if not result.ok and cut.BRAND_MISSING in result.detail:
                 # The campaign's rules want its logo or banner on every clip
                 # and the file is not in its brand/ folder. ATLAS never
-                # fetches one: Miro places it and answers the card, which
+                # fetches one: the owner places it and answers the card, which
                 # runs the cut again.
                 lines.append(await _brand_card(campaign, waiting, room,
                                                _held(result.detail)))
@@ -237,7 +237,7 @@ async def _post_ready(found: list[Any]) -> dict[str, tuple[bool, list[str]]]:
         else:
             result = await _run(action, {"clip_id": cid},
                                 f"clip {cid} of {campaign.name} is cut and checked; "
-                                f"it posts itself (Miro, 2026-09-30)")
+                                f"it posts itself (the owner, 2026-09-30)")
             if result.ok:
                 await _receipt(campaign, row, platform, result.detail)
                 say(slug, True, f"clip {cid} posted on {platform}: {result.detail}")
@@ -246,9 +246,28 @@ async def _post_ready(found: list[Any]) -> dict[str, tuple[bool, list[str]]]:
                 say(slug, False, f"clip {cid} not posted yet: {result.detail}")
                 continue
             hold = _held(result.detail)
+            if _already_used(result.detail):
+                # The leg's effect claim is spent ("already sent") or in
+                # doubt: approving can never post it, so a card would only
+                # fail and come back every tick (clip 4, cards #360, #362 and
+                # #365 on 2026-10-12: its row was put back to waiting by hand
+                # after TikTok refused it as spam, its claim still "sent").
+                # It is set aside once and said, never carded.
+                await _set_aside(cid, hold)
+                say(slug, False, f"clip {cid} set aside, not carded: {hold}. To post it "
+                                 f"again, release its effect claim by hand")
+                continue
+            if _counted(result.detail):
+                # Held by a count, not by the clip: the platform's day is
+                # full (or could not be counted). It waits for tomorrow, the
+                # reels lane's way -- a card would only ask the owner to break the
+                # cap (the owner, 2026-09-30 and 2026-10-12: clips post
+                # themselves, no cards; memory approval-policy).
+                say(slug, True, f"clip {cid} waits: {hold}")
+                continue
             if not result.detail.startswith("dry run refused"):
                 # The run itself failed: recorded as such, and still a card,
-                # so Miro sees the clip and can try it by hand.
+                # so the owner sees the clip and can try it by hand.
                 say(slug, False, f"clip {cid} not posted: {result.detail}")
         try:
             pid = await _card(card, hold)
@@ -296,6 +315,37 @@ def _global(detail: str) -> bool:
     hourly limit), not this clip's: it waits for the next tick, no card."""
     from ..modules.clips import intake
     return intake.is_global(detail)
+
+
+def _counted(detail: str) -> bool:
+    """A hold that is the day's count (`posting.auto_hold`: CLIPS_DAILY_CAP
+    reached, or today's posts could not be counted), not the clip's."""
+    from ..modules.clips import posting
+    return posting.HELD in detail and any(
+        mark in detail for mark in posting.COUNT_HOLDS)
+
+
+def _already_used(detail: str) -> bool:
+    """A refusal from the leg's effect claim (`kernel.idempotency`): the
+    post already went out, or an earlier attempt never confirmed. No
+    approval can change either."""
+    from . import idempotency
+    return any(idempotency.refusal("", state) in detail
+               for state in (idempotency.SENT, idempotency.IN_DOUBT))
+
+
+async def _set_aside(clip_id: int, why: str) -> None:
+    """Take a clip out of the waiting list, with the reason in its note.
+    Best effort: the intake says it either way."""
+    stamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%MZ")
+    try:
+        await execute_sql(
+            """UPDATE clip_outputs SET status = 'withdrawn',
+                      draft_note = concat_ws(' | ', NULLIF(draft_note, ''), $2::text)
+                WHERE id = $1 AND status IN ('made', 'draft_approved')""",
+            int(clip_id), f"{stamp}: set aside by the intake: {why}")
+    except Exception as exc:                            # noqa: BLE001
+        log.warning("clip %s could not be set aside: %s", clip_id, type(exc).__name__)
 
 
 def _held(detail: str) -> str:

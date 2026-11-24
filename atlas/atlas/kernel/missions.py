@@ -1,6 +1,6 @@
 """Missions: a job bigger than one catalog action, handed to the agent that owns it.
 
-Miro, 2026-09-29, by voice: "Hey Atlas, search up the 50 local businesses
+the owner, 2026-09-29, by voice: "Hey Atlas, search up the 50 local businesses
 that have a very poor website or no website at all and make them one."
 ATLAS answered as small talk ("I can't pull a live list of local
 businesses") while the agency module does exactly that. His words: "he
@@ -85,25 +85,55 @@ _POOR_SITE = (r"\b(?:no|bad|poor|terrible|awful|ugly|outdated|old|broken|slow"
 # through are here; a persona addressed by name reaches any roster agent
 # (`_owner_of_agent`). The clips lane has no roster agent, so no owner.
 OWNERS: tuple[Owner, ...] = (
-    Owner("agency", ("agency",), re.compile(
+    Owner("qa", ("qa",), re.compile(
+        r"\bqa\b|\bquality\s+check\w*|\bsecurity\s+scan\w*"
+        r"|\bmissed\s+(?:jobs?|runs?)\b|\bremediation\b", re.IGNORECASE)),
+    # Sage (seo) owns the TutorSite page calendar (SAGE_MMT_LINKEDIN): a request
+    # about that page's SEO, LinkedIn posts, hashtags, tagline or keywords is search
+    # work. Only those words, ahead of mmt (prospects and product facts); a bare
+    # "MMT calendar" or "MMT pricing page" stays mmt's. Plain SEO words keep their
+    # place after sales below.
+    # Prospect, intro and outreach work on LinkedIn stays mmt's.
+    Owner("seo", ("seo", "sagemmt"), re.compile(
+        r"^(?!.*\b(?:prospects?|intros?|introductions?|leads?|outreach|customers?"
+        r"|centers?\s+to\s+contact|dms?|messages?)\b).*?(?:"
+        r"(?:\bmeet\s*my\s*tutor\b|\bmmt\b)[^.\n]{0,40}"
+        r"\b(?:seo|linkedin|hashtags?|tagline|keywords?|posts?"
+        r"|(?:page|post|content)\s+calendar)\b"
+        r"|\b(?:seo|linkedin|hashtags?|tagline|keywords?|posts?"
+        r"|(?:page|post|content)\s+calendar)\b[^.\n]{0,40}"
+        r"(?:\bmeet\s*my\s*tutor\b|\bmmt\b))", re.IGNORECASE | re.DOTALL)),
+    # Before sales and sites: their `lead`/`prospect` words would otherwise win.
+    Owner("mmt", ("mmt",), re.compile(
+        r"\bmeet\s*my\s*tutor\b|\bmmt\b"
+        r"|\btutor(?:ing)?\s+(?:centre|center)s?\b", re.IGNORECASE)),
+    Owner("sales", ("sales",), re.compile(
+        r"\bsales\b|\blead\s+gen\w*|\bcold\s+(?:email|outreach)\w*"
+        r"|\bproposals?\b|\bcsv\s+(?:of\s+)?leads?\b", re.IGNORECASE)),
+    # Before agency: "seo audit of joes" is search work, not a new site. Same
+    # modules as Sage's TutorSite-page entry above (BY_AGENT keeps this one).
+    Owner("seo", ("seo", "sagemmt"), re.compile(
+        r"\bseo\b|\bsearch\s+console\b|\bkeyword\s+research\b"
+        r"|\bsearch\s+rank\w*|\bgoogle\s+rank\w*", re.IGNORECASE)),
+    # Before agency: "competitor pricing table" is research, not a new site.
+    Owner("research", ("research",), re.compile(
+        r"\bcompetitor\w*|\bmarket\s+trends?\b|\bniche\s+trends?\b"
+        r"|\bpricing\s+(?:table|comparison)\w*|\bresearch\s+(?:report|watch)\w*"
+        r"|\bdeep\s+dive\b", re.IGNORECASE)),
+    # Client sites are the `sites` agent's since 2026-10-28; the recipe and
+    # the module keep their `agency` names.
+    Owner("sites", ("agency",), re.compile(
         _POOR_SITE + r"|\blocal\s+business\w*|\bprospect\w*|\bleads?\b"
         r"|\bmockups?\b|\bclient\s+sites?\b|\bweb\s*sites?\s+for\s+them\b"
         r"|\b(?:make|build)\s+them\s+(?:one|a\s+(?:web\s*)?site)\b",
         re.IGNORECASE), recipe="agency.sites"),
-    Owner("markets", ("markets",), re.compile(
-        r"\bstocks?\b|\bshare\s+price\b|\bthe\s+basket\b|\balinea\b"
-        r"|\bsec\s+filings?\b|\binsider\s+(?:buy|sell|trad)\w*|\bticker\b",
-        re.IGNORECASE)),
-    Owner("reels", ("content",), re.compile(
-        r"\breels?\b|\bseries\s+part\b|\bepisodes?\b", re.IGNORECASE)),
-    Owner("marketing", ("marketing", "content"), re.compile(
-        r"\bexperiments?\b|\bmarketing\b|\bthe\s+course\b|\bplaybook\b"
-        r"|\bmoneti[sz]\w+", re.IGNORECASE)),
-    Owner("growth", ("instagram", "linkedin", "tiktok", "content"), re.compile(
-        r"\blinkedin\b|\binstagram\b|\btiktok\b", re.IGNORECASE)),
-    Owner("commerce", ("fiverr", "mirotech", "shop"), re.compile(
-        r"\bfiverr\b|\bgigs?\b|\bebay\b|\bmirotech\b|\blistings?\b",
-        re.IGNORECASE)),
+    # After agency: "build them a website and invoice them" stays a site job.
+    Owner("bizops", ("bizops",), re.compile(
+        r"\bbizops\b|\binvoic\w*|\bonboard\w*|\bpayment\s+reminders?\b"
+        r"|\bautomation\s+ideas?\b", re.IGNORECASE)),
+    Owner("content", ("academy", "youtube", "church", "reddit"), re.compile(
+        r"\byoutube\b|\bacademy\b|\bchurch\b|\becc\b|\breddit\b"
+        r"|\btitle\s+tests?\b|\bcomment\s+repl\w*", re.IGNORECASE)),
 )
 BY_AGENT: dict[str, Owner] = {o.agent: o for o in OWNERS}
 
@@ -116,9 +146,20 @@ _ADDRESSED = re.compile(
     re.IGNORECASE | re.DOTALL)
 
 
+_RENAMED = {"agency": "sites"}
+
+
+def current_agent(agent: str) -> str:
+    """The roster name for an agent a stored row names. Missions written
+    before 2026-10-28 say `agency`; that work is the `sites` agent's now."""
+    return _RENAMED.get(agent, agent)
+
+
 def _owner_of_agent(agent: str) -> Owner:
     """The registry's owner, or one for a roster agent it does not list:
-    a business agent's module is its own name (businesses.py)."""
+    a business agent's module is its own name (businesses.py). A mission
+    stored under the retired `agency` agent is the `sites` agent's now."""
+    agent = _RENAMED.get(agent, agent)
     if agent in BY_AGENT:
         return BY_AGENT[agent]
     from .businesses import BY_NAME
@@ -170,29 +211,16 @@ def who(agent: str) -> str:
 
 # ------------------------------------------------- who answers, out loud
 #
-# Miro, 2026-09-29: "When I ask something, ATLAS should coordinate and
+# the owner, 2026-09-29: "When I ask something, ATLAS should coordinate and
 # redirect to the appropriate agent." `owner_for` decides whose WORK an order
 # is -- what Slack and the missions start. This decides who ANSWERS a spoken
 # question on the dashboard: wider (the business agents, his words for them,
 # a persona asked about by name), and kept apart so widening it never
 # changes what Slack or a mission starts. Pure, no model.
 
-_TOPICS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
-    (agent, re.compile(pattern, re.IGNORECASE)) for agent, pattern in (
-        ("markets", (r"\btrad(?:ing|es?)\b|\bportfolio\b|\bstocks?\b|\bshare\s+price\b"
-                     r"|\b(?:the|paper)\s+basket\b|\balinea\b|\bticker\b|\bwatchlist\b"
-                     r"|\binsider\s+(?:buy|sell|trad)\w*")),
-        ("reels", r"\breels?\b|\bseries\s+part\b|\bepisodes?\b"),
-        ("marketing", r"\bexperiments?\b|\bmarketing\b|\bthe\s+course\b|\bplaybook\b"),
-        ("growth", r"\blinkedin\b|\binstagram\b|\btiktok\b"),
-        ("flycheap", r"\bfly\s*cheap\b"),
-        ("vpsie", r"\bvpsie\b|\bvipsy\b|\bvps[\s-]?e\b|\bvp\s+see\b"),
-        # Never a bare "vault": that is also his notes vault (modules/vault).
-        ("guardian", r"\bguardian\b|\bguarder\b|\bvault\s+(?:watchdog|network)\b"),
-        ("inroots", r"\bin\s*roots\b|\battendance\s+bot\b"),
-        ("mirotech", r"\bmirotech\b|\bebay\b"),
-        ("fiverr", r"\bfiverr\b|\bfiver\b|\bgigs?\b"),
-    ))
+# Retired 2026-10-28 with their agents (markets, reels, marketing, growth and
+# the per-business agents): no kept agent answers those topics by word alone.
+_TOPICS: tuple[tuple[str, re.Pattern[str]], ...] = ()
 
 # A persona asked ABOUT by name: "what did Nora do today", "how's Ivan
 # doing", "what's Hazel up to", "Owen's update". Several names are ordinary
@@ -208,8 +236,6 @@ _ABOUT = (r"\b(?:what|how)(?:'s|\s+(?:is|was|did|has|does|about))\s+{n}"
 def _asked_about(request: str) -> str | None:
     from .personas import PERSONAS
     for p in PERSONAS.values():
-        if p.agent == "concierge":
-            continue
         name = re.escape(p.name)
         if re.search(_ABOUT.format(n=name), request, re.IGNORECASE):
             return p.agent
@@ -227,12 +253,12 @@ def voice_agent(request: str) -> str | None:
     hit = addressed(asked)
     agent = hit[0].agent if hit is not None else _asked_about(asked)
     if agent is None:
-        agency = BY_AGENT["agency"].pattern
-        if agency is not None and agency.search(asked):
-            agent = "agency"
+        sites = BY_AGENT["sites"].pattern
+        if sites is not None and sites.search(asked):
+            agent = "sites"
     if agent is None:
         agent = next((a for a, pattern in _TOPICS if pattern.search(asked)), None)
-    if agent is None or agent == "concierge" or agent not in ROSTER:
+    if agent is None or agent not in ROSTER:
         return None
     return agent
 
@@ -412,7 +438,7 @@ class Area:
 
 
 def home_area() -> Area | None:
-    """`AGENCY_HOME_AREA` = "lat,lng,radius_m,label" -- Miro's own words for
+    """`AGENCY_HOME_AREA` = "lat,lng,radius_m,label" -- the owner's own words for
     where he works, set by him. None when unset or malformed."""
     raw = os.getenv("AGENCY_HOME_AREA", "").strip()
     if not raw:
@@ -475,13 +501,13 @@ async def _model_slots(request: str) -> dict[str, Any]:
     try:
         completion = await asyncio.wait_for(think(
             Need.TRIVIAL,
-            "Miro asked for local businesses to be found. Read two slots from "
+            "the owner asked for local businesses to be found. Read two slots from "
             "his words and reply with one JSON object and nothing else:\n"
             '  {"business": "<the trade he named, plural, e.g. plumbers>" or '
             'null, "area": "<the place he named, e.g. Astoria>" or null}\n'
             "Use only words he said. A slot he did not say is null. 'Local "
             "businesses' in general is business null. Never write coordinates.",
-            [Message("user", wrap_untrusted(request, "miro", principal=True))],
+            [Message("user", wrap_untrusted(request, "owner", principal=True))],
             max_tokens=120), timeout=20)
     except Exception:                                   # noqa: BLE001
         return {}
@@ -745,7 +771,7 @@ def next_agency_step(m: dict[str, Any], facts: list[LeadFact],
     blocked = st.setdefault("blocked", {})
     n = int(m["slots"].get("n") or 1)
 
-    # Verify before anything else is spent on a lead (Miro, 2026-09-30):
+    # Verify before anything else is spent on a lead (the owner, 2026-09-30):
     # only a verified lead is audited, mocked up or built for.
     if "verify" not in blocked:
         for f in facts:
@@ -862,7 +888,7 @@ async def run_step(m: dict[str, Any], owner: Owner, name: str,
             pid = await propose(
                 name, params,
                 reason=(f"Mission #{m.get('id')} ({who(owner.agent)}), asked by "
-                        f"Miro: “{request}”"),
+                        f"the owner: “{request}”"),
                 evidence={"mission": m.get("id"), "request": request},
                 dedup_key=f"mission:{m.get('id')}:{name}:"
                           f"{json.dumps(params, sort_keys=True, default=str)[:80]}")
@@ -871,13 +897,13 @@ async def run_step(m: dict[str, Any], owner: Owner, name: str,
                         "detail": exc.spoken})
             return "refused", exc.spoken
         _record(m, {"action": name, "params": params, "ok": True,
-                    "proposal_id": pid, "detail": f"card #{pid} raised for Miro"})
+                    "proposal_id": pid, "detail": f"card #{pid} raised for the owner"})
         return "card", pid
 
     from .executor import ExecutionRequest, execute
     result = await execute(ExecutionRequest(
         action=name, params=params,
-        reason=(f"Mission #{m.get('id')} for Miro, run by {who(owner.agent)}: "
+        reason=(f"Mission #{m.get('id')} for the owner, run by {who(owner.agent)}: "
                 f"“{request}”")))
     held = _held(result) and not result.ok
     if not held:
@@ -1159,9 +1185,9 @@ def report(m: dict[str, Any], facts: list[LeadFact], *, read_at: datetime) -> st
         not_done.append(f"{count} lead(s) — {why}")
     if slots.get("n_capped"):
         not_done.append(f"capped at {max_n()} (AGENCY_MISSION_MAX_N)")
-    not_done.append("outreach and deploying: not done — each is a Tier 2 card "
-                    "(agency.send_outreach, agency.deploy_site) and needs your "
-                    "yes; none was raised")
+    not_done.append("outreach and deploying: not done — each email is a Tier 2 "
+                    "card (agency.send_outreach) and needs your yes; none was "
+                    "raised")
     lines.append("Not done:")
     lines += [f"• {line}" for line in not_done]
     return "\n".join(lines)
@@ -1199,7 +1225,7 @@ def _kick(mission_id: int) -> None:
 @dataclass(frozen=True, slots=True)
 class Reply:
     """`spoken` is what ATLAS says and the dashboard types: one or two short
-    sentences, no config names, no file paths, no mission numbers (Miro,
+    sentences, no config names, no file paths, no mission numbers (the owner,
     2026-09-29: "not too chatty -- simple and straight to the point").
     `detail` is the full account for Slack and the Agency room, when there
     is more to it than the spoken line."""
@@ -1271,7 +1297,7 @@ async def take(request: str, *, channel: str, who_: str, thread: str = "",
                principal: bool = True) -> Reply | None:
     """Start a recipe mission for this request, or None when it is not one.
 
-    Only a surface that authenticates Miro starts one (Slack from an
+    Only a surface that authenticates the owner starts one (Slack from an
     approver, the signed-in dashboard); anything else gets an honest line.
     """
     from .solve import denied
@@ -1441,7 +1467,7 @@ async def answer(text: str, *, channel: str) -> Reply | None:
 # ------------------------------------------------------- the generic path
 
 ASK_AGENT = (
-    "Miro asked for the job below and handed it to you. Nothing in your "
+    "the owner asked for the job below and handed it to you. Nothing in your "
     "catalog does it as one action, so do what you can with your tools: take "
     "the readings that bear on it, each with the time it was read, and answer "
     "him in at most four sentences. If it needs something you cannot do, say "
@@ -1449,7 +1475,7 @@ ASK_AGENT = (
 # The same, for a voice he is listening to: two short sentences, the read
 # time said compactly ("as of 7:52"), no tool, config or file names.
 ASK_AGENT_SAID = (
-    "Miro asked for the job below, out loud, and handed it to you. Nothing in "
+    "the owner asked for the job below, out loud, and handed it to you. Nothing in "
     "your catalog does it as one action, so do what you can with your tools. "
     "Answer in at most two short sentences he can take in by ear: lead with "
     "the answer, don't restate the question, no config names or file paths. "
@@ -1491,7 +1517,7 @@ async def delegate(request: str, *, channel: str, who_: str, thread: str = "",
         try:
             pid = await propose(
                 action, params,
-                reason=f"{name_of} took this for Miro over {channel}: “{asked[:300]}”",
+                reason=f"{name_of} took this for the owner over {channel}: “{asked[:300]}”",
                 evidence={"channel": channel, "request": asked[:500],
                           "agent": owner.agent},
                 dedup_key=f"{action}@{channel}:{asked[:80].lower()}")

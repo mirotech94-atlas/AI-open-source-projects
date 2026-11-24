@@ -120,3 +120,97 @@
 @media (prefers-reduced-motion: reduce) {
   .live { animation: none; }
 }
+
+/* --- the backdrop ---------------------------------------------------------
+ * Black with slow royal-blue light, one source for the bundle and for every
+ * server-rendered page. Pure CSS (no script: the CSP allows script-src 'self'
+ * only), four fixed layers behind everything, none of them able to take a
+ * click. It carries no health meaning: it can neither light UNKNOWN nor hide it.
+ *
+ *   body::before   glow set A      html::before  glow set B (drifts the other way)
+ *   body::after    the grid        html::after   rising specks (sign-in pages only)
+ *
+ * Motion is declared only inside `prefers-reduced-motion: no-preference`, so a
+ * reader who asked for less gets the same picture, standing still.
+ */
+:root {
+  --royal:        #5b8cff;
+  --royal-bright: #8fb0ff;
+  --royal-deep:   #1d3a8a;
+  --royal-glow:   rgba(91, 140, 255, .28);
+  --ground:       #0a0d14;
+  --ease-out:     cubic-bezier(.22, 1, .36, 1);
+}
+
+:root:has(.cmd-shell, .login, body.atlas-page) body {
+  background: transparent;
+}
+:root:has(.cmd-shell, .login, body.atlas-page) body::before,
+:root:has(.cmd-shell, .login, body.atlas-page) body::after,
+:root:has(.cmd-shell, .login, body.atlas-page)::before,
+:root:has(.login, body.atlas-login)::after {
+  content: ""; position: fixed; z-index: -1; pointer-events: none;
+}
+:root:has(.cmd-shell, .login, body.atlas-page) body::before {
+  inset: -25%;
+  background:
+    radial-gradient(38% 34% at 22% 28%, rgba(91, 140, 255, .26), transparent 70%),
+    radial-gradient(32% 30% at 80% 20%, rgba(36, 72, 190, .24), transparent 70%),
+    radial-gradient(40% 34% at 60% 84%, rgba(91, 140, 255, .14), transparent 72%);
+}
+:root:has(.cmd-shell, .login, body.atlas-page)::before {
+  inset: -25%;
+  background:
+    radial-gradient(30% 28% at 78% 70%, rgba(29, 58, 138, .34), transparent 70%),
+    radial-gradient(26% 24% at 14% 82%, rgba(91, 140, 255, .12), transparent 70%),
+    radial-gradient(22% 20% at 50% 8%, rgba(143, 176, 255, .08), transparent 70%);
+}
+/* One grid cell larger than the screen on every side, so sliding it one cell
+   loops without a seam; the mask fades it out toward the edges. */
+:root:has(.cmd-shell, .login, body.atlas-page) body::after {
+  inset: -56px;
+  background:
+    linear-gradient(rgba(91, 140, 255, .07) 1px, transparent 1px) 0 0 / 56px 56px,
+    linear-gradient(90deg, rgba(91, 140, 255, .07) 1px, transparent 1px) 0 0 / 56px 56px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 38%, #000 18%, transparent 78%);
+          mask-image: radial-gradient(ellipse 80% 70% at 50% 38%, #000 18%, transparent 78%);
+}
+/* Specks: tall tiles whose heights divide 300px, so a 300px climb loops. */
+:root:has(.login, body.atlas-login)::after {
+  top: 0; left: 0; right: 0; bottom: -300px;
+  background:
+    radial-gradient(circle, rgba(143, 176, 255, .55) 0 1px, transparent 1.7px) 30px 40px / 190px 300px,
+    radial-gradient(circle, rgba(91, 140, 255, .45) 0 1.2px, transparent 2px) 90px 120px / 260px 150px,
+    radial-gradient(circle, rgba(200, 216, 255, .35) 0 .8px, transparent 1.4px) 160px 10px / 340px 100px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root:has(.cmd-shell, .login, body.atlas-page) body::before {
+    animation: atlas-drift-a 34s ease-in-out infinite alternate; will-change: transform;
+  }
+  :root:has(.cmd-shell, .login, body.atlas-page)::before {
+    animation: atlas-drift-b 41s ease-in-out infinite alternate; will-change: transform;
+  }
+  :root:has(.cmd-shell, .login, body.atlas-page) body::after {
+    animation: atlas-grid 28s linear infinite; will-change: transform;
+  }
+  :root:has(.login, body.atlas-login)::after {
+    animation: atlas-rise-specks 46s linear infinite; will-change: transform;
+  }
+  @keyframes atlas-drift-a {
+    from { transform: translate3d(-3%, -2%, 0) scale(1); }
+    to   { transform: translate3d(4%, 3%, 0) scale(1.1); }
+  }
+  @keyframes atlas-drift-b {
+    from { transform: translate3d(3%, 2%, 0) scale(1.08); }
+    to   { transform: translate3d(-4%, -3%, 0) scale(1); }
+  }
+  @keyframes atlas-grid {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(56px, 56px, 0); }
+  }
+  @keyframes atlas-rise-specks {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(0, -300px, 0); }
+  }
+}

@@ -12,7 +12,7 @@ becomes a workflow:
     prepare(Fix, Tier 1)   PREPARING -> RUNNING      one outbox intent, with
                                                      the move, in one statement
     prepare(Fix, Tier 2)   a card; PREPARING -> NEEDS_HUMAN (the card waits)
-    prepare(NextStep)      PREPARING -> NEEDS_HUMAN  one next step, owner Miro
+    prepare(NextStep)      PREPARING -> NEEDS_HUMAN  one next step, owner the owner
     verify_recovery():
         RUNNING -> VERIFYING                         by the outbox, on delivery
         VERIFYING -> SUCCEEDED                       the check read OK after it
@@ -217,7 +217,7 @@ async def prepare(taken: Taken, plan: Plan, *,
 
 async def escalated(taken: Taken, said: str, complete: bool) -> None:
     """The sweep posted what the agent said (or the incomplete-incident
-    card): record it as the one next step, owner Miro."""
+    card): record it as the one next step, owner the owner."""
     from .. import durable
     try:
         await durable.transition(

@@ -43,8 +43,8 @@ def test_a_keyword_with_a_hyphen_is_escaped():
 # ------------------------------------------------------------------ rules
 
 @pytest.mark.parametrize("text", [
-    "https://flycheap.live", "http://x.co", "www.flycheap.live", "flycheap.live",
-    "see atlasacademy-ai.myshopify.com", "link.ly/x", "Flycheap.Live now",
+    "https://flycheap.example", "http://x.co", "www.flycheap.example", "flycheap.example",
+    "see academy-store.myshopify.example", "link.ly/x", "Flycheap.Live now",
 ])
 def test_the_public_reply_may_never_carry_a_link(text):
     assert funnel.has_link(text)

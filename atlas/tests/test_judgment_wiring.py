@@ -11,6 +11,12 @@ from atlas.kernel.judgment import policy as jpolicy
 from atlas.kernel.registry import REGISTRY
 
 
+@pytest.fixture(autouse=True)
+def _slack_card_on(monkeypatch):
+    """These tests read the Slack card; it is opt-in now (APPROVALS_SLACK)."""
+    monkeypatch.setenv("APPROVALS_SLACK", "on")
+
+
 @pytest.fixture
 def proposing(monkeypatch, memory_backend):
     """A fake proposals table (the memory backend refuses arbitrary SQL) and

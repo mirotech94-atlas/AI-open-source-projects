@@ -1,4 +1,4 @@
-"""Stripe — Guardian and flycheap.
+"""Stripe — per-business restricted keys (none registered since 2026-10-29).
 
 Read the note on keys before wiring this up, because it is the difference
 between a useful monitor and a liability.
@@ -41,16 +41,25 @@ from ...kernel.contracts import (
 from .._http import redact
 
 API = "https://api.stripe.com/v1"
-BUSINESSES = ("guardian", "flycheap")
+# the owner, 2026-10-29: "delete flycheap and guardian, we don't use them
+# anymore". They were the only two businesses, so no business is watched and
+# the module declares no checks until one is added here.
+BUSINESSES: tuple[str, ...] = ()
 
 
 # Each business is a separate Stripe account, with its own key. They are
-# not interchangeable: the Guardian key reads acct_1UH58V... (guarder.io),
-# and flycheap is a different account entirely.
+# not interchangeable: a key pasted into the wrong variable reads the wrong
+# business's revenue.
 ENV_FOR = {b: f"STRIPE_{b.upper()}_KEY" for b in BUSINESSES}
 
 
+def _env(business: str) -> str:
+    return ENV_FOR.get(business, f"STRIPE_{business.upper()}_KEY")
+
+
 def _key(business: str) -> str:
+    if business not in ENV_FOR:
+        return ""
     return os.getenv(ENV_FOR[business], "").strip()
 
 
@@ -62,7 +71,7 @@ async def _get(business: str, path: str, **params):
     key = _key(business)
     if not key:
         raise NoKey(
-            f"no {ENV_FOR[business]} set. Create a RESTRICTED key (rk_live_) "
+            f"no {_env(business)} set. Create a RESTRICTED key (rk_live_) "
             f"in that account's dashboard under Developers -> API keys -> "
             f"Create restricted key, with read permissions only. Each "
             f"business is a separate Stripe account and needs its own.")
@@ -113,14 +122,14 @@ async def key_scope(business: str) -> Observation:
     if not key:
         return Observation(
             name, Health.UNKNOWN,
-            detail=f"no {ENV_FOR[business]} set. Create a RESTRICTED key "
+            detail=f"no {_env(business)} set. Create a RESTRICTED key "
                    f"(rk_live_) in that account under Developers -> API keys, "
                    f"with read permissions only.")
 
     if key.startswith(("sk_live_", "sk_test_")):
         return Observation(
             name, Health.DEGRADED, None, None,
-            f"{ENV_FOR[business]} is a FULL secret key, not a restricted one. "
+            f"{_env(business)} is a FULL secret key, not a restricted one. "
             f"It can create charges, refunds and payouts. Replace it with an "
             f"rk_live_ restricted key with read permissions only — money out "
             f"is permanently denied here and the capability should not exist.")
@@ -140,7 +149,7 @@ async def key_scope(business: str) -> Observation:
         name, Health.OK if matches else Health.DEGRADED, None, None,
         f"restricted key for {label} ({account.get('id')})"
         + ("" if matches else
-           f" — but it is in {ENV_FOR[business]}, so {business} figures would "
+           f" — but it is in {_env(business)}, so {business} figures would "
            f"be reported from the wrong account. Check which key went where."),
         evidence={"account": account.get("id"), "name": label})
 
@@ -331,7 +340,7 @@ async def retry_invoice(business: str, invoice_id: str) -> ActionResult:
     not Tier 3. It still requires approval every time: a charge cannot be
     undone, and `contracts.py` refuses an irreversible Tier 1.
 
-    Miro, 2026-09-28: it always charges, and the customer always gets a
+    the owner, 2026-09-28: it always charges, and the customer always gets a
     receipt -- once a retry pays, the charge's receipt is emailed
     (`_send_receipt`), once per charge.
 
@@ -340,6 +349,9 @@ async def retry_invoice(business: str, invoice_id: str) -> ActionResult:
     of the same run (a timeout, a re-dispatch) is answered by Stripe with
     the first attempt's result instead of a second charge. A new card is a
     new run and may retry the invoice again."""
+    if business not in BUSINESSES:
+        return ActionResult(False, f"unknown business {business!r}: Stripe "
+                                   f"watches {', '.join(BUSINESSES) or 'none'}")
     run = idempotency.run_key("stripe.retry_invoice",
                               {"business": business, "invoice_id": invoice_id})
     key = retry_key(invoice_id, run)
@@ -383,7 +395,7 @@ async def _charge_of(business: str, invoice: dict) -> str | None:
 
 
 async def _send_receipt(business: str, invoice: dict) -> str:
-    """Miro, 2026-09-28: a customer charged by a retry always gets a receipt.
+    """the owner, 2026-09-28: a customer charged by a retry always gets a receipt.
 
     Stripe emails the receipt when a charge's `receipt_email` is set. Sent
     once per charge: a charge that already carries `receipt_email` or a
@@ -426,6 +438,9 @@ def receipt_key(charge_id: str) -> str:
 
 
 async def retry_dry(business: str, invoice_id: str) -> ActionResult:
+    if business not in BUSINESSES:
+        return ActionResult(False, f"unknown business {business!r}: Stripe "
+                                   f"watches {', '.join(BUSINESSES) or 'none'}")
     try:
         inv = await _get(business, f"invoices/{invoice_id}")
     except Exception as exc:                            # noqa: BLE001
@@ -446,7 +461,7 @@ class StripeModule:
     # before the other should light up that business rather than keep both
     # dark. A missing key reports UNKNOWN naming the variable.
     requires_env = ()
-    optional_env = ("STRIPE_GUARDIAN_KEY", "STRIPE_FLYCHEAP_KEY")
+    optional_env = tuple(ENV_FOR.values())
 
     async def setup(self) -> None: ...
     async def teardown(self) -> None: ...
@@ -485,7 +500,7 @@ class StripeModule:
                 summary="Retry collection on a failed invoice (dunning)",
                 run=retry_invoice, dry_run=retry_dry,
                 rollback=None, irreversible=True,
-                params={"business": "guardian or flycheap",
+                params={"business": "a business in stripe_billing.BUSINESSES",
                         "invoice_id": "Stripe invoice id (in_...)"},
                 max_per_hour=5,
             ),

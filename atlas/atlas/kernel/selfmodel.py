@@ -1,6 +1,6 @@
 """The self-model: what ATLAS can truthfully say about itself.
 
-Miro asked for ATLAS to have "awareness and consciousness". What is built is
+the owner asked for ATLAS to have "awareness and consciousness". What is built is
 an honest self-model and nothing more: ATLAS is not conscious, has no
 feelings, and this file never says otherwise.
 
@@ -26,7 +26,7 @@ What it knows, and where each fact comes from:
     (None when there is none) and whether it can call tools, as learned by
     this process from the first request that carried tools. None until
     then: not having asked is not a yes.
-  * `private_cloud_allowed` — whether Miro has opted in, with
+  * `private_cloud_allowed` — whether the owner has opted in, with
     `ATLAS_PRIVATE_ALLOW_CLOUD`, to PRIVATE work falling through to a cloud
     model when the local one fails. False unless he has.
   * `providers_present` — which cloud providers have a key configured, by
@@ -299,7 +299,7 @@ def _peer_ips_line(peers: dict | None) -> str:
 
 
 def _where(presence_: dict | None) -> str:
-    """"Where you are: home (miro on 203.0.113.7)." / "...out (miro
+    """"Where you are: home (owner on 203.0.113.7)." / "...out (owner
     connected from 198.51.100.4)." / "...unknown (<reason>)." — always
     followed by every listed peer's current address, so `self_status` alone
     is enough to learn what to put in `HOME_IPS` (invariant 6: never guess
@@ -327,8 +327,8 @@ async def spoken() -> str:
 
     "I'm running. Up 46 minutes, 2 errors since deploy, 38 of 41 checks fine,
     3 unmeasured. Did 3 things since deploy, last vault.reindex at 14:02; I
-    hold 812 memories. Where you are: home (miro on 203.0.113.7). Peer IPs
-    for HOME_IPS: miro 203.0.113.7, atlas.example.com 198.51.100.1. Last thing
+    hold 812 memories. Where you are: home (owner on 203.0.113.7). Peer IPs
+    for HOME_IPS: owner 203.0.113.7, atlas.example.com 198.51.100.1. Last thing
     I got wrong: <newest lesson>."
     """
     s = await status()

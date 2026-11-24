@@ -45,7 +45,7 @@ from .registry import REGISTRY
 # action, on purpose.
 ALLOWED = frozenset({
     "screening.book_slot",
-    # The agent on Miro's Mac recording a clip it submitted on Whop (Miro,
+    # The agent on the owner's Mac recording a clip it submitted on Whop (the owner,
     # 2026-09-29): a status on ATLAS's own row, mesh-only and behind the
     # HANDOFF_TOKEN bearer (atlas/api/clips.py).
     "clips.record_whop_submission",
@@ -55,26 +55,27 @@ ALLOWED = frozenset({
     # door and bearer (atlas/api/clips.py).
     "clips.record_draft_submitted",
     "clips.record_draft_decision",
-    # The agent on Miro's Mac recording the Webild site it published for a
-    # lead (Miro, 2026-09-29): a status on ATLAS's own row and a read-only
+    # The agent on the owner's Mac recording the Webild site it published for a
+    # lead (the owner, 2026-09-29): a status on ATLAS's own row and a read-only
     # launch check, mesh-only and behind the HANDOFF_TOKEN bearer
     # (atlas/api/webild.py).
     "agency.record_webild_site",
     # A lead on ATLAS's own consented call picking one of the free slots
-    # just read from Miro's calendar (Miro, 2026-09-30): a hold on his own
+    # just read from the owner's calendar (the owner, 2026-09-30): a hold on his own
     # calendar with no attendee, re-checked free by its dry run, rolled back
     # by deleting it (atlas/api/lead_call.py).
     "agency.hold_meeting",
-    # The same call, 2026-10-06 (Miro: "schedule meetings with them via
-    # email as well ... approve invoices too", under his rule that anything
-    # not urgent runs without a card): the invite to the slot the lead just
-    # picked, and the agreement with his own Stripe payment link at the
-    # price the lead just accepted -- money IN, never out. Both Tier 1 with
-    # every guard in code (meetings._invite_guard, replies._guard_agreement:
-    # a verified lead, an allowed price, a link Miro created for exactly
-    # that price, not suppressed); a refusal falls back to the Tier 2 card.
-    "agency.send_invite",
-    "agency.send_agreement",
+    # agency.send_invite and agency.send_agreement left this list on
+    # 2026-10-27 (six agents): every send to a client is a Tier 2 card, and
+    # a Tier 2 action never goes through this door.
+    # The agent on the owner's Mac asking for an approved draft to post now
+    # (2026-10-06: Whop takes a live link only within 30 minutes of the
+    # post), through the clip's own Tier 1 auto action with every gate it
+    # already has -- the same post the posting pass would make on its own
+    # timing (atlas/api/clips.py, /post_now).
+    "clips.publish_clip",
+    "clips.publish_clip_tiktok",
+    "clips.publish_clip_youtube_postiz",
 })
 
 

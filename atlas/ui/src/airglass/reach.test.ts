@@ -1,6 +1,6 @@
 // Can a real hand reach what Air Glass asks it to pinch?
 //
-// Miro, live with his own camera (2026-10-06): "his forefinger cannot pick a
+// the owner, live with his own camera (2026-10-06): "his forefinger cannot pick a
 // model". The demo and the old tests passed because their hand was drawn
 // straight onto the stage and could sit anywhere -- wrist below the picture
 // included. A real hand cannot: the tracker finds it by its palm. These

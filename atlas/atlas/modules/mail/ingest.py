@@ -7,7 +7,7 @@ Fiverr order, a Stripe dispute notice all sat there as "1 unread". Counting
 is not reading.
 
 This polls instead. It is honest polling: every account, every few minutes,
-only messages newer than the last one seen, only ones Miro has not opened.
+only messages newer than the last one seen, only ones the owner has not opened.
 That last part is the point. He asked to be told about things he has NOT
 seen, not about everything -- so anything he has already read is skipped
 and the watermark is per account, so a busy inbox does not starve a quiet
@@ -47,8 +47,8 @@ _started = datetime.now(UTC)
 # What the classifier can say that is worth interrupting him for.
 TELL_HIM = {"needs_reply", "client", "bill"}
 # What the sender can be that is worth interrupting him for regardless.
-WATCHED_SENDERS = ("fiverr.com", "stripe.com", "guarder.io", "flycheap.live",
-                   "gitlab", "vpsie.com", "linkedin.com")
+WATCHED_SENDERS = ("fiverr.com", "stripe.com", "vault.example", "flycheap.example",
+                   "gitlab", "cloud-provider.example", "linkedin.com")
 
 
 def _topic_for(account: Account) -> str:
@@ -62,7 +62,7 @@ def _topic_for(account: Account) -> str:
 
 
 async def _new_google(account: Account) -> list[dict]:
-    from . import _api, _body_text, _header
+    from . import _api, _body_text, _header, spam
 
     since = int((datetime.now(UTC) - timedelta(days=2)).timestamp())
     data = await _api("/messages", account=account,
@@ -88,6 +88,8 @@ async def _new_google(account: Account) -> list[dict]:
             "body": _body_text(full.get("payload", {}))[:6000],
             "at": datetime.fromtimestamp(
                 int(full.get("internalDate", 0)) / 1000, UTC),
+            # the whole message, for the spam verdict: headers, links, stamp
+            "spam_item": spam.item_from_gmail(full, full=True),
         })
     if ids:
         _seen[account.name] = ids[0]
@@ -100,6 +102,7 @@ async def _new_imap(account: Account) -> list[dict]:
     import imaplib
     import ssl
 
+    from . import spam
     from .imap import _decode
 
     def sync() -> list[dict]:
@@ -109,6 +112,7 @@ async def _new_imap(account: Account) -> list[dict]:
         try:
             conn.login(account.email, account.password)
             conn.select("INBOX", readonly=True)
+            validity = spam.uidvalidity(conn)
             since = (datetime.now(UTC) - timedelta(days=2)).strftime("%d-%b-%Y")
             typ, data = conn.search(None, f"(UNSEEN SINCE {since})")
             ids = (data[0] or b"").split()
@@ -118,7 +122,7 @@ async def _new_imap(account: Account) -> list[dict]:
                 key = mid.decode()
                 if key == newest_seen:
                     break
-                typ, payload = conn.fetch(mid, "(BODY.PEEK[])")
+                typ, payload = conn.fetch(mid, "(UID BODY.PEEK[])")
                 if typ != "OK" or not payload or not isinstance(payload[0], tuple):
                     continue
                 msg = email.message_from_bytes(payload[0][1])
@@ -134,9 +138,15 @@ async def _new_imap(account: Account) -> list[dict]:
                         at = at.replace(tzinfo=UTC)
                 except (TypeError, ValueError):
                     at = datetime.now(UTC)
+                # the server's own ids, never the sender-written Message-ID
+                uid = spam.uid_of(payload[0][0])
                 out.append({"id": key, "subject": _decode(msg.get("Subject")),
                             "sender": _decode(msg.get("From")),
-                            "body": body[:6000], "at": at})
+                            "body": body[:6000], "at": at,
+                            "spam_item": spam.item_from_message(
+                                msg, key=spam.imap_key(account.name, validity, uid,
+                                                       msg.get("Message-ID")),
+                                trust_auth=spam.authserv_for_host(account.host))})
             if ids:
                 _seen[account.name] = ids[-1].decode()
             return out
@@ -154,7 +164,7 @@ async def sweep() -> list[Signal]:
     from ...kernel.memory import Kind, remember
     from ...kernel.permissions import scan_for_injection
     from .._http import explain
-    from . import UNCLASSIFIED_HEADING, classify
+    from . import UNCLASSIFIED_HEADING, classify, spam
 
     signals: list[Signal] = []
     for account in all_accounts():
@@ -162,6 +172,8 @@ async def sweep() -> list[Signal]:
             continue
         before = _seen.get(account.name)
         unread: list[tuple[int, dict, str]] = []     # (position, mail, reason)
+        unsure: list[tuple[dict, spam.SpamResult]] = []
+        unchecked = 0
         try:
             fresh = (await _new_imap(account) if account.kind == "imap"
                      else await _new_google(account))
@@ -176,6 +188,20 @@ async def sweep() -> list[Signal]:
             if scan_for_injection(f"{m['subject']}\n{m['body']}",
                                   f"mail:{m['sender']}"):
                 log.warning("instruction-shaped email from %s", m["sender"])
+            # Every ingested message gets a spam verdict first. Spam is never
+            # read by a model for triage and never raised; unsure is held back
+            # and named once below; a check that could not run is UNKNOWN and
+            # the mail is read as before. Nothing in the mailbox is touched.
+            flag = await spam.check(m.get("spam_item") or spam.item_from_row(
+                m, key=spam.mid_key(account.name, str(m["id"]))), account)
+            if flag.verdict == spam.SPAM:
+                log.info("spam held back (%s): %s", account.name, flag.reason)
+                continue
+            if flag.verdict == spam.UNSURE:
+                unsure.append((m, flag))
+                continue
+            if flag.verdict == spam.UNKNOWN:
+                unchecked += 1
             try:
                 verdict = await classify(m["subject"], m["sender"], m["body"])
             except Exception as exc:                    # noqa: BLE001
@@ -214,6 +240,9 @@ async def sweep() -> list[Signal]:
                 params={"topic": _topic_for(account)},
             ))
 
+        held = spam.flagged_signal(account, unsure, unchecked, _topic_for(account))
+        if held is not None:
+            signals.append(held)
         if unread:
             signals.append(_unclassified_alert(account, unread, UNCLASSIFIED_HEADING))
             _rewind(account, fresh, before, max(pos for pos, _, _ in unread))

@@ -67,7 +67,7 @@ _FLIGHT_NO = re.compile(r"^[A-Z0-9]{2}\s?\d{1,4}[A-Z]?$")
 _CODE = re.compile(r"^[A-Z0-9-]{3,20}$", re.IGNORECASE)
 
 SYSTEM = (
-    "Extract the travel bookings in this email for Miro. Reply with JSON only:\n"
+    "Extract the travel bookings in this email for the owner. Reply with JSON only:\n"
     '{"bookings": [{"kind": "flight" | "hotel" | "transfer", '
     '"confirmation": the booking reference or PNR exactly as written, or null, '
     '"flight_number": exactly as written (e.g. "ME 201"), or null, '

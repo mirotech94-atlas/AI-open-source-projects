@@ -4,7 +4,7 @@
 failed twice. What it cannot see is one fault wearing different parameters:
 a provider that rejects every post, a tool that times out for every site.
 Each is a fresh pair of (action, params) to `lessons`, so nothing ever
-reaches two. Miro's operations brief (2026-10-04) asks for a ledger that
+reaches two. the owner's operations brief (2026-10-04) asks for a ledger that
 knows a mistake when it comes back.
 
 Nightly, after the review, `nightly()` reads the week's `failed_action`

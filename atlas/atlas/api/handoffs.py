@@ -1,4 +1,4 @@
-"""Where the coding agent on Miro's Mac collects approved work and reports.
+"""Where the coding agent on the owner's Mac collects approved work and reports.
 
 Mesh-only by the middleware (`/handoffs` is not in PUBLIC_PATHS) and
 authenticated with a bearer token, the same defence in depth as
@@ -10,9 +10,11 @@ Two calls, and neither can create work:
   the same UPDATE that checks it has not expired -- silence is never
   consent, so an expired task is never handed out late.
 * `POST /handoffs/{id}/report` closes a claimed task and relays the report to
-  the thread he asked in. The report is the agent's account, not ATLAS's:
-  it is labelled as such, capped, and stored for whatever reads it next to
-  wrap as untrusted (invariant 4).
+  the thread he asked in. A done report may carry `artifact_url`, the Claude
+  Docs link for a client-site document (`agency.sitedocs`); only a claude.ai
+  artifact link is taken, and it is recorded as the agent's word. The report
+  is the agent's account, not ATLAS's: it is labelled as such, capped, and
+  stored for whatever reads it next to wrap as untrusted (invariant 4).
 """
 from __future__ import annotations
 
@@ -26,7 +28,7 @@ log = logging.getLogger("atlas.api.handoffs")
 
 router = APIRouter(prefix="/handoffs")
 
-REPORT_STATUSES = {"done", "failed", "needs_miro"}
+REPORT_STATUSES = {"done", "failed", "needs_owner"}
 MAX_REPORT = 6000
 
 
@@ -82,6 +84,16 @@ async def report(hid: int, request: Request, authorization: str = Header("")) ->
     text = str(body.get("summary") or "").strip()[:MAX_REPORT]
     if not text:
         raise HTTPException(400, "summary is required")
+    # A Claude Docs link for a client-site document (agency.publish_doc).
+    # Checked before anything changes; only a claude.ai artifact link, and
+    # only on a task reported done.
+    from ..modules.agency import sitedocs
+    url = str(body.get("artifact_url") or "").strip()
+    if url and not sitedocs.artifact_url_ok(url):
+        raise HTTPException(400, "artifact_url must be a https://claude.ai/ "
+                                 "artifact link")
+    if url and status != "done":
+        raise HTTPException(400, "artifact_url comes only with status done")
     row = await fetch_one(
         """UPDATE handoffs SET status = $2, report = $3, reported_at = now()
             WHERE id = $1 AND status = 'claimed'
@@ -90,12 +102,25 @@ async def report(hid: int, request: Request, authorization: str = Header("")) ->
         raise HTTPException(409, f"handoff {hid} is not claimed")
     await audit("handoff.reported", f"handoff:{hid}", {"status": status})
     label = {"done": "done", "failed": "could not do it",
-             "needs_miro": "needs you"}[status]
+             "needs_owner": "needs you"}[status]
+    link = ""
+    if url:
+        try:
+            doc = await sitedocs.record_link(hid, url)
+        except Exception:
+            log.exception("could not record handoff %s's Docs link", hid)
+            doc = None
+        link = (f"\n\nDocs link for {doc['slug']} \u201c{doc['title']}\u201d "
+                f"(reported by the coding agent, not verified): {url}" if doc
+                else f"\n\nDocs link reported, but no queued client-site "
+                     f"document is on this handoff, so it was not recorded: {url}")
+        await audit("handoff.artifact", f"handoff:{hid}",
+                    {"recorded": bool(doc), "url": url})
     try:
         await notify(Outbound(
             title=f"Coding agent on handoff #{hid}: {label}",
             body=(f"_Report from the coding agent, in its words — ATLAS has not "
-                  f"verified it:_\n\n{text}"),
+                  f"verified it:_\n\n{text}{link}"),
             severity=Severity.NORMAL, topic=row["topic"] or "decisions",
             thread=row["thread"] or None, channel=row["channel"] or None,
             kind="receipt"))

@@ -1,7 +1,7 @@
 """The decision log: the only thing the learning layer learns from.
 
 One row per proposal. Written when the proposal is raised (the conditions
-and the prediction), resolved when Miro answers or the proposal expires.
+and the prediction), resolved when the owner answers or the proposal expires.
 Three outcomes, never collapsed: approved, denied, expired.
 
 Trains only on his decisions. There is no other source, and none may be

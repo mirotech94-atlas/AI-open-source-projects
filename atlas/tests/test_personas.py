@@ -29,7 +29,9 @@ def test_persona_names_are_unique_and_human():
     reserved = {n.lower() for n in _roster()} | {
         v.lower() for v in _DISPLAY_NAME.values()} | {"atlas"}
     for p in personas.PERSONAS.values():
-        assert p.name.lower() not in reserved, p
+        # A persona may carry its own agent's key (the owner 2026-11-10: the
+        # TutorSite agent is called "MMT"), never another agent's.
+        assert p.name.lower() not in reserved - {p.agent}, p
         assert p.name.isalpha() and p.name[0].isupper(), p
 
 
@@ -40,16 +42,20 @@ def test_each_persona_has_a_one_line_specialty_and_a_known_voice():
         assert p.voice in {"female", "male"}, p
 
 
-def test_both_voices_are_in_the_room():
-    voices = {p.voice for p in personas.PERSONAS.values()}
-    assert voices == {"female", "male"}
+def test_no_persona_is_female():
+    """the owner, 2026-10-11: "don't use the girl voice, only use the guy voice at
+    all times." "female" stays in the closed set only for old browsers."""
+    assert {p.voice for p in personas.PERSONAS.values()} == {"male"}
+    assert personas.persona_for("newbie", "Newbie Desk", "x").voice == "male"
+    assert "female" in personas.VOICES            # still a 200, spoken as ATLAS
+    assert "the owner, 2026-10-11" in (personas.__doc__ or "")
 
 
 def test_personas_are_a_fixed_table_not_a_draw():
     """Same agent, same persona, on every call and every process."""
-    assert personas.persona_for("concierge") is personas.PERSONAS["concierge"]
-    assert personas.PERSONAS["concierge"].name == "Ava"
-    assert personas.PERSONAS["concierge"].voice == "female"
+    assert personas.persona_for("inbox") is personas.PERSONAS["inbox"]
+    assert personas.PERSONAS["inbox"].name == "Clara"
+    assert personas.PERSONAS["inbox"].voice == "male"
 
 
 def test_an_agent_without_an_entry_still_gets_an_honest_derived_persona():

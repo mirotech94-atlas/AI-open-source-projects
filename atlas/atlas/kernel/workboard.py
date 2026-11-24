@@ -1,6 +1,6 @@
 """The work board: what every agent is doing right now, from the record.
 
-Miro, 2026-09-29, by voice: "how is Hazel doing on the 50 websites?" -- and
+the owner, 2026-09-29, by voice: "how is Hazel doing on the 50 websites?" -- and
 ATLAS said it saw no data on Hazel's work. The voice path's context was the
 checks and the pending cards; the Tasks tab showed the cards and the
 nightshift. Nobody could see what each agent had in hand.
@@ -11,7 +11,7 @@ One source of truth, read for both surfaces:
     YOU), from the tables only: what is in flight (open missions, running
     nightshift jobs, queued outbox effects, queued research, the
     department's scheduled jobs with their last run and next due), what is
-    waiting on Miro (pending cards whose action is one of the agent's
+    waiting on the owner (pending cards whose action is one of the agent's
     modules'), what finished in the window (missions, outbox rows,
     `execute.finish` counts per action, read-backs), each module's own
     progress from its own tables (sites built, leads by stage, ideas by
@@ -303,7 +303,7 @@ async def _agency_progress(since: datetime, now: datetime) -> list[dict[str, Any
     out.append(figure("mockups", int(mock["n"]), read_at=now))
     webild = _by(await fetch_all(
         "SELECT status, count(*) AS n FROM agency_webild GROUP BY status"), "status")
-    for st in ("drafted", "queued", "claimed", "published", "failed", "needs_miro"):
+    for st in ("drafted", "queued", "claimed", "published", "failed", "needs_owner"):
         if webild.get(st):
             out.append(figure(f"webild {st}", webild[st], read_at=now))
     return out
@@ -542,7 +542,7 @@ def headline(agent: dict[str, Any]) -> str:
         return f"{kinds['research']} research question(s) queued"
     waiting = agent["counts"]["waiting"]
     if waiting:
-        return f"{waiting} card(s) waiting on Miro"
+        return f"{waiting} card(s) waiting on the owner"
     ran = sum(v["ok"] + v["failed"] for v in agent["recent"]["executions"].values())
     if ran:
         failed = sum(v["failed"] for v in agent["recent"]["executions"].values())
@@ -734,7 +734,7 @@ async def board(days: int = WINDOW_DAYS, now: datetime | None = None
         agents_out.append(agent)
 
     # A pending card whose action no department holds is still waiting on
-    # Miro: it lands on YOU, so the seats add up to the badge's count.
+    # the owner: it lands on YOU, so the seats add up to the badge's count.
     if cards is not None:
         stray = [c for c in cards if c["id"] not in placed_cards]
         you = next(a for a in agents_out if a["name"] == YOU)
@@ -785,12 +785,10 @@ ALIASES: dict[str, tuple[str, ...]] = {
     "calendar": ("calendar", "meeting", "meetings", "booking", "bookings"),
     "research": ("research", "question", "questions"),
     "fiverr": ("fiverr", "gig", "gigs", "buyer", "buyers"),
-    "mirotech": ("ebay", "listing", "listings", "reselling"),
+    "exampleco": ("ebay", "listing", "listings", "reselling"),
     "marketing": ("experiment", "experiments", "playbook", "campaigning"),
     "course": ("course", "students", "lessons"),
-    "vpsie": ("vpsie", "vipsy", "instances", "cloud"),
-    "guardian": ("vault", "guardian", "guarder", "sensors", "network"),
-    "flycheap": ("flycheap", "fares", "flights", "fare"),
+    "cloudco": ("cloudco", "vipsy", "instances", "cloud"),
     "inroots": ("roots", "inroots", "attendance", "standup", "standups"),
     "school": ("school", "college", "cuny", "class", "classes", "grades",
                "homework"),
@@ -859,7 +857,7 @@ def one_liner(a: dict[str, Any]) -> str:
     fl_s = "unknown" if fl is None else str(fl)
     wt_s = "unknown" if wt is None else str(wt)
     return (f"{a['label']} ({a['name']}, {a['department_name']}): {fl_s} in flight, "
-            f"{wt_s} waiting on Miro — {a['headline']}")
+            f"{wt_s} waiting on the owner — {a['headline']}")
 
 
 def detail(a: dict[str, Any], now: datetime, *, rows: int = MAX_ROWS) -> str:
@@ -902,9 +900,9 @@ def detail(a: dict[str, Any], now: datetime, *, rows: int = MAX_ROWS) -> str:
             quoted.append(f"research #{r['id']} question: {r['summary']}")
     wt = a["waiting"]
     if wt is None:
-        lines.append("waiting on Miro: unknown (proposals could not be read)")
+        lines.append("waiting on the owner: unknown (proposals could not be read)")
     else:
-        lines.append(f"waiting on Miro ({len(wt)}):" + ("" if wt else " nothing"))
+        lines.append(f"waiting on the owner ({len(wt)}):" + ("" if wt else " nothing"))
         for c in wt[:rows]:
             lines.append(f"  card #{c['id']} {c['action']} Tier {c['tier']}, "
                          f"{_left(c['expires_at'], now)}")
@@ -971,7 +969,7 @@ async def context_text(question: str, *, max_chars: int = 6000,
     head = (f"AGENTS' WORK, read at {_clock(now)} — answer from this; a figure "
             f"not here is unknown. "
             f"{'unknown' if waiting_all is None else waiting_all} card(s) waiting "
-            f"on Miro in all; {len(agents)} seats.")
+            f"on the owner in all; {len(agents)} seats.")
     if b["errors"]:
         head += " Could not read: " + ", ".join(sorted(b["errors"])) + "."
     order = sorted(agents, key=lambda a: (a["name"] not in picked,

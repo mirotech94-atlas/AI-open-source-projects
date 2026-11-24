@@ -1,6 +1,6 @@
 """agency.sitemedia -- the self-hosted imagery on every designed client site.
 
-**Why (2026-09-30).** Miro, on the desktop review of the templates: "very
+**Why (2026-09-30).** the owner, on the desktop review of the templates: "very
 poor design -- make sure it's a frontend marketing website for each one".
 The page was type on a white card. A local business's site needs a scene:
 a photograph of the trade, a moving background behind the hero, imagery in

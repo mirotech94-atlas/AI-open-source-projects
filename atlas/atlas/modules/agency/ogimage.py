@@ -3,7 +3,7 @@ from the site's own name, tagline and colours when the client gave none.
 
 A rendered graphic, never a photo: flat colour, a band, and the business's
 name set in a blocky pixel face. Nothing here depends on Pillow (not a
-dependency of this project, and adding one is Miro's call), so the PNG is
+dependency of this project, and adding one is the owner's call), so the PNG is
 written with `zlib` + `struct` and the letters come from a 5x7 bitmap font
 scaled up. Uppercase only; an accented letter is shown without its accent
 and anything the font has no glyph for becomes a space rather than a

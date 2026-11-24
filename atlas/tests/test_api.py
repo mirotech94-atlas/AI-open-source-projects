@@ -211,7 +211,7 @@ def test_a_mesh_client_proxied_by_caddy_is_allowed(monkeypatch, memory_backend):
     """Caddy sits on the Docker bridge and forwards the real mesh address."""
     with TestClient(_app(monkeypatch), client=("172.18.0.5", 40000)) as c:
         response = c.get("/api/session",
-                         headers={"X-Forwarded-For": "100.84.1.7"})
+                         headers={"X-Forwarded-For": "100.64.0.7"})
         assert response.status_code == 200
 
 
@@ -223,7 +223,7 @@ def test_a_public_client_cannot_forge_a_mesh_address(monkeypatch, memory_backend
     """
     with TestClient(_app(monkeypatch), client=("203.0.113.9", 40000)) as c:
         response = c.get("/api/session",
-                         headers={"X-Forwarded-For": "100.84.1.7"})
+                         headers={"X-Forwarded-For": "100.64.0.7"})
         assert response.status_code == 404
 
 
@@ -247,7 +247,7 @@ def test_a_chain_of_forwarded_addresses_uses_the_originator(
     """X-Forwarded-For is a list; the first entry is the original client."""
     with TestClient(_app(monkeypatch), client=("172.18.0.5", 40000)) as c:
         assert c.get("/api/session",
-                     headers={"X-Forwarded-For": "203.0.113.9, 100.84.1.7"}
+                     headers={"X-Forwarded-For": "203.0.113.9, 100.64.0.7"}
                      ).status_code == 404
 
 
@@ -274,8 +274,11 @@ def test_the_dashboard_exposes_no_write_endpoint(client):
         if getattr(route, "methods", None)
         and {"POST", "PUT", "PATCH", "DELETE"} & set(route.methods)
     ]
+    # the owner 2026-10-29: GUI decisions. The decision route answers a Tier 2
+    # card through approvals.decide, the same door Slack and the phone use.
     assert sorted(path for path, _ in writes) == [
-        "/api/agents/warm", "/api/login", "/api/logout"], writes
+        "/api/agents/warm", "/api/approvals/{pid}/decision", "/api/login",
+        "/api/logout"], writes
 
 
 def test_no_route_anywhere_can_reach_the_executor():
@@ -314,12 +317,17 @@ def test_no_route_anywhere_can_reach_the_executor():
                 elif name in ("run_mac_action", "run_spoken_commands",
                               "run_chain") and path.name != "voice.py":
                     # kernel.spoken: Mac actions said on the signed-in
-                    # dashboard (Miro, 2026-09-28) and from the menu-bar
+                    # dashboard (the owner, 2026-09-28) and from the menu-bar
                     # hotkey (2026-10-06). Voice only.
                     offenders.append(f"{path.name}:{node.lineno} {name}()")
                 elif name == "run_chain":
                     # voice.py goes through run_spoken_commands, which
                     # checks the whole plan first; never the bare runner.
+                    offenders.append(f"{path.name}:{node.lineno} {name}()")
+                elif name == "decide" and path.name not in (
+                        "main.py", "slack_events.py", "phone.py", "dashboard.py"):
+                    # the owner 2026-10-29: GUI decisions. decide() answers a card
+                    # by its stored action and params; only these four doors.
                     offenders.append(f"{path.name}:{node.lineno} {name}()")
     assert offenders == [], f"an API module calls the executor: {offenders}"
 
@@ -354,7 +362,7 @@ def test_a_module_tile_takes_the_worst_state_it_actually_saw(
     """
     from datetime import datetime
     now = datetime.now(UTC)
-    rows = [{"property": "vpsie", "check_name": f"c{i}", "last_run_at": now,
+    rows = [{"property": "cloudco", "check_name": f"c{i}", "last_run_at": now,
              "next_run_at": now, "interval_s": 300, "health": h,
              "detail": "", "observed_at": now}
             for i, h in enumerate(healths)]
@@ -372,7 +380,7 @@ def test_a_module_tile_takes_the_worst_state_it_actually_saw(
     memory_backend.fetchrow = fetchrow
 
     body = signed_in.get("/api/overview").json()
-    tile = next((m for m in body["modules"] if m["module"] == "vpsie"), None)
+    tile = next((m for m in body["modules"] if m["module"] == "cloudco"), None)
     if not healths:
         assert tile is None or tile["health"] == "unknown"
     else:
@@ -390,10 +398,10 @@ def test_a_stale_ok_is_unknown_on_the_board_as_it_is_spoken(
     from atlas.api import system_check
     now = datetime.now(UTC)
     rows = [
-        {"property": "vpsie", "check_name": "fresh", "last_run_at": now,
+        {"property": "cloudco", "check_name": "fresh", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "ok", "detail": "",
          "observed_at": now - timedelta(minutes=2)},
-        {"property": "vpsie", "check_name": "old", "last_run_at": now,
+        {"property": "cloudco", "check_name": "old", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "ok", "detail": "",
          "observed_at": now - timedelta(minutes=26)},
     ]
@@ -407,7 +415,7 @@ def test_a_stale_ok_is_unknown_on_the_board_as_it_is_spoken(
     memory_backend.fetch = fetch
     memory_backend.fetchrow = fetchrow
     body = signed_in.get("/api/overview").json()
-    tile = next(m for m in body["modules"] if m["module"] == "vpsie")
+    tile = next(m for m in body["modules"] if m["module"] == "cloudco")
     checks = {c["name"]: c for c in tile["checks"]}
     assert checks["fresh"]["health"] == "ok" and checks["fresh"]["stale"] is False
     assert checks["old"]["health"] == "unknown" and checks["old"]["stale"] is True
@@ -620,11 +628,11 @@ def test_the_module_detail_badges_the_current_health_not_the_raw_one(
     async def probe() -> Observation:
         return Observation("x", Health.UNKNOWN)
 
-    monkeypatch.setattr(REGISTRY, "modules", {"vpsie": type("M", (), {
-        "title": "VPSie", "brief": lambda self: ""})()})
+    monkeypatch.setattr(REGISTRY, "modules", {"cloudco": type("M", (), {
+        "title": "CloudCo", "brief": lambda self: ""})()})
     monkeypatch.setattr(REGISTRY, "checks", {
-        "vpsie.api": Check("api", probe, timedelta(minutes=5)),
-        "vpsie.db": Check("db", probe, timedelta(minutes=5)),
+        "cloudco.api": Check("api", probe, timedelta(minutes=5)),
+        "cloudco.db": Check("db", probe, timedelta(minutes=5)),
     })
     now = datetime.now(UTC)
 
@@ -634,7 +642,7 @@ def test_the_module_detail_badges_the_current_health_not_the_raw_one(
         return [{"at": now - timedelta(minutes=1), "value": 2.0, "health": "ok"}]
 
     memory_backend.fetch = fetch
-    body = signed_in.get("/api/modules/vpsie").json()
+    body = signed_in.get("/api/modules/cloudco").json()
     current = {c["name"]: c["current"] for c in body["checks"]}
     assert current["api"]["health"] == "unknown" and current["api"]["stale"] is True
     assert current["db"]["health"] == "ok" and current["db"]["stale"] is False
@@ -710,7 +718,7 @@ def test_warming_the_roster_starts_a_background_job_and_returns_at_once(
     assert started == ["warm agents"]
     body = response.json()
     assert body["started"] is True
-    assert "concierge" in body["agents"]
+    assert set(body["agents"]) == set(agent_module.ROSTER)
 
 
 def test_warming_the_roster_refuses_a_second_click_while_one_runs(
@@ -801,7 +809,7 @@ async def test_the_details_button_is_a_read_not_a_verdict(
     the wildcard {verdict} route that once swallowed /approvals/1/why: a read
     sent down the only write path."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
 
     decided = []
 
@@ -825,7 +833,7 @@ async def test_the_details_button_is_a_read_not_a_verdict(
 
     monkeypatch.setattr("atlas.api.main._slack_reply", fake_reply)
     response = _slack_post(client, {
-        "user": {"id": "UMIRO"}, "response_url": "https://hooks.slack/x",
+        "user": {"id": "UOWNER"}, "response_url": "https://hooks.slack/x",
         "actions": [{"value": "detail:7"}]})
     assert response.status_code == 200
     assert decided == []
@@ -839,9 +847,9 @@ async def test_the_details_button_is_a_read_not_a_verdict(
 
 async def test_a_non_approver_click_is_refused(client, monkeypatch, memory_backend):
     """A valid Slack signature proves the request came from Slack, not that
-    it came from Miro."""
+    it came from the owner."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
 
     async def fake_decide(*a, **k):
         raise AssertionError("a stranger's click must never reach decide()")
@@ -870,7 +878,7 @@ async def test_a_replayed_slack_request_is_rejected(client, monkeypatch):
 
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
     body = urllib.parse.urlencode(
-        {"payload": _json.dumps({"user": {"id": "UMIRO"},
+        {"payload": _json.dumps({"user": {"id": "UOWNER"},
                                  "actions": [{"value": "approve:7"}]})})
     ts = str(int(_time.time()) - 1200)           # twenty minutes ago
     sig = "v0=" + hmac.new(b"s3cret", f"v0:{ts}:{body}".encode(),
@@ -911,7 +919,7 @@ async def test_an_unrecognised_caller_is_told_nothing(client, monkeypatch):
     body = _twilio_post(client, "/webhooks/twilio/voice/inbound",
                         {"From": "+15559998888", "CallSid": "CA1"}).text
     assert "private line" in body
-    for leak in ("flycheap", "guardian", "vpsie", "roots", "failing",
+    for leak in ("flycheap", "guardian", "cloudco", "roots", "failing",
                  "degraded", "snapshot", "balance"):
         assert leak not in body.lower(), f"leaked {leak!r} to a stranger"
 
@@ -926,7 +934,7 @@ async def test_a_call_with_no_twilio_signature_is_rejected(client, monkeypatch):
     assert response.status_code == 401
 
 
-async def test_miro_is_greeted_and_told_what_needs_him(
+async def test_owner_is_greeted_and_told_what_needs_him(
         client, monkeypatch, memory_backend):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
     monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
@@ -935,7 +943,7 @@ async def test_miro_is_greeted_and_told_what_needs_him(
     async def fake_rows(_sql, *a):
         # Fresh readings: the staleness rule would make an old one unknown.
         at = datetime.now(UTC)
-        return [{"health": "failing", "name": "protection", "prop": "vpsie",
+        return [{"health": "failing", "name": "protection", "prop": "cloudco",
                  "at": at, "interval_s": 300},
                 {"health": "degraded", "name": "open_errors", "prop": "inroots",
                  "at": at, "interval_s": 300},
@@ -952,7 +960,7 @@ async def test_miro_is_greeted_and_told_what_needs_him(
     assert 'input="speech dtmf"' in body and "<Hangup/>" not in body.split("</Gather>")[0]
     assert "2 things need you" in body
     # The loudest is named, and it is the FAILING one rather than the first.
-    assert "vpsie protection" in body
+    assert "cloudco protection" in body
     # An unmeasured check is said as unmeasured, never folded into "fine".
     assert "couldn't run" in body
 
@@ -967,7 +975,7 @@ async def test_the_greeting_counts_a_stale_ok_as_unmeasured(
     async def stale(_sql, *a):
         # One fresh failure (so the board is offered at all) and one OK read
         # 26 minutes ago on a 5-minute check.
-        return [{"health": "failing", "name": "protection", "prop": "vpsie",
+        return [{"health": "failing", "name": "protection", "prop": "cloudco",
                  "at": datetime.now(UTC), "interval_s": 300},
                 {"health": "ok", "name": "api", "prop": "flycheap",
                  "at": datetime.now(UTC) - timedelta(minutes=26),
@@ -1007,7 +1015,7 @@ async def test_an_outcome_is_posted_to_response_url_not_the_body(
     a void: the button worked, decide() ran, and the channel showed nothing.
     That is exactly what "the approve buttons aren't working" looked like."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
 
     posted = []
 
@@ -1029,7 +1037,7 @@ async def test_an_outcome_is_posted_to_response_url_not_the_body(
     monkeypatch.setattr("atlas.api.main._slack_reply", fake_reply)
 
     response = _slack_post(client, {
-        "user": {"id": "UMIRO"},
+        "user": {"id": "UOWNER"},
         "response_url": "https://hooks.slack.com/actions/T1/B2/xyz",
         "actions": [{"value": "approve:7"}]})
 
@@ -1047,7 +1055,7 @@ async def test_a_missing_response_url_does_not_break_the_decision(
     """Narrating the outcome is not the outcome. If Slack sends no
     response_url, the decision still stands and the handler still 200s."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
 
     ran = []
 
@@ -1063,7 +1071,7 @@ async def test_a_missing_response_url_does_not_break_the_decision(
         return FakeVerdict()
 
     monkeypatch.setattr("atlas.api.main.decide", fake_decide)
-    response = _slack_post(client, {"user": {"id": "UMIRO"},
+    response = _slack_post(client, {"user": {"id": "UOWNER"},
                                     "actions": [{"value": "approve:7"}]})
     assert response.status_code == 200
     assert ran == [7]
@@ -1071,7 +1079,7 @@ async def test_a_missing_response_url_does_not_break_the_decision(
 
 # ------------------------------------------------------ the slash command
 
-def _slash(client, text: str, user: str = "UMIRO", secret: str = "s3cret"):
+def _slash(client, text: str, user: str = "UOWNER", secret: str = "s3cret"):
     import hashlib
     import hmac
     import time as _time
@@ -1090,9 +1098,9 @@ def _slash(client, text: str, user: str = "UMIRO", secret: str = "s3cret"):
 
 
 async def test_a_command_from_a_non_approver_does_nothing(client, monkeypatch):
-    """Being in the workspace is not being Miro."""
+    """Being in the workspace is not being the owner."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
 
     async def should_not_run(*a, **k):
         raise AssertionError("a stranger's command must not reach intent")
@@ -1110,7 +1118,7 @@ async def test_a_command_with_a_bad_signature_is_rejected(client, monkeypatch):
 
 async def test_an_empty_command_asks_for_one(client, monkeypatch):
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
     body = _slash(client, "   ").json()
     assert "Tell me what to do" in body["text"]
 
@@ -1120,7 +1128,7 @@ async def test_a_command_acknowledges_inside_the_window(client, monkeypatch):
     Slack has already told the user timed out, so the work happens after the
     acknowledgement and the outcome follows on response_url."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
 
     started = []
 
@@ -1242,42 +1250,39 @@ def test_agents_reports_the_latest_run_and_the_24h_count(
     async def fetch(sql, *args):
         flat = " ".join(sql.split())
         if "DISTINCT ON (agent)" in flat:
-            return [{"agent": "ops", "at": last_at, "outcome": "fixed it",
+            return [{"agent": "qa", "at": last_at, "outcome": "fixed it",
                       "model": "claude-sonnet"}]
         if "interval '24 hours'" in flat:
-            return [{"agent": "ops", "n": 3}]
+            return [{"agent": "qa", "n": 3}]
         return []
 
     memory_backend.fetch = fetch
 
     body = signed_in.get("/api/agents").json()
     by_name = {a["name"]: a for a in body["agents"]}
-    assert by_name["ops"]["last_run_at"] == last_at.isoformat()
-    assert by_name["ops"]["last_outcome"] == "fixed it"
-    assert by_name["ops"]["runs_24h"] == 3
-    assert by_name["ops"]["model"] == "claude-sonnet"
+    assert by_name["qa"]["last_run_at"] == last_at.isoformat()
+    assert by_name["qa"]["last_outcome"] == "fixed it"
+    assert by_name["qa"]["runs_24h"] == 3
+    assert by_name["qa"]["model"] == "claude-sonnet"
     # An agent nothing ran recently for reports zero, not a stale copy.
-    assert by_name["sentinel"]["last_run_at"] is None
-    assert by_name["sentinel"]["runs_24h"] == 0
+    assert by_name["seo"]["last_run_at"] is None
+    assert by_name["seo"]["runs_24h"] == 0
 
 
 def test_agents_reports_the_model_that_answered_not_the_configured_pin(
         signed_in, memory_backend):
-    """Task 53: `flycheap` is pinned to the OpenRouter default, but the fallback
-    prefix means Anthropic actually answered the last run -- the card must
-    say `anthropic:claude-sonnet-4-5`, never `openrouter:...hermes...` as if
-    the pin had run (invariant 6)."""
+    """Task 53: whatever an agent is configured with, the card says the model
+    that actually answered its last run -- `anthropic:claude-sonnet-4-5` here
+    -- never the configured pin dressed up as a run (invariant 6)."""
     from atlas.kernel import agents as agent_module
 
     agent_module.build_roster()
-    from atlas.kernel.businesses import DEFAULT_MODEL
-    assert agent_module.ROSTER["flycheap"].model == DEFAULT_MODEL
     last_at = datetime(2026, 9, 24, 9, 0, tzinfo=UTC)
 
     async def fetch(sql, *args):
         flat = " ".join(sql.split())
         if "DISTINCT ON (agent)" in flat:
-            return [{"agent": "flycheap", "at": last_at, "outcome": "fine",
+            return [{"agent": "qa", "at": last_at, "outcome": "fine",
                       "model": "claude-sonnet-4-5", "provider": "anthropic"}]
         return []
 
@@ -1285,11 +1290,11 @@ def test_agents_reports_the_model_that_answered_not_the_configured_pin(
 
     body = signed_in.get("/api/agents").json()
     by_name = {a["name"]: a for a in body["agents"]}
-    assert by_name["flycheap"]["model"] == "anthropic:claude-sonnet-4-5"
-    assert by_name["flycheap"]["model_at"] == last_at.isoformat()
+    assert by_name["qa"]["model"] == "anthropic:claude-sonnet-4-5"
+    assert by_name["qa"]["model_at"] == last_at.isoformat()
     # No run at all: null, not the configured default dressed up as a run.
-    assert by_name["guardian"]["model"] is None
-    assert by_name["guardian"]["model_at"] is None
+    assert by_name["seo"]["model"] is None
+    assert by_name["seo"]["model_at"] is None
 
 
 # ---------------------------------------------- readiness, groups, shifts
@@ -1305,7 +1310,7 @@ def test_agents_reports_readiness_and_reasons(signed_in, memory_backend, monkeyp
     memory_backend.fetch = fetch
 
     def fake_readiness(name):
-        if name == "fiverr":
+        if name == "sales":
             return False, ["browser disabled — missing env: X (browser_open)"]
         return True, []
 
@@ -1313,17 +1318,16 @@ def test_agents_reports_readiness_and_reasons(signed_in, memory_backend, monkeyp
 
     body = signed_in.get("/api/agents").json()
     by_name = {a["name"]: a for a in body["agents"]}
-    assert by_name["ops"]["ready"] is True
-    assert by_name["ops"]["reasons"] == []
-    assert by_name["fiverr"]["ready"] is False
-    assert by_name["fiverr"]["reasons"] == [
+    assert by_name["qa"]["ready"] is True
+    assert by_name["qa"]["reasons"] == []
+    assert by_name["sales"]["ready"] is False
+    assert by_name["sales"]["reasons"] == [
         "browser disabled — missing env: X (browser_open)"]
 
 
-def test_agents_group_places_concierge_businesses_and_functions_correctly(
+def test_agents_group_places_the_front_door_first_and_the_rest_as_functions(
         signed_in, memory_backend):
     from atlas.kernel import agents as agent_module
-    from atlas.kernel.businesses import BY_NAME as BUSINESSES
 
     agent_module.build_roster()
 
@@ -1334,34 +1338,10 @@ def test_agents_group_places_concierge_businesses_and_functions_correctly(
 
     body = signed_in.get("/api/agents").json()
     by_name = {a["name"]: a for a in body["agents"]}
-    assert by_name["concierge"]["group"] == "lead"
-    for name in BUSINESSES:
-        assert by_name[name]["group"] == "businesses", name
-    for name in ("ops", "growth", "marketing", "inbox", "scheduler",
-                 "sentinel", "commerce", "analyst"):
+    assert set(by_name) == set(agent_module.AGENT_NAMES)
+    assert by_name[agent_module.DEFAULT_AGENT]["group"] == "lead"
+    for name in set(agent_module.AGENT_NAMES) - {agent_module.DEFAULT_AGENT}:
         assert by_name[name]["group"] == "functions", name
-
-
-def test_guardian_and_school_carry_a_shortened_display_name(
-        signed_in, memory_backend):
-    """The map shows "Vault" for guardian and "College" for school -- Miro's
-    own words for the redesign -- while `title` (Fleet's own cards, the org
-    chart, DeepDive) stays exactly what it always was."""
-    from atlas.kernel import agents as agent_module
-
-    agent_module.build_roster()
-
-    async def fetch(sql, *args):
-        return []
-
-    memory_backend.fetch = fetch
-
-    body = signed_in.get("/api/agents").json()
-    by_name = {a["name"]: a for a in body["agents"]}
-    assert by_name["guardian"]["title"] == "Guardian"
-    assert by_name["guardian"]["display"] == "Vault"
-    assert by_name["school"]["display"] == "College"
-    assert by_name["ops"]["display"] == by_name["ops"]["title"]
 
 
 def test_agents_reports_next_shift_at_and_null_when_not_ready(
@@ -1377,17 +1357,172 @@ def test_agents_reports_next_shift_at_and_null_when_not_ready(
     memory_backend.fetch = fetch
     monkeypatch.setattr(agent_module, "next_shift_at",
                         lambda name, last, now: next_at)
+    monkeypatch.setattr(agent_module, "shift_state",
+                        lambda name, last, failures, now: agent_module.ShiftState(
+                            "done", next_at, next_at, 0, None))
 
     def fake_readiness(name):
-        return (False, ["reason"]) if name == "fiverr" else (True, [])
+        return (False, ["reason"]) if name == "sales" else (True, [])
 
     monkeypatch.setattr(agent_module, "readiness", fake_readiness)
 
     body = signed_in.get("/api/agents").json()
     by_name = {a["name"]: a for a in body["agents"]}
-    assert by_name["ops"]["next_shift_at"] == next_at.isoformat()
+    assert by_name["qa"]["next_shift_at"] == next_at.isoformat()
     # Not ready: never a next shift time, whatever next_shift_at would say.
-    assert by_name["fiverr"]["next_shift_at"] is None
+    assert by_name["sales"]["next_shift_at"] is None
+
+
+# ------------------------------------- roster read model (the owner 2026-10-29)
+
+ROSTER_STATUS = {"ok", "failing", "idle", "unknown"}
+SHIFT_STATES = {"done", "due", "overdue", "failed", "off"}
+
+
+def _roster_fetch(rows_by_fragment):
+    async def fetch(sql, *args):
+        flat = " ".join(sql.split())
+        for fragment, rows in rows_by_fragment.items():
+            if fragment in flat:
+                return rows
+        return []
+    return fetch
+
+
+def test_agents_rows_carry_the_roster_fields(signed_in, memory_backend, monkeypatch):
+    from atlas.kernel import agents as agent_module
+    agent_module.build_roster()
+    for name in agent_module.AGENT_NAMES:
+        monkeypatch.delenv(f"AGENT_SHIFT_{name.upper()}", raising=False)
+    now = datetime.now(UTC)
+    memory_backend.fetch = _roster_fetch({
+        "AS last_shift": [{"agent": "qa", "last_any": now, "last_shift": now,
+                           "last_attempt": now, "failures": None}],
+        "AS today_output": [{"agent": "qa", "today_output": 2}],
+    })
+    monkeypatch.setattr(agent_module, "readiness", lambda name: (True, []))
+
+    body = signed_in.get("/api/agents").json()
+    rows = body["agents"]
+    assert len(rows) == 9
+    for row in rows:
+        assert row["role"] == row["title"]
+        assert row["status"] in ROSTER_STATUS
+        assert row["shift_state"] in SHIFT_STATES
+        for key in ("last_shift_at", "last_shift_outcome", "next_shift_at",
+                    "attempts_today", "today_output", "scheduler_cycle_age_s",
+                    "read_at"):
+            assert key in row, key
+        datetime.fromisoformat(row["read_at"])
+    qa = next(r for r in rows if r["name"] == "qa")
+    assert qa["shift_state"] == "done" and qa["status"] == "ok"
+    assert qa["today_output"] == 2
+    assert qa["last_shift_at"] == now.isoformat()
+
+
+def test_agents_status_is_unknown_when_the_runs_cannot_be_read(
+        signed_in, memory_backend):
+    from atlas.kernel import agents as agent_module
+    agent_module.build_roster()
+
+    async def broken(sql, *args):
+        raise ConnectionError("database down")
+
+    memory_backend.fetch = broken
+    body = signed_in.get("/api/agents").json()
+    assert len(body["agents"]) == 9
+    assert {r["status"] for r in body["agents"]} == {"unknown"}
+    assert all(r["status"] != "ok" for r in body["agents"])
+
+
+def test_agents_a_failed_shift_reads_failing_with_its_attempts(
+        signed_in, memory_backend, monkeypatch):
+    from atlas.kernel import agents as agent_module
+    agent_module.build_roster()
+    monkeypatch.delenv("AGENT_SHIFT_SEO", raising=False)
+    monkeypatch.delenv("SHIFT_RETRIES_PER_DAY", raising=False)
+    now = datetime.now(UTC)
+    slot = now.replace(hour=agent_module.shift_hour("seo"), minute=0, second=0,
+                       microsecond=0)
+    if slot > now:
+        slot -= timedelta(days=1)
+    tries = [slot + timedelta(seconds=i) for i in range(4)]
+    memory_backend.fetch = _roster_fetch({
+        "AS last_shift": [{"agent": "seo", "last_any": tries[-1],
+                           "last_shift": slot - timedelta(days=1),
+                           "last_attempt": tries[-1], "failures": tries}],
+        "DISTINCT ON (agent)": [{"agent": "seo", "at": tries[-1],
+                                 "outcome": "shift failed: RuntimeError: x",
+                                 "model": "", "provider": ""}],
+        "agent.shift_alert_unrouted": [{"subject": "seo"}],
+    })
+    monkeypatch.setattr(agent_module, "readiness", lambda name: (True, []))
+
+    body = signed_in.get("/api/agents").json()
+    seo = next(r for r in body["agents"] if r["name"] == "seo")
+    assert seo["shift_state"] == "failed" and seo["status"] == "failing"
+    assert seo["attempts_today"] == 4
+    assert seo["alert_unrouted"] is True
+
+
+def test_agents_an_unanswered_shift_is_not_ok_and_its_text_is_one_clean_line(
+        signed_in, memory_backend, monkeypatch):
+    """the owner 2026-10-29: QA's shift ended "No answer" and read OK. The SQL now
+    counts it as a failed attempt (not `last_shift`); a retry is pending, so
+    the row reads failing, never ok, and its outcome is fixed words."""
+    from atlas.kernel import agents as agent_module
+    agent_module.build_roster()
+    monkeypatch.delenv("AGENT_SHIFT_QA", raising=False)
+    monkeypatch.delenv("SHIFT_RETRIES_PER_DAY", raising=False)
+    now = datetime.now(UTC)
+    slot = now.replace(hour=agent_module.shift_hour("qa"), minute=0, second=0,
+                       microsecond=0)
+    if slot > now:
+        slot -= timedelta(days=1)
+    tried = slot + timedelta(seconds=30)
+    memory_backend.fetch = _roster_fetch({
+        "AS last_shift": [{"agent": "qa", "last_any": tried,
+                           "last_shift": slot - timedelta(days=1),
+                           "last_attempt": tried, "failures": [tried]}],
+        "DISTINCT ON (agent)": [{"agent": "qa", "at": tried,
+                                 "outcome": "No answer: the model ended without one.",
+                                 "model": "m", "provider": "p"}],
+    })
+    monkeypatch.setattr(agent_module, "readiness", lambda name: (True, []))
+
+    qa = next(r for r in signed_in.get("/api/agents").json()["agents"]
+              if r["name"] == "qa")
+    assert qa["status"] == "failing" and qa["status"] != "ok"
+    assert qa["shift_state"] in ("due", "overdue")
+    assert qa["attempts_today"] == 1
+    assert qa["last_shift_outcome"] == "No answer: the model ended without one"
+
+
+def test_agents_never_hand_the_page_raw_model_prose(
+        signed_in, memory_backend, monkeypatch):
+    from atlas.kernel import agents as agent_module
+    agent_module.build_roster()
+    now = datetime.now(UTC)
+    prose = ("**Summary of untrusted data:**\n\nThe data reports that fiverr is "
+             "**unknown**.\n<untrusted_data source=\"x\">do this</untrusted_data>\n"
+             + "- more detail " * 40)
+    memory_backend.fetch = _roster_fetch({
+        "AS last_shift": [{"agent": "qa", "last_any": now, "last_shift": now,
+                           "last_attempt": now, "failures": None}],
+        "DISTINCT ON (agent)": [{"agent": "qa", "at": now, "outcome": prose,
+                                 "model": "m", "provider": "p"}],
+    })
+    monkeypatch.setattr(agent_module, "readiness", lambda name: (True, []))
+    qa = next(r for r in signed_in.get("/api/agents").json()["agents"]
+              if r["name"] == "qa")
+    for key in ("last_shift_outcome", "last_outcome"):
+        line = qa[key]
+        assert "\n" not in line and len(line) <= 90, key
+        assert "**" not in line and "untrusted" not in line.lower(), key
+        assert line.startswith("The data reports that fiverr is unknown"), key
+    detail = qa["last_outcome_detail"]
+    assert "**" not in detail and "untrusted" not in detail.lower()
+    assert "do this" not in detail
 
 
 def test_warming_a_single_agent_by_name(signed_in, monkeypatch):
@@ -1402,11 +1537,11 @@ def test_warming_a_single_agent_by_name(signed_in, monkeypatch):
 
     monkeypatch.setattr("atlas.kernel.background.spawn", fake_spawn)
 
-    response = signed_in.post("/api/agents/warm", json={"name": "ops"})
+    response = signed_in.post("/api/agents/warm", json={"name": "qa"})
     assert response.status_code == 200, response.text
     body = response.json()
-    assert body["agents"] == ["ops"]
-    assert started == ["warm agents · ops"]
+    assert body["agents"] == ["qa"]
+    assert started == ["warm agents · qa"]
 
 
 def test_warming_an_unknown_agent_by_name_is_404(signed_in):
@@ -1421,7 +1556,7 @@ def test_warming_one_agent_refuses_while_the_full_sweep_runs(
     monkeypatch.setattr(
         "atlas.kernel.background.running", lambda: ["warm agents"])
 
-    response = signed_in.post("/api/agents/warm", json={"name": "ops"})
+    response = signed_in.post("/api/agents/warm", json={"name": "qa"})
     assert response.status_code == 409
 
 
@@ -1430,9 +1565,9 @@ def test_warming_one_agent_refuses_a_second_click_on_the_same_agent(
     from atlas.kernel import agents as agent_module
     agent_module.build_roster()
     monkeypatch.setattr(
-        "atlas.kernel.background.running", lambda: ["warm agents · ops"])
+        "atlas.kernel.background.running", lambda: ["warm agents · qa"])
 
-    response = signed_in.post("/api/agents/warm", json={"name": "ops"})
+    response = signed_in.post("/api/agents/warm", json={"name": "qa"})
     assert response.status_code == 409
 
 
@@ -1556,15 +1691,15 @@ def test_memory_graph_has_a_node_per_namespace_and_an_edge_per_agent_scope(
     assert nodes_by_id["ns:security"]["total"] == 1
     # A namespace with an agent pointing at it but zero memories still shows
     # up, or the edge below would dangle.
-    assert "ns:incidents" in nodes_by_id
-    assert nodes_by_id["ns:incidents"]["total"] == 0
+    assert "ns:qa" in nodes_by_id
+    assert nodes_by_id["ns:qa"]["total"] == 0
 
     edges = {(e["from"], e["to"]) for e in body["edges"]}
-    assert ("agent:ops", "ns:incidents") in edges
+    assert ("agent:qa", "ns:qa") in edges
     assert ("agent:inbox", "ns:people") in edges
 
     agents_by_id = {a["id"]: a for a in body["agents"]}
-    assert agents_by_id["ops"]["title"] == "Operations"
+    assert agents_by_id["qa"]["title"] == "QA"
     assert set(agents_by_id) == set(agent_module.ROSTER)
 
 
@@ -1594,7 +1729,7 @@ def test_agenda_returns_structured_items_split_into_today_and_the_horizon(
             AgendaItem(when=today_at, title="Daily standup", kind="event",
                        detail="the whole crew", minutes=30, source="calendar"),
             AgendaItem(when=later, title="Invoice due", kind="deadline",
-                       source="mirotech"),
+                       source="exampleco"),
         ]
 
     monkeypatch.setattr(brief_mod, "agenda_items", items)
@@ -1894,7 +2029,7 @@ def test_tools_lists_the_catalog_with_denied_actions_marked_denied(
     assert names == {s.name for s in skills_mod.SKILLS}
     triage = next(s for s in body["skills"] if s["name"] == "Incident triage")
     assert "outage" in triage["triggers"]
-    assert "ops" in triage["agents"]
+    assert "qa" in triage["agents"]
 
 
 def test_workflows_reads_the_standing_rules_and_the_schedulers_own_hours(
@@ -2674,124 +2809,6 @@ def test_brain_carries_the_last_reads_so_the_stage_can_show_what_fired(
 
 def test_brain_needs_a_session(client):
     assert client.get("/api/brain").status_code == 401
-# ------------------------------------------------------- guardian feed (18.6)
-
-def test_the_guardian_feed_needs_a_session(client):
-    assert client.get("/api/guardian/feed").status_code == 401
-
-
-def test_the_guardian_feed_is_rows_newest_first_each_with_its_time(
-        signed_in, memory_backend):
-    """The Incident panel draws only from real rows: the latest
-    `guardian.open_incidents` observation, the `guardian.*` proposals (the
-    plan steps) and the `guardian.*` audit entries. A step's state is the
-    proposal's own status, mapped — and a failed or expired one is never
-    drawn as DONE."""
-    import json as _json
-    obs_at = datetime(2026, 9, 24, 3, 15, tzinfo=UTC)
-    t1 = datetime(2026, 9, 24, 3, 20, tzinfo=UTC)
-    t2 = datetime(2026, 9, 24, 3, 25, tzinfo=UTC)
-    t3 = datetime(2026, 9, 24, 3, 30, tzinfo=UTC)
-    plan = {"alert_id": "sec:attacker:web1:203.0.113.9", "operator": "unknown",
-            "vectors": [{"kind": "attacker", "target": "203.0.113.9"}],
-            "steps": [], "observed_at": obs_at.isoformat()}
-
-    async def fetch(sql, *args):
-        flat = " ".join(sql.split())
-        if "FROM proposals" in flat:
-            assert "LIKE 'guardian.%'" in flat, flat
-            assert "ORDER BY p.created_at DESC" in flat, flat
-            base = {"action": "guardian.contain", "reason": "block it",
-                    "expires_at": t3, "decided_at": None}
-            return [
-                {**base, "id": 4, "created_at": t3, "status": "expired",
-                 "params": {"alert_id": "a", "target": "10.0.0.9",
-                            "kind": "isolate_host"}},
-                {**base, "id": 3, "created_at": t2, "status": "failed",
-                 "params": "{}"},
-                {**base, "id": 2, "created_at": t1, "status": "pending",
-                 "params": _json.dumps({"alert_id": "a", "target": "203.0.113.9",
-                                        "kind": "block_ip"})},
-                {**base, "id": 1, "created_at": obs_at, "status": "executed",
-                 "params": {}},
-                {**base, "id": 0, "created_at": obs_at, "status": "declined",
-                 "params": {}},
-            ]
-        if "FROM actions_log" in flat:
-            assert "LIKE 'guardian.%'" in flat, flat
-            assert "ORDER BY at DESC" in flat, flat
-            return [
-                {"id": 9, "at": t3, "event": "execute.watch_only",
-                 "subject": "guardian.contain", "payload": "{}"},
-                {"id": 8, "at": t2, "event": "execute.finish",
-                 "subject": "guardian.contain", "payload": '{"ok": false}'},
-                {"id": 7, "at": t1, "event": "proposal.created",
-                 "subject": "guardian.contain", "payload": "{}"},
-            ]
-        raise AssertionError(flat)
-
-    async def fetchrow(sql, *args):
-        flat = " ".join(sql.split())
-        assert "FROM observations" in flat, flat
-        assert args == ("guardian", "open_incidents")
-        return {"at": obs_at, "health": "failing", "value": 1.0,
-                "detail": "1 open incident", "evidence": _json.dumps(
-                    {"incidents": [{"iid": "101"}], "plan": plan,
-                     "plan_incident": {"iid": "101", "alert_keys": ["a"]},
-                     "total": 1, "incidents_read": 1})}
-
-    memory_backend.fetch = fetch
-    memory_backend.fetchrow = fetchrow
-
-    body = signed_in.get("/api/guardian/feed").json()
-    assert "as_of" in body
-    inc = body["open_incidents"]
-    assert inc["value"] == 1.0
-    assert inc["at"] == obs_at.isoformat()
-    assert inc["health"] == "failing"
-    assert inc["plan"]["operator"] == "unknown"
-    assert inc["incidents"][0]["iid"] == "101"
-    # The panel keys step state on the incident the plan was built for.
-    assert inc["plan_incident"] == {"iid": "101", "alert_keys": ["a"]}
-    assert inc["total"] == 1 and inc["incidents_read"] == 1
-
-    steps = body["steps"]
-    assert [s["id"] for s in steps] == [4, 3, 2, 1, 0]
-    assert all(s["at"] for s in steps)
-    by_id = {s["id"]: s for s in steps}
-    assert by_id[2]["state"] == "PROPOSED"
-    assert by_id[2]["params"]["kind"] == "block_ip"
-    assert by_id[1]["state"] == "DONE"
-    assert by_id[0]["state"] == "REFUSED"
-    # Silence is never consent, and a failure is not a success: the raw word.
-    assert by_id[4]["state"] is None and by_id[4]["status"] == "expired"
-    assert by_id[3]["state"] is None and by_id[3]["status"] == "failed"
-
-    log = body["log"]
-    assert [e["id"] for e in log] == [9, 8, 7]
-    assert all(e["at"] for e in log)
-    states = {e["id"]: e["state"] for e in log}
-    assert states == {9: "REFUSED", 8: None, 7: "PROPOSED"}
-    # approvals.py audits these with the proposal id as subject, so the
-    # guardian.% read cannot see them; no dead mapping pretends otherwise.
-    from atlas.api.dashboard import LOG_STATE
-    assert "proposal.watch_only" not in LOG_STATE
-
-
-def test_the_guardian_feed_says_null_when_nothing_was_measured(
-        signed_in, memory_backend):
-    async def fetch(sql, *args):
-        return []
-
-    async def fetchrow(sql, *args):
-        return None
-
-    memory_backend.fetch = fetch
-    memory_backend.fetchrow = fetchrow
-    body = signed_in.get("/api/guardian/feed").json()
-    assert body["open_incidents"] is None
-    assert body["steps"] == [] and body["log"] == []
-
 def test_conversations_label_a_voice_note_transcript(signed_in, memory_backend):
     """A voice note's text is a machine transcript and may be mis-heard;
     whoever approves a reply against it should see that it is one."""
@@ -2997,15 +3014,15 @@ def test_marketing_channel_tiles_carry_the_time_each_figure_was_read(
     then = read - timedelta(days=28, hours=2)
     _mk_db(
         memory_backend,
-        latest={"flycheap_stats": _mk_obs(read, 52_000.0, 1_240),
-                "guardian_stats": None},
-        base={"flycheap_stats": _mk_obs(then, 40_000.0, 1_100)},
+        latest={"clips_stats": _mk_obs(read, 52_000.0, 1_240),
+                "ecc_stats": None},
+        base={"clips_stats": _mk_obs(then, 40_000.0, 1_100)},
     )
     body = signed_in.get("/api/marketing").json()
     assert body["unavailable"]["channels"] is None
     tiles = {t["channel"]: t for t in body["channels"]}
 
-    fly = tiles["flycheap"]
+    fly = tiles["clips"]
     assert fly["health"] == "ok"
     assert fly["subscribers"] == 1_240
     assert fly["views_total"] == 52_000.0
@@ -3022,7 +3039,7 @@ def test_marketing_channel_tiles_carry_the_time_each_figure_was_read(
     assert "not measured" in fly["partner"]["line"]
 
     # No reading at all is UNKNOWN with a reason — never a zero.
-    gua = tiles["guardian"]
+    gua = tiles["ecc"]
     assert gua["health"] == "unknown"
     assert gua["subscribers"] is None and gua["views_28d"] is None
     assert gua["read_at"] is None
@@ -3034,12 +3051,12 @@ def test_marketing_a_failed_stats_read_is_unknown_not_the_last_number(
     failed = MK_NOW - timedelta(minutes=30)
     _mk_db(
         memory_backend,
-        latest={"flycheap_stats": _mk_obs(failed, None, None, health="unknown",
-                                          detail="flycheap: HTTP 401 from "
+        latest={"clips_stats": _mk_obs(failed, None, None, health="unknown",
+                                          detail="clips: HTTP 401 from "
                                                  "oauth2.googleapis.com")},
     )
     body = signed_in.get("/api/marketing").json()
-    fly = {t["channel"]: t for t in body["channels"]}["flycheap"]
+    fly = {t["channel"]: t for t in body["channels"]}["clips"]
     assert fly["health"] == "unknown"
     assert "401" in fly["reason"]
     assert fly["subscribers"] is None and fly["views_total"] is None
@@ -3050,10 +3067,10 @@ def test_marketing_fewer_than_28_days_of_readings_is_said_not_guessed(
         signed_in, memory_backend):
     read = MK_NOW - timedelta(hours=1)
     _mk_db(memory_backend,
-           latest={"flycheap_stats": _mk_obs(read, 900.0, 40, as_string=False)},
+           latest={"clips_stats": _mk_obs(read, 900.0, 40, as_string=False)},
            base={})
     body = signed_in.get("/api/marketing").json()
-    fly = {t["channel"]: t for t in body["channels"]}["flycheap"]
+    fly = {t["channel"]: t for t in body["channels"]}["clips"]
     assert fly["health"] == "ok"
     assert fly["views_28d"] is None
     assert fly["views_28d_span_days"] is None
@@ -3068,11 +3085,11 @@ def test_marketing_a_reading_far_past_28_days_is_not_a_28_day_span(
     read = MK_NOW - timedelta(hours=1)
     then = read - timedelta(days=40)
     _mk_db(memory_backend,
-           latest={"flycheap_stats": _mk_obs(read, 900.0, 40)},
-           base={"flycheap_stats": _mk_obs(then, 100.0, 10)})
+           latest={"clips_stats": _mk_obs(read, 900.0, 40)},
+           base={"clips_stats": _mk_obs(then, 100.0, 10)})
     body = signed_in.get("/api/marketing").json()
     assert body["unavailable"]["channels"] is None
-    fly = {t["channel"]: t for t in body["channels"]}["flycheap"]
+    fly = {t["channel"]: t for t in body["channels"]}["clips"]
     assert fly["views_28d"] is None
     assert fly["views_28d_span_days"] is None
     assert fly["views_28d_since"] is None
@@ -3559,7 +3576,7 @@ async def test_the_acknowledge_button_mutes_and_confirms_never_decides(
     """Acknowledge on an alert records the ack and says so in the channel.
     It is not a decision about any action and must never reach decide()."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
 
     async def fake_decide(*a, **k):
         raise AssertionError("Acknowledge must never reach decide()")
@@ -3579,20 +3596,20 @@ async def test_the_acknowledge_button_mutes_and_confirms_never_decides(
     monkeypatch.setattr("atlas.api.main._slack_reply", fake_reply)
 
     r = _slack_post(client, {
-        "user": {"id": "UMIRO"}, "response_url": "https://hooks.slack/x",
-        "actions": [{"value": "ack:vpsie.balance"}]})
+        "user": {"id": "UOWNER"}, "response_url": "https://hooks.slack/x",
+        "actions": [{"value": "ack:cloudco.balance"}]})
     assert r.status_code == 200
-    assert acked == [("vpsie.balance", "slack:UMIRO")]
-    assert "Acknowledged vpsie.balance (failing)" in posted[0]
+    assert acked == [("cloudco.balance", "slack:UOWNER")]
+    assert "Acknowledged cloudco.balance (failing)" in posted[0]
 
 
 
 def test_marketing_channels_include_instagram_and_tiktok(signed_in, memory_backend):
-    """Miro, 2026-09-27: "include Instagram channels and TikTok as well"."""
+    """the owner, 2026-09-27: "include Instagram channels and TikTok as well"."""
     read = MK_NOW - timedelta(hours=1)
     _mk_db(memory_backend, social={
         ("instagram", "main_token"): {"at": read, "health": "ok", "value": 412.0,
-                                      "detail": "@flycheap.live 412 followers",
+                                      "detail": "@flycheap.example 412 followers",
                                       "evidence": "{}"},
         ("instagram", "main_engagement"): {
             "at": read, "health": "ok", "value": 57.0,
@@ -3605,7 +3622,7 @@ def test_marketing_channels_include_instagram_and_tiktok(signed_in, memory_backe
     body = signed_in.get("/api/marketing").json()
     tiles = [t for t in body["channels"] if t.get("platform") != "YouTube"]
     ig_main, ig_stories, tiktok = tiles
-    assert ig_main["platform"] == "Instagram" and ig_main["channel"] == "@flycheap.live"
+    assert ig_main["platform"] == "Instagram" and ig_main["channel"] == "@flycheap.example"
     assert ig_main["health"] == "ok"
     assert {f["label"]: f["value"] for f in ig_main["figures"]} == {
         "followers": 412.0, "reach / day": 57.0, "profile views / day": 23}
@@ -3633,18 +3650,18 @@ def test_a_check_that_is_not_set_up_or_paused_is_set_aside_not_ok():
 
 def test_a_retired_check_does_not_paint_a_live_module_unknown(
         signed_in, memory_backend, monkeypatch):
-    """vpsie 'snapshots' was replaced by 'protection' but its rows stayed; its
-    last reading (six days old) turned a healthy VPSie tile UNKNOWN. A live
+    """cloudco 'snapshots' was replaced by 'protection' but its rows stayed; its
+    last reading (six days old) turned a healthy CloudCo tile UNKNOWN. A live
     module shows only the checks it still registers."""
     from datetime import datetime, timedelta
 
     from atlas.kernel.registry import REGISTRY
     now = datetime.now(UTC)
     rows = [
-        {"property": "vpsie", "check_name": "protection", "last_run_at": now,
+        {"property": "cloudco", "check_name": "protection", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "ok", "detail": "",
          "observed_at": now},
-        {"property": "vpsie", "check_name": "snapshots", "last_run_at": now,
+        {"property": "cloudco", "check_name": "snapshots", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "degraded",
          "detail": "", "observed_at": now - timedelta(days=6)},
     ]
@@ -3657,15 +3674,19 @@ def test_a_retired_check_does_not_paint_a_live_module_unknown(
 
     memory_backend.fetch = fetch
     memory_backend.fetchrow = fetchrow
-    monkeypatch.setitem(REGISTRY.modules, "vpsie", object())
-    monkeypatch.setitem(REGISTRY.checks, "vpsie.protection", object())
+    monkeypatch.setitem(REGISTRY.modules, "cloudco", object())
+    monkeypatch.setitem(REGISTRY.checks, "cloudco.protection", object())
     body = signed_in.get("/api/overview").json()
-    tile = next(m for m in body["modules"] if m["module"] == "vpsie")
-    assert [c["name"] for c in tile["checks"]] == ["protection"]
+    tile = next(m for m in body["modules"] if m["module"] == "cloudco")
+    # Phase 4: the old row is shown, as retired, never OK; it does not decide
+    # the module colour.
+    by_name = {c["name"]: c for c in tile["checks"]}
+    assert by_name["snapshots"]["state"]["kind"] == "retired"
+    assert by_name["snapshots"]["health"] != "ok"
     assert tile["health"] == "ok"
 
 
-# ------------------------------- Miro's own device, off the mesh, by cert
+# ------------------------------- the owner's own device, off the mesh, by cert
 
 FP = "ab" * 32
 
@@ -3700,3 +3721,510 @@ def test_no_pinned_devices_means_mesh_only(monkeypatch, memory_backend):
         response = c.get("/api/session", headers={
             "X-Forwarded-For": "203.0.113.9", "X-Atlas-Device": FP})
         assert response.status_code == 404
+
+
+# --- Command Center: pipeline and money read models (the owner 2026-10-29) ------
+
+def _stub_sites(monkeypatch, sites=None, exc: Exception | None = None) -> None:
+    from atlas.modules.agency import sites_view
+
+    async def overview():
+        if exc is not None:
+            raise exc
+        return {"sites": sites or [], "read_at": "2026-10-29T10:00:00+00:00"}
+
+    monkeypatch.setattr(sites_view, "overview", overview)
+
+
+def test_pipeline_joins_client_sites_and_leads(signed_in, memory_backend, monkeypatch):
+    _stub_sites(monkeypatch, [
+        {"slug": "acme", "live_release": "r7", "deployed_at": "2026-10-01T00:00:00+00:00",
+         "health": "ok", "health_detail": ""},
+        {"slug": "draft-co", "live_release": None, "deployed_at": None,
+         "health": "unknown", "health_detail": ""},
+    ])
+    _stub_leads(memory_backend, [_lead_row(
+        lead_id=2, name="Bob's Bakery", outreach_id=10, outreach_status="draft",
+        outreach_kind="email", proposal_id=55, proposal_reason="send the email",
+        proposal_expires_at=datetime(2026, 10, 30, tzinfo=UTC))])
+    body = signed_in.get("/api/pipeline").json()
+    rows = {r["client"]: r for r in body["rows"]}
+    assert rows["acme"]["kind"] == "site" and rows["acme"]["stage"] == "live"
+    assert rows["draft-co"]["stage"] is None and rows["draft-co"]["reason"]
+    # The health word is a field the UI renders as the grey chip, not prose.
+    assert rows["draft-co"]["next_step"] == "check site health"
+    assert rows["draft-co"]["health"] == "unknown"
+    assert rows["acme"]["health"] == "ok" and rows["acme"]["next_step"] is None
+    lead = rows["Bob's Bakery"]
+    assert lead["kind"] == "lead"
+    assert lead["stage"] == "waiting on you"
+    assert lead["next_step"] == "send the email"
+    assert all(r["read_at"] for r in body["rows"])
+    assert body["sites"]["state"] == "ok" and body["leads"]["state"] == "ok"
+
+
+def test_pipeline_a_half_that_cannot_be_read_is_unknown(
+        signed_in, memory_backend, monkeypatch):
+    _stub_sites(monkeypatch, exc=RuntimeError("registry down"))
+    _stub_leads(memory_backend, [_lead_row()])
+    body = signed_in.get("/api/pipeline").json()
+    assert body["sites"]["state"] == "unknown"
+    assert "RuntimeError" in body["sites"]["reason"]
+    assert body["leads"]["state"] == "ok"
+    assert [r["kind"] for r in body["rows"]] == ["lead"]
+
+    async def broken(sql, *args):
+        raise RuntimeError("db down")
+
+    memory_backend.fetch = broken
+    _stub_sites(monkeypatch, [])
+    body = signed_in.get("/api/pipeline").json()
+    assert body["leads"]["state"] == "unknown" and body["leads"]["reason"]
+    assert body["sites"]["state"] == "ok"
+
+
+def _stub_money(monkeypatch, *, places_exc: Exception | None = None) -> None:
+    from atlas.kernel import quota
+    from atlas.modules import _perplexity
+    from atlas.modules.agency import prospect
+
+    monkeypatch.setattr(quota, "snapshot", lambda: {"groq:llama": {"requests_left": 5}})
+
+    async def budget():
+        return {"configured": True, "used": 3, "cap": 100,
+                "read_at": "2026-10-29T10:00:00+00:00"}
+
+    async def spend():
+        if places_exc is not None:
+            raise places_exc
+        return 42
+
+    monkeypatch.setattr(_perplexity, "budget_status", budget)
+    monkeypatch.setattr(prospect, "spend_this_month", spend)
+    monkeypatch.setattr(prospect, "cap", lambda: 500)
+
+
+def test_money_reports_costs_and_never_guesses_revenue(signed_in, monkeypatch):
+    _stub_money(monkeypatch)
+    body = signed_in.get("/api/money").json()
+    costs = body["costs"]
+    assert costs["free_quota"]["pools"] == {"groq:llama": {"requests_left": 5}}
+    assert costs["perplexity"]["used"] == 3
+    assert costs["places"]["used"] == 42 and costs["places"]["cap"] == 500
+    assert costs["places"]["month"]
+    assert body["revenue"] == {
+        "value": None, "state": "unknown",
+        "reason": "no revenue source configured",
+        "read_at": body["revenue"]["read_at"]}
+    for block in (costs["free_quota"], costs["perplexity"], costs["places"],
+                  body["revenue"]):
+        assert block["read_at"]
+
+
+def test_money_places_unreadable_is_unknown_not_zero(signed_in, monkeypatch):
+    _stub_money(monkeypatch, places_exc=RuntimeError("db down"))
+    places = signed_in.get("/api/money").json()["costs"]["places"]
+    assert places["used"] is None and places["state"] == "unknown"
+    assert places["reason"] and places["read_at"]
+
+
+# --- GUI decision route (the owner 2026-10-29: GUI decisions) ---------------------
+# POST /api/approvals/{pid}/decision. Every check fails closed, in this order:
+# session 401, Origin 403, CSRF 403, body 422, rate 429, card 409/403, decide.
+
+ORIGIN = "http://testserver"      # TestClient's own Host
+ASK_ACTION = "testmod.ask_thing"
+AUTO_ACTION = "testmod.auto_thing"
+NEVER_ACTION = "testmod.never_thing"
+
+
+@pytest.fixture
+def decision_env(signed_in, memory_backend, monkeypatch):
+    """A signed-in client whose Host is the published port, a Tier 2 and a
+    Tier 1 action in the registry, and a card store the test can steer."""
+    from atlas.api import dashboard
+    from atlas.kernel import judgment
+    from atlas.kernel.contracts import Tier
+    from atlas.kernel.permissions import Decision
+    from atlas.kernel.registry import REGISTRY
+
+    monkeypatch.setitem(REGISTRY.decisions, ASK_ACTION,
+                        Decision(True, Tier.ASK, "asks first"))
+    monkeypatch.setitem(REGISTRY.decisions, AUTO_ACTION,
+                        Decision(True, Tier.AUTO, "acts alone"))
+    monkeypatch.setitem(REGISTRY.decisions, NEVER_ACTION,
+                        Decision(False, Tier.NEVER, "money out"))
+    # TestClient's Host; unset, the route would only answer loopback names.
+    monkeypatch.setenv("ATLAS_ALLOWED_HOSTS", "testserver")
+
+    async def nothing(*_a, **_kw):
+        return None
+
+    monkeypatch.setattr(judgment, "record_outcome", nothing)
+    dashboard._decision_limit.clear()
+    dashboard._decision_calls.clear()
+    card = {"action": ASK_ACTION, "status": "pending", "expires_hours": 1.0,
+            "loads": 0}
+
+    def install(**over):
+        card.update(over)
+        claim = claim_once(memory_backend, status=card["status"],
+                           expires_hours=card["expires_hours"])
+        inner = memory_backend.fetchrow
+
+        async def fetchrow(sql, *args):
+            flat = " ".join(sql.split())
+            if flat.startswith("SELECT id, action, status, expires_at FROM proposals"):
+                card["loads"] += 1
+                if card["action"] is None:
+                    return None
+                return {"id": args[0], "action": card["action"],
+                        "status": card["status"],
+                        "expires_at": datetime.now(UTC)
+                        + timedelta(hours=card["expires_hours"])}
+            if "FROM restores WHERE fenced_at IS NULL" in flat:
+                return {"due": False}
+            return await inner(sql, *args)
+
+        memory_backend.fetchrow = fetchrow
+        return claim
+
+    install()
+    csrf = signed_in.get("/api/session").json()["csrf"]
+    headers = {"Origin": ORIGIN, "X-CSRF-Token": csrf,
+               "Sec-Fetch-Site": "same-origin"}
+    yield {"client": signed_in, "headers": headers, "install": install,
+           "card": card}
+    dashboard._decision_limit.clear()
+    dashboard._decision_calls.clear()
+
+
+def _decide(env, verdict="decline", pid=7, headers=None, body=None):
+    return env["client"].post(
+        f"/api/approvals/{pid}/decision",
+        json=body if body is not None else {"verdict": verdict},
+        headers=env["headers"] if headers is None else headers)
+
+
+def _events(memory_backend, name):
+    return [r for r in memory_backend.audit_rows if r.event == name]
+
+
+def test_decision_without_a_session_is_401(client, executed):
+    response = client.post("/api/approvals/7/decision", json={"verdict": "decline"},
+                           headers={"Origin": "http://testserver"})
+    assert response.status_code == 401
+    assert executed == []
+
+
+@pytest.mark.parametrize("origin", [None, "https://evil.example", "null",
+                                    "http://testserver.evil.example",
+                                    "https://testserver"])
+def test_decision_from_a_foreign_or_missing_origin_is_403(
+        decision_env, executed, origin):
+    headers = {k: v for k, v in decision_env["headers"].items() if k != "Origin"}
+    if origin is not None:
+        headers["Origin"] = origin
+    assert _decide(decision_env, headers=headers).status_code == 403
+    assert decision_env["card"]["loads"] == 0
+    assert executed == []
+
+
+def test_decision_cross_site_fetch_is_403(decision_env, executed):
+    headers = dict(decision_env["headers"], **{"Sec-Fetch-Site": "cross-site"})
+    assert _decide(decision_env, headers=headers).status_code == 403
+    assert executed == []
+
+
+@pytest.mark.parametrize("token", [None, "", "0" * 64])
+def test_decision_with_a_bad_or_missing_csrf_token_is_403(
+        decision_env, executed, token):
+    headers = {k: v for k, v in decision_env["headers"].items()
+               if k != "X-CSRF-Token"}
+    if token is not None:
+        headers["X-CSRF-Token"] = token
+    assert _decide(decision_env, headers=headers).status_code == 403
+    assert decision_env["card"]["loads"] == 0
+    assert executed == []
+
+
+@pytest.mark.parametrize("action", [AUTO_ACTION, NEVER_ACTION],
+                         ids=["tier1", "tier3"])
+@pytest.mark.parametrize("verdict", ["approve", "decline"])
+def test_decision_on_a_tier_1_or_tier_3_card_is_403(
+        decision_env, executed, memory_backend, action, verdict):
+    """Only a pending Tier 2 card may be answered from the page. Tier 1 acts
+    alone and Tier 3 is permanently denied: both 403, nothing claimed,
+    nothing executed, no dashboard.decision row."""
+    claim = decision_env["install"](action=action)
+    response = _decide(decision_env, verdict)
+    assert response.status_code == 403
+    assert claim["claimed"] is False
+    assert not _events(memory_backend, "dashboard.decision")
+    assert executed == []
+
+
+def test_decision_with_allowed_hosts_unset_refuses_a_foreign_host(
+        decision_env, executed, monkeypatch):
+    monkeypatch.delenv("ATLAS_ALLOWED_HOSTS", raising=False)
+    headers = dict(decision_env["headers"], Host="evil.example:8080",
+                   Origin="http://evil.example:8080")
+    assert _decide(decision_env, headers=headers).status_code == 403
+    assert decision_env["card"]["loads"] == 0
+    # The TestClient's own name is not loopback either: unset is not "off".
+    assert _decide(decision_env).status_code == 403
+    assert executed == []
+
+
+def test_decision_with_allowed_hosts_unset_still_answers_loopback(
+        decision_env, executed, monkeypatch):
+    monkeypatch.delenv("ATLAS_ALLOWED_HOSTS", raising=False)
+    headers = dict(decision_env["headers"], Host="127.0.0.1:8080",
+                   Origin="http://127.0.0.1:8080")
+    response = _decide(decision_env, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["verdict"]["outcome"] == "declined"
+    assert executed == []
+
+
+def test_decision_on_an_unknown_action_is_403(decision_env, executed):
+    decision_env["install"](action="nobody.knows_this")
+    assert _decide(decision_env).status_code == 403
+    assert executed == []
+
+
+def test_decision_on_a_card_that_is_not_pending_is_409(decision_env, executed):
+    decision_env["install"](status="declined")
+    assert _decide(decision_env).status_code == 409
+    assert executed == []
+
+
+def test_decision_on_an_expired_card_reports_expired(decision_env, executed):
+    decision_env["install"](expires_hours=-1.0)
+    response = _decide(decision_env, "approve")
+    assert response.status_code == 200
+    assert response.json()["verdict"]["outcome"] == "expired"
+    assert executed == []
+
+
+def test_approve_under_watch_only_is_refused_and_stays_pending(
+        decision_env, executed, memory_backend, monkeypatch):
+    monkeypatch.setenv("ATLAS_WATCH_ONLY", "true")
+    claim = decision_env["install"]()
+    response = _decide(decision_env, "approve")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["verdict"]["outcome"] == "refused"
+    assert body["watch_only"] is True
+    assert claim["claimed"] is False            # the card was never claimed
+    assert _events(memory_backend, "proposal.watch_only")
+    assert executed == []
+
+
+def test_decline_of_a_pending_tier_2_card_is_declined_and_audited(
+        decision_env, executed, memory_backend):
+    response = _decide(decision_env, "decline")
+    assert response.status_code == 200
+    assert response.json()["verdict"]["outcome"] == "declined"
+    rows = _events(memory_backend, "dashboard.decision")
+    assert len(rows) == 1
+    payload = json.loads(rows[0].payload)["data"]
+    assert set(payload) == {"verdict", "outcome", "origin", "client"}
+    assert payload["verdict"] == "decline" and payload["outcome"] == "declined"
+    assert executed == []
+
+
+def test_two_concurrent_declines_decline_exactly_once(decision_env, executed):
+    # Both requests read the card as pending (the card load is steered to
+    # say so); the atomic UPDATE inside decide() matches only once.
+    outcomes = [_decide(decision_env).json()["verdict"]["outcome"] for _ in range(2)]
+    assert outcomes.count("declined") == 1
+    assert executed == []
+
+
+def test_decision_always_is_422(decision_env, executed):
+    assert _decide(decision_env, "always").status_code == 422
+    assert decision_env["card"]["loads"] == 0
+    assert executed == []
+
+
+def test_decision_with_extra_body_fields_is_422(decision_env, executed):
+    response = _decide(decision_env, body={"verdict": "decline",
+                                           "params": {"to": "x@example.com"}})
+    assert response.status_code == 422
+    assert decision_env["card"]["loads"] == 0
+    assert executed == []
+
+
+def test_refused_watch_only_approves_never_block_a_decline(
+        decision_env, executed, monkeypatch):
+    """Regression, the owner 2026-10-29: ten watch-only approves (each refused,
+    nothing changed) used up the shared per-address bucket, and the Decline
+    that followed answered 429 on its first click."""
+    monkeypatch.setenv("ATLAS_WATCH_ONLY", "true")
+    for _ in range(12):
+        response = _decide(decision_env, "approve")
+        assert response.status_code == 200
+        assert response.json()["verdict"]["outcome"] == "refused"
+    response = _decide(decision_env, "decline")
+    assert response.status_code == 200, response.text
+    assert response.json()["verdict"]["outcome"] == "declined"
+    assert executed == []
+
+
+def test_decisions_that_change_a_card_are_limited_with_a_retry_time(
+        decision_env, executed, monkeypatch):
+    from atlas.api import dashboard
+    from atlas.api.peers import PerAddressLimiter
+    monkeypatch.setattr(dashboard, "_decision_limit", PerAddressLimiter(2, 60.0))
+    for _ in range(2):
+        decision_env["install"]()                     # a fresh pending card
+        assert _decide(decision_env).json()["verdict"]["outcome"] == "declined"
+    decision_env["install"]()
+    loads = decision_env["card"]["loads"]
+    response = _decide(decision_env)
+    assert response.status_code == 429
+    assert "try again in" in response.json()["detail"]
+    assert 1 <= int(response.headers["Retry-After"]) <= 60
+    assert decision_env["card"]["loads"] == loads     # refused before the card
+    assert executed == []
+
+
+def test_every_decision_call_is_capped_per_session(decision_env, executed, monkeypatch):
+    from atlas.api import dashboard
+    from atlas.api.peers import PerAddressLimiter
+    monkeypatch.setenv("ATLAS_WATCH_ONLY", "true")
+    monkeypatch.setattr(dashboard, "_decision_calls", PerAddressLimiter(3, 60.0))
+    codes = [_decide(decision_env, "approve").status_code for _ in range(4)]
+    assert codes == [200, 200, 200, 429]
+    assert executed == []
+
+
+def test_decision_limit_is_per_session_not_per_address(
+        decision_env, executed, monkeypatch):
+    """Docker Desktop's gateway is one address for every tab and tool on the
+    Mac: a bucket keyed on it is shared. Another session is not limited."""
+    from fastapi.testclient import TestClient
+
+    from atlas.api import dashboard
+    from atlas.api.main import app
+    from atlas.api.peers import PerAddressLimiter
+    monkeypatch.setattr(dashboard, "_decision_calls", PerAddressLimiter(1, 60.0))
+    assert _decide(decision_env).status_code == 200
+    assert _decide(decision_env).status_code == 429
+    with TestClient(app, client=("127.0.0.1", 51000)) as other:
+        assert other.post("/api/login", json={"password": PASSWORD}).status_code == 200
+        csrf = other.get("/api/session").json()["csrf"]
+        decision_env["install"]()
+        response = other.post("/api/approvals/7/decision", json={"verdict": "decline"},
+                              headers=dict(decision_env["headers"], **{"X-CSRF-Token": csrf}))
+    assert response.status_code == 200, response.text
+    assert executed == []
+
+
+def test_limiter_says_how_long_until_the_next_event_is_allowed(monkeypatch):
+    from atlas.api import peers
+    clock = [100.0]
+    monkeypatch.setattr(peers.time, "monotonic", lambda: clock[0])
+    lim = peers.PerAddressLimiter(2, 60.0)
+    assert lim.retry_after("k") == 0.0
+    lim.hit("k")
+    clock[0] = 110.0
+    lim.hit("k")
+    assert lim.retry_after("k") == pytest.approx(50.0)
+    clock[0] = 161.0
+    assert lim.retry_after("k") == 0.0
+
+
+def test_session_hands_a_csrf_token_only_when_signed_in(client):
+    assert client.get("/api/session").json().get("csrf") is None
+    client.post("/api/login", json={"password": PASSWORD})
+    token = client.get("/api/session").json()["csrf"]
+    assert token and len(token) == 64
+    assert token == auth.csrf_token(client.cookies.get(auth.COOKIE))
+
+
+def test_the_csp_middleware_sets_the_caddy_policy_on_html(client):
+    from atlas.api import main
+
+    assert main.CONTENT_SECURITY_POLICY == (
+        "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; "
+        "media-src 'self' blob:; manifest-src 'self'; connect-src 'self'; "
+        "frame-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+    response = client.get("/healthz")
+    assert "content-security-policy" not in response.headers   # JSON, not HTML
+
+    # The SPA shell exists only with a ui/dist build; stand in for it with a
+    # route of the same endpoint name, removed again afterwards.
+    from fastapi.responses import HTMLResponse
+
+    async def spa() -> HTMLResponse:
+        return HTMLResponse("<!doctype html><title>x</title>")
+
+    async def other_page() -> HTMLResponse:
+        return HTMLResponse("<p>x</p>", headers={
+            "Content-Security-Policy": "default-src 'none'; sandbox"})
+
+    before = list(main.app.router.routes)
+    main.app.add_api_route("/csp-probe", spa, include_in_schema=False)
+    main.app.add_api_route("/csp-own", other_page, include_in_schema=False)
+    # Ahead of a real SPA catch-all, when this checkout has a ui/dist build.
+    probes = main.app.router.routes[len(before):]
+    main.app.router.routes[:] = probes + before
+    try:
+        page = client.get("/csp-probe")
+        assert page.headers.get("content-security-policy") == \
+            main.CONTENT_SECURITY_POLICY
+        own = client.get("/csp-own")
+        assert own.headers.get("content-security-policy") == \
+            "default-src 'none'; sandbox"
+    finally:
+        main.app.router.routes[:] = before
+
+
+# --- the roster's "Today" is New York's day (the owner 2026-10-29) ----------------
+# At 20:15 EDT (00:15 UTC) every agent read 0: the count started at UTC
+# midnight, four hours into his evening.
+
+@pytest.mark.parametrize("now, start", [
+    ("2026-10-30T00:15:00+00:00", "2026-10-29T04:00:00+00:00"),   # 20:15 EDT
+    ("2026-10-29T15:00:00+00:00", "2026-10-29T04:00:00+00:00"),
+    ("2026-11-01T12:00:00+00:00", "2026-11-01T04:00:00+00:00"),   # DST ends
+    ("2026-11-02T03:00:00+00:00", "2026-11-01T04:00:00+00:00"),   # 22:00 EST
+    ("2026-11-02T12:00:00+00:00", "2026-11-02T05:00:00+00:00"),
+])
+def test_day_start_is_new_york_midnight(now, start):
+    from atlas.kernel.agent_activity import day_start
+    got = day_start(datetime.fromisoformat(now))
+    assert got == datetime.fromisoformat(start)
+    assert got.tzinfo is not None
+
+
+def test_roster_today_counts_from_new_york_midnight(signed_in, memory_backend,
+                                                    monkeypatch):
+    from atlas.api import dashboard
+    from atlas.kernel import agents as agent_module
+    agent_module.build_roster()
+    fixed = datetime(2026, 10, 30, 0, 15, tzinfo=UTC)
+
+    class Frozen(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return fixed if tz is None else fixed.astimezone(tz)
+
+    monkeypatch.setattr(dashboard, "datetime", Frozen)
+    seen: dict[str, tuple] = {}
+
+    async def fetch(sql, *args):
+        flat = " ".join(sql.split())
+        for fragment in ("AS today_output", "agent.shift_alert_unrouted"):
+            if fragment in flat:
+                seen[fragment] = args
+        return []
+
+    memory_backend.fetch = fetch
+    assert signed_in.get("/api/agents").status_code == 200
+    ny_midnight = datetime(2026, 10, 29, 4, 0, tzinfo=UTC)
+    assert seen["AS today_output"][0] == ny_midnight
+    assert seen["agent.shift_alert_unrouted"][0] == ny_midnight

@@ -8,6 +8,7 @@ import {
   api, normaliseHealth, type AgentSummary, type ModuleTile, type Overview, type Tasks,
 } from "../api";
 import { headline } from "../pages/companionModel";
+import { outcomeLine } from "../pages/outcomeText";
 
 export type PanelKind = "health" | "tasks" | "sales" | "agents";
 export type RowState = "ok" | "warn" | "fail" | "unknown" | "plain";
@@ -108,7 +109,7 @@ export function agentsPanel(agents: AgentSummary[], asOf: string): PanelData {
     .sort((a, b) => b.runs_24h - a.runs_24h);
   const rows = busy.slice(0, 6).map((a): PanelRow => ({
     label: a.display || a.title || a.name,
-    value: `${a.runs_24h} run${a.runs_24h === 1 ? "" : "s"} today${a.last_outcome ? ` · ${a.last_outcome}` : ""}`,
+    value: `${a.runs_24h} run${a.runs_24h === 1 ? "" : "s"} today${a.last_outcome ? ` · ${outcomeLine(a.last_outcome, 60)}` : ""}`,
     state: a.ready ? "plain" : "warn",
   }));
   return {

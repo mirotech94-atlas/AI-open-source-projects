@@ -4,7 +4,7 @@ Every line is either **verified** (I ran it and read the output), **built, not
 verifiable here** (correct by inspection, needs something only you can supply),
 or **outstanding**. Nothing is marked done on the strength of having written it.
 
-Last run: 2026-09-22, against `atlas.example.com` (203.0.113.10).
+Last run: 2026-09-22, against `atlas.example.com` (203.0.113.191).
 
 ---
 
@@ -43,7 +43,7 @@ All six areas covered, **252 tests passing**, `ruff` clean, TypeScript strict cl
 
 ## Step 4 — module stubs
 
-`flycheap`, `guardian`, `inroots`, `vpsie` rewritten. Each docstring records the
+`flycheap`, `guardian`, `inroots`, `cloudco` rewritten. Each docstring records the
 endpoints and response shapes it assumes. Added `modules/_http.py`: a wrong
 shape is UNKNOWN with a message naming the path, and `redact()` strips
 credentials from anything bound for an Observation — `flycheap` and `instagram`
@@ -220,16 +220,16 @@ modules  : 27 loaded, 5 disabled
   + purchasing       0 check(s), 2 action(s)  — Purchasing
   + research         0 check(s), 1 action(s)  — Research
   + rhythm           1 check(s), 1 action(s)  — Rhythm
-  + school           3 check(s), 2 action(s)  — College (CUNY, Fall 2026)
+  + school           3 check(s), 2 action(s)  — College (the university, Fall 2026)
   + screening        1 check(s), 1 action(s)  — Screening line
   + stripe           12 check(s), 1 action(s)  — Payments (Stripe)
   + vault            1 check(s), 2 action(s)  — Vault & Library
-  + vpsie            5 check(s), 1 action(s)  — VPSie
+  + cloudco            5 check(s), 1 action(s)  — CloudCo
   + youtube          6 check(s), 3 action(s)  — YouTube
   - calendar         DISABLED: missing env: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN
   - gitlab           DISABLED: missing env: GITLAB_TOKEN
   - matrix_rooms     DISABLED: missing env: MATRIX_HOMESERVER, MATRIX_TOKEN
-  - mirotech         DISABLED: missing env: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN
+  - exampleco         DISABLED: missing env: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN
   - tiktok           DISABLED: missing env: TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET, TIKTOK_REFRESH_TOKEN
 ```
 
@@ -277,7 +277,7 @@ actions  : 43 in the catalog, 0 refused
   [ask ] stripe.retry_invoice               requires approval [irreversible]
   [auto] vault.log_reading                  reversible and self-contained [reversible]
   [auto] vault.reindex                      reversible and self-contained [reversible]
-  [ask ] vpsie.snapshot_all                 requires approval [irreversible]
+  [ask ] cloudco.snapshot_all                 requires approval [irreversible]
   [auto] youtube.draft_metadata             reversible and self-contained [reversible]
   [ask ] youtube.set_visibility             requires approval [reversible]
   [ask ] youtube.upload                     requires approval [reversible]

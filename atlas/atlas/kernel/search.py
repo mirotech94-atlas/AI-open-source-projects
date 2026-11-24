@@ -1,6 +1,6 @@
 """ATLAS's own search: what it recorded, found by words.
 
-Miro, 2026-10-06: "if I say something in a channel, generic or something,
+the owner, 2026-10-06: "if I say something in a channel, generic or something,
 then he should have its own search engine for me". Before this a question
 in Slack was answered from the live checks alone; anything ATLAS had done,
 proposed, posted or seen earlier was out of reach unless he remembered the
@@ -54,7 +54,7 @@ class Hit:
 def fold(hits: list[Hit]) -> list[Hit]:
     """One line per (source, title): a check that was degraded six times in
     two days is one record six times, not six records. The newest stays,
-    with the count. Read live 2026-10-06: "vpsie balance" was six identical
+    with the count. Read live 2026-10-06: "cloudco balance" was six identical
     finding lines."""
     seen: dict[tuple[str, str], int] = {}
     out: list[Hit] = []

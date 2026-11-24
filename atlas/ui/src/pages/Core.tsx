@@ -8,6 +8,7 @@ import { Brain } from "../core/Brain";
 import { current, llmTile, memoryTile, regionsTile } from "../core/core-tiles";
 import type { useVoice } from "../voice/useVoice";
 import { statusOf, type Phase } from "../voice/loop";
+import { SpeakingSparks } from "../voice/SpeakingSparks";
 import {
   AnswerExtras, MuteButton, StopButton, TranscriptLog, VoiceHints,
 } from "../voice/VoiceOverlay";
@@ -154,11 +155,15 @@ export function Core({ reloadKey, voice, gaze = null }: {
 
       {/* --- the stage --------------------------------------------------- */}
       <div className="core-stage">
-        <Suspense fallback={<div className="bust" aria-hidden="true" />}>
-          <Bust phase={phase} bars={voice.bars}
-                onWake={voice.phase === "dormant" ? voice.wake : voice.interrupt}
-                gaze={gaze} />
-        </Suspense>
+        <div className="core-figure">
+          <Suspense fallback={<div className="bust" aria-hidden="true" />}>
+            <Bust phase={phase} bars={voice.bars}
+                  onWake={voice.phase === "dormant" ? voice.wake : voice.interrupt}
+                  gaze={gaze} />
+          </Suspense>
+          {/* Sparks over the figure while he speaks, as loud as the real clip. */}
+          <SpeakingSparks voice={voice} origin={{ x: 0.5, y: 0.36, r: 0.13 }} />
+        </div>
 
         <div className="core-hud">
           <span className="hud-status" data-status={status}>

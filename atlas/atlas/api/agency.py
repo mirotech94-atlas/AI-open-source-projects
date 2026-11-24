@@ -38,6 +38,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from ..kernel import agent_activity
 from ..kernel import meeting as meeting_module
 from ..kernel.meeting import EXCERPT_CHARS, failure_kind, first_sentence
 from ..modules._http import explain
@@ -79,6 +80,42 @@ async def meeting(_s: SignedIn,
                  f"to report — {why}") from None
     built["served_at"] = served_at
     return built
+
+
+@router.get("/activity")
+async def activity(_s: SignedIn) -> dict[str, Any]:
+    """Each roster agent's now / yesterday / issues (`kernel/agent_activity.py`).
+
+    Read-only. A read that fails inside is `errors[...]` and the figures it
+    fed are null (UNKNOWN on the page); only a failure of the whole build is
+    a 503 that says why, never a panel of zeros."""
+    served_at = datetime.now(UTC).isoformat()
+    try:
+        built = await agent_activity.activity()
+    except Exception as exc:                                  # noqa: BLE001
+        why = explain(exc)
+        log.warning("the agent activity panel could not be built: %s", why)
+        raise HTTPException(
+            503, f"I could not read the agents' activity — {why}") from None
+    return {"served_at": served_at, **built}
+
+
+@router.get("/seo")
+async def seo_panel(_s: SignedIn) -> dict[str, Any]:
+    """The SEO panel beside the Agency map (`modules/seo/panel.py`): per site,
+    Search Console and Core Web Vitals figures from the checks' last
+    readings, with their read times, and the stored reports. Read-only. A
+    read that fails inside is `errors[...]` and its figures null (UNKNOWN on
+    the page); only a failure of the whole build is a 503 that says why."""
+    from ..modules.seo import panel
+    served_at = datetime.now(UTC).isoformat()
+    try:
+        built = await panel.build()
+    except Exception as exc:                                  # noqa: BLE001
+        why = explain(exc)
+        log.warning("the SEO panel could not be built: %s", why)
+        raise HTTPException(503, f"I could not read the SEO readings — {why}") from None
+    return {"served_at": served_at, **built}
 
 
 @router.get("/brain")
@@ -125,7 +162,7 @@ async def missions(_s: SignedIn,
         state = row.get("state") or {}
         out.append({
             "id": row["id"], "agent": row["agent"],
-            "persona": persona_for(row["agent"]).name,
+            "persona": persona_for(missions_module.current_agent(row["agent"])).name,
             "recipe": row["recipe"], "request": row["request"],
             "status": row["status"], "phase": row.get("phase") or "",
             "slots": row.get("slots") or {},
@@ -142,3 +179,39 @@ async def missions(_s: SignedIn,
 
 def _iso(value: Any) -> Any:
     return value.isoformat() if isinstance(value, datetime) else value
+
+
+# ------------------------------------------------------------ client sites
+# The Client Sites tab (`ui/src/pages/Sites.tsx`): the agency module's site
+# registry (`agency_sites`), read now. Read-only; nothing here deploys.
+
+@router.get("/sites")
+async def sites(_s: SignedIn) -> dict[str, Any]:
+    """Every registry row: kind, hostname, the release live on this box and
+    the newest `site_<slug>` reading with its read time, or UNKNOWN with
+    the reason. An unreadable registry is a 503, never an empty list."""
+    from ..modules.agency import sites_view
+    try:
+        return await sites_view.overview()
+    except Exception as exc:                                  # noqa: BLE001
+        why = explain(exc)
+        log.warning("the client sites could not be read: %s", why)
+        raise HTTPException(503, f"I could not read the client sites — {why}") from None
+
+
+@router.get("/sites/{slug}/events")
+async def site_events(_s: SignedIn, slug: str) -> dict[str, Any]:
+    """The last 50 deploy outcomes of one site, newest first."""
+    from ..modules.agency import _store, hosting
+    if hosting.slug_problem(slug):
+        raise HTTPException(422, "not a site slug")
+    try:
+        rows = await _store.site_events(slug, 50)
+    except Exception as exc:                                  # noqa: BLE001
+        why = explain(exc)
+        log.warning("the site events could not be read: %s", why)
+        raise HTTPException(503, f"I could not read the site's events — {why}") from None
+    events = [{"at": _iso(r.get("at")), "event": r.get("event"),
+               "release": r.get("release"), "detail": r.get("detail") or ""}
+              for r in rows]
+    return {"slug": slug, "events": events, "read_at": datetime.now(UTC).isoformat()}

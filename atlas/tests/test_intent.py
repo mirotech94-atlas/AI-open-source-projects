@@ -1,4 +1,4 @@
-"""Acting on what Miro says, rather than on a button he clicks.
+"""Acting on what the owner says, rather than on a button he clicks.
 
 He asked for this twice: say it in Slack or on the phone, and it happens.
 That is his Tier 2 approval to give — an approval is an authenticated human
@@ -68,7 +68,7 @@ async def test_tier_three_is_refused_with_his_own_words(registry, monkeypatch, m
         return "billing.payout", {}
 
     monkeypatch.setattr(intent, "choose", picks_payout)
-    outcome = await intent.act("send the payout", channel="slack", who="UMIRO")
+    outcome = await intent.act("send the payout", channel="slack", who="UOWNER")
     assert outcome.ok is False
     assert outcome.ran is False
     assert "no runtime override" in outcome.spoken
@@ -158,10 +158,10 @@ async def test_the_request_reaches_the_executor_as_an_approval(
     monkeypatch.setattr("atlas.kernel.executor.execute", fake_execute)
 
     outcome = await intent.act("file an issue about the stale scraper",
-                               channel="slack", who="UMIRO")
+                               channel="slack", who="UOWNER")
     assert outcome.ran is True
     assert seen["req"].action == "gitlab.open_issue"
-    assert seen["req"].approved_by == "slack:UMIRO"
+    assert seen["req"].approved_by == "slack:UOWNER"
     # The words he actually used travel with it, so the audit log says why.
     assert "stale scraper" in seen["req"].reason
 
@@ -171,13 +171,13 @@ async def test_nothing_matching_is_said_plainly(registry, monkeypatch, memory_ba
         return None
 
     monkeypatch.setattr(intent, "choose", no_match)
-    outcome = await intent.act("book me a flight", channel="slack", who="UMIRO")
+    outcome = await intent.act("book me a flight", channel="slack", who="UOWNER")
     assert outcome.ok is False
     assert "don't have an action that does that" in outcome.spoken
 
 
 async def test_an_empty_request_does_nothing(registry, memory_backend):
-    outcome = await intent.act("   ", channel="slack", who="UMIRO")
+    outcome = await intent.act("   ", channel="slack", who="UOWNER")
     assert outcome.ok is False
 
 
@@ -198,27 +198,27 @@ async def test_intent_never_imports_a_way_around_the_executor():
 
 # ---------------------------------------------- his own chat, and nobody else's
 #
-# A chat message is only an approval when it comes from the chat Miro
+# A chat message is only an approval when it comes from the chat the owner
 # configured as his own. Anyone else's message is data about the world,
 # never an instruction -- invariant 4. No messaging chat is configured in
 # code today (Telegram and WhatsApp were removed on 2026-09-28), so the
 # mechanism is exercised through a stand-in platform, "chat".
 
-REMOVED = (("telegram", "MIRO_TELEGRAM_CHAT_ID", "555"),
-           ("whatsapp", "MIRO_WHATSAPP_NUMBER", "15550001111"))
+REMOVED = (("telegram", "OWNER_TELEGRAM_CHAT_ID", "555"),
+           ("whatsapp", "OWNER_WHATSAPP_NUMBER", "15550001111"))
 
 
 @pytest.fixture
 def a_chat(monkeypatch):
     """A principal chat platform, wired the way a real one would be."""
-    monkeypatch.setattr(intent, "PRINCIPAL_ENV", {"chat": "MIRO_CHAT_ID"})
+    monkeypatch.setattr(intent, "PRINCIPAL_ENV", {"chat": "OWNER_CHAT_ID"})
     monkeypatch.setattr(intent, "READ_BACK", frozenset({"chat"}))
     monkeypatch.setattr(intent, "CAN_APPROVE", intent.CAN_APPROVE | {"chat"})
-    monkeypatch.setenv("MIRO_CHAT_ID", "4242")
+    monkeypatch.setenv("OWNER_CHAT_ID", "4242")
 
 
 def test_principal_channel_is_none_when_nothing_is_configured(monkeypatch, a_chat):
-    monkeypatch.delenv("MIRO_CHAT_ID", raising=False)
+    monkeypatch.delenv("OWNER_CHAT_ID", raising=False)
     assert intent.principal_channel("chat", "4242") is None
     # An empty chat id never matches an empty setting either.
     assert intent.principal_channel("chat", "") is None
@@ -239,7 +239,7 @@ def test_no_messaging_chat_approves_anything():
 
 @pytest.mark.parametrize("platform,env,chat", REMOVED)
 def test_a_removed_platform_can_no_longer_approve(monkeypatch, platform, env, chat):
-    """Removed at Miro's request, 2026-09-28. A leftover setting must not
+    """Removed at the owner's request, 2026-09-28. A leftover setting must not
     bring it back as an approval channel, nor as a principal origin at the
     executor."""
     from atlas.kernel.executor import PRINCIPAL_ORIGINS

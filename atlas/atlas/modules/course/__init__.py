@@ -1,12 +1,12 @@
-"""course -- Miro's own products, marketed organically, one approved post at a time.
+"""course -- the owner's own products, marketed organically, one approved post at a time.
 
 The products: the closed catalog in `catalog.py` -- "Build a Safe AI Operator",
 "Everyday AI for Adults", "Safe and Simple AI 60+", the AI for Every Age
 bundle and the free Family Scam-Safety Kit (the email lead magnet) -- sold on
-his Shopify store (atlasacademy-ai.myshopify.com). A product not in the
+his Shopify store (academy-store.myshopify.example). A product not in the
 catalog is never marketed. The marketing agent
 (Nora) proposes a post as a measured experiment; the growth agent (Leo) can
-draft it again; Miro approves every post on its own card. Organic only:
+draft it again; the owner approves every post on its own card. Organic only:
 nothing here spends, boosts or buys, and no such action exists.
 
 What it watches (reads only):
@@ -24,7 +24,7 @@ What it may do:
     approved text through Postiz to a non-clips text channel.
   * `course.hand_off`     (Tier 2, card only) -- the LinkedIn post or the
     product's one Shopify blog article (SEO title, meta description, 700-1,200
-    words of its own lesson excerpts), whole, for Miro to post by hand.
+    words of its own lesson excerpts), whole, for the owner to post by hand.
 
 How Nora picks what to post: `course_catalog` (the products, their channels,
 which are due by rotation, and `playbook.md` -- organic tactics distilled
@@ -167,7 +167,7 @@ class CourseModule:
             ),
             Action(
                 name="course.publish_post",
-                # Tier 2 every time: a public post under Miro's name. There
+                # Tier 2 every time: a public post under the owner's name. There
                 # is no rollback, because taking a post down is deleting it.
                 tier=Tier.ASK,
                 summary="Post one course post to a Postiz channel",
@@ -183,7 +183,7 @@ class CourseModule:
                 # Tier 2: the card IS the review of text he will post under
                 # his own name. The rollback only reopens ATLAS's row.
                 tier=Tier.ASK,
-                summary="Hand Miro a course post to publish by hand (LinkedIn "
+                summary="Hand the owner a course post to publish by hand (LinkedIn "
                         "or the Shopify blog)",
                 run=posts.hand_off, dry_run=posts.hand_off_dry,
                 rollback=posts.hand_off_rollback,

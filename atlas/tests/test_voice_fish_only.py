@@ -1,6 +1,6 @@
 """ATLAS speaks in Fish Audio and nothing else.
 
-Miro, 2026-10-06: "make sure the voice is Fish Audio, not the sound of Siri
+the owner, 2026-10-06: "make sure the voice is Fish Audio, not the sound of Siri
 or anything else; make sure she responds with voice as well." No reply path
 reaches a system voice -- the browser's speechSynthesis on the dashboard,
 AVSpeechSynthesizer in ATLAS Menu -- and the lines ATLAS says again and
@@ -83,7 +83,7 @@ def test_a_fixed_line_is_rendered_once_then_played_from_the_cache(client, monkey
 
 def test_an_answer_is_never_kept_on_disk(client, monkeypatch):
     _fish(monkeypatch, b"ID3answer")
-    said = "VPSie's fine, as of 7:52."
+    said = "CloudCo's fine, as of 7:52."
     assert client.post("/api/voice/speak", json={"text": said}).status_code == 200
     assert voice_cache.cached(said) is None
     assert not voice_cache.path_for(said).exists()

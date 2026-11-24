@@ -365,6 +365,12 @@ async def set_site_deployed(slug: str, previous_release: str | None) -> None:
         slug, previous_release)
 
 
+async def set_site_domain(slug: str, domain: str | None) -> None:
+    """Where the site is live (a Vercel publish sets its host), or None."""
+    await execute_sql(
+        "UPDATE agency_sites SET domain=$2 WHERE slug=$1", slug, domain)
+
+
 async def set_site_undeployed(slug: str) -> None:
     """A first deploy rolled back: nothing of this site is live any more."""
     await execute_sql(
@@ -375,7 +381,50 @@ async def set_site_undeployed(slug: str) -> None:
 
 
 async def list_sites() -> list[dict[str, Any]]:
-    rows = await fetch_all("SELECT slug, domain, deployed_at FROM agency_sites")
+    rows = await fetch_all(
+        "SELECT slug, domain, deployed_at, kind, source, managed FROM agency_sites")
+    return [dict(r) for r in rows]
+
+
+async def add_site_row(slug: str, domain: str, kind: str, source: str,
+                       path: str) -> int | None:
+    """The operator's `sites-add`: a demo or app row with no lead behind
+    it. `ON CONFLICT DO NOTHING`: an existing row is never overwritten."""
+    row = _row(await fetch_one(
+        """INSERT INTO agency_sites (slug, domain, path, kind, source, managed)
+           VALUES ($1,$2,$3,$4,$5,$6)
+           ON CONFLICT (slug) DO NOTHING
+           RETURNING id""",
+        slug, domain, path, kind, source, kind == "demo"))
+    return row["id"] if row else None
+
+
+async def record_site_event(slug: str, event: str, detail: str = "",
+                            release: str | None = None) -> None:
+    await execute_sql(
+        """INSERT INTO agency_site_events (slug, event, release, detail)
+           VALUES ($1,$2,$3,$4)""",
+        slug, event, release, detail[:500])
+
+
+async def site_health(slug: str) -> dict[str, Any] | None:
+    """The newest `agency.site_<slug>` observation (at, health, detail), or
+    None when the check has never run."""
+    return _row(await fetch_one(
+        """SELECT o.at, o.health, o.detail FROM observations o
+             JOIN checks c ON c.id = o.check_id
+             JOIN properties p ON p.id = c.property_id
+            WHERE p.name = 'agency' AND c.name = $1
+            ORDER BY o.at DESC LIMIT 1""",
+        f"site_{slug}"))
+
+
+async def site_events(slug: str, limit: int = 20) -> list[dict[str, Any]]:
+    """Newest first."""
+    rows = await fetch_all(
+        """SELECT at, event, release, detail FROM agency_site_events
+            WHERE slug=$1 ORDER BY at DESC, id DESC LIMIT $2""",
+        slug, max(1, min(int(limit), 200)))
     return [dict(r) for r in rows]
 
 
@@ -511,7 +560,7 @@ async def unpublish_webild(brief_id: int, url: str) -> bool:
 
 
 async def report_webild(lead_id: int, status: str, text: str) -> dict[str, Any] | None:
-    """The agent stopped: queued -> failed | needs_miro, with its own words,
+    """The agent stopped: queued -> failed | needs_owner, with its own words,
     only while the task is still live."""
     return _row(await fetch_one(
         """UPDATE agency_webild SET status=$2, report=$3, reported_at=now()
@@ -607,7 +656,7 @@ async def queue_reply(message_id: int, channel: str) -> None:
 
 
 async def messages_awaiting_reply(limit: int) -> list[dict[str, Any]]:
-    """Queued, unclaimed, and under a day old: an older one is Miro's to
+    """Queued, unclaimed, and under a day old: an older one is the owner's to
     answer, not a draft to spring on him late."""
     rows = await fetch_all(
         """SELECT id, lead_id, reply_channel FROM agency_lead_messages
@@ -980,6 +1029,22 @@ async def count_closed_deals() -> int:
     return int(row["n"])
 
 
+async def lead_returning(lead_id: int) -> bool:
+    """A returning client: a won or paid deal on THIS lead, or a lead the owner
+    linked to an earlier client (`returning_of_lead_id`). Never an email
+    domain. Raises when unreadable -- the caller must not read a failure as
+    new."""
+    row = _row(await fetch_one(
+        """SELECT (l.returning_of_lead_id IS NOT NULL
+                   OR EXISTS (SELECT 1 FROM agency_deals d
+                               WHERE d.lead_id = l.id
+                                 AND d.status IN ('won', 'paid'))) AS returning
+             FROM agency_leads l WHERE l.id = $1""", int(lead_id)))
+    if row is None:
+        raise RuntimeError(f"lead {lead_id} could not be read")
+    return bool(row["returning"])
+
+
 async def insert_deal(lead_id: int, status: str, amount: int | None,
                       note: str) -> int | None:
     row = _row(await fetch_one(
@@ -1207,3 +1272,33 @@ async def set_payment_status(payment_id: int, status: str,
 
 async def set_deal_status(deal_id: int, status: str) -> None:
     await execute_sql("UPDATE agency_deals SET status=$2 WHERE id=$1", deal_id, status)
+
+
+# ------------------------------------------------------------ agency_skills
+
+async def active_skills() -> list[dict[str, Any]]:
+    """The approved skill texts, for `kernel.skills.load_dynamic`."""
+    rows = await fetch_all(
+        "SELECT name, triggers, body FROM agency_skills WHERE status = 'active' "
+        "ORDER BY name")
+    return [dict(r) for r in rows]
+
+
+async def activate_skill(name: str, triggers: list[str], body: str) -> int:
+    """Store an approved skill as active (an approved card is the only caller)."""
+    row = await fetch_one(
+        """INSERT INTO agency_skills (name, triggers, body, status, approved_at)
+           VALUES ($1, $2, $3, 'active', now())
+           ON CONFLICT (name) DO UPDATE
+              SET triggers = EXCLUDED.triggers, body = EXCLUDED.body,
+                  status = 'active', approved_at = now()
+        RETURNING id""", name, triggers, body)
+    return int(row["id"])
+
+
+async def retire_skill(name: str) -> bool:
+    """active -> retired. The row stays; nothing is deleted."""
+    row = await fetch_one(
+        """UPDATE agency_skills SET status = 'retired'
+            WHERE name = $1 AND status = 'active' RETURNING id""", name)
+    return row is not None

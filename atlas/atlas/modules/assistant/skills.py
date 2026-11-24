@@ -138,7 +138,7 @@ that are needed; no padding.
 """))
 
 register(Skill(
-    name="summarise", summary="summarise a web page Miro gives the link to",
+    name="summarise", summary="summarise a web page the owner gives the link to",
     triggers=("summarise", "summarize", "summary of", "tl;dr", "tldr",
               "what does this page", "what does this article", "this link",
               "this url", "https://", "http://"),
@@ -164,15 +164,15 @@ never fill a gap with what sounds right.
 """))
 
 register(Skill(
-    name="atlas", summary="a question about ATLAS itself or Miro's own systems",
+    name="atlas", summary="a question about ATLAS itself or the owner's own systems",
     triggers=("atlas", "yourself", "your status", "your tools", "what can you do",
               "which modules", "your modules", "health of", "flycheap", "guardian",
-              "vpsie", "gitlab", "proposals waiting", "how are you"),
+              "cloudco", "gitlab", "proposals waiting", "how are you"),
     priority=95,
     tools=_all("atlas_status", "atlas_module_status", "atlas_capabilities",
                "time_now", "calculate"),
     body="""
-This is about ATLAS or Miro's own systems: read atlas_status, the module
+This is about ATLAS or the owner's own systems: read atlas_status, the module
 with atlas_module_status, or atlas_capabilities, and answer only from what
 they return, each figure with the time it was measured. Never the web, never
 memory of an earlier answer. A null or "unknown" is reported as unknown.

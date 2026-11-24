@@ -1,0 +1,41 @@
+/* "Why" list behind the header pill and the status ring. Colours are the
+   command.css tokens; UNKNOWN is grey, dashed and carries the word. */
+.why-back { position: fixed; inset: 0; z-index: 60; background: rgba(4, 7, 13, .6);
+            display: flex; justify-content: center; align-items: flex-start; padding: 64px 16px 16px; }
+.why { width: min(860px, 100%); max-height: calc(100vh - 96px); overflow: auto;
+       background: var(--surface, #131a28); border: 1px solid var(--state, var(--frame-hot));
+       border-radius: 3px; padding: 14px 16px; color: var(--text, #c9d2e3); }
+.why[data-health="unknown"] { border-style: dashed; }
+.why-head { display: flex; align-items: baseline; gap: 12px; }
+.why-head h2 { margin: 0; flex: 1; font: 700 13px/1.3 var(--mono, monospace); letter-spacing: .1em;
+               text-transform: uppercase; color: var(--state, var(--text-hot)); }
+.why-stamp, .why-at { font: 11px/1.3 var(--mono, monospace); color: var(--text-dim, #a3adc2);
+                      font-variant-numeric: tabular-nums; white-space: nowrap; }
+.why-close { background: none; border: 1px solid var(--frame, #333); color: var(--text-dim);
+             width: 26px; height: 26px; cursor: pointer; border-radius: 2px; font-size: 16px; line-height: 1; }
+.why h3 { margin: 14px 0 6px; font: 700 11px/1 var(--mono, monospace); letter-spacing: .14em;
+          text-transform: uppercase; color: var(--text-dim); }
+.why h3[data-health="unknown"], .why-group h4 { color: var(--grey, #8a8f99); }
+.why-group { margin: 6px 0 0; padding-left: 8px; border-left: 1px dashed var(--grey, #8a8f99); }
+.why-group h4 { margin: 0 0 4px; font: 700 11px/1.2 var(--mono, monospace); letter-spacing: .1em; }
+.why-group h4 small { font-weight: 400; }
+.why-list { list-style: none; margin: 0; padding: 0; }
+.why-row { display: grid; grid-template-columns: 110px 150px 84px 1fr auto; gap: 8px; align-items: baseline;
+           padding: 5px 0; border-bottom: 1px solid var(--frame, #222); font-size: 12px; }
+.why-row[data-health="failing"] { --state: var(--red, #f87171); border-left: 3px solid var(--red, #f87171); padding-left: 6px; }
+.why-row[data-health="degraded"] { --state: var(--amber, #f5a524); border-left: 3px solid var(--amber, #f5a524); padding-left: 6px; }
+.why-row[data-health="unknown"] { --state: var(--grey, #8a8f99); border-left: 3px dashed var(--grey, #8a8f99); padding-left: 6px; }
+.why-mod { font-weight: 700; color: var(--text-hot, #eef2fa); }
+.why-check { font-family: var(--mono, monospace); }
+.why-word { font: 700 10px/1 var(--mono, monospace); letter-spacing: .12em; color: var(--state); }
+.why-detail { color: var(--text, #c9d2e3); overflow-wrap: anywhere; }
+.why-none, .why-aside { margin: 12px 0 0; font-size: 12px; color: var(--text-dim); }
+.why-none[data-health="unknown"] { color: var(--grey, #8a8f99); }
+button.cmd-pill { background: transparent; cursor: pointer; }
+.cmd-pill small { font: 400 10px/1 var(--mono); letter-spacing: .04em; text-transform: none; opacity: .85;
+                  font-variant-numeric: tabular-nums; }
+.br-wrap[data-clickable] { cursor: pointer; }
+@media (max-width: 720px) {
+  .why-row { grid-template-columns: 1fr 1fr; }
+  .why-detail, .why-at { grid-column: 1 / -1; }
+}

@@ -1,12 +1,12 @@
-"""Where the Webild agent on Miro's Mac reads its tasks, and says what it did.
+"""Where the Webild agent on the owner's Mac reads its tasks, and says what it did.
 
     GET  /webild/pending                 approved briefs waiting (read-only)
     POST /webild/claim                   the oldest one, now yours; 204 if none
     POST /webild/{lead_id}/submitted     {"url": "https://<site>.webild.io/"}
-    POST /webild/{lead_id}/report        {"status": "needs_miro"|"failed",
+    POST /webild/{lead_id}/report        {"status": "needs_owner"|"failed",
                                           "summary": "..."}
 
-Miro, 2026-09-29: a Webild site is built by an agent in his own Chrome, in
+the owner, 2026-09-29: a Webild site is built by an agent in his own Chrome, in
 his own signed-in Webild account, never by ATLAS. Exactly like the Whop
 submitter (`clips.py`): mesh-only by the middleware (`/webild` is not in
 PUBLIC_PATHS) and authenticated with the `HANDOFF_TOKEN` bearer, checked
@@ -16,11 +16,11 @@ here -- an address is not a credential.
   `kernel.unattended.run_tier1` to the executor as
   `agency.record_webild_site` (Tier 1, dry run first, audited, refused
   while paused or watch-only), with no approver -- the agent's word is not
-  Miro's. That action checks the URL is on a Webild host, records it only
+  the owner's. That action checks the URL is on a Webild host, records it only
   while the task has not expired, and runs the live launch check.
 * `report` is for the agent stopping short (a payment wall, a login prompt,
   new terms). It closes the task with the agent's words, capped, and relays
-  them to Miro labelled as the agent's account, not ATLAS's -- the same
+  them to the owner labelled as the agent's account, not ATLAS's -- the same
   shape as `/handoffs/{id}/report`.
 """
 from __future__ import annotations
@@ -74,7 +74,7 @@ async def submitted(lead_id: int, request: Request,
     got = await run_tier1(
         "agency.record_webild_site",
         {"lead_id": int(lead_id), "url": url[:500]},
-        "the Webild agent on Miro's Mac published this lead's site")
+        "the Webild agent on the owner's Mac published this lead's site")
     if not got.ok:
         raise HTTPException(409, got.detail[:300])
     evidence = got.evidence or {}
@@ -103,7 +103,7 @@ async def report(lead_id: int, request: Request,
     row = await webild.record_report(int(lead_id), status, text)
     if row is None:
         raise HTTPException(409, f"lead {lead_id} has no Webild task waiting")
-    label = {"failed": "could not build it", "needs_miro": "needs you"}[status]
+    label = {"failed": "could not build it", "needs_owner": "needs you"}[status]
     await _tell(f"Webild agent on lead {lead_id}: {label}",
                 f"_Report from the Webild agent, in its words — ATLAS has not "
                 f"verified it:_\n\n{text[:webild.MAX_REPORT]}")

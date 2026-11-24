@@ -1,6 +1,6 @@
-"""A voice turn is small, marked as Miro's, and never ends in silence.
+"""A voice turn is small, marked as the owner's, and never ends in silence.
 
-Miro, 2026-10-06: "ATLAS has nothing to respond with when talking with
+the owner, 2026-10-06: "ATLAS has nothing to respond with when talking with
 him; make sure one of the free tiers is talking to me always and never
 stopping." The fast answer's prompt carried every check (~16,300
 characters for the 142 registered here), the free daily allowances were
@@ -51,9 +51,9 @@ def _board(monkeypatch, n: int, *, failing_every: int = 3) -> None:
              "interval_s": 300,
              "health": "failing" if i % failing_every == 0 else "ok",
              "detail": "x" * 400, "at": fresh} for i in range(n)]
-    rows.append({"module": "vpsie", "check": "balance", "interval_s": 300,
+    rows.append({"module": "cloudco", "check": "balance", "interval_s": 300,
                  "health": "ok", "detail": "0.6 months of runway", "at": fresh})
-    rows.append({"module": "vpsie", "check": "instances", "interval_s": 300,
+    rows.append({"module": "cloudco", "check": "instances", "interval_s": 300,
                  "health": "ok", "detail": None, "at": None})
 
     async def fetch_all(sql, *a):
@@ -68,7 +68,7 @@ def _board(monkeypatch, n: int, *, failing_every: int = 3) -> None:
 @pytest.mark.parametrize("checks", [10, 142, 400])
 async def test_a_voice_prompt_stays_small_however_big_the_board(monkeypatch, checks):
     _board(monkeypatch, checks)
-    system = await voice.voice_system("how is vpsie looking")
+    system = await voice.voice_system("how is cloudco looking")
     assert len(system) <= VOICE_PROMPT_MAX_CHARS, len(system)
 
 
@@ -76,9 +76,9 @@ async def test_the_small_board_keeps_what_the_question_needs(monkeypatch):
     _board(monkeypatch, 142)
     system = await voice.voice_system("how is vipsy doing")      # as heard
     # Every row of the module he named, said as heard, with its read time.
-    assert "vpsie.balance: ok — 0.6 months of runway (read " in system
+    assert "cloudco.balance: ok — 0.6 months of runway (read " in system
     # Never measured is unknown, never fine (invariant 7).
-    assert "vpsie.instances: unknown — never measured" in system
+    assert "cloudco.instances: unknown — never measured" in system
     # The count says what is not shown, and the rest is not passed off as fine.
     assert "144 checks: 95 fine, 1 unknown, 48 not fine" in system
     assert "more not fine" in system
@@ -94,28 +94,28 @@ async def test_an_unreadable_board_says_so(monkeypatch):
     async def broken(sql, *a):
         raise ConnectionError("db down")
     monkeypatch.setattr(voice, "fetch_all", broken)
-    assert "unreachable" in await voice.voice_context("how is vpsie")
+    assert "unreachable" in await voice.voice_context("how is cloudco")
 
 
-async def test_the_fast_answer_is_small_on_the_voice_lane_and_miros(client, monkeypatch):
+async def test_the_fast_answer_is_small_on_the_voice_lane_and_owners(client, monkeypatch):
     _board(monkeypatch, 142)
     seen: dict = {}
 
     async def think(need, system, messages, **kw):
         seen.update(need=need, system=system, kw=kw,
                     interactive=quota.is_interactive())
-        return Completion(text="VPSie's fine, as of 7:52.", provider="groq",
+        return Completion(text="CloudCo's fine, as of 7:52.", provider="groq",
                           model="llama-3.1-8b-instant")
     monkeypatch.setattr("atlas.kernel.llm.think", think)
-    # ATLAS answers this one itself, not the agent that owns VPSie.
+    # ATLAS answers this one itself, not the agent that owns CloudCo.
     monkeypatch.setattr("atlas.kernel.missions.voice_agent", lambda _t: None)
     body = client.post("/api/voice/ask",
-                       json={"transcript": "how is vpsie looking"}).json()
-    assert body["answer"] == "VPSie's fine, as of 7:52."
+                       json={"transcript": "how is cloudco looking"}).json()
+    assert body["answer"] == "CloudCo's fine, as of 7:52."
     assert seen["need"] == Need.TRIVIAL
     assert len(seen["system"]) <= VOICE_PROMPT_MAX_CHARS
     assert seen["kw"]["max_tokens"] == voice.VOICE_MAX_TOKENS
-    assert seen["interactive"] is True                 # may spend Miro's reserve
+    assert seen["interactive"] is True                 # may spend the owner's reserve
 
 
 # ------------------------------------------------------------ never silent
@@ -148,7 +148,7 @@ async def test_out_of_allowance_says_so_with_the_providers_reset_time(
     monkeypatch.setattr("atlas.kernel.llm.think", no_answer)
     monkeypatch.setattr("atlas.kernel.agents.route", route)
     body = client.post("/api/voice/ask",
-                       json={"transcript": "how is vpsie looking"}).json()
+                       json={"transcript": "how is cloudco looking"}).json()
     assert body["answer"] is None
     assert "used today's allowance" in body["error"]
     assert reset.strftime("%H:%M") in body["error"]     # the provider's time
@@ -220,7 +220,7 @@ async def test_the_phone_line_hears_the_honest_line_not_an_exception(monkeypatch
     monkeypatch.setattr(improve, "handle", nothing)
     monkeypatch.setattr(missions, "take", nothing)
     monkeypatch.setattr("atlas.kernel.llm.think", no_answer)
-    said, cards = await voice.spoken_turn("how is vpsie", source="phone")
+    said, cards = await voice.spoken_turn("how is cloudco", source="phone")
     assert said == voice.NO_MODEL_DOWN and cards == []
 
 
@@ -250,7 +250,7 @@ async def test_the_spoken_chain_records_where_it_was_said():
     assert seen[0].reason.startswith("Asked out loud on the dashboard")
 
 
-async def test_a_slack_message_is_miros_turn(monkeypatch):
+async def test_a_slack_message_is_the_owners_turn(monkeypatch):
     from atlas.api import slack_events
     seen: list[bool] = []
 
@@ -316,7 +316,7 @@ async def test_a_timeout_with_one_model_spent_still_asks_the_agent(client, monke
     monkeypatch.setattr("atlas.kernel.llm.think", slow)
     monkeypatch.setattr("atlas.kernel.agents.route", route)
     body = client.post("/api/voice/ask",
-                       json={"transcript": "how is vpsie looking"}).json()
+                       json={"transcript": "how is cloudco looking"}).json()
     assert asked, "the agent was asked"
     assert body["answer"] == "Here's what I know."
     assert not voice.out_of_allowance(None)

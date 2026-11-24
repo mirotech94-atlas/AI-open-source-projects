@@ -1,7 +1,9 @@
 """The one timed follow-up (kernel.lead_followup.followups): a first email
 still unanswered after AGENCY_FOLLOWUP_DAYS gets its single follow-up
-through the executor; a reply (status `replied`) or a later message stops
-it at the query; a hold releases the claim; a refusal keeps it."""
+drafted through the executor and raised as one card (six agents,
+2026-10-27); a reply (status `replied`) or a later message stops it at the
+query; a hold on the draft releases the claim; a refused dry run leads the
+card with "Held for you" and keeps it."""
 from __future__ import annotations
 
 from datetime import timedelta
@@ -11,7 +13,7 @@ from atlas.kernel.contracts import ActionResult, FailureClass
 from atlas.kernel.executor import HOLD
 from atlas.modules.agency import _store
 
-FIRST = {"id": 1, "lead_id": 219, "to_address": "stella@estelleny.com",
+FIRST = {"id": 1, "lead_id": 219, "to_address": "contact13@example.com",
          "sent_at": "2026-10-05 02:34:46+00"}
 LEAD = {"id": 219, "name": "Estelle Hair Studio"}
 
@@ -47,18 +49,19 @@ class World:
             if request.action == "agency.draft_outreach":
                 assert request.params == {"lead_id": 219, "kind": "email"}
                 return ActionResult(True, "drafted", evidence={
-                    "outreach_id": 2, "to": "stella@estelleny.com", "text": "A short...",
+                    "outreach_id": 2, "to": "contact13@example.com", "text": "A short...",
                     "followup_of": 1 if chained else None})
-            if request.action == "agency.send_outreach":
-                assert request.params == {"outreach_id": 2}
-                assert request.approved_by is None
-                if send_refused:
-                    return ActionResult(False, f"dry run refused: {send_refused}",
-                                        failure_class=FailureClass.VALIDATION,
-                                        dispatched=False)
-                return ActionResult(True, "sent outreach 2 to stella@estelleny.com")
             raise AssertionError(request.action)
         monkeypatch.setattr("atlas.kernel.executor.execute", execute)
+
+        async def preview(action, params):
+            assert action == "agency.send_outreach" and params == {"outreach_id": 2}
+            if send_refused:
+                return ActionResult(False, f"dry run refused: {send_refused}",
+                                    failure_class=FailureClass.VALIDATION,
+                                    dispatched=False)
+            return ActionResult(True, "would send outreach 2")
+        monkeypatch.setattr("atlas.kernel.executor.preview", preview)
 
         async def propose(action, params, reason, **kw):
             self.cards.append((action, params, reason, kw))
@@ -70,31 +73,32 @@ class World:
         monkeypatch.setattr("atlas.kernel.comms.notify", notify)
 
 
-async def test_an_unanswered_first_email_gets_its_one_follow_up(monkeypatch):
+async def test_an_unanswered_first_email_gets_its_one_follow_up_card(monkeypatch):
     world = World(monkeypatch)
-    assert await lead_followup.followups() == 0          # sent, no card
-    assert world.claimed == [1]
-    assert world.ran == ["agency.draft_outreach", "agency.send_outreach"]
-    [msg] = world.slack
-    assert "Followed up with Estelle Hair Studio" == msg.title
-    assert "nothing more goes to them" in msg.body
-    assert world.released == []
+    assert await lead_followup.followups() == 1
+    assert world.claimed == [1] and world.ran == ["agency.draft_outreach"]
+    [(action, params, reason, kw)] = world.cards
+    assert action == "agency.send_outreach" and params == {"outreach_id": 2}
+    assert reason.startswith("Follow-up email to Estelle Hair Studio")
+    assert kw["evidence"]["client"] == "Estelle Hair Studio"
+    assert kw["dedup_key"] == "agency.send_outreach:2" and kw["automatic"] is True
+    assert world.slack == [] and world.released == []
 
 
 async def test_a_hold_releases_the_claim_for_a_later_tick(monkeypatch):
     other = {**FIRST, "id": 7, "lead_id": 219}
-    world = World(monkeypatch, due=(FIRST, other), hold="agency.send_outreach")
+    world = World(monkeypatch, due=(FIRST, other), hold="agency.draft_outreach")
     assert await lead_followup.followups() == 0
     assert world.released == [1, 7]
-    assert world.ran == ["agency.draft_outreach", "agency.send_outreach"]
+    assert world.ran == ["agency.draft_outreach"] and world.cards == []
 
 
 async def test_a_refusal_becomes_the_held_card_and_keeps_the_claim(monkeypatch):
-    world = World(monkeypatch, send_refused="AGENCY_OUTREACH_AUTOSEND is off")
+    world = World(monkeypatch, send_refused="joe is on the suppression list")
     assert await lead_followup.followups() == 1
     [(action, params, reason, kw)] = world.cards
     assert action == "agency.send_outreach" and params == {"outreach_id": 2}
-    assert reason.startswith("Held for you: AGENCY_OUTREACH_AUTOSEND is off")
+    assert reason.startswith("Held for you: joe is on the suppression list")
     assert kw["evidence"]["followup_of"] == 1 and kw["automatic"] is True
     assert world.released == []
 

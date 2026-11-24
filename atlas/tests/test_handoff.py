@@ -98,22 +98,22 @@ def test_scope_renders_both_halves():
 
 # ------------------------------------------------------------------ surface
 
-def test_a_denied_finding_still_reaches_miro_with_the_remedy_named():
+def test_a_denied_finding_still_reaches_owner_with_the_remedy_named():
     """A denial that does not say what would fix it is indistinguishable from
     not having looked."""
     h = surface(
-        what_changed="flycheap.live DMARC is p=none with no reporting address",
-        evidence='_dmarc.flycheap.live TXT "v=DMARC1; p=none;"',
+        what_changed="flycheap.example DMARC is p=none with no reporting address",
+        evidence='_dmarc.flycheap.example TXT "v=DMARC1; p=none;"',
         source="dns.dmarc",
-        target="flycheap.live",
+        target="flycheap.example",
         read_at=NOW,
-        remedy='_dmarc TXT  "v=DMARC1; p=none; rua=mailto:dmarc@flycheap.live"',
+        remedy='_dmarc TXT  "v=DMARC1; p=none; rua=mailto:dmarc@flycheap.example"',
     )
     rendered = h.render()
     assert h.delegation is False
     assert "permanently denied" in rendered
     assert "TO FIX BY HAND" in rendered
-    assert "rua=mailto:dmarc@flycheap.live" in rendered
+    assert "rua=mailto:dmarc@flycheap.example" in rendered
     # It is a finding, not a task: nothing tells an agent to do anything.
     assert "DONE LOOKS LIKE" not in rendered
     assert "TASK FOR CLAUDE CODE" not in rendered

@@ -2,7 +2,7 @@
 
 Slack is already wired for approvals (`atlas.channels.slack`) and for typed
 commands (`atlas.api.slack_events`); CAPABILITIES.md §2.3 asks this module to
-add *reading* the workspaces Miro names, not a second way to post. There is
+add *reading* the workspaces the owner names, not a second way to post. There is
 no `send_text` here on purpose.
 
 Uses `SLACK_BOT_TOKEN` and `SLACK_APPROVER_IDS`, both already required
@@ -52,7 +52,7 @@ async def _replied(channel: str, thread_ts: str, own_ts: str,
 
 
 async def unanswered(hours: int = 24) -> list[dict]:
-    """Messages in the configured channels that mention one of Miro's
+    """Messages in the configured channels that mention one of the owner's
     approver ids and have not been answered by him in the thread yet.
 
     A message from an approver, or from a bot (ATLAS's own cards included),

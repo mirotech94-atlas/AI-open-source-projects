@@ -124,7 +124,7 @@ from ...kernel.contracts import ActionResult
 from ...kernel.llm import Message, Need, think
 from ...kernel.permissions import wrap_untrusted
 from ..research.report import uncited_numbers
-from . import _store, pagegate, sitechat, sitetemplate
+from . import _store, mockup, pagegate, sitechat, sitetemplate
 from ._mcp import McpClient
 from .client import (
     ClientData,
@@ -317,6 +317,34 @@ def _write_build(html: str, site_dir: Path, is_rebuild: bool,
 
 _STALE_MOCKUP = ("the mockup for lead {lead_id} predates the designed templates (it has "
                  "no validated copy beside it); run agency.mockup again")
+
+
+def _is_designed(mockup_path: str | None) -> bool:
+    """A mockup registered from a hand-designed page (`mockup.DESIGN_FILE`)."""
+    return bool(mockup_path) and Path(str(mockup_path)).name == mockup.DESIGN_FILE
+
+
+def _write_designed(src_dir: Path, site_dir: Path, is_rebuild: bool) -> str | None:
+    """Blocking. Copies the hand-designed page and its assets into the site
+    directory (the screenshot and dotfiles stay behind), snapshotting what
+    was there like `_write_build`. Returns the backup path or None."""
+    backup_dir: str | None = None
+    if is_rebuild and site_dir.exists():
+        backup_dir = str(site_dir.parent / f".{site_dir.name}.rollback")
+        if Path(backup_dir).exists():
+            shutil.rmtree(backup_dir)
+        shutil.copytree(site_dir, backup_dir)
+    site_dir.mkdir(parents=True, exist_ok=True)
+    for item in sorted(src_dir.rglob("*")):
+        rel = item.relative_to(src_dir)
+        if not item.is_file() or item.is_symlink() or item.suffix == ".png":
+            continue
+        if any(part.startswith(".") for part in rel.parts):
+            continue
+        target = site_dir / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(item, target)
+    return backup_dir
 
 
 def _brochure_copy(mockup_path: str | None) -> dict | None:
@@ -888,14 +916,18 @@ async def build_site(
     photo_path: Path | None = None
     reviews_file: Path | None = None
     copy_record: dict | None = None
+    designed = False
+    mockup_path: str | None = None
     if kind == "brochure":
         mockup_path = await _store.latest_mockup_path(lead_id)
         if not mockup_path or not Path(mockup_path).exists():
             return ActionResult(
                 False, f"no mockup on disk for lead {lead_id}; run agency.mockup first")
-        copy_record = await asyncio.to_thread(_brochure_copy, mockup_path)
-        if copy_record is None:
-            return ActionResult(False, _STALE_MOCKUP.format(lead_id=lead_id))
+        designed = _is_designed(mockup_path)
+        if not designed:
+            copy_record = await asyncio.to_thread(_brochure_copy, mockup_path)
+            if copy_record is None:
+                return ActionResult(False, _STALE_MOCKUP.format(lead_id=lead_id))
     else:
         photo_path, reviews_file, reason = _validate_store_inputs(
             lead_id, lead, product_photo, product_description, contact_email,
@@ -918,7 +950,22 @@ async def build_site(
     record: dict | None = None
     faqs: list[Faq] | None = None
     colours_given = bool(raw_client and "colours" in raw_client)
-    if kind == "brochure" and copy_record is not None:
+    if kind == "brochure" and designed:
+        # A page designed by hand: copied, not re-rendered. pagegate reads it
+        # again here; the other pages and the share image are the template's.
+        _page, problem = await asyncio.to_thread(
+            mockup.read_design, Path(str(mockup_path)))
+        if problem is not None:
+            return ActionResult(False, f"refused to build lead {lead_id}: {problem}; "
+                                       "nothing was written")
+        client = sitetemplate.themed(client, sitetemplate.family_for(lead.get("category")))
+        backup_dir = await asyncio.to_thread(
+            _write_designed, Path(str(mockup_path)).parent, site_dir, is_rebuild)
+        variants_backup = await asyncio.to_thread(
+            _write_alternates, variants_dir, [], None, None)
+        detail = (f"built brochure site for lead {lead_id} at {site_dir} from the "
+                  f"hand-designed page {mockup_path}")
+    elif kind == "brochure" and copy_record is not None:
         if not colours_given:
             # The share image takes the template family's own colour.
             brand = sitetemplate.FAMILY_BRAND.get(str(copy_record.get("family")))
@@ -1062,6 +1109,10 @@ async def build_site_dry(
         if not mockup_path:
             return ActionResult(
                 False, f"no mockup on disk for lead {lead_id}; run agency.mockup first")
+        if _is_designed(mockup_path):
+            return ActionResult(True, f"would copy the hand-designed page "
+                                f"{mockup_path} for lead {lead_id} to {SITES_DIR / slug} "
+                                f"with the 20 launch items, then run the launch check")
         if await asyncio.to_thread(_brochure_copy, mockup_path) is None:
             return ActionResult(False, _STALE_MOCKUP.format(lead_id=lead_id))
         return ActionResult(True, f"would render the designed template for lead "

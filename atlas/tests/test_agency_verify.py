@@ -1,5 +1,5 @@
 """agency.verify: only real, operating NYC businesses with a real web problem
-(Miro, 2026-09-30). Perplexity and the store are faked; no socket."""
+(the owner, 2026-09-30). Perplexity and the store are faked; no socket."""
 from __future__ import annotations
 
 from datetime import UTC, datetime

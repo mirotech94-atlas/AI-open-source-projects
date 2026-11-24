@@ -10,12 +10,12 @@ from ..kernel.skills import Skill, register
 register(Skill(
     name="The Fiverr wall and the state file",
     triggers=("fiverr", "perimeterx", "gig", "buyer message", "seller page"),
-    agents=("fiverr",),
+    agents=("sales",),
     priority=85,
     body="""
 Fiverr fronts every seller page with PerimeterX, which fingerprints and
 blocks the automated browser itself — not the IP, not the account, not the
-selector. That holds from the server and from Miro's own Mac on his own live
+selector. That holds from the server and from the owner's own Mac on his own live
 session alike, so there is no selector fix waiting to be found. A session
 check reporting UNKNOWN is the honest reading; reading its zeros as "no
 unread messages" would be reporting a wall as a clear inbox, which is exactly

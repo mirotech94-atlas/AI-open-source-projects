@@ -52,7 +52,7 @@ export function domainOf(url) {
  * A entry matches if the domain equals it, is a subdomain of it, or — for
  * bare words like "bank" — if the domain contains it as a label. Deliberately
  * generous: a false positive loses one data point, a false negative records
- * something Miro did not want recorded.
+ * something the owner did not want recorded.
  */
 export function isDenied(url, denylist) {
   const domain = domainOf(url);

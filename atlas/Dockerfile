@@ -12,7 +12,9 @@ COPY atlas/api/templates/_tokens.css /atlas/api/templates/_tokens.css
 # is cross-origin to the dashboard (CSP connect-src 'self'), so the catalog
 # and its covers are bundled from here at build time (ui/src/airglass/catalog.ts).
 COPY atlas/modules/academy/catalog.json /atlas/modules/academy/catalog.json
-COPY atlas/modules/academy/assets/covers/ /atlas/modules/academy/assets/covers/
+# The outcome-line cases are shared by pytest and vitest, and tsc -b checks
+# the test that reads them (ui/src/pages/outcomeText.test.ts).
+COPY tests/fixtures/outcome_lines.json /tests/fixtures/outcome_lines.json
 COPY ui/ ./
 RUN npm run build && rm -f dist/assets/*.map
 
@@ -35,13 +37,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # whatever PyPI serves that day. The floors below stay as documentation; the
 # constraints decide. A new dependency needs a line there too, or it floats
 # (tests/test_image_pins.py fails until it has one).
-COPY pyproject.toml constraints.txt ./
+# Only constraints.txt: the install below names its packages itself, so a
+# pyproject.toml edit (a marker, a test extra) must not bust this layer.
+COPY constraints.txt ./
 RUN pip install --no-cache-dir -c constraints.txt \
       "fastapi>=0.115" "uvicorn[standard]>=0.32" "asyncpg>=0.30" \
       "httpx>=0.28" "anthropic>=0.40" "openai>=1.55" "redis>=5.2" \
       "pgvector>=0.3" "python-dateutil>=2.9" "playwright>=1.49" \
       "jinja2>=3.1" "argon2-cffi>=23.1" "itsdangerous>=2.2" \
-      "python-multipart>=0.0.9" "numpy>=2.0" "scikit-learn>=1.5"
+      "python-multipart>=0.0.9" "numpy>=2.0" "scikit-learn>=1.5" \
+      "youtube-transcript-api>=1.2" "cryptography>=44" \
+      "opencv-python-headless>=4.10"
 
 # The fiverr and linkedin collectors drive a real browser: neither service has
 # an API, and both are read-only here. Without this every one of their checks

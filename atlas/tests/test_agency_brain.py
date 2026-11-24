@@ -183,19 +183,22 @@ async def test_waiting_on_you_is_the_badges_count_split_by_department(world):
 @needs_pg
 async def test_seats_that_ran_and_a_pause_on_its_department(world):
     await state.execute_sql(
-        "INSERT INTO agent_runs (agent, task) VALUES ('markets', 'why is NVDA up'), "
-        "('markets', 'Your shift: today'), ('reels', 'draft')")
+        "INSERT INTO agent_runs (agent, task) VALUES ('content', 'draft the reel'), "
+        "('content', 'Your shift: today'), ('reels', 'draft')")
     await state.execute_sql(
         """INSERT INTO schedule_runs (job, occurrence, status, finished_at)
            VALUES ('playlist', '2026-W39', 'done', now()),
                   ('ideas', '2026-09-28', 'failed', now())""")
     await state.execute_sql(
-        "INSERT INTO pauses (scope, paused_by, reason) VALUES ('markets', 'miro', 'test')")
+        "INSERT INTO pauses (scope, paused_by, reason) VALUES ('markets', 'owner', 'test')")
 
     out = await brain.build()
     money = _dept(out, "money")
     seats = money["seats"]
-    assert (seats["agents"], seats["agents_ran"]) == (1, 1)
+    assert (seats["agents"], seats["agents_ran"]) == (0, 0)   # no agent leads money
+    # Content has one agent; its shift prompt and the retired 'reels' agent don't count.
+    cseats = _dept(out, "content")["seats"]
+    assert (cseats["agents"], cseats["agents_ran"]) == (1, 1)
     jobs = {j["name"]: j for j in money["jobs"]}
     assert jobs["playlist"]["ran_7d"] == 1
     assert jobs["ideas"]["ran_7d"] == 0                 # failed is not done
@@ -215,7 +218,9 @@ async def test_every_seat_has_an_sop_and_the_head_is_named(world):
     for d in out["departments"]:
         for item in d["agents"] + d["jobs"] + d["actions"]:
             assert item["id"] in out["sops"], item["id"]
-    assert _dept(out, "money")["head"]["label"] == "Ivan"
+    assert _dept(out, "money")["head"]["label"] == "You"   # no agent leads money
+    assert _dept(out, "money")["head"]["agent"] is None
+    assert _dept(out, "sales")["head"]["label"] == "Sam"
     assert _dept(out, "strategy")["head"]["agent"] is None
     idea = out["sops"]["action:markets.paper_idea"]
     assert any(s["kind"] == "signoff" for s in idea)

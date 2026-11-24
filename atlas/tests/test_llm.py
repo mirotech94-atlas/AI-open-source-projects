@@ -26,7 +26,7 @@ from atlas.kernel.llm import (
 
 TOOL = {
     "name": "gmail_search",
-    "description": "Search Miro's mail.",
+    "description": "Search the owner's mail.",
     "input_schema": {"type": "object",
                      "properties": {"query": {"type": "string"}},
                      "required": ["query"]},
@@ -106,7 +106,7 @@ async def test_ollama_sends_tools_and_maps_the_calls_back(monkeypatch):
     assert body["messages"][0] == {"role": "system", "content": "sys"}
     assert body["messages"][1] == {"role": "user", "content": "any invoices?"}
     assert body["tools"] == [{"type": "function", "function": {
-        "name": "gmail_search", "description": "Search Miro's mail.",
+        "name": "gmail_search", "description": "Search the owner's mail.",
         "parameters": TOOL["input_schema"]}}]
 
     assert reply.provider == "ollama" and reply.model == "llama3.1:8b"
@@ -594,7 +594,7 @@ async def test_private_never_reaches_a_pinned_cloud_provider(monkeypatch, pin):
 async def test_private_ignores_the_pin_even_with_a_real_chain_and_cloud_opt_in(
         monkeypatch, pin):
     """The stronger case: PRIVATE has somewhere real to go (local, plus the
-    Anthropic fallback Miro explicitly opted into) and a real chain to
+    Anthropic fallback the owner explicitly opted into) and a real chain to
     filter a pin's identity out of -- and still never reaches Cerebras,
     Mistral or Cohere, because the pin is not looked at for PRIVATE at all.
 
@@ -734,7 +734,7 @@ def _free_only_routes(monkeypatch, **env):
 
 
 def test_free_only_leaves_no_paid_model_in_any_cloud_chain(monkeypatch):
-    """Miro, 2026-10-05: free tiers, not paid ones. Every cloud Need is the
+    """the owner, 2026-10-05: free tiers, not paid ones. Every cloud Need is the
     free bench; nothing Anthropic, and no paid OpenRouter model."""
     llm = _free_only_routes(monkeypatch, GROQ_API_KEY="g", OPENROUTER_API_KEY="o")
     for need in (llm.Need.TRIVIAL, llm.Need.DRAFT, llm.Need.REASON, llm.Need.HARD,
@@ -883,7 +883,7 @@ async def test_cloudflare_puts_the_account_in_the_url(monkeypatch):
 
 
 def test_free_only_asks_every_groq_model_and_cloudflare_when_keyed(monkeypatch):
-    """Miro, 2026-10-05: "pick all the free tiers all of them"."""
+    """the owner, 2026-10-05: "pick all the free tiers all of them"."""
     for key in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "OLLAMA_URL", "GEMINI_API_KEY",
                 "OPENROUTER_API_KEY", "COHERE_API_KEY", "CEREBRAS_API_KEY",
                 "MISTRAL_API_KEY"):

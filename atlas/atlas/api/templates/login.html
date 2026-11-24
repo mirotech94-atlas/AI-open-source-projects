@@ -1,34 +1,119 @@
 {% extends "base.html" %}
 {% block title %}Sign in — ATLAS{% endblock %}
-{% block body %}
-  <h2 style="margin-top:0">Sign in</h2>
-  <p class="note" style="max-width:52ch">
-    Being on the mesh gets you to this page. It does not get you the ability to
-    approve anything.
-  </p>
-
-  {% if not configured %}
-    <p class="unavailable">
-      No dashboard password is set. Run <code>python -m atlas.cli set-password</code>
-      on the server, put the hash in <code>.env</code>, and restart the API.
-    </p>
-  {% else %}
-    {% if error %}<p class="unavailable">{{ error }}</p>{% endif %}
-    <form method="post" action="/login" style="margin-top:18px;max-width:34ch">
-      <input type="hidden" name="next" value="{{ next }}">
-      <label for="password" style="display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:6px">Password</label>
-      <input id="password" name="password" type="password" autocomplete="current-password"
-             autofocus required
-             style="width:100%;padding:9px 10px;font:inherit;font-size:14px;
-                    background:var(--surface);color:var(--text);
-                    border:1px solid var(--line);border-radius:var(--radius)">
-      <button type="submit"
-              style="margin-top:12px;padding:9px 18px;font:inherit;font-size:14px;
-                     font-weight:600;background:var(--accent);color:var(--bg);
-                     border:0;border-radius:var(--radius);cursor:pointer">
-        Sign in
-      </button>
-    </form>
-  {% endif %}
+{% block bodyclass %} atlas-login{% endblock %}
+{% block style %}
+.auth {
+  min-height: 100vh; min-height: 100dvh; display: grid; place-items: center;
+  padding: 24px 16px;
+}
+.auth-card {
+  width: 100%; max-width: 400px; padding: 30px 26px 24px;
+  background: rgba(19, 26, 40, .72); color: #c9d2e3;
+  border: 1px solid rgba(143, 176, 255, .28); border-radius: 20px;
+  -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 0 0 1px rgba(91, 140, 255, .06), 0 24px 70px rgba(0, 0, 0, .55),
+              0 0 80px rgba(91, 140, 255, .12);
+}
+.auth-brand {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 16px;
+  font-size: 22px; font-weight: 700; letter-spacing: .3em; color: #eef2fa;
+}
+.auth-brand svg { color: var(--royal); flex: none; }
+.auth-card h1 { margin: 0; font: inherit; }
+.auth-card .note { font-size: 13px; color: #c9d2e3; max-width: 52ch; margin: 0 0 18px; }
+.auth-card label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+                   color: #c9d2e3; margin-bottom: 6px; }
+.auth-card input[type="password"] {
+  width: 100%; min-height: 46px; padding: 0 14px; font: inherit; font-size: 15px;
+  background: rgba(10, 13, 20, .72); color: #eef2fa;
+  border: 1.5px solid rgba(143, 176, 255, .3); border-radius: 10px;
+}
+.auth-card input[type="password"]:focus {
+  outline: none; border-color: var(--royal);
+  box-shadow: 0 0 0 4px rgba(91, 140, 255, .22), 0 0 26px rgba(91, 140, 255, .22);
+}
+.auth-card input[type="password"]:focus-visible { outline: 2px solid var(--royal-bright); outline-offset: 2px; }
+.auth-card button {
+  width: 100%; min-height: 46px; margin-top: 16px; font: inherit; font-size: 15px; font-weight: 700;
+  background: var(--royal); color: #070a12; border: 1.5px solid var(--royal);
+  border-radius: 10px; cursor: pointer;
+}
+.auth-card button:hover { background: #7a9fff; border-color: #7a9fff; }
+.auth-card .unavailable { border-radius: 10px; margin: 0 0 14px; }
+.auth-card code { color: var(--royal-bright); }
+.auth-foot { margin: 18px 0 0; padding-top: 12px; border-top: 1px solid rgba(143, 176, 255, .16);
+             color: #8e99ae; font-size: 11.5px; }
+@media (prefers-reduced-motion: no-preference) {
+  .auth-card { animation: auth-card-in .85s var(--ease-out) backwards; }
+  .auth-brand svg {
+    animation: auth-logo-in 1s var(--ease-out) .15s backwards,
+               auth-logo-glow 5s ease-in-out 1.3s infinite;
+  }
+  .auth-brand span { animation: page-rise .7s var(--ease-out) .25s backwards; }
+  .auth-card .note { animation: page-rise .7s var(--ease-out) .35s backwards; }
+  .auth-card form > :nth-child(2) { animation: page-rise .7s var(--ease-out) .45s backwards; }
+  .auth-card form > :nth-child(3) { animation: page-rise .7s var(--ease-out) .52s backwards; }
+  .auth-card form > :nth-child(4) { animation: page-rise .7s var(--ease-out) .59s backwards; }
+  .auth-card input[type="password"] { transition: border-color .2s ease, box-shadow .25s ease; }
+  .auth-card button { transition: background-color .2s ease, transform .2s var(--ease-out); }
+  .auth-card button:hover { transform: translateY(-1px); }
+  .auth-card button:active { transform: scale(.98); }
+  /* A wrong password: the message shakes once. */
+  .auth-card .unavailable { animation: auth-shake .5s cubic-bezier(.36, .07, .19, .97) both; }
+  @keyframes auth-card-in {
+    from { opacity: 0; transform: translateY(22px) scale(.97); filter: blur(6px); }
+    to   { opacity: 1; transform: none; filter: none; }
+  }
+  @keyframes auth-logo-in {
+    from { opacity: 0; transform: scale(.6) rotate(-14deg); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes auth-logo-glow {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(91, 140, 255, .25)); }
+    50%      { filter: drop-shadow(0 0 14px rgba(91, 140, 255, .7)); }
+  }
+  @keyframes auth-shake {
+    10%, 90% { transform: translateX(-1px); }
+    20%, 80% { transform: translateX(3px); }
+    30%, 50%, 70% { transform: translateX(-5px); }
+    40%, 60% { transform: translateX(5px); }
+  }
+}
+@media (max-width: 480px) { .auth-card { padding: 24px 18px 20px; } }
 {% endblock %}
-{% block footer %}ATLAS runs on the mesh. This page is not reachable from the internet.{% endblock %}
+{% block shell %}
+<main class="auth">
+  <div class="auth-card">
+    <h1 class="auth-brand">
+      <svg viewBox="0 0 32 32" width="34" height="34" fill="none"
+           stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true">
+        <circle cx="16" cy="7.6" r="3.4" fill="currentColor" stroke="none"/>
+        <path d="M4.6 26.6L12.4 12.2"/><path d="M27.4 26.6L19.6 12.2"/>
+        <path d="M8.2 19.8H23.8"/>
+      </svg><span>ATLAS</span>
+    </h1>
+    <p class="note">
+      Being on the mesh gets you to this page. It does not get you the ability to
+      approve anything.
+    </p>
+
+    {% if not configured %}
+      <p class="unavailable">
+        No dashboard password is set. Run <code>python -m atlas.cli set-password</code>
+        on the server, put the hash in <code>.env</code>, and restart the API.
+      </p>
+    {% else %}
+      <form method="post" action="/login">
+        {% if error %}<p class="unavailable" role="alert">{{ error }}</p>{% endif %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password"
+               autofocus required>
+        <button type="submit">Sign in</button>
+      </form>
+    {% endif %}
+    <p class="auth-foot">ATLAS runs on the mesh. This page is not reachable from the internet.</p>
+  </div>
+</main>
+{% endblock %}

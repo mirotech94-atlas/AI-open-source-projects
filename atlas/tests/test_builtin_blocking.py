@@ -70,8 +70,8 @@ async def test_the_resolver_runs_off_the_event_loop(monkeypatch):
         return [(2, 1, 6, "", ("203.0.113.7", 0))]
 
     monkeypatch.setattr(builtin.socket, "getaddrinfo", fake_getaddrinfo)
-    got = await builtin.dns_check("guarder.io")
-    assert got == {"host": "guarder.io", "addresses": ["203.0.113.7"]}
+    got = await builtin.dns_check("vault.example")
+    assert got == {"host": "vault.example", "addresses": ["203.0.113.7"]}
     assert seen and seen[0] != loop_thread
 
 

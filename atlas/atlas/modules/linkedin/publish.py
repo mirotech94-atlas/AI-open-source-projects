@@ -1,18 +1,38 @@
 """The one LinkedIn write: publish an approved page post, byte for byte.
 
-Tier 2. The card ATLAS raises each day IS the approval for that post; the
-post-bank status `approved` is what makes an entry eligible to be offered at
-all. A draft is never published, approved text is never edited, and the
-only link allowed is the page's own.
+`linkedin.publish_post` is Tier 2. Its card IS the approval for that post;
+the post-bank status `approved` is what makes an entry eligible to be
+offered at all. A draft is never published, approved text is never edited,
+and the only link allowed is the page's own. It has no rollback: a LinkedIn
+post can only be undone by deleting it, and deletion is permanently denied.
 
-There is no rollback. A LinkedIn post can only be undone by deleting it, and
-deletion is permanently denied, so this cannot be Tier 1 whatever the
-standing instruction says about "without re-asking". One tap a day is the
-version that does not break the rule.
+**Vault posts publish themselves** (the owner, 2026-10-11: post the Vault page's
+approved posts automatically "the way reels already do"; memory
+approval-policy -- a standing rule is a tier set in code, never a card
+approved at runtime). `linkedin.autopublish_post` is Tier AUTO, the shape of
+`content.autopublish_reel`, and runs only past `autopublish_refusal`, in
+code: the page is `guardian` (Vault) and still active (FlyCheap is retired
+through LINKEDIN_PAGES_ACTIVE, and is never auto-posted even if named
+again); LINKEDIN_AUTOPUBLISH is on (default); the page's autopublish is not
+paused; the entry is the bank's next `approved` one and its payload is the
+one approved (`approved_sha256`); a posting day from the bank, and an hour
+inside the bank's `posting.hours` (default 9-18, America/New York); at most
+one post on the page today; the saved session exists and the last sweep
+was clean and recent; no restriction alert in the window. Its rollback is
+honest, like `agency.send_reply`'s: a live post is not unpublished (that is
+deletion, Tier 3) -- the rollback pauses that page's autopublish
+(`posting.autopublish_paused`) and records why, so every next post is a
+card again until the pause is cleared by hand. Anything refused is the
+Tier 2 `linkedin.publish_post` card with "Held for you: <reason>"
+(`kernel.linkedin_autopost`).
 
-The reshare to Miro's profile is the distribution (a controlled pair: 1
-impression without it, 10 with it), so it is part of publishing, done
-through the durable deep link, and verified rather than assumed.
+The reshare to the owner's profile is the distribution (a controlled pair: 1
+impression without it, 10 with it), done through the durable deep link and
+verified rather than assumed. A card-approved publish reshares as before.
+An automatic one does not: a reshare posts on the owner's personal profile and
+cannot be taken back, which is not the reels pattern (reels post to ATLAS's
+own accounts), so it stays `linkedin.reshare_post`, Tier 2 -- the entry is
+marked `reshared: False` and the module's reshare card follows.
 """
 from __future__ import annotations
 
@@ -21,10 +41,14 @@ import difflib
 import hashlib
 import json
 import logging
+import os
 import re
 import unicodedata
+from dataclasses import replace
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 from ...kernel.contracts import ActionResult
 from . import PAGES
@@ -39,11 +63,20 @@ from .browser import (
     pause,
     snapshot,
 )
-from .store import bank, file_lock, load, log_run, page_obj, save, stamp, today
+from .store import (
+    bank,
+    file_lock,
+    has_banned_link,
+    load,
+    log_run,
+    page_obj,
+    save,
+    stamp,
+    today,
+)
 
 log = logging.getLogger("atlas.linkedin.publish")
 
-BANNED = ("example.com", "pulsedemo", "my.guarder.io", "admin.guarder.io")
 
 
 def gate(state: dict[str, Any], key: str) -> tuple[dict | None, str]:
@@ -67,11 +100,30 @@ def gate(state: dict[str, Any], key: str) -> tuple[dict | None, str]:
     entry = approved[0]
     text = str(entry.get("text") or "")
     link = PAGES[key]["link"]
-    if any(b in text for b in BANNED):
+    if has_banned_link(text):
         return None, f"{entry.get('id')} carries a banned link"
     if link not in text and "http" in text:
         return None, f"{entry.get('id')} links somewhere other than {link}"
+    poll = entry.get("poll") or {}
+    if (left := leftover_label(" ".join(
+            [text, str(poll.get("intro") or ""), str(poll.get("question") or "")]))):
+        return None, (f"{entry.get('id')} still carries the drafting label "
+                      f"{left!r}; it needs a clean re-draft")
     return entry, "ok"
+
+
+# A drafting label the model left in the text (2026-10-13: A5 "INTRO: Which
+# group...", G18 "Block 3 -- KIND: poll"). What was approved is what posts,
+# so such an entry is refused here rather than cleaned at publish time.
+_LEFTOVER = re.compile(
+    r"(?im)(^|\n)\W*(intro|question|options|text|kind|hook|image_prompt|"
+    r"video_prompt)\s*:|\bblock\s*\d+\s*\W+\s*kind\s*:")
+
+
+def leftover_label(text: str) -> str:
+    """The first drafting label left in `text`, or ""."""
+    m = _LEFTOVER.search(text or "")
+    return m.group(0).strip() if m else ""
 
 
 def today_name() -> str:
@@ -102,7 +154,7 @@ async def publish_dry(page: str = "", entry_id: str = "") -> ActionResult:
     return ActionResult(
         True,
         f"would publish {entry.get('id')} to the {PAGES[page]['name']} page "
-        f"({len(text)} chars, text-only), then reshare it to Miro's profile:\n"
+        f"({len(text)} chars, text-only), then reshare it to the owner's profile:\n"
         + text[:400],
         evidence={"page": page, "entry": entry.get("id"), "chars": len(text)})
 
@@ -112,7 +164,7 @@ async def publish_dry(page: str = "", entry_id: str = "") -> ActionResult:
 # normalises whitespace on save cannot silently turn one back into a plain
 # space. Quill's innerText readback has rendered a plain typed space as any
 # of these; a comparison that does not fold them together aborts a post
-# that is, to the eye and to LinkedIn, identical to the one Miro approved.
+# that is, to the eye and to LinkedIn, identical to the one the owner approved.
 _SPACE_LIKE = chr(0x00A0) + chr(0x202F) + chr(0x2007)
 
 
@@ -162,14 +214,14 @@ def _readback_diff(approved: str, got: str) -> str | None:
 
 
 def text_sha256(text: str) -> str:
-    """The hash a card shows Miro alongside a draft's text, and the one
+    """The hash a card shows the owner alongside a draft's text, and the one
     `approve_draft` is asked to confirm against before it approves anything.
     A mismatch means the sweep rewrote the draft after the card went out."""
     return hashlib.sha256((text or "").encode()).hexdigest()
 
 
 def payload_sha256(entry: dict[str, Any]) -> str:
-    """The hash a card shows Miro, and the one `approve_draft` confirms
+    """The hash a card shows the owner, and the one `approve_draft` confirms
     before it approves anything -- covering the WHOLE payload a kind
     carries, not only `text` (Task 64). Before this, only the text was
     hashed: the sweep could have rewritten a poll's options, or a draft's
@@ -237,13 +289,44 @@ MEDIA_BUTTON_SELECTOR = ("button[aria-label*='media' i], "
                          "button[aria-label*='Add a photo' i], "
                          "button[aria-label*='Add media' i]")
 FILE_INPUT_SELECTOR = "input[type='file']"
-POLL_BUTTON_SELECTOR = ("button[aria-label*='poll' i], "
-                        "button:has-text('Create a poll')")
-POLL_QUESTION_SELECTOR = "textarea[aria-label*='question' i]"
-POLL_OPTION_SELECTOR = "input[aria-label*='option' i]"
-POLL_DURATION_SELECTOR = "button[aria-label*='duration' i]"
-POLL_ONE_WEEK_SELECTOR = "text=/1\\s*week/i"
-POLL_DONE_SELECTOR = "button:has-text('Done')"
+# The poll flow, read off the live page-admin composer 2026-10-13 (after
+# cards #377/#378 failed at 'fill-poll'): the composer's toolbar row is a
+# carousel of `button.share-promoted-detour-button`s labelled exactly "Add
+# media", "Create an event", "Celebrate an occasion", "More". There is no
+# poll button until "More" (the "+") is clicked; it does not open a menu, it
+# replaces itself in the same row with "Share that you're hiring", "Create a
+# poll" and "Add a document". The direct button is still tried first, for a
+# composer that shows it unexpanded. Never `aria-label*='add'`: "Add media"
+# opens the file picker.
+POLL_BUTTON_SELECTOR = ("[role='dialog'] button[aria-label='Create a poll'], "
+                        "[role='dialog'] button[aria-label*='poll' i], "
+                        "[role='dialog'] button:has-text('Create a poll')")
+POLL_DIRECT_TIMEOUT_MS = 2500
+POLL_MORE_SELECTORS = (
+    "[role='dialog'] button.share-promoted-detour-button[aria-label='More']",
+    "[role='dialog'] button[aria-label='More']",
+    "[role='dialog'] button[aria-label='Add more']",
+)
+# Last resort for "More": the toolbar's last detour button -- before it is
+# expanded, that is the "+". Clicked only when its label is none of the
+# toolbar's other known actions.
+TOOLBAR_BUTTON_SELECTOR = "[role='dialog'] button.share-promoted-detour-button"
+NOT_MORE_LABELS = ("media", "photo", "video", "event", "occasion", "celebrate",
+                   "hiring", "document", "poll")
+# The "Create a poll" form (same dialog, header "Create a poll"): a question
+# textarea (0/140), Option 1 and Option 2 inputs with fixed ids (0/30 each),
+# an "Add option" button for the 3rd and 4th, a duration <select> whose
+# values are days ("7" = "1 week", selected by default), Back and Done (Done
+# disabled until the required fields are filled). None of the fields carry
+# an aria-label -- the old `[aria-label*=...]` selectors matched nothing.
+POLL_QUESTION_SELECTOR = ("[role='dialog'] textarea.polls-detour__question-field, "
+                          "[role='dialog'] textarea[aria-label*='question' i]")
+POLL_OPTION_SELECTOR = "[role='dialog'] input#poll-option-{n}"
+POLL_ADD_OPTION_SELECTOR = "[role='dialog'] button:has-text('Add option')"
+POLL_DURATION_SELECTOR = "[role='dialog'] select"
+POLL_ONE_WEEK_VALUE = "7"
+POLL_DONE_SELECTOR = ("[role='dialog'] button[aria-label='Done'], "
+                      "[role='dialog'] button:text-is('Done')")
 
 
 class _StepFailed(Exception):
@@ -300,30 +383,107 @@ async def _fill_poll(tab, poll: dict[str, Any]) -> None:
     """LinkedIn's own "Create a poll" flow: question, 2-4 options, then the
     duration fixed to one week regardless of what the bank entry carries
     (Task 64's standing instruction, not the model's to vary) -- visibility
-    is public by construction, there being no other option in the composer
-    this module has ever seen documented."""
-    button = tab.locator(POLL_BUTTON_SELECTOR).first
-    await button.wait_for(state="visible", timeout=15000)
-    await button.click()
-    await pause(tab, 500, 1000)
+    is public by construction, there being no other option in the composer.
+
+    Every field is read back before Done: a poll whose question or an
+    option is not exactly the approved one is refused here, before Post,
+    the same as the editor's text."""
+    await _open_poll_form(tab)
+    question_text = str(poll.get("question") or "")
     question = tab.locator(POLL_QUESTION_SELECTOR).first
     await question.wait_for(state="visible", timeout=15000)
     await question.click()
-    await tab.keyboard.type(str(poll.get("question") or ""), delay=12)
-    for option in poll.get("options") or []:
-        field = tab.locator(POLL_OPTION_SELECTOR).first
+    await tab.keyboard.type(question_text, delay=12)
+    options = [str(o) for o in poll.get("options") or []]
+    for n, option in enumerate(options, start=1):
+        field = tab.locator(POLL_OPTION_SELECTOR.format(n=n)).first
+        if n > 2:
+            add = tab.locator(POLL_ADD_OPTION_SELECTOR).first
+            await add.wait_for(state="visible", timeout=10000)
+            await add.click()
+            await pause(tab, 300, 700)
         await field.wait_for(state="visible", timeout=10000)
         await field.click()
-        await tab.keyboard.type(str(option), delay=12)
+        await tab.keyboard.type(option, delay=12)
     duration = tab.locator(POLL_DURATION_SELECTOR).first
-    await duration.click()
+    await duration.wait_for(state="visible", timeout=10000)
+    await duration.select_option(POLL_ONE_WEEK_VALUE)
     await pause(tab, 300, 600)
-    one_week = tab.locator(POLL_ONE_WEEK_SELECTOR).first
-    await one_week.click()
+
+    got = {"question": await question.input_value(),
+           "options": [await tab.locator(POLL_OPTION_SELECTOR.format(n=n))
+                       .first.input_value() for n in range(1, len(options) + 1)],
+           "duration": await duration.input_value()}
+    want = {"question": question_text, "options": options,
+            "duration": POLL_ONE_WEEK_VALUE}
+    if got != want:
+        raise RuntimeError(f"the poll form did not read back as approved: "
+                           f"wanted {want!r}, got {got!r}")
+
     done = tab.locator(POLL_DONE_SELECTOR).first
     await done.wait_for(state="visible", timeout=15000)
+    for _ in range(20):
+        if await done.is_enabled():
+            break
+        await tab.wait_for_timeout(500)
+    else:
+        raise RuntimeError("the poll form's Done button never became enabled")
     await done.click()
+    # Done closes the form and returns to the composer; until the question
+    # field is gone, nothing after this step can be trusted.
+    await question.wait_for(state="hidden", timeout=15000)
     await pause(tab, 800, 1500)
+
+
+def _poll_over_limits(poll: dict[str, Any]) -> str:
+    """The form's own limits (live 2026-10-13: question 0/140, each option
+    0/30; at most 4 options is LinkedIn's documented maximum, not read
+    live). An approved poll over them would be cut or
+    refused by the form; refused here instead, before any browser."""
+    from .sweep import MAX_POLL_OPTION_CHARS, MAX_POLL_OPTIONS, MAX_POLL_QUESTION_CHARS
+    options = [str(o) for o in poll.get("options") or []]
+    if len(str(poll.get("question") or "")) > MAX_POLL_QUESTION_CHARS:
+        return f"question over {MAX_POLL_QUESTION_CHARS} characters"
+    if len(options) > MAX_POLL_OPTIONS:
+        return f"more than {MAX_POLL_OPTIONS} options"
+    if any(len(o) > MAX_POLL_OPTION_CHARS for o in options):
+        return f"an option over {MAX_POLL_OPTION_CHARS} characters"
+    return ""
+
+
+async def _open_poll_form(tab) -> None:
+    """The direct "Create a poll" button if the toolbar already shows it
+    (briefly); otherwise "More" first, which expands the same row with the
+    poll button in it. Raises -- caught as the 'fill-poll' step -- when
+    neither path finds it."""
+    direct = tab.locator(POLL_BUTTON_SELECTOR).first
+    try:
+        await direct.wait_for(state="visible", timeout=POLL_DIRECT_TIMEOUT_MS)
+    except Exception:                                   # noqa: BLE001
+        await _click_more(tab)
+        direct = tab.locator(POLL_BUTTON_SELECTOR).first
+        await direct.wait_for(state="visible", timeout=10000)
+    await direct.click()
+    await pause(tab, 800, 1500)
+
+
+async def _click_more(tab) -> None:
+    for selector in POLL_MORE_SELECTORS:
+        more = tab.locator(selector).first
+        if await more.count():
+            await more.click()
+            await pause(tab, 600, 1200)
+            return
+    last = tab.locator(TOOLBAR_BUTTON_SELECTOR).last
+    if await last.count():
+        label = (await last.get_attribute("aria-label") or "").lower()
+        if label and not any(word in label for word in NOT_MORE_LABELS):
+            await last.click()
+            await pause(tab, 600, 1200)
+            return
+        raise RuntimeError(f"no poll button and no 'More' in the composer "
+                           f"toolbar (its last button is {label!r})")
+    raise RuntimeError("no poll button and no 'More' in the composer toolbar")
 
 
 async def _post_button(tab):
@@ -364,6 +524,7 @@ def _mark_unverified(state: dict[str, Any], page: str, entry: dict[str, Any],
     person has to look."""
     entry["status"] = "posted_unverified"
     entry["published_attempt_at"] = stamp()
+    evidence["posted_unverified"] = True
     _entries, posting, holder = bank(state, page)
     posting["last_post"] = today()
     posting["last_post_attempt"] = stamp()
@@ -379,7 +540,8 @@ def _mark_unverified(state: dict[str, Any], page: str, entry: dict[str, Any],
         f"check LinkedIn by hand.", evidence=evidence)
 
 
-async def _publish(page: str, entry_id: str) -> ActionResult:
+async def _publish(page: str, entry_id: str, *, auto: bool = False) -> ActionResult:
+    """`auto` (linkedin.autopublish_post): no reshare -- that stays a card."""
     state = load()
     entry, why = gate(state, page)
     if entry is None or (entry_id and str(entry.get("id")) != str(entry_id)):
@@ -396,6 +558,9 @@ async def _publish(page: str, entry_id: str) -> ActionResult:
     if kind == "poll" and len(poll.get("options") or []) < 2:
         return ActionResult(False, f"{entry.get('id')} is a poll with fewer "
                                    f"than 2 options; refusing")
+    if kind == "poll" and (why_not := _poll_over_limits(poll)):
+        return ActionResult(False, f"{entry.get('id')} is a poll LinkedIn's form "
+                                   f"cannot take as approved ({why_not}); refusing")
     try:
         pw, b, ctx = await browser()
     except NoSession as exc:
@@ -497,7 +662,8 @@ async def _publish(page: str, entry_id: str) -> ActionResult:
             return _mark_unverified(state, page, entry, evidence)
 
         reshared: bool | str = False
-        if activity and (bank(state, page)[1].get("reshare_to_profile", True)):
+        if not auto and activity and (
+                bank(state, page)[1].get("reshare_to_profile", True)):
             reshared, why = await _reshare(tab, activity, text)
             if why:
                 evidence["reshare_error"] = why
@@ -515,6 +681,8 @@ async def _publish(page: str, entry_id: str) -> ActionResult:
     entry["published_at"] = stamp()
     entry["activity_url"] = activity
     entry["reshared"] = reshared
+    if auto:
+        entry["autopublished"] = True
     _entries, posting, holder = bank(state, page)
     posting["last_post"] = today()
     posting["last_post_attempt"] = stamp()
@@ -529,24 +697,31 @@ async def _publish(page: str, entry_id: str) -> ActionResult:
              f"reshare verified: {reshared}"], label="publish")
     # No promise of a retry that nothing performs: the reshare card is raised
     # by the module's signals, and `linkedin.reshare_post` redoes it.
-    if reshared is True:
-        tail = ", reshared to Miro's profile"
+    if auto and autoreshare_owns(page):
+        tail = (" on its own; the reshare to the owner's profile follows on its own "
+                f"({AUTORESHARE_ENV}), or a 'Reshare {entry.get('id')}' card if "
+                "it cannot")
+    elif auto:
+        tail = (" on its own; the reshare to the owner's profile stays his tap -- a "
+                f"'Reshare {entry.get('id')}' card follows")
+    elif reshared is True:
+        tail = ", reshared to the owner's profile"
     elif reshared == UNVERIFIED:
-        tail = ("; the reshare to Miro's profile was clicked but did not verify -- "
+        tail = ("; the reshare to the owner's profile was clicked but did not verify -- "
                 "check his activity")
     else:
-        tail = ("; the reshare to Miro's profile did not go out -- a "
+        tail = ("; the reshare to the owner's profile did not go out -- a "
                 f"'Reshare {entry.get('id')}' card follows")
     detail = f"published {entry.get('id')} to the {spec['name']} page" + tail
     return ActionResult(True, detail, evidence=evidence)
 
 
-PROFILE_ACTIVITY = ("https://www.linkedin.com/in/myron-mekhael-841196242/"
+PROFILE_ACTIVITY = ("https://www.linkedin.com/in/example-profile/"
                     "recent-activity/all/")
 
 
 # How a reshare ended, as stored in the entry's `reshared`: True verified on
-# Miro's activity; UNVERIFIED Post was clicked but never seen there, so it may
+# the owner's activity; UNVERIFIED Post was clicked but never seen there, so it may
 # well be live and is never offered again (a second click is a duplicate
 # post); False Post was not clicked, safe to offer again.
 UNVERIFIED = "unverified"
@@ -554,7 +729,7 @@ ACTIVITY_LOOKS = 3
 
 
 async def _seen_on_activity(tab, text: str) -> bool:
-    """Miro's activity lags a fresh repost by seconds to a minute (G8,
+    """the owner's activity lags a fresh repost by seconds to a minute (G8,
     2026-09-28: missed on the first read, there five minutes later), so look
     more than once before saying it is not there."""
     needle = text.strip()[:40].lower()
@@ -571,7 +746,7 @@ async def _seen_on_activity(tab, text: str) -> bool:
 
 
 async def _reshare(tab, activity: str, text: str) -> tuple[bool | str, str]:
-    """Reshare a published page post to Miro's profile through the durable
+    """Reshare a published page post to the owner's profile through the durable
     deep link, then verify it on his activity. Returns (True | UNVERIFIED |
     False, why-not)."""
     deep = (f"https://www.linkedin.com/feed/?shareActive=true"
@@ -587,7 +762,7 @@ async def _reshare(tab, activity: str, text: str) -> tuple[bool | str, str]:
         await pause(tab, 4000, 6000)
         if await _seen_on_activity(tab, text):
             return True, ""
-        why = f"Post clicked, but not on Miro's recent activity after {ACTIVITY_LOOKS} looks"
+        why = f"Post clicked, but not on the owner's recent activity after {ACTIVITY_LOOKS} looks"
     except Exception as exc:                            # noqa: BLE001
         why = f"Post clicked, then the check failed: {type(exc).__name__}: {str(exc)[:100]}"
     return UNVERIFIED, why
@@ -604,9 +779,9 @@ def _reshare_target(state: dict[str, Any], page: str, entry_id: str
         return None, f"{entry_id} is not a published post with a link to reshare"
     if entry.get("reshared") == UNVERIFIED:
         return None, (f"{entry_id}'s reshare was clicked once and did not verify; it may "
-                      f"be live -- check Miro's activity before resharing again")
+                      f"be live -- check the owner's activity before resharing again")
     if entry.get("reshared"):
-        return None, f"{entry_id} is already reshared to Miro's profile"
+        return None, f"{entry_id} is already reshared to the owner's profile"
     return entry, ""
 
 
@@ -619,7 +794,7 @@ async def reshare_dry(page: str = "", entry_id: str = "") -> ActionResult:
     if entry is None:
         return ActionResult(False, f"would not reshare: {why}")
     return ActionResult(True, f"would reshare {entry_id} from the "
-                              f"{PAGES[page]['name']} page to Miro's profile "
+                              f"{PAGES[page]['name']} page to the owner's profile "
                               f"({entry['activity_url']})",
                         evidence={"page": page, "entry": entry_id})
 
@@ -630,33 +805,185 @@ async def reshare(page: str = "", entry_id: str = "") -> ActionResult:
         entry, why = _reshare_target(state, page, entry_id)
         if entry is None:
             return ActionResult(False, f"not resharing: {why}")
-        try:
-            pw, b, ctx = await browser()
-        except NoSession as exc:
-            return ActionResult(False, str(exc))
-        try:
-            tab = await ctx.new_page()
-            ok, why = await _reshare(tab, str(entry["activity_url"]),
-                                     str(entry.get("text") or ""))
-            await keep_session(ctx)
-        finally:
-            await ctx.close()
-            await b.close()
-            await pw.stop()
-        if ok is False:
-            return ActionResult(False, f"the reshare of {entry_id} did not go out: {why}")
-        entry["reshared"] = ok
-        entry["reshared_at"] = stamp()
-        save(state)
-        if ok == UNVERIFIED:
-            log_run([f"reshare of {entry_id} ({PAGES[page]['name']}) unverified: {why}"],
-                    label="reshare")
-            return ActionResult(False, f"the reshare of {entry_id} did not verify ({why}); "
-                                       f"it may be live, so it is not offered again")
-        log_run([f"reshared {entry_id} ({PAGES[page]['name']}) to Miro's profile"],
+        return await _reshare_entry(state, page, entry_id, entry)
+
+
+async def _reshare_entry(state: dict[str, Any], page: str, entry_id: str,
+                         entry: dict[str, Any], *, auto: bool = False) -> ActionResult:
+    """The reshare itself, under the caller's browser and state-file locks."""
+    try:
+        pw, b, ctx = await browser()
+    except NoSession as exc:
+        return ActionResult(False, str(exc))
+    try:
+        tab = await ctx.new_page()
+        ok, why = await _reshare(tab, str(entry["activity_url"]),
+                                 str(entry.get("text") or ""))
+        await keep_session(ctx)
+    finally:
+        await ctx.close()
+        await b.close()
+        await pw.stop()
+    if ok is False:
+        return ActionResult(False, f"the reshare of {entry_id} did not go out: {why}")
+    entry["reshared"] = ok
+    entry["reshared_at"] = stamp()
+    if auto:
+        entry["autoreshared"] = True
+    save(state)
+    if ok == UNVERIFIED:
+        log_run([f"reshare of {entry_id} ({PAGES[page]['name']}) unverified: {why}"],
                 label="reshare")
-        return ActionResult(True, f"reshared {entry_id} to Miro's profile, verified "
-                                  f"on his activity")
+        return ActionResult(False, f"the reshare of {entry_id} did not verify ({why}); "
+                                   f"it may be live, so it is not offered again",
+                            evidence={"reshare_unverified": True})
+    log_run([f"reshared {entry_id} ({PAGES[page]['name']}) to the owner's profile"
+             + (" on its own" if auto else "")], label="reshare")
+    return ActionResult(True, f"reshared {entry_id} to the owner's profile, verified "
+                              f"on his activity")
+
+
+# --------------------------------------------------------- automatic reshare
+#
+# the owner, 2026-10-12 (memory approval-policy): "whatever you think should be
+# done should be automatically approved, but whatever is really urgent should
+# only need human approval." linkedin.autoreshare_post reshares to the owner's
+# profile only a post ATLAS itself just published on the Vault page
+# (`autopublished`, published today), the way autopublish_post posts it:
+#
+#   * Vault only (AUTOPUBLISH_PAGES); LINKEDIN_AUTORESHARE on (default);
+#     not paused (posting.autoreshare_paused, set by the rollback);
+#   * the entry is published with its link, never reshared or clicked once
+#     unverified (`_reshare_target`), autopublished, published today;
+#   * one automatic reshare a page a day;
+#   * inside the bank's posting hours, a signed-in session and a clean sweep,
+#     no restriction alert -- the same checks as the post itself.
+#
+# Anything else is the Tier 2 linkedin.reshare_post card, as before. The
+# rollback is honest: a reshare is not deleted (Tier 3); it pauses automatic
+# resharing for the page, so the next one is a card again.
+
+AUTORESHARE_ENV = "LINKEDIN_AUTORESHARE"
+RESHARE_PAUSED_KEY = "autoreshare_paused"
+
+
+def autoreshare_enabled() -> bool:
+    return os.getenv(AUTORESHARE_ENV, "on").strip().lower() not in (
+        "0", "off", "false", "no")
+
+
+def autoreshare_owns(page: str) -> bool:
+    """Whether today's autopublished post on `page` is reshared by the tick,
+    not offered as a card by the daily signal."""
+    return page in AUTOPUBLISH_PAGES and page in PAGES and autoreshare_enabled()
+
+
+def autoreshare_candidate(state: dict[str, Any], page: str) -> dict | None:
+    """Today's autopublished, unreshared post on `page`, or None. Pure."""
+    entries, _posting, _ = bank(state, page)
+    day = today()
+    for e in entries:
+        if (e.get("status") == "published" and e.get("autopublished")
+                and e.get("activity_url") and e.get("reshared") is False
+                and str(e.get("published") or "") == day):
+            return e
+    return None
+
+
+def autoreshare_refusal(state: dict[str, Any], page: str, entry_id: str,
+                        now: datetime | None = None
+                        ) -> tuple[dict | None, str, str]:
+    """(the entry that may be reshared now, or None; why; kind): 'ok';
+    'wait' outside the posting hours; 'held' for every other refusal -- the
+    Tier 2 reshare_post card."""
+    now = now or datetime.now(UTC)
+    if page not in AUTOPUBLISH_PAGES:
+        return None, f"only the Vault page reshares itself, not {page!r}", "held"
+    if page not in PAGES:
+        return None, f"{page} is not an active page (LINKEDIN_PAGES_ACTIVE)", "held"
+    if not autoreshare_enabled():
+        return None, f"automatic resharing is off ({AUTORESHARE_ENV})", "held"
+    entries, posting, _ = bank(state, page)
+    if paused := posting.get(RESHARE_PAUSED_KEY):
+        return None, (f"automatic resharing for {PAGES[page]['name']} is paused "
+                      f"({paused.get('why') if isinstance(paused, dict) else paused})"
+                      f" -- clear posting.{RESHARE_PAUSED_KEY} to resume"), "held"
+    entry, why = _reshare_target(state, page, entry_id)
+    if entry is None:
+        return None, why, "held"
+    day = today()
+    if not entry.get("autopublished") or str(entry.get("published") or "") != day:
+        return None, (f"{entry_id} is not a post ATLAS published on its own today; "
+                      f"its reshare is yours"), "held"
+    if any(e.get("autoreshared") and str(e.get("reshared_at") or "").startswith(day)
+           for e in entries):
+        return None, "an automatic reshare already went out today", "held"
+    start, end = posting_hours(posting)
+    hour = now.astimezone(ZoneInfo(HOURS_TZ)).hour
+    if not start <= hour < end:
+        return None, f"outside the posting hours ({start}-{end} New York)", "wait"
+    if (why := _session_refusal(state, now)) is not None:
+        return None, why, "held"
+    if (why := _restriction_refusal(state, now)) is not None:
+        return None, why, "held"
+    return entry, "ok", "ok"
+
+
+async def autoreshare_dry(page: str = "", entry_id: str = "") -> ActionResult:
+    try:
+        state = load()
+    except Exception as exc:                            # noqa: BLE001
+        return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
+    entry, why, _kind = autoreshare_refusal(state, page, entry_id)
+    if entry is None:
+        return ActionResult(False, why, evidence={"page": page, "entry": entry_id})
+    return ActionResult(True, f"would reshare {entry_id} from the "
+                              f"{PAGES[page]['name']} page to the owner's profile on its "
+                              f"own ({entry['activity_url']})",
+                        evidence={"page": page, "entry": entry_id})
+
+
+async def autoreshare(page: str = "", entry_id: str = "") -> ActionResult:
+    """Tier AUTO, only past `autoreshare_refusal`, checked again under the
+    browser lock and the state-file lock."""
+    async with lock(), file_lock():
+        try:
+            state = load()
+        except Exception as exc:                        # noqa: BLE001
+            return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
+        entry, why, _kind = autoreshare_refusal(state, page, entry_id)
+        if entry is None:
+            return ActionResult(False, why, evidence={"page": page, "entry": entry_id})
+        made = await _reshare_entry(state, page, entry_id, entry, auto=True)
+    if made.ok:
+        made = replace(made, rollback_token=f"{page}:{entry_id}")
+    return made
+
+
+async def pause_autoreshare(token: str) -> ActionResult:
+    """The honest rollback: a reshare is not deleted (deletion is Tier 3).
+    Automatic resharing for the page pauses, so every next one is a card."""
+    page, _, entry_id = (token or "").partition(":")
+    if not page:
+        return ActionResult(True, "nothing was reshared for this run; nothing to undo")
+    if page not in AUTOPUBLISH_PAGES:
+        return ActionResult(False, f"{page!r} never reshares itself; nothing to pause")
+    async with file_lock():
+        state = load()
+        _entries, posting, holder = bank(state, page)
+        posting[RESHARE_PAUSED_KEY] = {"at": stamp(), "entry": entry_id,
+                                       "why": f"the rollback of {entry_id}'s reshare"}
+        holder["posting"] = posting
+        save(state)
+    name = PAGES.get(page, {}).get("name", page)
+    log_run([(f"autoreshare for {name} paused by the rollback of {entry_id}; the "
+              f"reshare stays live (deletion is Tier 3)")], label="reshare")
+    return ActionResult(
+        True, f"{entry_id}'s reshare is still on the owner's profile -- it is not deleted "
+              f"(deletion is permanently denied). Automatic resharing for {name} is "
+              f"paused, so each next reshare is a card again; clear "
+              f"posting.{RESHARE_PAUSED_KEY} in the state file to resume.",
+        evidence={"page": page, "entry": entry_id, "paused": True})
 
 
 def _unquote(s: str) -> str:
@@ -664,10 +991,259 @@ def _unquote(s: str) -> str:
     return unquote(s)
 
 
+# ----------------------------------------------------------------- automatic
+#
+# the owner, 2026-10-11 (memory approval-policy). See the module docstring.
+
+AUTOPUBLISH_PAGES = ("guardian",)        # Vault only; never FlyCheap, whatever PAGES says
+AUTOPUBLISH_ENV = "LINKEDIN_AUTOPUBLISH"
+HOURS_DEFAULT = (9, 18)                  # local hours [start, end) in HOURS_TZ
+HOURS_TZ = "America/New_York"
+PAUSED_KEY = "autopublish_paused"
+
+
+def autopublish_enabled() -> bool:
+    """LINKEDIN_AUTOPUBLISH: on by default; off sends every post back to a card."""
+    return os.getenv(AUTOPUBLISH_ENV, "on").strip().lower() not in (
+        "0", "off", "false", "no")
+
+
+def autopublish_owns(page: str) -> bool:
+    """Whether the automatic path, not the daily signal, offers this page's post."""
+    return page in AUTOPUBLISH_PAGES and page in PAGES and autopublish_enabled()
+
+
+def posting_hours(posting: dict[str, Any]) -> tuple[int, int]:
+    """The bank's `posting.hours` ([start, end), New York), or the default."""
+    raw = posting.get("hours")
+    if isinstance(raw, list | tuple) and len(raw) == 2:
+        try:
+            start, end = int(raw[0]), int(raw[1])
+        except (TypeError, ValueError):
+            return HOURS_DEFAULT
+        if 0 <= start < end <= 24:
+            return start, end
+    return HOURS_DEFAULT
+
+
+def posting_day_over(state: dict[str, Any], page: str,
+                     now: datetime | None = None) -> bool:
+    """Whether today's posting hours for `page` have ended (New York)."""
+    _entries, posting, _ = bank(state, page)
+    _start, end = posting_hours(posting)
+    hour = (now or datetime.now(UTC)).astimezone(ZoneInfo(HOURS_TZ)).hour
+    return hour >= end
+
+
+def _session_refusal(state: dict[str, Any], now: datetime) -> str | None:
+    """Signed in, as far as can be told without opening a browser: the saved
+    session exists, and the last sweep (which opens it) was clean and recent."""
+    from . import _parse_when, browser
+    if not browser.SESSION.exists():
+        return f"no saved LinkedIn session at {browser.SESSION}"
+    when = _parse_when(state.get("last_run"))
+    if when is None:
+        return "the last sweep's time is unknown, so the session is not known to work"
+    hours = (now - when).total_seconds() / 3600
+    interval = float(os.getenv("LINKEDIN_AGENT_INTERVAL_HOURS", "12"))
+    if hours > interval * 2:
+        return f"the last sweep was {hours:.0f}h ago, so the session is not known to work"
+    outcome = str((state.get("last_run_result") or {}).get("outcome") or "")
+    if outcome != "ok":
+        return f"the last sweep did not end clean ({outcome[:120] or 'no outcome'})"
+    return None
+
+
+def _restriction_refusal(state: dict[str, Any], now: datetime) -> str | None:
+    from . import ALERT_WINDOW, _parse_when, _restriction_candidates
+    recent = []
+    for alert in state.get("alerts") or []:
+        if not isinstance(alert, dict):
+            continue
+        when = _parse_when(alert.get("when"))
+        if when is not None and when >= now - ALERT_WINDOW:
+            recent.append(alert)
+    found = _restriction_candidates(recent)
+    if found:
+        alert, word = found[-1]
+        return (f"an alert from {alert.get('when')} mentions {word!r}, so the account "
+                "may be restricted")
+    return None
+
+
+def autopublish_refusal(state: dict[str, Any], page: str, entry_id: str = "",
+                        now: datetime | None = None
+                        ) -> tuple[dict | None, str, str]:
+    """(the entry that may post itself now, or None; why; and what kind of
+    no it is): 'ok'; 'none' when there is nothing to post today (the gate
+    is shut: nothing approved, not a posting day, posted today); 'wait'
+    outside the posting hours; 'held' for every other refusal -- that one is
+    the Tier 2 card."""
+    now = now or datetime.now(UTC)
+    if page not in AUTOPUBLISH_PAGES:
+        return None, f"only the Vault page posts itself, not {page!r}", "held"
+    if page not in PAGES:
+        return None, f"{page} is not an active page (LINKEDIN_PAGES_ACTIVE)", "held"
+    if not autopublish_enabled():
+        return None, f"automatic posting is off ({AUTOPUBLISH_ENV})", "held"
+    entries, posting, _ = bank(state, page)
+    if paused := posting.get(PAUSED_KEY):
+        return None, (f"automatic posting for {PAGES[page]['name']} is paused "
+                      f"({paused.get('why') if isinstance(paused, dict) else paused})"
+                      f" -- clear posting.{PAUSED_KEY} to resume"), "held"
+    entry, why = gate(state, page)
+    if entry is None:
+        return None, why, "none"
+    if entry_id and str(entry.get("id")) != str(entry_id):
+        return None, f"{entry_id} is not the next approved entry ({entry.get('id')} is)", \
+            "held"
+    approved_sha = entry.get("approved_sha256")
+    if approved_sha and approved_sha != payload_sha256(entry):
+        return None, (f"{entry.get('id')} changed after it was approved; it is not the "
+                      "post you approved"), "held"
+    day = today()
+    if any(str(e.get("published") or "") == day
+           or str(e.get("published_attempt_at") or "").startswith(day) for e in entries):
+        return None, "a post already went to this page today", "none"
+    start, end = posting_hours(posting)
+    hour = now.astimezone(ZoneInfo(HOURS_TZ)).hour
+    if not start <= hour < end:
+        return None, f"outside the posting hours ({start}-{end} New York)", "wait"
+    if (why := _session_refusal(state, now)) is not None:
+        return None, why, "held"
+    if (why := _restriction_refusal(state, now)) is not None:
+        return None, why, "held"
+    return entry, "ok", "ok"
+
+
+async def autopublish_dry(page: str = "", entry_id: str = "") -> ActionResult:
+    try:
+        state = load()
+    except Exception as exc:                            # noqa: BLE001
+        return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
+    entry, why, _kind = autopublish_refusal(state, page, entry_id)
+    if entry is None:
+        return ActionResult(False, why, evidence={"page": page, "entry": entry_id})
+    text = str(entry.get("text") or "")
+    return ActionResult(
+        True,
+        f"would publish {entry.get('id')} to the {PAGES[page]['name']} page on its own "
+        f"({len(text)} chars); the reshare to the owner's profile stays a card:\n"
+        + text[:400],
+        evidence={"page": page, "entry": entry.get("id"), "chars": len(text)})
+
+
+async def autopublish(page: str = "", entry_id: str = "") -> ActionResult:
+    """Tier AUTO, only past `autopublish_refusal`, checked again under the
+    browser lock and the state-file lock so nothing moves between the check
+    and the Post click."""
+    async with lock(), file_lock():
+        try:
+            state = load()
+        except Exception as exc:                        # noqa: BLE001
+            return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
+        entry, why, _kind = autopublish_refusal(state, page, entry_id)
+        if entry is None:
+            return ActionResult(False, why, evidence={"page": page, "entry": entry_id})
+        made = await _publish(page, str(entry.get("id")), auto=True)
+    if made.ok:
+        made = replace(made, rollback_token=f"{page}:{entry.get('id')}")
+    return made
+
+
+async def pause_autopublish(token: str) -> ActionResult:
+    """The honest rollback. A published post is not unpublished -- that is
+    deletion, and deletion is Tier 3 -- and this does not pretend to: it
+    pauses this page's automatic posting and records why, so every next
+    post is a card again until the pause is cleared by hand."""
+    page, _, entry_id = (token or "").partition(":")
+    if not page:
+        return ActionResult(True, "nothing was posted for this run; nothing to roll back")
+    if page not in AUTOPUBLISH_PAGES:
+        return ActionResult(False, f"{page!r} never posts itself; nothing to pause")
+    async with file_lock():
+        state = load()
+        _entries, posting, holder = bank(state, page)
+        posting[PAUSED_KEY] = {"at": stamp(), "entry": entry_id,
+                               "why": f"the rollback of {entry_id}"}
+        holder["posting"] = posting
+        save(state)
+    name = PAGES.get(page, {}).get("name", page)
+    log_run([(f"autopublish for {name} paused by the rollback of {entry_id}; "
+              f"{entry_id} stays live (deletion is Tier 3)")], label="publish")
+    return ActionResult(
+        True, f"{entry_id} is still live on the {name} page -- a published post is not "
+              "deleted (deletion is permanently denied). Automatic posting for "
+              f"{name} is paused, so each next post is a card again; clear "
+              f"posting.{PAUSED_KEY} in the state file to resume.",
+        evidence={"page": page, "entry": entry_id, "unpublished": False,
+                  "paused": True})
+
+
+# ----------------------------------------------- approving drafts on its own
+#
+# the owner, 2026-10-12 (memory approval-policy): "whatever you think should be
+# done should be automatically approved, but whatever is really urgent should
+# only need human approval." linkedin.approve_draft is Tier 1: a draft is
+# marked approved in ATLAS's own bank, and the rollback flips it back. That
+# only stays a bank change while a person still reads the post before it is
+# public -- the page's Tier 2 linkedin.publish_post card. So, unless an
+# approved card is running it:
+#
+#   * never a page that publishes itself (AUTOPUBLISH_PAGES, Vault): there
+#     an approved entry goes out with no further read, so its drafts stay
+#     the owner's card -- the 2026-10-11 rule covered already-approved entries;
+#   * LINKEDIN_AUTOAPPROVE (on by default): off, every draft is a card;
+#   * at most AUTOAPPROVE_PER_DAY drafts per page per day.
+
+AUTOAPPROVE_ENV = "LINKEDIN_AUTOAPPROVE"
+AUTOAPPROVE_PER_DAY = 2
+
+
+def autoapprove_enabled() -> bool:
+    return os.getenv(AUTOAPPROVE_ENV, "on").strip().lower() not in (
+        "0", "off", "false", "no")
+
+
+def _answered_by_card() -> bool:
+    from ...kernel import idempotency
+    return (idempotency.current_run() or "").startswith("proposal:")
+
+
+def autoapprove_refusal(state: dict[str, Any], page: str) -> str | None:
+    """Why this page's draft is the owner's card rather than approved by ATLAS,
+    or None. Never asked of an approved card: his tap is the answer."""
+    if _answered_by_card():
+        return None
+    name = PAGES.get(page, {}).get("name", page)
+    from . import HUMAN_APPROVAL_PAGES
+    if page in HUMAN_APPROVAL_PAGES:
+        return f"{name} drafts are yours to read and approve"
+    if page in AUTOPUBLISH_PAGES:
+        return (f"the {name} page publishes its approved posts by itself, so "
+                f"its drafts are yours to read and approve")
+    if not autoapprove_enabled():
+        return f"automatic draft approval is off ({AUTOAPPROVE_ENV})"
+    entries, _posting, _holder = bank(state, page)
+    done = sum(1 for e in entries
+               if e.get("auto_approved") and e.get("approved") == today())
+    if done >= AUTOAPPROVE_PER_DAY:
+        return (f"{done} {name} draft(s) already approved automatically today "
+                f"(at most {AUTOAPPROVE_PER_DAY})")
+    return None
+
+
+def _claim_refusal(entry: dict[str, Any]) -> str | None:
+    """Sage's TutorSite drafts pass the fact-backed claim gate again here;
+    every other drafter's entry is unaffected."""
+    from ..sagemmt.claims import entry_refusal
+    return entry_refusal(entry)
+
+
 async def approve_draft_dry(page: str = "", entry_id: str = "",
                             text_sha256: str = "") -> ActionResult:
     # Deliberately does not check `text_sha256` against the draft: this runs
-    # as `preview()`, before Miro decides, and as the executor's own
+    # as `preview()`, before the owner decides, and as the executor's own
     # pre-approval dry run -- returning ok=False here on a mismatch would
     # stop `execute()` before `run()` ever gets called, and it is `run()`
     # that has to notice the change and get a fresh card started.
@@ -680,6 +1256,10 @@ async def approve_draft_dry(page: str = "", entry_id: str = "",
         return ActionResult(False, f"no entry {entry_id} in the {page} bank")
     if e.get("status") != "draft":
         return ActionResult(False, f"{entry_id} is {e.get('status')}, not a draft")
+    if (why := autoapprove_refusal(state, page)) is not None:
+        return ActionResult(False, why)
+    if (why := _claim_refusal(e)) is not None:
+        return ActionResult(False, why)
     return ActionResult(True, f"would mark {entry_id} approved for the "
                               f"{PAGES[page]['name']} page:\n{str(e.get('text'))[:400]}")
 
@@ -706,8 +1286,17 @@ async def _approve_draft(page: str, entry_id: str, text_sha256: str) -> ActionRe
         save(state)
         return ActionResult(False, "the draft changed since you saw it; a "
                                    "fresh card is coming")
+    # Checked again under the lock: the dry run read the bank before it.
+    if (why := autoapprove_refusal(state, page)) is not None:
+        return ActionResult(False, why)
+    if (why := _claim_refusal(e)) is not None:
+        return ActionResult(False, why)
+    if not _answered_by_card():
+        e["auto_approved"] = True
     e["status"] = "approved"
     e["approved"] = today()
+    # What was approved, so an automatic post can prove it is the same payload.
+    e["approved_sha256"] = current
     save(state)
     return ActionResult(True, f"{entry_id} approved; it goes out on the next open "
                               f"posting day for {PAGES[page]['name']}",
@@ -727,6 +1316,8 @@ async def _unapprove_draft(page: str, entry_id: str) -> ActionResult:
         return ActionResult(False, f"{entry_id} is not an approved entry")
     e["status"] = "draft"
     e.pop("approved", None)
+    e.pop("approved_sha256", None)
+    e.pop("auto_approved", None)
     save(state)
     return ActionResult(True, f"{entry_id} is a draft again")
 

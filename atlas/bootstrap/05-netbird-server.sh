@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 # Stand up a self-hosted NetBird control plane: management, signal, dashboard,
 # TURN, and a self-hosted Zitadel for identity. Nothing depends on a third
 # party — that is the point of running your own.

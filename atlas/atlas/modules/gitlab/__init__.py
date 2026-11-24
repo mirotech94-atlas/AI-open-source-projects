@@ -1,8 +1,8 @@
 """GitLab — both self-hosted instances.
 
-Miro runs two:
-  aicode.example.com   business repos (flycheap, Guardian, Mirotech, ATLAS itself)
-  code.example.org        work repos, including Miro/ai behind InRoots
+the owner runs two:
+  aicode.example.com   business repos (flycheap, Guardian, ExampleCo, ATLAS itself)
+  git.internal.example        work repos, including the owner/ai behind InRoots
 
 Both are watched the same way. The valuable signals are not "is git up" but the
 things that rot quietly: failed pipelines nobody looked at, merge requests that
@@ -77,7 +77,7 @@ class Instance:
 INSTANCES = (
     Instance("business", os.getenv("GITLAB_URL", "https://aicode.example.com"),
              "GITLAB_TOKEN"),
-    Instance("work", os.getenv("GITLAB_WORK_URL", "https://code.example.org"),
+    Instance("work", os.getenv("GITLAB_WORK_URL", "https://git.internal.example"),
              "GITLAB_WORK_TOKEN"),
 )
 
@@ -334,20 +334,120 @@ async def open_issue(instance: str, project: str, title: str,
                         rollback_token=f"{instance}|{project}|{issue['iid']}")
 
 
+# ------------------------------------------------- filing on its own (Tier 1)
+#
+# the owner, 2026-09-30 and 2026-10-12 (memory approval-policy): "whatever you
+# think should be done should be automatically approved". 181 cards in 30
+# days, 138 of them expired unanswered, were this action. It is Tier 1 now,
+# gated in code here, in the dry run the executor runs before every run:
+#
+#   * the business instance only. On `work` the watchers are colleagues and
+#     an issue emails them the moment it exists; ATLAS never files there.
+#   * GITLAB_AUTOFILE (on by default): off files nothing.
+#   * no near-duplicate: an atlas-labelled issue in the project, open or
+#     closed in the last DEDUPE_DAYS, whose title shares most of its words
+#     (the reasoner rewords each time, so an exact match would never fire).
+#     A duplicate the rollback closed is not filed again the next cycle.
+#   * at most GITLAB_ISSUES_PER_DAY (default 5) atlas issues per project per
+#     UTC day.
+#
+# The rollback closes the issue it opened (closing is not deletion).
+
+DAILY_CAP_DEFAULT = 5
+DEDUPE_DAYS = 7
+SIMILAR = 0.6
+_WORD = re.compile(r"[a-z][a-z0-9_-]{2,}")
+_FILLER = frozenset({"the", "and", "for", "with", "from", "not", "has", "was",
+                     "are", "its", "this", "that", "atlas", "issue"})
+
+
+def autofile_enabled() -> bool:
+    return os.getenv("GITLAB_AUTOFILE", "on").strip().lower() not in (
+        "0", "off", "false", "no")
+
+
+def daily_cap() -> int:
+    try:
+        return max(0, int(os.getenv("GITLAB_ISSUES_PER_DAY",
+                                    str(DAILY_CAP_DEFAULT))))
+    except ValueError:
+        return DAILY_CAP_DEFAULT
+
+
+def title_words(title: str) -> frozenset[str]:
+    """The words that say what an issue is about. Pure."""
+    return frozenset(w for w in _WORD.findall((title or "").lower())
+                     if w not in _FILLER)
+
+
+def same_issue(a: str, b: str) -> bool:
+    """Whether two titles name the same thing: most of their words shared,
+    or every word of the shorter one (three or more) in the longer. Pure."""
+    wa, wb = title_words(a), title_words(b)
+    if not wa or not wb:
+        return (a or "").strip().lower() == (b or "").strip().lower()
+    shared = len(wa & wb)
+    if shared / len(wa | wb) >= SIMILAR:
+        return True
+    return len(min(wa, wb, key=len)) >= 3 and shared == min(len(wa), len(wb))
+
+
+async def _atlas_issues(inst: Instance, project: str, **params) -> list[dict]:
+    got = await _api(inst, f"projects/{project.replace('/', '%2F')}/issues",
+                     labels="atlas", per_page=100, **params)
+    return [i for i in (got or []) if isinstance(i, dict)]
+
+
 async def open_issue_dry(instance: str, project: str, title: str,
                          body: str = "") -> ActionResult:
     if instance not in {i.key for i in INSTANCES}:
         return ActionResult(False, f"unknown instance {instance!r}")
-    # The project has to exist. Every early card named "Miro/ai", a project
+    if instance != "business":
+        return ActionResult(False, (
+            f"ATLAS does not file issues on {instance!r} by itself: its watchers "
+            f"are colleagues, and an issue emails them the moment it exists"))
+    if not autofile_enabled():
+        return ActionResult(False, "automatic issue filing is off (GITLAB_AUTOFILE)")
+    if not (title or "").strip():
+        return ActionResult(False, "an issue needs a title")
+    # The project has to exist. Every early card named "the owner/ai", a project
     # that was never there, and the 404 surfaced only after approval -- as
     # a failed card, not as a dry run that said so.
     inst = next(i for i in INSTANCES if i.key == instance)
     try:
-        await _api(inst, f"projects/{project.replace('/', '%2F')}")
+        return await _autofile_check(inst, instance, project, title)
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 404:
             return ActionResult(False, f"no project {project!r} on {instance}")
-        raise
+        return ActionResult(False, f"GitLab could not be read, so nothing is "
+                                   f"filed: {_gitlab_reason(exc)}")
+    except httpx.HTTPError as exc:
+        # A Tier 1 dry run that raises escapes the executor into the caller's
+        # loop; GitLab being unreachable is a refusal, never a crash.
+        return ActionResult(False, f"GitLab could not be read, so nothing is "
+                                   f"filed: {_gitlab_reason(exc)}")
+
+
+async def _autofile_check(inst: Instance, instance: str, project: str,
+                          title: str) -> ActionResult:
+    await _api(inst, f"projects/{project.replace('/', '%2F')}")
+    now = datetime.now(UTC)
+    recent = await _atlas_issues(inst, project, state="opened")
+    recent += await _atlas_issues(
+        inst, project, state="closed",
+        updated_after=(now - timedelta(days=DEDUPE_DAYS)).isoformat())
+    for issue in recent:
+        if same_issue(title, str(issue.get("title") or "")):
+            return ActionResult(False, (
+                f"already filed: #{issue.get('iid')} '{issue.get('title')}' "
+                f"({issue.get('state')}) in {project}"),
+                evidence={"duplicate_of": issue.get("iid")})
+    midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today = await _atlas_issues(inst, project, created_after=midnight.isoformat())
+    if len(today) >= daily_cap():
+        return ActionResult(False, (
+            f"{len(today)} ATLAS issue(s) already filed in {project} today "
+            f"(GITLAB_ISSUES_PER_DAY={daily_cap()})"))
     return ActionResult(True, f"would open '{title}' in {project} ({instance})")
 
 
@@ -366,7 +466,7 @@ async def close_issue(token: str) -> ActionResult:
 
 # `nightshift.merge` (Tier ASK, irreversible) is the only caller. What it
 # merges is pinned: the SHA the job's branch pointed at when the job
-# finished, which is what the card Miro approves names. Anything pushed to
+# finished, which is what the card the owner approves names. Anything pushed to
 # the branch after that is refused, and GitLab itself is handed the pin
 # (`sha=` on the accept call) so a push between the check and the merge
 # cannot slip in either. ATLAS's own repository is never merged here.
@@ -514,7 +614,7 @@ async def merge_branch(repo_url: str, branch: str, expected_sha: str) -> ActionR
 
 class GitLabModule:
     name = "gitlab"
-    title = "GitLab (aicode + code.example.org)"
+    title = "GitLab (aicode + git.internal.example)"
     requires_env = ("GITLAB_TOKEN",)     # work instance is optional
 
     async def setup(self) -> None: ...
@@ -554,24 +654,28 @@ class GitLabModule:
         return (
             Action(
                 name="gitlab.open_issue",
-                # Tier 2, not 1. This was AUTO, and an issue is not a private
-                # note: opening one emails every watcher and posts to the
-                # project's activity feed the moment it is created. On the
-                # work instance those watchers are colleagues.
-                #
-                # `close_issue` is offered as a rollback and it does not undo
-                # any of that -- a closed issue is still an issue everyone was
-                # notified about. An action whose rollback cannot reverse the
-                # visible effect has no business running unattended.
-                tier=Tier.ASK,
+                # Tier 1 again since 2026-10-12 (the owner: "whatever you think
+                # should be done should be automatically approved, but
+                # whatever is really urgent should only need human
+                # approval"; memory approval-policy). It was AUTO, then ASK
+                # because an issue emails every watcher -- colleagues on the
+                # work instance -- and closing it undoes none of that. So the
+                # dry run (open_issue_dry) files on the business instance
+                # only, where the owner is the watcher, never on work; never a
+                # near-duplicate of an open or recently closed atlas issue;
+                # at most GITLAB_ISSUES_PER_DAY per project a day; nothing
+                # with GITLAB_AUTOFILE=off. The rollback closes the issue it
+                # opened (closing, not deletion: that is Tier 3).
+                tier=Tier.AUTO,
                 summary="File an issue recording something ATLAS noticed",
                 run=open_issue, dry_run=open_issue_dry, rollback=close_issue,
-                params={"instance": "'business' or 'work'",
+                params={"instance": "'business' (ATLAS never files on 'work', "
+                                    "where the watchers are colleagues)",
                         "project": "namespace/path. On 'business' the "
                                    "projects are root/atlas (ATLAS's own "
                                    "notes and findings -- the default), "
-                                   "mirotech94/guardian, "
-                                   "mirotech94/flycheap-tracker",
+                                   "owner/guardian, "
+                                   "owner/flycheap-tracker",
                         "title": "issue title", "body": "markdown body"},
                 max_per_hour=6,
             ),

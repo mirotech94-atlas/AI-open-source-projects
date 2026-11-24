@@ -1,13 +1,26 @@
 {
-  "name": "ATLAS",
+  "name": "ATLAS Agency",
   "short_name": "ATLAS",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#05090d",
-  "theme_color": "#05090d",
+  "background_color": "#0a0d14",
+  "theme_color": "#0a0d14",
   "icons": [
-    { "src": "/atlas-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/atlas-avatar.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }

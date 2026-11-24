@@ -10,7 +10,7 @@ parent's executor run. What is load-bearing:
   parent not listed in `kernel.legs.PARENTS` cannot run the leg.
 * Every attempt is in the audit chain as `leg.start` / `leg.finish` (or
   `leg.refused`), naming the parent.
-* Miro's settled flow still holds: a reel that passes posts itself; one held
+* the owner's settled flow still holds: a reel that passes posts itself; one held
   only by an hourly allowance WAITS -- never a remake (a paid Veo call) and
   never a card.
 """
@@ -227,7 +227,7 @@ async def test_autopublish_names_itself_as_the_parent(media, registered, graph,
     assert start["parent"] == "content.autopublish_reel"
 
 
-# ------------------------------------------------------------ Miro's flow
+# ------------------------------------------------------------ the owner's flow
 
 async def test_autopublish_holds_a_reel_whose_instagram_hour_is_spent(
         memory_backend, registered, monkeypatch):

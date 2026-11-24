@@ -14,40 +14,6 @@ import pytest
 
 from atlas.kernel.contracts import Health
 
-# ------------------------------------------------------------------ flycheap
-
-
-async def test_flycheap_api_with_no_readable_subsystem_is_unknown(monkeypatch):
-    from atlas.modules import flycheap
-
-    async def payload():
-        return {"ok": True, "checks": {}}, None
-    monkeypatch.setattr(flycheap, "_health_payload", payload)
-    obs = await flycheap.check_api()
-    assert obs.health is Health.UNKNOWN
-    assert "nothing was measured" in obs.detail
-
-    async def malformed():
-        return {"ok": True, "checks": {"database": "fine", "x": {}}}, None
-    monkeypatch.setattr(flycheap, "_health_payload", malformed)
-    assert (await flycheap.check_api()).health is Health.UNKNOWN
-
-
-async def test_flycheap_api_counts_only_readable_subsystems(monkeypatch):
-    from atlas.modules import flycheap
-
-    async def payload():
-        return {"ok": True, "version": "1", "checks": {
-            "database": {"ok": True}, "last_poll": {"ok": True},
-            "junk": "not an entry"}}, None
-    monkeypatch.setattr(flycheap, "_health_payload", payload)
-    obs = await flycheap.check_api()
-    assert obs.health is Health.OK
-    assert obs.value == 2
-    assert "all 2 subsystems healthy" in obs.detail
-    assert "1 unreadable entry not counted" in obs.detail
-
-
 # -------------------------------------------------------------------- gitlab
 
 def _gitlab(responses):
@@ -228,12 +194,12 @@ async def test_fiverr_orders_matching_nothing_is_unknown(monkeypatch, tmp_path):
     assert "0 active order" not in obs.detail
 
 
-# --------------------------------------------------------------------- vpsie
+# --------------------------------------------------------------------- cloudco
 
-async def test_vpsie_auth_proves_a_cached_token_before_saying_ok(monkeypatch):
-    from atlas.modules import vpsie
+async def test_cloudco_auth_proves_a_cached_token_before_saying_ok(monkeypatch):
+    from atlas.modules import cloudco
 
-    monkeypatch.setattr(vpsie, "_token", ("jwt", 9e12))
+    monkeypatch.setattr(cloudco, "_token", ("jwt", 9e12))
     asked: list[str] = []
 
     async def token():
@@ -241,44 +207,44 @@ async def test_vpsie_auth_proves_a_cached_token_before_saying_ok(monkeypatch):
 
     async def refused(path, **params):
         asked.append(path)
-        raise vpsie.VpsieRejected("token expired")
-    monkeypatch.setattr(vpsie, "_access_token", token)
-    monkeypatch.setattr(vpsie, "_get", refused)
-    obs = await vpsie.check_auth()
+        raise cloudco.CloudCoRejected("token expired")
+    monkeypatch.setattr(cloudco, "_access_token", token)
+    monkeypatch.setattr(cloudco, "_get", refused)
+    obs = await cloudco.check_auth()
     assert asked == ["/vm"]
     assert obs.health is Health.UNKNOWN
     assert "cached token" in obs.detail
 
     async def fine(path, **params):
         return {"data": []}
-    monkeypatch.setattr(vpsie, "_get", fine)
-    obs = await vpsie.check_auth()
+    monkeypatch.setattr(cloudco, "_get", fine)
+    obs = await cloudco.check_auth()
     assert obs.health is Health.OK and "authenticated read" in obs.detail
 
 
-async def test_vpsie_ledger_with_no_total_is_unknown(monkeypatch):
-    from atlas.modules import vpsie
+async def test_cloudco_ledger_with_no_total_is_unknown(monkeypatch):
+    from atlas.modules import cloudco
 
     async def get(path, **params):
         return {"data": [{"hostname": "a"}]}
-    monkeypatch.setattr(vpsie, "_get", get)
-    assert (await vpsie.check_resource_ledger()).health is Health.UNKNOWN
+    monkeypatch.setattr(cloudco, "_get", get)
+    assert (await cloudco.check_resource_ledger()).health is Health.UNKNOWN
 
     async def with_total(path, **params):
         return {"data": [{"hostname": "a"}], "total": 1}
-    monkeypatch.setattr(vpsie, "_get", with_total)
-    assert (await vpsie.check_resource_ledger()).health is Health.OK
+    monkeypatch.setattr(cloudco, "_get", with_total)
+    assert (await cloudco.check_resource_ledger()).health is Health.OK
 
 
-def _vpsie_protection(monkeypatch, *, vm, policy):
-    from atlas.modules import vpsie
+def _cloudco_protection(monkeypatch, *, vm, policy):
+    from atlas.modules import cloudco
 
     async def get(path, **params):
         return {"/snapshot": {"data": [{"identifier": "s1", "status": "ok"}]},
                 "/backups": {"data": [{"identifier": "b1"}]},
                 "/vm": vm, "/backups/policy/all": policy}[path]
-    monkeypatch.setattr(vpsie, "_get", get)
-    return vpsie
+    monkeypatch.setattr(cloudco, "_get", get)
+    return cloudco
 
 
 POLICY = {"data": {"rows": [{"name": "daily", "vmsCount": 1, "planEvery": 1,
@@ -286,59 +252,59 @@ POLICY = {"data": {"rows": [{"name": "daily", "vmsCount": 1, "planEvery": 1,
                              "created_on": "2026-01-01T00:00:00Z"}]}}
 
 
-async def test_vpsie_protection_unreadable_policy_is_not_ok(monkeypatch):
-    vpsie = _vpsie_protection(monkeypatch, vm={"data": [{"hostname": "a"}]},
+async def test_cloudco_protection_unreadable_policy_is_not_ok(monkeypatch):
+    cloudco = _cloudco_protection(monkeypatch, vm={"data": [{"hostname": "a"}]},
                               policy={"data": "nope"})
-    obs = await vpsie.check_protection()
+    obs = await cloudco.check_protection()
     assert obs.health is Health.UNKNOWN
     assert "policy unreadable" in obs.detail
     assert "first scheduled backup" not in obs.detail
 
 
-async def test_vpsie_protection_unreadable_vm_list_is_not_full_coverage(
+async def test_cloudco_protection_unreadable_vm_list_is_not_full_coverage(
         monkeypatch):
-    vpsie = _vpsie_protection(monkeypatch, vm={"weird": 1}, policy=POLICY)
-    obs = await vpsie.check_protection()
+    cloudco = _cloudco_protection(monkeypatch, vm={"weird": 1}, policy=POLICY)
+    obs = await cloudco.check_protection()
     assert obs.health is Health.UNKNOWN
     assert "all 0 instances" not in obs.detail
 
 
-async def test_vpsie_protection_readable_policy_still_reads_ok(monkeypatch):
-    vpsie = _vpsie_protection(monkeypatch, vm={"data": [{"hostname": "a"}]},
+async def test_cloudco_protection_readable_policy_still_reads_ok(monkeypatch):
+    cloudco = _cloudco_protection(monkeypatch, vm={"data": [{"hostname": "a"}]},
                               policy=POLICY)
-    obs = await vpsie.check_protection()
+    obs = await cloudco.check_protection()
     assert obs.health is Health.OK, obs.detail
 
 
-# ------------------------------------------------------------------ mirotech
+# ------------------------------------------------------------------ exampleco
 
 def _ebay(monkeypatch, payload):
-    from atlas.modules import mirotech
+    from atlas.modules import exampleco
 
     async def api(path, **params):
         return payload
-    monkeypatch.setattr(mirotech, "_api", api)
-    return mirotech
+    monkeypatch.setattr(exampleco, "_api", api)
+    return exampleco
 
 
 @pytest.mark.parametrize("fn", ["check_listings", "check_orders",
                                 "check_stale_listings"])
 async def test_ebay_response_without_its_list_is_unknown(monkeypatch, fn):
-    mirotech = _ebay(monkeypatch, {"href": "x"})
-    assert (await getattr(mirotech, fn)()).health is Health.UNKNOWN
+    exampleco = _ebay(monkeypatch, {"href": "x"})
+    assert (await getattr(exampleco, fn)()).health is Health.UNKNOWN
 
 
 @pytest.mark.parametrize("fn", ["check_listings", "check_orders",
                                 "check_stale_listings"])
 async def test_ebay_total_zero_is_a_real_empty(monkeypatch, fn):
-    mirotech = _ebay(monkeypatch, {"total": 0})
-    assert (await getattr(mirotech, fn)()).health is Health.OK
+    exampleco = _ebay(monkeypatch, {"total": 0})
+    assert (await getattr(exampleco, fn)()).health is Health.OK
 
 
 async def test_ebay_listing_age_that_is_never_present_is_unknown(monkeypatch):
-    mirotech = _ebay(monkeypatch, {"offers": [
+    exampleco = _ebay(monkeypatch, {"offers": [
         {"sku": "a", "status": "PUBLISHED", "listing": {"listingId": "1"}}]})
-    obs = await mirotech.check_stale_listings()
+    obs = await exampleco.check_stale_listings()
     assert obs.health is Health.UNKNOWN
     assert "no" in obs.detail and "listing age" in obs.detail
 
@@ -422,21 +388,6 @@ async def test_linkedin_unreadable_page_raises_rather_than_reading_empty():
         await sweep._profile_links(Broken())
     with pytest.raises(RuntimeError):
         await sweep._conversations(Broken())
-
-
-# ------------------------------------------------------------------ guardian
-
-@pytest.mark.parametrize("scope, health", [
-    ("read", Health.OK), ("write", Health.DEGRADED),
-    ("", Health.UNKNOWN), ("admin", Health.UNKNOWN)])
-async def test_guardian_token_scope_must_positively_say_read(
-        monkeypatch, scope, health):
-    from atlas.modules import guardian
-
-    async def api(path, **params):
-        return {"scope": scope, "role": "viewer", "account": "acct"}, None
-    monkeypatch.setattr(guardian, "_api", api)
-    assert (await guardian.check_token_scope()).health is health
 
 
 # ---------------------------------------------------------------- nightshift

@@ -1,11 +1,11 @@
 """Dashboard API. Mesh-only, session-authenticated, read-mostly.
 
-There is deliberately no admin panel, no "run this check now" and no
-UI-only shortcut to a decision: approve/deny happen by text, through
-`approvals.decide`, which goes through `executor.execute` (see the comment
-below `/approvals`) — a second route to the outside world from a browser
-would make that guarantee meaningless. Login and logout are the dashboard's
-own session, not a step towards the world.
+There is deliberately no admin panel and no "run this check now". Decisions
+go through `approvals.decide`: by text (Slack, phone) and, since the owner
+2026-10-29 (GUI decisions), from the dashboard's own decision route, which
+answers only a pending Tier 2 card behind session, Origin, CSRF and rate
+checks (see the comment below `/approvals`). Login and logout are the
+dashboard's own session, not a step towards the world.
 
 `POST /api/agents/warm` (Task 59) is the one deliberate write beyond those:
 it never calls `invoke` or the executor, only `agents.warmup`, which runs a
@@ -21,6 +21,7 @@ number without a time attached to it.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import math
@@ -30,17 +31,19 @@ import time
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel, ConfigDict, ValidationError
 
-from ..kernel import events
+from ..kernel import board_state, events
 from ..kernel.audit import verify_chain
 from ..kernel.executor import watch_only
 from ..kernel.registry import REGISTRY
 from ..kernel.state import fetch_all, fetch_one
 from . import auth, peers
+from .peers import PerAddressLimiter
 
 # The modern FastAPI idiom: a dependency in the type, not in a default value.
 SignedIn = Annotated[auth.Session, Depends(auth.require)]
@@ -71,6 +74,9 @@ async def session_state(request: Request) -> dict:
     return envelope(
         authenticated=session is not None,
         user=session.user if session else None,
+        # Only a signed-in page gets the token the decision route asks for.
+        csrf=(auth.csrf_token(request.cookies.get(auth.COOKIE, ""))
+              if session else None),
         configured=auth.configured(),
         watch_only=watch_only(),
     )
@@ -98,6 +104,37 @@ async def login(request: Request, response: Response) -> dict:
 async def logout(request: Request, response: Response) -> dict:
     auth.clear_cookie(response, request)
     return envelope(ok=True)
+
+
+# ------------------------------------------------------- settings secrets
+# The Agency tab's Settings section: which of the names the owner re-enters on
+# the Mac are set. A FIXED list (the plan's "Secrets to re-enter"), never a
+# scan of the environment, and only a boolean per name: no value, no length,
+# no prefix ever leaves this function.
+
+SECRET_NAMES: tuple[str, ...] = (
+    "POSTGRES_PASSWORD", "DATABASE_URL", "SESSION_SECRET",
+    "DASHBOARD_PASSWORD_HASH", "DASHBOARD_PASSWORD_HASH_B64",
+    "SLACK_BOT_TOKEN", "SLACK_APP_TOKEN", "SLACK_APPROVER_IDS",
+    "SLACK_CHANNELS", "SLACK_CHANNEL", "SLACK_APPROVALS_CHANNEL",
+    "SLACK_SIGNING_SECRET",
+    "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN",
+    "MAIL_ACCOUNTS",
+    "YOUTUBE_CLIPS_CLIENT_ID", "YOUTUBE_CLIPS_CLIENT_SECRET",
+    "YOUTUBE_CLIPS_REFRESH_TOKEN", "YOUTUBE_CLIPS_CHANNEL_ID",
+    "ATLAS_FREE_ONLY", "OPENROUTER_API_KEY", "GROQ_API_KEY",
+    "FISH_AUDIO_API_KEY", "FISH_AUDIO_VOICE_ID",
+    "ACADEMY_STRIPE_READ_KEY",
+    "MAC_AGENT_TOKEN", "HANDOFF_TOKEN",
+    "VERCEL_TOKEN", "VERCEL_TEAM_ID", "RESEND_API_KEY", "GMAIL_APP_PASSWORD",
+)
+
+
+@router.get("/settings/secrets")
+async def settings_secrets(_s: SignedIn) -> dict:
+    """{name: set?} for SECRET_NAMES, read now. An empty value is unset."""
+    return envelope(secrets={name: bool(os.environ.get(name, "").strip())
+                             for name in SECRET_NAMES})
 
 
 # -------------------------------------------------------------- overview
@@ -159,17 +196,24 @@ async def overview(_s: SignedIn) -> dict:
     from .system_check import effective_health
 
     moment = datetime.now(UTC)
+    today = board_state.today_utc(moment)
+    loaded = bool(REGISTRY.modules)
     tiles: dict[str, dict[str, Any]] = {}
+    seen_keys: set[str] = set()
     for row in rows:
         name = row["property"]
+        key = f"{name}.{row['check_name']}"
+        seen_keys.add(key)
         # A check its module no longer registers (renamed or retired, e.g.
-        # vpsie "snapshots" -> "protection") keeps its old rows forever; its
-        # last reading goes stale and would paint a healthy module UNKNOWN.
-        # Only a LIVE module's retired checks are dropped -- a switched-off
-        # module still shows what it last saw.
-        if (name in REGISTRY.modules
-                and f"{name}.{row['check_name']}" not in REGISTRY.checks):
-            continue
+        # cloudco "snapshots" -> "protection", or a whole module taken out of
+        # the code) keeps its old rows forever. Its last reading is history,
+        # not a reading of now: it is listed as RETIRED, never OK, and left
+        # out of the module's colour. A switched-off module is different: its
+        # tile is replaced by the "switched off" label below. With no
+        # registry loaded (nothing to compare with) nothing is called retired.
+        gone = ((name in REGISTRY.modules and key not in REGISTRY.checks)
+                or (loaded and name not in REGISTRY.modules
+                    and name not in REGISTRY.disabled))
         tile = tiles.setdefault(name, {
             "module": name,
             "title": getattr(REGISTRY.modules.get(name), "title", name),
@@ -187,13 +231,18 @@ async def overview(_s: SignedIn) -> dict:
                     if row["interval_s"] else None)
         health, stale = effective_health(row["health"], row["observed_at"],
                                          interval, moment)
-        state = _check_state(health, row["detail"] or "")
+        # Retired and parked outrank the check's own words: the board says
+        # which of the two it is, in its own look, never as OK.
+        state = (board_state.override_state(key, registered=not gone, today=today)
+                 or _check_state(health, row["detail"] or ""))
         observed = row["observed_at"].isoformat() if row["observed_at"] else None
         tile["checks"].append({
             "name": row["check_name"],
             "health": health,
             "state": state,
             "stale": stale,
+            # A stale reading is UNKNOWN and says when it was last read.
+            "last_read_at": observed,
             "detail": row["detail"] or "",
             "observed_at": observed,
             "next_run_at": row["next_run_at"].isoformat() if row["next_run_at"] else None,
@@ -214,7 +263,7 @@ async def overview(_s: SignedIn) -> dict:
         # unmeasured — the inverse of the dangerous direction, but wrong.
         # A check that is not set up, or deliberately paused, says so on its
         # own row but does not decide the module's colour: "nobody has given
-        # me a token" is not the module failing (Miro, 2026-09-27: the board
+        # me a token" is not the module failing (the owner, 2026-09-27: the board
         # should be clean). It stays UNKNOWN underneath -- never OK.
         worst = tile.get("_worst")
         if state is not None:
@@ -231,6 +280,36 @@ async def overview(_s: SignedIn) -> dict:
             if current is None or (stamp < current if key == "next_check_at"
                                    else stamp > current):
                 tile[key] = stamp
+
+    # A registered check with no row at all has never been read. It is listed
+    # as UNKNOWN ("never read"), not left out: a missing line reads like a
+    # clean board (invariant 7). Only the checks the registry really holds.
+    for key, check in REGISTRY.checks.items():
+        if key in seen_keys:
+            continue
+        name, _, check_name = key.partition(".")
+        tile = tiles.setdefault(name, {
+            "module": name,
+            "title": getattr(REGISTRY.modules.get(name), "title", name),
+            "health": "unknown", "checks": [], "last_check_at": None,
+            "next_check_at": None, "enabled": name in REGISTRY.modules,
+        })
+        interval = getattr(check, "interval", None)
+        state = board_state.override_state(key, registered=True, today=today)
+        if state is not None:
+            tile.setdefault("_set_aside", []).append(state)
+        elif (tile.get("_worst") is None
+                or HEALTH_RANK["unknown"] > HEALTH_RANK[tile["_worst"]]):
+            tile["_worst"] = "unknown"
+        tile["checks"].append({
+            "name": check_name, "health": "unknown",
+            "state": state,
+            "stale": False, "last_read_at": None,
+            "detail": "never read: this check has not reported yet",
+            "observed_at": None, "next_run_at": None,
+            "interval_s": int(interval.total_seconds()) if interval else None,
+            "value": None, "unit": None, "read_at": None,
+        })
 
     for name, tile in tiles.items():
         # No checks at all is genuinely unknown: nothing was measured.
@@ -263,10 +342,15 @@ async def overview(_s: SignedIn) -> dict:
             "latest_finding": None, "disabled_reason": why,
         })
 
+    # The board's line about itself, counted now from the rows above: checks
+    # run / total, UNKNOWN, parked, each with the time it was counted. A
+    # switched-off module's checks were cleared above, so they are not in it.
+    every = [c for t in tiles.values() for c in t["checks"]]
     return envelope(
         modules=sorted(tiles.values(), key=lambda t: t["module"]),
         pending_approvals=int(pending["n"]) if pending else 0,
         watch_only=watch_only(),
+        self_test=board_state.self_test(every, moment),
     )
 
 
@@ -364,8 +448,11 @@ def _health_counts(rows: list[Any], moment: datetime) -> dict[str, Any]:
                     if row["interval_s"] else None)
         health, _stale = effective_health(row["health"], row["observed_at"],
                                           interval, moment)
+        key = f"{name}.{row['check_name']}"
         per.setdefault(name, []).append(
-            (health, _check_state(health, row["detail"] or "")))
+            (health, board_state.override_state(
+                key, registered=True, today=board_state.today_utc(moment))
+             or _check_state(health, row["detail"] or "")))
     counts = {"ok": 0, "degraded": 0, "failing": 0, "unknown": 0}
     set_aside = 0
     for checks in per.values():
@@ -471,17 +558,125 @@ async def approvals(_s: SignedIn) -> dict:
             "health": row["health"],
         } if row["finding_id"] else None
         out.append(item)
-    return envelope(proposals=out, watch_only=watch_only())
+    return envelope(proposals=out, watch_only=watch_only(),
+                    whatsapp_undelivered=await _whatsapp_undelivered())
 
 
-# There is deliberately NO approve/deny endpoint here.
-#
-# ATLAS asks for decisions by text and they are answered by text. The
-# dashboard is a mirror, not a cockpit: `/api/agents/warm`, below, is its one
-# write endpoint that is not login/logout, and it never reaches the executor
-# — so there is still no path from a browser, or from anything that can reach
-# one, to `executor.execute`. The webhook handlers in main.py remain the only
-# way a decision reaches approvals.decide.
+async def _whatsapp_undelivered() -> int | None:
+    """How many pending cards that WhatsApp could really have decided (eligible
+    now, by the same check the send uses) are older than ten minutes and never got
+    their message (no `mmt.notify_card` claim): the portal banner that replaces a
+    Slack nag. 0 when WhatsApp cards are off or watch-only (nothing is sent then,
+    so nothing is "missing"); None when it cannot be read (never a guessed 0)."""
+    from ..kernel import wa_approvals
+    if not wa_approvals.enabled() or watch_only():
+        return 0
+    try:
+        rows = await fetch_all(
+            """SELECT p.id, p.action, p.params, p.dry_run_ok FROM proposals p
+                WHERE p.status = 'pending' AND p.tier >= 2 AND p.expires_at > now()
+                  AND p.created_at < now() - interval '10 minutes'
+                  AND NOT EXISTS (SELECT 1 FROM effect_claims e
+                                   WHERE e.action = 'mmt.notify_card'
+                                     AND e.key = 'card:' || p.id::text)
+                LIMIT 50""")
+        return sum(1 for r in rows or [] if wa_approvals.eligibility(
+            str(r["action"]), wa_approvals._params_of(r["params"]),
+            dry_ok=r.get("dry_run_ok") if hasattr(r, "get") else None)[0])
+    except Exception:                                       # noqa: BLE001
+        return None
+
+
+# the owner 2026-10-29: GUI decisions. The dashboard answers a pending Tier 2 card
+# through `approvals.decide` -- the same door Slack and the phone use, with
+# the card's STORED action and params; the browser sends only a verdict. The
+# controls, each failing closed and in this order: a session (401), the
+# request's own Origin and a same-origin fetch (403), the CSRF token that
+# only /api/session hands out (403), a closed body of approve|decline (422),
+# a per-session rate (429, with the retry time), then the card read here: pending (409) and its
+# action's tier from code, Tier.ASK only (403). Watch-only, expiry and the
+# one-claim UPDATE stay inside decide(). `/api/agents/warm` is the other
+# write that is not login/logout, and it never reaches the executor.
+
+
+class DecisionBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    verdict: Literal["approve", "decline"]
+
+
+# Keyed per signed-in SESSION, never per address: behind Docker Desktop every
+# tab and tool on the Mac is one gateway address, so a per-address bucket was
+# shared, and ten watch-only approves (refused, nothing changed) made the next
+# Decline answer 429 on its first click (the owner 2026-10-29). `_decision_limit`
+# counts only answers that changed a card; `_decision_calls` bounds every call
+# (each one writes audit rows) more loosely.
+_decision_limit = PerAddressLimiter(10, 60.0)
+_decision_calls = PerAddressLimiter(30, 60.0)
+_CHANGED = frozenset({"declined", "executed", "failed", "started", "superseded"})
+
+
+def _session_key(request: Request) -> str:
+    cookie = request.cookies.get(auth.COOKIE) or ""
+    return hashlib.sha256(b"atlas-decision:" + cookie.encode()).hexdigest()[:32]
+
+
+def _too_many(limiter: PerAddressLimiter, key: str) -> HTTPException:
+    wait = max(1, math.ceil(limiter.retry_after(key)))
+    return HTTPException(429, f"rate limited: too many decisions this minute; "
+                              f"try again in {wait} s",
+                         headers={"Retry-After": str(wait)})
+
+
+@router.post("/approvals/{pid}/decision")
+async def approval_decision(pid: int, request: Request, session: SignedIn) -> dict:
+    from ..kernel.approvals import decide
+    from ..kernel.audit import audit
+    from ..kernel.contracts import Tier
+    from .main import DEFAULT_ALLOWED_HOSTS, _allowed_hosts
+
+    # Unset ATLAS_ALLOWED_HOSTS turns the global Host middleware off (Caddy's
+    # public names); it never turns this check off: the decision route then
+    # answers only the loopback names (the owner 2026-10-29).
+    hosts = _allowed_hosts() or frozenset(DEFAULT_ALLOWED_HOSTS)
+    if not auth.same_origin(request, hosts):
+        raise HTTPException(403, "this request did not come from the dashboard page")
+    if not auth.csrf_ok(request):
+        raise HTTPException(403, "missing or wrong CSRF token; reload the page")
+    try:
+        body = DecisionBody.model_validate(json.loads(await request.body() or b"null"))
+    except (ValueError, ValidationError) as exc:
+        raise HTTPException(422, "the body must be exactly {\"verdict\": "
+                                 "\"approve\"} or {\"verdict\": \"decline\"}") from exc
+    client = peers.effective_client(request)
+    key = _session_key(request)
+    if _decision_limit.limited(key):
+        raise _too_many(_decision_limit, key)
+    if not _decision_calls.allow(key):
+        raise _too_many(_decision_calls, key)
+
+    card = await fetch_one(
+        "SELECT id, action, status, expires_at FROM proposals WHERE id=$1", pid)
+    if card is None:
+        raise HTTPException(404, f"no proposal #{pid}")
+    if card["status"] != "pending":
+        raise HTTPException(409, f"#{pid} is {card['status']}, not pending")
+    decision = REGISTRY.decisions.get(card["action"])
+    if decision is None or not decision.allowed or decision.tier is not Tier.ASK:
+        raise HTTPException(403, f"#{pid} is not a Tier 2 card the dashboard may answer")
+
+    verdict = await decide(pid, body.verdict, via=f"dashboard:{session.user}")
+    if verdict.outcome in _CHANGED:
+        _decision_limit.hit(key)
+    await audit("dashboard.decision", str(pid), {
+        "verdict": body.verdict, "outcome": verdict.outcome,
+        "origin": auth.request_origin(request), "client": client})
+    return envelope(
+        verdict={"ok": verdict.ok, "outcome": verdict.outcome,
+                 "detail": verdict.detail, "proposal_id": verdict.proposal_id,
+                 "action": verdict.action, "executed": verdict.executed},
+        watch_only=watch_only(),
+    )
+
 
 # ----------------------------------------------------------------- status
 
@@ -492,8 +687,8 @@ async def status(_s: SignedIn) -> dict:
     Deliberately a separate call from /overview so the bar can refresh without
     re-running the per-check join behind the tiles.
     """
-    since = datetime.now(UTC).replace(hour=0, minute=0, second=0,
-                                               microsecond=0)
+    from ..kernel.agent_activity import day_start
+    since = day_start(datetime.now(UTC))        # New York's day, not UTC's
     scans = await fetch_one(
         "SELECT count(*) AS n FROM observations WHERE at >= $1", since)
     issues = await fetch_one(
@@ -776,12 +971,14 @@ def _last_model(row: dict | None) -> str | None:
 
 
 # A roster agent's group for the redesigned Agents map (Task 69): "lead" for
-# concierge, "businesses" for every agent `businesses.py` builds from a
+# the front door (agents.DEFAULT_AGENT, inbox since 2026-10-28), "businesses"
+# for every agent `businesses.py` builds from a
 # `Business` (read from `BY_NAME`, never hand-listed here — a new business
 # places itself without this file changing), "functions" for everything
 # else. Read the ROSTER names in the code; never invent one.
 def _agent_group(name: str, businesses_by_name: dict) -> str:
-    if name == "concierge":
+    from ..kernel.agents import DEFAULT_AGENT
+    if name == DEFAULT_AGENT:
         return "lead"
     if name in businesses_by_name:
         return "businesses"
@@ -790,8 +987,8 @@ def _agent_group(name: str, businesses_by_name: dict) -> str:
 
 # The map's own shortened name for a card, distinct from `title` (which
 # Fleet's cards, the org chart and DeepDive all still read unchanged).
-# Miro's own words for the redesign: guardian reads "Vault", school reads
-# "College" rather than its full "College (CUNY, Fall 2026)".
+# the owner's own words for the redesign: guardian reads "Vault", school reads
+# "College" rather than its full "College (the university, Fall 2026)".
 _DISPLAY_NAME = {"guardian": "Vault", "school": "College"}
 
 
@@ -807,28 +1004,62 @@ async def agents(_s: SignedIn) -> dict:
     heartbeat — and its `last_run_at` is `null`, never a guessed timestamp.
     """
     from ..kernel import agents as agents_module
+    from ..kernel import scheduler as scheduler_module
     from ..kernel.businesses import BY_NAME as businesses_by_name
     from ..kernel.llm import ROUTES
     from ..kernel.personas import as_dict as persona_dict
     from ..kernel.personas import persona_for
 
     ROSTER = agents_module.ROSTER
+    from ..kernel.agent_activity import day_start
+    now = datetime.now(UTC)
+    # "Today" is New York's day: UTC midnight is 20:00 there, and every
+    # agent read 0 all evening (the owner 2026-10-29).
+    midnight = day_start(now)
 
-    latest_rows = await fetch_all(
-        """SELECT DISTINCT ON (agent) agent, at, outcome, model, provider
-           FROM agent_runs ORDER BY agent, at DESC""")
-    latest = {r["agent"]: r for r in latest_rows}
-    count_rows = await fetch_all(
-        """SELECT agent, count(*) AS n FROM agent_runs
-           WHERE at > now() - interval '24 hours' GROUP BY agent""")
-    runs_24h = {r["agent"]: int(r["n"]) for r in count_rows}
-    # The last SHIFT specifically (task = SHIFT_PROMPT), separate from
-    # `latest` above (any run at all) -- `next_shift_at` needs the former.
-    shift_rows = await fetch_all(
-        "SELECT agent, max(at) AS at FROM agent_runs WHERE task LIKE $1 GROUP BY agent",
-        agents_module.SHIFT_LIKE)
-    last_shift = {r["agent"]: r["at"] for r in shift_rows}
-    now = datetime.now(UTC).astimezone()
+    # A read that fails is UNKNOWN for every row, never an empty table that
+    # renders as "ok" (invariant 7).
+    read_failed = False
+    latest: dict[str, Any] = {}
+    runs_24h: dict[str, int] = {}
+    shift: dict[str, Any] = {}
+    output: dict[str, int] = {}
+    unrouted: set[str] = set()
+    try:
+        latest_rows = await fetch_all(
+            """SELECT DISTINCT ON (agent) agent, at, outcome, model, provider
+               FROM agent_runs ORDER BY agent, at DESC""")
+        latest = {r["agent"]: r for r in latest_rows}
+        count_rows = await fetch_all(
+            """SELECT agent, count(*) AS n FROM agent_runs
+               WHERE at > now() - interval '24 hours' GROUP BY agent""")
+        runs_24h = {r["agent"]: int(r["n"]) for r in count_rows}
+        # The last SUCCESSFUL shift, the last attempt and the failed/deferred
+        # attempts -- the scheduler's own query, so both read the same truth.
+        shift_rows = await fetch_all(
+            scheduler_module.shift_rows_sql(), *scheduler_module.shift_rows_args(now))
+        shift = {r["agent"]: r for r in shift_rows}
+        # Today's (New York) runs that a model actually answered, failed and
+        # deferred shifts left out.
+        output_rows = await fetch_all(
+            """SELECT agent, count(*) AS today_output FROM agent_runs
+               WHERE at >= $1::timestamptz AND coalesce(model, '') <> ''
+                 AND coalesce(outcome, '') <> ''
+                 AND NOT (outcome LIKE ANY($2::text[]))
+               GROUP BY agent""",
+            midnight, list(agents_module.SHIFT_UNSUCCESSFUL_LIKE))
+        output = {r["agent"]: int(r["today_output"]) for r in output_rows}
+        unrouted_rows = await fetch_all(
+            """SELECT DISTINCT subject FROM actions_log
+               WHERE event = 'agent.shift_alert_unrouted' AND at >= $1::timestamptz""",
+            midnight)
+        unrouted = {r["subject"] for r in unrouted_rows}
+    except Exception as exc:                            # noqa: BLE001
+        log.warning("roster runs unreadable (%s)", type(exc).__name__)
+        read_failed = True
+    read_at = datetime.now(UTC).isoformat()
+    cycle = scheduler_module.LAST_CYCLE_AT
+    cycle_age = None if cycle is None else max(0, int(time.monotonic() - cycle))
 
     out = []
     for name, agent in sorted(ROSTER.items()):
@@ -836,9 +1067,41 @@ async def agents(_s: SignedIn) -> dict:
         chain = ROUTES.get(need, []) if need else []
         last = latest.get(name)
         ready, reasons = agents_module.readiness(name)
-        next_shift = (agents_module.next_shift_at(name, last_shift.get(name), now)
-                      if ready else None)
+        srow = shift.get(name)
+        last_ok = srow["last_shift"] if srow else None
+        failures = list((srow["failures"] if srow else None) or [])
+        st = agents_module.shift_state(name, last_ok, failures, now)
+        next_shift = st.next_at if ready else None
+        shift_state = st.state if ready else "off"
+        if read_failed:
+            status = "unknown"
+        elif ready and (shift_state in ("failed", "overdue")
+                        or (shift_state == "due" and st.attempts > 0)):
+            # A due shift with an attempt behind it is a retry after a
+            # failed, deferred or unanswered shift: failing, never idle/ok.
+            status = "failing"
+        elif not ready or shift_state in ("off", "due"):
+            status = "idle"
+        else:
+            status = "ok"
+        last_attempt = srow["last_attempt"] if srow else None
+        # One short, plain line; the model's prose is never handed over raw
+        # (the owner 2026-10-29). `last_outcome_detail` is the same text cleaned,
+        # longer, for the page's expand.
+        last_shift_outcome = (
+            agents_module.outcome_line(last["outcome"])
+            if last and last_attempt and last["at"] == last_attempt else None)
         out.append({
+            "role": getattr(agent, "title", name),
+            "status": status,
+            "shift_state": "unknown" if read_failed else shift_state,
+            "last_shift_at": last_attempt.isoformat() if last_attempt else None,
+            "last_shift_outcome": last_shift_outcome,
+            "attempts_today": st.attempts,
+            "today_output": None if read_failed else output.get(name, 0),
+            "alert_unrouted": name in unrouted,
+            "scheduler_cycle_age_s": cycle_age,
+            "read_at": read_at,
             "name": name,
             "title": getattr(agent, "title", name),
             "display": _DISPLAY_NAME.get(name, getattr(agent, "title", name)),
@@ -850,7 +1113,9 @@ async def agents(_s: SignedIn) -> dict:
             "providers": [p.name for p in chain],
             "tools": len(getattr(agent, "tools", ()) or ()),
             "last_run_at": last["at"].isoformat() if last else None,
-            "last_outcome": last["outcome"] if last else None,
+            "last_outcome": agents_module.outcome_line(last["outcome"]) if last else None,
+            "last_outcome_detail": (agents_module.outcome_detail(last["outcome"])
+                                    if last else None),
             "runs_24h": runs_24h.get(name, 0),
             # The model that actually answered the LAST run -- never the
             # configured pin as if it had run (invariant 6: a check that
@@ -1005,27 +1270,7 @@ def _find_ask_specialist(node: Any) -> str | None:
     return None
 
 
-# --------------------------------------------------- guardian incident feed
-
-# A proposal's own status, in the four words the Incident panel draws. A
-# status with no entry here -- `failed`, `expired` -- maps to None and the raw
-# word is shown instead: an expired proposal was never consented to (silence
-# is not consent) and a failed one did not happen, so neither may borrow a
-# word that reads as progress.
-STEP_STATE = {"pending": "PROPOSED", "approved": "APPROVED",
-              "executed": "DONE", "declined": "REFUSED"}
-
-# The same four words for an audit entry, where one applies. There is no
-# `proposal.watch_only` or `proposal.expired` entry: approvals.py audits those
-# two with the proposal id as the subject, not the action name, so the
-# `subject LIKE 'guardian.%'` read below never sees them. An expired or
-# watch-only guardian proposal still shows -- as its raw status in `steps`.
-LOG_STATE = {"proposal.created": "PROPOSED", "proposal.declined": "REFUSED",
-             "proposal.blocked": "REFUSED",
-             "execute.refused": "REFUSED", "execute.watch_only": "REFUSED",
-             "execute.rate_limited": "REFUSED", "rollback.refused": "REFUSED",
-             "rollback.watch_only": "REFUSED"}
-
+# --------------------------------------------------- helpers
 
 def _as_dict(value: Any) -> dict[str, Any]:
     if isinstance(value, str):
@@ -1034,92 +1279,6 @@ def _as_dict(value: Any) -> dict[str, Any]:
         except (TypeError, ValueError):
             return {}
     return value if isinstance(value, dict) else {}
-
-
-def _audit_data(value: Any) -> dict[str, Any]:
-    """An actions_log payload's own fields. The audit chain wraps them:
-    {"event", "subject", "data": {...}} -- read at the top level, detail,
-    ok and approved_by were never found (2026-09-28)."""
-    payload = _as_dict(value)
-    inner = payload.get("data")
-    return inner if isinstance(inner, dict) else payload
-
-
-def _log_state(event: str, payload: dict[str, Any]) -> str | None:
-    if event == "execute.start":
-        return "APPROVED" if payload.get("approved_by") else None
-    if event == "execute.finish":
-        return "DONE" if payload.get("ok") is True else None
-    return LOG_STATE.get(event)
-
-
-@router.get("/guardian/feed")
-async def guardian_feed(_s: SignedIn, limit: int = 50) -> dict:
-    """The Incident panel's rows: the latest `guardian.open_incidents`
-    observation (count, health, and the plan it carried), the `guardian.*`
-    proposals that are the plan's steps, and the `guardian.*` audit entries.
-    Newest first, every item with its time. Postgres only -- the hub was read
-    by the check, and this draws what the check recorded."""
-    limit = max(1, min(200, limit))
-    obs = await fetch_one(
-        """SELECT o.at, o.health, o.value, o.detail, o.evidence
-           FROM observations o
-           JOIN checks c ON c.id = o.check_id
-           JOIN properties p ON p.id = c.property_id
-           WHERE p.name = $1 AND c.name = $2
-           ORDER BY o.at DESC LIMIT 1""", "guardian", "open_incidents")
-    open_incidents = None
-    if obs is not None:
-        evidence = _as_dict(obs["evidence"])
-        open_incidents = {
-            "at": obs["at"].isoformat(),
-            "health": obs["health"],
-            "value": obs["value"],
-            "detail": obs["detail"] or "",
-            "incidents": evidence.get("incidents") or [],
-            "plan": evidence.get("plan"),
-            "narration": evidence.get("narration"),
-            "plan_unavailable": evidence.get("plan_unavailable"),
-            "plan_incident": evidence.get("plan_incident"),
-            "total": evidence.get("total"),
-            "incidents_read": evidence.get("incidents_read"),
-        }
-
-    steps = []
-    for row in await fetch_all(
-            """SELECT p.id, p.created_at, p.decided_at, p.expires_at, p.action,
-                      p.params, p.status, p.reason
-               FROM proposals p
-               WHERE p.action LIKE 'guardian.%'
-               ORDER BY p.created_at DESC LIMIT $1""", limit):
-        steps.append({
-            "id": row["id"],
-            "at": row["created_at"].isoformat(),
-            "action": row["action"],
-            "params": _as_dict(row["params"]),
-            "status": row["status"],
-            "state": STEP_STATE.get(row["status"]),
-            "reason": row["reason"],
-            "decided_at": _iso(row["decided_at"]),
-            "expires_at": _iso(row["expires_at"]),
-        })
-
-    log_rows = []
-    for row in await fetch_all(
-            """SELECT id, at, event, subject, payload FROM actions_log
-               WHERE subject LIKE 'guardian.%'
-               ORDER BY at DESC LIMIT $1""", limit):
-        payload = _audit_data(row["payload"])
-        log_rows.append({
-            "id": row["id"],
-            "at": row["at"].isoformat(),
-            "event": row["event"],
-            "subject": row["subject"],
-            "detail": str(payload.get("detail") or payload.get("why") or ""),
-            "state": _log_state(row["event"], payload),
-        })
-
-    return envelope(open_incidents=open_incidents, steps=steps, log=log_rows)
 
 
 @router.get("/llm")
@@ -1634,7 +1793,7 @@ async def module_detail(name: str, _s: SignedIn) -> dict:
 # extended to labels, not only numbers).
 _LEAD_STATUSES = ("new", "audited", "mocked", "contacted", "closed", "dropped")
 # The outreach pipeline's own derived states (see `_lead_json`) live in the
-# same flat chip namespace -- Miro filters "who is waiting on me" the same
+# same flat chip namespace -- the owner filters "who is waiting on me" the same
 # way he filters "who is still new", and both are real, read states.
 _OUTREACH_STATES = ("drafted", "waiting on you", "sent", "replied", "bounced")
 
@@ -1775,7 +1934,7 @@ async def leads(
 
     `status` matches either `agency_leads.status` or the derived outreach
     state above -- one flat set of chips over two underlying columns, since
-    Miro filters "who is new" and "who is waiting on me" the same way.
+    the owner filters "who is new" and "who is waiting on me" the same way.
     """
     limit = max(1, min(500, limit))
     offset = max(0, offset)
@@ -2052,7 +2211,7 @@ async def agenda(
 
 @router.get("/tasks")
 async def tasks(_s: SignedIn) -> dict:
-    """Everything with work still in it: decisions waiting on Miro, the
+    """Everything with work still in it: decisions waiting on the owner, the
     nightshift jobs that have not finished, and research still queued."""
     # The link runs findings -> proposals, not the other way: a proposal has
     # no finding column. Same join /approvals uses, for the same reason.
@@ -2108,7 +2267,7 @@ async def tasks(_s: SignedIn) -> dict:
 
 @router.get("/conversations")
 async def conversations(_s: SignedIn, limit: int = 60) -> dict:
-    """Everything said to ATLAS or to Miro, from all three surfaces, newest
+    """Everything said to ATLAS or to the owner, from all three surfaces, newest
     first.
 
     `unanswered` counts only the two inbound message tables: a voice turn was
@@ -2141,7 +2300,7 @@ async def conversations(_s: SignedIn, limit: int = 60) -> dict:
     for r in turns:
         rows.append({
             "source": "voice", "id": r["id"], "at": _iso(r["at"]),
-            "platform": "voice", "thread": None, "who": "Miro",
+            "platform": "voice", "thread": None, "who": "the owner",
             "text": r["transcript"], "answer": r["answer"],
             "intent": r["intent"], "agent": r["agent"],
             "replied_at": None, "draft": None, "label": None,
@@ -2332,7 +2491,7 @@ async def tools(_s: SignedIn) -> dict:
 
 @router.get("/workflows")
 async def workflows(_s: SignedIn) -> dict:
-    """The two kinds of standing behaviour: what Miro said once and meant
+    """The two kinds of standing behaviour: what the owner said once and meant
     permanently, and the steps the scheduler runs on a clock — plus, under
     `graphs`, what those steps actually connect to: the nine workflows in
     `kernel.workflows.WORKFLOWS`, each read fresh against the real tables
@@ -2388,7 +2547,7 @@ async def workflows(_s: SignedIn) -> dict:
 # -------------------------------------------------------------- marketing
 
 # The publish decisions a marketing experiment waits on. Tier ASK, every one:
-# a post under Miro's name is his word each time, so "awaiting approval" is a
+# a post under the owner's name is his word each time, so "awaiting approval" is a
 # pending proposal for one of these and nothing else.
 MARKETING_PUBLISH_ACTIONS: tuple[str, ...] = (
     "youtube.upload", "youtube.set_visibility",
@@ -2509,7 +2668,7 @@ async def _marketing_channels() -> list[dict[str, Any]]:
     tiles = [await _marketing_channel(ch, PARTNER_SUBSCRIBERS) for ch in CHANNELS]
     for tile in tiles:
         tile.setdefault("platform", "YouTube")
-    # Miro, 2026-09-27: "include Instagram channels and TikTok as well".
+    # the owner, 2026-09-27: "include Instagram channels and TikTok as well".
     tiles += [await _instagram_tile(a) for a in ("main", "stories")]
     tiles.append(await _tiktok_tile())
     return tiles
@@ -2814,7 +2973,7 @@ async def marketing(_s: SignedIn) -> dict:
 
 
 # WMO weather codes, as Open-Meteo documents them. Anything not listed reports
-# its number: a word ATLAS made up is worse than a code Miro can look up.
+# its number: a word ATLAS made up is worse than a code the owner can look up.
 WMO = {
     0: "Clear", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
     45: "Fog", 48: "Rime fog", 51: "Light drizzle", 53: "Drizzle",
@@ -2837,7 +2996,7 @@ _weather_cache: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
 
 @router.get("/ambient")
 async def ambient(_s: SignedIn) -> dict:
-    """The bottom bar: the server's clock, and the weather where Miro is.
+    """The bottom bar: the server's clock, and the weather where the owner is.
 
     Without `ATLAS_LAT`/`ATLAS_LON` there is nothing to ask, so `weather` is
     null and the reason says why. A temperature is a number, and invariant 6
@@ -2937,4 +3096,99 @@ async def stream(request: Request, _s: SignedIn) -> StreamingResponse:
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no",
                  "Connection": "keep-alive"},
+    )
+
+
+# --- Command Center read models (the owner 2026-10-29) ---------------------------
+# Reads only. A half that cannot be read says "unknown" and why, never an
+# empty list that would render as "nothing in the pipeline" (invariant 7).
+
+def _site_stage(site: dict[str, Any]) -> tuple[str | None, str | None]:
+    if site.get("live_release"):
+        return "live", None
+    if site.get("deployed_at"):
+        return "deployed", None
+    return None, "no deploy recorded for this site yet"
+
+
+@router.get("/pipeline")
+async def pipeline(_s: SignedIn) -> dict:
+    """One row per client site and per lead: client, kind, stage, next step."""
+    from ..modules.agency import sites_view
+
+    rows: list[dict[str, Any]] = []
+    sites_block: dict[str, Any]
+    try:
+        view = await sites_view.overview()
+    except Exception as exc:                            # noqa: BLE001
+        sites_block = {"state": "unknown", "read_at": now(),
+                       "reason": f"client sites could not be read: {type(exc).__name__}"}
+    else:
+        read_at = view.get("read_at") or now()
+        sites_block = {"state": "ok", "read_at": read_at, "reason": None}
+        for site in view.get("sites") or []:
+            stage, why = _site_stage(site)
+            health = site.get("health")
+            next_step = None if health == "ok" else "check site health"
+            rows.append({
+                "client": site.get("slug"), "kind": "site", "stage": stage,
+                "next_step": next_step,
+                "health": health if health in ("ok", "degraded", "failing") else "unknown",
+                "reason": why or (None if next_step else "no next step recorded"),
+                "read_at": read_at,
+            })
+
+    leads_block: dict[str, Any]
+    try:
+        lead_rows = await fetch_all(_LEADS_JOIN_SQL + " ORDER BY l.id")
+    except Exception as exc:                            # noqa: BLE001
+        leads_block = {"state": "unknown", "read_at": now(),
+                       "reason": f"leads could not be read: {type(exc).__name__}"}
+    else:
+        read_at = now()
+        leads_block = {"state": "ok", "read_at": read_at, "reason": None}
+        for r in lead_rows:
+            lead = _lead_json(r, read_at)
+            stage = lead["outreach_state"] or lead["status"]
+            step = lead["next_step"]
+            rows.append({
+                "client": lead["business"], "kind": "lead", "stage": stage,
+                "next_step": step["label"] if step else None,
+                "reason": None if step else "no next step recorded",
+                "read_at": read_at,
+            })
+    return envelope(rows=rows, sites=sites_block, leads=leads_block, read_at=now())
+
+
+@router.get("/money")
+async def money(_s: SignedIn) -> dict:
+    """What the agency spends, read now. Revenue has no source yet, so it is
+    UNKNOWN, never a zero."""
+    from ..kernel import quota
+    from ..modules import _perplexity
+    from ..modules.agency import prospect
+
+    free_quota = {"pools": quota.snapshot(), "read_at": now()}
+    try:
+        perplexity = dict(await _perplexity.budget_status())
+        perplexity.setdefault("read_at", now())
+        perplexity["read_at"] = perplexity["read_at"] or now()
+    except Exception as exc:                            # noqa: BLE001
+        perplexity = {"used": None, "cap": None, "state": "unknown", "read_at": now(),
+                      "reason": f"could not read the budget: {type(exc).__name__}"}
+    month = datetime.now(UTC).strftime("%Y-%m")
+    try:
+        used = await prospect.spend_this_month()
+    except Exception as exc:                            # noqa: BLE001
+        places = {"used": None, "cap": prospect.cap(), "month": month,
+                  "state": "unknown", "read_at": now(),
+                  "reason": f"could not read Places spend: {type(exc).__name__}"}
+    else:
+        places = {"used": used, "cap": prospect.cap(), "month": month,
+                  "state": "ok", "read_at": now(), "reason": None}
+    return envelope(
+        costs={"free_quota": free_quota, "perplexity": perplexity, "places": places},
+        revenue={"value": None, "state": "unknown",
+                 "reason": "no revenue source configured", "read_at": now()},
+        read_at=now(),
     )

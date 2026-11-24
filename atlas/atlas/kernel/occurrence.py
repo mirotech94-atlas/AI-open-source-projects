@@ -64,19 +64,27 @@ async def claim(job: str, window: str,
     return row is not None
 
 
-async def _mark(job: str, window: str, status: str) -> None:
+async def _mark(job: str, window: str, status: str, detail: str | None = None) -> None:
     from .state import execute_sql
     try:
-        await execute_sql(
-            """UPDATE schedule_runs SET status = $3, finished_at = now()
-                WHERE job = $1 AND occurrence = $2""", job, window, status)
+        if detail is None:
+            await execute_sql(
+                """UPDATE schedule_runs SET status = $3, finished_at = now()
+                    WHERE job = $1 AND occurrence = $2""", job, window, status)
+        else:
+            await execute_sql(
+                """UPDATE schedule_runs SET status = $3, finished_at = now(),
+                          detail = $4
+                    WHERE job = $1 AND occurrence = $2""", job, window, status,
+                detail[:900])
     except Exception as exc:                            # noqa: BLE001
         log.warning("%s %s: could not record %s (%s)", job, window, status,
                     type(exc).__name__)
 
 
-async def done(job: str, window: str) -> None:
-    await _mark(job, window, "done")
+async def done(job: str, window: str, detail: str | None = None) -> None:
+    """The run finished. `detail`, when given, says what it did (900 chars)."""
+    await _mark(job, window, "done", detail)
 
 
 async def release(job: str, window: str) -> None:

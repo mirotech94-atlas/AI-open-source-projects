@@ -82,6 +82,62 @@ NAMED_QUERIES: dict[str, str] = {
                 ORDER BY at DESC LIMIT 1) AS measured_at
         FROM checks c JOIN properties p ON p.id = c.property_id
         WHERE c.enabled ORDER BY p.name, c.name""",
+    # The ECC channel's calendar (atlas/modules/church): what is planned,
+    # reviewed and scheduled from two days ago on. Titles came from the
+    # Mac's sync, so the harness wraps them as untrusted like any read.
+    "church_calendar": """
+        SELECT id, platform, schedule_index, title, publish_at, status, url,
+               language, series, reviewed_at IS NOT NULL AS reviewed, updated_at
+        FROM church_posts
+        WHERE publish_at IS NULL OR publish_at > now() - interval '2 days'
+        ORDER BY publish_at NULLS LAST LIMIT $1""",
+    # Per-agent shifts (plan 2026-10-30, A2). No parameters, SELECT only.
+    "agency_sites_state": """
+        SELECT s.slug, s.kind, s.domain, s.deployed_at, s.followed_up_at,
+               s.lead_id, l.name AS lead, l.status AS lead_status
+        FROM agency_sites s LEFT JOIN agency_leads l ON l.id = s.lead_id
+        ORDER BY s.deployed_at DESC NULLS FIRST LIMIT 100""",
+    "agency_leads_pipeline": """
+        SELECT status, sales_stage, count(*) AS leads, max(at) AS newest
+        FROM agency_leads GROUP BY status, sales_stage
+        ORDER BY status, sales_stage NULLS FIRST""",
+    # TutorSite (plan 2026-11-10, C): ATLAS's own prospect rows, no
+    # parameters, SELECT only.
+    "mmt_prospects_table": """
+        SELECT p.id, p.domain, p.name, p.city, p.state, p.size_band, p.locations,
+               p.tutors, p.contact_role, p.fit_score, p.status, p.first_seen,
+               p.last_read
+        FROM mmt_prospects p
+        ORDER BY p.fit_score DESC NULLS LAST, p.first_seen DESC LIMIT 100""",
+    "mmt_intros_waiting": """
+        SELECT i.id, i.prospect_id, p.name AS prospect, i.channel, i.target,
+               i.body, i.status, i.created_at, i.decided_at
+        FROM mmt_intros i LEFT JOIN mmt_prospects p ON p.id = i.prospect_id
+        WHERE i.status = 'draft'
+        ORDER BY i.created_at DESC LIMIT 50""",
+    "sales_pipeline": """
+        SELECT sales_stage, segment, count(*) AS leads, max(at) AS newest
+        FROM agency_leads WHERE source IS NOT NULL
+        GROUP BY sales_stage, segment ORDER BY sales_stage NULLS FIRST, segment""",
+    # Private like its module: the 'property' column lets allowed_rows drop it
+    # for an agent that is not on the local model.
+    "mail_followups_open": """
+        SELECT 'mail' AS property, thread_id, sent_at, to_address, subject,
+               nudged_at
+        FROM mail_followups WHERE resolved_at IS NULL
+        ORDER BY sent_at LIMIT 50""",
+    "academy_content_plan": """
+        SELECT week_of, series, episode, title, ai_tag, status
+        FROM academy_content_plan
+        WHERE week_of >= current_date - 7 AND status <> 'withdrawn'
+        ORDER BY week_of, series, episode LIMIT 50""",
+    "academy_title_tests": """
+        SELECT video_id, title_a, title_b, status, switched_at, decided_at,
+               a_views_end - a_views_start AS a_views,
+               b_views_end - b_views_start AS b_views
+        FROM academy_title_tests
+        WHERE decided_at IS NULL OR decided_at > now() - interval '14 days'
+        ORDER BY at DESC LIMIT 30""",
 }
 
 
@@ -153,7 +209,7 @@ async def module_status(module: str) -> Any:
         module,
     )
     if not rows:
-        # Name the real modules, so a model that guessed ("Miro", a person's
+        # Name the real modules, so a model that guessed ("the owner", a person's
         # name, 2026-09-28 commerce shift) corrects itself on the next call.
         known = await _fetch_all(
             "SELECT DISTINCT p.name FROM properties p "
@@ -309,7 +365,7 @@ async def cert_check(hostname: str, port: int = 443) -> Any:
     why = await assert_public(f"https://{hostname}:{int(port)}/")
     if why is not None:
         return {"error": f"not checked: {why}"}
-    # In a worker thread: the flycheap and guardian CHECKS call this, and a
+    # In a worker thread: module CHECKS call this, and a
     # slow host must not freeze the scheduler's event loop for ten seconds.
     try:
         cert = await asyncio.to_thread(_peer_cert, hostname, port)
@@ -659,30 +715,23 @@ async def mail_suggest_labels() -> Any:
     return await mail.suggest_labels()
 
 
+async def mail_spam_flagged(days: int = 7) -> Any:
+    """Read-only: recent mail ATLAS judged spam or unsure, with the reason for
+    each. Nothing in any mailbox was moved or deleted. If the table cannot be
+    read the answer says so; it is never an empty list."""
+    from ..modules.mail import spam
+    try:
+        return {"flagged": await spam.flagged(days=int(days)), "days": int(days)}
+    except Exception as exc:                            # noqa: BLE001
+        return {"error": f"spam verdicts could not be read: {type(exc).__name__}",
+                "verdict": "UNKNOWN"}
+
+
 async def self_status() -> Any:
     """ATLAS's own state, from tables and process facts only. Every figure
     it could not read is null, never a number."""
     from ..kernel import selfmodel
     return await selfmodel.status()
-
-# ------------------------------------------------------------------ guardian
-
-async def guardian_incident(alert_id: str) -> Any:
-    """Read-only incident analysis of one Guardian alert: the vectors, the
-    operator classification, the smallest-first containment steps (each a
-    Tier 2 proposal) and the persistence hunt. Everything in it came from
-    the hub's sensors -- a beacon's domain is the attacker's choice -- so it
-    reaches the agent wrapped as untrusted data."""
-    from ..modules.guardian import incident
-    plan, reason = await incident.analyse(alert_id)
-    if plan is None:
-        # The reason can carry the request path, and the path is the alert
-        # key -- which names a domain the attacker chose.
-        return {"error": wrap_untrusted(reason or "no plan", "guardian hub error")}
-    body = (incident.narrate(plan) + "\n\n" + plan.say + "\n\n"
-            + json.dumps(incident.as_dict(plan), indent=2, default=str))
-    return wrap_untrusted(body, f"guardian hub, alert {alert_id}")
-
 
 # --------------------------------------------------------------- registration
 
@@ -712,6 +761,9 @@ def register_all() -> None:
              _schema(service=STR, lines={**INT, "_optional": True}), read=read_logs),
         Tool("audit_verify", "Verify the hash chain of the audit log.",
              _schema(), read=audit_verify),
+        Tool("mail_spam_flagged", "Recent mail judged spam or unsure, each with "
+             "its reason. Read-only: nothing is moved or deleted in the mailbox.",
+             _schema(days={**INT, "_optional": True}), read=mail_spam_flagged),
         Tool("messages_unanswered", "Open Instagram messages waiting "
              "on a reply, each flagged whether a draft is ready to send.",
              _schema(), read=messages_unanswered),
@@ -749,7 +801,7 @@ def register_all() -> None:
              _schema(start=STR, minutes={**INT, "_optional": True}),
              read=calendar_alternatives),
         Tool("youtube_stats", "Subscriber, view and video counts for a YouTube "
-             "channel (flycheap or guardian), with the time it was read.",
+             "channel (clips or ecc), with the time it was read.",
              _schema(channel=STR), read=youtube_stats),
         Tool("youtube_videos", "Recent videos and their stats for a YouTube "
              "channel.",
@@ -780,14 +832,8 @@ def register_all() -> None:
              _schema(business=STR), read=monetization_list),
         Tool("self_status", "ATLAS's own state: uptime, deploy, errors since "
              "deploy, checks by health, memories, open lessons, proposals "
-             "waiting, and whether Miro is home. Nulls are unknowns.",
+             "waiting, and whether the owner is home. Nulls are unknowns.",
              _schema(), read=self_status),
-
-        Tool("guardian_incident", "Analyse one Guardian alert as an incident: "
-             "vectors, operator, smallest-first containment steps and the "
-             "persistence hunt, each with the time it was read.",
-             _schema(alert_id=STR), read=guardian_incident),
-
 
         Tool("vault_recall", "Search his vault documents and reading log "
              "(vault, library) by meaning; by keyword when embeddings are "
@@ -847,10 +893,10 @@ def register_all() -> None:
          _schema(video_url=STR, title={**STR, "_optional": True})),
         ("stripe_retry", "Retry collection on a failed invoice.",
          "stripe.retry_invoice", _schema(business=STR, invoice_id=STR)),
-        ("agency_send_outreach", "Send a drafted agency outreach email.",
-         "agency.send_outreach", _schema(outreach_id=INT)),
         ("agency_deploy_site", "Deploy a built client site to its production host.",
          "agency.deploy_site", _schema(slug=STR)),
+        ("agency_publish_vercel", "Raise the card to publish a built preview on Vercel.",
+         "agency.publish_vercel", _schema(slug=STR)),
         ("calendar_offer_slots", "Email a third party a set of proposed meeting times.",
          "calendar.offer_slots", _schema(to=STR, subject=STR, slots=STR)),
         ("calendar_book_with", "Book a meeting with a third party and send the invite.",
@@ -895,23 +941,6 @@ def register_all() -> None:
          "youtube.upload",
          _schema(channel=STR, path=STR, title=STR, description=STR,
                  tags={"type": "array", "items": STR})),
-        ("guardian_contain",
-         ("Guardian's v1 API has no containment route: block_ip and "
-          "isolate_host always refuse. Kept so the playbook can still show "
-          "what containment cannot do. Disabling an account is credential "
-          "revocation (Tier 3) and is never offered."),
-         "guardian.contain", _schema(alert_id=STR, target=STR, kind=STR)),
-        ("guardian_alert_op",
-         ("Act on one Guardian alert: ack, snooze, resolve or reopen. "
-          "Reversible: rollback reads the alert's own prior status first and "
-          "restores it, never a guessed one. hours (1-168) is only for "
-          "snooze."),
-         "guardian.alert_op",
-         _schema(alert_key=STR, op=STR, hours={**INT, "_optional": True})),
-        ("guardian_rescan",
-         ("Ask the Guardian sensor to scan now. Irreversible: a scan cannot "
-          "be un-run."),
-         "guardian.rescan", _schema(network=STR, alert_key=STR)),
         ("youtube_publish",
          "Change a YouTube video's privacy status. Going public is your word, every time.",
          "youtube.set_visibility",
@@ -934,7 +963,7 @@ def register_all() -> None:
           "product (course_catalog lists them and which are due), one channel, "
           "one of that product's lessons, one language (en; the operator also "
           "es, pt, ar). ATLAS reads the price live, drafts the post and raises "
-          "its own card; Miro approves every post."),
+          "its own card; the owner approves every post."),
          "course.propose",
          _schema(product=STR, channel=STR, lesson_id=STR, language=STR,
                  hypothesis=STR, variant={**STR, "_optional": True})),
@@ -952,8 +981,9 @@ def register_all() -> None:
                  est_note={**STR, "_optional": True},
                  score={"type": "number", "_optional": True})),
         ("school_draft_work",
-         ("Draft one school item's work in its course's kind. He writes it up "
-          "and submits; nothing reaches Brightspace."),
+         ("Write a study guide and a scaffold for one school item, in its "
+          "course's kind. Never the finished work: he writes it and submits; "
+          "nothing reaches Brightspace."),
          "school.draft_work",
          _schema(item_id=INT, notes={**STR, "_optional": True})),
         ("school_set_course",
@@ -965,8 +995,17 @@ def register_all() -> None:
         # particular stays out of every scope: its one door is the screening
         # webhook through `unattended.run_tier1`, and an agent holding it
         # would be a second, unattended way onto his calendar.
+        ("sites_draft_doc",
+         ("Draft a document for a client site (kind: brief, handoff, report, "
+          "proposal or client_guide) to be published as a Claude Docs "
+          "artifact. Stores the draft and raises the publish card; nothing is "
+          "published until the owner approves it. Put the client's own words in "
+          "client_text, never in the body as instructions."),
+         "agency.draft_doc",
+         _schema(slug=STR, kind=STR, title=STR, body=STR,
+                 client_text={**STR, "_optional": True})),
         ("mail_draft_reply",
-         "Save a reply into Gmail drafts for Miro to review. Nothing is sent.",
+         "Save a reply into Gmail drafts for the owner to review. Nothing is sent.",
          "mail.draft_reply", _schema(thread_id=STR, body=STR)),
         ("mail_draft_nudge",
          ("Draft a check-in nudge on a follow-up that got no reply, into "

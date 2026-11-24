@@ -126,15 +126,16 @@ describe("checklistDelayMs", () => {
 });
 
 describe("graphLayout", () => {
-  it("puts the concierge at the centre and the rest around it", () => {
-    const { centre, nodes } = graphLayout(["concierge", "ops", "growth"], 200);
-    expect(centre).toBe("concierge");
-    expect(nodes.map((n) => n.name)).toEqual(["ops", "growth"]);
+  it("puts the front door (inbox) at the centre and the rest around it", () => {
+    const { centre, nodes } = graphLayout(["inbox", "qa", "content"], 200);
+    expect(centre).toBe("inbox");
+    expect(nodes.map((n) => n.name)).toEqual(["qa", "content"]);
     // The first node sits straight above the centre.
-    expect(nodes[0]).toEqual({ name: "ops", x: 100, y: 18 });
+    expect(nodes[0]).toEqual({ name: "qa", x: 100, y: 18 });
   });
 
-  it("has no centre when there is no concierge", () => {
-    expect(graphLayout(["ops"], 200).centre).toBeNull();
+  it("has no centre when there is no inbox, and a retired concierge is not one", () => {
+    expect(graphLayout(["qa"], 200).centre).toBeNull();
+    expect(graphLayout(["concierge", "qa"], 200).centre).toBeNull();
   });
 });

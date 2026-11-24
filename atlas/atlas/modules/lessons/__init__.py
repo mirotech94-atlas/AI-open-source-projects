@@ -3,7 +3,7 @@
 What it watches: nothing. It has no checks, because there is no outside
 service here to measure; the ledger is ATLAS's own table.
 
-What it may do: clear a never-repeat block, and only when Miro says why the
+What it may do: clear a never-repeat block, and only when the owner says why the
 situation is different. `approvals.propose()` refuses an action that has
 already failed twice with the same parameters and hands him the sentence
 "Say why it is different to clear it"; "it's different because the API
@@ -98,7 +98,7 @@ class LessonsModule:
             Action(
                 name="lessons.clear",
                 # ASK, although it is reversible and invisible outside: the
-                # block is Miro's to lift, by saying why it is different.
+                # block is the owner's to lift, by saying why it is different.
                 # As AUTO it sat in the catalog `diagnose` picks from with
                 # nobody attached, and the model could clear its own guard,
                 # writing its own "why". The rollback stays: reversibility is

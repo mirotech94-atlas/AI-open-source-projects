@@ -1,6 +1,6 @@
 """The Claude playlist (paper): the Alinea "Playlist Pro" loop, on paper.
 
-Miro, 2026-09-29, after the Alinea ad ("open Alinea -> Playlist Pro -> the
+the owner, 2026-09-29, after the Alinea ad ("open Alinea -> Playlist Pro -> the
 Claude portfolio -> deposit $100 -> AI researches and the Alinea team
 reviews and approves every move weekly"): "use this for the trading as
 well, follow the steps in the video". The same loop, with no money in it:

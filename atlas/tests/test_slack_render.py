@@ -27,7 +27,7 @@ def _texts(blocks):
 
 
 def test_a_reply_is_shown_once_not_as_header_and_body():
-    body = ("You have **9 servers** running — the vpsie.instances check reports "
+    body = ("You have **9 servers** running — the cloudco.instances check reports "
             "9 of 9 running (read 23:22).\n\nAnything else?")
     msg = Outbound(title=body[:150], body=body, kind="receipt", topic="decisions")
     blocks = CH._blocks(msg)
@@ -105,9 +105,9 @@ async def test_the_notification_text_matches_the_header(monkeypatch):
     monkeypatch.setattr(httpx, "AsyncClient", C)
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
     monkeypatch.setattr(s.SlackChannel, "channel_for", lambda self, topic: "C1")
-    await CH.send(Outbound(title="vpsie.balance is failing", body="b",
-                           topic="vpsie", severity=Severity.HIGH))
-    assert sent[-1]["text"] == "[VPSie] INCIDENT: vpsie.balance is failing"
+    await CH.send(Outbound(title="cloudco.balance is failing", body="b",
+                           topic="cloudco", severity=Severity.HIGH))
+    assert sent[-1]["text"] == "[CloudCo] INCIDENT: cloudco.balance is failing"
     assert sent[-1]["blocks"][0]["text"]["text"] == sent[-1]["text"]
 
 
@@ -133,7 +133,7 @@ def test_a_long_header_is_cut_at_a_word_with_an_ellipsis():
 
 
 def test_a_greeting_is_never_the_notification_line():
-    body = "Hey Miro,\n\nYou have *9 servers* running (read 00:37)."
+    body = "Hey the owner,\n\nYou have *9 servers* running (read 00:37)."
     msg = Outbound(title=body[:150], body=body, kind="receipt")
     assert CH.headline(msg) == "You have *9 servers* running (read 00:37)."
 

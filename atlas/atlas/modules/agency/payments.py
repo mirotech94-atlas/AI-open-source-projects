@@ -1,6 +1,6 @@
 """agency.payments -- what Mapfront's Stripe account says was paid.
 
-Miro, 2026-09-30: payments reach Mapfront's own Stripe account through the
+the owner, 2026-09-30: payments reach Mapfront's own Stripe account through the
 Payment Links in `AGENCY_PAYMENT_LINKS` and through Stripe invoices. Stripe
 tells ATLAS over a signed webhook (`api/stripe_mapfront.py`); this module
 turns a verified event into rows. It never calls Stripe and holds no key --
@@ -20,7 +20,7 @@ it reads and records. Money out (refunds included) stays Tier 3.
     addresses on the lead's own record. Otherwise unmatched -- never a
     guess.
   * ``charge.refunded`` and ``charge.dispute.created`` update the payment
-    (a full refund takes the deal off "paid") and ring Miro through the
+    (a full refund takes the deal off "paid") and ring the owner through the
     emergency path (`escalate.emergency`): a dispute is an emergency.
 
 Every event id is claimed once (`agency_stripe_events`); a replay records
@@ -98,6 +98,8 @@ def _paid_fields(kind: str, obj: dict[str, Any]) -> dict[str, Any] | None:
 async def _notify(title: str, body: str) -> None:
     from ...kernel.comms import Outbound, notify
     await notify(Outbound(title=title, body=body, topic="agency", kind="receipt"))
+    from . import owner_wa
+    await owner_wa.notify_owner("portal", title)          # [Portal] a payment came in
 
 
 async def _paid(event_id: str, kind: str, obj: dict[str, Any]) -> str:
@@ -124,7 +126,7 @@ async def _paid(event_id: str, kind: str, obj: dict[str, Any]) -> str:
     shown = money(fields["amount_minor"], fields["currency"])
     body = (f"Matched by {how}" if lead_id is not None else
             "No lead matched (no reference, metadata or known email) -- it still "
-            "counts as a sale, so the first-sale price is closed.")
+            "still counts as a sale.")
     await _notify(f"Mapfront: {business} paid {shown} (Stripe, read {read})",
                   f"{body}. Stripe {fields['source']} {fields['object_id']}.")
     return f"recorded {shown} from {business}"

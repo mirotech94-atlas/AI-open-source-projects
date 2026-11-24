@@ -1,4 +1,6 @@
 import type { AgentSummary, Meeting, MeetingExchange, SpeakVoice } from "../api";
+import { FRONT_DOOR_AGENT } from "./roster";
+import { outcomeLine } from "./outcomeText";
 
 /** One spoken line of the meeting, in order: ATLAS opens, each agent takes
  *  its turn, ATLAS closes. `key` is "atlas-open", the agent's roster name,
@@ -180,10 +182,10 @@ export function mapAgents(meeting: Meeting | null, roster: AgentSummary[] | null
   return (meeting?.turns ?? []).map((t) => ({
     name: t.agent, title: t.title, display: t.title, brief: t.persona.specialty,
     need: null, available: false, providers: [], tools: 0,
-    last_run_at: t.did.last_at, last_outcome: t.did.last_outcome,
+    last_run_at: t.did.last_at, last_outcome: outcomeLine(t.did.last_outcome),
     runs_24h: t.did.runs_24h, model: null, model_at: null,
     handoff: [], memory_scope: [], ready: t.ready, reasons: t.issues.items,
-    group: t.agent === "concierge" ? "lead" : "functions",
+    group: t.agent === FRONT_DOOR_AGENT ? "lead" : "functions",
     next_shift_at: t.next.at, persona: t.persona,
   }));
 }

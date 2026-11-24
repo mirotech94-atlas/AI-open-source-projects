@@ -1,7 +1,7 @@
 # AGENCY.md — local business web work as an ATLAS module
 
 Find local businesses with no website or a bad one, build them a good one,
-host it, keep it running. ATLAS runs the pipeline; Miro approves anything that
+host it, keep it running. ATLAS runs the pipeline; the owner approves anything that
 leaves the building.
 
 This is also the proof of the architecture: a whole new business line, and the
@@ -88,7 +88,7 @@ is why it lands.
 ### 2.3 Score
 
 Feed it to the judgment layer (`JUDGMENT.md`). Features: category, review
-count, rating, audit severity, whether they run ads, distance. Label: did Miro
+count, rating, audit severity, whether they run ads, distance. Label: did the owner
 pursue it, and did it close. Within a few dozen leads it learns which ones are
 worth your Saturday.
 
@@ -117,7 +117,7 @@ quote — the thing itself.
 
 ### 2.5 Outreach — Tier 2, every time
 
-ATLAS drafts. Miro sends. No exceptions at the start.
+ATLAS drafts. The owner sends. No exceptions at the start.
 
 - Email, call script, or a walk-in one-pager
 - Leads with the audit finding, not with "I noticed your website"

@@ -1,4 +1,4 @@
-"""The free allowance kept for Miro (kernel/quota.py).
+"""The free allowance kept for the owner (kernel/quota.py).
 
 Prod, 2026-10-06: every free deployment answered 429 within three hours,
 spent by background work, and his voice turn had nothing left to answer
@@ -90,7 +90,7 @@ def test_tokens_counted_from_answers_draw_the_day_down():
     assert quota.tokens_left(p) == 50_000
     assert quota.verdict(p) == quota.OK          # 50K is above the 40K reserve
     quota.spent(p, 15_000)
-    assert quota.verdict(p) == quota.RESERVED    # 35K: only Miro now
+    assert quota.verdict(p) == quota.RESERVED    # 35K: only the owner now
 
 
 def test_a_model_with_no_known_daily_figure_is_never_guessed_spent():
@@ -125,7 +125,7 @@ def test_openrouter_key_endpoint_is_read_as_the_days_free_requests():
         "used": 42, "limit": 50, "remaining": 8}}})
     p = _Fake("openrouter", "x:free")
     assert quota.requests_left(p) == 8
-    # 8 of 50 is under the 20% (10) kept for Miro.
+    # 8 of 50 is under the 20% (10) kept for the owner.
     assert quota.verdict(p) == quota.RESERVED
 
 
@@ -144,7 +144,7 @@ async def test_background_work_skips_a_reserved_deployment():
     assert reply.text == "from cerebras" and reserved.asked == 0
 
 
-async def test_miro_may_spend_the_reserve():
+async def test_owner_may_spend_the_reserve():
     reserved, other = _reserved_groq(), _Fake("cerebras", "c", "from cerebras")
     llm.ROUTES[Need.DRAFT] = [reserved, other]
     with quota.interactive():
@@ -165,7 +165,7 @@ async def test_background_that_finds_only_reserve_waits_without_asking():
     from atlas.kernel import breaker, outage
     reserved = _reserved_groq()
     llm.ROUTES[Need.DRAFT] = [reserved]
-    with pytest.raises(quota.ReservedForMiro):
+    with pytest.raises(quota.ReservedForOwner):
         await llm.think(Need.DRAFT, "s", [Message("user", "q")])
     assert reserved.asked == 0
     assert breaker.snapshot() == {} and not outage.active()
@@ -183,7 +183,7 @@ async def test_open_breakers_never_readmit_the_reserve_for_background():
     assert reply.text == "from cerebras" and reserved.asked == 0
 
 
-async def test_a_spent_deployment_is_skipped_even_for_miro_when_another_answers():
+async def test_a_spent_deployment_is_skipped_even_for_owner_when_another_answers():
     spent = _Fake("groq", "openai/gpt-oss-120b", "from groq")
     quota.observe(spent, _response(429, text=GROQ_TPD_429))
     other = _Fake("cerebras", "c", "from cerebras")
@@ -193,7 +193,7 @@ async def test_a_spent_deployment_is_skipped_even_for_miro_when_another_answers(
     assert reply.text == "from cerebras" and spent.asked == 0
 
 
-async def test_when_everything_is_spent_miro_is_still_asked_for():
+async def test_when_everything_is_spent_owner_is_still_asked_for():
     """'No model answered' must mean the models were asked."""
     spent = _Fake("groq", "openai/gpt-oss-120b", "came back early")
     quota.observe(spent, _response(429, text=GROQ_TPD_429))

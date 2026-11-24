@@ -59,27 +59,27 @@ def test_the_opening_and_every_question_change_with_the_day(monkeypatch):
     openings, questions = set(), set()
     for i in range(len(THEMES)):
         day = date(2026, 9, 29) + timedelta(days=i)
-        turns = seat_turns(monkeypatch, record, ("ops",), theme=theme_for(day))
+        turns = seat_turns(monkeypatch, record, ("qa",), theme=theme_for(day))
         m = compose(turns, {}, day, READ_AT)
         openings.add(m["opening"]["text"])
         questions.add(turns[0]["question"])
         assert m["theme"]["key"] == theme_for(day).key
         assert theme_for(day).title.lower() in m["opening"]["text"]
-        assert turns[0]["question"].startswith(name("ops"))
+        assert turns[0]["question"].startswith(name("qa"))
     assert len(openings) == len(questions) == 7
 
 
 def test_each_theme_foregrounds_different_record_facts(monkeypatch):
     at = NOW - timedelta(hours=2)
     record = empty_record()
-    record["counts"]["ops"] = {"runs": 3, "self_tests": 0, "shifts": 1, "failed": 1,
+    record["counts"]["qa"] = {"runs": 3, "self_tests": 0, "shifts": 1, "failed": 1,
                                "total": 3}
-    record["latest"]["ops"] = {"at": at, "outcome": "Disk on vps2 is 81%.",
+    record["latest"]["qa"] = {"at": at, "outcome": "Disk on vps2 is 81%.",
                                "model": "m", "provider": "p"}
-    record["failures"]["ops"] = {"at": at, "model": "", "outcome": "Nothing answered."}
+    record["failures"]["qa"] = {"at": at, "model": "", "outcome": "Nothing answered."}
     answers = {}
     for t in THEMES:
-        answers[t.key] = seat_turns(monkeypatch, record, ("ops",), theme=t)[0]
+        answers[t.key] = seat_turns(monkeypatch, record, ("qa",), theme=t)[0]
     assert len({a["answer"]["text"] for a in answers.values()}) == 7
     assert "1 of 3 runs in the last 24 hours failed" in answers["learned"]["answer"]["text"]
     num = answers["number"]["answer"]["text"]
@@ -88,7 +88,7 @@ def test_each_theme_foregrounds_different_record_facts(monkeypatch):
     # Every turn keeps its four items whatever the theme.
     for a in answers.values():
         assert a["did"]["runs_24h"] == 3 and a["issues"]["failed_24h"] == 1
-        assert a["speech"].startswith(name("ops"))
+        assert a["speech"].startswith(name("qa"))
 
 
 # ------------------------------------------------------------------ exchanges
@@ -104,26 +104,26 @@ def test_atlas_follows_up_a_failed_run_and_the_agent_answers_from_the_record(
         monkeypatch):
     at = NOW - timedelta(minutes=30)
     record = empty_record()
-    record["counts"]["analyst"] = {"runs": 2, "self_tests": 0, "shifts": 0,
+    record["counts"]["research"] = {"runs": 2, "self_tests": 0, "shifts": 0,
                                    "failed": 1, "total": 2}
-    record["failures"]["analyst"] = {"at": at, "model": "", "outcome": "Down."}
-    turns = seat_turns(monkeypatch, record, ("ops", "analyst"))
+    record["failures"]["research"] = {"at": at, "model": "", "outcome": "Down."}
+    turns = seat_turns(monkeypatch, record, ("qa", "research"))
     xs = exchanges(turns, {}, THEMES[0], READ_AT)
     q, a = _threads(xs)[1]
-    assert q["kind"] == "follow_up" and q["speaker"] == "atlas" and q["to"] == "analyst"
-    assert q["text"] == f"{name('analyst')}, your last run failed: no model answered. What's next?"
-    assert a["speaker"] == "analyst" and a["reply_to"] == q["id"]
+    assert q["kind"] == "follow_up" and q["speaker"] == "atlas" and q["to"] == "research"
+    assert q["text"] == f"{name('research')}, your last run failed: no model answered. What's next?"
+    assert a["speaker"] == "research" and a["reply_to"] == q["id"]
     analyst = turns[1]
     assert analyst["improve"]["text"] in a["text"] and analyst["next"]["text"] in a["text"]
-    assert a["speaker_name"] == name("analyst") and a["voice"] == analyst["voice"]
+    assert a["speaker_name"] == name("research") and a["voice"] == analyst["voice"]
     assert q["voice"] == "atlas" and q["read_at"] == READ_AT
     # ops is fine: nobody follows up with it.
-    assert all("ops" not in (x["speaker"], x["to"]) for x in xs)
+    assert all("qa" not in (x["speaker"], x["to"]) for x in xs)
 
 
 def test_atlas_follows_up_a_blocked_agent(monkeypatch):
-    turns = seat_turns(monkeypatch, empty_record(), ("fiverr",),
-                       blocked={"fiverr": ["browser disabled — missing env: X"]})
+    turns = seat_turns(monkeypatch, empty_record(), ("sales",),
+                       blocked={"sales": ["browser disabled — missing env: X"]})
     q, a = _threads(exchanges(turns, {}, THEMES[0], READ_AT))[1]
     assert "you are blocked: browser disabled — missing env: X." in q["text"]
     assert a["text"].startswith("No shift until it is ready.")
@@ -134,44 +134,44 @@ def test_an_agent_blocked_on_a_module_asks_its_owner_who_answers_from_its_run(
         monkeypatch):
     at = NOW - timedelta(hours=1)
     record = empty_record()
-    record["counts"]["fiverr"] = {"runs": 1, "self_tests": 0, "shifts": 1,
+    record["counts"]["sales"] = {"runs": 1, "self_tests": 0, "shifts": 1,
                                   "failed": 0, "total": 1}
-    record["latest"]["fiverr"] = {"at": at, "outcome": "Two orders are open. Rest.",
+    record["latest"]["sales"] = {"at": at, "outcome": "Two orders are open. Rest.",
                                   "model": "m", "provider": "p"}
     reason = "fiverr disabled — missing env: FIVERR_X (fiverr_orders)"
-    turns = seat_turns(monkeypatch, record, ("commerce", "fiverr"),
-                       blocked={"commerce": [reason]})
-    seats = {"commerce": Seat("commerce", frozenset({"fiverr"}), frozenset({"fiverr"})),
-             "fiverr": Seat("fiverr", frozenset({"fiverr"}))}
+    turns = seat_turns(monkeypatch, record, ("bizops", "sales"),
+                       blocked={"bizops": [reason]})
+    seats = {"bizops": Seat("bizops", frozenset({"sales"}), frozenset({"sales"})),
+             "sales": Seat("sales", frozenset({"sales"}))}
     xs = exchanges(turns, seats, THEMES[0], READ_AT)
     dep = [t for t in _threads(xs).values() if t[0]["kind"] == "dependency"]
     # ATLAS's follow-up to commerce comes first, then commerce asks fiverr --
     # one thread per pair, so ATLAS-commerce and commerce-fiverr are both kept.
     assert xs[0]["kind"] == "follow_up"
     q, a = dep[0]
-    assert (q["speaker"], q["to"]) == ("commerce", "fiverr")
-    assert q["text"].startswith(f"{name('fiverr')}, I am blocked on fiverr: {reason}")
-    assert a["speaker"] == "fiverr" and a["reply_to"] == q["id"]
+    assert (q["speaker"], q["to"]) == ("bizops", "sales")
+    assert q["text"].startswith(f"{name('sales')}, I am blocked on sales: {reason}")
+    assert a["speaker"] == "sales" and a["reply_to"] == q["id"]
     assert a["text"] == (f"My last run, at {at.astimezone():%H:%M}, said: "
                          "Two orders are open.")
 
 
 def test_an_owner_with_no_run_says_so_rather_than_inventing_one(monkeypatch):
-    turns = seat_turns(monkeypatch, empty_record(), ("commerce", "fiverr"))
-    seats = {"commerce": Seat("commerce", frozenset({"fiverr"})),
-             "fiverr": Seat("fiverr", frozenset({"fiverr"}))}
+    turns = seat_turns(monkeypatch, empty_record(), ("bizops", "sales"))
+    seats = {"bizops": Seat("bizops", frozenset({"sales"})),
+             "sales": Seat("sales", frozenset({"sales"}))}
     q, a = _threads(exchanges(turns, seats, THEMES[0], READ_AT))[1]
-    assert q["text"] == f"{name('fiverr')}, I use the fiverr module too. How did your last run go?"
+    assert q["text"] == f"{name('sales')}, I use the sales module too. How did your last run go?"
     assert a["text"] == "I have no run on record, so I cannot say."
 
 
 def test_two_agents_sharing_an_unowned_module_talk_later_asks_earlier(monkeypatch):
-    turns = seat_turns(monkeypatch, empty_record(), ("growth", "marketing"))
-    seats = {"growth": Seat("growth", frozenset({"instagram"})),
-             "marketing": Seat("marketing", frozenset({"instagram"}))}
+    turns = seat_turns(monkeypatch, empty_record(), ("content", "seo"))
+    seats = {"content": Seat("content", frozenset({"instagram"})),
+             "seo": Seat("seo", frozenset({"instagram"}))}
     q, _a = _threads(exchanges(turns, seats, THEMES[0], READ_AT))[1]
     assert q["kind"] == "shared"
-    assert (q["speaker"], q["to"]) == ("marketing", "growth")
+    assert (q["speaker"], q["to"]) == ("seo", "content")
     assert "we both use instagram" in q["text"]
 
 
@@ -199,10 +199,10 @@ def test_exchanges_are_bounded_and_each_pair_talks_once(monkeypatch):
 
 def test_on_help_day_the_agents_talk_to_each_other_first(monkeypatch):
     help_theme = next(t for t in THEMES if t.key == "help")
-    turns = seat_turns(monkeypatch, empty_record(), ("fiverr", "commerce"),
-                       blocked={"fiverr": ["x disabled — y"]}, theme=help_theme)
-    seats = {"commerce": Seat("commerce", frozenset({"fiverr"})),
-             "fiverr": Seat("fiverr", frozenset({"fiverr"}))}
+    turns = seat_turns(monkeypatch, empty_record(), ("sales", "bizops"),
+                       blocked={"sales": ["x disabled — y"]}, theme=help_theme)
+    seats = {"bizops": Seat("bizops", frozenset({"sales"})),
+             "sales": Seat("sales", frozenset({"sales"}))}
     xs = exchanges(turns, seats, help_theme, READ_AT)
     assert xs[0]["kind"] == "dependency"
     assert xs[-2]["kind"] == "follow_up"
@@ -210,14 +210,14 @@ def test_on_help_day_the_agents_talk_to_each_other_first(monkeypatch):
 
 # ------------------------------------------------------------------ polish
 
-def _meeting(monkeypatch, *, names=("ops", "inbox"), private=("inbox",)):
+def _meeting(monkeypatch, *, names=("qa", "inbox"), private=("inbox",)):
     at = NOW - timedelta(hours=2)
     record = empty_record()
-    record["counts"]["ops"] = {"runs": 3, "self_tests": 0, "shifts": 1, "failed": 1,
+    record["counts"]["qa"] = {"runs": 3, "self_tests": 0, "shifts": 1, "failed": 1,
                                "total": 3}
-    record["latest"]["ops"] = {"at": at, "outcome": "All four servers answered.",
+    record["latest"]["qa"] = {"at": at, "outcome": "All four servers answered.",
                                "model": "m", "provider": "p"}
-    record["failures"]["ops"] = {"at": at, "model": "", "outcome": "x"}
+    record["failures"]["qa"] = {"at": at, "model": "", "outcome": "x"}
     record["latest"]["inbox"] = {"at": at, "outcome": "Mail from the landlord.",
                                  "model": "m", "provider": "p"}
     turns = seat_turns(monkeypatch, record, names, theme=THEMES[0])
@@ -252,7 +252,7 @@ async def test_a_grounded_rewording_is_kept_and_marked_polished(monkeypatch):
     good = plain.replace("In my way:", "What's in my way:")
 
     def reply(lines):
-        return json.dumps([{"id": "turn:ops", "text": good}])
+        return json.dumps([{"id": "turn:qa", "text": good}])
 
     seen = _fake_think(monkeypatch, reply)
     out = await meeting.polish_meeting(m, seats)
@@ -271,7 +271,7 @@ async def test_a_rewording_with_an_invented_number_is_thrown_away(monkeypatch):
     m, seats = _meeting(monkeypatch)
     plain = m["turns"][0]["answer"]["plain"]
     bad = plain.replace("3 runs", "7 runs")
-    _fake_think(monkeypatch, lambda lines: json.dumps([{"id": "turn:ops", "text": bad}]))
+    _fake_think(monkeypatch, lambda lines: json.dumps([{"id": "turn:qa", "text": bad}]))
     out = await meeting.polish_meeting(m, seats)
     assert out["turns"][0]["answer"] == {"text": plain, "plain": plain, "polished": False}
     assert out["polished"] == 0 and out["polish_rejected"] == 1
@@ -309,7 +309,7 @@ async def test_every_polishable_line_is_offered_with_its_id(monkeypatch):
 
     _fake_think(monkeypatch, reply)
     await meeting.polish_meeting(m, seats)
-    assert offered[0] == "opening" and "turn:ops" in offered
+    assert offered[0] == "opening" and "turn:qa" in offered
     assert "turn:inbox" not in offered
     assert all(i == "opening" or i.startswith(("turn:", "x:")) for i in offered)
 
@@ -317,14 +317,14 @@ async def test_every_polishable_line_is_offered_with_its_id(monkeypatch):
 # ------------------------------------------------------------------ Slack summary
 
 def test_the_slack_summary_has_read_times_and_no_number_of_its_own(monkeypatch):
-    m, _ = _meeting(monkeypatch, names=("ops", "fiverr", "commerce"), private=())
+    m, _ = _meeting(monkeypatch, names=("qa", "sales", "bizops"), private=())
     m["built_at"] = "2026-09-29T11:02:00+00:00"
     text = meeting.slack_summary(m)
     read = datetime.fromisoformat(READ_AT).astimezone().strftime("%H:%M")
     built = datetime.fromisoformat(m["built_at"]).astimezone().strftime("%H:%M")
     assert f"Records read {read}, meeting built {built}." in text
     assert f"Theme: {m['theme']['title']}." in text
-    assert f"Worked (1 of 3): {name('ops')}." in text
+    assert f"Worked (1 of 3): {name('qa')}." in text
     assert "Top exchanges:" in text
     # Every digit run in the summary is one the meeting itself states.
     source = json.dumps(m) + read + built
@@ -335,12 +335,12 @@ def test_the_slack_summary_has_read_times_and_no_number_of_its_own(monkeypatch):
 
 
 def test_a_blocked_agent_is_named_with_its_reason_in_the_summary(monkeypatch):
-    turns = seat_turns(monkeypatch, empty_record(), ("fiverr",),
-                       blocked={"fiverr": ["browser disabled — missing env: X"]})
+    turns = seat_turns(monkeypatch, empty_record(), ("sales",),
+                       blocked={"sales": ["browser disabled — missing env: X"]})
     m = compose(turns, {}, date(2026, 9, 29), READ_AT)
     text = meeting.slack_summary(m)
-    assert f"Blocked (1): {name('fiverr')}." in text
-    assert f"  {name('fiverr')} — browser disabled — missing env: X." in text
+    assert f"Blocked (1): {name('sales')}." in text
+    assert f"  {name('sales')} — browser disabled — missing env: X." in text
 
 
 def test_a_bad_day_is_still_a_short_summary(monkeypatch):
@@ -364,7 +364,7 @@ async def test_store_writes_one_row_per_local_date(memory_backend, monkeypatch):
     sql, args = memory_backend.sql_log[-1]
     assert "INSERT INTO agency_meetings" in sql and "ON CONFLICT (day)" in sql
     assert args[0] == date(2026, 9, 29) and args[1] == m["theme"]["key"]
-    assert json.loads(args[2])["turns"][0]["agent"] == "ops"
+    assert json.loads(args[2])["turns"][0]["agent"] == "qa"
     assert args[3] == built
 
 
@@ -628,18 +628,18 @@ def test_private_agents_reach_slack_by_name_and_status_only(monkeypatch):
                                   "failed": 0, "total": 2}
     record["latest"]["school"] = {"at": at, "outcome": "Essay due Friday in ENG 201.",
                                   "model": "m", "provider": "p"}
-    record["counts"]["ops"] = {"runs": 1, "self_tests": 0, "shifts": 0,
+    record["counts"]["qa"] = {"runs": 1, "self_tests": 0, "shifts": 0,
                                "failed": 1, "total": 1}
-    record["failures"]["ops"] = {"at": at, "model": "", "outcome": "x"}
+    record["failures"]["qa"] = {"at": at, "model": "", "outcome": "x"}
     inbox_reason = "calendar disabled — missing env: GOOGLE_X (landlord thread)"
     monkeypatch.setattr(agent_module, "readiness",
                         lambda n: (n != "inbox", [inbox_reason] if n == "inbox" else []))
-    needs = {"inbox": Need.PRIVATE, "school": Need.PRIVATE, "ops": Need.REASON}
+    needs = {"inbox": Need.PRIVATE, "school": Need.PRIVATE, "qa": Need.REASON}
     turns = [make_turn(n, SimpleNamespace(title=n.title(), brief="", need=needs[n]),
                        record, NOW, READ_AT, THEMES[0])
-             for n in ("ops", "inbox", "school")]
+             for n in ("qa", "inbox", "school")]
     assert [t["private"] for t in turns] == [False, True, True]
-    seats = {"ops": Seat("ops", frozenset({"calendar"})),
+    seats = {"qa": Seat("qa", frozenset({"calendar"})),
              "inbox": Seat("inbox", frozenset({"calendar"}), frozenset({"calendar"}),
                            private=True),
              "school": Seat("school", frozenset({"school"}), private=True)}
@@ -651,13 +651,13 @@ def test_private_agents_reach_slack_by_name_and_status_only(monkeypatch):
     assert any(x["speaker"] == "inbox" or x["to"] == "inbox" for x in m["exchanges"])
 
     text = meeting.slack_summary(m)
-    assert f"Worked (2 of 3): {name('ops')}, {name('school')}." in text
+    assert f"Worked (2 of 3): {name('qa')}, School." in text
     assert f"Blocked (1): {name('inbox')}." in text
     for leaked in ("landlord", "ENG 201", "Essay", "GOOGLE_X", "calendar disabled"):
         assert leaked not in text, leaked
     # No line of a thread a private agent is in: only ops's own follow-up.
     bullets = [ln for ln in text.splitlines() if ln.startswith("•")]
-    assert bullets and all(name("inbox") not in ln and name("school") not in ln
+    assert bullets and all(name("inbox") not in ln and "School" not in ln
                            for ln in bullets)
     # The roster's own Need.PRIVATE counts even for a stored meeting whose
     # turns carry no flag.

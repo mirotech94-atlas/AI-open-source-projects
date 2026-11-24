@@ -1,6 +1,6 @@
 // ATLAS's offline lines in its own Fish voice, kept in this browser.
 //
-// Miro wants ATLAS to speak only in his chosen Fish Audio voice, including
+// the owner wants ATLAS to speak only in his chosen Fish Audio voice, including
 // when ATLAS is out of reach. While ATLAS answers, the page copies the small
 // pack from GET /api/voice/offline-pack into Cache Storage, checking every
 // clip against its sha256. When ATLAS cannot be reached, a line that is in

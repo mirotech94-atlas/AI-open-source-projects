@@ -8,7 +8,7 @@ raises a card — nothing here calls `executor.execute`, and there is no code
 here that could. Two kernel doors are reached from the signed-in dashboard
 only: `kernel.spoken` for Mac actions (said on /ask, or from the menu-bar
 hotkey on /command), and `kernel.missions`, which records a
-job for the agent that owns it (Miro, 2026-09-29) and whose Tier 1 steps the
+job for the agent that owns it (the owner, 2026-09-29) and whose Tier 1 steps the
 kernel then runs through the executor; its Tier 2 steps are cards. The phone
 line recognises a mission but never starts one.
 
@@ -27,7 +27,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
 
-from ..kernel import quota
+from ..kernel import quota, reply_timing
 from ..kernel.permissions import wrap_untrusted
 from ..kernel.state import execute_sql, fetch_all
 from ..modules._fish import FISH_TTS_URL  # noqa: F401 -- re-exported
@@ -81,7 +81,7 @@ _IMPERATIVE_VERBS = (
     r"(?:music|songs?|playlist|album|radio|mix|on\s+youtube(?:\s+music)?)\b|"
     r"(?:pause|stop|skip)\s+(?:the\s+)?(?:music|song|track)|"
     # Everyday Mac control (2026-09-28): "text Mum I'm late", "set the
-    # volume to 30", "open flycheap.live", "notify me ...". A message and a
+    # volume to 30", "open flycheap.example", "notify me ...". A message and a
     # Shortcut become cards (Tier 2); volume, a notification, a URL and
     # quitting an app run (Tier 1 since 2026-10-06).
     r"text|message|i-?message|"
@@ -100,7 +100,7 @@ def _addressed_names() -> str:
                            key=len, reverse=True))
 
 
-# Orders that hand a job to an agent (Miro, 2026-09-29: "search up the 50
+# Orders that hand a job to an agent (the owner, 2026-09-29: "search up the 50
 # local businesses that have a very poor website or no website at all and
 # make them one" was answered as small talk -- "I can't pull a live list" --
 # while the agency module does exactly that). Same terms as the verbs above:
@@ -228,7 +228,7 @@ def is_goodnight(transcript: str) -> bool:
 # A first-person statement, not a bare keyword: an earlier version matched
 # `until`, `travel` and `sick` on their own, which caught ordinary questions
 # too -- "what's on my calendar until Friday" is not a circumstance. This
-# requires Miro to be talking about himself, close to one of these words,
+# requires the owner to be talking about himself, close to one of these words,
 # and `is_circumstance()` below additionally refuses anything that reads as
 # a question at all.
 CIRCUMSTANCE = re.compile(
@@ -243,7 +243,7 @@ CIRCUMSTANCE = re.compile(
 
 # A question, by shape: ends with "?", or opens with a question word. Checked
 # before CIRCUMSTANCE is trusted at all -- "am I sick" or "how sick is the
-# server" must never be filed away as something Miro told ATLAS about his
+# server" must never be filed away as something the owner told ATLAS about his
 # own schedule.
 _QUESTION_START = re.compile(
     r"^\s*(what|when|where|how|can|could|would|is|are|do|does)\b",
@@ -252,7 +252,7 @@ _QUESTION_START = re.compile(
 
 
 def is_circumstance(transcript: str) -> bool:
-    """A first-person statement about Miro's own schedule -- never a
+    """A first-person statement about the owner's own schedule -- never a
     question, whatever words it contains."""
     text = transcript.strip()
     if text.endswith("?") or _QUESTION_START.search(text):
@@ -263,7 +263,7 @@ def is_circumstance(transcript: str) -> bool:
 # ----------------------------------------------------------------- knowledge
 
 # Phrasing that asks to be TOLD something, rather than asked to look
-# something up in his own systems. Deliberately generic -- Miro wants ATLAS
+# something up in his own systems. Deliberately generic -- the owner wants ATLAS
 # to have general knowledge of everything, medicine to technology to
 # anatomy, and this is the shape of a question about the world rather than
 # about him.
@@ -391,7 +391,7 @@ def _is_estate_framed(transcript: str) -> bool:
 
 def is_knowledge(transcript: str) -> bool:
     """A general-knowledge question -- medicine, technology, anatomy,
-    history, anything not about Miro's own estate. Checked only when the
+    history, anything not about the owner's own estate. Checked only when the
     transcript is neither an action request nor a circumstance.
 
     Two ways a question can turn out to be about his own systems instead:
@@ -605,11 +605,9 @@ async def find_document(query: str, kind: str | None) -> dict | None:
 # marketing -- are left out: an answer that says "research" in passing is not
 # a question about the research module, and a card nobody asked for is noise.
 BUSINESS_FOCUS: dict[str, str] = {
-    "flycheap": "/status",
-    "guardian": "/status",
     "inroots": "/status",
-    "vpsie": "/status",
-    "mirotech": "/status",
+    "cloudco": "/status",
+    "exampleco": "/status",
     "fiverr": "/status",
     "agency": "/status",
     "school": "/status",
@@ -626,8 +624,7 @@ BUSINESS_FOCUS: dict[str, str] = {
 
 # How a transcriber tends to write the names that are one word on disk.
 _FOCUS_ALIASES: dict[str, str] = {
-    "fly cheap": "flycheap",
-    "miro tech": "mirotech",
+    "owner tech": "exampleco",
     "stripe": "stripe_billing",
     "stripe billing": "stripe_billing",
     "night shift": "nightshift",
@@ -637,6 +634,7 @@ _FOCUS_ALIASES: dict[str, str] = {
     "tik tok": "tiktok",
     "linked in": "linkedin",
 }
+
 
 def _names_pattern(names: set[str]) -> re.Pattern[str]:
     return re.compile(
@@ -727,9 +725,10 @@ async def capabilities(_s: SignedIn) -> dict:
     sentence on screen rather than a dead button.
     """
     from ..kernel.llm import ROUTES
+    from . import voice_clone
 
-    if not _WARMED and os.getenv("FISH_AUDIO_API_KEY"):
-        # ATLAS's fixed lines in its Fish voice, rendered once in the
+    if not _WARMED and (os.getenv("FISH_AUDIO_API_KEY") or voice_clone.configured()):
+        # ATLAS's fixed lines in its own voice, rendered once in the
         # background so they are kept before they are needed.
         from ..kernel.background import spawn
         spawn(warm_clips(), "voice.warm_clips")
@@ -771,13 +770,19 @@ async def capabilities(_s: SignedIn) -> dict:
     # is actually running (see `createDetector` in `detector.ts`).
     clap_wake = os.getenv("VOICE_CLAP_WAKE", "").lower() in ("1", "true", "yes")
 
-    speech = bool(os.getenv("FISH_AUDIO_API_KEY"))
+    fish = bool(os.getenv("FISH_AUDIO_API_KEY"))
+    # ATLAS's own voice: the local NotebookLM-host clone, OK only when its
+    # server answered just now; Fish Audio speaks when it is down.
+    voice_source = await voice_clone.status(fish)
+    speech = fish or voice_source["speaking"] == "clone"
 
     return envelope(
         transcription=bool(_transcribers()),
         answering=bool(ROUTES),
-        # Speaking is Fish Audio only; hearing is Groq or OpenAI Whisper.
+        # Speaking is the local clone, else Fish Audio; hearing is Groq or
+        # OpenAI Whisper.
         speech=speech,
+        voice_source=voice_source,
         wake_word=wake_ready,
         # Picovoice access keys are designed to be used from a browser, so
         # handing it to a signed-in session is what it is for. It is not a
@@ -802,7 +807,7 @@ async def capabilities(_s: SignedIn) -> dict:
             ("GROQ_API_KEY or OPENAI_API_KEY (transcription)",
              bool(_transcribers())),
             ("an LLM provider (answers)", bool(ROUTES)),
-            ("FISH_AUDIO_API_KEY (speech)", speech),
+            ("ATLAS_VOICE_CLONE_URL or FISH_AUDIO_API_KEY (speech)", speech),
             ("PICOVOICE_ACCESS_KEY (wake word)", bool(picovoice)),
             ("wake/atlas.ppn in the built UI (the trained keyword)",
              keyword.exists()),
@@ -819,7 +824,7 @@ async def capabilities(_s: SignedIn) -> dict:
 
 # Voice may READ, and it may PROPOSE. It may never execute.
 #
-# Miro asked for voice to send email, book things and send messages. The
+# the owner asked for voice to send email, book things and send messages. The
 # standing rule is that there is no path from talking to ATLAS to changing
 # anything, and both are satisfied the same way: a spoken request becomes a
 # Tier 2 proposal, and he approves it through the channel he already uses.
@@ -836,7 +841,7 @@ async def capabilities(_s: SignedIn) -> dict:
 # anyone can forge, so the approval has to happen somewhere that knows who
 # is asking.
 #
-# Short, because it is heard (Miro, 2026-09-29: "not too chatty"). Why voice
+# Short, because it is heard (the owner, 2026-09-29: "not too chatty"). Why voice
 # cannot approve -- anyone in earshot could say the same words -- is the
 # design, not news he needs every time.
 ASK = "Queued — approve it in Slack."
@@ -877,17 +882,22 @@ def _refusal(action: str, exc: Exception) -> str | None:
 # Brevity never drops honesty: "I don't know", "that source is unreachable"
 # and a refusal's reason stay -- said in a few words, not left out.
 VOICE_STYLE = (
-    "This is heard, not read: answer in one or two short sentences, 35 words "
-    "at most. Lead with the answer; never restate the question. Talk like a "
-    "friend catching Miro up, not a butler reporting to a master: short "
-    "everyday words, contractions, no jargon, no check names, no config or "
-    "environment-variable names, no file paths. Say Vault, never Guardian. "
+    "This is heard, not read, and it is a summary the way a warm podcast host "
+    "gives one: answer in one to three short sentences, 45 words at most. "
+    "Lead with the answer; never restate the question. Talk like a friend "
+    "catching the owner up, not a butler reporting to a master: short everyday "
+    "words, contractions, no jargon, no check names, no config or "
+    "environment-variable names, no file paths. No lists and no bullet "
+    "points: never read out a run of module names, say how many instead and "
+    "that the rest is on his screen. Never spell out an id or a long string. "
+    "Never say \"please note\", never name your source or add a disclaimer. "
     "If you don't know, or can't, say so in a few words and why. "
 )
 FIGURES_LINE = (
-    "Numbers about Miro's own businesses and systems come only from the live "
-    "status above, with the time they were read said once, compactly (\"as "
-    "of 7:52\"); if one is not there, say that source is unreachable. "
+    "Numbers about the owner's own businesses and systems come only from the live "
+    "status above, and every number is said with the time it was read, once "
+    "and compactly (\"as of 7:52\"); if one is not there, say that source is "
+    "unreachable. Never guess or round up a number. "
 )
 
 # The improve requests `kernel/improve.py` does not catch by pattern still
@@ -895,14 +905,13 @@ FIGURES_LINE = (
 IMPROVE_LINE = (
     "If he asks you to improve something -- you, a feature, a module -- never "
     "say you have no access: offer to write it up as a development task for "
-    "his supervised coding session (FlyCheap and Vault can go to the night "
-    "shift, queued for his approval). "
+    "his supervised coding session. "
 )
 
 # An order: the card line follows it ("Queued — approve it in Slack."), so
 # the model says only what it will queue, in one breath.
 ACTION_STYLE = (
-    "Miro asked you to DO something. You cannot act from voice, but you CAN "
+    "the owner asked you to DO something. You cannot act from voice, but you CAN "
     "queue it for him to approve, and you are about to. Say in ONE short "
     "sentence (under 20 words) what you'll queue — then stop. Don't restate "
     "his words, don't refuse, don't apologise for lacking buttons, and don't "
@@ -1014,7 +1023,7 @@ async def _queue_steps(transcript: str, *, source: str,
             results.append((step, None, None))
             continue
         name, params = picked
-        # Jarvis on the Mac (Miro, 2026-09-28: "yes, for Mac actions only").
+        # Jarvis on the Mac (the owner, 2026-09-28: "yes, for Mac actions only").
         # On the signed-in dashboard it IS him, so a Mac action he says runs
         # now through kernel.spoken; a phone turn, or anything else, is a card.
         from ..kernel import spoken
@@ -1080,12 +1089,12 @@ async def _queue_steps(transcript: str, *, source: str,
 
 
 # How he says the names out loud, and how the transcriber hears them. The
-# dashboard mic turned "how is VPSie looking" into "Vipsy", the answer came
+# dashboard mic turned "how is CloudCo looking" into "Vipsy", the answer came
 # back "nothing named Vipsy", and the question was wasted.
 NAMES = (
-    "Names he uses: VPSie (heard as Vipsy, VPS-E, VP see, vipsie), FlyCheap "
-    "(fly cheap), Vault (its new name; the checks still say guardian; heard as guarder), Roots / InRoots (in roots, the "
-    "attendance bot), NetBird, Fiverr (fiver), Mirotech, GitLab, Stripe, "
+    "Names he uses: CloudCo (heard as Vipsy, VPS-E, VP see, vipsie), "
+    "Roots / InRoots (in roots, the "
+    "attendance bot), NetBird, Fiverr (fiver), ExampleCo, GitLab, Stripe, "
     "Matrix / k9."
 )
 
@@ -1093,7 +1102,7 @@ NAMES = (
 async def live_context(modules: tuple[str, ...] | None = None) -> str:
     """What the board says right now, one line per check.
 
-    Measured on atlas.example.com, "how is VPSie looking?":
+    Measured on atlas.example.com, "how is CloudCo looking?":
       route() — agent + tools, fetching the same rows   125 s
       this query                                          0.06 s
       one DRAFT call with this as context                ~6 s
@@ -1140,7 +1149,7 @@ async def live_context(modules: tuple[str, ...] | None = None) -> str:
             "A check marked unknown is not known right now: say so, never call "
             "it fine:\n"
             + wrap_untrusted("\n".join(lines), "checks")
-            + f"\n{len(waiting)} decision(s) waiting on Miro"
+            + f"\n{len(waiting)} decision(s) waiting on the owner"
             + (": " + ", ".join(r["action"] for r in waiting[:6]) if waiting else "")
             + "\n" + NAMES)
 
@@ -1165,9 +1174,7 @@ VOICE_WORKBOARD_CHARS = 1200   # the phone line's work board, when it has one
 
 # How a module is said, beside its own name (NAMES says the same to the model).
 _SAID_AS: dict[str, tuple[str, ...]] = {
-    "vpsie": ("vipsy", "vps-e", "vp see", "vipsie", "vps"),
-    "flycheap": ("fly cheap", "flight"),
-    "guardian": ("vault", "guarder"),
+    "cloudco": ("vipsy", "vps-e", "vp see", "vipsie", "vps"),
     "inroots": ("roots", "in roots", "attendance"),
     "fiverr": ("fiver",),
     "netbird": ("net bird", "mesh"),
@@ -1231,7 +1238,7 @@ async def voice_context(transcript: str) -> str:
             "figure's read time once ('as of 7:52'); an unknown check is not "
             "known, never call it fine:\n"
             + wrap_untrusted(body, "checks")
-            + f"\n{len(waiting)} decision(s) waiting on Miro\n" + NAMES)
+            + f"\n{len(waiting)} decision(s) waiting on the owner\n" + NAMES)
 
 
 def _short(line: str) -> str:
@@ -1252,8 +1259,10 @@ def voice_style(transcript: str, *, wants_action: bool) -> str:
     if wants_action:
         style = ACTION_STYLE
     else:
-        style = (VOICE_STYLE + "General questions (facts, advice, explanations) "
-                 "you answer from your own knowledge. " + FIGURES_LINE)
+        from ..modules.assistant.persona import PERSONA
+        style = (VOICE_STYLE + PERSONA + " General questions (facts, advice, "
+                 "explanations) you answer from your own knowledge. "
+                 + FIGURES_LINE)
     if re.search(r"\b(improv|better|feature|upgrade)", transcript, re.IGNORECASE):
         style += IMPROVE_LINE
     return style
@@ -1261,6 +1270,11 @@ def voice_style(transcript: str, *, wants_action: bool) -> str:
 
 async def voice_system(transcript: str, *, wants_action: bool = False) -> str:
     """The whole system prompt of a fast voice answer."""
+    from ..modules.assistant.persona import CASUAL_NOTE, is_casual
+    if not wants_action and is_casual(transcript, also=_LIVE_QUESTION):
+        # Plain talk: no live board in the prompt, so no unrelated status
+        # (the owner, 2026-11-19). A fact he asks for is not casual and keeps it.
+        return (voice_style(transcript, wants_action=False) + " " + CASUAL_NOTE)
     return (await voice_context(transcript) + "\n\n"
             + voice_style(transcript, wants_action=wants_action))
 
@@ -1294,7 +1308,7 @@ def _voice_lane() -> list[Any]:
 def out_of_allowance(exc: BaseException | None) -> bool:
     """Whether the models failed for want of allowance (a 429, or a pool its
     provider said is spent) rather than for an outage."""
-    return (_rate_limited(exc) or isinstance(exc, quota.ReservedForMiro)
+    return (_rate_limited(exc) or isinstance(exc, quota.ReservedForOwner)
             or quota.spent_out(_voice_lane()))
 
 
@@ -1340,7 +1354,7 @@ async def consult(agent: str, transcript: str) -> str | None:
         work = await missions.agent_activity(agent)
         # The work board (kernel/workboard): this seat's missions, outbox,
         # cards and its modules' own progress tables -- "12/50 sites built"
-        # lives there, not in the checks (Miro, 2026-09-30: "how is Hazel
+        # lives there, not in the checks (the owner, 2026-09-30: "how is Hazel
         # doing on the 50 websites?" had no source to answer from).
         from ..kernel import workboard
         # Kept small like every voice turn (voice_context): the seat's board
@@ -1348,12 +1362,12 @@ async def consult(agent: str, transcript: str) -> str | None:
         seat = await workboard.context_text(f"{name}: {transcript}",
                                             max_chars=2 * VOICE_WORKBOARD_CHARS)
         system = (f"{board}\n\n{work}\n\n{seat}\n\nYou are {name}, ATLAS's {member.title} "
-                  f"agent ({member.brief}). Miro asked you this directly, out loud. "
+                  f"agent ({member.brief}). the owner asked you this directly, out loud. "
                   + VOICE_STYLE + AGENT_FIGURES + IMPROVE_LINE)
         completion = await asyncio.wait_for(think(
             Need.TRIVIAL, system,
             [Message("user", wrap_untrusted(transcript, "voice", principal=True))],
-            max_tokens=VOICE_MAX_TOKENS), timeout=CONSULT_TIMEOUT_S)
+            max_tokens=VOICE_MAX_TOKENS, answer=True), timeout=CONSULT_TIMEOUT_S)
     except Exception as exc:                            # noqa: BLE001
         log.warning("%s could not answer (%s); ATLAS answers instead",
                     agent, type(exc).__name__)
@@ -1403,7 +1417,7 @@ async def spoken_answer(transcript: str, *, source: str,
     return text, (pids[0] if pids else None)
 
 
-@quota.for_miro
+@quota.for_owner
 async def spoken_turn(transcript: str, *, source: str,
                       preamble: str = "",
                       fast: bool | None = None) -> tuple[str, list[int]]:
@@ -1425,6 +1439,10 @@ async def spoken_turn(transcript: str, *, source: str,
     if task_id is not None:
         await tasks.close(task_id, route="cards" if pids else "answer",
                           ok=None, outcome=said, cards=pids)
+    if not pids:
+        # A call hears the same short summary the dashboard does. An order
+        # with cards keeps its whole line: the card line is the point of it.
+        said = for_speech(said) or said
     return said, pids
 
 
@@ -1506,7 +1524,7 @@ async def _spoken_turn(transcript: str, *, source: str,
                     Need.TRIVIAL, prompt,
                     [Message("user", wrap_untrusted(
                         transcript, source, principal=source == "phone"))],
-                    max_tokens=VOICE_MAX_TOKENS,
+                    max_tokens=VOICE_MAX_TOKENS, answer=True,
                 ), timeout=12)
             except TimeoutError:
                 slow = ("My models are slow to answer right now. Ask me again "
@@ -1665,7 +1683,11 @@ MAX_SPEAK_CHARS = 1500
 # sent by the browser. An unset one falls back to ATLAS's own voice rather
 # than failing -- the meeting still plays, and the `X-Voice` header says
 # which voice actually spoke.
-SPEAK_VOICE_ENV = {"female": "FISH_VOICE_FEMALE", "male": "FISH_VOICE_MALE"}
+# Male voices only (the owner, 2026-10-11: "don't use the girl voice, only use the
+# guy voice at all times"): "female" has no Fish voice of its own any more and
+# is answered in ATLAS's own voice; it stays in personas.VOICES so an older
+# browser asking for it still gets a 200.
+SPEAK_VOICE_ENV = {"male": "FISH_VOICE_MALE"}
 
 
 def _speak_voice(raw: Any) -> tuple[str, str | None]:
@@ -1677,6 +1699,8 @@ def _speak_voice(raw: Any) -> tuple[str, str | None]:
     if not isinstance(raw, str) or raw not in VOICES:
         raise HTTPException(
             400, f"voice must be one of: {', '.join(sorted(VOICES))}")
+    if raw == "female":                     # never a female voice: ATLAS's own
+        return ATLAS_VOICE, None
     env = SPEAK_VOICE_ENV.get(raw)
     ref = os.getenv(env, "").strip() if env else ""
     return (raw, ref) if ref else (ATLAS_VOICE, None)
@@ -1694,7 +1718,8 @@ async def _fish_tts(text: str, voice_id: str | None = None) -> bytes:
 
 @router.post("/speak")
 async def speak(request: Request, _s: SignedIn) -> Response:
-    """Text in, spoken audio out -- Fish Audio, mp3.
+    """Text in, spoken audio out, mp3: ATLAS's own voice is the local clone
+    of the NotebookLM host (voice_clone.py), Fish Audio when it is down.
 
     Like /transcribe, a POST that changes nothing in the world: it renders
     words ATLAS has already typed on screen into sound. Nothing is stored.
@@ -1721,43 +1746,94 @@ async def speak(request: Request, _s: SignedIn) -> Response:
     spoke_as, voice_id = _speak_voice(body.get("voice"))
     from . import voice_cache
     own_voice = voice_id is None
-    # A fixed line in ATLAS's own voice comes from the Fish clip already
-    # rendered (voice_cache): instant, and no Fish call at all.
+    # A fixed line in ATLAS's own voice comes from the clip already rendered
+    # (voice_cache): instant, and no render at all.
     if own_voice and voice_cache.is_fixed(text) and (
             clip := voice_cache.cached(text)) is not None:
         return _mp3(clip, spoke_as, "cache")
+    if own_voice:
+        try:
+            audio, source = await _render_own(text)
+        except Exception as exc:                        # noqa: BLE001
+            from ..modules._http import explain
+            reason = explain(exc)
+            # Never a system voice: the same line, already rendered, or
+            # nothing and the words stay on screen.
+            if (clip := voice_cache.fallback_for(text)) is not None:
+                log.warning("speech failed (%s); said a kept clip of the line "
+                            "instead", reason)
+                return _mp3(clip, spoke_as, "fallback")
+            log.warning("speech failed: %s", reason)
+            if isinstance(exc, _NoVoice):
+                raise HTTPException(503, str(exc)) from None
+            raise HTTPException(502, f"Speech failed — {reason}") from None
+        voice_cache.store(text, audio, _cache_voice(source))
+        return _mp3(audio, spoke_as, source)
+    # A persona voice (the Agency room) is a Fish voice of its own.
     if not os.getenv("FISH_AUDIO_API_KEY"):
         raise HTTPException(
             503, "No voice is configured, so I can only type. "
                  "Set FISH_AUDIO_API_KEY to enable speech.")
     try:
-        # ATLAS's own voice keeps the original one-argument call.
-        fish_at = time.monotonic()
-        audio = await (_fish_tts(text, voice_id) if voice_id else _fish_tts(text))
+        audio = await _fish_tts(text, voice_id)
         if not audio:
             raise RuntimeError("Fish Audio returned no audio")
-        log.info("voice timing: Fish Audio %d ms for %d chars",
-                 (time.monotonic() - fish_at) * 1000, len(text))
     except Exception as exc:                            # noqa: BLE001
         from ..modules._http import explain
         reason = explain(exc)
-        # Never another voice: the same line, already rendered by Fish, or
-        # nothing and the words stay on screen.
-        if own_voice and (clip := voice_cache.fallback_for(text)) is not None:
-            log.warning("speech via fish audio failed (%s); said a kept Fish "
-                        "clip of the line instead", reason)
-            return _mp3(clip, spoke_as, "fallback")
         log.warning("speech via fish audio failed: %s", reason)
         raise HTTPException(502, f"Speech failed — {reason}") from None
-    if own_voice:
-        voice_cache.store(text, audio)
     return _mp3(audio, spoke_as, "fish")
 
 
+class _NoVoice(RuntimeError):
+    """Neither the clone nor Fish Audio is configured."""
+
+
+def _cache_voice(source: str) -> str:
+    from . import voice_cache
+    return voice_cache.clone_voice() if source == "clone" else voice_cache.fish_voice()
+
+
+async def _render_own(text: str) -> tuple[bytes, str]:
+    """ATLAS's own voice: the local clone of the NotebookLM host first
+    (voice_clone.py), Fish Audio when the clone cannot. Returns (mp3,
+    source), source "clone" or "fish"; raises when neither can."""
+    from . import voice_clone
+    clone_reason: str | None = None
+    if voice_clone.configured():
+        at = time.monotonic()
+        try:
+            audio = await voice_clone.render(text)
+            if not audio:
+                raise RuntimeError("the clone voice returned no audio")
+            log.info("voice timing: clone %d ms for %d chars",
+                     (time.monotonic() - at) * 1000, len(text))
+            return audio, "clone"
+        except Exception as exc:                        # noqa: BLE001
+            from ..modules._http import explain
+            clone_reason = explain(exc)
+            log.warning("clone voice failed (%s); Fish Audio speaks instead",
+                        clone_reason)
+    if not os.getenv("FISH_AUDIO_API_KEY"):
+        if clone_reason:
+            raise RuntimeError(f"the clone voice failed ({clone_reason}) and "
+                               "Fish Audio is not set")
+        raise _NoVoice("No voice is configured, so I can only type. Set "
+                       "ATLAS_VOICE_CLONE_URL or FISH_AUDIO_API_KEY to enable speech.")
+    at = time.monotonic()
+    audio = await _fish_tts(text)
+    if not audio:
+        raise RuntimeError("Fish Audio returned no audio")
+    log.info("voice timing: Fish Audio %d ms for %d chars",
+             (time.monotonic() - at) * 1000, len(text))
+    return audio, "fish"
+
+
 def _mp3(audio: bytes, spoke_as: str, source: str) -> Response:
-    """`X-Voice` names the voice; `X-Voice-Source` says whether Fish Audio
-    rendered it now ("fish") or it is a Fish clip kept earlier ("cache",
-    "fallback") -- it is Fish Audio either way."""
+    """`X-Voice` names the voice; `X-Voice-Source` says what rendered it now
+    -- the local clone ("clone") or Fish Audio ("fish") -- or that it is a
+    clip kept earlier ("cache", "fallback")."""
     return Response(content=audio, media_type="audio/mpeg",
                     headers={"Cache-Control": "no-store", "X-Voice": spoke_as,
                              "X-Voice-Source": source})
@@ -1775,18 +1851,22 @@ async def clip(name: str, _s: SignedIn, cached_only: bool = False) -> Response:
         raise HTTPException(404, "no such line")
     if (audio := voice_cache.cached(text)) is not None:
         return _mp3(audio, "atlas", "cache")
-    if cached_only or not os.getenv("FISH_AUDIO_API_KEY"):
+    if cached_only:
+        if (audio := voice_cache.fallback_for(text)) is not None:
+            return _mp3(audio, "atlas", "fallback")
         raise HTTPException(404, "that line has not been rendered yet")
     try:
-        audio = await _fish_tts(text)
-        if not audio:
-            raise RuntimeError("Fish Audio returned no audio")
+        audio, source = await _render_own(text)
+    except _NoVoice:
+        raise HTTPException(404, "that line has not been rendered yet") from None
     except Exception as exc:                            # noqa: BLE001
         from ..modules._http import explain
         log.warning("could not render the %s line: %s", name, explain(exc))
+        if (audio := voice_cache.fallback_for(text)) is not None:
+            return _mp3(audio, "atlas", "fallback")
         raise HTTPException(502, "Speech failed") from None
-    voice_cache.store(text, audio)
-    return _mp3(audio, "atlas", "fish")
+    voice_cache.store(text, audio, _cache_voice(source))
+    return _mp3(audio, "atlas", source)
 
 
 _WARMED: list[bool] = []
@@ -1797,8 +1877,8 @@ async def warm_clips() -> int:
     the background when a voice surface first loads (`capabilities`), so
     the lines are there before Fish Audio is ever needed for them -- and
     before a day it is down. Returns how many were rendered."""
-    from . import voice_cache
-    if _WARMED or not os.getenv("FISH_AUDIO_API_KEY"):
+    from . import voice_cache, voice_clone
+    if _WARMED or not (os.getenv("FISH_AUDIO_API_KEY") or voice_clone.configured()):
         return 0
     _WARMED.append(True)
     made = 0
@@ -1806,16 +1886,16 @@ async def warm_clips() -> int:
         if voice_cache.cached(text) is not None:
             continue
         try:
-            audio = await _fish_tts(text)
+            audio, source = await _render_own(text)
         except Exception as exc:                        # noqa: BLE001
             from ..modules._http import explain
             log.warning("could not render the %s line: %s", name, explain(exc))
             continue
         if audio:
-            voice_cache.store(text, audio)
+            voice_cache.store(text, audio, _cache_voice(source))
             made += 1
     if made:
-        log.info("rendered %s fixed voice line(s) in Fish Audio", made)
+        log.info("rendered %s fixed voice line(s)", made)
     return made
 
 
@@ -1833,14 +1913,14 @@ async def _mac_without_a_model(transcript: str) -> str | None:
 
 
 @router.post("/ask")
-@quota.for_miro
+@quota.for_owner
 async def ask(request: Request, _s: SignedIn) -> dict:
     """Answer a spoken question. Reads only.
 
     The transcript is wrapped as untrusted before it reaches a prompt for the
     same reason email is: it is whatever was said in the room, by anyone.
 
-    Miro is waiting on it, so every model call beneath it may spend the
+    the owner is waiting on it, so every model call beneath it may spend the
     free allowance kept for him (kernel/quota.py); and it never ends in
     silence -- when no model answers, `no_model_line` is what is said.
     """
@@ -1848,7 +1928,75 @@ async def ask(request: Request, _s: SignedIn) -> dict:
     transcript = str(body.get("transcript", "")).strip()[:MAX_TRANSCRIPT]
     if not transcript:
         raise HTTPException(400, "nothing was said")
+    # Only the dashboard's own text box sends `typed: true`; anything else
+    # (spoken, absent, "true" as a string) is a spoken line, unchanged.
+    typed = body.get("typed") is True
 
+    # An order is on the record (kernel/tasks.py), as on the phone and in
+    # Slack, so the portal HUD can show it; a question is not a task. The
+    # task wraps the handler below and changes none of its branches.
+    from ..kernel import tasks
+    task_id = None
+    if is_order(transcript):
+        task_id = await tasks.open(transcript, source="dashboard", who="dashboard")
+    timer = reply_timing.begin("portal")
+    try:
+        reply = await (_ask(transcript, typed=True) if typed else _ask(transcript))
+    except Exception:
+        reply_timing.note(ok=False)
+        reply_timing.schedule(timer)
+        await tasks.close(task_id, route="answer", ok=False, outcome="failed")
+        raise
+    reply_timing.schedule(timer)
+    # (`assistant.converse` stores its own turn; its kind is "assistant", so
+    # nothing below learns from a live or private run a second time.)
+    if (reply.get("kind") == "question" and not reply.get("error")
+            and not reply.get("agent") and not _LIVE_QUESTION.search(transcript)):
+        # A plain chat turn from the signed-in dashboard: learn from it in the
+        # background. Live, agent and order turns yield nothing.
+        from ..kernel import memory_extract
+        memory_extract.schedule(transcript, str(reply.get("answer") or ""), "portal")
+    if task_id is not None:
+        pid = reply.get("proposal")
+        await tasks.close(task_id, route=str(reply.get("kind") or "answer"),
+                          ok=None, outcome=str(reply.get("answer") or ""),
+                          cards=[int(pid)] if pid else [])
+    return reply
+
+
+def _order_answer(answer: str, pids: list, tail: str) -> str:
+    """The reply to an order. The model was told a card is coming, so its line
+    says "queued"; with no card the line is dropped and only the plain reason
+    stays, so the reply never claims what did not happen."""
+    return f"{answer}\n\n{tail}" if pids else tail
+
+
+def _dashboard_door() -> bool:
+    from ..modules import assistant
+    return assistant.door_enabled("dashboard")
+
+
+async def _typed_assistant(transcript: str, wants_action: bool,
+                           started: float) -> dict | None:
+    """A typed dashboard line's general-chat step, through the assistant
+    (`ASSISTANT_DOORS` names `dashboard`). None when it failed, so the branch
+    that would have answered it before still does."""
+    from ..modules import assistant
+    try:
+        said = await assistant.converse(transcript, channel="dashboard", who="owner",
+                                       private_ok=True)
+    except Exception as exc:                                # noqa: BLE001
+        log.warning("assistant chat failed, today's answer used: %s",
+                    type(exc).__name__)
+        return None
+    return await _record(transcript, str(said), wants_action, started,
+                         kind="assistant")
+
+
+async def _ask(transcript: str, *, typed: bool = False) -> dict:
+    """The body of `ask`: every branch that answers a typed or spoken line.
+    `typed` is True only for a line typed in the dashboard; the spoken path
+    never reaches `assistant.converse`."""
     started = time.monotonic()
     wants_action = is_order(transcript)
 
@@ -1913,7 +2061,7 @@ async def ask(request: Request, _s: SignedIn) -> dict:
                                  error=f"I could not run the system check: {why}",
                                  kind="system_check")
         return await _record(transcript, check["line"], False, started,
-                             kind="system_check",
+                             kind="system_check", spoken=check.get("spoken"),
                              focus=resolve_focus(transcript, check["line"]),
                              check=check)
     # ---- end system check
@@ -1975,7 +2123,7 @@ async def ask(request: Request, _s: SignedIn) -> dict:
     # ------------------------------------------------------------ knowledge
     #
     # General knowledge -- medicine, technology, anatomy, history, whatever
-    # Miro asks -- answered directly, never routed to a specialist. Checked
+    # the owner asks -- answered directly, never routed to a specialist. Checked
     # only once action and circumstance are both ruled out, and only when no
     # module, business, agent or check name appears in what was said: a
     # question that names one of ATLAS's own is left for a specialist to
@@ -1983,6 +2131,10 @@ async def ask(request: Request, _s: SignedIn) -> dict:
     if not wants_action and is_knowledge(transcript):
         from ..kernel import knowledge
 
+        if typed and _dashboard_door() and (
+            got := await _typed_assistant(transcript, wants_action, started)
+        ):
+            return got
         try:
             answer = await knowledge.answer(transcript, quick=True)
         except RuntimeError as exc:
@@ -1997,7 +2149,7 @@ async def ask(request: Request, _s: SignedIn) -> dict:
         return await _record(transcript, answer, wants_action, started,
                              intent="knowledge", spoken=knowledge.spoken_part(answer))
 
-    # ---- the agent that owns it (Miro, 2026-09-29: "ATLAS should coordinate
+    # ---- the agent that owns it (the owner, 2026-09-29: "ATLAS should coordinate
     # and redirect to the appropriate agent"). "How's my trading" is Ivan's,
     # "what did Nora do today" is Nora's, "check FlyCheap" is Sofia's: that
     # agent answers, introduced by name, rather than a generic concierge
@@ -2012,6 +2164,11 @@ async def ask(request: Request, _s: SignedIn) -> dict:
                                      agent=owner,
                                      focus=resolve_focus(transcript, said))
     # ---- end the agent that owns it
+
+    if typed and not wants_action and _dashboard_door() and (
+        got := await _typed_assistant(transcript, wants_action, started)
+    ):
+        return got
 
     from ..kernel.agents import route
 
@@ -2048,10 +2205,18 @@ async def ask(request: Request, _s: SignedIn) -> dict:
             board_at = time.monotonic()
             system = await voice_system(transcript, wants_action=wants_action)
             asked_at = time.monotonic()
+            said_text = wrap_untrusted(transcript, "voice", principal=True)
+            if not wants_action and not _LIVE_QUESTION.search(transcript):
+                # Past notes of the owner's, quoted in the user turn, for a question
+                # that is not about live figures (none is ever read from them).
+                from ..kernel import memory
+                block = await memory.owner_recall_block(transcript, agent="portal")
+                if block:
+                    said_text = block + "\n\n" + said_text
             completion = await asyncio.wait_for(think(
                 Need.TRIVIAL, system,
-                [Message("user", wrap_untrusted(transcript, "voice", principal=True))],
-                max_tokens=VOICE_MAX_TOKENS), timeout=25)
+                [Message("user", said_text)],
+                max_tokens=VOICE_MAX_TOKENS, answer=True), timeout=25)
             answer = (getattr(completion, "text", "") or "").strip() or None
             # Per stage, for "he takes long to answer" (2026-10-06): routing
             # to here, reading the board, the model's whole answer.
@@ -2099,7 +2264,7 @@ async def ask(request: Request, _s: SignedIn) -> dict:
         pids, tail = await _queue_steps(transcript, source="voice",
                                         principal=True)
         proposal_id = pids[0] if pids else None
-        answer = f"{answer}\n\n{tail}"
+        answer = _order_answer(answer, pids, tail)
         if proposal_id is None:
             # No proposal to approve, so tell him in prose instead. propose()
             # already notifies on its own when it succeeds -- doing both would
@@ -2143,6 +2308,7 @@ async def mac_command(request: Request, _s: SignedIn) -> dict:
     if not transcript:
         raise HTTPException(400, "nothing was said")
     started = time.monotonic()
+    timer = reply_timing.begin("portal")
     # "Open Air Glass": the menu bar opens its own window. Answered here, in
     # code, before the Mac command parser (which would read it as an app
     # called "Air Glass"); nothing runs on the Mac or the server.
@@ -2151,12 +2317,14 @@ async def mac_command(request: Request, _s: SignedIn) -> dict:
     if window is not None:
         line = "Opening Air Glass."
         turn = await _record(transcript, line, False, started, kind="view")
+        reply_timing.schedule(timer)
         return {**turn, "handled": True, "ask": None, "ran": [], "window": window}
     from ..kernel import spoken
     heard = await spoken.run_spoken_commands(transcript)
     if not heard.handled:
         return envelope(handled=False, transcript=transcript)
     turn = await _record(transcript, heard.line, True, started, kind="mac_command")
+    reply_timing.schedule(timer)
     return {**turn, "handled": True, "ask": heard.ask,
             "ran": [{"action": r.action, "said": r.said, "ok": r.ok,
                      "detail": r.detail} for r in heard.ran]}
@@ -2205,16 +2373,36 @@ def first_sentences(text: str | None, n: int) -> str | None:
     return " ".join(parts[:n])
 
 
-def for_speech(text: str | None) -> str | None:
+def for_speech(text: str | None, *, wants_action: bool = False) -> str | None:
     """The part of a typed answer that is said out loud, or None when that is
-    all of it. Only removes; never rewrites, so an "unknown" or a refusal
-    reason in the sentence is still said."""
+    all of it. The host's way (`ear.for_ear`): a short summary, never a list,
+    an id or a pile of names. Only removes or collapses; never invents, so an
+    "unknown" or a refusal reason in the answer is still said. An order keeps
+    its card line ("Queued -- approve it in Slack."), so it gets more room."""
     if not text:
         return None
-    said = _MORE.sub("", text)
-    said = _CONFIG_PAREN.sub("", said)
-    said = re.sub(r"\s+([.,;:!?])", r"\1", said).strip()
+    from . import ear
+    try:
+        names = _module_names()
+    except Exception:                                   # noqa: BLE001
+        names = frozenset()
+    said = ear.for_ear(text, names=names,
+                       max_sentences=6 if wants_action else ear.MAX_SENTENCES,
+                       max_words=90 if wants_action else ear.MAX_WORDS)
     return said if said and said != text.strip() else None
+
+
+# A question about live state or figures: it gets no recalled memory.
+_LIVE_QUESTION = re.compile(
+    r"\b(how many|how much|how(?:'?s| is| are)|status|health|healthy|numbers?|figures?|"
+    r"views?|revenue|sales|money|earn\w*|subscribers?|followers?|orders?|traffic|down|"
+    r"working|broken|failing|failed|checks?|waiting|pending|approval|stats|today|"
+    r"yesterday|this week|right now|going|doing|up)\b", re.IGNORECASE)
+
+# Which timing route a turn's `kind` belongs to (kernel/reply_timing.py).
+_TIMING_ROUTE = {"view": "command", "mac_command": "command", "improve": "command",
+                 "mission": "command", "action_request": "command",
+                 "system_check": "live", "goodnight": "greeting"}
 
 
 async def _record(transcript: str, answer: str | None, wants_action: bool,
@@ -2223,7 +2411,7 @@ async def _record(transcript: str, answer: str | None, wants_action: bool,
                   intent: str | None = None, *,
                   kind: str | None = None, focus: dict | None = None,
                   check: dict | None = None, spoken: str | None = None,
-                  agent: str = "concierge") -> dict:
+                  agent: str = "inbox") -> dict:
     """Keep the words, never the audio. Ages out with browsing history.
 
     `kind` (alias `intent`) says which branch answered: question,
@@ -2236,6 +2424,7 @@ async def _record(transcript: str, answer: str | None, wants_action: bool,
     """
     kind = kind or intent or ("action_request" if wants_action else "question")
     ms = int((time.monotonic() - started) * 1000)
+    reply_timing.note(route=_TIMING_ROUTE.get(kind, "chat"), ok=error is None)
     if intent is None:
         intent = "action_request" if wants_action else "question"
     try:
@@ -2245,7 +2434,7 @@ async def _record(transcript: str, answer: str | None, wants_action: bool,
             transcript, answer, kind, agent, ms)
     except Exception:                                   # noqa: BLE001
         log.warning("could not record the voice turn")
-    said = for_speech(spoken or answer)
+    said = for_speech(spoken or answer, wants_action=wants_action)
     return envelope(transcript=transcript, answer=answer, error=error,
                     action_request=wants_action, proposal=proposal_id, ms=ms,
                     kind=kind, focus=focus, check=check,

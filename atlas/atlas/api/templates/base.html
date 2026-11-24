@@ -10,15 +10,16 @@
 {% include "_tokens.css" %}
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; background: var(--ground); }
+/* Transparent: the animated backdrop in _tokens.css sits behind the page. */
 body {
-  margin: 0; background: var(--bg); color: var(--text);
+  margin: 0; background: transparent; color: var(--text);
   font-family: var(--mono); font-size: 13.5px; line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
-a { color: var(--cyan); text-decoration: none; }
+a { color: var(--royal-bright); text-decoration: none; }
 a:hover { text-decoration: underline; }
-:focus-visible { outline: 1px solid var(--cyan); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--royal-bright); outline-offset: 2px; }
 
 .wrap { max-width: 74ch; margin: 0 auto; padding: 22px 16px 64px; }
 
@@ -28,12 +29,12 @@ a:hover { text-decoration: underline; }
   border-bottom: 1px solid var(--line);
 }
 .masthead .id {
-  font-size: 13px; font-weight: 700; letter-spacing: .34em; color: var(--cyan);
-  text-shadow: 0 0 12px var(--cyan-glow);
+  font-size: 13px; font-weight: 700; letter-spacing: .34em; color: var(--royal-bright);
+  text-shadow: 0 0 12px var(--royal-glow);
   display: inline-flex; align-items: center; gap: 9px;
 }
 /* The mark carries its own glow; the text-shadow above would not reach it. */
-.masthead .id svg { filter: drop-shadow(0 0 6px var(--cyan-glow)); }
+.masthead .id svg { filter: drop-shadow(0 0 6px var(--royal-glow)); }
 .masthead .when { color: var(--text-faint); font-size: 11.5px; }
 
 /* Bracketed, wide-tracked section labels. The brackets are the structure — no
@@ -43,11 +44,11 @@ h2.label {
   text-transform: uppercase; color: var(--text-dim);
   margin: 26px 0 9px;
 }
-h2.label::before { content: "[ "; color: var(--cyan-dim); }
-h2.label::after  { content: " ]"; color: var(--cyan-dim); }
+h2.label::before { content: "[ "; color: var(--royal); }
+h2.label::after  { content: " ]"; color: var(--royal); }
 h2.label:first-of-type { margin-top: 0; }
 
-.panel { border: 1px solid var(--line); background: var(--panel); padding: 11px 13px; }
+.panel { border: 1px solid var(--line); background: rgba(7, 12, 18, .72); padding: 11px 13px; }
 .panel + .panel { margin-top: -1px; }
 
 ul.rows { list-style: none; margin: 0; padding: 0; }
@@ -83,10 +84,26 @@ footer {
 footer a { color: var(--text-dim); }
 
 @media (max-width: 480px) { .wrap { padding: 16px 12px 48px; } body { font-size: 14px; } }
+
+/* Motion: entrance and hover only, and only for readers who have not asked for
+   less. UNKNOWN is never touched: nothing here targets a health state. */
+@media (prefers-reduced-motion: no-preference) {
+  .wrap > .masthead { animation: page-drop .6s var(--ease-out) backwards; }
+  .wrap > h2.label, .wrap > .panel, .wrap > .asof, .wrap > p, .wrap > ul,
+  .wrap > .watch-only, .wrap > .unavailable, .wrap > .pre {
+    animation: page-rise .6s var(--ease-out) backwards;
+  }
+  .panel, a { transition: border-color .25s ease, box-shadow .25s ease, color .2s ease; }
+  .panel:hover { border-color: rgba(143, 176, 255, .38);
+                 box-shadow: 0 0 0 1px rgba(91, 140, 255, .1), 0 10px 34px rgba(91, 140, 255, .1); }
+  @keyframes page-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes page-drop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+}
+{% block style %}{% endblock %}
 </style>
 </head>
-<body>
-<div class="wrap">
+<body class="atlas-page{% block bodyclass %}{% endblock %}">
+{% block shell %}<div class="wrap">
   <header class="masthead">
     <span class="id">
       <svg viewBox="0 0 32 32" width="17" height="17" fill="none"
@@ -102,6 +119,6 @@ footer a { color: var(--text-dim); }
   <footer>
     {% block footer %}<a href="/">Status</a> · <a href="/reports">Reports</a> · <a href="/logout">Sign out</a>{% endblock %}
   </footer>
-</div>
+</div>{% endblock %}
 </body>
 </html>

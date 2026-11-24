@@ -1,4 +1,4 @@
-// Speech understood together with what the hand is doing (Miro, 2026-10-06:
+// Speech understood together with what the hand is doing (the owner, 2026-10-06:
 // "I should be able to speak in Air Glass with the movements so he
 // understands better").
 //

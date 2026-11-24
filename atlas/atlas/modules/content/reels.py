@@ -9,7 +9,7 @@ Without the permission that part is UNKNOWN and
 the result says so in words; it is never skipped silently. The daily call
 spends one of the shared `PERPLEXITY_MONTHLY_CAP` calls, about 30 a month.
 
-**What it writes.** `reel_formats` rows: Miro's seeds (`source='miro'`, his
+**What it writes.** `reel_formats` rows: the owner's seeds (`source='owner'`, his
 four formats and five genres, inserted once and never duplicated) and what
 the research found (`source='perplexity'`), each with its evidence, read
 time and sources. `score` is a RANKING WEIGHT, not a measurement -- 2 for a
@@ -17,12 +17,12 @@ format he chose, 1 per research mention in the trailing 30 days -- and
 `top_formats` ranks by it, then rotates: among equal weights, the format
 drafted longest ago goes first. The rollback retires the rows it filed.
 
-**What it never does:** read Instagram through Miro's logged-in account.
+**What it never does:** read Instagram through the owner's logged-in account.
 Scraping with his session is how an account gets banned, and the
 `instagram` module refuses browser automation outright. The playbook's
 only sources are Perplexity, the accounts' own Graph insights (with their
 own token), Postiz's analytics for the TikTok posts, and the measured
-outliers Miro relayed from vidIQ (`MEASURED_FORMATS`).
+outliers the owner relayed from vidIQ (`MEASURED_FORMATS`).
 
 **Learning from results.** `check_reel_metrics` reads each posted reel's
 numbers once a day (`reel_metrics`, every row with its read time) and
@@ -66,7 +66,7 @@ RESEARCH_DEADLINE = 90.0
 REELS_PER_DAY_DEFAULT = 2
 WINDOW_DAYS = 30
 
-# Miro's four formats (2026-09-24) and the genre rotation he added the same
+# the owner's four formats (2026-09-24) and the genre rotation he added the same
 # day, each with how many beats a reel in it gets.
 SEED_FORMATS: tuple[tuple[str, int], ...] = (
     ("before/after transformation timelapse", 3),
@@ -79,7 +79,7 @@ SEED_FORMATS: tuple[tuple[str, int], ...] = (
     ("drama story", 4),
     ("love story", 4),
 )
-# Six formats Miro measured with vidIQ's outlier search (relayed
+# Six formats the owner measured with vidIQ's outlier search (relayed
 # 2026-09-25): name, beats, and the evidence -- views as read that day.
 MEASURED_ON = date(2026, 9, 25)      # a real date: asyncpg refuses a str for $1::date
 MEASURED_FORMATS: tuple[tuple[str, int, str], ...] = (
@@ -104,25 +104,25 @@ MEASURED_FORMATS: tuple[tuple[str, int, str], ...] = (
      "you', 'Mommy? You have a child?', a courtroom envelope reveal); guiding "
      "text and dynamic captions. vidIQ outliers, read 2026-09-25: 1M-4.8M views")),
 )
-# Miro's second round, 2026-09-27: 21 TikToks and 2 reels he sent, read
+# the owner's second round, 2026-09-27: 21 TikToks and 2 reels he sent, read
 # through TikTok's public captions (oEmbed) and vidIQ -- never through his
 # own logged-in accounts -- plus three story ideas of his own. Stories
 # inspired by films take the ARCHETYPE only: no film title, actor, character
 # name, likeness or footage ever reaches a prompt or a caption.
-MIRO_IDEAS_ON = "2026-09-27"
-MIRO_IDEAS: tuple[tuple[str, int, str], ...] = (
+OWNER_IDEAS_ON = "2026-09-27"
+OWNER_IDEAS: tuple[tuple[str, int, str], ...] = (
     ("wronged-man revenge saga", 4,
-     ("Miro's own idea (the Monte Cristo archetype, public domain): a rich man "
+     ("the owner's own idea (the Monte Cristo archetype, public domain): a rich man "
      "is robbed by the people he trusted and sent to prison; he digs a small "
      "hole out of his cell, teaches each betrayer a lesson so they never do "
      "it to anyone again, finds his grown daughter bullied by coworkers and "
      "saves her, and they live happily. A 'Part N' series.")),
     ("secret-trial courtroom comedy", 4,
-     ("Miro's own idea: a closed-door trial played for laughs -- a pompous "
+     ("the owner's own idea: a closed-door trial played for laughs -- a pompous "
      "judge, a hopeless lawyer, a defendant who keeps making it worse; mock "
      "the courtroom-drama genre. Archetype only, no film named.")),
     ("stranger-in-the-family redemption", 4,
-     ("Miro's own idea: a hardened fugitive hides with a warm, chaotic family "
+     ("the owner's own idea: a hardened fugitive hides with a warm, chaotic family "
      "and is slowly changed by their kindness. Never glorify violence; the "
      "turn is the family's warmth.")),
     ("talking fruit and vegetable brainrot saga", 4,
@@ -144,18 +144,18 @@ MIRO_IDEAS: tuple[tuple[str, int, str], ...] = (
       "with AI' on screen from the first second; never real events, people, "
       "places or a realistic bulletin.")),
     ("Egyptian Arabic comedy series", 4,
-     ("Miro, 2026-09-27: he is Egyptian, so an Egyptian-dialect series -- "
+     ("the owner, 2026-09-27: he is Egyptian, so an Egyptian-dialect series -- "
       "family pranks and kitchen revolts (vegetables begging to be let out "
       "of the fridge). Veo speaks it; the English Fish voice is skipped.")),
     ("original insane plot", 4,
-     ("Miro, 2026-09-27: ATLAS invents the plot itself -- an absurd premise "
+     ("the owner, 2026-09-27: ATLAS invents the plot itself -- an absurd premise "
       "played completely straight, a real emotional turn, and a cliffhanger; "
       "comedy and drama at once. Never borrowed from a film or a real case.")),
     ("Egyptian Arabic revenge serial", 4,
-     ("Miro, 2026-09-27: his wronged-man revenge saga told in Egyptian "
+     ("the owner, 2026-09-27: his wronged-man revenge saga told in Egyptian "
       "Arabic, spoken by Veo, alternating days with the English serials.")),
     ("hospital ER comedy series", 4,
-     ("Miro, 2026-09-27: a new series -- doctors, nurses and patients in "
+     ("the owner, 2026-09-27: a new series -- doctors, nurses and patients in "
       "absurd ER situations, a 'Part N' with the same cast. An invented "
       "hospital only: never a real hospital's name, logo or uniform, never "
       "real medical advice, and nobody's illness is the joke -- the "
@@ -184,7 +184,7 @@ MIRO_IDEAS: tuple[tuple[str, int, str], ...] = (
      "beat. Fictional characters only -- the reel used real people's faces, "
      "which ATLAS never does.")),
     ("anime-style football edit (labelled)", 3,
-     ("Miro, 2026-10-01: Instagram @slx123_7 Dd7ba3wx8V1 (33 s, marked 'AI "
+     ("the owner, 2026-10-01: Instagram @slx123_7 Dd7ba3wx8V1 (33 s, marked 'AI "
       "content', 114K likes read 15:58 UTC) -- an anime-styled AI edit of a "
       "footballer, big dramatic beats, music, no narration; he wants this for "
       "Cristiano Ronaldo. ATLAS draws an ORIGINAL anime striker (number 7, "
@@ -193,7 +193,7 @@ MIRO_IDEAS: tuple[tuple[str, int, str], ...] = (
       "a real person's likeness is never generated (guard), and the 'AI "
       "content' label stays on.")),
     ("genius-roommate sitcom series", 4,
-     ("Miro, 2026-10-01: TikTok edits of The Big Bang Theory and Young "
+     ("the owner, 2026-10-01: TikTok edits of The Big Bang Theory and Young "
       "Sheldon (@dmlqbp2020 7681198263260695838, @xkmovie6 "
       "7681638179203517727) -- a pedantic genius, a patient roommate, one "
       "apartment, a running gag per episode. ATLAS writes ORIGINAL "
@@ -204,7 +204,7 @@ MIRO_IDEAS: tuple[tuple[str, int, str], ...] = (
 MEASURED_SOURCE = "vidiq_outliers"
 # Formats whose text is ATLAS's own constant, not something read from
 # outside: quoted to the drafter as given, not wrapped as untrusted.
-TRUSTED_SOURCES = ("miro", MEASURED_SOURCE)
+TRUSTED_SOURCES = ("owner", MEASURED_SOURCE)
 SEED_WEIGHT = 2.0
 MENTION_WEIGHT = 1.0
 DEFAULT_SCENES = 4
@@ -271,24 +271,24 @@ def _json_object(text: str) -> dict | None:
 
 
 async def ensure_seeds() -> None:
-    """Miro's seeds, once each. Idempotent: a seed already on file (by name,
+    """the owner's seeds, once each. Idempotent: a seed already on file (by name,
     case-insensitively) is left alone."""
     for name, scenes in SEED_FORMATS:
         await execute_sql(
             """INSERT INTO reel_formats (format, evidence, source, score, max_scenes)
                SELECT $1, $2, $3, $4, $5
                WHERE NOT EXISTS (SELECT 1 FROM reel_formats r
-                                  WHERE r.source = 'miro'
+                                  WHERE r.source = 'owner'
                                     AND lower(r.format) = lower($1))""",
-            name, "chosen by Miro, 2026-09-24", "miro", SEED_WEIGHT, scenes)
-    for name, scenes, evidence in MIRO_IDEAS:
+            name, "chosen by the owner, 2026-09-24", "owner", SEED_WEIGHT, scenes)
+    for name, scenes, evidence in OWNER_IDEAS:
         await execute_sql(
             """INSERT INTO reel_formats (format, evidence, source, score, max_scenes)
                SELECT $1, $2, $3, $4, $5
                WHERE NOT EXISTS (SELECT 1 FROM reel_formats r
-                                  WHERE r.source = 'miro'
+                                  WHERE r.source = 'owner'
                                     AND lower(r.format) = lower($1))""",
-            name, f"chosen by Miro, {MIRO_IDEAS_ON}: {evidence}", "miro",
+            name, f"chosen by the owner, {OWNER_IDEAS_ON}: {evidence}", "owner",
             SEED_WEIGHT, scenes)
     for name, scenes, evidence in MEASURED_FORMATS:
         await execute_sql(
@@ -434,7 +434,7 @@ async def top_formats(n: int) -> list[dict]:
              WHERE f.retired_at IS NULL
                AND f.source <> 'football'
                AND f.source <> 'course'
-               AND (f.source IN ('miro', 'vidiq_outliers')
+               AND (f.source IN ('owner', 'vidiq_outliers')
                     OR f.at > now() - interval '{WINDOW_DAYS} days')
              GROUP BY lower(f.format)""")
     last = await fetch_all(
@@ -466,7 +466,7 @@ async def top_formats(n: int) -> list[dict]:
 
 # ------------------------------------------------------------ the day's mix
 #
-# Miro, 2026-09-27, for both the stories account and TikTok: the daily reels
+# the owner, 2026-09-27, for both the stories account and TikTok: the daily reels
 # rotate across four buckets -- (a) serialized stories, in Egyptian Arabic
 # and in English on alternate days; (b) funny AI animals, cats and dogs;
 # (c) fruit and vegetable sagas; (d) original "insane" plots ATLAS invents
@@ -506,7 +506,7 @@ def bucket_of(name: str) -> str:
     return "serial"
 
 
-# Miro's priority, relayed 2026-09-27, in order. Within the day's hard rules
+# the owner's priority, relayed 2026-09-27, in order. Within the day's hard rules
 # (an original plot every two days, one serial in the day's language) the
 # next pick is the highest-priority format whose bucket is due.
 PRIORITY: tuple[tuple[str, ...], ...] = (
@@ -536,7 +536,7 @@ SERIES_BEATS = (8, 11)
 OTHER_BEATS = (4, 5)
 
 
-# The football lane: 20-40 s, 3-5 clips (Miro, 2026-09-29).
+# The football lane: 20-40 s, 3-5 clips (the owner, 2026-09-29).
 FOOTBALL_BEATS = (3, 5)
 
 
@@ -588,7 +588,7 @@ async def pick_today(n: int, today: date | None = None) -> list[dict]:
     ranked = await top_formats(200)
     if not ranked:
         return []
-    # Miro's priority first, the measured weight within it (stable sort).
+    # the owner's priority first, the measured weight within it (stable sort).
     ranked = sorted(ranked, key=lambda r: priority(r["format"]))
     try:
         last = await _bucket_last_drafted()

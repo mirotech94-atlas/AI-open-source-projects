@@ -55,19 +55,26 @@ describe("overall health", () => {
 
 describe("services", () => {
   const modules = [
-    mod("guardian", "failing", [check({ name: "hub_api", health: "failing",
-                                         detail: "hub API answered HTTP 502. Retrying" })]),
+    mod("agency", "failing", [check({ name: "getlayers_auth", health: "failing",
+                                       detail: "GetLayers answered HTTP 502. Retrying" })]),
     mod("comms", "ok", [check({ name: "slack_auth" }),
                         check({ name: "twilio_auth", health: "unknown", detail: "timed out" })]),
-    mod("flycheap", "ok", [check({ name: "api", stale: true })], { health: "ok" }),
     mod("calendar", "unknown", [check({ health: "unknown",
       state: { kind: "not_set_up", label: "not set up" } })], { setup: "not set up" }),
   ];
 
+  it("lists exactly the eight services the owner checks", () => {
+    expect(SERVICES.map((s) => s.name)).toEqual(
+      ["Mapfront", "Academy store", "Slack", "Gmail", "Calendar", "Atlas Academy YouTube",
+       "Search Console", "Twilio"]);
+    expect(SERVICES.find((s) => s.name === "Atlas Academy YouTube")?.source)
+      .toBe("youtube.clips_stats");
+  });
+
   it("a failing module is Down with its reason and read time", () => {
-    const g = service(SERVICES[0]!, modules, null);
+    const g = service(SERVICES.find((x) => x.name === "Mapfront")!, modules, null);
     expect(g).toMatchObject({ state: "down", word: "Down", readAt: READ });
-    expect(g.why).toBe("hub_api: hub API answered HTTP 502");
+    expect(g.why).toBe("getlayers_auth: GetLayers answered HTTP 502");
   });
 
   it("one check can stand for a service; an unknown one is Unknown, never Online", () => {
@@ -78,19 +85,32 @@ describe("services", () => {
     expect(by.Twilio?.why).toBe("timed out");
     expect(by.Calendar).toMatchObject({ state: "unknown", why: "not set up" });
     expect(by.Gmail).toMatchObject({ state: "unknown", why: "not watched" });
-    expect(by.Whop).toMatchObject({ state: "unknown", why: "no check reads Whop" });
-    expect(by.Postiz?.state).toBe("unknown");
   });
 
   it("a lane that contacted nothing is not a probe of the service", () => {
-    const spec = SERVICES.find((x) => x.name === "YouTube")!;
-    const off = service(spec, [mod("content", "ok", [check({ name: "shorts_lane",
-      detail: "Shorts are off (SHORTS_PER_WEEK=0)" })])], null);
+    const spec = { name: "Lane", source: "content.lane", notProbed: /^Lane is off/ };
+    const off = service(spec, [mod("content", "ok", [check({ name: "lane",
+      detail: "Lane is off (PER_WEEK=0)" })])], null);
     expect(off.state).toBe("unknown");
     expect(off.why).toMatch(/^not probed/);
-    const on = service(spec, [mod("content", "ok", [check({ name: "shorts_lane",
-      detail: "last Short 2h ago" })])], null);
+    const on = service(spec, [mod("content", "ok", [check({ name: "lane",
+      detail: "last run 2h ago" })])], null);
     expect(on.state).toBe("online");
+  });
+
+  it("a stale Atlas Academy reading is Unknown, too old to count", () => {
+    const spec = SERVICES.find((x) => x.name === "Atlas Academy YouTube")!;
+    const s = service(spec, [mod("youtube", "ok", [check({ name: "clips_stats", stale: true })])], null);
+    expect(s).toMatchObject({ state: "unknown", why: "last reading too old to count" });
+  });
+
+  it("an unknown Atlas Academy reading never says the channel key", () => {
+    const spec = SERVICES.find((x) => x.name === "Atlas Academy YouTube")!;
+    const s = service(spec, [mod("youtube", "unknown", [check({ name: "clips_stats",
+      health: "unknown", detail: "clips: token refresh failed: x" })])], null);
+    expect(s.state).toBe("unknown");
+    expect(s.why).not.toMatch(/\bclips\b/i);
+    expect(s.why).toContain("Atlas Academy");
   });
 
   it("the pill names unknowns beside trouble", () => {
@@ -101,8 +121,7 @@ describe("services", () => {
   it("a failed read makes every service Unknown with the reason", () => {
     const all = services(null, "HTTP 502");
     expect(all.every((s) => s.state === "unknown")).toBe(true);
-    expect(all.filter((s) => s.name !== "Whop" && s.name !== "Postiz")
-      .every((s) => s.why.includes("502"))).toBe(true);
+    expect(all.every((s) => s.why.includes("502"))).toBe(true);
   });
 });
 
@@ -146,7 +165,7 @@ describe("diagnostics", () => {
       .toMatchObject({ text: "23% free", health: "degraded" });
     expect(storage(disk({ value: 23.4, unit: "% free", stale: true })).text).toBeNull();
     expect(storage(disk({ value: null, health: "unknown" })).health).toBe("unknown");
-    expect(storage([mod("vpsie", "ok")])).toMatchObject({ text: null, sub: "disk check not reporting" });
+    expect(storage([mod("cloudco", "ok")])).toMatchObject({ text: null, sub: "disk check not reporting" });
     expect(storage(null).text).toBeNull();
   });
 
@@ -182,16 +201,26 @@ describe("AI core strip", () => {
 
 describe("what reaches the DOM", () => {
   it("the header pill says Unknown, dashed, while anything is unmeasured", () => {
-    const voice = { tap: () => undefined, phase: "dormant" } as unknown as Parameters<typeof CommandHeader>[0]["voice"];
     const overview = { data: { as_of: READ, modules: [mod("a", "ok"), mod("b", "unknown")],
                                pending_approvals: 0, watch_only: true },
                        error: null, loading: false, fetchedAt: new Date(READ), reload: () => undefined };
     const html = renderToStaticMarkup(createElement(StaticRouter, { location: "/" },
-      createElement(CommandHeader, { items: [], overview, waiting: null, feed: "live",
-                                     onSignOut: () => undefined, voice })));
+      createElement(CommandHeader, { overview, waiting: null, feed: "live" })));
     expect(html).toContain('class="cmd-pill" data-health="unknown"');
     expect(html).toContain("Unknown: 1 unmeasured");
     expect(html).not.toContain("operational");
     expect(html).toContain("needs you: unknown");
+  });
+
+  it("the header has the two tabs, no AI Voice, no Sign out, no More menu", () => {
+    const overview = { data: null, error: null, loading: true, fetchedAt: null, reload: () => undefined };
+    const html = renderToStaticMarkup(createElement(StaticRouter, { location: "/agency" },
+      createElement(CommandHeader, { overview, waiting: 2, feed: "live" })));
+    expect(html).toContain("Command Center");
+    expect(html).toContain('href="/agency"');
+    expect(html).not.toContain("Sign out");
+    expect(html).not.toContain("AI Voice");
+    expect(html).not.toContain("AI Core");
+    expect(html).not.toContain("More");
   });
 });

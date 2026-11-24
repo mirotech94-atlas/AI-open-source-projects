@@ -99,14 +99,14 @@ async def test_tier_3_is_refused_before_a_single_feature_is_computed(monkeypatch
     from atlas.kernel.judgment import policy
     from atlas.kernel.permissions import Decision
 
-    monkeypatch.setitem(reg.REGISTRY.decisions, "vpsie.delete_vm",
+    monkeypatch.setitem(reg.REGISTRY.decisions, "cloudco.delete_vm",
                         Decision(False, Tier.NEVER, "permanently denied: destroys data"))
 
     async def boom(*a, **k):
         raise AssertionError("features were computed for a Tier 3 action")
     monkeypatch.setattr(jlog, "features_for", boom)
 
-    pred = await policy.predict("vpsie.delete_vm", 2)
+    pred = await policy.predict("cloudco.delete_vm", 2)
     assert pred.abstained and pred.p is None
     assert pred.advice is Advice.ABSTAIN
     assert "tier 3" in pred.why
@@ -123,9 +123,9 @@ def test_the_only_training_source_is_the_decision_log():
 
 
 def test_below_forty_rows_every_head_abstains():
-    env = abstain.Envelope(n_rows=39, pair_counts={"vpsie.snapshot_all": 39},
+    env = abstain.Envelope(n_rows=39, pair_counts={"cloudco.snapshot_all": 39},
                            mean=(0.5,) * 13, std=(0.1,) * 13)
-    v = abstain.check(env, np.zeros(encode.WIDTH), "vpsie.snapshot_all")
+    v = abstain.check(env, np.zeros(encode.WIDTH), "cloudco.snapshot_all")
     assert v.abstain and "39" in v.reason
     assert abstain.check(None, np.zeros(encode.WIDTH), "x.y").abstain
 
@@ -133,7 +133,7 @@ def test_below_forty_rows_every_head_abstains():
 # --------------------------------------------------------------- encoder
 
 def _feat(**over) -> encode.DecisionFeatures:
-    base = {"module": "vpsie", "action": "vpsie.snapshot_all", "severity": 1,
+    base = {"module": "cloudco", "action": "cloudco.snapshot_all", "severity": 1,
             "reversible": True, "blast_radius": 1, "cost_usd": 0.0, "hour": 14,
             "weekday": 2, "quiet_hours": False, "times_seen": 12,
             "prior_approve_rate": 0.9, "days_since_similar": 3.0,
@@ -147,7 +147,7 @@ def test_encoder_is_forty_wide_and_every_slot_is_named():
     assert len(encode.NAMES) == 40 and len(set(encode.NAMES)) == 40
     x = encode.encode(_feat())
     assert x.shape == (40,) and x.dtype == np.float32
-    assert x[encode.NAMES.index("module=vpsie")] == 1.0
+    assert x[encode.NAMES.index("module=cloudco")] == 1.0
     assert x[encode.NAMES.index("family=snapshot")] == 1.0
     assert 0 <= x.min() and x.max() <= 1.0
 
@@ -324,10 +324,10 @@ def test_calibration_refuses_a_single_class():
 # --------------------------------------------------------------- abstain
 
 def test_abstains_on_a_pair_it_has_barely_seen():
-    env = abstain.Envelope(200, {"vpsie.snapshot_all": 150, "mail.draft_reply": 2},
+    env = abstain.Envelope(200, {"cloudco.snapshot_all": 150, "mail.draft_reply": 2},
                            (0.5,) * 13, (0.2,) * 13)
     x = encode.encode(_feat())
-    assert not abstain.check(env, x, "vpsie.snapshot_all").abstain
+    assert not abstain.check(env, x, "cloudco.snapshot_all").abstain
     v = abstain.check(env, x, "mail.draft_reply")
     assert v.abstain and "2 time" in v.reason
     assert abstain.check(env, x, "never.seen").abstain
@@ -335,11 +335,11 @@ def test_abstains_on_a_pair_it_has_barely_seen():
 
 def test_abstains_on_a_value_outside_everything_seen():
     X, _ = _synthetic(300)
-    env = abstain.Envelope.from_training(X, ["vpsie.snapshot_all"] * 300)
+    env = abstain.Envelope.from_training(X, ["cloudco.snapshot_all"] * 300)
     normal = encode.encode(_feat(cost_usd=0))
-    assert not abstain.check(env, normal, "vpsie.snapshot_all").abstain
+    assert not abstain.check(env, normal, "cloudco.snapshot_all").abstain
     wild = encode.encode(_feat(cost_usd=500.0))
-    v = abstain.check(env, wild, "vpsie.snapshot_all")
+    v = abstain.check(env, wild, "cloudco.snapshot_all")
     assert v.abstain and "cost_usd" in v.reason
 
 
@@ -350,7 +350,7 @@ def test_every_number_comes_with_three_reasons_in_his_words():
     pipe = calibrate.fit_calibrated(BY_NAME["logistic"], X, y)
     x = encode.encode(_feat(reversible=True, hour=4, prior_approve_rate=0.95,
                             times_seen=30))
-    reasons = explain.explain(pipe, x, X.mean(axis=0), pair="vpsie.snapshot_all",
+    reasons = explain.explain(pipe, x, X.mean(axis=0), pair="cloudco.snapshot_all",
                               seen=30, rate=0.95)
     assert len(reasons) == 3
     texts = [r.text for r in reasons]
@@ -364,7 +364,7 @@ def test_explain_works_for_the_gradient_head_too():
     pipe = calibrate.fit_calibrated(BY_NAME["gradient"], X, y)
     assert pipe is not None
     reasons = explain.explain(pipe, encode.encode(_feat()), X.mean(axis=0),
-                              pair="vpsie.snapshot_all", seen=12, rate=0.9)
+                              pair="cloudco.snapshot_all", seen=12, rate=0.9)
     assert len(reasons) == 3 and all(r.text for r in reasons)
 
 

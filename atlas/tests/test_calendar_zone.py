@@ -161,7 +161,7 @@ async def test_an_unreadable_zone_writes_nothing(google):
 # -------------------------------------------------------------- duplicates
 
 def _existing(start: str, end: str, *, attendees=(), summary="Call", status="confirmed"):
-    me = {"email": "miro@example.com", "self": True, "organizer": True}
+    me = {"email": "owner@example.com", "self": True, "organizer": True}
     return {"id": "old7", "status": status, "summary": summary,
             "start": {"dateTime": start}, "end": {"dateTime": end},
             "attendees": [me, *({"email": a} for a in attendees)]}

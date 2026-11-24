@@ -12,6 +12,7 @@ those is a surface that exists to serve a second user who does not exist.
 from __future__ import annotations
 
 import base64
+import hashlib
 import hmac
 import logging
 import os
@@ -36,7 +37,7 @@ _hasher = PasswordHasher()
 # single-user dashboard on a private mesh, so the threat is a mesh device
 # guessing, not a botnet -- a small sliding window is proportionate and needs
 # no storage. Per address, not global: one guessing device must not be able
-# to lock Miro himself out of the dashboard (audit #20). The address is the
+# to lock the owner himself out of the dashboard (audit #20). The address is the
 # one the mesh guard judges (peers.effective_client), not Caddy's.
 MAX_ATTEMPTS = 8
 WINDOW = 300.0
@@ -130,7 +131,7 @@ def verify_password(supplied: str, client: str = "") -> bool:
     return True
 
 
-def issue(user: str = "miro") -> str:
+def issue(user: str = "owner") -> str:
     return _serializer().dumps({"u": user, "n": secrets.token_hex(8)})
 
 
@@ -222,3 +223,51 @@ def hash_password(plain: str) -> str:
 
 def constant_time_equals(a: str, b: str) -> bool:
     return hmac.compare_digest(a or "", b or "")
+
+
+# --- CSRF for the GUI decision route (the owner 2026-10-29: GUI decisions) -------
+# The session cookie is HttpOnly and SameSite=Lax; the decision route also
+# wants proof that the page making the request read /api/session itself. The
+# token is an HMAC of the cookie value, which already carries a per-login
+# nonce ("n" in `issue`), so it changes with every sign-in and needs no
+# storage. A page on another origin can neither read the cookie nor this.
+
+def csrf_token(session_cookie: str) -> str:
+    return hmac.new(_secret().encode(), b"atlas-csrf:" + session_cookie.encode(),
+                    hashlib.sha256).hexdigest()
+
+
+def csrf_ok(request: Request) -> bool:
+    cookie = request.cookies.get(COOKIE) or ""
+    given = request.headers.get("x-csrf-token", "").strip()
+    if not cookie or not given:
+        return False
+    return constant_time_equals(given, csrf_token(cookie))
+
+
+def request_origin(request: Request) -> str:
+    """The origin this request was made to: its scheme (the proxy's
+    X-Forwarded-Proto only when the peer is our own proxy) and its Host."""
+    scheme = request.url.scheme
+    if peers.from_proxy(request):
+        proto = request.headers.get("x-forwarded-proto", "").split(",")[0]
+        proto = proto.strip().lower()
+        if proto in ("http", "https"):
+            scheme = proto
+    host = request.headers.get("host", "").strip().lower()
+    return f"{scheme}://{host}"
+
+
+def same_origin(request: Request, allowed_hosts: frozenset[str] | None) -> bool:
+    """Fail closed: a missing, "null" or foreign Origin is not ours, nor is a
+    browser that says the fetch was not same-origin."""
+    origin = (request.headers.get("origin") or "").strip().rstrip("/").lower()
+    host = request.headers.get("host", "").strip().lower()
+    if not origin or origin == "null" or not host:
+        return False
+    if not hmac.compare_digest(origin, request_origin(request)):
+        return False
+    if allowed_hosts is not None and host not in allowed_hosts:
+        return False
+    site = request.headers.get("sec-fetch-site")
+    return site is None or site.strip().lower() == "same-origin"

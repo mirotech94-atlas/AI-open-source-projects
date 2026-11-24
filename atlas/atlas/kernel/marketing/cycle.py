@@ -15,7 +15,7 @@ Two filters, both from the brief and both tested:
   replication; re-running it everywhere is stopping the experiment.
 
 **Standing rules are drafted here and enacted nowhere.** At p >= 0.95 the
-judgment layer produces the text of a rule in Miro's own shape. This file
+judgment layer produces the text of a rule in the owner's own shape. This file
 carries that text to him with `enacted: False` and a note saying only he can
 put it in place. CLAUDE.md is explicit that there is no runtime override and
 none may be added; nothing in this package reads a standing rule back to skip
@@ -88,7 +88,7 @@ async def closed_experiments(business: str, *, weeks: int = 12) -> list[dict]:
 
 
 async def standing_rule_candidates() -> list[dict]:
-    """Rule text the judgment layer drafted, for Miro to confirm once.
+    """Rule text the judgment layer drafted, for the owner to confirm once.
 
     A candidate appears only at `Advice.STANDING_RULE` — p >= 0.95 over at
     least twenty decisions, and only for a reversible action. The layer

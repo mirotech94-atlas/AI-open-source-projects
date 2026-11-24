@@ -145,7 +145,7 @@ LOCATE_FIELD_MASK = "places.location,places.formattedAddress,places.displayName"
 async def locate(
     area: str, *, near: tuple[float, float, int] | None = None,
 ) -> tuple[dict | None, str | None]:
-    """Where a place Miro NAMED is, read from Places -- never a coordinate a
+    """Where a place the owner NAMED is, read from Places -- never a coordinate a
     model wrote. One Text Search for the area itself ("Astoria"), biased
     toward `near` (AGENCY_HOME_AREA) when there is one, so "Astoria" is the
     one near him. Charged against the same monthly cap as a prospect call.

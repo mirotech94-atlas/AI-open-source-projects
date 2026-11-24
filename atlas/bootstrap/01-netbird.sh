@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 # Enroll the box in the NetBird mesh. Pass a setup key as $1.
 #
 #   NETBIRD_MGMT_URL=https://netbird.example.com bash 01-netbird.sh <setup-key>

@@ -1,5 +1,5 @@
 """RA-B6: a cause ATLAS raises by itself is not re-asked the moment its card
-expires (151 gitlab.open_issue cards from 33 causes) -- but what Miro asks
+expires (151 gitlab.open_issue cards from 33 causes) -- but what the owner asks
 for himself is never held back."""
 from __future__ import annotations
 

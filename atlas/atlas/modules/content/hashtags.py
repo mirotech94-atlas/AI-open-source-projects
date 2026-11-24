@@ -1,4 +1,4 @@
-"""Niche hashtags per lane, chosen in code from closed lists (Miro,
+"""Niche hashtags per lane, chosen in code from closed lists (the owner,
 2026-09-29: reach without paid promotion).
 
 No model writes a hashtag. Each lane has a fixed list, and the only choice

@@ -1,7 +1,7 @@
 """The designed client-site templates, the page gate, and the call brief
 (2026-09-30).
 
-The preview at eco-electrical-services-llc-38.mapfront.io had, as its body
+The eco-electrical-services-llc-38 preview had, as its body
 copy, a model's account of the GetLayers output it had been handed. These
 tests hold the three places that now stop that -- the copy validation, the
 page gate in the builder, and launch item 22 that `agency.deploy_site`
@@ -27,9 +27,18 @@ from atlas.modules.agency import (
     sitekit,
     sitetemplate,
 )
+from atlas.modules.agency import client as client_mod
 from atlas.modules.agency.client import ClientData, client_data
 from atlas.modules.agency.launch import finish_site
 from atlas.modules.agency.launchcheck import CONTENT_NUMBER, Status, launch_audit
+
+
+@pytest.fixture(autouse=True)
+def _box_deploy_path(monkeypatch):
+    """The box deploy path is kept for rollback and tested here; since
+    2026-10-30 it refuses live (Vercel only, test_agency_gmail_brand.py)."""
+    from atlas.modules.agency import deploy as _deploy
+    monkeypatch.setattr(_deploy, "VERCEL_ONLY", False)
 
 # Word for word what the public preview said on 2026-09-30.
 ECO_PARAGRAPH = (
@@ -40,7 +49,7 @@ ECO_PARAGRAPH = (
 
 LEADS = {
     "trades": {"id": 10, "name": "NYC Quality Plumbing", "category": "plumber",
-               "phone": "(332) 222-0135", "address": "885 6th Ave, New York, NY 10001",
+               "phone": "(555) 010-0100", "address": "885 6th Ave, New York, NY 10001",
                "website": None, "status": "audited"},
     "beauty": {"id": 11, "name": "Court Street Salon", "category": "hair_salon",
                "phone": "(718) 555-0142", "address": "214 Court St, Brooklyn, NY 11201",
@@ -234,7 +243,10 @@ def test_a_preview_says_so_and_stays_out_of_search_until_the_client_buys():
     assert 'content="noindex"' not in sold and "Preview made by" not in sold
 
 
-def test_the_chat_script_stays_on_a_chat_package_page():
+def test_the_chat_script_stays_on_a_chat_package_page(monkeypatch):
+    # Off while ATLAS is local-only (2026-10-29); on behind a public door.
+    assert 'data-atlas="chat"' not in _page("beauty", raw={"package": "500"})
+    monkeypatch.setattr(client_mod, "PUBLIC_DOOR", True)
     assert 'data-atlas="chat"' in _page("beauty", raw={"package": "500"})
     assert 'data-atlas="chat"' not in _page("beauty", raw={"package": "100"})
 
@@ -291,7 +303,7 @@ async def test_each_family_builds_a_site_with_no_launch_issue(monkeypatch, tmp_p
 
 async def test_the_eco_paragraph_on_a_built_page_blocks_the_deploy(monkeypatch, tmp_path):
     lead = {**LEADS["trades"], "id": 38, "name": "Eco Electrical Services, LLC",
-            "category": "electrician", "phone": "(212) 915-0610", "address": None}
+            "category": "electrician", "phone": "(555) 010-0100", "address": None}
     site = _env(monkeypatch, tmp_path, lead, "trades")
     assert (await build.build_site(38)).ok
     index = site / "index.html"
@@ -360,20 +372,21 @@ def test_the_opening_line_only_mentions_a_website_the_lead_has():
     assert "looked at your website" in has_site
 
 
-def test_what_miro_built_is_the_public_preview_url_not_a_server_path():
-    assert calls.built_line({"slug": "eco-electrical-services-llc-38", "deployed": True,
-                             "mockup": "data/agency/mockups/38.html"}) == (
-        "the preview site, live at https://eco-electrical-services-llc-38.mapfront.io/")
-    built = calls.built_line({"slug": "eco-electrical-services-llc-38", "deployed": False})
-    assert "https://eco-electrical-services-llc-38.mapfront.io/" in built
-    assert "not deployed yet" in built
+def test_what_owner_built_is_the_public_preview_url_not_a_server_path():
+    # 2026-10-30: no per-slug host; a slug alone is "publish it first".
+    built = calls.built_line({"slug": "eco-electrical-services-llc-38", "deployed": True,
+                              "mockup": "data/agency/mockups/38.html"})
+    assert "mapfront" not in built and "agency.publish_vercel" in built
+    assert calls.built_line({"domain": "demo-site.vercel.example",
+                             "slug": "eco-electrical-services-llc-38"}) == (
+        "https://demo-site.vercel.example")
     assert calls.built_line({"domain": "eco.example", "slug": "x-1"}) == "https://eco.example"
     only_mockup = calls.built_line({"mockup": "data/agency/mockups/38.html"})
     assert "data/agency" not in only_mockup
 
 
 # ------------------------------------------------------------ the booking
-# Miro, 2026-09-30: "design it better with buttons, reservations if it's a
+# the owner, 2026-09-30: "design it better with buttons, reservations if it's a
 # restaurant or booking system". sitebooking.py; the form's script is
 # templates/booking.js.
 
@@ -437,7 +450,7 @@ def test_a_preview_booking_sends_nothing_and_says_so():
     assert typed and not [n.get("name") for n in typed if n.get("name")]
     assert "_next" not in html.split('data-atlas="booking"')[1].split("</form>")[0]
     assert ("Bookings start when NYC Quality Plumbing launches this site. For now, "
-            'call <span class="mf-nowrap">(332) 222-0135</span>.') in html
+            'call <span class="mf-nowrap">(555) 010-0100</span>.') in html
     assert "Nothing was sent" in html and "nothing you type here is sent" in html
     # a request, never a booking or a free slot
     lower = launchcheck.parse(html).text().lower()
@@ -616,7 +629,7 @@ async def test_reservations_in_the_json_ld_without_a_path_is_a_launch_issue(
 
 
 # ------------------------------------------------ the marketing site (v3)
-# Miro, 2026-09-30, on the desktop review: "very poor design -- make sure
+# the owner, 2026-09-30, on the desktop review: "very poor design -- make sure
 # it's a frontend marketing website for each one". sitemedia.py and the
 # new sections in sitetemplate.py.
 
@@ -847,12 +860,12 @@ def test_the_preview_still_sends_nothing_with_the_new_structure():
             assert not value.startswith(("http", "//")), (tag.tag, value)
     offsite = [a.get("href") for a in root.find_all("a")
                if a.get("href").startswith("http")]
-    assert all(h.startswith(("https://www.google.com/maps", "https://mapfront.io"))
+    assert all(h.startswith(("https://www.google.com/maps", "https://agency.example.com"))
                for h in offsite), offsite
 
 
 # ------------------------------------------------------ the Lovable port (v4)
-# Miro, 2026-10-01: every client site's design goes frontend-design ->
+# the owner, 2026-10-01: every client site's design goes frontend-design ->
 # GetLayers -> Webild -> Lovable, and the best of each is ported into our
 # templates. The trades reference is Lovable "Bright Spark Site"
 # (1d613626-2177-490b-8e33-242910df26ec): a cinematic photo hero with a
@@ -861,7 +874,7 @@ def test_the_preview_still_sends_nothing_with_the_new_structure():
 # two-column booking with a white form card, and a marigold closing band.
 
 HITCHINGHAM = {"id": 40, "name": "Hitchingham Electric Company", "category": "electrician",
-               "phone": "(540) 729-4548", "address": "512 E 11th St, New York, NY 10009",
+               "phone": "(555) 010-0100", "address": "512 E 11th St, New York, NY 10009",
                "website": None, "status": "audited"}
 
 
@@ -1037,7 +1050,7 @@ def test_the_header_shows_the_phone_beside_the_booking_button():
     head = next(n for n in root.iter() if n.get("data-atlas") == "header")
     phone = [a for a in head.find_all("a") if "mf-head__phone" in a.classes()]
     assert len(phone) == 1 and phone[0].get("href") == "tel:5407294548"
-    assert phone[0].text() == "(540) 729-4548"
+    assert phone[0].text() == "(555) 010-0100"
 
 
 def test_the_lovable_reference_is_recorded_beside_the_getlayers_ids():

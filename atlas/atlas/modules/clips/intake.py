@@ -19,7 +19,7 @@ the check can say it:
     outcome, which the status check reads. Not ok is UNKNOWN there.
 
 **Idempotent.** A file is registered only when its sha256 is not on file
-for the campaign at all -- a registration Miro rolled back stays rolled
+for the campaign at all -- a registration the owner rolled back stays rolled
 back -- and a source is cut only when it has no clip at all (a cut he
 rolled back is final). Hashing is remembered per (path, size, mtime) for
 the life of the process, so a large source is read once, not every tick.
@@ -39,7 +39,7 @@ from typing import Any
 from ...kernel.state import execute_sql, fetch_all, fetch_one
 from . import campaigns, sources
 
-# Raise to 12 once >= 3 live campaigns have an approval history -- Miro's
+# Raise to 12 once >= 3 live campaigns have an approval history -- the owner's
 # (the lane owner's) decision, not a code default to change on its own.
 DEFAULT_CAP = 6
 DEFAULT_INTERVAL_MIN = 30

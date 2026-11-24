@@ -5,7 +5,7 @@ Every reel reaches the platforms through `kernel.reels.post_or_card`, whether
 ATLAS rendered it (the daily reels, a series part, a 30-day calendar day) or
 the host's episode job made it and `import-reel` filed it. That function
 runs `check_media` first, whatever `REELS_AUTOPUBLISH` says: a reel that
-fails is a quality exception with its reason, never a silent pass. Miro's
+fails is a quality exception with its reason, never a silent pass. the owner's
 rule (2026-09-28, settled) decides what happens next: a failed check is
 made again once, then it becomes a card, the exception on its first line.
 `importer.check` runs the same `check_file` before a row is written.
@@ -16,15 +16,15 @@ render said about itself:
   * native 1080x1920 from the video stream, with no display rotation;
   * a video stream whose own playable duration sits inside the reel's band:
       - a series episode 60-90 s, anything else 30-60 s (`SERIES_SECONDS`,
-        `OTHER_SECONDS`: Miro's lengths, relayed 2026-09-27, the same ones
+        `OTHER_SECONDS`: the owner's lengths, relayed 2026-09-27, the same ones
         `content.reels.beat_range` drafts to);
       - a 30-day calendar reel: its own planned length, the sum of the part
-        lengths `calendar.plan` cuts it to from the package Miro supplied,
+        lengths `calendar.plan` cuts it to from the package the owner supplied,
         +/- `CALENDAR_SLACK_S` for trim and concat drift -- the package, not
         the drafting rule, sets how long those reels are (a FOOD reel is
         12-35 s by design);
   * an audio track whose mean volume is above `ffmpeg.SILENT_DB`;
-  * motion (Miro's rule: real motion video only, never stills or slides):
+  * motion (the owner's rule: real motion video only, never stills or slides):
     `ffmpeg.frozen_seconds` runs `freezedetect` over the frames, and more
     than `FROZEN_MAX` of the runtime frozen fails. It catches a slideshow
     of still frames; it does NOT catch a Ken Burns (zoompan) slideshow,
@@ -59,7 +59,7 @@ SERIES_SECONDS = (60.0, 90.0)
 OTHER_SECONDS = (30.0, 60.0)
 # Trimming each part to a frame boundary and concatenating ~10 of them drifts
 # a few frames per join; 1.5 s covers that and nothing a missing beat
-# (a whole Veo clip, 8 s) could hide in. A value for Miro to confirm.
+# (a whole Veo clip, 8 s) could hide in. A value for the owner to confirm.
 CALENDAR_SLACK_S = 1.5
 EXCEPTION = "quality exception"
 # More than half the runtime frozen is a slideshow, not a video. Real reels
@@ -89,7 +89,7 @@ async def check_file(path: str, caption: str, *, series: bool,
                      motion: bool = True
                      ) -> tuple[dict[str, Any] | None, str | None]:
     """(probe info, None) when the file passes every check; (None, why).
-    `motion=False` skips the still-frame rule: Miro, 2026-10-06, the
+    `motion=False` skips the still-frame rule: the owner, 2026-10-06, the
     Academy's designed reels (typographic editions over the product's
     cover, clips.autopublish_promo) are made of composed frames by his
     choice; the stories lane keeps the rule."""

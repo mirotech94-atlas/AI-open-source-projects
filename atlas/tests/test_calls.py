@@ -15,8 +15,8 @@ import pytest
 from atlas.kernel import calls
 
 CONVERSATION = [
-    {"role": "agent", "message": "Hey Miro."},
-    {"role": "user", "message": "the vpsie backup thing, is it sorted?"},
+    {"role": "agent", "message": "Hey the owner."},
+    {"role": "user", "message": "the cloudco backup thing, is it sorted?"},
     {"role": "agent", "message": "Snapshot's pending, want me to run it?"},
     {"role": "user", "message": "yeah do it, and remind me about the gitlab token"},
     {"role": "agent", "message": "Done. Noted on the token."},
@@ -34,7 +34,7 @@ def summariser(monkeypatch):
 
     async def fake_think(need, system, messages, tools=None, max_tokens=2048):
         asked.append((system, messages[0].content))
-        return C("discussed: vpsie backup. decided: run the snapshot. "
+        return C("discussed: cloudco backup. decided: run the snapshot. "
                  "open: the gitlab token.")
 
     monkeypatch.setattr("atlas.kernel.llm.think", fake_think)
@@ -73,13 +73,13 @@ async def test_the_note_is_a_summary_not_the_transcript(summariser, kept):
 async def test_the_transcript_reaches_the_model_as_untrusted_data(summariser, kept):
     await calls.note_call(CONVERSATION, direction="outbound")
     _, user_msg = summariser[0]
-    assert "Miro: the vpsie backup thing" in user_msg
+    assert "the owner: the cloudco backup thing" in user_msg
     assert "untrusted" in user_msg.lower()
 
 
 async def test_a_hangup_leaves_nothing(summariser, kept):
     """One greeting is not a conversation. No model call, no row."""
-    await calls.note_call([{"role": "agent", "message": "Hey Miro."}],
+    await calls.note_call([{"role": "agent", "message": "Hey the owner."}],
                           direction="outbound")
     assert summariser == [] and kept == []
 
@@ -193,7 +193,7 @@ def test_a_finished_call_is_noted_from_what_was_said(monkeypatch):
     monkeypatch.setattr(calls, "note_call", fake_note)
     sid = "CA" + "a" * 32
     phone.remember(sid, "ATLAS", "Atlas alert. Disk full.")
-    phone.remember(sid, "Miro", "what's using it")
+    phone.remember(sid, "the owner", "what's using it")
     phone.remember(sid, "ATLAS", "The backups, mostly.")
     escalation.reset()
     try:

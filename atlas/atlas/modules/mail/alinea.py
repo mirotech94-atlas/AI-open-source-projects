@@ -1,7 +1,7 @@
-"""Alinea watcher: Miro's Alinea Invest emails, read -- never acted on.
+"""Alinea watcher: the owner's Alinea Invest emails, read -- never acted on.
 
 Alinea is a retail AI auto-investing app. It has no public API and it
-trades inside the app, on its own, with Miro's money. ATLAS has no hands
+trades inside the app, on its own, with the owner's money. ATLAS has no hands
 there and gets none: placing a trade or moving money is money out, Tier 3,
 permanently denied (CLAUDE.md, invariant 3). This file adds no action, and
 nothing here gives buy/sell advice. It only reads what Alinea emails him:
@@ -79,7 +79,7 @@ MAX_EVENTS = 20
 SWEEP_EVERY = timedelta(hours=6)
 
 SYSTEM = (
-    "This is an email from Alinea Invest, Miro's investing app. List what it "
+    "This is an email from Alinea Invest, the owner's investing app. List what it "
     "reports. Reply with JSON only:\n"
     '{"events": [{"kind": "deposit" | "trade" | "statement" | "dividend" | '
     '"withdrawal" | "fee" | "notice", '

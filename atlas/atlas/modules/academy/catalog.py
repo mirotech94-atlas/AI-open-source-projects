@@ -2,7 +2,7 @@
 
 Everything the store says about a product comes from that file, and
 everything the access page hands over is named there too. A value that is
-Miro's to decide (a price, a refund term, a payment link) is `null` or empty
+the owner's to decide (a price, a refund term, a payment link) is `null` or empty
 until he sets it, and the code treats "unset" as "not on sale", never as a
 default:
 
@@ -48,6 +48,131 @@ class File:
     path: str
 
 
+# ------------------------------------------------- offer panels (2026-10-11)
+#
+# the owner's competitor report ("Compete through useful results", 11 Oct 2026):
+# lead each page with what the buyer will finish, the free lesson that leads
+# to it, what was tested and when, a troubleshooting preview, the approval
+# step, real samples, and exactly what is in the box. Every field below is
+# optional and defaults to empty, so a product without it renders as before.
+# What could not be checked goes in `unverified` (a product's) or a store
+# `*_note`, which no page ever prints: it is the list of questions for the owner.
+
+INCLUSION_KINDS = ("video", "guide", "files", "worksheet")
+EVIDENCE_KINDS = ("sample-lesson", "worksheet", "page-image", "template", "exercise")
+LESSON_STATUSES = ("scripted", "planned", "proposed")
+TROUBLE_KINDS = ("setup", "expected", "unsupported")
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+@dataclass(frozen=True)
+class Inclusion:
+    """One labelled thing in the box (the 3D kit scene and its static list)."""
+
+    kind: str                        # INCLUSION_KINDS
+    label: str
+    detail: str = ""
+    count: int | None = None         # videos: must equal the offer's .mp4 files
+
+
+@dataclass(frozen=True)
+class Finish:
+    """"What you will finish": the deliverable and a preview of real material."""
+
+    deliverable: str
+    preview: str
+
+
+@dataclass(frozen=True)
+class LessonRef:
+    """A free lesson, by tutorial series key and episode slug (or a proposal
+    in tutorial_proposals.json, series "proposal"). Linked only once `url`
+    (the published video) is set."""
+
+    series: str
+    slug: str
+    status: str                      # LESSON_STATUSES
+    url: str = ""
+
+
+@dataclass(frozen=True)
+class Journey:
+    free_lessons: tuple[LessonRef, ...]
+    exercise: str                    # the small thing to try after the free lesson
+    paid_adds: tuple[tuple[str, str], ...]   # (what, detail): "What the full kit adds"
+    note: str = ""
+
+
+@dataclass(frozen=True)
+class Check:
+    """One check that was actually run, by whom and when ("Tested with")."""
+
+    tool: str
+    version: str
+    checked_on: str                  # YYYY-MM-DD
+    by: str
+    what: str
+
+
+@dataclass(frozen=True)
+class Trouble:
+    kind: str                        # TROUBLE_KINDS: setup issue, correct refusal, unsupported
+    problem: str
+    example_input: str
+    expected_output: str
+    recovery: str
+
+
+@dataclass(frozen=True)
+class ReviewDemo:
+    """Request -> draft -> the review step, with the control's limits."""
+
+    request: str
+    draft: str
+    review_step: str
+    on_approve: str
+    on_silence: str
+    limits: str
+
+
+@dataclass(frozen=True)
+class Evidence:
+    kind: str                        # EVIDENCE_KINDS
+    label: str
+    source: str                      # where the real file is (vault path)
+    url: str = ""                    # set once it is published on the store
+
+
+@dataclass(frozen=True)
+class Audience:
+    key: str
+    name: str
+    description: str
+
+
+@dataclass(frozen=True)
+class RouteStep:
+    title: str
+    who: str
+    do: str
+    source: str
+
+
+@dataclass(frozen=True)
+class Route:
+    """A learn-together route across products (the family offering)."""
+
+    slug: str
+    title: str
+    products: tuple[str, ...]
+    people: str
+    steps: tuple[RouteStep, ...]
+    printables: tuple[str, ...]
+    boundaries: tuple[str, ...]
+    overlap: str = ""
+    unverified: tuple[str, ...] = ()     # never rendered
+
+
 @dataclass(frozen=True)
 class Offer:
     """One thing a buyer can pay for: one price, one payment link."""
@@ -62,6 +187,11 @@ class Offer:
     blurb: str = ""
     cover: str = ""
     price_note: str = ""
+    inclusions: tuple[Inclusion, ...] = ()
+
+    @property
+    def video_count(self) -> int:
+        return sum(1 for f in self.files if f.path.endswith(".mp4"))
 
     @property
     def buy_live(self) -> bool:
@@ -89,7 +219,18 @@ class Product:
     pairs_with: str
     pairs_reason: str
     offers: tuple[Offer, ...]
-    tags: tuple[str, ...] = ()       # catalog filter / finder keys (site.py TAGS)
+    tags: tuple[str, ...] = ()       # catalog filter / finder keys (site.py PATHS)
+    level: str = ""                  # the level as words: "Beginner, no code"
+    level_detail: str = ""           # what that level asks of the reader
+    finish: Finish | None = None
+    journey: Journey | None = None
+    tested: tuple[Check, ...] = ()
+    troubleshooting: tuple[Trouble, ...] = ()
+    audiences: tuple[str, ...] = ()  # keys of store.audiences
+    review_demo: ReviewDemo | None = None
+    evidence: tuple[Evidence, ...] = ()
+    testimonials: tuple[str, ...] = ()   # genuine, with permission; none yet
+    unverified: tuple[str, ...] = ()     # the owner's open questions; never rendered
 
 
 @dataclass(frozen=True)
@@ -108,8 +249,26 @@ class Catalog:
     products: tuple[Product, ...]
     bundle: Bundle
     raw: dict[str, Any] = field(repr=False, default_factory=dict)
+    routes: tuple[Route, ...] = ()
 
     # -------------------------------------------------------------- lookups
+
+    @property
+    def audiences(self) -> tuple[Audience, ...]:
+        return tuple(Audience(str(k), str(v["name"]), str(v["description"]))
+                     for k, v in (self.store.get("audiences") or {}).items())
+
+    def audience(self, key: str) -> Audience | None:
+        return next((a for a in self.audiences if a.key == key), None)
+
+    @property
+    def support(self) -> dict[str, Any]:
+        """The bounded-help policy (store.support). `*_note` keys and null
+        values are the owner's to decide and are never rendered."""
+        return dict(self.store.get("support") or {})
+
+    def routes_for(self, slug: str) -> tuple[Route, ...]:
+        return tuple(r for r in self.routes if slug in r.products)
 
     def product(self, slug: str) -> Product | None:
         return next((p for p in self.products if p.slug == slug), None)
@@ -146,8 +305,19 @@ class Catalog:
         return str(self.store.get("contact_email") or "")
 
     @property
+    def support_email(self) -> str:
+        """The store's support contact (owner@example.com); the personal
+        contact_email when none is set."""
+        return str(self.store.get("support_email") or "") or self.contact_email
+
+    @property
     def base_url(self) -> str:
         return f"https://{self.store['domain']}"
+
+    @property
+    def store_url(self) -> str:
+        """Where the whole store lives: https://<host>/academy (2026-11-16)."""
+        return f"{self.base_url}/academy"
 
 
 # ------------------------------------------------------------------ parsing
@@ -164,6 +334,17 @@ def _price(value: Any) -> float | None:
     return float(value)
 
 
+def _inclusions(raw: list[dict[str, Any]]) -> tuple[Inclusion, ...]:
+    out = []
+    for i in raw:
+        count = i.get("count")
+        if count is not None and (isinstance(count, bool) or not isinstance(count, int)):
+            raise CatalogError(f"inclusion count {count!r} is not a whole number")
+        out.append(Inclusion(kind=str(i["kind"]), label=str(i["label"]),
+                             detail=str(i.get("detail") or ""), count=count))
+    return tuple(out)
+
+
 def _offer(raw: dict[str, Any], product: str) -> Offer:
     return Offer(
         id=str(raw["id"]), name=str(raw["name"]), price_usd=_price(raw.get("price_usd")),
@@ -171,7 +352,38 @@ def _offer(raw: dict[str, Any], product: str) -> Offer:
         stripe_price_id=str(raw.get("stripe_price_id") or "").strip(),
         files=_files(raw.get("files") or []), product=product,
         blurb=str(raw.get("blurb") or ""), cover=str(raw.get("cover") or ""),
-        price_note=str(raw.get("price_note") or ""))
+        price_note=str(raw.get("price_note") or ""),
+        inclusions=_inclusions(raw.get("inclusions") or []))
+
+
+def _strs(raw: Any) -> tuple[str, ...]:
+    return tuple(str(x) for x in raw or ())
+
+
+def _finish(raw: dict[str, Any] | None) -> Finish | None:
+    if not raw:
+        return None
+    return Finish(deliverable=str(raw["deliverable"]), preview=str(raw.get("preview") or ""))
+
+
+def _journey(raw: dict[str, Any] | None) -> Journey | None:
+    if not raw:
+        return None
+    return Journey(
+        free_lessons=tuple(LessonRef(series=str(lr["series"]), slug=str(lr["slug"]),
+                                     status=str(lr["status"]), url=str(lr.get("url") or ""))
+                           for lr in raw.get("free_lessons") or ()),
+        exercise=str(raw.get("exercise") or ""),
+        paid_adds=tuple((str(a["what"]), str(a["detail"]))
+                        for a in raw.get("paid_adds") or ()),
+        note=str(raw.get("note") or ""))
+
+
+def _review_demo(raw: dict[str, Any] | None) -> ReviewDemo | None:
+    if not raw:
+        return None
+    return ReviewDemo(**{k: str(raw[k]) for k in (
+        "request", "draft", "review_step", "on_approve", "on_silence", "limits")})
 
 
 def _product(raw: dict[str, Any]) -> Product:
@@ -192,7 +404,37 @@ def _product(raw: dict[str, Any]) -> Product:
         pairs_with=str(raw.get("pairs_with") or ""),
         pairs_reason=str(raw.get("pairs_reason") or ""),
         offers=tuple(_offer(o, slug) for o in raw.get("offers") or ()),
-        tags=tuple(str(t) for t in raw.get("tags") or ()))
+        tags=tuple(str(t) for t in raw.get("tags") or ()),
+        level=str(raw.get("level") or ""),
+        level_detail=str(raw.get("level_detail") or ""),
+        finish=_finish(raw.get("finish")),
+        journey=_journey(raw.get("journey")),
+        tested=tuple(Check(tool=str(c["tool"]), version=str(c.get("version") or ""),
+                           checked_on=str(c["checked_on"]), by=str(c["by"]),
+                           what=str(c["what"])) for c in raw.get("tested") or ()),
+        troubleshooting=tuple(
+            Trouble(kind=str(t["kind"]), problem=str(t["problem"]),
+                    example_input=str(t.get("example_input") or ""),
+                    expected_output=str(t.get("expected_output") or ""),
+                    recovery=str(t["recovery"]))
+            for t in raw.get("troubleshooting") or ()),
+        audiences=_strs(raw.get("audiences")),
+        review_demo=_review_demo(raw.get("review_demo")),
+        evidence=tuple(Evidence(kind=str(e["kind"]), label=str(e["label"]),
+                                source=str(e["source"]), url=str(e.get("url") or ""))
+                       for e in raw.get("evidence") or ()),
+        testimonials=_strs(raw.get("testimonials")),
+        unverified=_strs(raw.get("unverified")))
+
+
+def _route(raw: dict[str, Any]) -> Route:
+    return Route(
+        slug=str(raw["slug"]), title=str(raw["title"]), products=_strs(raw["products"]),
+        people=str(raw["people"]),
+        steps=tuple(RouteStep(title=str(s["title"]), who=str(s["who"]), do=str(s["do"]),
+                              source=str(s["source"])) for s in raw.get("steps") or ()),
+        printables=_strs(raw.get("printables")), boundaries=_strs(raw.get("boundaries")),
+        overlap=str(raw.get("overlap") or ""), unverified=_strs(raw.get("unverified")))
 
 
 def parse(raw: dict[str, Any]) -> Catalog:
@@ -211,7 +453,9 @@ def parse(raw: dict[str, Any]) -> Catalog:
         bundle = Bundle(slug=str(b["slug"]), title=str(b["title"]),
                         summary=str(b["summary"]), includes=includes, offer=offer,
                         terms_note=str(b.get("terms_note") or ""))
-        cat = Catalog(store=dict(raw["store"]), products=products, bundle=bundle, raw=raw)
+        routes = tuple(_route(r) for r in raw.get("routes") or ())
+        cat = Catalog(store=dict(raw["store"]), products=products, bundle=bundle, raw=raw,
+                      routes=routes)
     except (KeyError, TypeError) as exc:
         raise CatalogError(f"catalog is missing or mistypes a field: {exc}") from exc
     problems = validate(cat)
@@ -278,12 +522,61 @@ def validate(cat: Catalog) -> list[str]:
             if not o.files:
                 out.append(f"offer {o.id} delivers no file")
             out.extend(_sale_problems(o, has_terms=p.refund is not None))
+            out.extend(_inclusion_problems(o))
+        out.extend(_panel_problems(cat, p))
+    for r in cat.routes:
+        if not SLUG_RE.match(r.slug):
+            out.append(f"route slug {r.slug!r} is not a URL-safe label")
+        for s in r.products:
+            if cat.product(s) is None:
+                out.append(f"route {r.slug} names unknown product {s!r}")
     for oid in cat.bundle.includes:
         if cat.offer(oid) is None or oid == cat.bundle.slug:
             out.append(f"bundle includes unknown offer {oid!r}")
     terms = all(cat.product(o.product) and cat.product(o.product).refund  # type: ignore[union-attr]
                 for o in cat.bundle_offers())
     out.extend(_sale_problems(cat.bundle.offer, has_terms=terms))
+    return out
+
+
+def _inclusion_problems(o: Offer) -> list[str]:
+    """A count in the box must be the count of files delivered: the 3D scene
+    and its static list may never say 30 videos when 28 ship."""
+    out: list[str] = []
+    for i in o.inclusions:
+        if i.kind not in INCLUSION_KINDS:
+            out.append(f"offer {o.id} has an inclusion of unknown kind {i.kind!r}")
+    videos = [i for i in o.inclusions if i.kind == "video"]
+    if videos and sum(i.count or 0 for i in videos) != o.video_count:
+        out.append(f"offer {o.id} lists {sum(i.count or 0 for i in videos)} videos "
+                   f"but delivers {o.video_count}")
+    if o.inclusions and o.video_count and not videos:
+        out.append(f"offer {o.id} delivers videos its inclusions don't list")
+    return out
+
+
+def _panel_problems(cat: Catalog, p: Product) -> list[str]:
+    out: list[str] = []
+    for a in p.audiences:
+        if cat.audience(a) is None:
+            out.append(f"{p.slug} names unknown audience {a!r}")
+    if p.journey:
+        for lr in p.journey.free_lessons:
+            if lr.status not in LESSON_STATUSES:
+                out.append(f"{p.slug} free lesson {lr.slug} has status {lr.status!r}")
+            if lr.url and not lr.url.startswith("https://"):
+                out.append(f"{p.slug} free lesson {lr.slug} url is not https")
+    for c in p.tested:
+        if not DATE_RE.match(c.checked_on):
+            out.append(f"{p.slug} check {c.tool!r} date {c.checked_on!r} is not YYYY-MM-DD")
+    for t in p.troubleshooting:
+        if t.kind not in TROUBLE_KINDS:
+            out.append(f"{p.slug} troubleshooting kind {t.kind!r} is unknown")
+    for e in p.evidence:
+        if e.kind not in EVIDENCE_KINDS:
+            out.append(f"{p.slug} evidence kind {e.kind!r} is unknown")
+        if e.url and not (e.url.startswith("https://") or FILE_PATH_RE.match(e.url)):
+            out.append(f"{p.slug} evidence url {e.url!r} is neither https nor a store path")
     return out
 
 

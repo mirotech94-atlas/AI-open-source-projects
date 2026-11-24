@@ -10,7 +10,7 @@
     `content_drafts` row the run inserted, read by id with a SELECT: kind,
     source, title, not dropped, and the body hash the run recorded.
 
-The module is off in prod (`ATLAS_DISABLED_MODULES`, Miro 2026-09-27), and a
+The module is off in prod (`ATLAS_DISABLED_MODULES`, the owner 2026-09-27), and a
 channel with no credentials is off for that channel. Both give unknown,
 class disabled, before any network call. An access token is only taken from
 `api`'s own cache: a refresh is a POST, so a cold cache is unknown rather

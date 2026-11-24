@@ -1,7 +1,7 @@
 /**
  * The conversation loop, as pure rules -- no DOM, no React, no timers.
  *
- * Miro asked to "talk to him without having to click mic on". Two things
+ * the owner asked to "talk to him without having to click mic on". Two things
  * make that true, and they are deliberately separate:
  *
  *   1. An on-device wake gate (`localWake.ts`, or Porcupine, or pinch) that

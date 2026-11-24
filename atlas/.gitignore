@@ -18,3 +18,5 @@ ui/public/wake/whisper/
 
 # generated docs — regenerate with tools/md2pdf.py
 *.pdf
+presenter-inbox/
+.env.lock

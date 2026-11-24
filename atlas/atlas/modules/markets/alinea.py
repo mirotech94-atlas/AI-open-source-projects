@@ -1,4 +1,4 @@
-"""Alinea: what Miro's Alinea Invest emails say, read back -- watch only.
+"""Alinea: what the owner's Alinea Invest emails say, read back -- watch only.
 
 Alinea trades on its own, inside its app, with his money; ATLAS only reads
 its emails (`mail/alinea.py` stores them in `alinea_events`). Nothing here

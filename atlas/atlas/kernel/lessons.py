@@ -1,6 +1,6 @@
 """The lessons ledger. A mistake is allowed once; it is not allowed forever.
 
-Miro's rule, verbatim: "learn all the skills and improve based on what it has
+the owner's rule, verbatim: "learn all the skills and improve based on what it has
 learned and made mistakes on; mistakes are okay, permanent mistakes
 unacceptable." This file is the mechanism for the second half of that
 sentence, and it has exactly two moving parts:
@@ -270,7 +270,7 @@ async def for_task(agent: str, task: str) -> str:
 
     try:
         # `told` is excluded: a clearance is bookkeeping for `clear()`, not
-        # guidance. "He said vpsie.restart is different now" in a prompt
+        # guidance. "He said cloudco.restart is different now" in a prompt
         # reads as permission, which is the one thing a lesson must never be.
         rows = await fetch_all(
             """SELECT lesson, kind FROM lessons

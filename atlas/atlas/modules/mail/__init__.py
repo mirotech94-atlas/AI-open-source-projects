@@ -6,7 +6,7 @@ Two design points that matter more than the code:
    leaves the box. This is not a nicety — it is what makes it acceptable to
    point an agent at an inbox at all.
 
-2. ATLAS never sends. It drafts into Gmail's own drafts folder and tells Miro
+2. ATLAS never sends. It drafts into Gmail's own drafts folder and tells the owner
    it is there. A draft he can edit in the client he already uses beats an
    approval card he has to read in another app.
 
@@ -16,6 +16,7 @@ gvoice parser on the way through.
 """
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -37,10 +38,10 @@ from ...kernel.contracts import (
     Signal,
     Tier,
 )
-from ...kernel.llm import LocalModelUnavailable, Message, Need, think
+from ...kernel.llm import LocalModelUnavailable, Message, Need, local_model, think
 from ...kernel.memory import Kind, remember
 from ...kernel.permissions import scan_for_injection, wrap_untrusted
-from . import followups
+from . import followups, imap_draft
 
 log = logging.getLogger("atlas.mail")
 
@@ -151,7 +152,7 @@ async def classify(subject: str, sender: str, body: str) -> dict:
     try:
         reply = await think(
             Need.PRIVATE,
-            "Classify this email for Miro. Reply with JSON only:\n"
+            "Classify this email for the owner. Reply with JSON only:\n"
             '{"category": one of ' + str(list(CATEGORIES)) + ', '
             '"urgency": 0-3, "commitment": "what was promised, by whom, by '
             'when" or null, "summary": one short sentence}',
@@ -207,8 +208,36 @@ async def _classify_capped(thread_id: str, subject: str, sender: str,
     return result
 
 
+# The unreplied check owns its budget. The scheduler's default 30s killed it
+# from outside every time (exampleco: one list call plus up to 25 thread reads
+# over Google's API on a slow day), and a kill from outside says only "timed
+# out". The body gives up first, at DEADLINE_S, and names what it was doing;
+# the Check's own timeout sits above it so the scheduler is the backstop, not
+# the first line.
+UNREPLIED_DEADLINE_S = 100.0
+UNREPLIED_TIMEOUT = timedelta(seconds=120)
+# Only the first 25 threads are read, so only 25 are listed; and only the two
+# headers the check uses come back, not the whole thread.
+UNREPLIED_LIST_MAX = 25
+UNREPLIED_FETCH_PARALLEL = 10
+
+
 async def check_unreplied_for(account) -> Observation:
-    """Threads in one mailbox where Miro was asked something and hasn't answered.
+    """Bounded by UNREPLIED_DEADLINE_S; a mailbox that does not answer in time
+    reads UNKNOWN with the reason, never a number."""
+    name = f"{account.name}_unreplied"
+    try:
+        return await asyncio.wait_for(_check_unreplied(account),
+                                      timeout=UNREPLIED_DEADLINE_S)
+    except TimeoutError:
+        return Observation(
+            name, Health.UNKNOWN,
+            detail=f"{account.email or account.name}: the mailbox did not answer "
+                   f"within {UNREPLIED_DEADLINE_S:.0f}s; nothing was measured")
+
+
+async def _check_unreplied(account) -> Observation:
+    """Threads in one mailbox where the owner was asked something and hasn't answered.
 
     The account's OWN address decides "he replied last". A single global
     address made every thread in every other mailbox look unanswered — a
@@ -226,9 +255,9 @@ async def check_unreplied_for(account) -> Observation:
             stale, waiting, looked = await imap_unreplied(account)
         else:
             data = await _api("/threads", account=account,
-                              q="is:unread -category:promotions "
+                              q="is:unread in:inbox -category:promotions "
                                 "-category:social newer_than:7d",
-                              maxResults=50)
+                              maxResults=UNREPLIED_LIST_MAX)
             threads = data.get("threads", [])
             looked = len(threads)
             stale = 0
@@ -236,28 +265,37 @@ async def check_unreplied_for(account) -> Observation:
             # 25 sequential round-trips to Gmail ran past the scheduler's
             # 30s and the check reported UNKNOWN every time. Fetch them
             # together, a few at a time.
-            import asyncio
-            gate = asyncio.Semaphore(6)
+            gate = asyncio.Semaphore(UNREPLIED_FETCH_PARALLEL)
 
             async def _one(tid: str) -> dict:
                 async with gate:
-                    return await _api(f"/threads/{tid}", account=account,
-                                      format="metadata")
-            fulls = await asyncio.gather(*(_one(t["id"]) for t in threads[:25]))
+                    return await _api(
+                        f"/threads/{tid}", account=account, format="metadata",
+                        metadataHeaders=["From", "Subject", "List-Unsubscribe",
+                                         "List-Id", "Auto-Submitted", "Precedence"],
+                        fields="messages(internalDate,payload/headers)")
+            fulls = await asyncio.gather(
+                *(_one(t["id"]) for t in threads[:UNREPLIED_LIST_MAX]))
             for full in fulls:
                 msgs = full.get("messages", [])
                 if not msgs:
                     continue
                 last = msgs[-1]
                 frm = _header(last, "From")
-                from .accounts import automated
-                if account.is_me(frm) or automated(frm):
+                from .accounts import automated, bulk_headers
+                if (account.is_me(frm) or automated(frm)
+                        or bulk_headers(last.get("payload", {}).get("headers", []))):
                     continue                 # he replied last, or a machine wrote it
                 ts = datetime.fromtimestamp(
                     int(last.get("internalDate", 0)) / 1000, UTC)
-                if datetime.now(UTC) - ts > timedelta(hours=48):
-                    stale += 1
-                    waiting.append(_header(last, "Subject")[:80])
+                if datetime.now(UTC) - ts <= timedelta(hours=48):
+                    continue         # only threads over 48h count: skip the model
+                from . import spam
+                if (await spam.check(spam.item_from_gmail(last), account)
+                        ).verdict in (spam.SPAM, spam.UNSURE):
+                    continue                 # spam is not waiting on him
+                stale += 1
+                waiting.append(_header(last, "Subject")[:80])
     except Exception as exc:                            # noqa: BLE001
         from .._http import redact
         return Observation(name, Health.UNKNOWN,
@@ -284,13 +322,51 @@ async def check_unreplied() -> Observation:
     return await check_unreplied_for(accounts[0])
 
 
+# A made-up message, so the check reads nobody's mail to prove the route.
+_PROBE = ("Invoice 4471 due Friday", "billing@example.com",
+          "Hi the owner, invoice 4471 for October is attached and due on Friday.")
+
+
+async def check_classify_local() -> Observation:
+    """Can PRIVATE classification run at all? One synthetic email through
+    `classify()`, i.e. `Need.PRIVATE` on the local model. When the local
+    model is absent or down, `think()` refuses rather than borrowing a cloud
+    API, and this reads UNKNOWN with the reason -- never OK."""
+    result = await classify(*_PROBE)
+    model = local_model()
+    if "unclassified" in result or not result.get("category"):
+        reason = str(result.get("unclassified") or "no category in the answer")
+        return Observation("classify_local", Health.UNKNOWN,
+                           detail=f"PRIVATE classification did not run: "
+                                  f"{reason[:200]}")
+    return Observation("classify_local", Health.OK,
+                       detail=f"PRIVATE classification ran on the local model "
+                              f"{model}: test email filed as "
+                              f"{str(result.get('category'))[:20]}")
+
+
 async def check_watch_active() -> Observation:
-    """A lapsed Gmail watch expires after 7 days and ingestion silently stops."""
+    """Is the Gmail API answering with a real mailbox profile?
+
+    There is no push watch to lapse: ingestion is polled (`mail.ingest`), so
+    this proves only that the API answers for this mailbox. A reply with no
+    mailbox fields in it is not that proof and reads UNKNOWN, never "OK, 0
+    messages"."""
     try:
         data = await _api("/profile")
-        return Observation("watch_active", Health.OK,
-                           float(data.get("messagesTotal", 0)), "messages",
-                           "Gmail API reachable")
+        if not isinstance(data, dict) or (
+                "messagesTotal" not in data and "emailAddress" not in data):
+            return Observation(
+                "watch_active", Health.UNKNOWN,
+                detail="Gmail answered without a mailbox profile "
+                       "(no address, no message count); reachability is "
+                       "not shown")
+        total = data.get("messagesTotal")
+        return Observation(
+            "watch_active", Health.OK,
+            float(total) if isinstance(total, (int, float)) else None,
+            "messages" if isinstance(total, (int, float)) else None,
+            "Gmail API answers for this mailbox (mail is polled, not pushed)")
     except Exception as exc:                            # noqa: BLE001
         return Observation("watch_active", Health.FAILING,
                            detail=f"Gmail unreachable — re-auth may be needed: {exc}")
@@ -316,6 +392,13 @@ async def ingest_message(message_id: str) -> dict:
                            f"{event.text[:300]}", importance=0.5)
             return {"routed": "google_voice", "kind": event.kind}
 
+    # Every ingested message gets a spam verdict before a model reads it for
+    # triage. Spam and unsure mail yields no commitments and no memories.
+    from . import spam
+    flag = await spam.check(spam.item_from_gmail(msg, full=True))
+    if flag.verdict in (spam.SPAM, spam.UNSURE):
+        return {"spam_verdict": flag.verdict, "reason": flag.reason}
+
     result = await classify(subject, sender, body)
     if result.get("commitment"):
         await remember(Kind.SEMANTIC, "commitments",
@@ -328,7 +411,12 @@ async def ingest_message(message_id: str) -> dict:
 
 
 async def draft_reply(thread_id: str, body: str) -> ActionResult:
-    """Write into Gmail drafts, where he can edit and send from his own client."""
+    """Write into Gmail drafts, where he can edit and send from his own client.
+
+    `imap:<account>:<Message-ID>` is an IMAP-read mailbox: the draft is an
+    IMAP APPEND to its Drafts folder (imap_draft.py), no OAuth token."""
+    if body is not None and str(thread_id).startswith(imap_draft.PREFIX):
+        return await imap_draft.draft(thread_id, body)
     tok = await _access_token()
     thread = await _api(f"/threads/{thread_id}", format="metadata")
     last = thread["messages"][-1]
@@ -360,11 +448,19 @@ async def draft_reply(thread_id: str, body: str) -> ActionResult:
 async def draft_dry(thread_id: str, body: str) -> ActionResult:
     if len(body.strip()) < 10:
         return ActionResult(False, "draft body is empty")
+    if str(thread_id).startswith(imap_draft.PREFIX):
+        login, _name, _orig, why = imap_draft.check_params(thread_id)
+        if login is None:
+            return ActionResult(False, why)
+        return ActionResult(True, f"would append a {len(body)}-character draft to "
+                                  f"{login.email} Drafts for {thread_id[:60]}")
     return ActionResult(True, f"would save a {len(body)}-character draft on "
                               f"thread {thread_id}")
 
 
 async def delete_draft(draft_id: str) -> ActionResult:
+    if str(draft_id).startswith(imap_draft.PREFIX):
+        return await imap_draft.delete(draft_id)
     tok = await _access_token()
     async with httpx.AsyncClient(timeout=20) as c:
         r = await c.delete(f"{API}/drafts/{draft_id}",
@@ -614,7 +710,7 @@ async def remove_label_map(token: str) -> ActionResult:
 
 async def suggest_labels() -> list[dict]:
     """Read-only: the classifier's own category for every unread thread, so
-    Miro can decide what to label before ATLAS touches Gmail at all. Uses
+    the owner can decide what to label before ATLAS touches Gmail at all. Uses
     the same `classify()` mail already runs for triage -- a second,
     disagreeing classifier here would be a second answer to "what is this
     email", which this repo consistently rejects."""
@@ -631,6 +727,11 @@ async def suggest_labels() -> list[dict]:
         last = msgs[-1]
         subject = _header(last, "Subject")
         sender = _header(last, "From")
+        from . import spam
+        if (await spam.check(spam.item_from_gmail(
+                last, snippet=t.get("snippet", "")))).verdict in (
+                spam.SPAM, spam.UNSURE):
+            continue                 # no label suggested for suspected spam
         result = await classify(subject, sender, t.get("snippet", ""))
         if not result.get("category"):
             continue                 # unread by the model: no suggestion
@@ -651,12 +752,12 @@ async def _nudge_text(thread_id: str) -> tuple[str | None, str | None]:
 
     `max_per_hour` on the action caps how often it fires at all; it does not
     stop it firing twice on the SAME thread. Two proposals both naming the
-    oldest open thread -- e.g. Miro approving several days of pending cards
+    oldest open thread -- e.g. the owner approving several days of pending cards
     at once -- would otherwise draft two nudges on one thread with nothing
     to stop it. Checking `nudged_at` here is that stop.
 
     The `resolved_at` check exists because a Signal's proposal can sit
-    unapproved for up to 24h (the Tier 2 TTL) before Miro acts on it, and
+    unapproved for up to 24h (the Tier 2 TTL) before the owner acts on it, and
     `check_followups` runs on its own two-hour schedule the whole time. If
     the other side replies during that window, the thread is resolved before
     the stale proposal is approved -- and without this check, approving it
@@ -684,7 +785,7 @@ async def _nudge_text(thread_id: str) -> tuple[str | None, str | None]:
     try:
         reply = await think(
             Need.PRIVATE,
-            "Write ONE short, friendly follow-up sentence in Miro's voice, "
+            "Write ONE short, friendly follow-up sentence in the owner's voice, "
             "checking in on something he already asked and has not heard "
             "back on. Do not invent new facts and do not ask a new question. "
             "Reply with the nudge text only -- no quotes, no subject line.",
@@ -706,6 +807,9 @@ async def draft_nudge(thread_id: str) -> ActionResult:
     `draft_reply`'s own token is just the draft id, and `rollback_nudge`
     needs the thread id too, to clear `nudged_at` when it undoes this.
     """
+    if str(thread_id).startswith(imap_draft.PREFIX):
+        return ActionResult(False, "follow-ups are tracked from the Gmail API "
+                                   "only; no nudge for an IMAP-read mailbox")
     body, error = await _nudge_text(thread_id)
     if error:
         return ActionResult(False, error)
@@ -764,6 +868,10 @@ class MailModule:
         out = [Check("watch_active", check_watch_active, timedelta(hours=6),
                      Severity.HIGH, "Gmail reachable and ingesting",
                      baseline_sigma=None),
+               Check("classify_local", check_classify_local, timedelta(hours=6),
+                     Severity.NORMAL,
+                     "personal mail is classified on the local model",
+                     baseline_sigma=None),
                Check("followups", followups.check_followups, timedelta(hours=2),
                      Severity.NORMAL,
                      "follow-ups he sent and never heard back on",
@@ -772,7 +880,7 @@ class MailModule:
             Check(f"{a.name}_unreplied", bind(a), timedelta(hours=2),
                   Severity.NORMAL,
                   f"{a.email or a.name}: threads waiting on a reply",
-                  baseline_sigma=None)
+                  baseline_sigma=None, timeout=UNREPLIED_TIMEOUT)
             for a in all_accounts()
         ]
         return tuple(out)
@@ -782,10 +890,10 @@ class MailModule:
             Action(
                 name="mail.draft_reply",
                 tier=Tier.AUTO,     # a draft is reversible and nobody sees it
-                summary="Save a reply into Gmail drafts for Miro to review",
+                summary="Save a reply into Gmail drafts for the owner to review",
                 run=draft_reply, dry_run=draft_dry, rollback=delete_draft,
                 params={"thread_id": "Gmail thread id",
-                        "body": "the reply text, in Miro's voice"},
+                        "body": "the reply text, in the owner's voice"},
                 max_per_hour=20,
             ),
             Action(
@@ -868,6 +976,14 @@ class MailModule:
             log.exception("reply-today card did not start; retried next cycle")
         out.extend(reply_today.take_signals())
 
+        # A spam verdict for every recent message that has none (read-only,
+        # once a day, in the background; writes only ATLAS's own table).
+        from . import spam
+        try:
+            await spam.maybe_backfill()
+        except Exception:
+            log.exception("spam backfill did not start; retried next cycle")
+
         # The travel organiser: a background sweep of booking emails (local
         # model, slow), then check-in reminder proposals and passport flags
         # from what earlier sweeps stored. No mailbox, nothing to read.
@@ -926,12 +1042,26 @@ class MailModule:
             if age_h > 168:
                 continue
             subject = _header(last, "Subject") or "(no subject)"
+            from . import spam
+            flag = await spam.check(spam.item_from_gmail(
+                last, snippet=snippets.get(thread["id"], "")))
+            if flag.verdict in (spam.SPAM, spam.UNSURE):
+                # Shown, flagged, with the reason; never urgent, never
+                # classified or offered a draft. unsure is not "ok".
+                items.append(InboxItem(
+                    at=at,
+                    sender=sender.split("<")[0].strip().strip('"')[:40] or sender[:40],
+                    subject=subject[:80], urgency=Severity.INFO,
+                    why=flag.line()[:160], reference=thread["id"]))
+                continue
             classification = await _classify_capped(
                 thread["id"], subject, sender, snippets.get(thread["id"], ""),
                 now, budget)
             why = followups.bucket(classification, age_h)
             if why == "unclassified":
                 why = UNCLASSIFIED_HEADING
+            if flag.verdict == spam.UNKNOWN:
+                why = f"spam check UNKNOWN; {why}"
             urgency = (Severity.HIGH if why == "reply_today"
                        else Severity.INFO if why == "noise"
                        else Severity.NORMAL)

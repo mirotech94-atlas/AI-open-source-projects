@@ -39,6 +39,27 @@ export const WIDE_FRAME: Frame = {
   inner: { rx: 235, ry: 150 }, outer: { rx: 420, ry: 285 },
 };
 
+/** The frame for a stage that fills its container (the Agency tab): 1 frame
+ *  unit is 1 CSS px, so the SVG needs no scaling and rings, labels and the
+ *  core keep their size. Vertical radii are the wide frame's fractions of the
+ *  height; the outer ring runs out to a label margin (the wider of 170 px and
+ *  12.5% of the width) from each side so a wide screen is used rather than
+ *  letterboxed, and the inner ring keeps the wide frame's ratio to it. Clamped
+ *  so a tiny or not-yet-measured stage still gets a frame that holds every label. */
+export const FILL_MIN = { w: 900, h: 460 };
+
+export function fillFrame(widthPx: number, heightPx: number): Frame {
+  const w = Math.max(FILL_MIN.w, Math.round(Number.isFinite(widthPx) ? widthPx : 0));
+  const h = Math.max(FILL_MIN.h, Math.round(Number.isFinite(heightPx) ? heightPx : 0));
+  const W = WIDE_FRAME;
+  const outerRx = Math.round(w / 2 - Math.max(190, w * 0.13));
+  return {
+    w, h, cx: w / 2, cy: h / 2,
+    inner: { rx: Math.round(outerRx * (W.inner.rx / W.outer.rx)), ry: Math.round(h * (W.inner.ry / W.h)) },
+    outer: { rx: outerRx, ry: Math.round(h * (W.outer.ry / W.h)) },
+  };
+}
+
 /** The compact (phone) frame is a different shape, not the wide one
  *  scaled: labels are HTML and keep their size, so 21 names cannot sit on
  *  a 343px ring. Instead the net is drawn in layers, top to bottom -- the
@@ -61,6 +82,8 @@ export interface Neuron {
   side: Side;
   /** Side of the square neuron in CSS px -- by runs in the last 24 hours. */
   size: number;
+  /** Widest the label may be (px) before it would cross the frame edge; left/right sides only. */
+  labelMax: number;
 }
 
 export type SynapseKind = "handoff" | "memory";
@@ -95,6 +118,21 @@ export interface NeuralLayout {
 }
 
 const round = (n: number): number => Math.round(n * 10) / 10;
+
+/** Label gap from the node edge, and the margin kept to the frame edge. */
+export const LABEL_GAP = 7;
+export const LABEL_EDGE = 8;
+export const LABEL_MIN = 90;
+
+/** Room (px) for a label beside a neuron at frame x: out to the frame edge on
+ *  its side, less the gap and an edge margin. Top/bottom labels are centred
+ *  on the node, so their room is twice the distance to the nearer edge. */
+export function labelRoom(frameW: number, x: number, side: Side, size: number): number {
+  const room = side === "left" ? x - size / 2 - LABEL_GAP - LABEL_EDGE
+    : side === "right" ? frameW - x - size / 2 - LABEL_GAP - LABEL_EDGE
+    : 2 * (Math.min(x, frameW - x) - LABEL_EDGE);
+  return Math.max(LABEL_MIN, Math.floor(room));
+}
 
 /** A neuron's side in px: 8 for an agent that has not run in the last day,
  *  growing with the square root of its runs, capped at 22 -- so 31 runs
@@ -196,9 +234,13 @@ function chord(p: Neuron, q: Neuron, f: Frame, variant: Variant): string {
   return `M${round(p.x)},${round(p.y)} Q${round(cx)},${round(cy)} ${round(q.x)},${round(q.y)}`;
 }
 
-export function neuralLayout(agents: AgentSummary[], variant: Variant = "wide"): NeuralLayout {
+export function neuralLayout(
+  agents: AgentSummary[], variant: Variant = "wide",
+  size: { w: number; h: number } | null = null,
+): NeuralLayout {
   const model = agentMapModel(agents);
-  const f: Frame = variant === "wide" ? WIDE_FRAME : compactFrame(model);
+  const f: Frame = variant === "compact" ? compactFrame(model)
+    : size ? fillFrame(size.w, size.h) : WIDE_FRAME;
 
   const place = (a: AgentSummary, lane: Lane, x: number, y: number, side?: Side): Neuron => ({
     agent: a, lane,
@@ -207,6 +249,7 @@ export function neuralLayout(agents: AgentSummary[], variant: Variant = "wide"):
     py: round(((f.cy + y) / f.h) * 100),
     side: side ?? sideFor(x, y),
     size: neuronSize(a.runs_24h),
+    labelMax: labelRoom(f.w, f.cx + x, side ?? sideFor(x, y), neuronSize(a.runs_24h)),
   });
 
   let innerNeurons: Neuron[];

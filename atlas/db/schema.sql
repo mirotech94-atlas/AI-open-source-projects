@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS proposals (
     decided_at  TIMESTAMPTZ,
     decided_via TEXT,                        -- slack | sms | matrix | imessage
     always      BOOLEAN NOT NULL DEFAULT FALSE,  -- "approve + always do this"
-    -- The dry run as it stood when the proposal was raised. Miro must be able
+    -- The dry run as it stood when the proposal was raised. the owner must be able
     -- to read what WOULD happen before deciding; execute() runs its own dry
     -- run again at approval time, because the world may have moved since.
     dry_run     TEXT,
@@ -105,6 +105,25 @@ ALTER TABLE proposals ADD COLUMN IF NOT EXISTS dry_run_at TIMESTAMPTZ;
 ALTER TABLE proposals ADD COLUMN IF NOT EXISTS catalog_version TEXT;
 ALTER TABLE proposals ADD COLUMN IF NOT EXISTS approved_payload_hash TEXT;
 CREATE INDEX IF NOT EXISTS proposals_pending ON proposals (status, expires_at);
+-- Where each card's Slack message is, so the approvals board (kernel/board.py)
+-- can link to it: the channel and ts recorded when propose() sent it, the
+-- chat.getPermalink answer, and when a card raised before these existed was
+-- looked up (once; a card never found is listed without a link).
+ALTER TABLE proposals ADD COLUMN IF NOT EXISTS slack_channel TEXT;
+ALTER TABLE proposals ADD COLUMN IF NOT EXISTS slack_ts TEXT;
+ALTER TABLE proposals ADD COLUMN IF NOT EXISTS slack_permalink TEXT;
+ALTER TABLE proposals ADD COLUMN IF NOT EXISTS slack_link_tried_at TIMESTAMPTZ;
+
+-- The approvals board: key 'channel' is the #approvals channel the
+-- approvals_board.create_channel action made (SLACK_APPROVALS_CHANNEL, when
+-- it is an id, wins over it); key 'board' is the one pinned board message,
+-- edited in place.
+CREATE TABLE IF NOT EXISTS approvals_board (
+    key        TEXT PRIMARY KEY,
+    channel    TEXT NOT NULL,
+    ts         TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 -- Append-only, hash-chained. Never UPDATE or DELETE from this table.
 CREATE TABLE IF NOT EXISTS actions_log (
@@ -135,7 +154,7 @@ CREATE TABLE IF NOT EXISTS runbooks (
     rollback_plan TEXT,
     successes   INT NOT NULL DEFAULT 0,
     failures    INT NOT NULL DEFAULT 0,
-    promoted    BOOLEAN NOT NULL DEFAULT FALSE,   -- promoted to Tier 1 by Miro
+    promoted    BOOLEAN NOT NULL DEFAULT FALSE,   -- promoted to Tier 1 by the owner
     last_used   TIMESTAMPTZ,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -148,7 +167,7 @@ CREATE TABLE IF NOT EXISTS messages (
     received_at TIMESTAMPTZ,
     body        TEXT,
     draft       TEXT,
-    sent_body   TEXT,                 -- what Miro actually sent, after editing
+    sent_body   TEXT,                 -- what the owner actually sent, after editing
     status      TEXT NOT NULL DEFAULT 'drafted',
     embedding   vector(1024)
 );
@@ -293,7 +312,7 @@ CREATE TABLE IF NOT EXISTS browser_rollup (
 CREATE INDEX IF NOT EXISTS browser_rollup_day ON browser_rollup (day DESC);
 
 
--- Standing rules: things Miro said once that should hold from then on.
+-- Standing rules: things the owner said once that should hold from then on.
 --
 -- "From now on, whenever any node hits 80% disk, just prune and tell me
 -- after."
@@ -322,10 +341,10 @@ CREATE INDEX IF NOT EXISTS standing_rules_live
 
 -- ---------------------------------------------------------------------------
 -- The decision log (JUDGMENT.md §5). One row per proposal: the conditions
--- it was raised under, what ATLAS predicted, and what Miro answered.
+-- it was raised under, what ATLAS predicted, and what the owner answered.
 -- Written only by kernel/approvals.py; read only by kernel/judgment/.
 -- Starts filling in Phase 4, during watch-only, so by the time ATLAS can act
--- there is already a history of "what would Miro have said".
+-- there is already a history of "what would the owner have said".
 --
 -- outcome is THREE classes. Expiry is never a denial: deny means the wrong
 -- action, expiry means it was wrong to ask.
@@ -663,7 +682,7 @@ CREATE TABLE IF NOT EXISTS youtube_videos (
 CREATE TABLE IF NOT EXISTS marketing_experiments (
     id          BIGSERIAL PRIMARY KEY,
     at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    business    TEXT NOT NULL,                  -- flycheap | guardian | mirotech | agency
+    business    TEXT NOT NULL,                  -- flycheap | guardian | exampleco | agency
     platform    TEXT NOT NULL,                  -- youtube | instagram | tiktok | linkedin
     hypothesis  TEXT NOT NULL,                  -- "route-deal shorts beat explainer shorts on views/48h"
     variant     TEXT NOT NULL,                  -- the concrete post kind / hook / format
@@ -683,7 +702,7 @@ CREATE TABLE IF NOT EXISTS monetization_ideas (
     idea        TEXT NOT NULL,
     mechanism   TEXT NOT NULL,                  -- affiliate | sponsorship | ads | product | service | partner_program
     evidence    JSONB NOT NULL DEFAULT '{}',    -- the measured facts it rests on, each with observed_at
-    requires    TEXT,                           -- what Miro must do (sign up, enable, decide)
+    requires    TEXT,                           -- what the owner must do (sign up, enable, decide)
     est_note    TEXT,                           -- prose only; no invented revenue figures
     score       REAL,
     status      TEXT NOT NULL DEFAULT 'proposed' -- proposed | pursuing | done | dropped
@@ -732,6 +751,10 @@ ALTER TABLE school_items ADD COLUMN IF NOT EXISTS grade TEXT;
 ALTER TABLE school_items ADD COLUMN IF NOT EXISTS url TEXT;
 ALTER TABLE school_items ADD COLUMN IF NOT EXISTS signalled_at TIMESTAMPTZ;   -- email kinds told
 ALTER TABLE school_items ADD COLUMN IF NOT EXISTS meta JSONB NOT NULL DEFAULT '{}';  -- sender_unverified
+-- 2026-10-13: when the row was last READ from its source (every upsert), so a
+-- due date is shown with the time it was read (invariant 6). seen_at is only
+-- when it was first seen.
+ALTER TABLE school_items ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
 
 -- Phase 20 (2026-09-24): store variants. A store build's ranking -- style id,
 -- primary angle, and per variant its rubric score, what it failed and where
@@ -756,7 +779,7 @@ ALTER TABLE nightshift_jobs ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 
 -- RA-D1 (2026-09-29): the commit a finished code job's branch pointed at,
 -- read from GitLab when check_jobs marks the job done. nightshift.merge
 -- merges only this commit, so nothing pushed after the job finished can be
--- merged under the card Miro approved.
+-- merged under the card the owner approved.
 ALTER TABLE nightshift_jobs ADD COLUMN IF NOT EXISTS head_sha TEXT;
 
 -- Phase 20 (2026-09-24): a rendered video reachable by a publish proposal.
@@ -778,13 +801,13 @@ ALTER TABLE content_media ADD COLUMN IF NOT EXISTS media_token_expires_at TIMEST
 -- read back, so the reel quality gate reads this record.
 ALTER TABLE content_media ADD COLUMN IF NOT EXISTS captions BOOLEAN;
 
--- "I know. Stop telling me." One row per check Miro acknowledged from a
+-- "I know. Stop telling me." One row per check the owner acknowledged from a
 -- Slack alert. While it stands, the check neither pages nor raises a card.
 -- It lapses after `until`, or as soon as the check's health differs from the
 -- health he acknowledged (degraded -> failing is news), or when the check
 -- reads OK again (a later failure is a new problem, not the one he knew).
 CREATE TABLE IF NOT EXISTS acks (
-    key     TEXT PRIMARY KEY,            -- module.check, e.g. vpsie.balance
+    key     TEXT PRIMARY KEY,            -- module.check, e.g. cloudco.balance
     at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     until   TIMESTAMPTZ NOT NULL,
     health  TEXT NOT NULL,               -- the state he acknowledged
@@ -804,7 +827,7 @@ CREATE TABLE IF NOT EXISTS veo_usage (
 );
 CREATE INDEX IF NOT EXISTS veo_usage_at ON veo_usage (at);
 
--- Miro, 2026-09-29: Higgsfield renders the calendar clips Veo's daily
+-- the owner, 2026-09-29: Higgsfield renders the calendar clips Veo's daily
 -- allowance cannot, under HIGGSFIELD_MONTHLY_USD. Its own ledger, never
 -- veo_usage (which Veo's allowance and seconds cap read). One positive row
 -- reserved per clip BEFORE the request, a negative row when Higgsfield
@@ -826,8 +849,8 @@ ALTER TABLE higgsfield_usage ADD COLUMN IF NOT EXISTS seconds INT;
 ALTER TABLE higgsfield_usage ADD COLUMN IF NOT EXISTS resolution TEXT;
 ALTER TABLE higgsfield_usage ADD COLUMN IF NOT EXISTS price_read BOOLEAN;
 
--- Task 55 (2026-09-24): the AI-stories account's format playbook. Miro's
--- seeds (source 'miro') and what the daily research found (source
+-- Task 55 (2026-09-24): the AI-stories account's format playbook. the owner's
+-- seeds (source 'owner') and what the daily research found (source
 -- 'perplexity'). `score` is a RANKING WEIGHT, never a measurement: 2 for a
 -- format he chose, 1 per research mention in the trailing 30 days. Rows are
 -- retired (retired_at), never deleted -- content.reel_research's rollback.
@@ -836,7 +859,7 @@ CREATE TABLE IF NOT EXISTS reel_formats (
     at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     format      TEXT NOT NULL,
     evidence    TEXT NOT NULL,                -- why it is here, with its read time and sources
-    source      TEXT NOT NULL,                -- miro | perplexity
+    source      TEXT NOT NULL,                -- owner | perplexity
     score       REAL NOT NULL,
     max_scenes  INT NOT NULL DEFAULT 4,       -- beats a reel in this format gets
     retired_at  TIMESTAMPTZ
@@ -869,11 +892,11 @@ CREATE TABLE IF NOT EXISTS reel_metrics (
 );
 CREATE INDEX IF NOT EXISTS reel_metrics_at ON reel_metrics (at);
 
--- 2026-09-27: the 30-day reels calendar Miro supplied
+-- 2026-09-27: the 30-day reels calendar the owner supplied
 -- (atlas/modules/content/calendars/*.json). One row per job; the job itself
 -- is read from the package file. status: draft | rendering | rendered |
 -- carded | published | declined | blocked. The business package stays 'draft' until
--- Miro picks its account, language and start date.
+-- the owner picks its account, language and start date.
 CREATE TABLE IF NOT EXISTS reel_calendar (
     job_id      TEXT PRIMARY KEY,
     package     TEXT NOT NULL,                 -- stories | business
@@ -931,9 +954,9 @@ ALTER TABLE reel_series ADD COLUMN IF NOT EXISTS scripts JSONB;  -- a series wri
 ALTER TABLE reel_calendar ADD COLUMN IF NOT EXISTS redos INT NOT NULL DEFAULT 0;      -- remade after a failed check
 ALTER TABLE reel_series_parts ADD COLUMN IF NOT EXISTS redos INT NOT NULL DEFAULT 0;  -- rendered again after a failed check
 
--- Work ATLAS hands to the coding agent on Miro's Mac (CLAUDE_CODE_AGENT.md
+-- Work ATLAS hands to the coding agent on the owner's Mac (CLAUDE_CODE_AGENT.md
 -- §9 option b). ATLAS writes the brief and never runs it: a row is `draft`
--- until Miro approves its card (`delegate.claude_code`), `queued` until the
+-- until the owner approves its card (`delegate.claude_code`), `queued` until the
 -- scheduled agent claims it, and expires unclaimed -- silence is never
 -- consent. The report comes back as untrusted text.
 CREATE TABLE IF NOT EXISTS handoffs (
@@ -945,7 +968,7 @@ CREATE TABLE IF NOT EXISTS handoffs (
     topic       TEXT NOT NULL DEFAULT 'decisions',
     channel     TEXT NOT NULL DEFAULT '',      -- where he asked (Slack channel id)
     thread      TEXT NOT NULL DEFAULT '',      -- the thread the report goes back to
-    status      TEXT NOT NULL DEFAULT 'draft', -- draft | queued | claimed | done | failed | needs_miro | expired | cancelled
+    status      TEXT NOT NULL DEFAULT 'draft', -- draft | queued | claimed | done | failed | needs_owner | expired | cancelled
     queued_at   TIMESTAMPTZ,
     expires_at  TIMESTAMPTZ,
     claimed_at  TIMESTAMPTZ,
@@ -956,7 +979,7 @@ CREATE TABLE IF NOT EXISTS handoffs (
 CREATE INDEX IF NOT EXISTS handoffs_status ON handoffs (status, id);
 
 -- The kill switch (kernel/pause.py): a pause stops new dispatch through
--- executor.execute for everything ('all') or one module, until Miro
+-- executor.execute for everything ('all') or one module, until the owner
 -- resumes it. Rows are never deleted; resuming stamps resumed_at.
 CREATE TABLE IF NOT EXISTS pauses (
     id          BIGSERIAL PRIMARY KEY,
@@ -987,7 +1010,7 @@ CREATE TABLE IF NOT EXISTS schedule_runs (
 ALTER TABLE schedule_runs ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;
 ALTER TABLE schedule_runs ADD COLUMN IF NOT EXISTS detail TEXT;
 
--- The agent on Miro's Mac (modules/mac, api/mac_agent.py). A job expires 60 s
+-- The agent on the owner's Mac (modules/mac, api/mac_agent.py). A job expires 60 s
 -- after it is queued, checked inside the claim; 'unknown' is a job the Mac
 -- claimed and never answered.
 CREATE TABLE IF NOT EXISTS mac_jobs (
@@ -1009,7 +1032,7 @@ CREATE TABLE IF NOT EXISTS mac_agent (
 );
 
 -- The shop (modules/shop): one product per reel type, sold through a Stripe
--- payment link Miro approved. file_path is what /deliver hands over after a
+-- payment link the owner approved. file_path is what /deliver hands over after a
 -- paid checkout, under data/products/.
 CREATE TABLE IF NOT EXISTS shop_products (
     key              TEXT PRIMARY KEY,
@@ -1028,7 +1051,7 @@ INSERT INTO shop_products (key, name, reel_type, status, payment_link_url, file_
     ('vault_kit', 'Claude + Obsidian Vault Kit', 'tech', 'draft', NULL,
      'data/products/claude-obsidian-vault-kit.zip'),
     ('flycheap_pro', 'FlyCheap Pro', 'travel', 'live',
-     'https://flycheap.live/pricing', NULL)
+     'https://flycheap.example/pricing', NULL)
 ON CONFLICT (key) DO NOTHING;
 
 -- Money per reel (kernel/reel_money.py): the Improver's reel-type mix, in
@@ -1065,7 +1088,7 @@ CREATE TABLE IF NOT EXISTS markets_paper (
     started_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Miro's own TradingView alerts, as TradingView sent them to
+-- the owner's own TradingView alerts, as TradingView sent them to
 -- POST /hooks/tradingview (atlas/api/tradingview.py). Read only: nothing
 -- here is ever traded on (money out is Tier 3). `name` and `message` are
 -- untrusted text and reach a prompt only through wrap_untrusted();
@@ -1201,7 +1224,7 @@ CREATE TABLE IF NOT EXISTS workflows (
     workflow_type         TEXT NOT NULL,
     workflow_version      INT NOT NULL DEFAULT 1,
     correlation_id        TEXT NOT NULL,
-    tenant                TEXT NOT NULL DEFAULT 'miro',
+    tenant                TEXT NOT NULL DEFAULT 'owner',
     originating_actor     TEXT NOT NULL DEFAULT '',
     originating_channel   TEXT NOT NULL DEFAULT '',
     thread_id             TEXT NOT NULL DEFAULT '',
@@ -1313,7 +1336,7 @@ CREATE TABLE IF NOT EXISTS leases (
 -- Which emails an agent has already read, so the model reads each once.
 CREATE TABLE IF NOT EXISTS mail_extractions (
     agent       TEXT NOT NULL,                  -- travel | money | alinea
-    message_id  TEXT NOT NULL,                  -- gmail:<id> | imap:<acct>:<Message-ID>
+    message_id  TEXT NOT NULL,                  -- gmail:<id> | imap:<acct>:uid:<validity>:<uid> | imap:<acct>:mid:<sha256(Message-ID)>
     account     TEXT NOT NULL,
     outcome     TEXT NOT NULL,                  -- found | none | unparsed
     at          TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -1363,7 +1386,7 @@ CREATE TABLE IF NOT EXISTS money_charges (
     at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS money_charges_seen ON money_charges (seen_on);
--- One row per event in an Alinea Invest email (Miro's auto-investing app;
+-- One row per event in an Alinea Invest email (the owner's auto-investing app;
 -- it trades on its own, ATLAS only reads its emails). Every figure is the one written in
 -- the email; one the email does not state is NULL, shown as unknown -- never
 -- 0, never estimated (invariant 6). One row per event: an email listing
@@ -1405,9 +1428,9 @@ CREATE TABLE IF NOT EXISTS clip_campaigns (
     category        TEXT NOT NULL,                  -- gaming | trends | business | streamer
     status          TEXT NOT NULL DEFAULT 'paused'
                     CHECK (status IN ('active', 'paused', 'ended')),
-    whop_url        TEXT,                           -- NULL until Miro gives it
+    whop_url        TEXT,                           -- NULL until the owner gives it
     rules_doc_id    TEXT,                           -- NULL = rules pending; never clipped
-    source_folder   TEXT,                           -- the official folder, for Miro; never scraped
+    source_folder   TEXT,                           -- the official folder, for the owner; never scraped
     platforms       JSONB NOT NULL DEFAULT '[]',    -- ["instagram", "tiktok", ...]
     rates           JSONB NOT NULL DEFAULT '{}',    -- {platform: USD per 1,000 views}
     tag_handles     JSONB NOT NULL DEFAULT '{}',    -- {platform: "@handle"}
@@ -1428,7 +1451,7 @@ CREATE TABLE IF NOT EXISTS clip_campaigns (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- One official source file, placed by Miro (or a Mac-side step) in
+-- One official source file, placed by the owner (or a Mac-side step) in
 -- data/clips/<slug>/source/. Nothing that is not registered here, to this
 -- campaign, with this sha256, is ever clipped. Retired, never deleted.
 CREATE TABLE IF NOT EXISTS clip_sources (
@@ -1442,7 +1465,7 @@ CREATE TABLE IF NOT EXISTS clip_sources (
     UNIQUE (campaign, sha256)
 );
 
--- One cut clip. made -> posted (by the Tier 2 post card, or by Miro by
+-- One cut clip. made -> posted (by the Tier 2 post card, or by the owner by
 -- hand from the ready-to-post card: handed_off, then his URL) -> submitted
 -- (to the campaign on Whop). A rollback
 -- marks it rolled_back and moves its files to .trash/; the row stays.
@@ -1490,7 +1513,7 @@ ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS preset TEXT NOT NULL DEFAULT
 ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS presets_allowed JSONB NOT NULL
     DEFAULT '["blur", "crop", "split"]';
 -- The account a clip went to on its platform ('instagram:clips',
--- 'youtube:clips'), set when ATLAS posts it or hands it to Miro to post:
+-- 'youtube:clips'), set when ATLAS posts it or hands it to the owner to post:
 -- what the max_accounts guard counts. One row per clip per platform, so
 -- a clip posts at most once on each.
 ALTER TABLE clip_outputs ADD COLUMN IF NOT EXISTS post_account TEXT;
@@ -1514,7 +1537,7 @@ CREATE TABLE IF NOT EXISTS effect_claims (
 -- account? Read from the reviewed rules doc by hand; FALSE unless it says
 -- so. Both live docs forbid it ("do not copy the same video across
 -- multiple accounts"), so each of their clips is cut for the one platform
--- that pays the most. The TikTok account is @atlasclips12 ('tiktok:clips').
+-- that pays the most. The TikTok account is @example_handle ('tiktok:clips').
 ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS cross_post_allowed BOOLEAN
     NOT NULL DEFAULT FALSE;
 -- Clips, 2026-09-28 (unattended intake, kernel.clip_intake). On each
@@ -1534,7 +1557,7 @@ CREATE TABLE IF NOT EXISTS clip_intake (
     detail      TEXT NOT NULL DEFAULT ''
 );
 
--- The football (soccer) reels lane, Miro 2026-09-29: every number on screen
+-- The football (soccer) reels lane, the owner 2026-09-29: every number on screen
 -- comes from API-Football (v3, api-sports.io), read by the read-only
 -- collector in atlas/modules/football. Each read is kept with the time it
 -- was read (invariant 6) and served from here while fresh, so the free
@@ -1572,15 +1595,15 @@ CREATE TABLE IF NOT EXISTS football_draft_facts (
 CREATE INDEX IF NOT EXISTS football_draft_facts_draft ON football_draft_facts (draft_id);
 -- Clips, 2026-09-29 (Whop through the Mac agent). post_url_source: where a
 -- clip's post_url came from -- 'instagram' / 'youtube' / 'tiktok' (the
--- platform's own publish response) or 'record_link' (Miro's word); NULL =
+-- platform's own publish response) or 'record_link' (the owner's word); NULL =
 -- not recorded, and such a row is never offered to the agent.
 -- submitted_by: who recorded it submitted -- 'mac-agent' (POST
--- /clips/whop/{id}/submitted) or 'miro' (his clips.submit_to_whop card).
+-- /clips/whop/{id}/submitted) or 'owner' (his clips.submit_to_whop card).
 ALTER TABLE clip_outputs ADD COLUMN IF NOT EXISTS post_url_source TEXT;
 -- Clips, 2026-10-01 (Irubyana: "include brand logo", "twitch banner in the
 -- background"). brand_assets on a campaign: which of logo | banner its rules
 -- require on every clip, composited by the cut from data/clips/<slug>/brand/
--- (files Miro placed; never fetched); NULL = never set, so the seed's apply.
+-- (files the owner placed; never fetched); NULL = never set, so the seed's apply.
 -- brand_assets on a clip: the ones it was cut with -- a clip cut without
 -- the campaign's is never posted.
 ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS brand_assets JSONB;
@@ -1735,9 +1758,9 @@ ALTER TABLE clip_sources ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 
 -- agency.webild_brief -> agency.build_with_webild -> agency.record_webild_site
 -- (2026-09-29): a Webild prompt drafted from the lead's own data, queued by
--- Miro's card for the agent on his Mac, and the site it published with its
+-- the owner's card for the agent on his Mac, and the site it published with its
 -- live launch check. drafted | queued | claimed | published | failed |
--- needs_miro | expired | cancelled. A queued or claimed row past expires_at
+-- needs_owner | expired | cancelled. A queued or claimed row past expires_at
 -- is never handed out or recorded (the UPDATEs test it), whatever its
 -- status still says.
 CREATE TABLE IF NOT EXISTS agency_webild (
@@ -1765,7 +1788,7 @@ CREATE INDEX IF NOT EXISTS agency_webild_lead ON agency_webild (lead_id, status)
 -- Missions, 2026-09-29 (kernel/missions.py): a job bigger than one catalog
 -- action, handed to the roster agent that owns it -- "find 50 local
 -- businesses with a poor or no website and make them one" goes to agency.
--- `request` is Miro's words verbatim, wrapped as untrusted before any
+-- `request` is the owner's words verbatim, wrapped as untrusted before any
 -- prompt. `slots` is what the recipe was filled with (n, business, area --
 -- never coordinates from a model). `state` is the runner's bookkeeping: the
 -- area as read (AGENCY_HOME_AREA or Places, with read_at), the searches
@@ -1799,7 +1822,7 @@ CREATE TABLE IF NOT EXISTS missions (
 CREATE INDEX IF NOT EXISTS missions_status ON missions (status, created_at);
 
 -- Real estate deal checker, 2026-09-29 (atlas/modules/realestate). One row
--- per deal Miro asked ATLAS to check: what he gave (address, list price,
+-- per deal the owner asked ATLAS to check: what he gave (address, list price,
 -- the listing blurb he pasted -- untrusted, wrapped before any prompt) and
 -- what was worked out, each estimate with its source and read time. A NULL
 -- figure is unknown, never 0. `card` is the text sent to him. Withdrawn by
@@ -1856,7 +1879,7 @@ CREATE TABLE IF NOT EXISTS realestate_rentcast_quota (
 -- Instagram comment-keyword -> DM funnels, 2026-09-30
 -- (atlas/modules/instagram/funnel.py). One row per funnel: the account,
 -- the keyword, the media scope, and the EXACT public reply and private
--- reply Miro approved on the instagram.funnel_set card. `text_hash` is
+-- reply the owner approved on the instagram.funnel_set card. `text_hash` is
 -- sha256 over both texts as approved; the sender recomputes it from the
 -- row before every send and refuses on a mismatch, so a text edited
 -- behind the card never reaches anyone. Deactivating is a flag, never a
@@ -2035,7 +2058,7 @@ CREATE TABLE IF NOT EXISTS futures_backtests (
 -- 2026-09-29: agency lead follow-up (atlas/modules/agency/leads.py,
 -- consent.py, replies.py, sms.py, calls.py). What a lead said back, the
 -- consent that alone lets ATLAS text or ring them, every contact ATLAS made,
--- the replies it drafted, and the deals Miro recorded.
+-- the replies it drafted, and the deals the owner recorded.
 --
 -- The Message-ID `send_outreach` stamps, kept on the row so a reply's
 -- In-Reply-To / References can be matched to it.
@@ -2132,7 +2155,7 @@ CREATE INDEX IF NOT EXISTS agency_reply_drafts_lead
 -- other time. NULL: no times were offered in this reply.
 ALTER TABLE agency_reply_drafts ADD COLUMN IF NOT EXISTS offered_slots JSONB;
 
--- 2026-10-06 (Miro: "schedule meetings with them via email ... approve
+-- 2026-10-06 (the owner: "schedule meetings with them via email ... approve
 -- invoices too"): what a lead's own words asked for, decided in code when
 -- the message came in. `booking_slot` is the one offered slot their words
 -- matched (held and invited by kernel.lead_followup.bookings, claimed once
@@ -2144,7 +2167,7 @@ ALTER TABLE agency_lead_messages ADD COLUMN IF NOT EXISTS booked_at TIMESTAMPTZ;
 ALTER TABLE agency_lead_messages ADD COLUMN IF NOT EXISTS agreement_price INTEGER;
 ALTER TABLE agency_lead_messages ADD COLUMN IF NOT EXISTS agreed_at TIMESTAMPTZ;
 
--- Deals Miro recorded (agency.record_deal, his word only). The first-sale
+-- Deals the owner recorded (agency.record_deal, his word only). The first-sale
 -- price is offered only while no row here is won or paid -- read fresh, and
 -- an unreadable table means the regular floor.
 CREATE TABLE IF NOT EXISTS agency_deals (
@@ -2163,6 +2186,13 @@ CREATE TABLE IF NOT EXISTS agency_deals (
 -- URLs and when it was read. A lead is never audited, marketed or contacted
 -- on anything but a live 'verified' row.
 ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS business_status TEXT;
+-- 2026-10-27 (six agents, phase 6): the Sales agent's pipeline columns, and
+-- the link that makes a lead a returning client ($300). Set by the owner only.
+ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS sales_stage TEXT;
+ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS segment TEXT;
+ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS returning_of_lead_id BIGINT
+    REFERENCES agency_leads(id);
 CREATE TABLE IF NOT EXISTS agency_verifications (
     id         BIGSERIAL PRIMARY KEY,
     at         TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -2179,8 +2209,8 @@ CREATE TABLE IF NOT EXISTS agency_verifications (
 CREATE INDEX IF NOT EXISTS agency_verifications_lead
     ON agency_verifications (lead_id, at DESC);
 
--- 2026-09-30: a meeting with Miro booked on a lead call (agency.hold_meeting,
--- agency.send_invite). The hold is on Miro's own calendar with no attendee;
+-- 2026-09-30: a meeting with the owner booked on a lead call (agency.hold_meeting,
+-- agency.send_invite). The hold is on the owner's own calendar with no attendee;
 -- the invite goes to the lead only on his yes. `reminded_at` claims the
 -- one-hour reminder once.
 CREATE TABLE IF NOT EXISTS agency_lead_meetings (
@@ -2280,7 +2310,7 @@ ALTER TABLE agency_lead_consent ADD COLUMN IF NOT EXISTS call_card_note TEXT;
 ALTER TABLE agency_sites ADD COLUMN IF NOT EXISTS followed_up_at TIMESTAMPTZ;
 
 -- 2026-09-30: ATLAS Academy purchases (atlas/modules/academy/delivery.py),
--- one row per Stripe Checkout Session, for Miro's dashboard. Written only
+-- one row per Stripe Checkout Session, for the owner's dashboard. Written only
 -- from what Stripe answered when the session was read (the access page, the
 -- signed webhook): never a guessed amount. The first INSERT of a session is
 -- what posts the purchase to Slack, so a session posts once. `offers` are
@@ -2290,7 +2320,7 @@ CREATE TABLE IF NOT EXISTS academy_purchases (
     session_id      TEXT PRIMARY KEY,               -- cs_live_... | cs_test_...
     first_seen_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_checked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    source          TEXT NOT NULL,                  -- access | webhook
+    source          TEXT NOT NULL,                  -- access | webhook | recover
     status          TEXT NOT NULL,                  -- paid | refunded | disputed | unknown_price
     offers          TEXT[] NOT NULL DEFAULT '{}',
     price_ids       TEXT[] NOT NULL DEFAULT '{}',
@@ -2309,7 +2339,7 @@ CREATE INDEX IF NOT EXISTS academy_purchases_seen ON academy_purchases (first_se
 ALTER TABLE tradingview_alerts ADD COLUMN IF NOT EXISTS ivan_checked_at TIMESTAMPTZ;
 ALTER TABLE tradingview_alerts ADD COLUMN IF NOT EXISTS ivan_note TEXT;
 
--- 2026-10-01: the outreach email sends itself (Miro: non-urgent work runs
+-- 2026-10-01: the outreach email sends itself (the owner: non-urgent work runs
 -- without a card; only emergencies reach him) -- but only a draft
 -- `draft_outreach` wrote. Its body's SHA-256 is stored with the row and
 -- checked before every unattended send (`outreach.auto_hold`); a body
@@ -2323,7 +2353,7 @@ ALTER TABLE agency_outreach ADD COLUMN IF NOT EXISTS followup_claimed_at TIMESTA
 -- wrote, kept so a message survives a failed Slack post. Untrusted text.
 -- The daily Academy reel on the clips accounts (clips.autopublish_promo):
 -- one row per automatic post, read for the daily cap and the rotation.
--- Tracked requests (kernel/tasks.py): everything Miro asks ATLAS to do
+-- Tracked requests (kernel/tasks.py): everything the owner asks ATLAS to do
 -- from Slack or the phone, where it went and how it ended.
 CREATE TABLE IF NOT EXISTS tasks (
     id        BIGSERIAL PRIMARY KEY,
@@ -2338,6 +2368,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     cards     JSONB NOT NULL DEFAULT '[]',
     done_at   TIMESTAMPTZ
 );
+-- A PRIVATE run keeps no words here and is never read back into a prompt.
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS private BOOLEAN NOT NULL DEFAULT false;
 CREATE TABLE IF NOT EXISTS academy_promo_posts (
     id        BIGSERIAL PRIMARY KEY,
     at        TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -2345,6 +2377,81 @@ CREATE TABLE IF NOT EXISTS academy_promo_posts (
     media_id  BIGINT NOT NULL,
     detail    TEXT NOT NULL DEFAULT ''
 );
+-- A teaching Short cut (academy/tutorials.py teaching_pass) whose render was
+-- refused or whose post was carded (not the day's cap): passed over until
+-- `until`, a week on, so one bad cut no longer heads the queue every day.
+CREATE TABLE IF NOT EXISTS academy_teaching_skips (
+    slug   TEXT PRIMARY KEY,                    -- tutorial:<series>:<episode>:<kind>
+    until  TIMESTAMPTZ NOT NULL,
+    why    TEXT NOT NULL DEFAULT ''
+);
+-- One live claim per Academy product and platform (clips/promo.py). It is
+-- taken atomically before a promo leg posts, and it refuses a second render of the
+-- same product on the same platform inside ACADEMY_PROMO_REPOST_DAYS.
+-- 2026-10-10: "AI for Every Age" went out twice, because a held card and
+-- a re-render after a restart each carried their own per-render key. A leg
+-- that definitely did not leave is 'released'; anything else keeps its claim.
+CREATE TABLE IF NOT EXISTS academy_promo_claims (
+    slug       TEXT NOT NULL,
+    leg        TEXT NOT NULL,                  -- instagram | tiktok | youtube
+    media_id   BIGINT NOT NULL,
+    claimed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    status     TEXT NOT NULL DEFAULT 'sending', -- sending | sent | released
+    detail     TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (slug, leg)
+);
+-- One row per tutorial episode put on YouTube (academy/tutorials.py). A
+-- rollback marks it withdrawn (the video goes private, never deleted).
+CREATE TABLE IF NOT EXISTS academy_tutorial_posts (
+    id          BIGSERIAL PRIMARY KEY,
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    series      TEXT NOT NULL,
+    episode     INT NOT NULL,
+    video_id    TEXT NOT NULL,
+    playlist_id TEXT,
+    item_id     TEXT,
+    thumb_set   BOOLEAN NOT NULL DEFAULT false,
+    captions_set BOOLEAN NOT NULL DEFAULT false,
+    public      BOOLEAN NOT NULL DEFAULT false,
+    withdrawn   BOOLEAN NOT NULL DEFAULT false,
+    detail      TEXT NOT NULL DEFAULT ''
+);
+-- 2026-10-13 (rule 16): the script went up as the en-GB caption track.
+ALTER TABLE academy_tutorial_posts
+    ADD COLUMN IF NOT EXISTS captions_set BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS academy_tutorial_posts_ep
+    ON academy_tutorial_posts (series, episode);
+-- 2026-10-13 (growth plan, task 6): the quiz + lab-file comment posted under
+-- a public tutorial by academy.pin_comment (Tier 1). Its rollback edits the
+-- comment to "(withdrawn)" and sets `withdrawn`; a comment is never deleted.
+CREATE TABLE IF NOT EXISTS academy_tutorial_comments (
+    id          BIGSERIAL PRIMARY KEY,
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    series      TEXT NOT NULL,
+    episode     INT NOT NULL,
+    video_id    TEXT NOT NULL,
+    comment_id  TEXT NOT NULL,
+    withdrawn   BOOLEAN NOT NULL DEFAULT false,
+    text        TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS academy_tutorial_comments_ep
+    ON academy_tutorial_comments (series, episode);
+-- One row per tutorial draft sent to #atlas-academy-videos for the owner to
+-- watch before he approves it for YouTube (academy/tutorials.py). The
+-- token is the public `/media/tut.<token>` watch link (atlas/api/media.py),
+-- never written into the card's reason.
+CREATE TABLE IF NOT EXISTS academy_tutorial_reviews (
+    id               BIGSERIAL PRIMARY KEY,
+    at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+    series           TEXT NOT NULL,
+    episode          INT NOT NULL,
+    proposal_id      BIGINT,
+    media_token      TEXT UNIQUE,
+    token_expires_at TIMESTAMPTZ,
+    detail           TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS academy_tutorial_reviews_ep
+    ON academy_tutorial_reviews (series, episode);
 CREATE TABLE IF NOT EXISTS academy_contacts (
     id              BIGSERIAL PRIMARY KEY,
     received_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -2356,7 +2463,78 @@ CREATE TABLE IF NOT EXISTS academy_contacts (
 );
 CREATE INDEX IF NOT EXISTS academy_contacts_received ON academy_contacts (received_at);
 
--- The "ask for a free preview" form on mapfront.io (atlas/api/preview_request.py):
+-- 2026-11-11: free storefront updates signup (modules/academy/subscribers.py,
+-- POST /public/academy/subscribe). Email only, double opt-in: a row stays
+-- 'pending' until its owner clicks the emailed link, and a pending row that is
+-- not confirmed within 7 days is deleted. Only the SHA-256 of the confirm token
+-- is stored; the unsubscribe link is an HMAC of the row id, stored nowhere.
+-- Nothing else is collected (no name, no address, no client address).
+CREATE TABLE IF NOT EXISTS academy_subscribers (
+    id                 BIGSERIAL PRIMARY KEY,
+    email              TEXT NOT NULL UNIQUE,         -- lowercased
+    status             TEXT NOT NULL DEFAULT 'pending'
+                       CHECK (status IN ('pending', 'confirmed', 'unsubscribed')),
+    source             TEXT NOT NULL DEFAULT 'site',
+    confirm_token_hash TEXT,
+    confirm_expires_at TIMESTAMPTZ,
+    mail_due           BOOLEAN NOT NULL DEFAULT TRUE, -- a confirmation mail is queued
+    mail_attempts      INT NOT NULL DEFAULT 0,
+    confirm_sent_at    TIMESTAMPTZ,
+    created_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    confirmed_at       TIMESTAMPTZ,
+    unsubscribed_at    TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS academy_subscribers_status ON academy_subscribers (status, created_at);
+CREATE INDEX IF NOT EXISTS academy_subscribers_token ON academy_subscribers (confirm_token_hash);
+
+-- The website contact form (POST /public/agency/contact, atlas/api/agency_contact.py,
+-- atlas/modules/agency/contact.py): every message is stored here BEFORE anything is
+-- sent, so a down mail server or an unjoined WhatsApp sandbox never loses a lead.
+-- Each channel (email to the owner with Reply-To the visitor, WhatsApp to the
+-- owner, a fixed confirmation to the visitor) has its own status: pending ->
+-- sending -> sent (-> delivered, WhatsApp only, once Twilio says so) | failed |
+-- skipped, with its attempts, time and the reason it failed. The text is
+-- untrusted; the visitor's address is never logged. ip_hash is a SHA-256, never
+-- the address.
+CREATE TABLE IF NOT EXISTS agency_site_messages (
+    id                    BIGSERIAL PRIMARY KEY,
+    name                  TEXT NOT NULL,
+    email                 TEXT NOT NULL,
+    phone                 TEXT NOT NULL DEFAULT '',
+    message               TEXT NOT NULL,
+    topic                 TEXT NOT NULL DEFAULT 'other',
+    source                TEXT NOT NULL DEFAULT 'site',
+    ip_hash               TEXT NOT NULL DEFAULT '',
+    dedupe_key            TEXT NOT NULL UNIQUE,
+    email_status          TEXT NOT NULL DEFAULT 'pending'
+                          CHECK (email_status IN ('pending','sending','sent','failed','skipped')),
+    email_attempts        INT NOT NULL DEFAULT 0,
+    email_at              TIMESTAMPTZ,
+    email_error           TEXT,
+    whatsapp_status       TEXT NOT NULL DEFAULT 'pending'
+                          CHECK (whatsapp_status IN ('pending','sending','sent','delivered','failed','skipped')),
+    whatsapp_attempts     INT NOT NULL DEFAULT 0,
+    whatsapp_at           TIMESTAMPTZ,
+    whatsapp_sid          TEXT,
+    whatsapp_delivered_at TIMESTAMPTZ,
+    whatsapp_error        TEXT,
+    ack_status            TEXT NOT NULL DEFAULT 'pending'
+                          CHECK (ack_status IN ('pending','sending','sent','failed','skipped')),
+    ack_attempts          INT NOT NULL DEFAULT 0,
+    ack_at                TIMESTAMPTZ,
+    ack_error             TEXT,
+    created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS agency_site_messages_created ON agency_site_messages (created_at);
+-- Slack is the owner's delivery channel (2026-11-17); WhatsApp is optional.
+ALTER TABLE agency_site_messages ADD COLUMN IF NOT EXISTS slack_status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (slack_status IN ('pending','sending','sent','failed','skipped'));
+ALTER TABLE agency_site_messages ADD COLUMN IF NOT EXISTS slack_attempts INT NOT NULL DEFAULT 0;
+ALTER TABLE agency_site_messages ADD COLUMN IF NOT EXISTS slack_at TIMESTAMPTZ;
+ALTER TABLE agency_site_messages ADD COLUMN IF NOT EXISTS slack_error TEXT;
+
+-- The "ask for a free preview" form on agency.example.com (atlas/api/preview_request.py):
 -- who asked and how to reach them, kept so a request survives a failed Slack
 -- post. Untrusted text; nothing reads it back into a prompt unwrapped.
 CREATE TABLE IF NOT EXISTS agency_preview_requests (
@@ -2374,7 +2552,7 @@ CREATE INDEX IF NOT EXISTS agency_preview_requests_received
     ON agency_preview_requests (received_at);
 
 -- Verified-buyer reviews (modules/academy/reviews.py): written on the paid
--- access page, shown only once Miro approves (academy.approve_review).
+-- access page, shown only once the owner approves (academy.approve_review).
 CREATE TABLE IF NOT EXISTS academy_reviews (
     id              BIGSERIAL PRIMARY KEY,
     session_id      TEXT NOT NULL,                  -- the paid checkout it came from
@@ -2500,4 +2678,1033 @@ CREATE TABLE IF NOT EXISTS linkedin_request_drafts (
     created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     send_attempted_at TIMESTAMPTZ,                  -- set just before Send is clicked
     sent_at           TIMESTAMPTZ
+);
+
+-- 2026-10-11: ATLAS Academy support (modules/academy/support*.py, kernel/
+-- academy_support.py). the owner, via Q&A: "everything auto unless unsure". One
+-- row per thing a customer asked: the Help page form, an email to the
+-- support address, or a chat question the visitor chose to send on. The
+-- words are untrusted and reach a prompt only inside wrap_untrusted. A chat
+-- that is never sent on is never stored. `route` is decided in code from
+-- their words (refund, legal, money, complaint, custom work go to the owner).
+CREATE TABLE IF NOT EXISTS academy_support_tickets (
+    id              BIGSERIAL PRIMARY KEY,
+    source          TEXT NOT NULL CHECK (source IN ('form', 'email', 'chat')),
+    source_id       TEXT NOT NULL UNIQUE,           -- form:<uuid> | gmail:<id>
+    name            TEXT NOT NULL DEFAULT '',
+    email           TEXT NOT NULL,                  -- lower-cased; replies go only here
+    product         TEXT NOT NULL DEFAULT '',       -- a catalog slug, or '' (not said)
+    subject         TEXT NOT NULL DEFAULT '',
+    message         TEXT NOT NULL,
+    inbound_sha     TEXT NOT NULL,
+    authenticated   BOOLEAN NOT NULL DEFAULT FALSE, -- DKIM/DMARC pass (email only)
+    client          TEXT NOT NULL DEFAULT '',       -- the address a form came from
+    route           TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'new'
+                    CHECK (status IN ('new', 'drafted', 'replied', 'held',
+                                      'suppressed', 'closed')),
+    note            TEXT NOT NULL DEFAULT '',
+    received_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    claimed_at      TIMESTAMPTZ,
+    replied_at      TIMESTAMPTZ,
+    sla_alerted_at  TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS academy_support_tickets_status
+    ON academy_support_tickets (status, received_at);
+CREATE TABLE IF NOT EXISTS academy_support_drafts (
+    id                BIGSERIAL PRIMARY KEY,
+    ticket_id         BIGINT NOT NULL REFERENCES academy_support_tickets (id),
+    inbound_sha       TEXT NOT NULL,                -- the message this answers
+    to_address        TEXT NOT NULL,
+    subject           TEXT NOT NULL,
+    body              TEXT NOT NULL,
+    body_sha          TEXT NOT NULL,
+    sources           JSONB NOT NULL DEFAULT '[]',  -- the KB chunk ids it cites
+    holds             JSONB NOT NULL DEFAULT '[]',  -- why the owner must see it first
+    confidence        REAL NOT NULL DEFAULT 0,
+    status            TEXT NOT NULL DEFAULT 'draft'
+                      CHECK (status IN ('draft', 'sent', 'discarded', 'rolled_back')),
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    send_attempted_at TIMESTAMPTZ,
+    sent_at           TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS academy_support_drafts_ticket
+    ON academy_support_drafts (ticket_id);
+-- Addresses that said STOP, or whose reply was rolled back: nothing more
+-- is sent to them from support.
+CREATE TABLE IF NOT EXISTS academy_support_suppressions (
+    address         TEXT PRIMARY KEY,
+    reason          TEXT NOT NULL,
+    at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Small settings ATLAS wrote itself: the Slack channel id it created for
+-- support cards (academy.create_support_channel), so a restart keeps it.
+CREATE TABLE IF NOT EXISTS academy_support_settings (
+    key             TEXT PRIMARY KEY,
+    value           TEXT NOT NULL,
+    at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ------------------------------------------------------------------ church
+-- The ECC Channel Agent (atlas/modules/church, docs/church-agent.md): the
+-- posting calendar of the Example Community & Example community
+-- Church bookstore on YouTube (@example_handle) and its Facebook Page. Rows are
+-- written by the Mac's sync (`POST /api/church/progress`, bearer
+-- CHURCH_PROGRESS_TOKEN) and by the church actions through the executor.
+-- What the sync sends is the Mac's account, not ATLAS's: it is stored as
+-- data and wrapped as untrusted before any prompt reads it.
+-- `reviewed_at` is the owner's review of the rendered video: the posting
+-- actions refuse a row without it (every video is seen before it posts).
+CREATE TABLE IF NOT EXISTS church_posts (
+    id              BIGSERIAL PRIMARY KEY,
+    platform        TEXT NOT NULL CHECK (platform IN ('youtube', 'facebook')),
+    schedule_index  INT NOT NULL CHECK (schedule_index >= 0),
+    title           TEXT NOT NULL DEFAULT '',
+    file            TEXT NOT NULL DEFAULT '',       -- the render's path on the Mac
+    description     TEXT,                           -- NULL: not synced
+    publish_at      TIMESTAMPTZ,
+    status          TEXT NOT NULL DEFAULT 'planned'
+                    CHECK (status IN ('planned', 'rendered', 'awaiting_review',
+                                      'scheduled', 'published', 'failed',
+                                      'deleted')),
+    url             TEXT,
+    video_id        TEXT,
+    language        TEXT NOT NULL DEFAULT 'en' CHECK (language IN ('en', 'ar')),
+    series          TEXT NOT NULL DEFAULT '',
+    reviewed_at     TIMESTAMPTZ,
+    scheduled_at    TIMESTAMPTZ,                    -- when it was handed to the platform
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (platform, schedule_index)
+);
+CREATE INDEX IF NOT EXISTS church_posts_publish_at
+    ON church_posts (platform, publish_at);
+CREATE TABLE IF NOT EXISTS church_events (
+    id      BIGSERIAL PRIMARY KEY,
+    at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    kind    TEXT NOT NULL,                          -- sync | note | feast | gap | scheduled ...
+    message TEXT NOT NULL,
+    data    JSONB NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS church_events_at ON church_events (at DESC);
+-- The content bank from the owner's growth plan (2026-10-12): 30 ideas,
+-- seeded once below; the sync or the shift moves their status.
+CREATE TABLE IF NOT EXISTS church_ideas (
+    id          BIGSERIAL PRIMARY KEY,
+    code        INT NOT NULL UNIQUE,
+    title       TEXT NOT NULL,
+    series      TEXT NOT NULL DEFAULT '',
+    category    TEXT NOT NULL CHECK (category IN ('book', 'icon', 'guide', 'store',
+                                                  'arrival')),
+    format      TEXT NOT NULL DEFAULT 'short' CHECK (format IN ('short', 'long')),
+    language    TEXT NOT NULL DEFAULT 'both' CHECK (language IN ('en', 'ar', 'both')),
+    status      TEXT NOT NULL DEFAULT 'idea'
+                CHECK (status IN ('idea', 'planned', 'in_production', 'scheduled',
+                                  'published', 'dropped')),
+    notes       TEXT NOT NULL DEFAULT '',
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- One row per post per day, as the platform reported it (never estimated).
+CREATE TABLE IF NOT EXISTS church_metrics (
+    id             BIGSERIAL PRIMARY KEY,
+    post_id        BIGINT NOT NULL REFERENCES church_posts (id),
+    day            DATE NOT NULL,
+    views          INT,
+    engaged_views  INT,
+    likes          INT,
+    comments       INT,
+    inquiries      INT,
+    read_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE (post_id, day)
+);
+INSERT INTO church_ideas (code, title, series, category, format, language) VALUES
+    (1, 'How to choose your next spiritual book', 'Choose With Us', 'guide', 'long', 'both'),
+    (2, 'Inside one English edition', 'Inside This Book', 'book', 'short', 'en'),
+    (3, 'Inside one Arabic edition', 'Inside This Book', 'book', 'short', 'ar'),
+    (4, 'A Pope Shenouda III book from our shelves', 'Inside This Book', 'book', 'short', 'both'),
+    (5, 'A Pope Tawadros II book', 'Inside This Book', 'book', 'short', 'both'),
+    (6, 'A St. Athanasius edition: where to begin', 'Inside This Book', 'book', 'short', 'both'),
+    (7, 'Short chapters or a longer study?', 'Choose With Us', 'guide', 'short', 'both'),
+    (8, 'Arabic and English editions compared', 'Inside This Book', 'book', 'short', 'both'),
+    (9, 'What to look for in a book''s contents page', 'Inside This Book', 'book', 'short', 'both'),
+    (10, 'A simple reading notebook', 'Choose With Us', 'guide', 'short', 'both'),
+    (11, 'One question to bring to a reading group', 'Choose With Us', 'guide', 'short', 'both'),
+    (12, 'Choosing a book for a parent', 'Choose With Us', 'guide', 'short', 'both'),
+    (13, 'Choosing a book as an adult beginner', 'Choose With Us', 'guide', 'short', 'both'),
+    (14, 'A volunteer''s book recommendation', 'From Our Bookstore', 'store', 'short', 'both'),
+    (15, 'A reading list for a church season', 'Choose With Us', 'guide', 'short', 'both'),
+    (16, 'A closer look at an icon of Christ', 'A Closer Look', 'icon', 'short', 'both'),
+    (17, 'A closer look at an icon of the Theotokos', 'A Closer Look', 'icon', 'short', 'both'),
+    (18, 'A saint depicted in an item on our shelf', 'A Closer Look', 'icon', 'short', 'both'),
+    (19, 'Icon, picture or statue: what is available?', 'A Closer Look', 'icon', 'short', 'both'),
+    (20, 'Small and large formats compared', 'A Closer Look', 'icon', 'short', 'both'),
+    (21, 'Choosing a housewarming gift', 'Choose With Us', 'guide', 'long', 'both'),
+    (22, 'Choosing a gift for a nameday or feast', 'Choose With Us', 'guide', 'short', 'both'),
+    (23, 'How an item is packaged', 'From Our Bookstore', 'store', 'short', 'both'),
+    (24, 'A tour of one bookshelf', 'From Our Bookstore', 'store', 'short', 'both'),
+    (25, 'New arrivals this week', 'From Our Bookstore', 'arrival', 'short', 'both'),
+    (26, 'Meet a bookstore volunteer', 'From Our Bookstore', 'store', 'short', 'both'),
+    (27, 'How to ask about an item', 'From Our Bookstore', 'store', 'short', 'both'),
+    (28, 'What to expect on your first visit', 'From Our Bookstore', 'store', 'short', 'both'),
+    (29, 'Answer a real visitor question', 'From Our Bookstore', 'store', 'short', 'both'),
+    (30, 'A monthly shelf selection', 'From Our Bookstore', 'arrival', 'short', 'both')
+ON CONFLICT (code) DO NOTHING;
+
+-- Client sites and demos (2026-10-27, docs/client-sites.md). Additive only.
+-- kind: 'built' (an ATLAS template build, agency.deploy_site), 'demo' (a
+-- static build made elsewhere, agency.deploy_demo, Tier ASK) or 'app' (an
+-- operator-deployed site ATLAS only watches). source: where a demo or app
+-- was built (repo@commit), text only. managed: false for a row ATLAS
+-- watches but never publishes.
+ALTER TABLE agency_sites ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'built'
+    CHECK (kind IN ('built', 'demo', 'app'));
+ALTER TABLE agency_sites ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE agency_sites ADD COLUMN IF NOT EXISTS managed BOOLEAN NOT NULL DEFAULT true;
+CREATE TABLE IF NOT EXISTS agency_site_events (
+    id      BIGSERIAL PRIMARY KEY,
+    slug    TEXT NOT NULL,
+    at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    event   TEXT NOT NULL,              -- deployed | deploy_failed | rolled_back
+    release TEXT,
+    detail  TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS agency_site_events_slug_at
+    ON agency_site_events (slug, at DESC);
+
+-- Client-sites skill book (2026-10-27): text guidance the owner approved on an
+-- agency.add_skill card. Text only; HTML/JS templates arrive through the repo.
+CREATE TABLE IF NOT EXISTS agency_skills (
+    id           BIGSERIAL PRIMARY KEY,
+    name         TEXT NOT NULL UNIQUE,
+    triggers     TEXT[] NOT NULL,
+    body         TEXT NOT NULL CHECK (length(body) <= 1500),
+    status       TEXT NOT NULL DEFAULT 'proposed'
+                 CHECK (status IN ('proposed','active','retired')),
+    proposed_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    approved_at  TIMESTAMPTZ
+);
+
+-- Six agents (2026-10-27). Polite shared scraper (atlas/modules/_scrape.py):
+-- one row per request (no body), and a 24 h page cache. Pruned after 30 days.
+CREATE TABLE IF NOT EXISTS scrape_log (
+    id      BIGSERIAL PRIMARY KEY,
+    at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    host    TEXT NOT NULL,
+    url     TEXT NOT NULL,
+    agent   TEXT NOT NULL,
+    client  TEXT NOT NULL DEFAULT '',
+    status  INT,
+    bytes   INT NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS scrape_log_at ON scrape_log (at DESC);
+CREATE TABLE IF NOT EXISTS scrape_pages (
+    url        TEXT PRIMARY KEY,
+    sha        TEXT NOT NULL,
+    text       TEXT NOT NULL,
+    fetched_at TIMESTAMPTZ NOT NULL
+);
+
+-- Six agents (2026-10-27). Local project and task board (atlas/modules/projects).
+-- Every write leaves a project_tasks_history row in the same statement; a
+-- rollback restores from it. Nothing is deleted: projects are archived,
+-- tasks cancelled.
+CREATE TABLE IF NOT EXISTS projects (
+    id             BIGSERIAL PRIMARY KEY,
+    client_lead_id BIGINT REFERENCES agency_leads(id),
+    client_name    TEXT NOT NULL DEFAULT '',
+    name           TEXT NOT NULL,
+    status         TEXT NOT NULL DEFAULT 'planned'
+                   CHECK (status IN ('planned','active','blocked','done','archived')),
+    kickoff_at     TIMESTAMPTZ,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS project_tasks (
+    id            BIGSERIAL PRIMARY KEY,
+    project_id    BIGINT REFERENCES projects(id),
+    title         TEXT NOT NULL,
+    kind          TEXT NOT NULL
+                  CHECK (kind IN ('task','remediation','build','site_change')),
+    owner         TEXT NOT NULL DEFAULT '',
+    status        TEXT NOT NULL DEFAULT 'todo'
+                  CHECK (status IN ('todo','doing','blocked','done','cancelled')),
+    due_at        TIMESTAMPTZ,
+    evidence      JSONB NOT NULL DEFAULT '{}'::jsonb,
+    suggested_fix TEXT NOT NULL DEFAULT '',
+    source_action TEXT NOT NULL DEFAULT '',
+    source_ref    TEXT NOT NULL DEFAULT '',
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    done_at       TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS project_tasks_project ON project_tasks (project_id);
+CREATE INDEX IF NOT EXISTS project_tasks_open_source
+    ON project_tasks (source_action, source_ref)
+    WHERE status IN ('todo','doing','blocked');
+CREATE TABLE IF NOT EXISTS project_tasks_history (
+    token TEXT PRIMARY KEY,
+    "row" JSONB NOT NULL,
+    at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- QA hard gate (kernel/qa_gate.py, modules/qa): one row per check of one
+-- subject (what would be sent or published) at one content hash. A gated
+-- action runs only when a row with ok = true for its exact sha exists and is
+-- not superseded. A rollback of a qa.* action supersedes its row; nothing is
+-- ever deleted. Rows hold statuses, lengths and hashes, never page bodies.
+CREATE TABLE IF NOT EXISTS qa_results (
+    id            BIGSERIAL PRIMARY KEY,
+    kind          TEXT NOT NULL,              -- draft | site | security | runs | video
+    subject_ref   TEXT NOT NULL,              -- agency_outreach:12, site:joes, ...
+    subject_sha   TEXT NOT NULL,
+    ok            BOOLEAN NOT NULL,
+    failures      JSONB NOT NULL DEFAULT '[]'::jsonb,
+    evidence      JSONB NOT NULL DEFAULT '{}'::jsonb,
+    checked_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    superseded_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS qa_results_subject
+    ON qa_results (subject_ref, subject_sha, checked_at DESC);
+-- qa.security_scan scans only a site Mapfront built (kind = 'built') or one
+-- whose owner consented: the time that consent was recorded.
+ALTER TABLE agency_sites ADD COLUMN IF NOT EXISTS security_consent_at TIMESTAMPTZ;
+
+-- 2026-10-27 (six agents, phase 7): the Sales agent (atlas/modules/sales).
+-- What it read about a lead (the page text wrapped untrusted, never a
+-- prompt), the proposals it drafted at the lead's own price, and the CSV
+-- files it imported (by content hash, so a file is read once).
+CREATE TABLE IF NOT EXISTS sales_research (
+    id                BIGSERIAL PRIMARY KEY,
+    lead_id           BIGINT NOT NULL REFERENCES agency_leads(id),
+    at                TIMESTAMPTZ NOT NULL DEFAULT now(),
+    source_urls       JSONB NOT NULL DEFAULT '[]',
+    signals           JSONB NOT NULL DEFAULT '{}',
+    summary_untrusted TEXT,
+    withdrawn_at      TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS sales_research_lead ON sales_research (lead_id, at DESC);
+CREATE TABLE IF NOT EXISTS sales_proposals (
+    id         BIGSERIAL PRIMARY KEY,
+    lead_id    BIGINT NOT NULL REFERENCES agency_leads(id),
+    at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    price      INT NOT NULL CHECK (price IN (300, 500)),
+    is_returning BOOLEAN NOT NULL,
+    html_path  TEXT NOT NULL,
+    pdf_path   TEXT,
+    sha        TEXT NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'drafted'   -- drafted | withdrawn
+);
+CREATE INDEX IF NOT EXISTS sales_proposals_lead ON sales_proposals (lead_id, at DESC);
+CREATE TABLE IF NOT EXISTS sales_imports (
+    sha       TEXT PRIMARY KEY,
+    at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    path      TEXT NOT NULL,
+    inserted  INT NOT NULL DEFAULT 0
+);
+
+-- Content & YouTube (six agents, 2026-10-27, phase 8). The Academy's
+-- planned topics (every one AI-oriented: ai_tag learn | progress | future),
+-- its automatic A/B title tests (each window's views read from
+-- youtube_videos with the time it was read; no read, no decision), the
+-- comment replies it drafts (the comment is stored wrapped, as untrusted
+-- data), and the Reddit showcase drafts (the subreddit's rules as read and
+-- when, before any card).
+CREATE TABLE IF NOT EXISTS academy_content_plan (
+    id          BIGSERIAL PRIMARY KEY,
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    week_of     DATE NOT NULL,
+    series      TEXT NOT NULL,
+    episode     INT NOT NULL,
+    title       TEXT NOT NULL,
+    ai_tag      TEXT NOT NULL CHECK (ai_tag IN ('learn', 'progress', 'future')),
+    status      TEXT NOT NULL DEFAULT 'planned',  -- planned | scripted | withdrawn
+    script_path TEXT,
+    UNIQUE (series, episode)
+);
+CREATE TABLE IF NOT EXISTS academy_title_tests (
+    id            BIGSERIAL PRIMARY KEY,
+    at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    video_id      TEXT NOT NULL,
+    title_a       TEXT NOT NULL,
+    title_b       TEXT NOT NULL,
+    a_views_start DOUBLE PRECISION, a_read_start TIMESTAMPTZ,
+    a_views_end   DOUBLE PRECISION, a_read_end   TIMESTAMPTZ,
+    b_views_start DOUBLE PRECISION, b_read_start TIMESTAMPTZ,
+    b_views_end   DOUBLE PRECISION, b_read_end   TIMESTAMPTZ,
+    switched_at   TIMESTAMPTZ,
+    decided_at    TIMESTAMPTZ,
+    status        TEXT NOT NULL DEFAULT 'drafted'
+    -- drafted | running_b | kept_a | kept_b | withdrawn
+);
+CREATE INDEX IF NOT EXISTS academy_title_tests_video
+    ON academy_title_tests (video_id, at DESC);
+CREATE TABLE IF NOT EXISTS academy_comment_drafts (
+    id          BIGSERIAL PRIMARY KEY,
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    video_id    TEXT NOT NULL,
+    comment_id  TEXT NOT NULL,
+    comment_untrusted TEXT NOT NULL,
+    reply       TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'drafted',  -- drafted | sent | withdrawn
+    reply_id    TEXT,
+    UNIQUE (comment_id)
+);
+CREATE TABLE IF NOT EXISTS reddit_drafts (
+    id             BIGSERIAL PRIMARY KEY,
+    at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    subreddit      TEXT NOT NULL DEFAULT '',
+    kind           TEXT NOT NULL CHECK (kind IN ('post', 'comment', 'profile')),
+    promotional    BOOLEAN NOT NULL DEFAULT false,
+    thing_id       TEXT,
+    title          TEXT NOT NULL DEFAULT '',
+    body           TEXT NOT NULL,
+    sha            TEXT NOT NULL,
+    rules_snapshot JSONB,
+    rules_read_at  TIMESTAMPTZ,
+    status         TEXT NOT NULL DEFAULT 'drafted',
+    -- drafted | needs_rules | refused | submitted | withdrawn
+    submitted_at   TIMESTAMPTZ,
+    url            TEXT
+);
+CREATE INDEX IF NOT EXISTS reddit_drafts_submitted ON reddit_drafts (submitted_at DESC);
+
+-- BizOps (six agents phase 9): onboarding after a won/paid deal, Stripe
+-- TEST-mode invoices, payment reminders and automation ideas. One
+-- onboarding per payment reference: a replayed trigger is a no-op.
+CREATE TABLE IF NOT EXISTS bizops_onboardings (
+    id             BIGSERIAL PRIMARY KEY,
+    at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    lead_id        BIGINT NOT NULL REFERENCES agency_leads(id),
+    payment_ref    TEXT NOT NULL UNIQUE,            -- deal:<id> | invoice:<id>
+    project_id     BIGINT REFERENCES projects(id),
+    history_tokens JSONB NOT NULL DEFAULT '[]',     -- project board restore tokens
+    to_address     TEXT NOT NULL DEFAULT '',
+    subject        TEXT NOT NULL DEFAULT '',
+    body           TEXT NOT NULL DEFAULT '',
+    kickoff_slots  JSONB NOT NULL DEFAULT '[]',
+    status         TEXT NOT NULL DEFAULT 'drafted'
+                   CHECK (status IN ('drafted', 'sent', 'dropped')),
+    sent_at        TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS bizops_invoices (
+    id              BIGSERIAL PRIMARY KEY,
+    at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+    lead_id         BIGINT NOT NULL REFERENCES agency_leads(id),
+    amount          INTEGER NOT NULL CHECK (amount IN (300, 500)),
+    to_address      TEXT NOT NULL,
+    memo            TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'drafted'
+                    CHECK (status IN ('drafted', 'sent', 'paid', 'void', 'withdrawn',
+                                      'failed')),
+    stripe_customer TEXT,
+    stripe_invoice  TEXT,
+    hosted_url      TEXT,
+    livemode        BOOLEAN NOT NULL DEFAULT false CHECK (livemode = false),
+    idempotency_key TEXT NOT NULL UNIQUE,           -- bizops-inv-<id>
+    sent_at         TIMESTAMPTZ,
+    due_at          TIMESTAMPTZ,
+    paid_at         TIMESTAMPTZ,
+    polled_at       TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS bizops_invoices_one_open
+    ON bizops_invoices (lead_id) WHERE status IN ('drafted', 'sent');
+CREATE TABLE IF NOT EXISTS bizops_reminders (
+    id          BIGSERIAL PRIMARY KEY,
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    invoice_id  BIGINT NOT NULL REFERENCES bizops_invoices(id),
+    to_address  TEXT NOT NULL,
+    subject     TEXT NOT NULL,
+    body        TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'drafted'
+                CHECK (status IN ('drafted', 'sent', 'withdrawn')),
+    sent_at     TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS bizops_reminders_invoice ON bizops_reminders (invoice_id, at DESC);
+CREATE TABLE IF NOT EXISTS bizops_automation_ideas (
+    id         BIGSERIAL PRIMARY KEY,
+    at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    pattern    TEXT NOT NULL UNIQUE,
+    samples    JSONB NOT NULL DEFAULT '[]',         -- wrapped, never instructions
+    count      INTEGER NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'new'
+               CHECK (status IN ('new', 'proposed', 'dismissed')),
+    task_id    BIGINT,
+    task_token TEXT
+);
+
+-- Six agents phase 10: SEO & Growth (audit and draft only). Blog drafts are
+-- content_drafts rows of kind 'seo_blog' (source 'seo:<site>:<post>');
+-- every change to a client page is a Tier 2 card behind the QA gate.
+CREATE TABLE IF NOT EXISTS seo_audits (
+    id        BIGSERIAL PRIMARY KEY,
+    slug      TEXT NOT NULL,
+    url       TEXT NOT NULL,
+    read_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    status    TEXT NOT NULL
+              CHECK (status IN ('ok', 'issues', 'unknown', 'withdrawn')),
+    summary   TEXT NOT NULL,
+    items     JSONB NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS seo_audits_slug ON seo_audits (slug, read_at DESC);
+CREATE TABLE IF NOT EXISTS seo_keywords (
+    id        BIGSERIAL PRIMARY KEY,
+    at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    slug      TEXT NOT NULL,
+    keyword   TEXT NOT NULL,
+    volume    TEXT NOT NULL DEFAULT 'not measured',  -- no free volume source
+    status    TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'withdrawn')),
+    UNIQUE (slug, keyword)
+);
+CREATE TABLE IF NOT EXISTS seo_ranks (
+    id        BIGSERIAL PRIMARY KEY,
+    at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    slug      TEXT NOT NULL,
+    keyword   TEXT NOT NULL,
+    provider  TEXT NOT NULL,                     -- brave | google_cse | none
+    position  INTEGER,                           -- NULL: not in the results read
+    url       TEXT,
+    measured  BOOLEAN NOT NULL,                  -- false: "not measured", reason set
+    reason    TEXT,
+    status    TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'withdrawn'))
+);
+CREATE INDEX IF NOT EXISTS seo_ranks_slug ON seo_ranks (slug, at DESC);
+CREATE TABLE IF NOT EXISTS seo_changes (
+    id         BIGSERIAL PRIMARY KEY,
+    at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    slug       TEXT NOT NULL,
+    page       TEXT NOT NULL,
+    spec       JSONB NOT NULL,                    -- title | meta_description | h1 | alt
+    status     TEXT NOT NULL DEFAULT 'proposed'
+               CHECK (status IN ('proposed', 'applied', 'reverted', 'withdrawn')),
+    backup     TEXT,
+    applied_at TIMESTAMPTZ
+);
+
+-- SEO reports (2026-10-29): the weekly per-client report and the Academy
+-- keyword gaps, built in code from recorded readings. The client email is a
+-- content_drafts row of kind 'seo_report_email' that no send path reads.
+CREATE TABLE IF NOT EXISTS seo_reports (
+    id        BIGSERIAL PRIMARY KEY,
+    at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    slug      TEXT NOT NULL,
+    kind      TEXT NOT NULL CHECK (kind IN ('client_weekly', 'academy_gaps')),
+    week      TEXT NOT NULL,                     -- ISO week, 2026-W45
+    body      JSONB NOT NULL,                    -- every figure with its read_at
+    text      TEXT NOT NULL,
+    status    TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'withdrawn'))
+);
+CREATE INDEX IF NOT EXISTS seo_reports_slug ON seo_reports (slug, kind, at DESC);
+
+-- 2026-10-29: the old shop host is gone (the store is ACADEMY_PUBLIC_ORIGIN,
+-- agency.example.com). Its SEO rows (slug 'mapfront-shop') are withdrawn, not
+-- deleted, and only those; idempotent, every schema apply.
+UPDATE seo_audits   SET status = 'withdrawn' WHERE slug = 'mapfront-shop' AND status <> 'withdrawn';
+UPDATE seo_keywords SET status = 'withdrawn' WHERE slug = 'mapfront-shop' AND status <> 'withdrawn';
+UPDATE seo_ranks    SET status = 'withdrawn' WHERE slug = 'mapfront-shop' AND status <> 'withdrawn';
+UPDATE seo_reports  SET status = 'withdrawn' WHERE slug = 'mapfront-shop' AND status <> 'withdrawn';
+UPDATE seo_changes  SET status = 'withdrawn' WHERE slug = 'mapfront-shop' AND status = 'proposed';
+
+-- Six agents phase 11: Research & Competitor Intel. Every measured row keeps
+-- its source and read time (NOT NULL); a profile field is a list of items
+-- {value, source_url, fetched_at, basis: measured | model_judgement}.
+-- Rollbacks archive or withdraw rows; nothing here is deleted.
+CREATE TABLE IF NOT EXISTS competitor_profiles (
+    id             BIGSERIAL PRIMARY KEY,
+    at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    lane           TEXT NOT NULL CHECK (lane IN ('academy', 'mapfront', 'client')),
+    client_lead_id BIGINT,
+    name           TEXT NOT NULL,
+    homepage       TEXT,
+    youtube_channel_id TEXT,
+    channels       JSONB NOT NULL DEFAULT '[]',
+    offer          JSONB NOT NULL DEFAULT '[]',
+    pricing        JSONB NOT NULL DEFAULT '[]',
+    positioning    JSONB NOT NULL DEFAULT '[]',
+    cadence        JSONB NOT NULL DEFAULT '[]',
+    strengths      JSONB NOT NULL DEFAULT '[]',
+    weaknesses     JSONB NOT NULL DEFAULT '[]',
+    status         TEXT NOT NULL DEFAULT 'active'
+                   CHECK (status IN ('active', 'archived')),
+    updated_at     TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS competitor_profiles_name
+    ON competitor_profiles (lane, COALESCE(client_lead_id, 0), lower(name));
+CREATE TABLE IF NOT EXISTS competitor_profile_history (
+    id            BIGSERIAL PRIMARY KEY,
+    competitor_id BIGINT NOT NULL,
+    field         TEXT NOT NULL,
+    old           JSONB NOT NULL DEFAULT '[]',
+    new           JSONB NOT NULL DEFAULT '[]',
+    at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    source        TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active', 'withdrawn'))
+);
+CREATE INDEX IF NOT EXISTS competitor_profile_history_c
+    ON competitor_profile_history (competitor_id, at DESC);
+CREATE TABLE IF NOT EXISTS research_watches (
+    id            BIGSERIAL PRIMARY KEY,
+    at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    url           TEXT NOT NULL UNIQUE,
+    label         TEXT NOT NULL DEFAULT '',
+    competitor_id BIGINT,
+    status        TEXT NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active', 'archived')),
+    last_sha      TEXT,
+    last_text     TEXT,
+    last_read_at  TIMESTAMPTZ,
+    fail_streak   INT NOT NULL DEFAULT 0,
+    last_error    TEXT
+);
+CREATE TABLE IF NOT EXISTS research_changes (
+    id         BIGSERIAL PRIMARY KEY,
+    at         TIMESTAMPTZ NOT NULL DEFAULT now(),
+    watch_id   BIGINT NOT NULL,
+    old_sha    TEXT,
+    new_sha    TEXT NOT NULL,
+    excerpt    TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    fetched_at TIMESTAMPTZ NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'active'
+               CHECK (status IN ('active', 'withdrawn'))
+);
+CREATE INDEX IF NOT EXISTS research_changes_at ON research_changes (at DESC);
+CREATE TABLE IF NOT EXISTS research_prices (
+    id            BIGSERIAL PRIMARY KEY,
+    at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    competitor_id BIGINT,
+    watch_id      BIGINT,
+    amount        NUMERIC(12, 2) NOT NULL,
+    currency      TEXT NOT NULL,
+    period        TEXT,
+    label         TEXT NOT NULL DEFAULT '',
+    source_url    TEXT NOT NULL,
+    fetched_at    TIMESTAMPTZ NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active', 'withdrawn'))
+);
+CREATE INDEX IF NOT EXISTS research_prices_c ON research_prices (competitor_id, at DESC);
+CREATE TABLE IF NOT EXISTS research_opportunities (
+    id          BIGSERIAL PRIMARY KEY,
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    title       TEXT NOT NULL,
+    detail      TEXT NOT NULL,
+    source_urls JSONB NOT NULL DEFAULT '[]',
+    status      TEXT NOT NULL DEFAULT 'proposed'
+                CHECK (status IN ('proposed', 'adopted', 'withdrawn')),
+    task_id     BIGINT
+);
+CREATE TABLE IF NOT EXISTS research_client_reports (
+    id             BIGSERIAL PRIMARY KEY,
+    at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+    client_lead_id BIGINT NOT NULL,
+    to_address     TEXT NOT NULL,
+    subject        TEXT NOT NULL,
+    body           TEXT NOT NULL,
+    status         TEXT NOT NULL DEFAULT 'drafted'
+                   CHECK (status IN ('drafted', 'sent', 'withdrawn'))
+);
+
+-- 2026-10-29: client-site documents are Claude Docs artifacts (the owner's rule).
+-- The sites agent drafts a brief, handoff, report, proposal or client guide
+-- here (agency.draft_doc); agency.publish_doc hands it to the coding agent
+-- on the Mac, which creates the artifact and reports the link through
+-- /handoffs/{id}/report. ATLAS never publishes a document itself. A
+-- withdrawn draft is kept as history; nothing here is deleted.
+CREATE TABLE IF NOT EXISTS agency_site_docs (
+    id           BIGSERIAL PRIMARY KEY,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    slug         TEXT NOT NULL,
+    kind         TEXT NOT NULL
+                 CHECK (kind IN ('brief', 'handoff', 'report', 'proposal',
+                                 'client_guide')),
+    title        TEXT NOT NULL,
+    body         TEXT NOT NULL,
+    client_text  TEXT NOT NULL DEFAULT '',
+    status       TEXT NOT NULL DEFAULT 'draft'
+                 CHECK (status IN ('draft', 'queued', 'published', 'withdrawn')),
+    handoff_id   BIGINT,
+    artifact_url TEXT,
+    reported_at  TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS agency_site_docs_slug
+    ON agency_site_docs (slug, created_at DESC);
+CREATE INDEX IF NOT EXISTS agency_site_docs_handoff
+    ON agency_site_docs (handoff_id) WHERE handoff_id IS NOT NULL;
+
+-- MMT agent (TutorSite): US tutoring-centre discovery and intros. Business-level
+-- data only; ATLAS's own rows. Nothing here is ever deleted: rollback marks dropped.
+CREATE TABLE IF NOT EXISTS mmt_prospects (
+    id            BIGSERIAL PRIMARY KEY,
+    domain        TEXT UNIQUE NOT NULL,
+    name          TEXT NOT NULL,
+    city          TEXT,
+    state         TEXT,
+    size_band     TEXT NOT NULL DEFAULT 'unknown'
+                  CHECK (size_band IN ('small', 'medium', 'large', 'unknown')),
+    locations     INTEGER,
+    tutors        INTEGER,
+    contact_role  TEXT CHECK (contact_role IN ('owner', 'coordinator')),
+    contact_name  TEXT,
+    public_email  TEXT,
+    linkedin_url  TEXT,
+    fit_score     REAL,
+    fit_evidence  JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status        TEXT NOT NULL DEFAULT 'new'
+                  CHECK (status IN ('new', 'scored', 'drafted', 'contacted',
+                                    'replied', 'suppressed', 'dropped')),
+    first_seen    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_read     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS mmt_facts (
+    id          BIGSERIAL PRIMARY KEY,
+    prospect_id BIGINT NOT NULL REFERENCES mmt_prospects(id),
+    kind        TEXT NOT NULL,
+    value       TEXT NOT NULL,
+    quote       TEXT NOT NULL,
+    source_url  TEXT NOT NULL,
+    read_at     TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mmt_facts_prospect ON mmt_facts (prospect_id, read_at DESC);
+CREATE TABLE IF NOT EXISTS mmt_intros (
+    id          BIGSERIAL PRIMARY KEY,
+    prospect_id BIGINT UNIQUE NOT NULL REFERENCES mmt_prospects(id),
+    channel     TEXT NOT NULL,
+    target      TEXT NOT NULL,
+    body        TEXT NOT NULL,
+    body_sha    TEXT NOT NULL,
+    fact_ids    BIGINT[] NOT NULL DEFAULT '{}',
+    status      TEXT NOT NULL DEFAULT 'draft'
+                CHECK (status IN ('draft', 'approved_for_manual_send', 'sent',
+                                  'refused', 'expired')),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    decided_at  TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS mmt_suppression (
+    id     BIGSERIAL PRIMARY KEY,
+    key    TEXT UNIQUE NOT NULL,                 -- a domain or a profile URL
+    reason TEXT NOT NULL,
+    at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- MMT owner notifications: what ATLAS told the owner on his own WhatsApp, and what he
+-- said back. The outbox holds templated text only; a reply is a note, never an approval.
+CREATE TABLE IF NOT EXISTS mmt_owner_outbox (
+    id         BIGSERIAL PRIMARY KEY,
+    kind       TEXT NOT NULL,
+    ref        TEXT NOT NULL,
+    body       TEXT NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'sending'
+               CHECK (status IN ('sending', 'sent', 'failed', 'retracted')),
+    sid        TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS mmt_owner_outbox_dedupe
+    ON mmt_owner_outbox (kind, ref) WHERE status IN ('sending', 'sent');
+CREATE TABLE IF NOT EXISTS mmt_owner_notes (
+    id         BIGSERIAL PRIMARY KEY,
+    body       TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Deciding an approval card from WhatsApp (kernel/wa_approvals.py). A code is
+-- stored only as a hash, tied to its proposal, single use, and expires with the
+-- card. `whatsapp_attempts` holds the wrong codes and the lock they cause, so a
+-- restart does not clear a lockout.
+CREATE TABLE IF NOT EXISTS whatsapp_codes (
+    id          BIGSERIAL PRIMARY KEY,
+    proposal_id INT NOT NULL,
+    code_hash   TEXT NOT NULL,
+    action      TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'open'
+                CHECK (status IN ('open', 'used', 'retired')),
+    expires_at  TIMESTAMPTZ NOT NULL,
+    used_at     TIMESTAMPTZ,
+    message_sid TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS whatsapp_codes_hash ON whatsapp_codes (code_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS whatsapp_codes_one_open
+    ON whatsapp_codes (proposal_id) WHERE status = 'open';
+CREATE TABLE IF NOT EXISTS whatsapp_attempts (
+    id       BIGSERIAL PRIMARY KEY,
+    at       TIMESTAMPTZ NOT NULL,
+    kind     TEXT NOT NULL CHECK (kind IN ('wrong', 'lock')),
+    until_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS whatsapp_attempts_at ON whatsapp_attempts (kind, at);
+
+-- Short memory for the owner's WhatsApp chat (kernel/chat_memory.py): the plain
+-- text of the last few messages and replies, 24 h, trimmed. Additive.
+CREATE TABLE IF NOT EXISTS whatsapp_chat_memory (
+    id         BIGSERIAL PRIMARY KEY,
+    role       TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+    body       TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS whatsapp_chat_memory_at ON whatsapp_chat_memory (created_at DESC);
+-- Per channel (2026-11-19): whatsapp | slack | dashboard each keep their own
+-- window. `private` marks rows written from a PRIVATE assistant run, so a
+-- follow-up replayed from them stays on the local model. Additive; the old rows
+-- are WhatsApp's by default. Hand-run undo: db/rollback-assistant-memory.sql.
+ALTER TABLE whatsapp_chat_memory ADD COLUMN IF NOT EXISTS channel TEXT NOT NULL DEFAULT 'whatsapp';
+ALTER TABLE whatsapp_chat_memory ADD COLUMN IF NOT EXISTS private BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS whatsapp_chat_memory_channel_at ON whatsapp_chat_memory (channel, created_at DESC);
+
+-- What ATLAS learned from YouTube videos (kernel/video_learn.py, modules/ytlearn).
+-- One row per video, ever: UNIQUE video_id is the second dedupe layer behind the
+-- card's dedup_key, so a video that was drafted, approved or left unread is never
+-- drafted twice. `status`: queued (waiting for the daily job) -> drafted (a Tier 2
+-- card holds the lessons) -> approved (the owner said yes: the note is saved knowledge
+-- for him to use; nothing reads it back into a prompt, rule or setting) or
+-- unreadable (no captions, rate-limited, could not draft). `queued_at` drives the
+-- per-day intake caps. Additive.
+CREATE TABLE IF NOT EXISTS video_lessons (
+    video_id       TEXT PRIMARY KEY CHECK (video_id ~ '^[A-Za-z0-9_-]{11}$'),
+    source         TEXT NOT NULL CHECK (source IN ('owner', 'channel')),
+    status         TEXT NOT NULL DEFAULT 'queued'
+                   CHECK (status IN ('queued', 'drafted', 'approved', 'unreadable')),
+    source_url     TEXT NOT NULL,
+    title          TEXT,
+    channel        TEXT,
+    published      TEXT,
+    lessons        TEXT,
+    lessons_sha256 TEXT,
+    card_id        INT,
+    reason         TEXT,
+    read_at        TIMESTAMPTZ,
+    approved_at    TIMESTAMPTZ,
+    queued_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS video_lessons_status ON video_lessons (status, queued_at);
+
+-- Home camera watch (atlas/modules/cameras), Phase A: motion/AI events the
+-- read-only watcher saw on the NVR, and ATLAS-side camera settings. Nothing
+-- here is written to the NVR. `snapshot_path` points under data/cameras and
+-- is blanked by the retention sweep (14 days). cluster_id / person_id stay
+-- NULL until Phase B (household recognition). Additive and idempotent;
+-- `db/rollback-cameras.sql` drops these by hand after a pg_dump.
+CREATE TABLE IF NOT EXISTS camera_events (
+    id            BIGSERIAL PRIMARY KEY,
+    at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    channel       SMALLINT NOT NULL CHECK (channel BETWEEN 0 AND 11),
+    kind          TEXT NOT NULL CHECK (kind IN ('person', 'vehicle', 'animal', 'motion')),
+    source        TEXT NOT NULL DEFAULT 'reolink_ai'
+                  CHECK (source IN ('reolink_ai', 'local_vision', 'motion')),
+    snapshot_path TEXT,
+    cluster_id    TEXT,
+    person_id     INT,
+    alert_level   SMALLINT NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS camera_events_channel_at ON camera_events (channel, at DESC);
+CREATE INDEX IF NOT EXISTS camera_events_at ON camera_events (at DESC);
+
+-- ATLAS-side settings: the mode (home / away / night), the day the daily
+-- summary was last sent, per-camera ignore flags. Key/value, one row each.
+CREATE TABLE IF NOT EXISTS camera_state (
+    key        TEXT PRIMARY KEY,
+    value      JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Home camera watch, Phase B: household face recognition (atlas/modules/cameras).
+-- Face vectors are AES-GCM ciphertext (key CAMERA_FACE_KEY, never stored here);
+-- no picture of a face is kept in these tables. A cluster is one unfamiliar
+-- face the cameras keep seeing; the owner's approval card turns it into a household
+-- cluster. Unknown clusters and their vectors are purged 72 h after the last
+-- sighting; household ones stay until the owner deletes them (portal button or
+-- `python -m atlas.cli cameras-forget`). `camera_events.cluster_id` holds the
+-- cluster's number as text, `person_id` the person slot. Additive, idempotent;
+-- `db/rollback-cameras.sql` drops these by hand after a pg_dump.
+CREATE TABLE IF NOT EXISTS camera_people (
+    slot         SMALLINT PRIMARY KEY CHECK (slot BETWEEN 1 AND 5),
+    display_name TEXT CHECK (display_name IS NULL OR char_length(display_name) BETWEEN 1 AND 40),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO camera_people (slot) VALUES (1), (2), (3), (4), (5) ON CONFLICT DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS camera_clusters (
+    id             BIGSERIAL PRIMARY KEY,
+    status         TEXT NOT NULL DEFAULT 'unknown' CHECK (status IN ('unknown', 'household')),
+    slot           SMALLINT REFERENCES camera_people (slot) ON DELETE SET NULL,
+    sightings      INT NOT NULL DEFAULT 1,
+    first_seen     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    last_seen      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    first_event_id BIGINT,
+    first_channel  SMALLINT,
+    proposal_id    BIGINT,
+    purge_after    TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS camera_clusters_status ON camera_clusters (status, purge_after);
+
+CREATE TABLE IF NOT EXISTS camera_faces (
+    id         BIGSERIAL PRIMARY KEY,
+    cluster_id BIGINT NOT NULL REFERENCES camera_clusters (id) ON DELETE CASCADE,
+    ciphertext BYTEA NOT NULL,
+    nonce      BYTEA NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS camera_faces_cluster ON camera_faces (cluster_id);
+
+-- Local-agency upgrades, Part 0 (2026-11-12). Additive only: nothing is dropped
+-- or rewritten. Rollback by hand: db/rollback-local-agency-upgrades.sql.
+--
+-- How long a reply took (kernel/reply_timing.py): numbers only, never text.
+CREATE TABLE IF NOT EXISTS reply_timings (
+    id       BIGSERIAL PRIMARY KEY,
+    at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    channel  TEXT NOT NULL CHECK (channel IN ('whatsapp', 'portal')),
+    route    TEXT NOT NULL DEFAULT 'chat'
+             CHECK (route IN ('greeting', 'command', 'chat', 'live')),
+    total_ms INT NOT NULL,
+    stages   JSONB NOT NULL DEFAULT '{}'::jsonb,   -- recall, live_read, model, other
+    model    TEXT,
+    ok       BOOLEAN NOT NULL DEFAULT TRUE
+);
+CREATE INDEX IF NOT EXISTS reply_timings_channel_at ON reply_timings (channel, at DESC);
+
+-- Durable memory (Part A): where a memory came from, a soft "forget" (hidden,
+-- undoable; the row stays until the hard wipe command), and the business it
+-- belongs to (mmt | agency | ...).
+ALTER TABLE memories ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE memories ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+ALTER TABLE memories ADD COLUMN IF NOT EXISTS business TEXT;
+CREATE INDEX IF NOT EXISTS memories_live_ns_kind
+    ON memories (namespace, kind, at DESC) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS memories_content_trgm
+    ON memories USING gin (content gin_trgm_ops);
+
+-- Routines and business tasks (Part C).
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS business TEXT NOT NULL DEFAULT '';
+ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS follow_up_at TIMESTAMPTZ;
+
+-- The spam verdict on every ingested email (atlas/modules/mail/spam.py).
+-- ATLAS's own table: a verdict never moves, labels or deletes anything in the
+-- mailbox. `unknown` is never stored (it is retried), so a row is always a
+-- check that ran. `depth` says whether the whole message or only its headers
+-- was read; a headers-only row never replaces a full one.
+CREATE TABLE IF NOT EXISTS mail_spam_verdicts (
+    message_key TEXT PRIMARY KEY,              -- gmail:<id> | imap:<acct>:<Message-ID>
+    account     TEXT,
+    sender      TEXT,
+    subject     TEXT,
+    verdict     TEXT NOT NULL CHECK (verdict IN ('spam', 'not_spam', 'unsure')),
+    bulk        BOOLEAN NOT NULL DEFAULT FALSE, -- newsletter / confirmation: bulk, not spam
+    reason      TEXT NOT NULL,
+    signals     JSONB NOT NULL DEFAULT '{}'::jsonb,   -- {"signals": [...], "score": n}
+    model       TEXT,                          -- local model's word, when asked
+    depth       TEXT NOT NULL DEFAULT 'headers' CHECK (depth IN ('full', 'headers')),
+    checked_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    fingerprint TEXT,                          -- sha256(From, Subject, Reply-To, full length, full hash)
+    head_digest TEXT                           -- sha256(headers + snippet), for headers-depth reuse
+);
+ALTER TABLE mail_spam_verdicts ADD COLUMN IF NOT EXISTS fingerprint TEXT;
+ALTER TABLE mail_spam_verdicts ADD COLUMN IF NOT EXISTS head_digest TEXT;
+CREATE INDEX IF NOT EXISTS mail_spam_verdicts_flagged
+    ON mail_spam_verdicts (checked_at DESC) WHERE verdict IN ('spam', 'unsure');
+
+-- 2026-11-14: each Academy lesson video on YouTube (academy/lesson_youtube.py).
+-- Keyed by the catalog's file key. `privacy` is what YouTube holds now: public
+-- (a free preview), unlisted (a paid lesson, embedded on the buyer's page only)
+-- or private (uploaded, or withdrawn). A rollback sets `withdrawn`; a video is
+-- never deleted.
+CREATE TABLE IF NOT EXISTS academy_lesson_youtube (
+    file_key     TEXT PRIMARY KEY,
+    course       TEXT NOT NULL,
+    num          TEXT NOT NULL,
+    video_id     TEXT NOT NULL,
+    privacy      TEXT NOT NULL DEFAULT 'private'
+                 CHECK (privacy IN ('private', 'unlisted', 'public')),
+    playlist_id  TEXT,
+    item_id      TEXT,
+    thumb_set    BOOLEAN NOT NULL DEFAULT false,
+    captions_set BOOLEAN NOT NULL DEFAULT false,
+    sha256       TEXT NOT NULL DEFAULT '',
+    done         BOOLEAN NOT NULL DEFAULT false,
+    withdrawn    BOOLEAN NOT NULL DEFAULT false,
+    uploaded_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    detail       TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS academy_lesson_youtube_day
+    ON academy_lesson_youtube (uploaded_at);
+-- 2026-11-14: one lesson or product can carry three uploads. `kind` is full
+-- (the existing rows: bare catalog key, unlisted, embedded on the paid page),
+-- preview (key `preview:<key>`, public) or short (key `short:<key>`, public).
+-- The daily cap counts every row of every kind.
+ALTER TABLE academy_lesson_youtube
+    ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'full'
+    CHECK (kind IN ('full', 'preview', 'short'));
+
+-- Every upload the Academy made to the clips channel (@example_handle), of any
+-- kind; written on upload, read by the public-visibility gate and the daily cap.
+CREATE TABLE IF NOT EXISTS academy_youtube_uploads (
+    video_id text PRIMARY KEY,
+    at       timestamptz NOT NULL DEFAULT now()
+);
+-- Messages ATLAS sends to the owner's own WhatsApp (the linked-device chat), other than
+-- website contact rows (agency_site_messages): [Portal] events, [Alert] problems.
+-- `digest` rows are low-value items folded into one message later; `sent` rows count
+-- toward the one shared hourly cap. Text is composed by ATLAS code from existing
+-- records; any outside words in it are defanged. See modules/agency/owner_wa.py.
+CREATE TABLE IF NOT EXISTS agency_owner_wa (
+    id          BIGSERIAL PRIMARY KEY,
+    kind        TEXT NOT NULL,
+    text        TEXT NOT NULL,
+    dedupe_key  TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending','sending','sent','failed','digest','folded')),
+    attempts    INT NOT NULL DEFAULT 0,
+    error       TEXT,
+    wa_id       TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    sent_at     TIMESTAMPTZ,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS agency_owner_wa_dedupe ON agency_owner_wa (dedupe_key, created_at);
+CREATE INDEX IF NOT EXISTS agency_owner_wa_status ON agency_owner_wa (status, created_at);
+-- Baseline repair 2026-11: tables created lazily in code, named here so the
+-- schema lint and a fresh database know them.
+CREATE TABLE IF NOT EXISTS draft_notice_mark (k int PRIMARY KEY, last_id bigint NOT NULL);
+CREATE TABLE IF NOT EXISTS academy_youtube_uploads (
+    video_id text PRIMARY KEY, at timestamptz NOT NULL DEFAULT now());
+
+-- Phase 2 (camera alerts you can count): durable debounce, dispatch failure rows,
+-- Twilio delivery status, and a marker for the canary's synthetic event.
+-- Additive and safe to apply twice. No message text is stored in the failure table.
+CREATE TABLE IF NOT EXISTS camera_alert_debounce (
+    key        TEXT PRIMARY KEY,
+    alerted_at TIMESTAMPTZ NOT NULL,
+    level      INT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS camera_alert_failures (
+    id          BIGSERIAL PRIMARY KEY,
+    event_id    BIGINT,
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    error_class TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS camera_alert_failures_at ON camera_alert_failures (at DESC);
+ALTER TABLE mmt_owner_outbox ADD COLUMN IF NOT EXISTS delivery_status TEXT;
+ALTER TABLE mmt_owner_outbox ADD COLUMN IF NOT EXISTS delivery_checked_at TIMESTAMPTZ;
+ALTER TABLE camera_events ADD COLUMN IF NOT EXISTS synthetic BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Proactive owner updates (atlas/modules/assistant/notices.py): one short note,
+-- built by code, sent as a Slack DM through the executor action
+-- `assistant.update_owner`. Rollback: db/rollback-assistant-notices.sql (by hand).
+CREATE TABLE IF NOT EXISTS assistant_notices (
+    id          BIGSERIAL PRIMARY KEY,
+    kind        TEXT NOT NULL,
+    ref         TEXT NOT NULL DEFAULT '',
+    text        TEXT NOT NULL,
+    dedupe_key  TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'pending',   -- pending | sending | sent | failed
+    attempts    INT NOT NULL DEFAULT 0,
+    error       TEXT,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    sent_at     TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS assistant_notices_dedupe ON assistant_notices (dedupe_key, created_at DESC);
+CREATE INDEX IF NOT EXISTS assistant_notices_sent ON assistant_notices (sent_at) WHERE sent_at IS NOT NULL;
+CREATE TABLE IF NOT EXISTS assistant_notice_state (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL,
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );

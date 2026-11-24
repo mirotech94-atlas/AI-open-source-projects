@@ -79,6 +79,10 @@ class JobPolicy:
     # False for claim_once jobs: a second run is worse than a missing one.
     retry: bool = False
     guard: str = "schedule_runs"    # where the run itself is kept once-only
+    # Whether the job is switched on. A job that is off writes no
+    # schedule_runs row by design, so its windows are not "missed" (QA's
+    # run check skips it). None: always on.
+    enabled: Callable[[], bool] | None = None
 
     @property
     def recorded(self) -> bool:

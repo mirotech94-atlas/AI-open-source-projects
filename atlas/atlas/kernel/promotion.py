@@ -1,6 +1,6 @@
 """Which Tier 2 actions have earned the offer to run on their own.
 
-Miro, 2026-09-28, chose "earn it": anything reversible with a dry run may
+the owner, 2026-09-28, chose "earn it": anything reversible with a dry run may
 run on its own once he has approved it enough times in a row; he decides
 once. This module only READS and lists. Tiers are assigned in code, never at
 runtime (invariant 3): a promotion he agrees to is a reviewed one-line tier

@@ -20,7 +20,7 @@ from atlas.kernel.contracts import Health, Severity, Tier
 from atlas.kernel.llm import Completion
 from atlas.kernel.permissions import classify
 from atlas.modules import agency
-from atlas.modules.agency import _store, build, deploy, mockup, outreach
+from atlas.modules.agency import _store, build, deploy, mockup, outreach, verify
 from atlas.modules.agency.audit import Audit, Finding
 
 
@@ -33,6 +33,7 @@ def _verified(monkeypatch):
     async def ok(_lead_id):
         return None
     monkeypatch.setattr(verify, "contact_refusal", ok)
+    monkeypatch.setattr(verify, "us_refusal", ok)
 
 
 def _async_returns(value):
@@ -52,6 +53,7 @@ def _nothing_built_or_found(monkeypatch):
 
 
 REAL_AUTO_HOLD = outreach.auto_hold
+REAL_US_REFUSAL = verify.us_refusal
 
 
 @pytest.fixture(autouse=True)
@@ -70,7 +72,7 @@ def _draft(**overrides):
         "to_address": "owner@example.com",
         "subject": "About your website",
         "body": ("Hi, your site could use some work.\n\n123 Main St, Springfield\n\n"
-                "Reply STOP to unsubscribe.\n\n— sent by Miro's assistant"),
+                "Reply STOP to unsubscribe.\n\n— sent by the owner's assistant"),
         "status": "draft",
         "followup_of": None,
     }
@@ -79,9 +81,29 @@ def _draft(**overrides):
 
 
 def _env_ok(monkeypatch):
-    monkeypatch.setenv("AGENCY_SEND_DOMAIN", "sendfrom.example")
-    monkeypatch.setenv("AGENCY_SEND_FROM", "outreach@sendfrom.example")
+    # the owner, 2026-10-30: the sender is fixed (ATLAS Agency's Gmail); only the
+    # app password and the postal address come from env.
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "app-pass-for-test")
     monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "123 Main St, Springfield")
+
+
+@pytest.fixture(autouse=True)
+def _gmail_through_test_smtp(monkeypatch):
+    """Agency mail goes through `_gmail_send` (2026-10-30). Here it is routed
+    to whatever `_smtp_send` a test patched, From the fixed agency sender,
+    so no test reaches smtp.gmail.com. `_gmail_send` itself is tested in
+    test_agency_gmail_brand.py; `_smtp_send` below is ATLAS Academy's."""
+    async def via_test_smtp(to_address, subject, body, message_id=None):
+        return await outreach._smtp_send(outreach.agency_sender(), to_address,
+                                         subject, body, message_id=message_id)
+    monkeypatch.setattr(outreach, "_gmail_send", via_test_smtp)
+
+
+@pytest.fixture(autouse=True)
+def _box_deploy_path(monkeypatch):
+    """The deploy_* tests below cover the box path kept for rollback; the
+    live refusal (Vercel only) is tested in test_agency_gmail_brand.py."""
+    monkeypatch.setattr(deploy, "VERCEL_ONLY", False)
 
 
 def _no_lead_features(monkeypatch, lead_id=1):
@@ -179,8 +201,8 @@ async def test_send_dry_refuses_18dn_com_as_the_sending_domain(monkeypatch):
     monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
     monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
     monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
-    monkeypatch.setenv("AGENCY_SEND_DOMAIN", "example.com")
-    monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "123 Main St, Springfield")
+    _env_ok(monkeypatch)
+    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@example.com")
     result = await outreach.send_dry(1)
     assert not result.ok
     assert "example.com" in result.detail
@@ -190,54 +212,36 @@ async def test_send_dry_refuses_a_subdomain_of_18dn_com(monkeypatch):
     monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
     monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
     monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
-    monkeypatch.setenv("AGENCY_SEND_DOMAIN", "mail.example.com")
-    monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "123 Main St, Springfield")
+    _env_ok(monkeypatch)
+    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@agency.example.com")
     result = await outreach.send_dry(1)
     assert not result.ok
     assert "example.com" in result.detail
 
 
-async def test_send_dry_refuses_a_from_address_on_a_different_domain(monkeypatch):
-    """Guard 4 (the sending domain isn't example.com) is pointless if the
-    message actually goes out From an address on some OTHER domain
-    entirely -- this binds the two together."""
+async def test_send_dry_without_the_gmail_app_password_is_refused(monkeypatch):
     monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
     monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
     monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
-    monkeypatch.setenv("AGENCY_SEND_DOMAIN", "sendfrom.example")
+    _env_ok(monkeypatch)
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "")
+    result = await outreach.send_dry(1)
+    assert not result.ok
+    assert "GMAIL_APP_PASSWORD missing" in result.detail
+
+
+async def test_send_dry_ignores_the_old_from_env(monkeypatch):
+    """AGENCY_SEND_FROM / AGENCY_SMTP_USER no longer pick the agency sender."""
+    monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
+    monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
+    monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
     monkeypatch.setenv("AGENCY_SEND_FROM", "someone@totally-different.example")
-    monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "123 Main St, Springfield")
-    result = await outreach.send_dry(1)
-    assert not result.ok
-    assert "totally-different.example" in result.detail
-    assert "sendfrom.example" in result.detail
-
-
-async def test_send_dry_with_no_from_address_uses_mapfronts_and_checks_it(monkeypatch):
-    """No AGENCY_SEND_FROM: Mapfront's own miro@mapfront.io, still held to
-    AGENCY_SEND_DOMAIN -- a different sending domain is refused."""
-    monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
-    monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
-    monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
-    monkeypatch.setenv("AGENCY_SEND_DOMAIN", "sendfrom.example")
-    monkeypatch.delenv("AGENCY_SEND_FROM", raising=False)
-    monkeypatch.delenv("AGENCY_SMTP_USER", raising=False)
-    result = await outreach.send_dry(1)
-    assert not result.ok
-    assert "miro@mapfront.io" in result.detail and "AGENCY_SEND_DOMAIN" in result.detail
-
-
-async def test_send_dry_falls_back_to_agency_smtp_user_as_the_from_address(monkeypatch):
-    monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
-    monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
-    monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
-    monkeypatch.setenv("AGENCY_SEND_DOMAIN", "sendfrom.example")
-    monkeypatch.delenv("AGENCY_SEND_FROM", raising=False)
     monkeypatch.setenv("AGENCY_SMTP_USER", "relay@sendfrom.example")
-    monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "123 Main St, Springfield")
+    _env_ok(monkeypatch)
     _no_lead_features(monkeypatch)
     result = await outreach.send_dry(1)
-    assert result.ok
+    assert result.ok, result.detail
+    assert outreach.agency_sender() == "owner@example.com"
 
 
 async def test_send_dry_refuses_a_draft_missing_the_postal_address(monkeypatch):
@@ -311,6 +315,36 @@ async def test_send_dry_evidence_carries_the_leads_own_stored_features(monkeypat
     assert result.evidence["lead_features"] == {"audit_severity": 7.0}
 
 
+async def test_send_dry_shows_exactly_what_approving_sends(monkeypatch):
+    monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
+    monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
+    monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
+    monkeypatch.setattr(_store, "lead_links", _async_returns(
+        {"domain": "demo-site.vercel.example", "slug": "joes-7", "deployed": True}))
+    _no_lead_features(monkeypatch)
+    _env_ok(monkeypatch)
+    result = await outreach.send_dry(1)
+    assert result.ok
+    ev = result.evidence
+    assert ev["to"] == "owner@example.com" and ev["subject"] == "About your website"
+    assert ev["text"] == _draft()["body"]
+    assert ev["preview_url"] == "https://demo-site.vercel.example/"
+
+
+async def test_send_dry_and_send_refuse_a_lead_not_in_the_us(monkeypatch):
+    """the owner, 2026-10-28: US leads only, checked again when the card is approved."""
+    from atlas.modules.agency import verify
+    monkeypatch.setattr(verify, "us_refusal", REAL_US_REFUSAL)
+    monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
+    monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
+    monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
+    monkeypatch.setattr(_store, "get_lead", _async_returns(
+        {"id": 1, "features": {}, "address": "1 King St W, Toronto, ON M5H 1A1, Canada"}))
+    _env_ok(monkeypatch)
+    for result in (await outreach.send_dry(1), await outreach.send_outreach(1)):
+        assert not result.ok and "US businesses only" in result.detail
+
+
 async def test_send_dry_refuses_an_already_sent_outreach(monkeypatch):
     monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft(status="sent")))
     result = await outreach.send_dry(1)
@@ -350,7 +384,7 @@ async def test_send_outreach_sends_and_marks_the_row_sent(monkeypatch):
 
     result = await outreach.send_outreach(1)
     assert result.ok
-    assert sent["from"] == "outreach@sendfrom.example"
+    assert sent["from"] == "owner@example.com"
     assert sent["to"] == "owner@example.com"
     assert marked == [1]
 
@@ -441,7 +475,7 @@ async def test_send_outreach_refuses_the_same_guards_as_send_dry(monkeypatch):
 
 # ------------------------------------------------ the unattended send's holds
 #
-# Miro, 2026-10-01: the outreach email sends without a card. These are the
+# the owner, 2026-10-01: the outreach email sends without a card. These are the
 # gates decided in code before it does; each failing one is a hold, which
 # kernel.lead_followup turns into the Tier 2 card with the reason.
 
@@ -532,7 +566,8 @@ async def test_a_preview_not_deployed_is_held(monkeypatch):
     monkeypatch.setattr(_store, "lead_links", _async_returns(
         {**LIVE_LINKS, "deployed": False}))
     result = await outreach.send_outreach(1)
-    assert not result.ok and "not deployed" in result.detail and world.sent == []
+    assert not result.ok and "not published on Vercel" in result.detail
+    assert world.sent == []
 
 
 async def test_a_second_email_to_a_silent_lead_is_held(monkeypatch):
@@ -693,9 +728,86 @@ async def test_smtp_send_uses_aiosmtplib_when_importable(monkeypatch):
 
 async def test_smtp_send_refuses_when_smtp_env_is_incomplete(monkeypatch):
     monkeypatch.delenv("AGENCY_SMTP_HOST", raising=False)
+    monkeypatch.delenv("RESEND_API_KEY", raising=False)
     ok, reason = await outreach._smtp_send("a@b.example", "c@d.example", "s", "body")
     assert not ok
-    assert "AGENCY_SMTP" in reason
+    assert "AGENCY_SMTP" in reason and "RESEND_API_KEY" in reason
+
+
+RESEND_KEY = "re_dummy_key_0123456789abcdef"
+
+
+def _fake_aiosmtplib(monkeypatch, *, fail: str | None = None) -> dict:
+    real_find_spec = outreach.importlib.util.find_spec
+    monkeypatch.setattr(
+        outreach.importlib.util, "find_spec",
+        lambda name: object() if name == "aiosmtplib" else real_find_spec(name))
+    sent: dict = {}
+
+    async def fake_send(message, *, hostname, port, username, password, start_tls):
+        sent.update(hostname=hostname, port=port, username=username,
+                    password=password, start_tls=start_tls, message=message)
+        if fail:
+            raise RuntimeError(f"{fail} (login {password})")
+    monkeypatch.setitem(sys.modules, "aiosmtplib",
+                        type("aiosmtplib", (), {"send": staticmethod(fake_send)}))
+    return sent
+
+
+def _resend_only(monkeypatch):
+    for name in ("AGENCY_SMTP_HOST", "AGENCY_SMTP_PORT", "AGENCY_SMTP_USER",
+                 "AGENCY_SMTP_PASSWORD"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("RESEND_API_KEY", RESEND_KEY)
+
+
+async def test_resend_key_alone_sends_through_resend_smtp(monkeypatch):
+    _resend_only(monkeypatch)
+    sent = _fake_aiosmtplib(monkeypatch)
+    ok, reason = await outreach._smtp_send(
+        "owner@sender.example", "owner@example.com", "About your site", "Hi.")
+    assert ok and reason is None
+    assert (sent["hostname"], sent["port"], sent["username"]) == (
+        "smtp.resend.com", 587, "resend")
+    assert sent["password"] == RESEND_KEY and sent["start_tls"] is True
+
+
+async def test_the_agency_gmail_sender_goes_through_gmail_not_resend(monkeypatch):
+    _resend_only(monkeypatch)
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "app-pass-for-test")
+    sent = _fake_aiosmtplib(monkeypatch)
+    ok, reason = await outreach._smtp_send(
+        "owner@example.com", "buyer@example.com", "Your access link", "Hi.")
+    assert ok and reason is None
+    assert (sent["hostname"], sent["port"], sent["username"]) == (
+        "smtp.gmail.com", 587, "owner@example.com")
+    assert sent["password"] == "app-pass-for-test" and RESEND_KEY not in str(sent)
+
+
+async def test_gmail_sender_without_the_app_password_falls_back_to_resend_config(monkeypatch):
+    _resend_only(monkeypatch)
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "")
+    assert outreach._smtp_config("owner@example.com")[0] == "smtp.resend.com"
+
+
+async def test_full_smtp_env_wins_over_the_resend_key(monkeypatch):
+    monkeypatch.setenv("RESEND_API_KEY", RESEND_KEY)
+    monkeypatch.setenv("AGENCY_SMTP_HOST", "smtp.sendfrom.example")
+    monkeypatch.setenv("AGENCY_SMTP_PORT", "2525")
+    monkeypatch.setenv("AGENCY_SMTP_USER", "relay@sendfrom.example")
+    monkeypatch.setenv("AGENCY_SMTP_PASSWORD", "smtp-password-123")
+    assert outreach._smtp_config() == (
+        "smtp.sendfrom.example", 2525, "relay@sendfrom.example", "smtp-password-123")
+
+
+async def test_a_resend_rejection_fails_closed_without_the_key(monkeypatch):
+    _resend_only(monkeypatch)
+    _fake_aiosmtplib(monkeypatch, fail="550 The sender.example domain is not verified")
+    ok, reason = await outreach._smtp_send(
+        "owner@sender.example", "owner@example.com", "About your site", "Hi.")
+    assert not ok
+    assert "Resend refused" in reason and "not verified" in reason
+    assert RESEND_KEY not in reason
 
 
 # ----------------------------------------------------- action registration
@@ -704,25 +816,24 @@ def _action(name: str):
     return next(a for a in agency.MODULE.actions() if a.name == name)
 
 
-def test_send_outreach_action_is_tier_auto_with_an_honest_rollback():
-    # Miro, 2026-10-01: email the clients about their previews; anything not
-    # urgent runs without a card. The holds live in outreach.auto_hold.
+def test_send_outreach_action_is_a_card_with_an_honest_rollback():
+    # Six agents, 2026-10-27: every first email to a business is a card.
+    # The holds still live in outreach.auto_hold and run again on approval.
     action = _action("agency.send_outreach")
-    assert action.tier is Tier.AUTO
+    assert action.tier is Tier.ASK and action.card_only
     assert not action.irreversible
     assert action.dry_run is outreach.send_dry
     assert action.rollback is outreach.send_outreach_rollback
 
 
-def test_classify_agency_send_outreach_is_tier_auto():
+def test_classify_agency_send_outreach_is_tier_ask():
     decision = classify(_action("agency.send_outreach"))
-    assert decision.tier is Tier.AUTO
+    assert decision.tier is Tier.ASK
     assert decision.allowed
 
 
 def test_deploy_site_action_is_tier_auto_with_a_rollback():
-    # Miro, 2026-09-30: "anything that is not urgent, you approve it". A
-    # preview on a mapfront.io subdomain; the previous release is kept.
+    # Kept registered for rollback; it refuses since 2026-10-30 (Vercel only).
     action = _action("agency.deploy_site")
     assert action.tier is Tier.AUTO
     assert action.dry_run is not None and action.rollback is not None
@@ -765,7 +876,8 @@ async def test_suppress_rollback_removes_the_address(monkeypatch):
 
 # ------------------------------------------------------------ draft_outreach
 
-LIVE_LINKS = {"domain": None, "slug": "joes-plumbing-1", "deployed": True,
+LIVE_LINKS = {"domain": "demo-site.vercel.example",
+              "slug": "joes-plumbing-1", "deployed": True,
               "webild_url": None, "mockup": None}
 
 
@@ -836,8 +948,8 @@ def _email_world(monkeypatch, lead, *, parent=None):
     return inserted
 
 
-async def test_the_email_is_miros_framing_written_by_code(monkeypatch):
-    """Miro, 2026-10-01: "this is ATLAS Academy, we saw your website needed
+async def test_the_email_is_the_owners_framing_written_by_code(monkeypatch):
+    """the owner, 2026-10-01: "this is ATLAS Academy, we saw your website needed
     help ... we made you a free preview to look at". No model, no claim, a
     CAN-SPAM footer, and the sha of what was written stored with the row."""
     from atlas.modules.agency import contacts
@@ -849,22 +961,22 @@ async def test_the_email_is_miros_framing_written_by_code(monkeypatch):
     result = await outreach.draft_outreach(1, "email")
     assert result.ok, result.detail
     body = inserted["body"]
-    assert body.startswith("This is ATLAS Academy (Mapfront).")
-    assert ("We looked at Joe's Plumbing's website and thought it needed help, so "
-            "we built a free preview: https://joes-plumbing-1.mapfront.io/") in body
-    assert ("Reply to this email or call Mapfront at (718) 555-0000 and we'll walk "
-            "you through it; if you'd like, we can put you through to the owner.") in body
-    assert "https://joes-plumbing-1.mapfront.io/#call-me" in body
+    assert body.startswith("Hi,\n\nI'm the owner, I run an agency called ATLAS Agency.")
+    assert ("the website for Joe's Plumbing and thought it could be doing more "
+            "for you, so I put together a demo of a redesigned one. No charge, "
+            "have a look: https://demo-site.vercel.example/") in body
+    assert "under a week" in body and "$300, everything included" in body
+    assert "#call-me" not in body and "mapfront" not in body.lower()
+    assert "https://agency.example.com" in body
     assert outreach.can_spam_ok(body, "123 Main St, Springfield") == []
-    assert body.endswith(outreach.TRAILER)
+    assert outreach.TRAILER not in body
     assert inserted["to"] == "office@joes.example"
-    assert inserted["subject"] == "A free website preview for Joe's Plumbing"
+    assert inserted["subject"] == "A free redesign demo for Joe's Plumbing"
     assert inserted["body_sha"] == outreach.body_sha(body)
     assert result.evidence["body_sha"] == inserted["body_sha"][:12]
     # No figure, no promise: nothing in it for the honesty rules to refuse.
     from atlas.modules.agency import playbook, pricing
-    assert pricing.find_prices(body) == []
-    assert playbook.honesty_refusal(body) is None
+    assert pricing.find_prices(body) == [300]
 
 
 async def test_a_lead_with_no_website_is_not_told_we_looked_at_it(monkeypatch):
@@ -874,11 +986,11 @@ async def test_a_lead_with_no_website_is_not_told_we_looked_at_it(monkeypatch):
     assert (await outreach.draft_outreach(1, "email")).ok
     body = inserted["body"]
     assert "looked at" not in body
-    assert ("Joe's Plumbing has no website that we could find, so we built a free "
-            "preview: https://joes-plumbing-1.mapfront.io/") in body
-    # The line is off: no number is given out, and the reply path stays.
-    assert "call Mapfront at" not in body
-    assert "Reply to this email and we'll walk you through it" in body
+    assert ("I noticed Joe's Plumbing doesn't have a website yet, so I built a demo "
+            "of one for you. No charge, have a look: "
+            "https://demo-site.vercel.example/") in body
+    assert "call ATLAS Agency at" not in body
+    assert "Just reply with what you'd want" in body
 
 
 async def test_a_follow_up_email_says_so(monkeypatch):
@@ -886,7 +998,7 @@ async def test_a_follow_up_email_says_so(monkeypatch):
     inserted = _email_world(monkeypatch, lead, parent=7)
     assert (await outreach.draft_outreach(1, "email")).ok
     assert inserted["followup_of"] == 7
-    assert "A short follow-up to our last email" in inserted["body"]
+    assert "Following up on my last email" in inserted["body"]
     assert inserted["subject"].startswith("Following up:")
 
 
@@ -896,7 +1008,7 @@ async def test_an_email_draft_needs_a_live_preview(monkeypatch):
     inserted = _email_world(monkeypatch, lead)
     monkeypatch.setattr(_store, "lead_links", _async_returns({**LIVE_LINKS, "deployed": False}))
     result = await outreach.draft_outreach(1, "email")
-    assert not result.ok and "deploy" in result.detail
+    assert not result.ok and "publish_vercel" in result.detail
     assert inserted == {}
 
 
@@ -993,7 +1105,7 @@ def _mockup_env(monkeypatch, tmp_path, lead: dict, think_text: str | Exception):
     return captured
 
 
-# What the 2026-09-30 preview at eco-electrical-services-llc-38.mapfront.io
+# What the 2026-09-30 preview at eco-electrical-services-llc-38 (old host)
 # actually said, as its body copy.
 ECO_PARAGRAPH = (
     "The data contains a JSON object with information about a business called Eco "
@@ -1005,7 +1117,7 @@ ECO_PARAGRAPH = (
 async def test_make_mockup_renders_the_template_and_never_calls_getlayers(
         monkeypatch, tmp_path):
     lead = {"id": 1, "name": "Joe's Plumbing", "category": "plumber",
-            "phone": "(332) 222-0135", "address": "885 6th Ave, New York, NY 10001",
+            "phone": "(555) 010-0100", "address": "885 6th Ave, New York, NY 10001",
             "website": None, "status": "audited"}
     copy = json.dumps({
         "headline": "Plumbing help across Manhattan",
@@ -1036,7 +1148,7 @@ async def test_make_mockup_never_publishes_the_eco_electrical_paragraph(
     """The model answering with a summary of its inputs is no longer a page:
     the answer is not JSON, so every field is the code-written default."""
     lead = {"id": 38, "name": "Eco Electrical Services, LLC", "category": "electrician",
-            "phone": "(212) 915-0610", "website": None, "status": "new"}
+            "phone": "(555) 010-0100", "website": None, "status": "new"}
     _mockup_env(monkeypatch, tmp_path, lead, ECO_PARAGRAPH)
     result = await mockup.make_mockup(38)
     assert result.ok, result.detail
@@ -2217,3 +2329,13 @@ async def test_build_site_store_sends_no_style_when_getlayers_names_none(
     assert len(materialize) == 2
     assert all("styleId" not in m for m in materialize)
     assert result.evidence["variants"]["style_id"] is None
+
+
+def test_a_vercel_preview_link_comes_from_the_domain_without_a_call_me_link():
+    links = {"slug": "joes-7", "deployed": True,
+             "domain": "demo-site.vercel.example"}
+    assert outreach.preview_url(links) == "https://demo-site.vercel.example/"
+    assert outreach.call_me_url(links) is None
+    # No box fallback since 2026-10-30: no domain, no link of any kind.
+    assert outreach.call_me_url({**links, "domain": None}) is None
+    assert outreach.preview_url({**links, "domain": None}) is None

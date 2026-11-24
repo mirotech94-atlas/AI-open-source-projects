@@ -3,7 +3,7 @@
 `escalation.CRITICAL_RETRIES` and `ladder()` have described this since
 COMMS.md 3.3 ("call again in two minutes, then every five") and nothing
 ever dialled: one missed call at night and the incident sat in Slack until
-morning. Miro's voice-partner brief (2026-10-04) asks for the step-up.
+morning. the owner's voice-partner brief (2026-10-04) asks for the step-up.
 
 What this does, and what it never does:
 

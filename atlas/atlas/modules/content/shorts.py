@@ -1,5 +1,5 @@
 """YouTube Shorts: the best AI reel of the week, three times a week
-(Miro, 2026-09-29).
+(the owner, 2026-09-29).
 
 YouTube's 2025 policy against "inauthentic / mass-produced" content rewards
 quality over volume, so this is curated, not a mirror: `SHORTS_PER_WEEK`
@@ -18,7 +18,7 @@ and the note says the ranking is by recency, not numbers.
 
 **The quality gate**, all in code, the first ranked reel that passes wins:
 a finished render of 1080x1920 with sound that is not silent, at least
-`crosspost.MIN_SECONDS` and at most `MAX_SECONDS` (Miro's Shorts limit --
+`crosspost.MIN_SECONDS` and at most `MAX_SECONDS` (the owner's Shorts limit --
 a longer reel is skipped, never cut); the caption guards the reel posted
 under (`crosspost._caption_refusal`, run over the new title AND the
 description) and its AI label; YouTube's title (2-100) and description

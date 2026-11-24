@@ -37,12 +37,12 @@ What `execute` returns decides the rest, and the default is the cautious one:
   (terminal, S08): the executor found the action's catalog version, or the
   params hash, changed since the row was recorded (`executor.STALE`). No
   attempt is spent, nothing ran, and a fresh card (approvals.fresh_card)
-  asks Miro about the action as it is now; the row itself never runs.
+  asks the owner about the action as it is now; the row itself never runs.
   Rows queued before versions were recorded carry NULL and are not checked.
 * the provider refused the credential (401/403, a revoked token; R09) ->
   that credential is paused (kernel/pause.block_capability: the module, or
   `module:account` for a module that posts as several accounts; lifted only
-  by Miro) so its other queued rows hold instead of each trying the dead
+  by the owner) so its other queued rows hold instead of each trying the dead
   login, with one short notice. A module whose credential cannot be told
   apart is only told, never paused. A notice ends failed; an effect is
   reconciled as below.
@@ -605,7 +605,7 @@ async def dispatch_once(owner: str = OWNER, lease: timedelta = LEASE,
                      else (False, None))
     if refused:
         # R09: block the credential -- pause it (`module:account` where the
-        # module posts as several accounts), or only tell Miro where the
+        # module posts as several accounts), or only tell the owner where the
         # credential cannot be told apart. Once, however many rows fail.
         from . import pause as _pause
         done = await _pause.block_capability(action, params or {}, code)

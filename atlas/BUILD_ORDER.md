@@ -1,5 +1,14 @@
 # BUILD_ORDER.md — ATLAS
 
+> **Status as of 2026-11-15 (feat/atlas-improve).** Full suite in the Postgres lane
+> (`ops/pg_lane.sh -d atlas_lane -j 8 -- tests`, after the last code commit): 15,821
+> passed, 0 failed, 128 skipped, 211 s. No skip is a Postgres skip; the skips need
+> ffmpeg, Playwright or the Mac vault. The gate tests below ran, none skipped.
+> Phase 22 is NOT built: it is gated on 21.H.1 (a readiness report the owner signs) and
+> 21.G.1 (48 h shadow run), neither of which can pass in one session.
+> Live-only steps still open: the 7-day soak, installing the watchdog on the Spark,
+> off-box copies, the live `support_kb` build, the stop-the-api test.
+
 > **Status as of 2026-09-22.** Ticks are what is verified, not what was written.
 > `[~]` means partly done with a stated reason.
 >
@@ -11,7 +20,7 @@
 > The violation is sequencing, not capability leaking early.
 >
 > **2026-09-22: the credential blocker broke.** 10 of 16 modules now load —
-> flycheap, guardian, inroots, netbird, vpsie, gitlab, stripe, linkedin,
+> flycheap, guardian, inroots, netbird, cloudco, gitlab, stripe, linkedin,
 > fiverr and comms — and a channel exists for the first time. What is left
 > is time (GATE 4.5, to 2026-10-06) and six modules still missing tokens.
 > Run `python -m atlas.cli connect` for the list.
@@ -122,7 +131,7 @@ No coverage targets. These specific behaviours only.
 ## PHASE 3 — Make the modules honest
 
 Several modules guess at admin API shapes I have not confirmed: `flycheap`,
-`guardian`, `inroots`, `vpsie`.
+`guardian`, `inroots`, `cloudco`.
 
 - [x] **3.1** For each, make the HTTP layer defensive — a wrong response shape
       returns `Health.UNKNOWN` with a useful message, never a crash and never
@@ -144,9 +153,26 @@ raised, proposals are recorded as "would have proposed", and nothing executes.
 
 - [~] **4.1** Deployed. `02-install.sh` done — and its Docker repo bug fixed:
       it added the *Ubuntu* repo on a *Debian* host and could never have run.
-      NetBird done, against your own control plane at `mironetbird.example.com`.
-      **`00-harden.sh` NOT run** (you said "not yet"): ufw not installed,
-      fail2ban inactive, SSH still root-on-22.
+      NetBird done, against your own control plane at `mesh.example.com`.
+      **`00-harden.sh` still NOT run** (you said "not yet"), but the half of
+      it that cannot lock anyone out was done on 2026-10-12, because the
+      journal showed **17,393 failed SSH attempts in 24 hours** against a box
+      with `PermitRootLogin yes`, no firewall and no fail2ban:
+      *fail2ban is installed, configured and active* — `maxretry 3`,
+      `bantime 24h`, and `ignoreip` covering localhost plus the mesh
+      (`100.64.0.0/10`, `10.0.0.0/8`) so a bad key attempt from his own laptop
+      over NetBird, or the local root-by-password login from `127.0.0.1`, can
+      never ban the only remaining door. It banned two IPs within twelve
+      seconds. *unattended-upgrades is active.*
+      **Deliberately left for the owner, because they can lock us both out of a
+      mesh-only box:** `PermitRootLogin no`, the SSH port change, and
+      `ufw --force enable`. `00-harden.sh` does all three at once and root over
+      SSH is currently the only access path.
+      Checked, and clean: the only two successful password logins in 14 days
+      were root from `127.0.0.1` — a local process, not an intruder. The attack
+      is a generic botnet from 77.239.124.x / 109.160.32.x hammering
+      admin/ubuntu/user/deploy/test. **Password authentication is still
+      enabled**, which is the remaining real exposure.
 - [x] **4.2** — verified from a non-mesh host; every dashboard path 404s. Confirm port 443 serves **only** `/webhooks/*` and `/healthz`.
       Everything else binds to the mesh. Postgres has no `ports:` entry.
 - [x] **4.3** **DONE, via Slack rather than iMessage.** 2026-09-22: a message
@@ -236,7 +262,7 @@ verified live). Channel done (Slack). A browser SpeechRecognition detector
 was added as a working-today fallback and is opt-in, because in Chrome it
 streams audio to Google — the opposite of what the on-device detector
 exists to guarantee. Still needs a Picovoice key and an `atlas.ppn`, both of
-which live in Miro's account.
+which live in the owner's account.
 
 7.4 has changed shape and is worth restating. Voice no longer only reads: a
 spoken request becomes a Tier 2 **proposal**, and on an authenticated
@@ -254,7 +280,7 @@ them.
 - [x] **8.3** One-click pause in the toolbar.
 - [x] **8.4** 90-day auto-deletion of raw history; rolled-up stats survive.
 
-**GATE 8: PARTIAL, and blocked on Miro.** Deny-list demonstrated (12
+**GATE 8: PARTIAL, and blocked on the owner.** Deny-list demonstrated (12
 assertions, incl. a lookalike-domain case) and a 200-day-old row verifiably
 purged while its roll-up survived. The extension is not installed, so
 nothing reaches the brief. Installing it is a browser action only he can
@@ -280,7 +306,7 @@ take.
       Covered by `test_audit_is_written_before_the_action`.
 - [ ] **9.4** Run **one week**. Review every single action he took.
 
-**GATE 9: OPENED 2026-09-22 BY INSTRUCTION, ahead of GATE 4.** Miro said,
+**GATE 9: OPENED 2026-09-22 BY INSTRUCTION, ahead of GATE 4.** The owner said,
 twice, that ATLAS should have read, write and execute modes always, and
 that when he tells it to do something it does it. I had argued for the
 two-week watch this file asks for; he overruled it, and it is his system.
@@ -298,10 +324,21 @@ against the gate this file calls the most important one in it.
 
 ## PHASE 10 — Tier 2 approvals
 
-- [~] **10.1** Proposals reach him as a card (over Slack, not iMessage — see
-      4.3) carrying the action, the tier and the rollback plan headline. The
-      **dry-run output is stored but is not on the card**; it is behind
-      Details. Finish by putting it in the message.
+- [x] **10.1** **DONE 2026-10-12.** The card now carries the action, the tier,
+      the rollback headline **and the dry-run output** (over Slack, not
+      iMessage — see 4.3). `propose()` calls `executor.preview`, which runs the
+      dry run and can never reach `run`, so this is sound in watch-only too.
+      Three states, deliberately distinct: a refusal leads with
+      `⚠ dry run REFUSED`, because approving something whose dry run already
+      refused is the mistake this prevents; a success is quoted; and a preview
+      that could not be reached reads as **not knowing**, never as a refusal —
+      those are opposite facts. A raised or slow preview (8s cap) never costs
+      him the card, since a decision without a preview still beats no decision
+      arriving.
+      Previewed **only at Tier 2 and above**: a Tier 1 action runs unattended
+      and dry-runs inside `execute` anyway, so previewing it did the work twice
+      to decorate a card nobody decides on — measured at 364s vs 0.87s across
+      the approval tests. *(`tests/test_approval_dry_run.py`)*
 - [x] **10.2** **DONE.** Expiry is enforced inside the same atomic UPDATE that
       claims the proposal, so silence cannot execute even under a race.
 - [x] **10.3** **DONE.** `UPDATE ... WHERE id=$1 AND status='pending' AND
@@ -628,7 +665,7 @@ label, the proposal and "nothing blocked before he does" are proven in
 tests. The call needs `PRESENCE_PEERS` and a real CRITICAL page while you
 are out (the call comes from `TWILIO_FROM` itself since Task 54, so the
 saved contact's photo shows); the voice note needs `TELEGRAM_BOT_TOKEN` and
-`MIRO_TELEGRAM_CHAT_ID`, plus Task 44's read-back; the stories account needs
+`OWNER_TELEGRAM_CHAT_ID`, plus Task 44's read-back; the stories account needs
 `INSTAGRAM_STORIES_*` and `OPENART_TOKEN`; the intrusion needs
 `GUARDIAN_WRITE_TOKEN` and a hub containment route that does not exist yet.
 
@@ -637,13 +674,13 @@ saved contact's photo shows); the voice note needs `TELEGRAM_BOT_TOKEN` and
 ## PHASE 19 — College: Brightspace, Fall 2026
 
 > Built while GATE 11 was open, by instruction, on the same terms as Phases
-> 12 to 18. CUNY's Brightspace sits behind SSO with MFA and gives students no
+> 12 to 18. the university's Brightspace sits behind SSO with MFA and gives students no
 > API key, and ATLAS never logs in, so it reads the two doors D2L gives every
-> student instead. ATLAS drafts; Miro writes, types and submits.
+> student instead. ATLAS drafts; the owner writes, types and submits.
 
 - [x] **19.1** The `school` module — the Brightspace calendar feed and the
       notification emails, each item with its course, its source and the
-      time it was read; Valence stays unmeasured until CUNY grants it; the
+      time it was read; Valence stays unmeasured until the university grants it; the
       feed's URL (it carries a token) is never logged.
       *(`tests/test_school.py`)*
 - [x] **19.2** The college sub-agent — a `school` business agent on the
@@ -656,7 +693,7 @@ saved contact's photo shows); the voice note needs `TELEGRAM_BOT_TOKEN` and
       submitted to Brightspace. *(`tests/test_school.py`)*
 
 **GATE 19:** *(drafted by Task 17 from the Phase 19 ruling — the plan did
-not define one; Miro to confirm.)* A week of the term arrives in the brief
+not define one; the owner to confirm.)* A week of the term arrives in the brief
 with every due date and its source; a grade email becomes one signal, once;
 a draft for each course comes out in that course's kind, and nothing
 reaches Brightspace.
@@ -701,7 +738,7 @@ rather than drafting elsewhere.
       the fallback; a source, never an oracle; one monthly cap across every
       caller; a question about his own estate refused before the call; only
       a topic leaves the box. *(`tests/test_perplexity.py`)*
-- [x] **20.6** *(item drafted by Task 17 for plan Task 41; Miro to confirm)*
+- [x] **20.6** *(item drafted by Task 17 for plan Task 41; the owner to confirm)*
       A local model that cannot call tools says so, and PRIVATE
       work never falls through to a cloud model unless
       `ATLAS_PRIVATE_ALLOW_CLOUD` is deliberately set. *(`tests/test_llm.py`,
@@ -731,24 +768,24 @@ This is a new phase after 20. It is not a re-lettering of phases 0–20:
 - [ ] **21.B.3** Durable outbox for notify and receipts.
 - [ ] **21.B.4** Unfinished `execute.start` → `RECONCILING`, not `failed`.
 - [ ] **21.B.5** Slack retry handling that does not drop first-failure deliveries.
-- **GATE 21.B:** R01–R07 and R11 pass.
+- **GATE 21.B:** R01–R07 and R11 pass. *(2026-11-15: ran in the PG lane, zero skips, green.)*
 - [ ] **21.C.1** Per-module runtime pause, checked in `execute` and before each scheduler step and host job.
 - [ ] **21.C.2** Proposal `version` / `payload_hash`.
 - [ ] **21.C.3** Close RA-C2, RA-C3 and RA-C5.
-- **GATE 21.C:** P01–P10 pass.
+- **GATE 21.C:** P01–P10 pass. *(2026-11-15: ran, zero skips, green.)*
 - [ ] **21.D.1** `Action.verify` contract, plus failure classes on `ActionResult`.
 - [ ] **21.D.2** Timeouts on detached scheduler steps.
-- **GATE 21.D:** S10, D05 and D10 pass.
+- **GATE 21.D:** S10, D05 and D10 pass. *(2026-11-15: ran, zero skips, green.)*
 - [ ] **21.E.1** One vertical per enabled module; fix the RA-E1 OK-on-empty checks.
 - [ ] **21.F.1** Durable once-per-window guard for every report (`review` first).
 - [ ] **21.F.2** Occurrence table with missed-run policy.
 - [ ] **21.F.3** Move reel timers into git with a single owner.
 - [ ] **21.F.4** External watchdog on a separate host.
-- **GATE 21.F:** D13, R10 and S06 pass.
+- **GATE 21.F:** D13, R10 and S06 pass. *(2026-11-15: ran, zero skips, green. 21.F.4 the Spark watchdog is built but not installed: needs the lead.)*
 - [ ] **21.G.1** 48 h shadow run.
 - [ ] **21.G.2** Restore drill into an isolated target.
-- **GATE 21.G:** S05, S07, S08 and R12 pass.
-- [ ] **21.H.1** Per-capability enablement; signed readiness report.
+- **GATE 21.G:** S05, S07, S08 and R12 pass. *(2026-11-15: ran, zero skips, green. 21.G.1 the 48 h shadow run has not run: open.)*
+- [ ] **21.H.1** Per-capability enablement; signed readiness report. *(Open: needs the owner's signature. Blocks Phase 22.)*
 
 
 Tier 3 stays permanently denied. Money out, DNS, deletion, credential

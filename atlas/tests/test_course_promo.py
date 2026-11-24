@@ -1,4 +1,4 @@
-"""The course-promo lane (Miro, relayed 2026-09-29): two reels a week for his
+"""The course-promo lane (the owner, relayed 2026-09-29): two reels a week for his
 course on the AI-stories accounts, honest by rule."""
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ from atlas.modules.content import captions, course, guard, higgsfield, reel_scri
 from atlas.modules.content import reels as playbook
 from atlas.modules.content.drafts import AI_LABEL
 
-URL = "https://shop.mapfront.io/safe-ai-operator/"
-PRICE_JSON = "https://shop.mapfront.io/catalog.json"
+URL = "https://agency.example.com/academy/safe-ai-operator/"
+PRICE_JSON = "https://agency.example.com/academy/catalog.json"
 TUE, WED, THU, FRI, SAT = (date(2026, 9, 29), date(2026, 9, 30), date(2026, 10, 1),
                            date(2026, 10, 2), date(2026, 10, 3))
 
@@ -43,17 +43,17 @@ def _own() -> list[dict]:
 def test_the_course_data_ships_every_hooked_lesson_and_the_product():
     rows = course.lessons()
     ids = [x["id"] for x in rows]
-    # The first course keeps its bare ids, in order (p.*: Miro's promo hooks).
+    # The first course keeps its bare ids, in order (p.*: the owner's promo hooks).
     assert [i for i in ids if ":" not in i] == [
         "0.1", "1.1", "1.2", "2.1", "3.1", "4.2", "5.2", "6.1", "8.1",
         "p.1", "p.2", "p.3", "p.4", "p.5", "p.6", "p.7"]
-    # Miro, 2026-10-05: every course is advertised -- the courses take turns.
+    # the owner, 2026-10-05: every course is advertised -- the courses take turns.
     assert ids[:5] == ["0.1", "sell-with-ai:0.2", "ai-for-every-age-adults:1.4",
                        "ai-for-every-age-60plus:3.1", "1.1"]
     assert len(ids) == len(set(ids)) == 16 + 12 + 10 + 8
     adults = course.lesson("ai-for-every-age-adults:1.4")
     assert adults["no"] == "1.4" and adults["product"] == "ai-for-every-age-adults"
-    assert course.product(adults)["url"] == "https://shop.mapfront.io/ai-for-every-age/"
+    assert course.product(adults)["url"] == "https://agency.example.com/academy/ai-for-every-age/"
     assert all(q.is_file() for x in rows for q in course.images(x))
     p = course.product()
     assert "price" not in p and p["url"] == URL     # read live, never stored
@@ -626,9 +626,9 @@ async def test_a_non_public_store_address_is_not_read(monkeypatch):
 
 
 @pytest.mark.parametrize("url", [
-    "http://atlasacademy-ai.myshopify.com/products/x.json",
+    "http://academy-store.myshopify.example/products/x.json",
     "https://evil.example.com/products/x.json",
-    "ftp://atlasacademy-ai.myshopify.com/x.json"])
+    "ftp://academy-store.myshopify.example/x.json"])
 async def test_only_the_stores_own_https_url_is_read(monkeypatch, url):
     import httpx
 
@@ -730,7 +730,7 @@ def test_the_price_line_round_trips():
 
 
 async def test_another_courses_price_is_read_by_its_own_slug(monkeypatch):
-    """Miro, 2026-10-05: every course advertised. Each reel's price is its
+    """the owner, 2026-10-05: every course advertised. Each reel's price is its
     own course's catalog entry, read live -- never the first course's."""
     asked = _store(monkeypatch, _Response(200, {"products": [
         {"slug": "safe-ai-operator", "price_usd": 20, "currency": "USD", "buy_live": True},
@@ -769,5 +769,5 @@ async def test_a_course_with_several_offers_shows_the_one_it_names(monkeypatch):
     price = await course.read_price(item=item)
     assert price.read and price.amount == Decimal(19)
     cap = course.caption(item, price)
-    assert "https://shop.mapfront.io/sell-with-ai/" in cap and "$19, link in bio" in cap
+    assert "https://agency.example.com/academy/sell-with-ai/" in cap and "$19, link in bio" in cap
     assert course.honesty_refusal(item, 2, price) is None

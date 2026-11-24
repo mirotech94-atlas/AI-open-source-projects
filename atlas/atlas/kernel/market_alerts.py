@@ -1,10 +1,10 @@
-"""Ivan's alerts, unattended: readings in, Slack messages to Miro out.
+"""Ivan's alerts, unattended: readings in, Slack messages to the owner out.
 
 Every `MARKETS_ALERT_MIN` minutes (default 15), from the scheduler, off the
 loop. `MARKETS_ALERTS=off` stops it.
 
   1. **Plan** -- the markets module reads the latest basket, SEC filings
-     and Alinea readings, and Miro's own TradingView alerts not yet
+     and Alinea readings, and the owner's own TradingView alerts not yet
      delivered (`markets.alerts.gather`), and records each event
      once in `markets_alerts` (the key is the event, so it is alerted once).
      Planned alerts past their age expire, never sent late.
@@ -13,7 +13,7 @@ loop. `MARKETS_ALERTS=off` stops it.
      path: its tier check (Tier 1; `ALLOWED` is the whole list), dry run,
      rate limits, pause, watch-only and audit.
 
-It sends Miro messages and does nothing else: there is no action here, or
+It sends the owner messages and does nothing else: there is no action here, or
 anywhere in the markets module, that can trade.
 
 Under ATLAS_WATCH_ONLY nothing is sent -- the executor would refuse it --
@@ -60,7 +60,7 @@ def _ready() -> str | None:
     if ALERT not in REGISTRY.actions or decision is None or not decision.allowed:
         return f"{ALERT} is not in the catalog (markets module not loaded)"
     if decision.tier is not Tier.AUTO:
-        return f"{ALERT} is not Tier 1; the alert tick runs nothing that needs Miro"
+        return f"{ALERT} is not Tier 1; the alert tick runs nothing that needs the owner"
     return None
 
 
@@ -90,7 +90,7 @@ async def tick(now: datetime | None = None) -> list[str]:
             continue
         result = await execute(ExecutionRequest(
             action=ALERT, params={"key": key},
-            reason=f"a market event Miro asked to be told about ({key})"))
+            reason=f"a market event the owner asked to be told about ({key})"))
         said.append(f"{key}: {result.detail}")
         if not result.ok and result.failure_class in _STOP:
             break

@@ -546,7 +546,7 @@ async def _receipt(workflow_id: int, action: str, state: State,
     if notice is not None:
         from .. import outbox
         try:
-            await outbox.enqueue(notice, {"text": body}, destination="miro",
+            await outbox.enqueue(notice, {"text": body}, destination="owner",
                                  occurrence=f"receipt:{workflow_id}",
                                  kind="notice", workflow_id=workflow_id,
                                  reason=f"receipt for workflow #{workflow_id}")

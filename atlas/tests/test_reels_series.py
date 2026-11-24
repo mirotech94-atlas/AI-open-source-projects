@@ -1,4 +1,4 @@
-"""The series engine (Miro, 2026-09-27/28): planned whole, made in order,
+"""The series engine (the owner, 2026-09-27/28): planned whole, made in order,
 finished with THE END -- never left on 'Part 2' forever."""
 from __future__ import annotations
 
@@ -22,13 +22,13 @@ def test_the_hospital_series_is_registered_as_made_and_clean():
 
 
 def test_the_handed_over_series_are_all_in_clean_and_in_order():
-    """Miro chose ATLAS's pipeline (2026-09-28): the engine-setup session's
+    """the owner chose ATLAS's pipeline (2026-09-28): the engine-setup session's
     14 written series, 60 episodes, are the engine's queue, in their order."""
     pk = series.package()
     assert len(pk) == 16 and sum(len(s["parts"]) for s in pk) == 67
     assert pk[0]["title"] == "The Parking Spot"
     assert pk[1]["title"] == "Halo of Coins" and pk[1]["position"] == 10, \
-        "Miro's parody goes next, right after the active series"
+        "the owner's parody goes next, right after the active series"
     assert pk[2]["title"] == "The Sand Contract" and pk[2]["position"] == 10, \
         "ties with Halo of Coins, which was taken in first, so it follows it"
     assert pk[3]["title"] == "The Return"
@@ -228,19 +228,6 @@ async def test_a_plan_that_copies_a_film_is_refused(memory_backend, monkeypatch)
     result = await series.plan_series("rival cars family drama")
     assert not result.ok and "refused" in result.detail
 
-
-def test_atlas_has_a_reels_producer_that_knows_the_plan_and_cannot_post():
-    from atlas.kernel import agents
-    from atlas.kernel.skills import skills_for
-    agents.build_roster()
-    producer = agents.ROSTER["reels"]
-    assert "no narrator" in producer.system.lower() or "no narrator," in producer.system
-    assert "10 clips a day" in producer.system and "never post" in producer.system
-    assert not any("post" in t or "publish" in t for t in producer.tools)
-    assert "growth" in producer.handoff and "reels" in agents.ROSTER["growth"].handoff
-    import atlas.skills.reels  # noqa: F401  (registers the pack)
-    names = [s.name for s in skills_for("what is the next reels series part?", "reels")]
-    assert "The reels plan" in names
 
 
 def test_the_workflows_tab_draws_the_reels_pipeline():

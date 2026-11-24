@@ -24,7 +24,7 @@ from when it was last read, which is always today while a post is in the
 read window and would make a month-old reel score like yesterday's. An
 unread number earns nothing and costs nothing.
 
-Nothing here reads Instagram through Miro's logged-in account; only the
+Nothing here reads Instagram through the owner's logged-in account; only the
 Graph API with the account's own token.
 """
 from __future__ import annotations

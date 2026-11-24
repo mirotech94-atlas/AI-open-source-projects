@@ -197,11 +197,25 @@ describe("micBadgeAction", () => {
     expect(micBadgeAction({ mic: "off", handsFree: false, detector: "pinch" })).toBe("unmute");
   });
 
-  it("never wakes: click-to-talk with the mic off has nothing to mute", () => {
-    expect(micBadgeAction({ mic: "off", handsFree: true, detector: "click-to-talk" }))
-      .toBeNull();
+  it("restarts the mic when it reads \"Mic off\" with hands-free armed and "
+    + "no pinch behind it -- the badge must never be a dead button", () => {
+    for (const detector of ["click-to-talk", "porcupine", "local-whisper", "speech-api", null] as const) {
+      expect(micBadgeAction({ mic: "off", handsFree: true, detector })).toBe("restart");
+    }
+  });
+
+  it("retries a denied or unavailable mic so the real reason is shown, "
+    + "except behind a pinch, which mutes", () => {
     expect(micBadgeAction({ mic: "denied", handsFree: true, detector: "porcupine" }))
-      .toBeNull();
+      .toBe("restart");
+    expect(micBadgeAction({ mic: "unavailable", handsFree: true, detector: "click-to-talk" }))
+      .toBe("restart");
+    expect(micBadgeAction({ mic: "unavailable", handsFree: true, detector: "pinch" }))
+      .toBe("mute");
+  });
+
+  it("unmutes a denied mic that was muted", () => {
+    expect(micBadgeAction({ mic: "denied", handsFree: false, detector: null })).toBe("unmute");
   });
 });
 

@@ -1,4 +1,4 @@
-"""What the futures engine tells Miro, and how little: one daily close
+"""What the futures engine tells the owner, and how little: one daily close
 summary, one weekly scoreboard. No per-trade cards -- intraday cards are
 noise. Every figure is read from ATLAS's own tables at the time of writing;
 what cannot be read is UNKNOWN, never zero. "Paper, not advice." once.

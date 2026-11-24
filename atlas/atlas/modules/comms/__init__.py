@@ -131,7 +131,7 @@ async def check_slack_auth() -> Observation:
 
 def _slack_targets() -> dict[str, list[str]]:
     """Every channel id ATLAS posts to, with the topics that land there."""
-    from ...channels.slack import TOPIC_CHANNEL_ENV
+    from ...channels.slack import TOPIC_CHANNEL_DEFAULT, TOPIC_CHANNEL_ENV
 
     out: dict[str, list[str]] = {}
     for pair in os.getenv("SLACK_CHANNELS", "").split(","):
@@ -139,7 +139,7 @@ def _slack_targets() -> dict[str, list[str]]:
         if cid.strip():
             out.setdefault(cid.strip(), []).append(name.strip())
     for topic, env in TOPIC_CHANNEL_ENV.items():
-        cid = os.getenv(env, "").strip()
+        cid = os.getenv(env, "").strip() or TOPIC_CHANNEL_DEFAULT.get(topic, "")
         if cid:
             out.setdefault(cid, []).append(topic)
     default = os.getenv("SLACK_CHANNEL", "").strip()
@@ -153,9 +153,9 @@ async def check_slack_channels() -> Observation:
 
     `chat:write.public` lets it post to a public channel it never joined, so
     every card arrives and looks fine. But Slack only sends message events
-    for channels the bot is a member of: whatever Miro types there, ATLAS
-    never hears. On 2026-09-27 that was #vpsie, #flycheap, #guardian and the
-    default channel -- "I should be able to talk with them" in #vpsie went
+    for channels the bot is a member of: whatever the owner types there, ATLAS
+    never hears. On 2026-09-27 that was #cloudco, #flycheap, #guardian and the
+    default channel -- "I should be able to talk with them" in #cloudco went
     nowhere, and nothing anywhere said so.
 
     Read only: `conversations.info`. Joining is a write, and without the
@@ -423,7 +423,7 @@ class CommsModule:
             # still reaches a phone — and if they are dead too, nothing is
             # lost by having tried.
             Check("reachable", check_reachable, timedelta(minutes=5),
-                  Severity.CRITICAL, "a channel that can reach Miro",
+                  Severity.CRITICAL, "a channel that can reach the owner",
                   baseline_sigma=None, timeout=timedelta(seconds=25)),
             Check("last_send", check_last_send, timedelta(minutes=5),
                   Severity.HIGH, "whether the last message landed",

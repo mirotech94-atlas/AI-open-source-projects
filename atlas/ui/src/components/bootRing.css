@@ -1,0 +1,57 @@
+/* ATLAS boot ring. Colours come from command.css tokens (--brand, --amber,
+   --red, --grey); only transform and opacity animate, so it stays off the
+   main thread's layout. */
+.br-wrap { margin: 4px auto 0; width: min(100%, 420px); text-align: center; }
+.br { display: block; width: 100%; height: auto; max-width: 420px; margin: 0 auto;
+      color: var(--brand, #5b8cff); overflow: visible; }
+.br-s-unknown { color: var(--grey, #8a8f99); }
+.br-r { transform-origin: 50% 50%; }
+.br circle, .br path { fill: none; vector-effect: non-scaling-stroke; }
+.br-tick { stroke: currentColor; stroke-width: 1.2; opacity: .7; }
+.br-line { stroke: currentColor; stroke-width: 2; opacity: .85; }
+.br-thin { stroke: currentColor; stroke-width: 1; opacity: .3; }
+.br-arc { stroke: currentColor; stroke-width: 4; opacity: .9; }
+.br-arc.br-fat { stroke-width: 6; opacity: .8; }
+.br-arc.br-seg-amber { stroke: var(--amber, #f5a524); stroke-width: 6; opacity: 1; }
+.br-arc.br-seg-red { stroke: var(--red, #f87171); stroke-width: 6; opacity: 1; }
+.br-dots { stroke: currentColor; stroke-width: 3; opacity: .55; }
+.br-disc { fill: var(--ground, #0a0d14); stroke: currentColor; stroke-width: 2; }
+.br-s-unknown .br-disc { stroke-dasharray: 4 6; opacity: .9; }
+.br-name { fill: var(--ink, #eef2fa); font: 800 30px/1 var(--font-display, system-ui, sans-serif);
+           letter-spacing: .22em; text-indent: .22em; }
+.br-s-unknown .br-name { fill: var(--grey, #8a8f99); }
+.br-word { fill: currentColor; font: 700 11px/1 var(--mono, ui-monospace, monospace); letter-spacing: .3em; }
+.br-s-degraded .br-word { fill: var(--amber, #f5a524); }
+.br-s-failing .br-word { fill: var(--red, #f87171); }
+.br-cap { display: flex; justify-content: center; gap: 14px; margin-top: 2px;
+          font: 11px/1.4 var(--mono, ui-monospace, monospace); color: var(--text-faint, #8e99ae);
+          letter-spacing: .06em; }
+.br-mode { text-transform: uppercase; letter-spacing: .14em; color: var(--text-dim, #a3adc2); }
+.br-mode[data-mode="unknown"] { color: var(--grey, #8a8f99); }
+
+@keyframes br-cw { to { transform: rotate(360deg); } }
+@keyframes br-ccw { to { transform: rotate(-360deg); } }
+@keyframes br-breathe { 0%, 100% { opacity: .55; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.04); } }
+@keyframes br-in { from { opacity: 0; transform: scale(.55) rotate(-90deg); } to { opacity: 1; transform: none; } }
+@keyframes br-light { from { opacity: 0; } to { opacity: 1; } }
+
+/* Idle: the rings turn slowly at different speeds and directions. */
+.br-spin .br-r1 { animation: br-cw 70s linear infinite; }
+.br-spin .br-r2 { animation: br-ccw 46s linear infinite; }
+.br-spin .br-r3 { animation: br-cw 28s linear infinite; }
+.br-spin .br-r4 { animation: br-ccw 20s linear infinite; }
+.br-spin .br-r0 { animation: br-cw 240s linear infinite; }
+.br-pulse .br-halo { transform-origin: 50% 50%; animation: br-breathe 4.2s ease-in-out infinite; }
+
+/* Boot: rim, then each ring draws in (scale + turn), then the core lights. */
+.br-boot .br-r { opacity: 0; animation: br-in .9s cubic-bezier(.2,.7,.2,1) forwards; }
+.br-boot .br-r0 { animation-delay: 0s; }
+.br-boot .br-r1 { animation-delay: .3s; }
+.br-boot .br-r2 { animation-delay: .6s; }
+.br-boot .br-r3 { animation-delay: .9s; }
+.br-boot .br-r4 { animation-delay: 1.2s; }
+.br-boot .br-core { opacity: 0; animation: br-light .8s ease-out 1.9s forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .br *, .br { animation: none !important; transition: none !important; }
+}

@@ -4,9 +4,10 @@ import { HealthBadge } from "../components/Health";
 import { useFresh } from "../hooks/useFresh";
 import { coreLabel, micBadgeAction, voiceHint } from "./detectorCore";
 import { graphLayout, planFocus } from "./focus";
-import type { Turn, useVoice } from "./useVoice";
+import type { Turn, useVoice, VoiceSource } from "./useVoice";
 import type { Phase } from "./loop";
 import { tapLabel } from "./interrupt";
+import { SpeakingSparks } from "./SpeakingSparks";
 
 const BARS = 38;
 
@@ -56,19 +57,21 @@ export function MicBadge({ voice }: { voice: ReturnType<typeof useVoice> }): JSX
     listening: phrase && voice.phase === "dormant" ? "Listening for “atlas”" : "Mic open",
     streaming: "Streaming to ATLAS",
   };
-  // The badge mutes and unmutes; it never wakes (see `micBadgeAction`).
+  // The badge mutes, unmutes or restarts; it never wakes (see `micBadgeAction`).
   const action = micBadgeAction(voice);
   return (
     <button
       className="micbadge"
       data-mic={voice.mic}
       data-muted={String(!voice.handsFree)}
-      onClick={action ? voice.toggleMic : undefined}
+      onClick={voice.toggleMic}
       title={
         voice.mic === "denied"
           ? "Permission was refused. Allow the microphone in your browser settings."
           : voice.mic === "unavailable"
             ? "No microphone is available on this device."
+            : action === "restart"
+              ? "Mic is off — tap to start listening again"
             : action === "unmute"
               ? "Muted — tap to turn hands-free listening (and pinch-to-wake) back on"
               : action === "mute"
@@ -94,7 +97,7 @@ export function MicBadge({ voice }: { voice: ReturnType<typeof useVoice> }): JSX
  *  whenever the badge would mute: an open mic, or a dormant pinch. */
 export function MuteButton({ voice }: { voice: ReturnType<typeof useVoice> }): JSX.Element | null {
   const action = micBadgeAction(voice);
-  if (!action) return null;
+  if (action === "restart") return null;
   return (
     <button className="voice-mute" data-action={action} onClick={voice.toggleMic}
             title={action === "mute"
@@ -135,14 +138,37 @@ export function VoiceHints({ voice, always = false }: {
   const hint = voiceHint(voice);
   const missing = voice.capabilities?.missing ?? [];
   const showMissing = missing.length > 0 && (always || voice.phase !== "dormant");
-  if (!hint && !showMissing) return null;
+  const source = voice.capabilities?.voice_source;
+  const showSource = !!source && (always || voice.phase !== "dormant");
+  if (!hint && !showMissing && !showSource) return null;
   return (
     <div className="voice-hints">
       {hint && <p className="stamp voice-hint">{hint}</p>}
+      {showSource && source && <VoiceSourceLine source={source} />}
       {showMissing && (
         <p className="missing">Not configured: {missing.join(" · ")}</p>
       )}
     </div>
+  );
+}
+
+/** Which voice speaks, its health with the time it was read, and that it is
+ *  an AI voice. UNKNOWN is grey and dashed with the word shown, never OK. */
+function VoiceSourceLine({ source }: { source: VoiceSource }): JSX.Element {
+  const read = new Date(source.as_of);
+  const at = Number.isNaN(read.getTime()) ? "?"
+    : read.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const ok = source.health === "ok";
+  const fallback = source.speaking === "fish" ? "Fish Audio speaks"
+    : source.speaking === "none" ? "no voice" : "";
+  return (
+    <p className="voice-source" data-health={ok ? "ok" : "unknown"}>
+      <i aria-hidden="true" />
+      {ok ? `Voice: ${source.voice}`
+        : `Voice: ${source.voice} UNKNOWN${source.reason ? ` (${source.reason})` : ""}`
+          + (fallback ? ` · ${fallback}` : "")}
+      {` · ${source.disclosure} · read ${at}`}
+    </p>
   );
 }
 
@@ -390,13 +416,17 @@ export function VoiceOverlay({ voice, onStage = false }: {
           >
             <span className="core-dot" aria-hidden="true" />
           </button>
+          <SpeakingSparks voice={voice} />
           {phase === "dormant" && (
             <span className="hint">{voiceHint(voice)}</span>
           )}
         </div>
 
         {awake && (
-          <>
+          <div
+            className="voice-body"
+            onClick={(e): void => { if (e.target === e.currentTarget) voice.dismiss(); }}
+          >
             <div className="voice-status">
               <StatusPill voice={voice} />
               {phase === "waking" && <span className="chip">Wake phrase detected</span>}
@@ -441,7 +471,7 @@ export function VoiceOverlay({ voice, onStage = false }: {
             )}
 
             <VoiceHints voice={voice} />
-          </>
+          </div>
         )}
       </div>
     </div>

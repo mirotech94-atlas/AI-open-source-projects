@@ -3,7 +3,7 @@ bad website.
 
 Prospecting, auditing and ranking stay Tier AUTO — none of it leaves the box.
 Outreach and deploy are Tier 2: this agent may call them, but only as a
-proposal Miro decides on, never as something it reports done on its own say.
+proposal the owner decides on, never as something it reports done on its own say.
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ register(Skill(
     name="Leading with the finding, not the pitch",
     triggers=("agency", "prospect", "lead", "outreach", "audit finding",
               "cold email", "local business"),
-    agents=("agency",),
+    agents=("sites", "sales"),
     priority=85,
     body="""
 Lead with the audit finding, in one sentence a shop owner can check for
@@ -34,7 +34,7 @@ whether to prospect at all, not a detail to mention after the fact.
 Outreach is sent only as a Tier 2 proposal, checked against a suppression
 list and a daily cap — never reported as sent when the tool has only queued
 it for approval. The same is true of deploying a built site to a client's
-own production: it runs on Miro's word, not on this agent's judgement that
+own production: it runs on the owner's word, not on this agent's judgement that
 the mockup looks ready. Buying the domain is different in kind, not degree —
 it is money out, permanently denied, and no proposal will ever put it in
 front of him.

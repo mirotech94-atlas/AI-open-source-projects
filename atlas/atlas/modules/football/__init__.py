@@ -1,6 +1,6 @@
 """Football (soccer) data for the reels lane -- a read-only collector.
 
-Miro, 2026-09-29: a football lane in the AI reels, made only from our own
+the owner, 2026-09-29: a football lane in the AI reels, made only from our own
 material -- animated stats, bold text, original stylised visuals -- and
 every number from API-Football (`api.py`, `facts.py`). This module reads;
 it never writes anywhere outside ATLAS. The drafting action lives with the

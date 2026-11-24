@@ -2,7 +2,7 @@
 
 Two behaviours live here:
 
-1. **Follow-ups.** A thread where Miro sent the last message and it reads as
+1. **Follow-ups.** A thread where the owner sent the last message and it reads as
    an ask (a question, or a stock asking phrase) is recorded in
    `mail_followups`. It clears the moment anyone else's message lands in the
    thread. One that has sat unanswered for `min_days` business days (default
@@ -232,12 +232,25 @@ async def check_followups() -> Observation:
         from . import _api, _body_text, _header
 
         data = await _api("/threads", q="from:me newer_than:14d", maxResults=50)
+        if not isinstance(data, dict) or not (
+                "threads" in data or "resultSizeEstimate" in data):
+            # An answer that is neither a thread list nor an honest empty one
+            # (Gmail sends `resultSizeEstimate` with no `threads` when there
+            # are none) is not a reading: zero follow-ups would be a guess.
+            return Observation(
+                "followups", Health.UNKNOWN,
+                detail="Gmail's thread list had no threads and no size "
+                       "estimate, so 'none waiting' cannot be told from a "
+                       "bad answer")
         threads = data.get("threads", [])
         gate = asyncio.Semaphore(6)
 
         async def _one(tid: str) -> dict:
             async with gate:
-                return await _api(f"/threads/{tid}", format="metadata")
+                # `full`, not `metadata`: the ask-test reads the body, and a
+                # metadata thread has none, so every thread read as "not an
+                # ask" and the check said zero forever.
+                return await _api(f"/threads/{tid}", format="full")
 
         fulls = await asyncio.gather(*(_one(t["id"]) for t in threads))
     except Exception as exc:                            # noqa: BLE001

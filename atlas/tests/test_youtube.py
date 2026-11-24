@@ -45,7 +45,23 @@ CREDENTIAL_ENV = (
     "YOUTUBE_GUARDIAN_REFRESH_TOKEN", "YOUTUBE_GUARDIAN_CHANNEL_ID",
     "YOUTUBE_CLIPS_CLIENT_ID", "YOUTUBE_CLIPS_CLIENT_SECRET",
     "YOUTUBE_CLIPS_REFRESH_TOKEN", "YOUTUBE_CLIPS_CHANNEL_ID",
+    "YOUTUBE_ECC_CLIENT_ID", "YOUTUBE_ECC_CLIENT_SECRET",
+    "YOUTUBE_ECC_REFRESH_TOKEN", "YOUTUBE_ECC_CHANNEL_ID",
+    "YOUTUBE_MMT_CLIENT_ID", "YOUTUBE_MMT_CLIENT_SECRET",
+    "YOUTUBE_MMT_REFRESH_TOKEN", "YOUTUBE_MMT_CHANNEL_ID",
 )
+
+
+# FlyCheap and Guardian were removed on 2026-10-29. The upload, token and
+# stats mechanics are channel-generic, so these tests keep two stand-in
+# channels under the old names; the real map is only clips and ecc.
+_REAL_CHANNELS = dict(api.CHANNELS)
+
+
+@pytest.fixture(autouse=True)
+def _stand_in_channels(monkeypatch):
+    monkeypatch.setitem(api.CHANNELS, "flycheap", "YOUTUBE_FLYCHEAP_")
+    monkeypatch.setitem(api.CHANNELS, "guardian", "YOUTUBE_GUARDIAN_")
 
 
 @pytest.fixture(autouse=True)
@@ -376,6 +392,51 @@ async def test_analytics_happy_path_parses_columns_and_rows(monkeypatch):
     assert "read_at" in data
 
 
+async def test_analytics_reads_retention_and_comments(monkeypatch):
+    _set_flycheap_creds(monkeypatch)
+
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+    seen = {}
+
+    async def fake_get_json(url, **kwargs):
+        seen.update(kwargs["params"])
+        return {
+            "columnHeaders": [{"name": n} for n in (
+                "views", "estimatedMinutesWatched", "likes", "comments",
+                "averageViewDuration", "averageViewPercentage")],
+            "rows": [[123, 456.0, 7, 2, 95, 48.5]],
+        }, None
+    monkeypatch.setattr(api, "get_json", fake_get_json)
+
+    data, reason = await api.analytics("flycheap", "vid1", 7)
+    assert reason is None
+    assert seen["metrics"] == ("views,estimatedMinutesWatched,likes,comments,"
+                               "averageViewDuration,averageViewPercentage")
+    assert data["comments"] == 2
+    assert data["average_view_duration"] == 95
+    assert data["average_view_percentage"] == 48.5
+
+
+async def test_analytics_absent_columns_are_none_not_zero(monkeypatch):
+    _set_flycheap_creds(monkeypatch)
+
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+
+    async def fake_get_json(url, **kwargs):
+        return {"columnHeaders": [{"name": "views"}], "rows": [[5]]}, None
+    monkeypatch.setattr(api, "get_json", fake_get_json)
+
+    data, reason = await api.analytics("flycheap", "vid1", 7)
+    assert reason is None and data["views"] == 5
+    assert data["comments"] is None
+    assert data["average_view_duration"] is None
+    assert data["average_view_percentage"] is None
+
+
 async def test_analytics_no_rows_is_a_reason(monkeypatch):
     _set_flycheap_creds(monkeypatch)
 
@@ -410,6 +471,341 @@ async def test_upload_action_declares_no_privacy_param():
     privacy is not something a caller can hand in at all."""
     actions = {a.name: a for a in youtube.MODULE.actions()}
     assert "privacy" not in actions["youtube.upload"].params
+
+
+def _capture_upload_body(monkeypatch, tmp_path) -> dict:
+    """Fake the YouTube client; the returned dict gets the init body."""
+    _set_flycheap_creds(monkeypatch)
+
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+    video_path = tmp_path / "v.mp4"
+    video_path.write_bytes(b"z" * 10)
+    seen: dict = {"path": str(video_path)}
+
+    class FakeResponse:
+        status_code = 200
+
+        def __init__(self):
+            self.headers = {"Location": "https://upload.example/s"}
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"id": "vid1"}
+
+    class FakeClient:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, **kw):
+            seen["body"] = kw["json"]
+            return FakeResponse()
+
+        async def put(self, url, **kw):
+            return FakeResponse()
+
+    monkeypatch.setattr(api.httpx, "AsyncClient", FakeClient)
+    return seen
+
+
+async def test_upload_sends_education_category_british_english_and_every_tag(
+        monkeypatch, tmp_path):
+    """Plan rule 15: category 27, en-GB, and all the tags full_tags made --
+    the 15-tag slice was why every tutorial carried 15."""
+    seen = _capture_upload_body(monkeypatch, tmp_path)
+    tags = [f"tag {i}" for i in range(22)]
+    _result, reason = await api.upload(
+        "flycheap", seen["path"], "T", "D", tags,
+        category_id=api.EDUCATION, language=api.TUTORIAL_LANGUAGE)
+    assert reason is None, reason
+    snippet = seen["body"]["snippet"]
+    assert snippet["categoryId"] == "27"
+    assert snippet["defaultLanguage"] == "en-GB"
+    assert snippet["defaultAudioLanguage"] == "en-GB"
+    assert snippet["tags"] == tags
+
+
+async def test_a_default_upload_carries_no_category_or_language(monkeypatch, tmp_path):
+    """The clips lane and youtube.upload must not be stamped Education/en-GB."""
+    seen = _capture_upload_body(monkeypatch, tmp_path)
+    _result, reason = await api.upload("flycheap", seen["path"], "T", "D", ["a"])
+    assert reason is None, reason
+    snippet = seen["body"]["snippet"]
+    for key in ("categoryId", "defaultLanguage", "defaultAudioLanguage"):
+        assert key not in snippet
+
+
+async def test_a_synthetic_upload_declares_contains_synthetic_media(monkeypatch, tmp_path):
+    """the owner 2026-10-17: Academy uploads set status.containsSyntheticMedia
+    (developers.google.com/youtube/v3/docs/videos, read 2026-10-17)."""
+    seen = _capture_upload_body(monkeypatch, tmp_path)
+    _result, reason = await api.upload("flycheap", seen["path"], "T", "D", ["a"],
+                                       synthetic=True)
+    assert reason is None, reason
+    assert seen["body"]["status"] == {"privacyStatus": "private",
+                                      "containsSyntheticMedia": True}
+
+
+async def test_a_default_upload_declares_nothing_synthetic(monkeypatch, tmp_path):
+    seen = _capture_upload_body(monkeypatch, tmp_path)
+    _result, reason = await api.upload("flycheap", seen["path"], "T", "D", ["a"])
+    assert reason is None, reason
+    assert "containsSyntheticMedia" not in seen["body"]["status"]
+
+
+async def test_set_privacy_resends_the_synthetic_flag_when_asked(monkeypatch):
+    """An Academy visibility change sends the flag again, never false."""
+    seen = _status_api(monkeypatch, LIVE_STATUS)
+    _r, why = await api.set_privacy("flycheap", "abcdefghijk", "public", synthetic=True)
+    assert why is None
+    assert seen["puts"][-1]["params"] == {"part": "status"}
+    assert seen["puts"][-1]["json_body"]["status"]["containsSyntheticMedia"] is True
+    _r, why = await api.set_privacy("flycheap", "abcdefghijk", "private")
+    assert "containsSyntheticMedia" not in seen["puts"][-1]["json_body"]["status"]
+
+
+async def test_set_privacy_keeps_every_other_writable_status_field(monkeypatch):
+    """videos.update deletes an omitted status field (docs/videos/update, read
+    2026-10-17): a visibility change resends licence, embeddable and stats
+    as read, for every caller (clips, church, the Academy)."""
+    seen = _status_api(monkeypatch, {**LIVE_STATUS, "privacyStatus": "private",
+                                     "license": "creativeCommon", "embeddable": False,
+                                     "publicStatsViewable": False})
+    data, why = await api.set_privacy("clips", "abcdefghijk", "public")
+    assert why is None and data is not None
+    assert seen["puts"][-1]["json_body"] == {"id": "abcdefghijk", "status": {
+        "privacyStatus": "public", "license": "creativeCommon", "embeddable": False,
+        "publicStatsViewable": False, "selfDeclaredMadeForKids": False}}
+
+
+async def test_set_privacy_clears_a_schedule_as_it_always_did(monkeypatch):
+    """A visibility change is a decision now: a pending publishAt is not
+    resent (church's rollback sets a scheduled Short private for good)."""
+    seen = _status_api(monkeypatch, {"privacyStatus": "private",
+                                     "publishAt": "2026-10-20T16:00:00Z"})
+    await api.set_privacy("clips", "abcdefghijk", "private")
+    assert "publishAt" not in seen["puts"][-1]["json_body"]["status"]
+
+
+async def test_set_privacy_writes_nothing_when_the_status_cannot_be_read(monkeypatch):
+    seen = _status_api(monkeypatch, LIVE_STATUS, read_fails=True)
+    data, why = await api.set_privacy("clips", "abcdefghijk", "public")
+    assert data is None and "503" in why and seen["puts"] == []
+
+
+def _status_api(monkeypatch, status, *, read_fails=False):
+    """api.token, get_json and _put_json faked around one video's status."""
+    seen: dict = {"puts": []}
+
+    async def fake_token(channel):
+        return "tok", None
+
+    async def fake_get(url, **kw):
+        seen["get"] = kw
+        if read_fails:
+            return None, "HTTP 503"
+        return {"items": [{"id": "abcdefghijk", "status": status}]}, None
+
+    async def fake_put(url, **kw):
+        seen["puts"].append(kw)
+        return {"id": "abcdefghijk"}, None
+    monkeypatch.setattr(api, "token", fake_token)
+    monkeypatch.setattr(api, "get_json", fake_get)
+    monkeypatch.setattr(api, "_put_json", fake_put)
+    return seen
+
+
+LIVE_STATUS = {"uploadStatus": "processed", "privacyStatus": "public",
+               "license": "youtube", "embeddable": True, "publicStatsViewable": True,
+               "madeForKids": False, "selfDeclaredMadeForKids": False}
+
+
+async def test_video_status_reads_part_status_fresh(monkeypatch):
+    seen = _status_api(monkeypatch, LIVE_STATUS)
+    got, why = await api.video_status("clips", "abcdefghijk")
+    assert why is None and got == LIVE_STATUS
+    assert seen["get"]["params"] == {"part": "status", "id": "abcdefghijk"}
+
+
+async def test_set_synthetic_resends_every_writable_status_field(monkeypatch):
+    """videos.update deletes an omitted status field (except this flag and
+    selfDeclaredMadeForKids; docs/videos/update, read 2026-10-17), so the
+    fresh-read privacy, licence, embeddable and stats fields go back as read."""
+    seen = _status_api(monkeypatch, LIVE_STATUS)
+    previous, why = await api.set_synthetic("clips", "abcdefghijk", True)
+    assert why is None and previous is False
+    put = seen["puts"][-1]
+    assert put["params"] == {"part": "status"}
+    assert put["json_body"] == {"id": "abcdefghijk", "status": {
+        "privacyStatus": "public", "license": "youtube", "embeddable": True,
+        "publicStatsViewable": True, "selfDeclaredMadeForKids": False,
+        "containsSyntheticMedia": True}}
+
+
+async def test_set_synthetic_keeps_publish_at_only_on_a_private_video(monkeypatch):
+    seen = _status_api(monkeypatch, {"privacyStatus": "private",
+                                     "publishAt": "2026-10-20T16:00:00Z",
+                                     "containsSyntheticMedia": False})
+    await api.set_synthetic("clips", "abcdefghijk", True)
+    assert seen["puts"][-1]["json_body"]["status"]["publishAt"] == "2026-10-20T16:00:00Z"
+    seen = _status_api(monkeypatch, {"privacyStatus": "public",
+                                     "publishAt": "2026-10-01T16:00:00Z"})
+    await api.set_synthetic("clips", "abcdefghijk", True)
+    assert "publishAt" not in seen["puts"][-1]["json_body"]["status"]
+
+
+async def test_set_synthetic_writes_nothing_when_the_status_cannot_be_read(monkeypatch):
+    seen = _status_api(monkeypatch, LIVE_STATUS, read_fails=True)
+    previous, why = await api.set_synthetic("clips", "abcdefghijk", True)
+    assert previous is None and "503" in why and seen["puts"] == []
+    seen = _status_api(monkeypatch, {"license": "youtube"})   # no privacyStatus
+    previous, why = await api.set_synthetic("clips", "abcdefghijk", True)
+    assert previous is None and "privacyStatus" in why and seen["puts"] == []
+
+
+async def test_set_synthetic_can_set_the_flag_back_to_false(monkeypatch):
+    seen = _status_api(monkeypatch, {**LIVE_STATUS, "containsSyntheticMedia": True})
+    previous, why = await api.set_synthetic("clips", "abcdefghijk", False)
+    assert why is None and previous is True
+    assert seen["puts"][-1]["json_body"]["status"]["containsSyntheticMedia"] is False
+
+
+async def test_a_scheduled_upload_still_lands_private_with_publish_at(
+        monkeypatch, tmp_path):
+    """The church lane's scheduled Short: private now, YouTube's publishAt
+    makes it public later. Nothing about the privacy gate changes."""
+    from datetime import UTC, datetime, timedelta
+    seen = _capture_upload_body(monkeypatch, tmp_path)
+    when = datetime.now(UTC) + timedelta(days=2)
+    _result, reason = await api.upload("flycheap", seen["path"], "T", "D", ["a"],
+                                       publish_at=when)
+    assert reason is None, reason
+    status = seen["body"]["status"]
+    assert status["privacyStatus"] == "private"
+    assert status["publishAt"] == when.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+async def test_a_publish_at_in_the_past_or_naive_is_refused_before_the_network():
+    from datetime import UTC, datetime, timedelta
+    for when in (datetime.now(UTC) - timedelta(minutes=1),
+                 datetime.fromisoformat("2030-01-01T09:00")):  # naive on purpose
+        _result, reason = await api.upload("flycheap", "/nope.mp4", "T", "D", [],
+                                           publish_at=when)
+        assert reason and "publish_at" in reason
+
+
+def test_tags_are_cut_where_youtube_counts_500_characters():
+    """Final review I4: the separating commas count too, as
+    tutorial_series.tags_cost and tutorials.tags_length count them."""
+    from atlas.modules.academy import tutorial_series as ts
+    from atlas.modules.academy import tutorials as tut
+    tags = ["a" * 100] * 6                      # 5 of them are 504 with commas
+    assert api.tags_within(tags) == ["a" * 100] * 4
+    spaced = ["two words"] * 60                 # 11 each, +1 comma after the first
+    kept = api.tags_within(spaced)
+    assert len(kept) == 41                      # 41*11 + 40 = 491; 42 would be 503
+    for cost in (ts.tags_cost, tut.tags_length):
+        assert cost(kept) <= api.TAGS_CHARS < cost(spaced[:len(kept) + 1])
+
+
+def _final_put_fails(monkeypatch, tmp_path, fail) -> str:
+    """The init POST works; the one (final) PUT does `fail()`."""
+    _set_flycheap_creds(monkeypatch)
+
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+    video_path = tmp_path / "v.mp4"
+    video_path.write_bytes(b"z" * 10)
+
+    class Init:
+        status_code = 200
+
+        @property
+        def headers(self) -> dict:
+            return {"Location": "https://upload.example/s"}
+
+        def raise_for_status(self):
+            pass
+
+    class FakeClient:
+        def __init__(self, *a, **k): ...
+        async def __aenter__(self): return self
+        async def __aexit__(self, *a): return False
+
+        async def post(self, url, **kw):
+            return Init()
+
+        async def put(self, url, **kw):
+            return fail()
+
+    monkeypatch.setattr(api.httpx, "AsyncClient", FakeClient)
+    return str(video_path)
+
+
+def _status(code: int):
+    def fail():
+        req = httpx.Request("PUT", "https://upload.example/s")
+        return httpx.Response(code, request=req)
+    return fail
+
+
+async def test_a_timeout_on_the_final_put_reads_as_unknown_not_refused(
+        monkeypatch, tmp_path):
+    """Final review I1: YouTube may already hold the video, so the caller's
+    idempotency.finish must keep its claim, never release it for a resend."""
+    from atlas.kernel import idempotency
+
+    def timeout():
+        raise httpx.ReadTimeout("slow", request=httpx.Request("PUT", "https://x"))
+    path = _final_put_fails(monkeypatch, tmp_path, timeout)
+    result, reason = await api.upload("flycheap", path, "T", "D", [])
+    assert result is None and idempotency.uncertain(reason), reason
+
+
+async def test_a_5xx_or_an_unreadable_2xx_on_the_final_put_reads_as_unknown(
+        monkeypatch, tmp_path):
+    from atlas.kernel import idempotency
+    path = _final_put_fails(monkeypatch, tmp_path, _status(503))
+    _r, reason = await api.upload("flycheap", path, "T", "D", [])
+    assert idempotency.uncertain(reason), reason
+
+    class NotJson:
+        status_code = 200
+
+        @property
+        def headers(self) -> dict:
+            return {}
+
+        def json(self):
+            raise ValueError("Expecting value")
+
+    class NoId(NotJson):
+        def json(self):
+            return {"kind": "youtube#video"}
+    for body in (NotJson, NoId):
+        path = _final_put_fails(monkeypatch, tmp_path, body)
+        _r, reason = await api.upload("flycheap", path, "T", "D", [])
+        assert reason.startswith("expected JSON"), reason
+        assert idempotency.uncertain(reason)
+
+
+async def test_a_400_on_the_final_put_is_a_certain_refusal_with_its_channel(
+        monkeypatch, tmp_path):
+    from atlas.kernel import idempotency
+    path = _final_put_fails(monkeypatch, tmp_path, _status(400))
+    _r, reason = await api.upload("flycheap", path, "T", "D", [])
+    assert reason.startswith("flycheap: HTTP 400"), reason
+    assert not idempotency.uncertain(reason)
 
 
 async def test_upload_resumable_flow_uses_correct_content_range(monkeypatch, tmp_path):
@@ -630,10 +1026,16 @@ async def test_upload_rollback_confirms_private_never_deletes(monkeypatch):
 
 # ------------------------------------------------------ the clips channel
 
-def test_the_channels_are_exactly_flycheap_guardian_and_clips():
-    assert api.CHANNELS == {"flycheap": "YOUTUBE_FLYCHEAP_",
-                            "guardian": "YOUTUBE_GUARDIAN_",
-                            "clips": "YOUTUBE_CLIPS_"}
+def test_the_channels_are_exactly_clips_ecc_and_mmt():
+    assert _REAL_CHANNELS == {"clips": "YOUTUBE_CLIPS_",
+                            "ecc": "YOUTUBE_ECC_",
+                            "mmt": "YOUTUBE_MMT_"}
+
+
+def test_the_generic_upload_never_reaches_the_ecc_channel():
+    """The church channel posts only reviewed videos, through its own card."""
+    assert youtube.vet_upload({"channel": "ecc"}) == youtube.CHURCH_ONLY
+    assert youtube.vet_upload({"channel": "flycheap"}) is None
 
 
 async def test_an_unset_clips_channel_reads_not_configured_never_ok():
@@ -662,19 +1064,62 @@ async def test_the_generic_upload_never_reaches_the_clips_channel(monkeypatch,
         assert not got.ok and "clips.publish_clip_youtube" in got.detail
 
 
-async def test_a_clips_video_goes_public_only_through_the_lane(monkeypatch):
-    async def never(*_a, **_k):
-        raise AssertionError("refused before YouTube is asked")
+async def test_a_clips_video_goes_public_only_if_it_is_an_academy_upload(monkeypatch):
+    """the owner 2026-11-14: unlisted is open on the clips channel; public needs the
+    video to be one this module uploaded for the Academy."""
+    seen = []
 
-    monkeypatch.setattr(api, "current_privacy", never)
+    async def current(*_a, **_k):
+        seen.append("read")
+        return None, "stop here"
+
+    async def known(_vid):
+        return False
+
+    monkeypatch.setattr(api, "current_privacy", current)
+    monkeypatch.setattr(youtube, "_is_academy", known)
+    for fn in (youtube.set_visibility, youtube.set_visibility_dry):
+        got = await fn("clips", "vid1", "public")
+        assert not got.ok and "clips.publish_clip_youtube" in got.detail
+    assert seen == []                       # refused before YouTube is asked
+    got = await youtube.set_visibility("clips", "vid1", "unlisted")
+    assert not got.ok and seen == []        # unlisted needs the Academy record too
+
+    async def yes(_vid):
+        return True
+
+    monkeypatch.setattr(youtube, "_is_academy", yes)
+    await youtube.set_visibility("clips", "vid1", "unlisted")
+    await youtube.set_visibility("clips", "vid1", "public")
+    assert seen == ["read", "read"]         # an Academy upload may go unlisted or public
     vet = {a.name: a for a in youtube.MODULE.actions()}["youtube.set_visibility"].vet
-    for privacy in ("public", "unlisted"):
-        assert vet({"channel": "clips", "privacy": privacy}) is not None
-        for fn in (youtube.set_visibility, youtube.set_visibility_dry):
-            got = await fn("clips", "vid1", privacy)
-            assert not got.ok and "clips.publish_clip_youtube" in got.detail
-    assert vet({"channel": "clips", "privacy": "private"}) is None
-    assert vet({"channel": "flycheap", "privacy": "public"}) is None
+    assert vet({"channel": "clips", "privacy": "public"}) is None   # the card is raised
+    assert vet({"channel": "mmt", "privacy": "public"}) is not None
+
+
+async def test_the_academy_staging_folder_may_use_the_generic_upload(monkeypatch,
+                                                                     tmp_path):
+    stage = tmp_path / "video"
+    stage.mkdir()
+    monkeypatch.setenv("ACADEMY_STAGING_DIR", str(stage))
+    good = stage / "lesson.mp4"
+    good.write_bytes(b"mp4")
+    (stage / "link.mp4").symlink_to(good)
+    assert not api.academy_video_path(str(good))            # no gate file yet
+    import hashlib
+    import json
+    gate = stage / "lesson.mp4.gate.json"
+    gate.write_text(json.dumps({"approved": True,
+                                "sha256": hashlib.sha256(b"mp4").hexdigest()}))
+    assert api.academy_video_path(str(good))
+    good.write_bytes(b"changed")
+    assert not api.academy_video_path(str(good))            # stale gate
+    good.write_bytes(b"mp4")
+    assert not api.academy_video_path(str(stage / "link.mp4"))
+    assert not api.academy_video_path(str(tmp_path / "lesson.mp4"))
+    vet = {a.name: a for a in youtube.MODULE.actions()}["youtube.upload"].vet
+    assert vet({"channel": "clips", "path": str(good)}) is None
+    assert vet({"channel": "clips", "path": str(tmp_path / "x.mp4")}) is not None
 
 
 @pytest.mark.parametrize("where", [
@@ -950,6 +1395,11 @@ async def test_check_latest_videos_writes_rows(monkeypatch):
     assert calls
     assert "youtube_videos" in calls[0][0]
     assert calls[0][1][1] == "v1"
+    # publishedAt arrives as an ISO string ending in Z; the row gets a
+    # datetime (asyncpg refused the string on the first live refresh,
+    # 2026-10-11).
+    from datetime import UTC, datetime
+    assert calls[0][1][3] == datetime(2026, 9, 1, tzinfo=UTC)
 
 
 async def test_check_latest_videos_keeps_the_48_hour_reading(monkeypatch):
@@ -1067,17 +1517,18 @@ def test_module_requires_no_env():
 
 
 def test_module_optional_env_lists_all_twelve_channel_vars():
-    assert set(youtube.MODULE.optional_env) == set(CREDENTIAL_ENV)
+    assert set(youtube.MODULE.optional_env) == set(CREDENTIAL_ENV[8:])
 
 
 def test_checks_cover_every_channel_with_expected_baselines():
-    checks = {c.name: c for c in youtube.MODULE.checks()}
+    checks = {c.name: c for c in youtube.MODULE.checks()
+              if c.name.split("_")[0] in _REAL_CHANNELS}
     assert set(checks) == {
-        "flycheap_token", "flycheap_stats", "flycheap_latest_videos",
-        "guardian_token", "guardian_stats", "guardian_latest_videos",
         "clips_token", "clips_stats", "clips_latest_videos",
+        "ecc_token", "ecc_stats", "ecc_latest_videos",
+        "mmt_token", "mmt_stats", "mmt_latest_videos",
     }
-    for channel in ("flycheap", "guardian", "clips"):
+    for channel in ("clips", "ecc", "mmt"):
         assert checks[f"{channel}_token"].baseline_sigma is None
         assert checks[f"{channel}_stats"].baseline_sigma == 3.0
         assert checks[f"{channel}_latest_videos"].baseline_sigma is None
@@ -1138,11 +1589,6 @@ async def test_draft_metadata_rollback_marks_the_row_dropped(monkeypatch):
 
 # --------------------------------------------------------- metadata.py
 
-def test_business_links_use_the_same_env_vars_as_the_business_modules():
-    assert metadata.BUSINESS_LINKS["flycheap"] == "https://flycheap.live"
-    assert metadata.BUSINESS_LINKS["guardian"] == "https://guarder.io"
-
-
 async def test_draft_metadata_refuses_when_gather_fails(monkeypatch):
     async def fake_gather(source):
         return wrap_untrusted("", source), "no weekly report found"
@@ -1169,6 +1615,7 @@ async def test_draft_metadata_appends_the_business_link_when_missing(monkeypatch
             provider="fake", model="fake")
     monkeypatch.setattr(metadata, "think", fake_think)
 
+    monkeypatch.setitem(metadata.BUSINESS_LINKS, "flycheap", "https://demo.example")
     result = await metadata.draft_metadata("flycheap", "note:hi")
     assert "error" not in result
     assert metadata.BUSINESS_LINKS["flycheap"] in result["description"]
@@ -1228,3 +1675,280 @@ def test_title_and_tags_are_capped():
         "CHAPTERS: none")
     assert fields["title"] == "x" * 200   # capping happens in draft_metadata
     assert len(fields["tags"]) == 30      # capping happens in draft_metadata
+
+
+async def test_set_captions_posts_a_multipart_srt_in_british_english(monkeypatch):
+    _set_flycheap_creds(monkeypatch)
+
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+    seen = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"id": "cap1"}
+
+    class FakeClient:
+        def __init__(self, *a, **k):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def post(self, url, **kw):
+            seen.update(url=url, **kw)
+            return FakeResponse()
+
+    monkeypatch.setattr(api.httpx, "AsyncClient", FakeClient)
+    got, why = await api.set_captions("flycheap", "vid1", "1\n00:00:00,000 --> 00:00:01,000\nHi\n")
+    assert why is None and got == {"id": "cap1"}
+    assert seen["url"].startswith("https://www.googleapis.com/upload/youtube/v3/captions")
+    meta = seen["files"]["metadata"][1]
+    assert b'"language": "en-GB"' in meta and b'"videoId": "vid1"' in meta
+
+
+# ---------------------------------------------- comments (academy, task 6)
+
+async def test_post_comment_inserts_a_thread_and_returns_the_comment_id(monkeypatch):
+    seen = {}
+
+    async def fake_token(channel):
+        return "tok", None
+
+    async def fake_post_json(url, **kwargs):
+        seen["url"], seen["kw"] = url, kwargs
+        return {"id": "Ugthread", "snippet": {"topLevelComment": {"id": "Ugcomment"}}}, None
+    monkeypatch.setattr(api, "token", fake_token)
+    monkeypatch.setattr(api, "post_json", fake_post_json)
+    made, why = await api.post_comment("flycheap", "abcdefghijk", "hello")
+    assert why is None and made == {"id": "Ugcomment", "thread_id": "Ugthread"}
+    assert seen["url"] == f"{api.DATA_API}/commentThreads"
+    assert seen["kw"]["params"] == {"part": "snippet"}
+    body = seen["kw"]["json_body"]["snippet"]
+    assert body["videoId"] == "abcdefghijk"
+    assert body["topLevelComment"]["snippet"]["textOriginal"] == "hello"
+
+
+async def test_update_comment_edits_the_text_through_a_put(monkeypatch):
+    seen = {}
+
+    async def fake_token(channel):
+        return "tok", None
+
+    async def fake_put(url, **kwargs):
+        seen["url"], seen["kw"] = url, kwargs
+        return {"id": "Ugcomment"}, None
+    monkeypatch.setattr(api, "token", fake_token)
+    monkeypatch.setattr(api, "_put_json", fake_put)
+    made, why = await api.update_comment("flycheap", "Ugcomment", "(withdrawn)")
+    assert why is None and made == {"id": "Ugcomment"}
+    assert seen["url"] == f"{api.DATA_API}/comments"
+    assert seen["kw"]["json_body"] == {"id": "Ugcomment",
+                                       "snippet": {"textOriginal": "(withdrawn)"}}
+
+
+async def test_a_comment_on_an_unknown_channel_is_refused():
+    made, why = await api.post_comment("nope", "abcdefghijk", "x")
+    assert made is None and "unknown channel" in why
+    made, why = await api.update_comment("nope", "Ugcomment", "x")
+    assert made is None and "unknown channel" in why
+
+
+async def test_a_comment_answer_with_no_id_is_an_unknown_outcome(monkeypatch):
+    from atlas.kernel import idempotency
+
+    async def fake_token(channel):
+        return "tok", None
+
+    async def fake_post_json(url, **kwargs):
+        return {}, None
+    monkeypatch.setattr(api, "token", fake_token)
+    monkeypatch.setattr(api, "post_json", fake_post_json)
+    made, why = await api.post_comment("flycheap", "abcdefghijk", "x")
+    assert made is None and idempotency.uncertain(why)
+
+
+async def test_a_comment_timeout_reads_as_unknown(monkeypatch):
+    from atlas.kernel import idempotency
+
+    async def fake_token(channel):
+        return "tok", None
+
+    async def fake_post_json(url, **kwargs):
+        return None, "timed out after 25s"
+    monkeypatch.setattr(api, "token", fake_token)
+    monkeypatch.setattr(api, "post_json", fake_post_json)
+    _, why = await api.post_comment("flycheap", "abcdefghijk", "x")
+    assert idempotency.uncertain(why)
+
+
+
+# ------------------------------------- channel_report (YPP progress, 2026-10-16)
+
+async def test_channel_report_reads_mine_by_dimension(monkeypatch):
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+    seen = {}
+
+    async def fake_get_json(url, **kwargs):
+        seen["url"] = url
+        seen.update(kwargs["params"])
+        return {"columnHeaders": [{"name": "day"}, {"name": "creatorContentType"},
+                                  {"name": "views"}],
+                "rows": [["2026-10-01", "SHORTS", 40], ["2026-10-01", "VIDEO_ON_DEMAND", 3]]}, None
+    monkeypatch.setattr(api, "get_json", fake_get_json)
+    from datetime import date
+    data, reason = await api.channel_report(
+        "clips", start=date(2025, 10, 16), end=date(2026, 10, 16),
+        metrics="views", dimensions="day,creatorContentType")
+    assert reason is None
+    assert seen["url"] == api.ANALYTICS_API and seen["ids"] == "channel==MINE"
+    assert seen["dimensions"] == "day,creatorContentType" and "filters" not in seen
+    assert seen["startDate"] == "2025-10-16" and seen["endDate"] == "2026-10-16"
+    assert data["rows"][0] == {"day": "2026-10-01", "creatorContentType": "SHORTS",
+                               "views": 40}
+    assert isinstance(data["read_at"], datetime)
+
+
+async def test_channel_report_no_rows_is_an_empty_read_not_a_failure(monkeypatch):
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+
+    async def fake_get_json(url, **kwargs):
+        return {"columnHeaders": [{"name": "day"}, {"name": "views"}]}, None
+    monkeypatch.setattr(api, "get_json", fake_get_json)
+    from datetime import date
+    data, reason = await api.channel_report(
+        "clips", start=date(2026, 9, 18), end=date(2026, 10, 16),
+        metrics="views", dimensions="day")
+    assert reason is None and data["rows"] == []
+
+
+async def test_channel_report_failures_carry_a_reason_never_rows(monkeypatch):
+    async def fake_token(channel):
+        return "tok", None
+    monkeypatch.setattr(api, "token", fake_token)
+    answers = iter([
+        (None, "HTTP 403 from /v2/reports — authenticated but not permitted"),
+        (None, "HTTP 503 from /v2/reports"),
+        ({"kind": "youtubeAnalytics#resultTable"}, None),       # no columnHeaders
+    ])
+
+    async def fake_get_json(url, **kwargs):
+        return next(answers)
+    monkeypatch.setattr(api, "get_json", fake_get_json)
+    from datetime import date
+    kw = {"start": date(2026, 9, 18), "end": date(2026, 10, 16),
+          "metrics": "views", "dimensions": "day"}
+    data, reason = await api.channel_report("clips", **kw)
+    assert data is None and "yt-analytics.readonly" in reason
+    data, reason = await api.channel_report("clips", **kw)
+    assert data is None and "503" in reason
+    data, reason = await api.channel_report("clips", **kw)
+    assert data is None and "columnHeaders" in reason
+    data, reason = await api.channel_report("nope", **kw)
+    assert data is None and "unknown channel" in reason
+
+
+# ------------------------------------------- the snippet update (2026-10-18)
+
+SNIPPET = {"title": "Build an n8n agent in 7 minutes", "categoryId": "27",
+           "description": "old words", "tags": ["n8n"], "defaultLanguage": "en-GB",
+           "defaultAudioLanguage": "en-GB", "publishedAt": "2026-10-12T17:00:00Z",
+           "thumbnails": {"default": {"url": "x"}}, "channelTitle": "ATLAS Academy",
+           "localized": {"title": "t", "description": "d"}}
+
+
+@pytest.fixture
+def snip(monkeypatch):
+    from atlas.modules.youtube import api as yapi
+    st = {"snippet": dict(SNIPPET), "duration": "PT7M31S", "read": None, "put": None,
+          "puts": [], "gets": []}
+
+    async def fake_token(channel):
+        return "tok", None
+
+    async def fake_get(url, **kw):
+        st["gets"].append(kw["params"])
+        if st["read"]:
+            return None, st["read"]
+        return {"items": [{"id": "abcdefghijk", "snippet": st["snippet"],
+                           "contentDetails": {"duration": st["duration"]}}]}, None
+
+    async def fake_put(url, **kw):
+        st["puts"].append(kw)
+        return (None, st["put"]) if st["put"] else ({"id": "abcdefghijk"}, None)
+    monkeypatch.setattr(yapi, "token", fake_token)
+    monkeypatch.setattr(yapi, "get_json", fake_get)
+    monkeypatch.setattr(yapi, "_put_json", fake_put)
+    return st
+
+
+def test_an_iso_duration_reads_as_seconds():
+    from atlas.modules.youtube import api as yapi
+    assert yapi.duration_seconds("PT7M31S") == 451
+    assert yapi.duration_seconds("PT1H2M") == 3720
+    assert yapi.duration_seconds("P0D") == 0
+    assert yapi.duration_seconds("7 minutes") is None
+    assert yapi.duration_seconds("") is None
+
+
+async def test_the_snippet_is_read_with_its_length_in_one_call(snip):
+    from atlas.modules.youtube import api as yapi
+    got, seconds, why = await yapi.video_snippet("clips", "abcdefghijk")
+    assert why is None and seconds == 451 and got["title"] == SNIPPET["title"]
+    assert snip["gets"] == [{"part": "snippet,contentDetails", "id": "abcdefghijk"}]
+
+
+@pytest.mark.parametrize("broken", [{"title": ""}, {"categoryId": None}])
+async def test_a_snippet_without_title_or_category_is_unknown(snip, broken):
+    from atlas.modules.youtube import api as yapi
+    snip["snippet"].update(broken)
+    got, _s, why = await yapi.video_snippet("clips", "abcdefghijk")
+    assert got is None and "title or categoryId" in why
+    assert await yapi.update_snippet("clips", "abcdefghijk", tags=["a"],
+                                     description="new") == (None, why)
+    assert snip["puts"] == []
+
+
+async def test_the_update_changes_only_tags_and_description(snip):
+    from atlas.modules.youtube import api as yapi
+    before, why = await yapi.update_snippet("clips", "abcdefghijk", tags=["n8n", "ai agent"],
+                                            description="new words")
+    assert why is None and before == SNIPPET
+    (put,) = snip["puts"]
+    assert put["params"] == {"part": "snippet"}
+    body = put["json_body"]
+    assert set(body) == {"id", "snippet"} and body["id"] == "abcdefghijk"
+    assert body["snippet"] == {"title": SNIPPET["title"], "categoryId": "27",
+                               "defaultLanguage": "en-GB",
+                               "defaultAudioLanguage": "en-GB",
+                               "tags": ["n8n", "ai agent"], "description": "new words"}
+
+
+async def test_a_failed_read_or_put_says_why_and_a_failed_read_writes_nothing(snip):
+    from atlas.modules.youtube import api as yapi
+    snip["read"] = "HTTP 503"
+    assert (await yapi.update_snippet("clips", "abcdefghijk", tags=[], description="x")
+            )[0] is None
+    assert snip["puts"] == []
+    snip["read"], snip["put"] = None, "HTTP 403 quotaExceeded"
+    got, why = await yapi.update_snippet("clips", "abcdefghijk", tags=[], description="x")
+    assert got is None and "quotaExceeded" in why
+
+
+def test_the_mmt_channel_is_watch_only():
+    assert youtube.vet_upload({"channel": "mmt"}) == youtube.MONITOR_ONLY
+    assert youtube.vet_visibility({"channel": "mmt", "privacy": "public"}) == youtube.MONITOR_ONLY
+    assert youtube.vet_visibility({"channel": "mmt", "privacy": "private"}) is None

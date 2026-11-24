@@ -3,7 +3,7 @@
 What these pin down (`atlas/modules/clips/links.py`):
   * Postiz is read through `GET /posts?startDate&endDate` only -- the
     shape seen live on 2026-09-30 -- and nothing else is ever sent to it;
-  * a TikTok row is filled in only with `tiktok.com/@atlasclips12/video/<n>`
+  * a TikTok row is filled in only with `tiktok.com/@example_handle/video/<n>`
     and source `tiktok`; the PROFILE URL Postiz actually lists for TikTok
     today, another account's video, a short link or another host are left
     alone;
@@ -30,10 +30,10 @@ from atlas.modules.content import postiz
 from tests.acceptance_support import DSN, needs_pg
 
 NOW = datetime(2026, 9, 30, 18, 0, tzinfo=UTC)
-TT_REF, TT_REF2, YT_REF = ("cmuo6cb1y017lpa0yn71qel4l", "cmun0s90d0bbbmt0ycy68lvem",
-                           "cmunrbgz50171le0yqnfd604q")
-VIDEO = "https://www.tiktok.com/@atlasclips12/video/7691328586581755917"
-PROFILE = "https://www.tiktok.com/@atlasclips12"
+TT_REF, TT_REF2, YT_REF = ("postiz_example_id_01", "postiz_example_id_02",
+                           "postiz_example_id_03")
+VIDEO = "https://www.tiktok.com/@example_handle/video/7691328586581755917"
+PROFILE = "https://www.tiktok.com/@example_handle"
 
 
 def _item(post_id: str, release_url: str, *, provider: str = "tiktok-business",
@@ -46,7 +46,7 @@ def _item(post_id: str, release_url: str, *, provider: str = "tiktok-business",
         "group": "40a6d2cb-2513-4863-894c-e483ee64825b", "intervalInDays": None,
         "publishDate": publish, "releaseId": release_id, "releaseURL": release_url,
         "settings": "{}", "state": state_, "tags": [],
-        "integration": {"id": "cmumubciv07romt0yeqqo60ib", "name": name,
+        "integration": {"id": "postiz_example_id_04", "name": name,
                         "picture": "https://example.invalid/p.png",
                         "providerIdentifier": provider},
     }
@@ -157,8 +157,8 @@ async def test_the_profile_url_postiz_lists_today_is_not_a_post_url(monkeypatch,
 @pytest.mark.parametrize("url", [
     "https://www.tiktok.com/@atlasstories7/video/7691328586581755917",  # other account
     "https://vm.tiktok.com/ZMabcdef/",                                  # short link
-    "http://www.tiktok.com/@atlasclips12/video/7691328586581755917",   # not https
-    "https://tiktok.com.evil.example/@atlasclips12/video/1",            # other host
+    "http://www.tiktok.com/@example_handle/video/7691328586581755917",   # not https
+    "https://tiktok.com.evil.example/@example_handle/video/1",            # other host
     "https://www.instagram.com/reel/Cxyz/",                             # other platform
     "https://www.youtube.com/shorts/Z0mGgLsD02w",
     "",
@@ -213,8 +213,8 @@ async def test_a_youtube_short_gets_its_shorts_link_with_the_youtube_source(
 
 @pytest.mark.parametrize("url,release", [
     ("https://www.youtube.com/watch?v=Z0mGgLsD02w", "SomeOtherId1"),  # id mismatch
-    ("https://www.tiktok.com/@atlasclips12/video/1", "Z0mGgLsD02w"),
-    ("https://www.youtube.com/@miroatlas", "Z0mGgLsD02w"),              # channel page
+    ("https://www.tiktok.com/@example_handle/video/1", "Z0mGgLsD02w"),
+    ("https://www.youtube.com/@example_handle", "Z0mGgLsD02w"),              # channel page
     ("https://evil.example/watch?v=Z0mGgLsD02w", "Z0mGgLsD02w"),
 ])
 async def test_a_youtube_row_ignores_anything_but_its_videos_url(monkeypatch, db, url,
@@ -259,7 +259,7 @@ async def test_postiz_unset_reads_nothing_and_writes_nothing(monkeypatch, db):
 
 
 async def test_a_link_already_set_is_never_overwritten(monkeypatch, db):
-    mine = "https://www.tiktok.com/@atlasclips12/video/1111111111111111111"
+    mine = "https://www.tiktok.com/@example_handle/video/1111111111111111111"
     rows = db(_row(1, "tiktok", TT_REF, post_url=mine, source="record_link"))
     seen = _postiz(monkeypatch, [_item(TT_REF, VIDEO)])
     assert await links.reconcile(NOW) == []
@@ -269,10 +269,10 @@ async def test_a_link_already_set_is_never_overwritten(monkeypatch, db):
 
 
 async def test_a_link_set_meanwhile_is_not_overwritten(monkeypatch, db):
-    """Recorded by Miro between the read and the write: the guarded UPDATE
+    """Recorded by the owner between the read and the write: the guarded UPDATE
     leaves his."""
     rows = db(_row(1, "tiktok", TT_REF))
-    mine = "https://www.tiktok.com/@atlasclips12/video/1111111111111111111"
+    mine = "https://www.tiktok.com/@example_handle/video/1111111111111111111"
     real_posts = postiz.posts_between
 
     async def posts_between(start, end):
@@ -375,7 +375,7 @@ async def _pg_row(tag: str, platform: str, ref: str, post_url: str | None,
 @needs_pg
 async def test_on_postgres_only_the_empty_link_is_filled(monkeypatch, pg):
     tag = pg
-    mine = "https://www.tiktok.com/@atlasclips12/video/1111111111111111111"
+    mine = "https://www.tiktok.com/@example_handle/video/1111111111111111111"
     ref_a, ref_b, ref_c = f"{tag}-a", f"{tag}-b", f"{tag}-c"
     empty = await _pg_row(tag, "tiktok", ref_a, None, None)
     kept = await _pg_row(tag, "tiktok", ref_b, mine, "record_link")

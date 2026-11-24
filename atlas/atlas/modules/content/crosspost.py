@@ -1,7 +1,7 @@
 """One approved AI-stories reel, out to three places on one card.
 
 `content.publish_reel` is Tier 2 (ASK): a post under the AI-stories
-account's name is Miro's decision each time. One card covers all three legs,
+account's name is the owner's decision each time. One card covers all three legs,
 in this order, each independent of the others:
 
   1. **Instagram, the stories account** -- through `instagram.publish` with
@@ -333,7 +333,7 @@ async def publish_reel(media_id: int, caption: str, *,
 
 # ----------------------------------------------------------------- automatic
 #
-# Miro, 2026-09-27: "make sure everything is fully automated so I don't
+# the owner, 2026-09-27: "make sure everything is fully automated so I don't
 # have to manually do anything." Until then every reel waited for his tap
 # (content.publish_reel, Tier ASK). He asked for that gate to go, for the
 # AI-stories account's reels only, so `content.autopublish_reel` is Tier
@@ -353,7 +353,7 @@ async def publish_reel(media_id: int, caption: str, *,
 # Anything that fails a check is not skipped: it becomes the ordinary card,
 # with the reason first. The rollback deletes the posts (`unpublish_reel`).
 
-AUTO_PER_DAY_DEFAULT = 3  # Miro, 2026-09-29: two stories + one soccer reel
+AUTO_PER_DAY_DEFAULT = 3  # the owner, 2026-09-29: two stories + one soccer reel
 MIN_SECONDS = 5.0
 # A reel held back only because a platform's hourly allowance is spent: it
 # is not a quality failure, so `kernel.reels.post_or_card` waits instead of
@@ -396,7 +396,7 @@ async def posted_today() -> int:
 
 async def _caption_refusal(media_id: int, caption: str) -> str | None:
     """The stories' caption rule, or the football lane's: a football reel's
-    caption names the real players its numbers are about (Miro, 2026-09-29),
+    caption names the real players its numbers are about (the owner, 2026-09-29),
     and still no brand, trademark or American football."""
     from . import football, guard
     try:

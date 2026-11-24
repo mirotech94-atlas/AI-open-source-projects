@@ -1,0 +1,728 @@
+/* ATLAS Agency -- the Agency tab.
+ *
+ * Brand: black + royal blue, dark only. Royal blue is the brand and the
+ * focus colour; it is never a health colour. Health keeps its own: OK green
+ * and solid, DEGRADED amber, FAILING red, UNKNOWN grey, dashed, unlit, with
+ * the word visible (invariant 7). No two share a treatment.
+ */
+
+.desk {
+  --d-black: #0a0d14;
+  --d-ground: #0a0d14;
+  --d-surface: #131a28;
+  --d-surface-2: #1b2334;
+  --d-line: rgba(143, 176, 255, 0.13);
+  --d-line-strong: rgba(143, 176, 255, 0.3);
+  --d-royal: #5b8cff;
+  --d-royal-bright: #8fb0ff;
+  --d-royal-soft: #141d33;
+  --d-ink: #eef2fa;
+  --d-ink-2: #c9d2e3;
+  --d-dim: #8e99ae;
+  --d-ok: #34d399;
+  --d-warn: #f59e0b;
+  --d-fail: #f87171;
+  --d-unknown: #8a8f99;
+
+  color-scheme: dark;
+  display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr);
+  max-width: 1500px; margin: 0 auto; padding: 0 0 32px;
+  color: var(--d-ink);
+  font-family: var(--font-body, system-ui, sans-serif);
+}
+/* The black ground belongs to the Agency tab (the map); the desk sections
+ * inside the Command Center (.cmd-desk) keep that page's own ground. */
+html:has(.desk:not(.cmd-desk)), html:has(.desk:not(.cmd-desk)) body {
+  background: var(--d-black, #0a0d14);
+}
+.cmd-shell:has(.desk:not(.cmd-desk)) { background: var(--d-black); }
+.cmd-desk { margin-top: 16px; }
+
+.desk a { color: var(--d-royal-bright); }
+.desk :focus-visible { outline: 3px solid #8fb0ff; outline-offset: 3px; }
+
+/* ---------------------------------------------------------- the frame */
+.desk-top {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--d-line);
+  background: rgba(10, 13, 20, 0.92); backdrop-filter: blur(8px);
+}
+.desk-wordmark {
+  font: 800 20px/1.1 var(--font-display, system-ui, sans-serif);
+  letter-spacing: -0.01em; color: var(--d-ink); white-space: nowrap;
+}
+.desk-wordmark::before {
+  content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 10px;
+  border-radius: 2px; background: var(--d-royal); vertical-align: 2px;
+}
+.desk-top nav { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.desk-top nav a {
+  padding: 4px 10px; border-radius: 999px; font-size: 13px; color: var(--d-ink-2);
+  text-decoration: none;
+}
+.desk-top nav a:hover { background: var(--d-royal-soft); color: var(--d-ink); }
+.desk-k {
+  padding: 4px 10px; border: 1px solid var(--d-line-strong); border-radius: 6px;
+  background: transparent; color: var(--d-ink-2); font: 600 12px/1.4 var(--mono, monospace);
+  cursor: pointer;
+}
+
+.desk-sections { display: grid; gap: 16px; padding: 0 16px; }
+.desk-sec {
+  scroll-margin-top: 72px;
+  padding: 16px; border: 1px solid var(--d-line); border-radius: 10px;
+  background: var(--d-surface);
+}
+.desk-sec > header {
+  display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px;
+  border-bottom: 1px solid var(--d-line); padding-bottom: 8px;
+}
+.desk-sec h2 {
+  margin: 0; font: 700 17px/1.2 var(--font-display, system-ui, sans-serif); color: var(--d-ink);
+}
+.desk-sec h2::before {
+  content: ""; display: inline-block; width: 3px; height: 14px; margin-right: 8px;
+  background: var(--d-royal); vertical-align: -1px;
+}
+.desk-sec h3 { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--d-ink-2); }
+.desk-sec h3 b { color: var(--d-royal-bright); font-weight: 700; margin-left: 4px; }
+.desk-at { margin-left: auto; font: 11px/1.4 var(--mono, monospace); color: var(--d-dim); }
+.desk-sub { display: flex; gap: 8px; align-items: baseline; margin-top: 14px !important; }
+
+.desk-empty, .desk-none { margin: 0; color: var(--d-dim); font-size: 14px; }
+.desk-note { margin: 8px 0 0; color: var(--d-dim); font-size: 12.5px; }
+.desk-rule {
+  margin: 0 0 10px; padding: 8px 10px; border-left: 3px solid var(--d-royal);
+  background: var(--d-royal-soft); color: var(--d-ink-2); font-size: 13px;
+}
+
+.desk-list, .desk-team, .desk-conn, .desk-secrets, .desk-next, .desk-sec ul {
+  list-style: none; margin: 0; padding: 0;
+}
+.desk-list li, .desk-team li {
+  display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--d-line);
+}
+.desk-list li:last-child, .desk-team li:last-child { border-bottom: 0; }
+.desk-list small, .desk-team small, .desk-conn small { color: var(--d-dim); font-size: 12px; }
+.desk-list p { margin: 4px 0 0; color: var(--d-ink-2); font-size: 13px; }
+.desk-list li[data-expired] span { text-decoration: line-through; color: var(--d-dim); }
+
+/* ------------------------------------------------------------- board */
+.desk-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.desk-col {
+  padding: 10px; border-radius: 8px; background: var(--d-surface-2);
+  border-top: 2px solid var(--d-line-strong);
+}
+.desk-col[data-stage="live"] { border-top-color: var(--d-royal); }
+.desk-col li { display: grid; gap: 2px; padding: 6px 0; border-bottom: 1px solid var(--d-line); }
+.desk-col li:last-child { border-bottom: 0; }
+.desk-col small { color: var(--d-dim); font-size: 12px; }
+.desk-chips { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.desk-chip {
+  padding: 3px 10px; border: 1px solid var(--d-line-strong); border-radius: 999px;
+  background: transparent; color: var(--d-ink-2); font-size: 12px; cursor: pointer;
+}
+.desk-chip[aria-expanded="true"] { border-color: var(--d-royal); color: var(--d-ink); }
+
+/* ---------------------------------------------- calendar and sources */
+.desk-cal, .desk-sources {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;
+}
+.desk-series, .desk-source { padding: 10px; border-radius: 8px; background: var(--d-surface-2); }
+.desk-next li { padding: 4px 0; font-size: 13px; color: var(--d-ink); }
+.desk-next em {
+  font-style: normal; font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--d-royal-bright); margin-right: 6px;
+}
+
+/* --------------------------------------------------- team, settings */
+/* One line per agent: name, role, status, last run, outcome, next shift.
+   The outcome is cut to one line; its full clean text opens below it. */
+.desk-team li {
+  grid-template-columns: minmax(130px, 1fr) minmax(120px, 1.2fr) 74px 72px minmax(0, 3fr) 120px;
+  align-items: baseline; gap: 10px; white-space: nowrap;
+}
+.desk-team li > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.desk-team-name { font-weight: 700; }
+.desk-team-role, .desk-team-when, .desk-team-next { color: var(--d-ink-2); }
+.desk-team-out summary {
+  cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 13px; color: var(--d-ink); list-style: none;
+}
+.desk-team-out summary::-webkit-details-marker { display: none; }
+.desk-team-out summary::after { content: " ▸"; color: var(--d-ink-2); }
+.desk-team-out[open] summary::after { content: " ▾"; }
+.desk-team-out[open] { overflow: visible; white-space: normal; }
+.desk-team-out[open] > span {
+  display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.45;
+  color: var(--d-ink-2); white-space: normal;
+}
+.desk-h-idle { color: var(--d-ink-2); border: 1px solid var(--d-line); background: transparent; }
+@media (max-width: 760px) {
+  .desk-team li { grid-template-columns: 1fr auto; white-space: normal; }
+  .desk-team-role, .desk-team-out { grid-column: 1 / -1; }
+}
+.desk-conn > li { padding: 8px 0; border-bottom: 1px solid var(--d-line); }
+.desk-conn > li > span { font-weight: 700; text-transform: capitalize; margin-right: 6px; }
+.desk-conn ul { margin: 6px 0 0 12px; }
+.desk-conn ul li { padding: 2px 0; font-size: 13px; }
+.desk-secrets { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 4px 16px; }
+.desk-secrets li { font-size: 13px; padding: 3px 0; }
+.desk-secrets code { font: 12px/1.4 var(--mono, monospace); color: var(--d-ink-2); }
+.desk-secret-set { color: var(--d-ok); font-weight: 700; }
+.desk-secret-unset { color: var(--d-warn); font-weight: 700; }
+
+/* ------------------------------------------------------------ health */
+.desk-h {
+  display: inline-block; padding: 0 6px; border-radius: 3px;
+  font: 700 10.5px/1.6 var(--mono, monospace); letter-spacing: .1em; text-transform: uppercase;
+}
+.desk-h-ok { color: var(--d-ok); border: 1px solid var(--d-ok); background: rgba(52, 211, 153, .1); }
+.desk-h-degraded { color: var(--d-warn); border: 1px solid var(--d-warn); background: rgba(245, 158, 11, .1); }
+.desk-h-failing { color: var(--d-fail); border: 1px solid var(--d-fail); background: rgba(248, 113, 113, .12); }
+/* UNKNOWN: grey, dashed, unlit -- the word visible, nothing glows. */
+.desk-h-unknown {
+  color: var(--d-unknown) !important; border: 1px dashed var(--d-unknown);
+  background: transparent; box-shadow: none; text-shadow: none;
+}
+
+/* --------------------------------------------------------- skeleton */
+.desk-skel { display: grid; gap: 8px; }
+.desk-skel i {
+  display: block; height: 12px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--d-surface-2), var(--d-line), var(--d-surface-2));
+  background-size: 200% 100%; animation: desk-shimmer 1.4s linear infinite;
+}
+.desk-skel i:nth-child(2) { width: 80%; }
+.desk-skel i:nth-child(3) { width: 60%; }
+@keyframes desk-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .desk-skel i { animation: none; } }
+
+/* ----------------------------------------------------------- palette */
+.desk-pal-back {
+  position: fixed; inset: 0; z-index: 50; display: grid; place-items: start center;
+  padding: 12vh 16px 0; background: rgba(0, 0, 0, 0.6);
+}
+.desk-pal {
+  width: min(520px, 100%); border: 1px solid var(--d-line-strong); border-radius: 12px;
+  background: var(--d-surface); box-shadow: 0 20px 60px rgba(0, 0, 0, .6); overflow: hidden;
+}
+.desk-pal input {
+  width: 100%; box-sizing: border-box; padding: 14px 16px; border: 0;
+  border-bottom: 1px solid var(--d-line); background: transparent; color: var(--d-ink);
+  font-size: 16px; outline: none;
+}
+.desk-pal ul { list-style: none; margin: 0; padding: 6px; }
+.desk-pal button {
+  width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--d-ink); font-size: 14px; cursor: pointer;
+}
+.desk-pal button:hover, .desk-pal button:focus-visible { background: var(--d-royal-soft); }
+
+/* -------------------------------------------------------- responsive */
+@media (max-width: 900px) {
+  .desk-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .desk-top { gap: 8px; padding: 10px 16px; }
+  .desk-wordmark { font-size: 17px; }
+  .desk-top nav { order: 3; flex-basis: 100%; min-width: 0; max-width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .desk-top nav a { white-space: nowrap; }
+  .desk-k { margin-left: auto; }
+  .desk-sections { padding: 0 8px; }
+  .desk-sec { padding: 12px; }
+  .desk-board { grid-template-columns: 1fr; }
+  .desk-team li { grid-template-columns: 1fr auto; }
+  .desk-secrets { grid-template-columns: 1fr; }
+}
+
+/* Six-agent sections (2026-10-27). "Not measured" is plain dim text: never
+   UNKNOWN's grey dashed treatment, never OK's colour. */
+.desk-nm { color: var(--d-dim); font-style: italic; }
+p.desk-nm { margin: 4px 0 0; }
+.desk-tag { margin-left: 6px; font-style: normal; font-size: 12px; color: var(--d-dim); }
+.desk-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 0; }
+.desk-facts div { min-width: 0; }
+.desk-facts dt { font-size: 12px; color: var(--d-dim); }
+.desk-facts dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.desk-rem li, .desk-projects li { overflow-wrap: anywhere; }
+.desk-fix { display: block; }
+
+/* ======================================================================
+ * ATLAS Academy brand layer (the owner, 2026-10-28): the portal wears the
+ * storefront's identity -- atlas/modules/academy/assets/style.css, dark:
+ * black + royal blue, Cabinet Grotesk headings, Atkinson Next text,
+ * 12px cards, 10px buttons, a 3px #8fb0ff focus ring. Loaded last, so it
+ * wins over hud.css and academy.css. Royal blue is the brand, the links
+ * and the focus; health keeps its own colours (OK green, DEGRADED amber,
+ * FAILING red) and UNKNOWN stays a neutral grey, dashed, unlit, with the
+ * word (invariant 7). atlas/api/templates/_tokens.css is not touched: the
+ * server-rendered pages keep their own.
+ * ==================================================================== */
+
+/* Outside the shell too: the login gate, the companion, the pocket. */
+:root, :root[data-theme="dark"] {
+  --brand: #5b8cff; --brand-hover: #7a9fff; --on-brand: #070a12;
+  --brand-soft: #141d33; --focus: #8fb0ff;
+  --bg: #0a0d14; --panel: #131a28; --raised: #1b2334;
+  --line: rgba(143, 176, 255, 0.22); --line-soft: rgba(143, 176, 255, 0.12);
+  --text: #c9d2e3; --text-dim: #a3adc2; --text-faint: #8e99ae; --text-hot: #eef2fa;
+  --cyan: #34d399; --cyan-dim: #1f8f6a; --cyan-glow: rgba(52, 211, 153, 0.28);
+  --amber: #f5a524; --red: #f87171; --grey: #8a8f99;
+  --paper: #0f1420; --surface: #131a28; --surface-2: #1b2334;
+  --ink: #eef2fa; --ink-2: #c9d2e3; --muted: #8e99ae;
+  --rule: rgba(143, 176, 255, 0.13); --rule-strong: rgba(143, 176, 255, 0.3);
+  --ok: #34d399; --warn: #f5a524; --no: #f87171; --unknown: #8a8f99;
+  --link: #8fb0ff; --accent: #5b8cff; --accent-hover: #7a9fff; --accent-ink: #070a12;
+  --accent-soft: rgba(91, 140, 255, 0.14); --plum: #7fa2ff; --navy: #0c1019;
+  --font-display: "Cabinet Grotesk", "Atkinson Next", system-ui, sans-serif;
+  --font-body: "Atkinson Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { background: #0a0d14; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* --- the wordmark: the mark, ATLAS, then the line in the second ink ----- */
+.cmd-mark { display: block; border-radius: 8px; flex: none; }
+.desk-wordmark::before {
+  width: 22px; height: 22px; margin-right: 10px; border-radius: 6px; vertical-align: -5px;
+  background: url("/favicon.svg") center / contain no-repeat;
+}
+
+/* --- tabs and pills: the storefront's rounded controls ------------------ */
+.cmd-tabs > a, .cmd-tabs > button, .cmd-tabs .ac-navlink {
+  border-radius: 10px; font: 700 13px/1 var(--font-body); letter-spacing: .02em;
+  text-transform: none;
+}
+.cmd-tabs > a.on, .cmd-tabs > button[data-on], .cmd-tabs .ac-navlink[aria-expanded="true"] {
+  background: var(--brand-soft); border-color: var(--rule-strong);
+  box-shadow: inset 0 -2px 0 var(--brand);
+}
+.cmd-pill, .cmd-needs { border-radius: 999px; }
+
+/* --- cards: the storefront's .card -------------------------------------- */
+.cmd-panel {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .3);
+}
+.cmd-panel::before { display: none; }
+.cmd-panel h2 {
+  font: 700 13px/1.2 var(--font-display); letter-spacing: .04em; color: var(--ink);
+}
+.desk-sec { border-radius: 12px; }
+
+/* --- buttons: the storefront's .btn (ghost) and .btn-gold (primary) ----- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 40px; padding: 0 14px; border-radius: 10px;
+  border: 1.5px solid var(--rule-strong); background: transparent; color: var(--ink);
+  font: 700 13px/1 var(--font-body); letter-spacing: .01em; text-transform: none;
+}
+.btn:hover:not(:disabled) { color: var(--ink); border-color: var(--ink); background: var(--surface); }
+.btn-approve, .login .btn {
+  background: var(--brand); border-color: var(--brand); color: var(--on-brand);
+}
+.btn-approve:hover:not(:disabled), .login .btn:hover:not(:disabled) {
+  background: var(--brand-hover); border-color: var(--brand-hover); color: var(--on-brand);
+}
+.desk-k { border-radius: 8px; }
+
+/* --- the badge: the storefront's .tag, health keeping its own colour ---- */
+.badge { border-radius: 6px; box-shadow: none; }
+[data-health="unknown"] .badge, .badge[data-health="unknown"] { border-style: dashed; }
+
+/* --- the Agency map: brand lines, green only for a live agent ----------- */
+.nn-spokes path, .nn-synapses path { stroke: var(--brand); }
+.nn[data-focus] .nn-synapses path[data-lit][data-kind="handoff"] { stroke: var(--focus); }
+.nn[data-read-failed] .nn-spokes path, .nn[data-read-failed] .nn-synapses path { stroke: var(--grey); }
+.nn-node:focus-visible .nn-soma { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--focus); }
+.nn-node[data-selected] .nn-soma { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--brand); }
+.nn-node[data-selected] .nn-label .n { color: var(--focus); }
+.nn-legend .k-line { border-top-color: var(--brand); }
+.nn-legend .k-line[data-k="handoff"] { border-top-color: var(--focus); }
+.agent-map-links .chip { border-color: var(--rule-strong); border-radius: 6px; }
+.agent-map-detail { border-left-color: var(--brand); border-radius: 12px; }
+
+/* --- the activity panel: one card per agent ----------------------------- */
+.act-card {
+  background: var(--surface); border: 1px solid var(--rule-strong); border-radius: 12px;
+  border-left: 3px solid var(--state, var(--grey));
+}
+.act-card[data-health="unknown"] { border: 1px dashed var(--grey); border-left: 3px dashed var(--grey); }
+.act-card header b { font-family: var(--font-display); font-size: 15px; color: var(--ink); }
+
+/* --- the login gate: the storefront's ground, card and primary button --- */
+.login {
+  max-width: 400px; margin: 14vh auto 0; padding: 28px 24px;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 20px;
+  font-family: var(--font-body); color: var(--ink-2);
+}
+.login-brand {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 16px;
+  font: 800 24px/1.1 var(--font-display); color: var(--ink); letter-spacing: .01em;
+}
+.login-brand img { border-radius: 10px; flex: none; }
+.login p { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+.login label {
+  font: 700 12px/1.4 var(--font-body); letter-spacing: .08em; color: var(--ink-2);
+}
+.login input {
+  min-height: 46px; padding: 0 14px; border-radius: 10px; font: 400 15px var(--font-body);
+  background: var(--paper); color: var(--ink); border: 1.5px solid var(--rule-strong);
+}
+.login input:focus { border-color: var(--brand); box-shadow: none; }
+.login input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.login .btn { min-height: 46px; margin-top: 16px; font-size: 15px; }
+.login .errorbar { border-radius: 10px; }
+@media (max-width: 480px) {
+  .login { margin: 8vh 16px 0; padding: 22px 18px; }
+  .cmd-brand .aw-agency { display: none; }
+}
+
+/* ------------------------------------------ compact (the owner 2026-10-29)
+   Each section scannable at a glance: short one-line rows, long lists cut
+   to "+n more", the small sections side by side. */
+.desk-more { color: var(--d-dim); font-size: 12px; padding: 6px 0; }
+.desk-col li > span, .desk-col li > small, .desk-list li > span, .desk-list li > small {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.desk-list p {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+@media (min-width: 1200px) {
+  .desk-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .desk-sections > #team, .desk-sections > #clients, .desk-sections > #calendar,
+  .desk-sections > #settings { grid-column: 1 / -1; }
+  .desk-conn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+  .desk-cal { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+}
+
+/* ============================================================== redesign
+   ATLAS Agency UI redesign (the owner 2026-10-30; spec atlas-agency-redesign-spec.pdf).
+   Black + royal blue glass. Royal blue is brand, active tab, links and focus
+   only, never health: ok green, degraded amber, failing red, unknown grey,
+   dashed and unlit, with the word. Every figure still comes from its read. */
+.cmd-shell {
+  --glass-fill: linear-gradient(180deg, rgba(27, 35, 52, .72), rgba(19, 26, 40, .86));
+  --hairline: rgba(143, 176, 255, 0.16);
+}
+/* Sticky glass header: rgba(10,13,20,.95), 8px blur, 1px frame. */
+.cmd-shell .cmd-top {
+  background: rgba(10, 13, 20, .95); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--hairline); box-shadow: 0 1px 0 rgba(91, 140, 255, .08);
+}
+/* Glowing wordmark: brand ink only. */
+.cmd-shell .aw-atlas { color: var(--ink); text-shadow: 0 0 14px rgba(91, 140, 255, .55); }
+.cmd-shell .atlas-wordmark .aw-mark { filter: drop-shadow(0 0 6px rgba(91, 140, 255, .85)); }
+.cmd-shell .aw-agency { text-shadow: 0 0 10px rgba(91, 140, 255, .4); }
+/* Telemetry is monospace: clock, read stamps, pills. */
+.cmd-shell .cmd-clock b, .cmd-shell .cmd-at, .cmd-shell .cmd-fig-read,
+.cmd-shell .ac-fig-read, .cmd-shell .cmd-note {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+/* Glass panels: hairline frame, faint inner top light. */
+.cmd-shell .cmd-panel, .cmd-shell .desk-sec {
+  background: var(--glass-fill); border: 1px solid var(--hairline); border-radius: 12px;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  box-shadow: inset 0 1px 0 rgba(143, 176, 255, .07), 0 10px 28px rgba(0, 0, 0, .35);
+}
+.cmd-shell .cmd-panel h2 {
+  font: 700 12px/1.2 var(--font-display); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--ink);
+}
+.cmd-shell .cmd-panel > header { border-bottom: 1px solid var(--hairline); }
+.cmd-shell .cmd-kpi {
+  border: 1px solid var(--hairline); border-radius: 8px; background: rgba(10, 13, 20, .55);
+}
+.cmd-shell .cmd-kpi-l, .cmd-shell .cmd-kpi .ac-fig-value { font-variant-numeric: tabular-nums; }
+.cmd-shell .cmd-kpi .ac-fig-value { font-family: var(--font-display); }
+
+/* Isometric charts: royal-blue bars on a hairline floor (bars are counts,
+   not health, so brand blue is allowed here). */
+.cmd-shell .cmd-iso .iso-grid line { stroke: rgba(143, 176, 255, .16); stroke-dasharray: 3 4; }
+.cmd-shell .cmd-iso .iso-front { fill: #5b8cff; }
+.cmd-shell .cmd-iso .iso-side { fill: #3a5fc4; }
+.cmd-shell .cmd-iso .iso-top { fill: #8fb0ff; }
+.cmd-shell .cmd-iso .iso-val { fill: var(--ink); font-family: var(--mono); }
+
+/* ------------------------------------------------------------ Agency tab */
+.cmd-shell .agency-tab { gap: 14px; }
+.cmd-shell .desk-map, .cmd-shell .act-panel {
+  position: relative; padding: 14px 16px 16px; border-radius: 12px;
+  background: var(--glass-fill); border: 1px solid var(--hairline);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  box-shadow: inset 0 1px 0 rgba(143, 176, 255, .07), 0 10px 28px rgba(0, 0, 0, .35);
+}
+.cmd-shell .desk-map-head {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline);
+}
+.cmd-shell .desk-map-head h2 {
+  margin: 0; font: 700 12px/1.2 var(--font-display); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink);
+}
+.cmd-shell .desk-map-head .cmd-at { margin-left: auto; font-family: var(--mono); }
+.cmd-shell .act-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+@media (min-width: 1100px) {
+  .cmd-shell .act-grid { grid-template-columns: repeat(4, minmax(260px, 1fr)); }
+}
+.cmd-shell .act-card {
+  background: rgba(10, 13, 20, .55); border: 1px solid var(--hairline); border-left: 3px solid var(--state, var(--grey));
+  border-radius: 10px; padding: 12px 14px;
+}
+.cmd-shell .act-card[data-health="unknown"] {
+  border: 1px dashed var(--grey); border-left: 3px dashed var(--grey);
+}
+.cmd-shell .act-card:hover:not([data-health="unknown"]) { border-color: var(--frame-hot); }
+.cmd-shell .act-card header b { font: 700 15px/1.2 var(--font-display); color: var(--ink); }
+.cmd-shell .act-card header .act-title { font-family: var(--mono); font-size: 10.5px; letter-spacing: .06em; }
+.cmd-shell .act-lamp { box-shadow: 0 0 8px var(--state); }
+.cmd-shell .act-card[data-health="unknown"] .act-lamp { box-shadow: none; }
+.cmd-shell .act-card h4 small { font-family: var(--mono); }
+.cmd-shell .act-lines { font-size: 12.5px; }
+
+/* Per-card progress bar: yesterday's real ok / failed action split. */
+.act-meter { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin: 2px 0 6px; }
+.act-meter-k { font: 700 10px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint); }
+.act-meter-v { font: 700 11px/1 var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; }
+.act-meter-track {
+  display: flex; height: 6px; overflow: hidden; border-radius: 3px;
+  background: rgba(143, 176, 255, .1); border: 1px solid var(--hairline);
+}
+.act-meter-track i { display: block; height: 100%; }
+.act-meter-track .ok { background: var(--ok); box-shadow: 0 0 6px rgba(52, 211, 153, .5); }
+.act-meter-track .no { background: var(--no); }
+.act-meter[data-meter="unknown"] .act-meter-track {
+  background: transparent; border: 1px dashed var(--grey); box-shadow: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .act-meter-track i { transition: width .5s cubic-bezier(.2, .8, .2, 1); }
+}
+
+/* ------------------------------------------- Agency tab: the map fills the screen
+   (the owner 2026-10-30). `.desk` centres itself with auto margins, which in the
+   tab's grid shrinks it to its content (about 990 px on a 1913 px screen):
+   the map panel is full width instead. From 900 px up the map is as tall as
+   the area under the header and above the footer; the activity cards follow
+   below it. The shell is one viewport tall, `.cmd-main` scrolls inside it. */
+.cmd-shell .desk-map { width: 100%; max-width: none; margin: 0; box-sizing: border-box; }
+@media (min-width: 900px) {
+  .cmd-shell:has(.agency-tab) { height: 100vh; height: 100dvh; min-height: 0; }
+  .cmd-shell:has(.agency-tab) .cmd-main {
+    flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+  }
+  .agency-tab { display: contents; }
+  .cmd-shell .desk-map {
+    flex: 0 0 100%; min-height: 480px; display: flex; flex-direction: column;
+    position: relative;
+  }
+  .desk-map > .agent-map { flex: 1 1 0; min-height: 0; position: relative; }
+  .agent-map[data-fill] > .nn { flex: 1 1 0; min-height: 0; }
+  .nn[data-fill] > .nn-stage { flex: 1 1 0; min-height: 0; width: 100%; }
+  /* The selected agent's details float over the map's corner, so choosing a
+     neuron never resizes the map under the pointer. */
+  .agent-map[data-fill] > .agent-map-detail {
+    position: absolute; z-index: 6; top: 8px; right: 8px; width: min(380px, 32%);
+    max-height: calc(100% - 70px); overflow-y: auto; background: var(--panel);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .5);
+  }
+  /* More room, so names are not cut: bigger type, wider labels, the
+     specialty may take two lines. */
+  .nn[data-fill] .nn-label { max-width: min(280px, 15cqw, var(--label-max, 280px)); }
+  .nn[data-fill][data-variant="wide"] .nn-node:not([data-lane="functions"]) .nn-label {
+    max-width: min(220px, 13cqw, var(--label-max, 220px));
+  }
+  /* Names wrap rather than truncate; the label ends at the node (left ring)
+     or starts at it (right ring), never past the frame edge. */
+  .nn[data-fill] .nn-label .n { font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+  .nn[data-fill] .nn-node[data-side="left"] .nn-label .s { text-align: right; }
+  .nn[data-fill] .nn-label .s {
+    font-size: 11px; white-space: normal; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  }
+  .nn[data-fill] .agent-map-lane-title { font-size: 11px; }
+}
+.cmd-shell .act-panel { flex: none; }
+
+/* ------------------------------------------------------------ previews */
+.prev { margin-top: 18px; }
+.prev-h { margin: 0 0 8px; font-size: 14px; color: var(--d-ink); }
+.prev-h small { margin-left: 8px; color: var(--d-dim); font-weight: 400; font-size: 12px; }
+.prev-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 12px; }
+.prev-card { background: var(--d-surface); border: 1px solid var(--d-line); border-radius: 8px; padding: 10px; }
+.prev-card header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.prev-card h3 { margin: 0; font-size: 13px; color: var(--d-ink); }
+.prev-toggle { display: flex; gap: 6px; }
+.prev-toggle .desk-chip[aria-pressed="true"] { border-color: var(--d-royal); color: var(--d-ink); background: var(--d-royal-soft); }
+.prev-stage { display: flex; justify-content: center; background: var(--d-black); border-radius: 6px; padding: 6px; }
+.prev-stage iframe { height: 460px; max-width: 100%; border: 0; border-radius: 4px; background: #fff; transition: width .15s; }
+.prev-unknown {
+  margin: 0; padding: 10px; border: 1px dashed var(--d-dim); border-radius: 6px;
+  color: var(--d-dim); background: transparent; font-size: 13px;
+}
+.prev-unknown b { text-transform: uppercase; letter-spacing: .06em; margin-right: 6px; }
+@media (max-width: 900px) { .prev-grid { grid-template-columns: minmax(0, 1fr); } }
+.cmd-shell .desk-prev-host { flex: 0 0 auto; width: 100%; max-width: none; margin: 0; box-sizing: border-box; }
+
+/* ==========================================================================
+   look v2: Agency tab. Every rule is scoped to `.cmd-shell.v2` (tokens live
+   in command.css). UNKNOWN is dashed grey with the word and has no motion,
+   shadow or gradient; animation only inside prefers-reduced-motion:
+   no-preference and only with a fresh roster read.
+   ========================================================================== */
+/* The tab scrolls in the shell: cancel the one-viewport lock above. */
+@media (min-width: 900px) {
+  .cmd-shell.v2:has(.agency-tab) { height: auto; min-height: 100dvh; }
+  .cmd-shell.v2:has(.agency-tab) .cmd-main {
+    flex: none; min-height: 0; overflow-y: visible; display: block;
+  }
+  .cmd-shell.v2 .agency-tab { display: flex; flex-direction: column; gap: var(--s-4); }
+  .cmd-shell.v2 .desk-map { flex: none; min-height: 0; }
+  .cmd-shell.v2 .desk-map > .agent-map { flex: none; }
+}
+.cmd-shell.v2 .agency-tab { display: flex; flex-direction: column; gap: var(--s-4); }
+
+/* Glance strip */
+.cmd-shell.v2 .agency-glance {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0;
+}
+.cmd-shell.v2 .ag-cell {
+  display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-4) var(--s-5);
+  border-left: 1px solid var(--edge); position: relative; min-width: 0;
+}
+.cmd-shell.v2 .ag-cell:first-child { border-left: 0; }
+.cmd-shell.v2 .ag-flag { display: inline-block; width: 7px; height: 7px; margin-right: var(--s-2);
+  background: var(--red); }
+.cmd-shell.v2 .ag-cell[data-health="unknown"]::after {
+  content: ""; position: absolute; inset: var(--s-2); border: 1px dashed var(--grey);
+  border-radius: var(--r-well); pointer-events: none;
+}
+.cmd-shell.v2 .ag-cell[data-health="unknown"] .cmd-word-unknown { font: 700 var(--t-body)/1.2 var(--mono); }
+@media (max-width: 760px) {
+  .cmd-shell.v2 .agency-glance { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cmd-shell.v2 .ag-cell:nth-child(odd) { border-left: 0; }
+  .cmd-shell.v2 .ag-cell:nth-child(n+3) { border-top: 1px solid var(--edge); }
+}
+
+/* Map: e2 surface */
+.cmd-shell.v2 .desk-map {
+  background: radial-gradient(ellipse 55% 60% at 50% 50%, rgba(91, 140, 255, .09), transparent 70%),
+              var(--e2-fill);
+  border: 1px solid var(--edge-strong); border-radius: var(--r-hero); box-shadow: var(--e2-shadow);
+}
+.cmd-shell.v2 .desk-map-head { border-bottom: 1px solid var(--edge); }
+.cmd-shell.v2 .desk-map-sub { font: var(--t-small)/1.4 var(--font-body); color: var(--muted); }
+.cmd-shell.v2 .rm { position: relative; display: block; }
+.cmd-shell.v2 .rm-scroll { overflow-x: auto; }
+.cmd-shell.v2 .rm-web { display: block; width: 100%; min-width: 680px; height: auto; }
+.cmd-shell.v2 .rm-link { fill: none; stroke: var(--brand); stroke-opacity: .30; stroke-width: 1.25; }
+.cmd-shell.v2 .rm-link[data-kind="spoke"] { stroke-opacity: .5; }
+.cmd-shell.v2 .rm-link[data-kind="memory"] { stroke-dasharray: 3 5; }
+.cmd-shell.v2 .rm-link[data-lit] { stroke: var(--focus); stroke-opacity: .85; }
+.cmd-shell.v2 .rm[data-read-failed] .rm-link {
+  stroke: var(--grey); stroke-opacity: .6; stroke-dasharray: 4 6;
+}
+.cmd-shell.v2 .rm-core-disc { fill: #131a28; stroke: var(--brand); stroke-width: 1.5; }
+.cmd-shell.v2 .rm-core-label { fill: var(--ink); font: 800 11px var(--font-display); letter-spacing: .1em; }
+.cmd-shell.v2 .rm-node { cursor: pointer; outline: none; --st: var(--cyan); }
+.cmd-shell.v2 .rm-node[data-state="working"] { --st: var(--cyan); }
+.cmd-shell.v2 .rm-node[data-state="not-ready"] { --st: var(--amber); }
+.cmd-shell.v2 .rm-node[data-state="failing"] { --st: var(--red); }
+.cmd-shell.v2 .rm-node[data-state="unknown"] { --st: var(--grey); }
+.cmd-shell.v2 .rm-disc { fill: #131a28; stroke: var(--st); stroke-width: 1.5; }
+.cmd-shell.v2 .rm-node[data-state="unknown"] .rm-disc {
+  fill: transparent; stroke-dasharray: 4 3;
+}
+.cmd-shell.v2 .rm-node[data-selected] .rm-disc { stroke-width: 2.5; }
+.cmd-shell.v2 .rm-node[data-selected] .rm-disc,
+.cmd-shell.v2 .rm-node:focus-visible .rm-disc {
+  paint-order: stroke; filter: none;
+}
+.cmd-shell.v2 .rm-node[data-selected]::after { content: none; }
+.cmd-shell.v2 .rm-node:focus-visible .rm-disc { stroke: var(--focus); stroke-width: 3; }
+.cmd-shell.v2 .rm-node[data-selected] .rm-n { fill: var(--focus); }
+.cmd-shell.v2 .rm-node[data-linked] .rm-disc { stroke: var(--focus); }
+.cmd-shell.v2 .rm-n { fill: var(--ink); font: 600 13px var(--font-body); }
+.cmd-shell.v2 .rm-r { fill: var(--muted); font: 11px var(--font-body); }
+.cmd-shell.v2 .rm-w { fill: var(--muted); font: 700 11px var(--mono); }
+.cmd-shell.v2 .rm-w[data-unknown] { fill: var(--grey); }
+.cmd-shell.v2 .rm-empty { margin: var(--s-4) 0 0; text-align: center; color: var(--grey);
+  font: 700 var(--t-body)/1.4 var(--mono); }
+.cmd-shell.v2 .rm-legend {
+  display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); margin-top: var(--s-3);
+  font: var(--t-meta)/1.4 var(--mono); color: var(--muted);
+}
+.cmd-shell.v2 .rm-legend span { display: inline-flex; align-items: center; gap: var(--s-2); }
+.cmd-shell.v2 .rm-legend .k-sq { width: 8px; height: 8px; background: var(--cyan); }
+.cmd-shell.v2 .rm-legend .k-sq[data-k="not-ready"] { background: var(--amber); }
+.cmd-shell.v2 .rm-legend .k-sq[data-k="failing"] { background: var(--red); }
+.cmd-shell.v2 .rm-legend .k-sq[data-k="unknown"] { background: transparent; border: 1px dashed var(--grey); }
+.cmd-shell.v2 .rm > .agent-map-detail {
+  margin-top: var(--s-4); padding: var(--s-5); background: var(--e3-fill);
+  border: 1px solid var(--edge-strong); border-left: 3px solid var(--brand);
+  border-radius: var(--r-panel); box-shadow: var(--e3-shadow);
+}
+
+/* Agent cards */
+.cmd-shell.v2 .act-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--s-4); }
+.cmd-shell.v2 .act-card {
+  background: var(--e0-fill); border: 1px solid var(--edge); border-left: 3px solid var(--state, var(--grey));
+  border-radius: var(--r-panel); padding: var(--s-4) var(--s-5);
+  display: flex; flex-direction: column; gap: var(--s-2);
+}
+.cmd-shell.v2 .act-card[data-health="idle"] { border-left-color: var(--muted); }
+.cmd-shell.v2 .act-card header { display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap; }
+.cmd-shell.v2 .act-card header b { font: 700 15px/1.2 var(--font-display); color: var(--ink); }
+.cmd-shell.v2 .act-card header .act-title {
+  font: var(--t-small)/1.3 var(--font-body); letter-spacing: 0; color: var(--muted);
+}
+.cmd-shell.v2 .act-card header .badge,
+.cmd-shell.v2 .act-card header .cmd-word-unknown { margin-left: auto; }
+.cmd-shell.v2 .badge {
+  height: 22px; padding: 0 var(--s-2); border-radius: var(--r-chip); display: inline-flex; align-items: center;
+  gap: var(--s-1); font: 700 var(--t-meta)/1 var(--mono); background: transparent; box-shadow: none;
+  border: 1px solid var(--state, var(--grey)); color: var(--state, var(--grey));
+}
+.cmd-shell.v2 .badge[data-health="idle"] { border-color: var(--muted); color: var(--muted); }
+.cmd-shell.v2 .badge[data-health="unknown"], .cmd-shell.v2 .badge.hatch-edge { border-style: dashed; }
+.cmd-shell.v2 .act-brief {
+  margin: 0; color: var(--ink-2); font: var(--t-body)/1.5 var(--font-body);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cmd-shell.v2 .act-work { margin: 0; display: flex; flex-direction: column; gap: var(--s-1); }
+.cmd-shell.v2 .act-work-t {
+  color: var(--ink-2); font: var(--t-small)/1.4 var(--font-body);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cmd-shell.v2 .act-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.cmd-shell.v2 .act-toggle {
+  background: none; border: 0; padding: var(--s-1) 0; cursor: pointer; color: var(--link);
+  font: 600 var(--t-small)/1.2 var(--font-body);
+}
+.cmd-shell.v2 .act-toggle:hover { text-decoration: underline; }
+.cmd-shell.v2 .act-detail { padding-top: var(--s-3); border-top: 1px solid var(--edge); }
+.cmd-shell.v2 .act-detail[hidden] { display: none; }
+.cmd-shell.v2 .act-card h4 small { font-size: var(--t-meta); }
+.cmd-shell.v2 .act-meter-k { font-size: var(--t-meta); }
+.cmd-shell.v2 .act-meter-track .ok { box-shadow: none; }
+.cmd-shell.v2 .act-card[data-health="unknown"] {
+  background: transparent; box-shadow: none; border: 1px dashed var(--grey); border-left: 3px dashed var(--grey);
+}
+.cmd-shell.v2 .prev-card { background: var(--e0-fill); border-radius: var(--r-panel); }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Light runs down a link only while the roster read is fresh. */
+  .cmd-shell.v2 .rm[data-fresh] .rm-link[data-flow] {
+    stroke-dasharray: 2 22; stroke-opacity: .7; animation: rm-flow 6s linear infinite;
+  }
+  @keyframes rm-flow { to { stroke-dashoffset: -96; } }
+  .cmd-shell.v2 .act-card:not([data-health="unknown"]) {
+    transition: transform var(--dur-2) var(--ease-std), border-color var(--dur-2) var(--ease-std);
+  }
+  .cmd-shell.v2 .act-card:not([data-health="unknown"]):hover {
+    transform: translateY(-1px); border-color: var(--edge-strong);
+  }
+  .cmd-shell.v2 .act-detail:not([hidden]) { animation: act-open var(--dur-2) var(--ease-std); }
+  @keyframes act-open { from { opacity: 0; } to { opacity: 1; } }
+}

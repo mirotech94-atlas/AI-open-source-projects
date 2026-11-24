@@ -1,7 +1,7 @@
 """Requests and messages to the Guardian and FlyCheap LinkedIn pages: seen,
 tracked by what people want, and answered.
 
-Miro, 2026-10-07: "go to guardian and flycheap pages on linkedin and track
+the owner, 2026-10-07: "go to guardian and flycheap pages on linkedin and track
 the services that clients want and need and reply to them always based on
 what they want -- i have linkedin premium", and "make sure when requests
 come for either page you will see it and reply to it".
@@ -21,7 +21,7 @@ read-only discovery runs; nothing clicked):
 * Both company page inboxes show "No messages yet" / "New messages your page
   receives will show up here." FlyCheap has no service page, so it cannot
   receive service requests -- only page messages.
-* Every one of those pages also carries LinkedIn's messaging overlay (Miro's
+* Every one of those pages also carries LinkedIn's messaging overlay (the owner's
   PERSONAL inbox, with its own contenteditable). Nothing here reads or types
   into it.
 
@@ -46,12 +46,26 @@ thread with something in it, and the reply UI of either. So:
   has not been seen, and guessing a form that may cost credits is not
   acceptable. The send guard refuses them with "the proposal form has not
   been seen yet; draft attached", which becomes a Tier 2 card carrying the
-  draft for Miro to paste. The scan saves a screenshot and outline of the
+  draft for the owner to paste. The scan saves a screenshot and outline of the
   request page when it first sees one, so the next session can finish the
   flow. Anything that asks for credits or payment stops the run: money out
   is Tier 3.
 
-The narrow rule for unattended replies (Miro's words above, his date): ATLAS
+Premium requests, first seen 2026-10-12 (a read-only discovery run that
+clicked only the list items): the Requests tab lists them as
+`li[role=tab]` rows (requester, service, age) with no link, and clicking one
+loads its detail pane (title, location, age, requester card, "Project
+details" as question/answer pairs). The URL never changes and no id is on
+the page, so a request's key is a hash of what the requester wrote (service,
+location, the Q&A) -- never the list position, the age or the name, which
+LinkedIn hides ("--") until the request is unlocked. With Page Premium
+lapsed every pane showed an "Unlock this request ... Reactivate Premium"
+box and no message, reply or proposal control at all: such a request is
+recorded 'held' with `LOCKED_NOTE`, is never drafted or answered, and the owner
+gets one alert per request. The upsell is never clicked: buying Premium is
+money out, Tier 3.
+
+The narrow rule for unattended replies (the owner's words above, his date): ATLAS
 answers only someone who wrote to the page or requested its services first --
 never first contact -- once per inbound message, from a code-held fact sheet
 per page, past `content_refusal` and `_guard_send` in code. Both actions are
@@ -59,7 +73,7 @@ Tier AUTO with a dry run (the guard) and an honest rollback: a sent LinkedIn
 message cannot be unsent (deletion is Tier 3, permanently denied), so the
 rollback suppresses the thread and records it, like `agency.send_reply`.
 `LINKEDIN_REPLY_AUTOSEND=off` holds every send for a card. The reply signs
-off as the page's assistant with "Miro sees this thread", and
+off as the page's assistant with "the owner sees this thread", and
 `kernel.linkedin_replies` posts a Slack receipt of every send so that it is
 true.
 """
@@ -74,9 +88,11 @@ import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from functools import partial
 from typing import Any
 
 from ...kernel.contracts import ActionResult, Health, Observation
+from ...kernel.voice_persona import EMAIL_STYLE, reask, voice_problems, voice_refusal
 
 log = logging.getLogger("atlas.linkedin.requests")
 
@@ -97,6 +113,20 @@ DIRECT_EMPTY = "No direct requests."
 INBOX_EMPTY = "No messages yet"
 INBOX_EMPTY_LINE = "New messages your page receives will show up here."
 
+# The Requests tab's premium layout, by the data-test hooks read on
+# 2026-10-12 (tests/fixtures/linkedin_requests_premium.json).
+PREMIUM_LIST = "[data-test-service-marketplace-premium-service-requests-list]"
+PREMIUM_ITEM = "[data-test-service-marketplace-premium-service-requests__list-item]"
+DIRECT_NONE = "[data-test-service-marketplace-direct-requests-list__no-direct-requests]"
+DETAIL = "[data-test-service-marketplace-service-requests__detail]"
+LOCKED_NOTE = "locked: LinkedIn needs Page Premium to reply"
+# The upsell box on a locked request. Its link is never clicked.
+LOCK_MARK = re.compile(r"unlock this request|reactivate premium|upgrade to premium",
+                       re.IGNORECASE)
+# Any control in the pane that could answer the requester.
+REPLY_CONTROL = re.compile(r"\b(?:message|reply|respond|send|submit|proposal|contact|"
+                           r"chat)\b", re.IGNORECASE)
+
 SOURCES = ("service_request", "page_message")
 STATUSES = ("new", "drafted", "replied", "held", "suppressed")
 OPEN = ("new", "drafted", "held")
@@ -109,13 +139,13 @@ HARD_STOP_BACKOFF_H = 24
 
 
 def inbox_url(page_key: str) -> str:
-    from . import PAGES
-    return f"https://www.linkedin.com/company/{PAGES[page_key]['id']}/admin/inbox/"
+    from . import KNOWN_PAGES
+    return f"https://www.linkedin.com/company/{KNOWN_PAGES[page_key]['id']}/admin/inbox/"
 
 
 def inbox_prefix(page_key: str) -> str:
-    from . import PAGES
-    return f"https://www.linkedin.com/company/{PAGES[page_key]['id']}/admin/inbox"
+    from . import KNOWN_PAGES
+    return f"https://www.linkedin.com/company/{KNOWN_PAGES[page_key]['id']}/admin/inbox"
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,10 +159,11 @@ class Surface:
 
 def surfaces() -> tuple[Surface, ...]:
     """What the scan reads, in order. Only FlyCheap and Guardian: those are
-    the pages Miro named. The provider page is member-level; Guardian's is
+    the pages the owner named. The provider page is member-level; Guardian's is
     the only service page that exists (FlyCheap has none), so its items are
     Guardian's."""
-    return (
+    from . import PAGES
+    every = (
         Surface("guardian-requests", "guardian", "service_request",
                 GUARDIAN_REQUESTS_URL, "requests_tab"),
         Surface("provider-requests", "guardian", "service_request",
@@ -142,6 +173,9 @@ def surfaces() -> tuple[Surface, ...]:
         Surface("flycheap-inbox", "flycheap", "page_message",
                 inbox_url("flycheap"), "inbox"),
     )
+    # Only pages ATLAS still uses (LINKEDIN_PAGES_ACTIVE; FlyCheap retired by
+    # the owner 2026-10-09): a retired page's inbox is never opened.
+    return tuple(s for s in every if s.page in PAGES)
 
 
 # ------------------------------------------------------------- parsing
@@ -157,6 +191,9 @@ class Item:
     service_raw: str = ""
     url: str | None = None
     from_us: bool = False
+    locked: bool = False     # LinkedIn's Premium lock: no way to reply
+    age: str = ""            # as LinkedIn shows it ("2d ago"); never in `words`
+    location: str = ""
 
     @property
     def inbound_sha(self) -> str:
@@ -215,7 +252,7 @@ def _request_href(href: str) -> bool:
 
 
 SELF_PREFIX = re.compile(r"^(?:you|you sent|sent)\s*[:·-]\s*")
-OUR_SIGNOFF = "(miro sees this thread)"
+OUR_SIGNOFF = "(owner sees this thread)"
 MATCH_HEAD = 32
 
 
@@ -299,22 +336,126 @@ def parse_rows(surface: Surface, rows: list[dict[str, Any]],
     return items
 
 
+def pane_lock(pane: dict[str, Any]) -> tuple[bool, bool]:
+    """(the lock box is shown, a control that could answer is shown)."""
+    lock = bool(LOCK_MARK.search(str(pane.get("text") or "")))
+    control = False
+    for ctl in pane.get("controls") or []:
+        tag = str(ctl.get("tag") or "").lower()
+        words = f"{ctl.get('text') or ''} {ctl.get('label') or ''}"
+        if (tag in ("textarea", "form") or ctl.get("editable")
+                or (not LOCK_MARK.search(words) and REPLY_CONTROL.search(words))):
+            control = True
+    return lock, control
+
+
+def pane_matches(row: dict[str, Any], pane: dict[str, Any] | None) -> bool:
+    """The pane shows this row's request: the same service, requester and
+    age. Two requests can share a service ("Cybersecurity" twice on
+    2026-10-12), so a pane still showing the previous one never passes."""
+    if not isinstance(pane, dict):
+        return False
+    title, name, age = (_clean(row.get(k)) for k in ("title", "name", "age"))
+    if not title or _clean(pane.get("title")) != title:
+        return False
+    creator, when = _clean(pane.get("creator")), _clean(pane.get("age"))
+    return (not name or creator == name) and (not age or when == age)
+
+
+def premium_key(title: str, location: str, qa: list[tuple[str, str]]) -> str:
+    """A premium request's identity: what the requester wrote. LinkedIn puts
+    no id on the page and the URL does not change when one is opened."""
+    body = "\n".join([title, location] + [f"{q}\n{a}" for q, a in qa])
+    return f"service-request:premium:{sha(body)}"
+
+
+def parse_premium(surface: Surface, premium: dict[str, Any]
+                  ) -> tuple[list[Item], list[str]]:
+    """Items from the premium list and each request's detail pane, as the
+    page script read them ({items: [{name, title, age}], panes: [pane|None]}).
+    Pure. Returns (items, problems); a request whose pane was not read is a
+    problem and is not recorded, so its key never comes from half a read."""
+    items: list[Item] = []
+    problems: list[str] = []
+    rows = premium.get("items") or []
+    panes = list(premium.get("panes") or [])
+    panes += [None] * (len(rows) - len(panes))
+    for n, (row, pane) in enumerate(zip(rows, panes, strict=False)):
+        name = _clean(row.get("name"))[:120]
+        title = _clean(row.get("title"))
+        if not title:
+            problems.append(f"premium request {n + 1} has no service on the list")
+            continue
+        if pane is None or not pane_matches(row, pane):
+            problems.append(f"premium request {n + 1} ({title}): its detail pane "
+                            "did not load")
+            continue
+        location = _clean(pane.get("location"))
+        qa = [(_clean(q), _clean(a)) for q, a in (pane.get("qa") or []) if _clean(q)]
+        lock, control = pane_lock(pane)
+        if lock and control:
+            problems.append(f"premium request {n + 1} ({title}) shows both the "
+                            "Premium lock and a control that could answer; not "
+                            "seen before")
+        lines = ([f"Location: {location}"] if location else []) + [
+            f"{q} {a}" for q, a in qa]
+        key = premium_key(title, location, qa)
+        if key in {i.external_key for i in items}:
+            problems.append(f"premium request {n + 1} ({title}) reads exactly like "
+                            "another one on the list; not recorded twice")
+            continue
+        items.append(Item(
+            page=surface.page, source=surface.source, surface=surface.label,
+            external_key=key,
+            requester=name or _clean(pane.get("creator"))[:120],
+            words="\n".join(lines)[:WORDS_MAX], service_raw=title, url=surface.url,
+            locked=lock, age=_clean(row.get("age") or pane.get("age")),
+            location=location))
+    return items, problems
+
+
+def _interpret_premium(surface: Surface, text: str, rows: list[dict[str, Any]],
+                       ours: list[str] | None, premium: dict[str, Any]) -> Read:
+    """The premium list as read on 2026-10-12. Recognised (ok) only when every
+    listed request was read through its pane and the Direct section says it
+    is empty; a Direct section with something in it is still unseen, and a
+    recognised premium list never hides it."""
+    items, problems = parse_premium(surface, premium)
+    if not (DIRECT_EMPTY in text or premium.get("direct_empty")):
+        extra = [i for i in parse_rows(surface, rows, ours)
+                 if i.external_key not in {x.external_key for x in items}]
+        return Read(surface, False, items + extra, (
+            f"the Direct requests section shows something in a layout ATLAS has not "
+            f"seen; {len(items)} premium and {len(extra)} other item(s) recorded"),
+            unverified_layout=True)
+    if problems:
+        # Something is listed that was not fully read: like an unseen
+        # layout, it outweighs the other page reading empty.
+        return Read(surface, False, items, "; ".join(problems), unverified_layout=True)
+    return Read(surface, True, items)
+
+
 def interpret(surface: Surface, text: str, rows: list[dict[str, Any]],
-              ours: list[str] | None = None) -> Read:
-    """What one loaded page says. Pure: the text and rows are already read.
+              ours: list[str] | None = None,
+              premium: dict[str, Any] | None = None) -> Read:
+    """What one loaded page says. Pure: the text, rows and premium list are
+    already read.
 
     0 only on a positive empty state. On the Requests tab both sections must
-    say empty; if only one does, the other holds something whose layout has
-    not been seen, and that is UNKNOWN, never 0."""
+    say empty or be read; if one is neither, it holds something whose layout
+    has not been seen, and that is UNKNOWN, never 0."""
     text = text or ""
+    if (surface.kind in ("requests_tab", "provider") and premium
+            and premium.get("list") and premium.get("items")):
+        return _interpret_premium(surface, text, rows, ours, premium)
     if surface.kind == "requests_tab":
-        premium, direct = PREMIUM_EMPTY in text, DIRECT_EMPTY in text
-        if premium and direct:
+        premium_empty, direct = PREMIUM_EMPTY in text, DIRECT_EMPTY in text
+        if premium_empty and direct:
             return Read(surface, True, empty=True)
         headers = "Premium requests" in text or "Direct requests" in text
         items = parse_rows(surface, rows, ours)
         # Which section is NOT saying empty: that is where something is.
-        which = "premium" if direct else "direct" if premium else "both"
+        which = "premium" if direct else "direct" if premium_empty else "both"
         why = (f"the Requests tab shows something in the {which} section(s), in a "
                f"layout ATLAS has not seen; {len(items)} item(s) recorded best effort"
                if headers else "the Requests tab did not look like the one read on "
@@ -404,8 +545,10 @@ def valid_label(page_key: str, raw: str) -> str:
 async def classify(page_key: str, service_raw: str, words: str) -> tuple[str, str]:
     """(label, how). Keyword rules first; then a model may pick a label from
     the closed set, with the request text wrapped as untrusted data; anything
-    else is 'other'."""
-    hit = keyword_label(page_key, f"{service_raw}\n{words}")
+    else is 'other'. The service LinkedIn names wins over a word in their
+    text ("Computer Networking" stays that, even if they mention security)."""
+    hit = (keyword_label(page_key, service_raw) if service_raw else None) \
+        or keyword_label(page_key, f"{service_raw}\n{words}")
     if hit is not None:
         return hit, "keyword"
     if not (service_raw or words).strip():
@@ -467,15 +610,27 @@ async def _exec(sql: str, *args: Any) -> Any:
 
 async def upsert_seen(item: Item, label: str, label_by: str, budget: str,
                       timeline: str) -> dict[str, Any] | None:
-    """Record an inbound item. A thread that was answered, or held for Miro,
+    """Record an inbound item. A thread that was answered, or held for the owner,
     and has new words from them since goes back to 'new' (one reply per
     inbound; the held card's draft answered the older message). A suppressed
-    one stays suppressed. Returns {id, inserted, status}."""
+    one stays suppressed.
+
+    A request LinkedIn shows locked (`item.locked`) is written 'held' with
+    `LOCKED_NOTE` in the same statement, so no reply driver can claim it in
+    between, and stays held while it is locked whatever its words; it goes
+    to 'new' only once a scan reads it unlocked. Returns {id, inserted,
+    status, note, prior_status, prior_note} (prior_* None when it is new)."""
+    note = locked_note(item) if item.locked else ""
     row = await _one(
-        """INSERT INTO linkedin_requests
+        """WITH prior AS (
+             SELECT status, note FROM linkedin_requests
+             WHERE page = $1 AND source = $2 AND external_key = $3),
+           up AS (
+           INSERT INTO linkedin_requests
              (page, source, external_key, surface, requester, words, inbound_sha,
-              service_raw, label, label_by, budget, timeline, url)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+              service_raw, label, label_by, budget, timeline, url, status, note)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,
+                   CASE WHEN $14::boolean THEN 'held' ELSE 'new' END, $15)
            ON CONFLICT (page, source, external_key) DO UPDATE SET
              last_seen = now(),
              requester = EXCLUDED.requester,
@@ -484,23 +639,61 @@ async def upsert_seen(item: Item, label: str, label_by: str, budget: str,
                                          <> EXCLUDED.inbound_sha
                                     THEN now() ELSE linkedin_requests.last_inbound_at END,
              inbound_sha = EXCLUDED.inbound_sha,
-             status = CASE WHEN linkedin_requests.status = 'replied'
+             status = CASE WHEN linkedin_requests.status = 'suppressed'
+                           THEN 'suppressed'
+                           WHEN $14::boolean
+                            AND linkedin_requests.status IN ('new', 'drafted', 'held')
+                           THEN 'held'
+                           WHEN NOT $14::boolean AND linkedin_requests.status = 'held'
+                            AND linkedin_requests.note LIKE 'locked:%'
+                           THEN 'new'
+                           WHEN linkedin_requests.status = 'replied'
                             AND linkedin_requests.replied_sha
                                 IS DISTINCT FROM EXCLUDED.inbound_sha
                            THEN 'new'
                            WHEN linkedin_requests.status = 'held'
                             AND linkedin_requests.inbound_sha <> EXCLUDED.inbound_sha
                            THEN 'new'
-                           ELSE linkedin_requests.status END
-           RETURNING id, (xmax = 0) AS inserted, status""",
+                           ELSE linkedin_requests.status END,
+             note = CASE WHEN linkedin_requests.status = 'suppressed'
+                         THEN linkedin_requests.note
+                         WHEN $14::boolean
+                          AND linkedin_requests.status IN ('new', 'drafted', 'held')
+                         THEN $15
+                         WHEN NOT $14::boolean AND linkedin_requests.status = 'held'
+                          AND linkedin_requests.note LIKE 'locked:%'
+                         THEN ''
+                         ELSE linkedin_requests.note END
+           RETURNING id, (xmax = 0) AS inserted, status, note)
+           SELECT up.id, up.inserted, up.status, up.note,
+                  (SELECT status FROM prior) AS prior_status,
+                  (SELECT note FROM prior) AS prior_note
+           FROM up""",
         item.page, item.source, item.external_key, item.surface, item.requester,
         item.words[:WORDS_MAX], item.inbound_sha, item.service_raw, label, label_by,
-        budget, timeline, item.url)
+        budget, timeline, item.url, bool(item.locked), note)
     return dict(row) if row is not None else None
 
 
+def locked_note(item: Item) -> str:
+    """`LOCKED_NOTE` and what the scan saw, the age as read at that time."""
+    seen = datetime.now(UTC).strftime("%Y-%m-%d %H:%M")
+    age = f", listed {item.age}" if item.age else ""
+    return f"{LOCKED_NOTE} (read {seen} UTC{age})"[:500]
+
+
+def newly_locked(item: Item, row: dict[str, Any] | None) -> bool:
+    """This scan is the first to see the request locked: insert, or a row
+    that was not already held as locked. The one alert hangs on this, kept
+    in Postgres, so a deploy or a second surface never repeats it."""
+    if not item.locked or not row or row.get("status") != "held":
+        return False
+    return not (row.get("prior_status") == "held"
+                and str(row.get("prior_note") or "").startswith("locked:"))
+
+
 async def mark_answered_on_page(item: Item) -> None:
-    """The thread's latest line is the page's own (Miro answered it himself,
+    """The thread's latest line is the page's own (the owner answered it himself,
     or ATLAS did): it is answered. Its current line becomes the inbound the
     answer covers, so the requester's next message reopens it. Suppressed
     stays suppressed."""
@@ -543,13 +736,15 @@ async def get_request(request_id: int) -> dict[str, Any] | None:
 
 async def awaiting_reply(limit: int) -> list[dict[str, Any]]:
     """New or drafted requests whose latest inbound is under three days old.
-    Older ones are Miro's: the check has been red about them for days."""
+    Older ones are the owner's: the check has been red about them for days."""
     rows = await _all(
         """SELECT id, page, source FROM linkedin_requests
            WHERE status IN ('new', 'drafted')
              AND last_inbound_at > now() - interval '3 days'
            ORDER BY first_seen LIMIT $1""", limit)
-    return [dict(r) for r in rows]
+    from . import PAGES
+    # A retired page's rows stay exactly as they are; nothing is drafted or sent.
+    return [dict(r) for r in rows if str(r["page"]) in PAGES]
 
 
 async def claim(request_id: int) -> bool:
@@ -631,7 +826,10 @@ async def open_requests() -> list[dict[str, Any]]:
                   last_inbound_at, note
            FROM linkedin_requests WHERE status IN ('new', 'drafted', 'held')
            ORDER BY last_inbound_at""")
-    return [dict(r) for r in rows]
+    from . import PAGES
+    # A retired page's open rows are kept but never turn the check red:
+    # nothing would answer them, so nobody could clear it.
+    return [dict(r) for r in rows if str(r["page"]) in PAGES]
 
 
 async def demand_rows() -> list[dict[str, Any]]:
@@ -702,7 +900,7 @@ class Facts:
 FACTS: dict[str, Facts] = {
     "guardian": Facts(
         name="Guardian", sign="Guardian's assistant",
-        link="https://guarder.io", host="guarder.io", contact="support@guarder.io",
+        link="https://vault.example", host="vault.example", contact="support@vault.example",
         what=("Guardian watches the network a business is responsible for: devices, "
               "servers, sites and certificates. For routine failures it performs the "
               "repair instead of sending another alert: services restarted, log "
@@ -711,20 +909,20 @@ FACTS: dict[str, Facts] = {
               "every site on one page, and what it fixed is already written down "
               "when the client asks."),
         services=("Network Support", "Computer Networking", "Cybersecurity"),
-        role=("Miro (Myron Mekhael) founded and owns Guardian. Never call him a "
+        role=("the owner (the author) founded and owns Guardian. Never call him a "
               "co-founder of it."),
-        extra=("Availability: remote, or in person in Staten Island, New York. "
-               "Pricing: on request only. Never state or estimate a price; say Miro "
+        extra=("Availability: remote, or in person in your city. "
+               "Pricing: on request only. Never state or estimate a price; say the owner "
                "will follow up on pricing in this thread."),
     ),
     "flycheap": Facts(
         name="FlyCheap", sign="FlyCheap's assistant",
-        link="https://flycheap.live", host="flycheap.live", contact="miro@flycheap.live",
+        link="https://flycheap.example", host="flycheap.example", contact="owner@flycheap.example",
         what=("FlyCheap is a flight-deal site. It tracks fares on the routes people "
               "follow and sends an email alert when a price drops, with a link to "
               "book the deal."),
         services=("Fare alerts", "Flight deals"),
-        role=("Miro (Myron Mekhael) is co-founder and developer of FlyCheap. Never "
+        role=("the owner (the author) is co-founder and developer of FlyCheap. Never "
               "call him its owner or founder."),
         extra=("Never state a fare, a price or a saving. Never promise that a fare "
                "will drop or that a seat is available."),
@@ -733,7 +931,7 @@ FACTS: dict[str, Facts] = {
 
 
 def signoff(page_key: str) -> str:
-    return f"\n\n— {FACTS[page_key].sign} (Miro sees this thread)"
+    return f"\n\n— {FACTS[page_key].sign} (the owner sees this thread)"
 
 
 MAX_CHARS = int(os.getenv("LINKEDIN_REPLY_MAX_CHARS", "600"))
@@ -746,20 +944,21 @@ SERVICE_FORM_UNSEEN = ("the proposal form has not been seen yet; draft attached 
 SYSTEM = (
     "You write a short reply from {name}'s assistant on LinkedIn to someone who "
     "wrote to the {name} page or requested its services. Answer what they asked "
-    "for, using only the facts below; if the facts do not cover it, say Miro will "
+    "for, using only the facts below; if the facts do not cover it, say the owner will "
     "answer here. Two to four short sentences, plain text, no greeting line with "
     "a title, no sign-off (one is added).\n"
     "Hard rules: no numbers or digits at all; no prices, fees, discounts or "
     "anything free; no dates, days, times or delivery promises; no guarantees or "
     "promises; no link other than {link}; no email address other than {contact}; "
-    "never claim to be Miro or a person -- you are the page's assistant and Miro "
-    "reads this thread. For a quote, a date or a decision, say Miro will follow "
-    "up here.\n\nFacts about {name}:\n{what}\nServices: {services}.\n{role}\n{extra}"
+    "never claim to be the owner or a person -- you are the page's assistant and the owner "
+    "reads this thread. For a quote, a date or a decision, say the owner will follow "
+    "up here.\n\n" + EMAIL_STYLE + "\n\n"
+    "Facts about {name}:\n{what}\nServices: {services}.\n{role}\n{extra}"
 )
 
 
 def autosend_enabled() -> bool:
-    """`LINKEDIN_REPLY_AUTOSEND`: on by default (Miro, 2026-10-07); 'off'
+    """`LINKEDIN_REPLY_AUTOSEND`: on by default (the owner, 2026-10-07); 'off'
     holds every reply for a card."""
     return os.getenv("LINKEDIN_REPLY_AUTOSEND", "on").strip().lower() not in (
         "0", "off", "false", "no")
@@ -810,7 +1009,7 @@ def content_refusal(text: str, page_key: str) -> str | None:
     if not body.endswith(signoff(page_key)):
         return "it does not end with the assistant sign-off"
     # Only the contact address is lifted out before the scans. The link is
-    # judged by the host rule below, so "https://guarder.io/anything" is
+    # judged by the host rule below, so "https://vault.example/anything" is
     # still caught for its path.
     bare = body.replace(facts.contact, " ")
     for addr in _EMAIL.findall(bare):
@@ -822,16 +1021,16 @@ def content_refusal(text: str, page_key: str) -> str | None:
             return f"it carries a link other than the page's own ({m.group(0)!r})"
     if (hit := _DIGIT.search(bare)) is not None:
         return (f"it contains a figure ({hit.group(0)!r}); prices, dates, times and "
-                "counts are Miro's to give")
+                "counts are the owner's to give")
     if (hit := _MONEY.search(bare)) is not None:
-        return f"it talks money ({hit.group(0)!r}); prices are Miro's to give"
+        return f"it talks money ({hit.group(0)!r}); prices are the owner's to give"
     if (hit := _FREE.search(bare)) is not None:
         return f"it offers something free or discounted ({hit.group(0)!r})"
     if (hit := _WHEN.search(bare)) is not None:
         return f"it names a date or a time ({hit.group(0)!r})"
     if (hit := _PROMISE.search(bare)) is not None:
         return f"it makes a promise or a guarantee ({hit.group(0)!r})"
-    return honesty_refusal(bare)
+    return honesty_refusal(bare) or voice_refusal(bare)
 
 
 # ------------------------------------------------------- draft_request_reply
@@ -856,11 +1055,14 @@ async def draft_request_reply(request_id: int) -> ActionResult:
         f"Service they named: {request.get('service_raw') or '(none)'}\n"
         f"Their words:\n{request.get('words') or '(none read)'}",
         f"linkedin {page_key} {request['source']}")
-    completion = await think(Need.DRAFT, system, [Message("user", material)],
-                             max_tokens=300)
+    turns = [Message("user", material)]
+    completion = await think(Need.DRAFT, system, turns, max_tokens=300, answer=True)
     text = (getattr(completion, "text", "") or "").strip()
     if not text:
         return ActionResult(False, "the model returned nothing")
+    if bad := voice_problems(text):
+        text = await reask(partial(think, answer=True), Need.DRAFT, system, turns, text, bad,
+                           max_tokens=300) or text
     body = text + signoff(page_key)
     refused = content_refusal(body, page_key)
     if refused is not None:
@@ -885,6 +1087,10 @@ async def _draftable(request_id: int) -> tuple[dict[str, Any] | None, str]:
         return None, f"no such request: {request_id}"
     if request["page"] not in FACTS:
         return None, f"no fact sheet for page {request['page']!r}"
+    from . import PAGES
+    if request["page"] not in PAGES:
+        return None, (f"the {request['page']} page is not active "
+                      "(LINKEDIN_PAGES_ACTIVE); nothing is drafted for it")
     if request["status"] == "suppressed":
         return None, "the thread is suppressed"
     if request["status"] not in ("new", "drafted"):
@@ -927,6 +1133,10 @@ async def _guard_send(draft_id: int) -> tuple[dict[str, Any] | None, str | None]
     if request is None:
         return None, f"no such request: {draft['request_id']}"
     page_key = str(request["page"])
+    from . import PAGES
+    if page_key not in PAGES:
+        return None, (f"the {page_key} page is not active (LINKEDIN_PAGES_ACTIVE); "
+                      "nothing is sent from its inbox")
     if request["status"] == "suppressed":
         return None, "the thread is suppressed; nothing more goes to it"
     if request["source"] == "service_request":
@@ -1043,7 +1253,7 @@ async def send_request_reply_rollback(token: str) -> ActionResult:
 # ------------------------------------------------------------- the browser
 
 # The page script: rows inside <main>, never inside the messaging overlay
-# (Miro's personal inbox) or the global nav. Text and hrefs only.
+# (the owner's personal inbox) or the global nav. Text and hrefs only.
 ROWS_JS = r"""
 () => {
   const main = document.querySelector('main') || document.body;
@@ -1061,6 +1271,90 @@ ROWS_JS = r"""
   return out;
 }
 """
+
+# The premium list by its data-test hooks. LinkedIn renders each field twice
+# (visible and screen-reader); the first line is the visible one. `controls`
+# counts links and buttons inside a row: a row with any is never clicked.
+PREMIUM_JS = r"""
+() => {
+  const first = el => el ? ((el.innerText || '').split('\n').map(s => s.trim())
+                             .filter(Boolean)[0] || '') : '';
+  const list = document.querySelector('__LIST__');
+  const items = Array.from(document.querySelectorAll('__ITEM__')).map(li => ({
+    name: first(li.querySelector('[data-test-service-requests-list-item__creator-name]')),
+    title: first(li.querySelector('[data-test-service-requests-list-item__project-title]')),
+    age: first(li.querySelector('[data-test-service-requests-list-item__project-status]')),
+    selected: li.getAttribute('aria-selected') === 'true',
+    controls: li.querySelectorAll('a, button, input, textarea, form').length,
+  }));
+  return {list: !!list, items, direct_empty: !!document.querySelector('__DIRECT__')};
+}
+""".replace("__LIST__", PREMIUM_LIST).replace("__ITEM__", PREMIUM_ITEM).replace(
+    "__DIRECT__", DIRECT_NONE)
+
+# The open request's detail pane: its fields, the Q&A, every control in it
+# (to tell a locked request from one that could be answered), and its text.
+DETAIL_JS = r"""
+() => {
+  const d = document.querySelector('__DETAIL__');
+  if (!d) return null;
+  const first = el => el ? ((el.innerText || '').split('\n').map(s => s.trim())
+                             .filter(Boolean)[0] || '') : '';
+  const f = name => first(d.querySelector('[data-test-service-requests-detail__' + name + ']'));
+  const qa = [];
+  for (const q of d.querySelectorAll('[data-test-service-requests-detail__description-question]')) {
+    const n = q.getAttribute('data-test-service-requests-detail__description-question');
+    const a = d.querySelector('[data-test-service-requests-detail__description-answer="' + n + '"]');
+    qa.push([(q.innerText || '').trim(), a ? (a.innerText || '').trim() : '']);
+  }
+  const controls = Array.from(d.querySelectorAll(
+      'a, button, textarea, input, select, form, [contenteditable="true"], ' +
+      '[role=button], [role=textbox]')).map(el => ({
+    tag: el.tagName.toLowerCase(), label: el.getAttribute('aria-label') || '',
+    text: first(el).slice(0, 80), editable: el.isContentEditable || false}));
+  return {title: f('project-title'), location: f('location'), age: f('project-status'),
+          creator: f('creator-title'), subtitle: f('creator-subtitle'), qa, controls,
+          text: (d.innerText || '').slice(0, 4000)};
+}
+""".replace("__DETAIL__", DETAIL)
+
+
+PANE_TRIES = 5
+
+
+async def read_premium(page: Any) -> dict[str, Any] | None:
+    """The premium list and each request's pane. Read-only: the only clicks
+    are on the list rows themselves (LinkedIn's tabs), scoped to their
+    data-test hook, never on a row holding a link or button, and the run
+    stops if a click moved the page. The open row's pane is read without a
+    click. None when the page has no premium list."""
+    from .browser import pause
+    listed = await page.evaluate(PREMIUM_JS)
+    if not isinstance(listed, dict) or not listed.get("list") or not listed.get("items"):
+        return None
+    here = page.url
+    panes: list[dict[str, Any] | None] = []
+    rows = page.locator(PREMIUM_ITEM)
+    for n, row in enumerate(listed["items"]):
+        pane: dict[str, Any] | None = None
+        if int(row.get("controls") or 0) == 0:
+            if not row.get("selected"):
+                await pause(page, 2000, 4500)
+                await rows.nth(n).click()
+                await pause(page, 1500, 3000)
+                if page.url != here:
+                    raise RuntimeError("opening a premium request moved the page to "
+                                       f"{page.url.split('?')[0]}; stopped")
+            # LinkedIn re-renders the pane late: wait for it to show this row.
+            for _ in range(PANE_TRIES):
+                got = await page.evaluate(DETAIL_JS)
+                pane = got if isinstance(got, dict) else None
+                if pane_matches(row, pane):
+                    break
+                await pause(page, 800, 1500)
+        panes.append(pane)
+    return {**listed, "panes": panes}
+
 
 # A stripped outline for the next session: structure, never raw HTML (which
 # can carry embedded tokens).
@@ -1120,6 +1414,7 @@ class Scan:
     new: list[dict[str, Any]] = field(default_factory=list)
     read_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     shots: list[str] = field(default_factory=list)
+    locked: list[dict[str, Any]] = field(default_factory=list)   # newly locked
 
 
 async def scan() -> Scan:
@@ -1155,6 +1450,8 @@ async def scan() -> Scan:
                     text = await goto(page, surface.url)
                     await pause(page, 1200, 2600)
                     rows = await page.evaluate(ROWS_JS)
+                    premium = (await read_premium(page)
+                               if surface.kind != "inbox" else None)
                 except (HardStop, SignedOut):
                     raise
                 except Exception as exc:                 # noqa: BLE001
@@ -1164,7 +1461,7 @@ async def scan() -> Scan:
                         f"could not read it ({type(exc).__name__}: {str(exc)[:120]})")))
                     continue
                 any_read = True
-                read = interpret(surface, text, rows, ours)
+                read = interpret(surface, text, rows, ours, premium)
                 result.reads.append(read)
                 fresh = [i for i in read.items
                          if (i.page, i.source, i.external_key) not in known]
@@ -1173,7 +1470,10 @@ async def scan() -> Scan:
                     outline = await save_outline(page, f"requests-{surface.label}")
                     result.shots += [s for s in (shot, outline) if s]
                 for item in fresh:
-                    if item.source == "service_request" and item.url:
+                    # A premium request has no page of its own (its url is the
+                    # list): its pane was read above.
+                    if (item.source == "service_request" and item.url
+                            and item.url != surface.url):
                         # The proposal UI has never been seen: keep a picture
                         # and an outline of the request itself for the next
                         # session to finish the flow from.
@@ -1209,7 +1509,7 @@ async def scan() -> Scan:
             key = (item.page, item.source, item.external_key)
             if item.from_us:
                 if key in known:
-                    # The page has the last word (Miro answered, or ATLAS
+                    # The page has the last word (the owner answered, or ATLAS
                     # did): answered, until they write again.
                     await mark_answered_on_page(item)
                 continue
@@ -1224,6 +1524,12 @@ async def scan() -> Scan:
                 result.new.append({"id": row.get("id"), "page": item.page,
                                    "source": item.source, "requester": item.requester,
                                    "label": label})
+            if newly_locked(item, row):
+                result.locked.append({"id": row.get("id") if row else None,
+                                      "page": item.page, "requester": item.requester,
+                                      "service": item.service_raw, "age": item.age,
+                                      "location": item.location, "url": item.url})
+            known.add(key)
     return result
 
 
@@ -1369,6 +1675,38 @@ def _hard_stop_recent(state: dict[str, Any]) -> str | None:
     return None
 
 
+async def alert_locked(locked: list[dict[str, Any]]) -> None:
+    """One Slack alert, in the page's topic, for the requests this scan was
+    the first to see locked (`newly_locked`, kept in Postgres: never again
+    for the same request). The names and services are LinkedIn's text,
+    shown as read."""
+    from ...kernel.comms import Outbound, notify
+    by_page: dict[str, list[dict[str, Any]]] = {}
+    for r in locked:
+        by_page.setdefault(str(r["page"]), []).append(r)
+    for page_key, rows in by_page.items():
+        name = FACTS[page_key].name if page_key in FACTS else page_key
+        lines = []
+        for r in rows:
+            who = r.get("requester") or ""
+            who = "name hidden" if who in ("", "--") else who
+            where = f", {r['location']}" if r.get("location") else ""
+            lines.append(f"- {who} · {r.get('service') or 'a service'} · "
+                         f"{r.get('age') or 'age not shown'}{where}")
+        body = ("LinkedIn shows each one with an \"Unlock this request\" box and no "
+                "message or reply control, so ATLAS cannot answer them and has not "
+                "tried. Unlocking means paying for Page Premium; that is yours to "
+                "decide, ATLAS never clicks it.\n\n" + "\n".join(lines)
+                + f"\n\n{rows[0].get('url') or GUARDIAN_REQUESTS_URL}")
+        try:
+            await notify(Outbound(
+                title=(f"LinkedIn: {len(rows)} {name} service request(s) locked "
+                       "behind Page Premium"),
+                body=body, topic=page_key, kind="alert"))
+        except Exception:
+            log.warning("could not send the locked-requests alert", exc_info=True)
+
+
 async def requests_check() -> Observation:
     """Read the request surfaces and both inboxes; report what is waiting.
 
@@ -1425,6 +1763,8 @@ async def requests_check() -> Observation:
                    if r.surface.source == "page_message" and not r.ok]
         _LAST_SCAN.update({"at": result.read_at, "clean": not unread,
                            "new": result.new, "shots": result.shots})
+        if result.locked:
+            await alert_locked(result.locked)
         scan_note = (f"read {len(result.reads)} surface(s) at "
                      f"{result.read_at:%H:%M} UTC; {len(result.new)} new")
     try:
@@ -1435,15 +1775,20 @@ async def requests_check() -> Observation:
             f"the requests table could not be read: {type(exc).__name__}"))
     now = datetime.now(UTC)
     # Unanswered = nobody has it: still new or drafted after STALE_HOURS. A
-    # held one is with Miro already (a card or an alert carries it), so it
+    # held one is with the owner already (a card or an alert carries it), so it
     # is counted and named, not paged on again every half hour.
     stale = [r for r in rows if r["status"] in ("new", "drafted")
              and (now - r["last_inbound_at"]).total_seconds() > STALE_HOURS * 3600]
     held = [r for r in rows if r["status"] == "held"]
-    if held:
-        scan_note += f"; {len(held)} held for you on a card"
+    locked = [r for r in held if str(r.get("note") or "").startswith("locked:")]
+    if len(held) > len(locked):
+        scan_note += f"; {len(held) - len(locked)} held for you on a card"
+    if locked:
+        scan_note += (f"; {len(locked)} locked (LinkedIn needs Page Premium to reply; "
+                      "you were alerted once)")
     scanned = _LAST_SCAN.get("at")
     evidence = {"open": len(rows), "stale": len(stale), "held": len(held),
+                "locked": len(locked),
                 "unread": unread,
                 "scanned_at": scanned.isoformat() if scanned else None,
                 "clean": bool(_LAST_SCAN.get("clean")) and not unread,

@@ -1,7 +1,7 @@
 """agency.sitetemplate -- the designed client-site templates, filled in code.
 
-**Why this exists (2026-09-30).** The preview at
-eco-electrical-services-llc-38.mapfront.io was a model's paragraph about the
+**Why this exists (2026-09-30).** The
+eco-electrical-services-llc-38 preview was a model's paragraph about the
 raw GetLayers output it had been handed, wrapped in unstyled chrome. The
 fix is structural: the page is designed ONCE, at design time, and checked in
 under `templates/`; at run time ATLAS only fills its slots.
@@ -31,7 +31,7 @@ under `templates/`; at run time ATLAS only fills its slots.
 * **Preview honesty.** Until a client has bought (`client.json` names a
   `package`), every page carries `<meta name="robots" content="noindex">`
   and a small line, set apart from the business's own voice: "Preview made
-  by Mapfront for <Business>".
+  by ATLAS Agency for <Business>".
 
 * **Booking (2026-09-30, `sitebooking`).** Every family leads with one
   booking action -- "Request a visit", "Book an appointment", "Reserve a
@@ -41,7 +41,7 @@ under `templates/`; at run time ATLAS only fills its slots.
   nowhere, said plainly). The contact section keeps an empty
   `data-atlas="callme"` slot for the call-me widget.
 
-* **A marketing site, not a brochure (2026-09-30, Miro's desktop review:
+* **A marketing site, not a brochure (2026-09-30, the owner's desktop review:
   "very poor design -- make sure it's a frontend marketing website for each
   one").** Every family's home page now runs hero (a GetLayers background
   loop behind the copy, a photograph of the trade in a plate) → an honest
@@ -52,7 +52,7 @@ under `templates/`; at run time ATLAS only fills its slots.
   print. The imagery is `sitemedia`: self-hosted, generic, captioned as
   illustrative, never presented as the business's own.
 
-* **The Lovable port (2026-10-01, v4).** Miro's rule: every client site's
+* **The Lovable port (2026-10-01, v4).** the owner's rule: every client site's
   design goes frontend-design → GetLayers → Webild → Lovable, and the best
   of each is ported into these templates. From the trades reference
   ("Bright Spark Site", recorded in `templates/getlayers.json`): a
@@ -95,8 +95,9 @@ FAMILIES = ("trades", "beauty", "food")
 FAMILY_BRAND = {"trades": "#133153", "beauty": "#1b0095", "food": "#275a47"}
 FONT_FILE = sitemedia.FONT_FILE
 ASSET_FILES = sitemedia.FONT_FILES
-PREVIEW_LINE = "Preview made by Mapfront for"
-MAPFRONT_URL = "https://mapfront.io/"
+# the owner, 2026-10-30: the brand is ATLAS Agency, its public link the storefront.
+PREVIEW_LINE = "Preview made by ATLAS Agency for"
+AGENCY_URL = "https://agency.example.com/"
 
 INDEX, CONTACT, PRIVACY, TERMS = "index.html", "contact.html", "privacy.html", "terms.html"
 
@@ -300,7 +301,7 @@ _CLAIMS = re.compile(
     r"fastest|quick\w*|rapid\w*|prompt\w*|immediate\w*|within|minutes?|hours?|"
     r"weekends?|daily|free|cheap\w*|affordable|lowest|discounts?|deals?|prices?|"
     r"priced|pricing|expert\w*|master|specialists?|leading|premier|team|staff|"
-    r"employees|crew|website|web ?site|mapfront|template)\b|[%$€£#]|24\s*/\s*7",
+    r"employees|crew|website|web ?site|mapfront|atlas agency|template)\b|[%$€£#]|24\s*/\s*7",
     re.IGNORECASE)
 _MARKUP = re.compile(r"[<>{}\[\]\\]|https?:|www\.|@|\*\*|`")
 _DIGITS = re.compile(r"\d+")
@@ -881,7 +882,7 @@ def preview_aside(client: ClientData) -> str:
         return ""
     return ('<aside class="mf-preview" aria-label="About this preview" '
             'data-atlas="preview"><p>Preview made by '
-            f'<a href="{MAPFRONT_URL}" rel="noopener">Mapfront</a> for '
+            f'<a href="{AGENCY_URL}" rel="noopener">ATLAS Agency</a> for '
             f"{escape(client.name)}</p></aside>")
 
 
@@ -1007,8 +1008,8 @@ def footer(client: ClientData, family: str, *, prefix: str = "") -> str:
     hours = ""
     if client.hours:
         hours = f'<div><p class="mf-foot__title">Hours</p>{_hours_list(client)}</div>'
-    meta_right = ('<p>Preview made by <a href="' + MAPFRONT_URL + '" rel="noopener">'
-                  "Mapfront</a></p>") if is_preview(client) else ""
+    meta_right = ('<p>Preview made by <a href="' + AGENCY_URL + '" rel="noopener">'
+                  "ATLAS Agency</a></p>") if is_preview(client) else ""
     year = datetime.now(UTC).year
     noun, _work = kind_of(client.category)
     place = place_of(client.address)

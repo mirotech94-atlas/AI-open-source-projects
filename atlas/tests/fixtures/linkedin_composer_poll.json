@@ -1,0 +1,183 @@
+{
+ "_source": "read-only probe of the ATLAS Academy page-admin composer (linkedin.com/company/<id>/admin/page-posts/published/?share=true), 2026-10-13, after cards #377/#378 failed at 'fill-poll'. The composer was closed without posting both times. Outline only, never raw HTML.",
+ "toolbar_before_more": [
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Add media"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Create an event"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Celebrate an occasion"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "More"
+  }
+ ],
+ "toolbar_after_more": [
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Add media"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Create an event"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Celebrate an occasion"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Share that you’re hiring"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Create a poll"
+  },
+  {
+   "tag": "button",
+   "class": "share-promoted-detour-button",
+   "aria_label": "Add a document"
+  }
+ ],
+ "poll_form": [
+  {
+   "tag": "button",
+   "class": "artdeco-button artdeco-button--circle artdeco-button--muted artdeco-button--2 artdeco-button--tertia",
+   "aria_label": "Dismiss",
+   "text": "",
+   "id": "ember<n>"
+  },
+  {
+   "tag": "h2",
+   "class": "",
+   "aria_label": "",
+   "text": "Create a poll",
+   "id": "share-to-linkedin-modal__header"
+  },
+  {
+   "tag": "label",
+   "class": "artdeco-text-input--label",
+   "aria_label": "",
+   "text": "Your question",
+   "for": "input-uid-ember<n>"
+  },
+  {
+   "tag": "textarea",
+   "class": "polls-detour__form-fields polls-detour__question-field artdeco-text-input--input artdeco-text-input_",
+   "aria_label": "",
+   "text": "",
+   "id": "input-uid-ember<n>",
+   "placeholder": "E.g., How do you commute to work?",
+   "required": true
+  },
+  {
+   "tag": "label",
+   "class": "polls-detour__input-label polls-detour__required-input-indicator",
+   "aria_label": "",
+   "text": "Option 1",
+   "for": "poll-option-1"
+  },
+  {
+   "tag": "input",
+   "class": "polls-detour__form-fields artdeco-text-input--input",
+   "aria_label": "",
+   "text": "",
+   "id": "poll-option-1",
+   "placeholder": "E.g., Public transportation",
+   "type": "text",
+   "required": true
+  },
+  {
+   "tag": "label",
+   "class": "polls-detour__input-label polls-detour__required-input-indicator",
+   "aria_label": "",
+   "text": "Option 2",
+   "for": "poll-option-2"
+  },
+  {
+   "tag": "input",
+   "class": "polls-detour__form-fields artdeco-text-input--input",
+   "aria_label": "",
+   "text": "",
+   "id": "poll-option-2",
+   "placeholder": "E.g., Drive myself",
+   "type": "text",
+   "required": true
+  },
+  {
+   "tag": "button",
+   "class": "artdeco-button artdeco-button--2 artdeco-button--secondary ember-view",
+   "aria_label": "",
+   "text": "Add option",
+   "id": "ember<n>",
+   "type": "button"
+  },
+  {
+   "tag": "h3",
+   "class": "t-14 t-black t-bold mb3",
+   "aria_label": "",
+   "text": "Poll duration",
+   "id": "polls-duration-label"
+  },
+  {
+   "tag": "select",
+   "class": "mb4",
+   "aria_label": "",
+   "text": "1 day 3 days 1 week 2 weeks",
+   "options": [
+    [
+     "1",
+     "1 day",
+     false
+    ],
+    [
+     "3",
+     "3 days",
+     false
+    ],
+    [
+     "7",
+     "1 week",
+     true
+    ],
+    [
+     "14",
+     "2 weeks",
+     false
+    ]
+   ]
+  },
+  {
+   "tag": "button",
+   "class": "artdeco-button artdeco-button--2 artdeco-button--secondary ember-view",
+   "aria_label": "Back",
+   "text": "Back",
+   "id": "ember<n>",
+   "type": "button"
+  },
+  {
+   "tag": "button",
+   "class": "share-box-footer__primary-btn artdeco-button artdeco-button--2 artdeco-button--primary artdeco-butto",
+   "aria_label": "Done",
+   "text": "Done",
+   "id": "ember<n>",
+   "type": "button",
+   "disabled": true
+  }
+ ]
+}

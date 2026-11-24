@@ -216,8 +216,8 @@ class Action:
     params: dict[str, str] = field(default_factory=dict)   # name -> description
     # Stop repeating a fix that is not fixing anything.
     max_per_hour: int = 3
-    # Where the approval card lands. By default the namespace ("vpsie" for
-    # vpsie.restart_instance); a module whose actions concern several
+    # Where the approval card lands. By default the namespace ("cloudco" for
+    # cloudco.restart_instance); a module whose actions concern several
     # estates names the parameter that says which -- "page" for a LinkedIn
     # post, so a FlyCheap post is discussed in the FlyCheap channel.
     topic_param: str | None = None
@@ -248,10 +248,10 @@ class Action:
     # Proposed only by the code that drafted its parameters, and approved only
     # from that card -- never offered to a model. `delegate.claude_code`
     # queues a brief for an agent with a shell: the brief IS the capability,
-    # so it has to be the one ATLAS wrote and Miro read, not one a model
+    # so it has to be the one ATLAS wrote and the owner read, not one a model
     # picked and filled in from the catalog (intent.catalog, the reasoner).
     card_only: bool = False
-    # Runs only when Miro himself asked for it, over a channel that proves
+    # Runs only when the owner himself asked for it, over a channel that proves
     # it is him (an approver's signed Slack message or /atlas, a call ATLAS
     # placed) -- never unattended, never
     # from an agent, the reasoner or a fix sweep, never on caller ID alone.
@@ -265,12 +265,15 @@ class Action:
     # the decision -- a message's recipient and text -- a one-line card with
     # the params behind a Details button is not an approval of them.
     card_detail: Callable[[dict[str, Any]], str] | None = None
-    # Tier 2 that is carded even when Miro asks for it directly. On Slack or
+    # Tier 2 that is carded even when the owner asks for it directly. On Slack or
     # a call ATLAS placed, `intent.act` normally takes the request as the
     # approval; but the model wrote these params (the text of a message he
     # dictated, the contact it picked), so he approves what will actually be
     # sent, not what he said. Meaningless on Tier 1.
     card_always: bool = False
+    # Moves money or handles a credential. Set in code on the spec; WhatsApp
+    # approval refuses any action carrying it, whatever its name or tier.
+    moves_money_or_credentials: bool = False
 
     def __post_init__(self) -> None:
         if self.tier is Tier.AUTO:
@@ -284,7 +287,7 @@ class Action:
 
 @dataclass(frozen=True, slots=True)
 class Signal:
-    """Something worth telling Miro that is not a failure: a recommendation,
+    """Something worth telling the owner that is not a failure: a recommendation,
     a trend, a deadline. Modules emit these; the kernel routes them."""
 
     title: str
@@ -320,7 +323,7 @@ class AgendaItem:
 
 @dataclass(frozen=True, slots=True)
 class InboxItem:
-    """Something waiting on a reply from Miro."""
+    """Something waiting on a reply from the owner."""
 
     at: datetime
     sender: str

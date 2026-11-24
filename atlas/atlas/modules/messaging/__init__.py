@@ -4,7 +4,7 @@ Watches: Slack mentions waiting on a reply, read-only through
 `conversations.history` on the channels named in `MESSAGING_SLACK_CHANNELS`.
 
 May do: nothing. There is no action here. WhatsApp was the last platform
-`messaging.reply` could send on, and it was removed at Miro's request on
+`messaging.reply` could send on, and it was removed at the owner's request on
 2026-09-28 -- so the action went with it rather than stay in the catalog as
 a Tier 2 name that could only ever refuse.
 
@@ -15,7 +15,7 @@ CAPABILITIES.md §2.3 ("this adds reading and drafting ... not just posting
 alerts").
 
 Endpoint assumed: Slack Web API `slack.com/api`, documented in
-`slack_read.py` for Miro to correct if a shape changes.
+`slack_read.py` for the owner to correct if a shape changes.
 
 Only `_SENDABLE` platforms are read back from `messaging_inbound`, and there
 are none left: rows from WhatsApp and Telegram, both since removed, stay in

@@ -3,7 +3,7 @@
 These are the last hop before a message leaves the building, and every bug
 found here was invisible from the inside: `notify()` catches a channel
 exception per channel and logs a warning, so a malformed payload looks
-exactly like "Miro wasn't notified" with no louder signal than a log line.
+exactly like "the owner wasn't notified" with no louder signal than a log line.
 """
 from __future__ import annotations
 
@@ -84,9 +84,9 @@ def test_thread_ts_is_omitted_rather_than_sent_as_null():
 @pytest.mark.parametrize("channel, env", [
     (slack_channel.SlackChannel(), {"SLACK_BOT_TOKEN": "xoxb-x",
                                     "SLACK_CHANNEL": "C1"}),
-    (matrix_channel.MatrixChannel(), {"MATRIX_HOMESERVER": "https://example.org",
+    (matrix_channel.MatrixChannel(), {"MATRIX_HOMESERVER": "https://internal.example",
                                       "MATRIX_TOKEN": "syt_x",
-                                      "MATRIX_ALERT_ROOM": "!r:example.org"}),
+                                      "MATRIX_ALERT_ROOM": "!r:internal.example"}),
     (twilio_channel.VoiceChannel(), {"TWILIO_ACCOUNT_SID": "AC1",
                                      "TWILIO_AUTH_TOKEN": "t",
                                      "TWILIO_FROM": "+1", "TWILIO_TO": "+2",
@@ -108,7 +108,7 @@ async def test_credentials_are_read_per_call_not_at_import(channel, env, monkeyp
 
 async def test_voice_is_unavailable_without_atlas_host(monkeypatch):
     """send() builds the TwiML callback from ATLAS_HOST. Unset, the URL is
-    "https://None/..." and Twilio rings Miro only to fail fetching what to
+    "https://None/..." and Twilio rings the owner only to fail fetching what to
     say — a CRITICAL page that looks delivered and carries no information."""
     for key, value in (("TWILIO_ACCOUNT_SID", "AC1"), ("TWILIO_AUTH_TOKEN", "t"),
                        ("TWILIO_FROM", "+1"), ("TWILIO_TO", "+2")):
@@ -193,7 +193,7 @@ async def test_a_critical_call_is_placed_on_the_phone_line_itself(monkeypatch):
     assert data["MachineDetection"] == "DetectMessageEnd"
     # The opening is the three-beat briefing (kernel/briefing.py), composed
     # before the phone rings; with no card there is no question.
-    assert _query(seen) == {"say": "Hey Miro, it's ATLAS. Server down. Act now.",
+    assert _query(seen) == {"say": "Hey the owner, it's ATLAS. Server down. Act now.",
                             "title": "Server down"}
 
 
@@ -224,7 +224,7 @@ async def test_one_card_is_asked_as_its_own_action_and_several_are_not(monkeypat
         "The fare poller is stuck.\n`flycheap.restart_worker` · Tier 2 · rollback: start it",
         Severity.CRITICAL, buttons=(Button("Approve", "approve:41"),)))
     query = _query(seen)
-    assert query["say"] == "Hey Miro, it's ATLAS. The fare poller is stuck."
+    assert query["say"] == "Hey the owner, it's ATLAS. The fare poller is stuck."
     assert query["ask"] == "Want me to restart the FlyCheap worker, yes or no?"
     assert "Tier" not in query["say"] and "#41" not in query["say"]
 
@@ -249,7 +249,7 @@ async def test_away_shortens_the_speech_but_keeps_the_decision(monkeypatch):
     await twilio_channel.VoiceChannel().send(Outbound("Pager", body,
                                                        Severity.CRITICAL))
     query = _query(seen)
-    assert query["say"] == "Hey Miro, it's ATLAS. Pager. First sentence here."
+    assert query["say"] == "Hey the owner, it's ATLAS. Pager. First sentence here."
     assert query["away"] == "1"
 
 
@@ -263,7 +263,7 @@ async def test_home_or_unknown_says_it_all_and_is_not_marked_away(
     await twilio_channel.VoiceChannel().send(Outbound("Pager", body,
                                                        Severity.CRITICAL))
     query = _query(seen)
-    assert query["say"] == f"Hey Miro, it's ATLAS. Pager. {body}"
+    assert query["say"] == f"Hey the owner, it's ATLAS. Pager. {body}"
     assert "away" not in query
 
 
@@ -303,10 +303,10 @@ async def test_nothing_about_the_call_reaches_an_agent_platform(monkeypatch):
 # ------------------------------------------------------------------- matrix
 
 async def test_matrix_percent_encodes_the_room_id(monkeypatch):
-    """Room ids are `!abc:example.org` — reserved characters in a path segment."""
-    monkeypatch.setenv("MATRIX_HOMESERVER", "https://example.org")
+    """Room ids are `!abc:internal.example` — reserved characters in a path segment."""
+    monkeypatch.setenv("MATRIX_HOMESERVER", "https://internal.example")
     monkeypatch.setenv("MATRIX_TOKEN", "syt_x")
-    monkeypatch.setenv("MATRIX_ALERT_ROOM", "!abc:example.org")
+    monkeypatch.setenv("MATRIX_ALERT_ROOM", "!abc:internal.example")
     seen: dict[str, str] = {}
 
     class FakeResponse:
@@ -326,7 +326,7 @@ async def test_matrix_percent_encodes_the_room_id(monkeypatch):
 
     monkeypatch.setattr(matrix_channel.httpx, "AsyncClient", FakeClient)
     await matrix_channel.MatrixChannel().send(Outbound("t", "b"))
-    assert "%21abc%3Aexample.org" in seen["url"]
+    assert "%21abc%3Ak9.ms" in seen["url"]
 
 
 async def test_matrix_uses_put_with_a_transaction_id(monkeypatch):
@@ -339,24 +339,24 @@ async def test_matrix_uses_put_with_a_transaction_id(monkeypatch):
 
 
 async def test_matrix_rejects_a_bare_hostname(monkeypatch):
-    """MATRIX_HOMESERVER=example.org (no scheme) raised UnsupportedProtocol deep in
+    """MATRIX_HOMESERVER=internal.example (no scheme) raised UnsupportedProtocol deep in
     httpx at send time rather than reporting the channel as unconfigured."""
     monkeypatch.setenv("MATRIX_TOKEN", "syt_x")
-    monkeypatch.setenv("MATRIX_ALERT_ROOM", "!r:example.org")
-    monkeypatch.setenv("MATRIX_HOMESERVER", "example.org")
+    monkeypatch.setenv("MATRIX_ALERT_ROOM", "!r:internal.example")
+    monkeypatch.setenv("MATRIX_HOMESERVER", "internal.example")
     assert await matrix_channel.MatrixChannel().available() is False
 
 
 # ------------------------------------------------------- per-topic channels
 
 def test_a_topic_goes_to_its_own_channel(monkeypatch):
-    """One channel for everything means vpsie billing and a FlyCheap deploy
+    """One channel for everything means cloudco billing and a FlyCheap deploy
     sit in the same scroll. SLACK_CHANNELS maps a module to a channel."""
     monkeypatch.setenv("SLACK_CHANNEL", "C_DEFAULT")
     monkeypatch.setenv("SLACK_CHANNELS",
-                       "vpsie:C_VPSIE,flycheap:C_FLY,guardian:C_GUARD")
+                       "cloudco:C_CLOUDCO,flycheap:C_FLY,guardian:C_GUARD")
     slack = slack_channel.SlackChannel()
-    assert slack.channel_for("vpsie") == "C_VPSIE"
+    assert slack.channel_for("cloudco") == "C_CLOUDCO"
     assert slack.channel_for("flycheap") == "C_FLY"
     assert slack.channel_for("guardian") == "C_GUARD"
 
@@ -374,7 +374,7 @@ def test_an_unmapped_topic_falls_back_rather_than_vanishing(monkeypatch):
     """A message in the wrong channel is still read. One with no channel is
     lost, so there is no case where an unmapped topic is dropped."""
     monkeypatch.setenv("SLACK_CHANNEL", "C_DEFAULT")
-    monkeypatch.setenv("SLACK_CHANNELS", "vpsie:C_VPSIE")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:C_CLOUDCO")
     slack = slack_channel.SlackChannel()
     assert slack.channel_for("linkedin") == "C_DEFAULT"
     assert slack.channel_for("") == "C_DEFAULT"
@@ -383,17 +383,17 @@ def test_an_unmapped_topic_falls_back_rather_than_vanishing(monkeypatch):
 def test_no_mapping_at_all_still_works(monkeypatch):
     monkeypatch.setenv("SLACK_CHANNEL", "C_DEFAULT")
     monkeypatch.delenv("SLACK_CHANNELS", raising=False)
-    assert slack_channel.SlackChannel().channel_for("vpsie") == "C_DEFAULT"
+    assert slack_channel.SlackChannel().channel_for("cloudco") == "C_DEFAULT"
 
 
 def test_a_proposal_carries_the_namespace_as_its_topic():
-    """"vpsie.restart_instance" is vpsie's business, so its approval card
+    """"cloudco.restart_instance" is cloudco's business, so its approval card
     belongs where that estate is discussed."""
     from types import SimpleNamespace
 
     from atlas.kernel import approvals
     plain = SimpleNamespace(topic_param=None, topic_for=None)
-    assert approvals._topic(plain, "vpsie.restart_instance", {}) == "vpsie", \
+    assert approvals._topic(plain, "cloudco.restart_instance", {}) == "cloudco", \
         "the namespace is still the default topic"
     by_param = SimpleNamespace(topic_param="page", topic_for=None)
     assert approvals._topic(by_param, "linkedin.publish_post",
@@ -403,7 +403,7 @@ def test_a_proposal_carries_the_namespace_as_its_topic():
 
 async def test_a_thread_reply_in_a_channel_is_also_shown_in_the_channel(monkeypatch):
     """2026-09-25: ATLAS answered in #decisions inside the message's thread
-    and Miro, looking at the channel, saw nothing. A channel thread reply
+    and the owner, looking at the channel, saw nothing. A channel thread reply
     broadcasts; a DM thread does not need to."""
     import httpx
     sent: list[dict] = []
@@ -426,7 +426,7 @@ async def test_a_thread_reply_in_a_channel_is_also_shown_in_the_channel(monkeypa
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
     ch = slack_channel.SlackChannel()
     monkeypatch.setattr(slack_channel.SlackChannel, "channel_for",
-                        lambda self, topic: "C0C3RK8RS2E")
+                        lambda self, topic: "C0SLACKCH04")
     await ch.send(Outbound("t", "b", thread="1790363136.669899", kind="receipt"))
     assert sent[-1]["thread_ts"] == "1790363136.669899"
     assert sent[-1]["reply_broadcast"] is True
@@ -440,7 +440,7 @@ async def test_a_thread_reply_in_a_channel_is_also_shown_in_the_channel(monkeypa
 
 
 async def test_a_reply_goes_to_the_channel_it_answers(monkeypatch):
-    """2026-09-27: "how many servers do I have?" typed in #vpsie was answered
+    """2026-09-27: "how many servers do I have?" typed in #cloudco was answered
     in #atlas-decisions, because every typed reply went to the decisions
     topic. An explicit channel wins over the topic's."""
     import httpx
@@ -466,7 +466,7 @@ async def test_a_reply_goes_to_the_channel_it_answers(monkeypatch):
     monkeypatch.setattr(slack_channel.SlackChannel, "channel_for",
                         lambda self, topic: "CDECISIONS")
     await ch.send(Outbound("t", "b", topic="decisions", thread="9.9",
-                           kind="receipt", channel="CVPSIE"))
-    assert sent[-1]["channel"] == "CVPSIE" and sent[-1]["thread_ts"] == "9.9"
+                           kind="receipt", channel="CCLOUDCO"))
+    assert sent[-1]["channel"] == "CCLOUDCO" and sent[-1]["thread_ts"] == "9.9"
     await ch.send(Outbound("t", "b", topic="decisions"))
     assert sent[-1]["channel"] == "CDECISIONS"

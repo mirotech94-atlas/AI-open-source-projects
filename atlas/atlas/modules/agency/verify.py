@@ -1,6 +1,6 @@
 """agency.verify -- only real, active New York businesses that need help.
 
-Miro, 2026-09-30. Before a lead is audited, built for or contacted, ATLAS
+the owner, 2026-09-30. Before a lead is audited, built for or contacted, ATLAS
 confirms three things and keeps the evidence:
 
   1. **It is operating.** Google Places' own `businessStatus` first:
@@ -203,12 +203,54 @@ def _reusable(row: dict[str, Any] | None) -> bool:
     return False
 
 
-async def verify_lead(lead_id: int) -> ActionResult:
-    """Tier AUTO: one read of Perplexity and rows on ATLAS's own tables."""
+PROFILES = ("local_nyc", "remote_us")
+PAID_ENV = "SALES_PAID_VERIFY"
+
+
+def paid_for_sales() -> bool:
+    return (os.getenv(PAID_ENV) or "").strip().lower() in ("1", "on", "true", "yes")
+
+
+async def _remote_us(lead: dict[str, Any]
+                     ) -> tuple[str, list[str], dict[str, Any], list[str], Any]:
+    """A remote US business, verified from its own site: live, and a US
+    street address on it. No paid read. (verdict, reasons, checks, sources,
+    read_at)."""
+    from .. import _scrape
+    from ..sales import rules
+    checks: dict[str, Any] = {"profile": "remote_us",
+                              "listed_website": bool(lead.get("website"))}
+    if rules.excluded(lead.get("name"), lead.get("category")):
+        return "disqualified", ["a place of worship"], checks, [], None
+    site = (lead.get("website") or "").strip()
+    if not site:
+        return "unknown", ["no website to read"], checks, [], None
+    page = await _scrape.fetch(site, agent="sales")
+    checks["site_status"] = page.status
+    if not page.ok:
+        why = page.blocked or f"HTTP {page.status}"
+        return "unknown", [f"its site could not be read: {why}"], checks, [], None
+    checks["us_address"] = await rules.has_us_address_async(page.text)
+    sources = [page.final_url or page.url]
+    if not checks["us_address"]:
+        return ("unknown", ["no US street address on its own site"], checks, sources,
+                page.fetched_at)
+    return "verified", [], checks, sources, page.fetched_at
+
+
+async def verify_lead(lead_id: int, profile: str = "") -> ActionResult:
+    """Tier AUTO: one read (Perplexity for local_nyc, the lead's own site for
+    remote_us) and rows on ATLAS's own tables."""
     lead_id = int(lead_id)
+    if profile and profile not in PROFILES:
+        return ActionResult(False, f"unknown profile {profile!r}: "
+                                   f"{' or '.join(PROFILES)}")
     lead = await _store.get_lead(lead_id)
     if lead is None:
         return ActionResult(False, f"no such lead: {lead_id}")
+    profile = profile or str(lead.get("segment") or "local_nyc")
+    if profile not in PROFILES:
+        profile = "local_nyc"
     cached = await _store.latest_verification(lead_id)
     if _reusable(cached):
         return ActionResult(True, f"lead {lead_id}: {cached['verdict']} (verified "
@@ -217,12 +259,19 @@ async def verify_lead(lead_id: int) -> ActionResult:
                                       "verification_id": cached["id"]},
                             rollback_token="")
 
+    if profile == "remote_us":
+        return await _record(lead, *await _remote_us(lead), "", None)
+
     found: dict[str, Any] | None = None
     answer_text, sources, read_at, unread = "", [], None, None
     status = (lead.get("business_status") or "").upper()
     closed = status in ("CLOSED_PERMANENTLY", "CLOSED_TEMPORARILY")
     outside = nyc_by_address(lead.get("address")) is False
-    if not (closed or outside):
+    sales_lead = bool(lead.get("source"))
+    if not (closed or outside) and sales_lead and not paid_for_sales():
+        unread = (f"{PAID_ENV} is off: a Sales lead gets no paid research read "
+                  "(set it on to allow one)")
+    elif not (closed or outside):
         ok, why = await _budget_left()
         if not ok:
             unread = why
@@ -236,8 +285,17 @@ async def verify_lead(lead_id: int) -> ActionResult:
                 answer_text, sources, read_at = (answer.text, list(answer.citations),
                                                  answer.read_at)
     verdict, reasons, checks = judge(lead, found)
+    checks["profile"] = "local_nyc"
     if unread and verdict == "unknown":
         reasons = [f"Perplexity unread: {unread}"]
+    return await _record(lead, verdict, reasons, checks, sources, read_at,
+                         answer_text, unread)
+
+
+async def _record(lead: dict[str, Any], verdict: str, reasons: list[str],
+                  checks: dict[str, Any], sources: list[str], read_at: Any,
+                  answer_text: str, unread: str | None) -> ActionResult:
+    lead_id = int(lead["id"])
     previous = str(lead.get("status") or "")
     vid = await _store.insert_verification(lead_id, verdict, reasons, checks,
                                            answer_text, sources, read_at, previous)
@@ -256,10 +314,14 @@ async def verify_lead(lead_id: int) -> ActionResult:
         rollback_token=str(vid))
 
 
-async def verify_dry(lead_id: int) -> ActionResult:
+async def verify_dry(lead_id: int, profile: str = "") -> ActionResult:
     lead = await _store.get_lead(int(lead_id))
     if lead is None:
         return ActionResult(False, f"no such lead: {lead_id}")
+    if (lead.get("segment") or "") == "remote_us":
+        return ActionResult(True, f"would verify {lead.get('name')} (lead {lead_id}) "
+                                  "from its own site: live, with a US address",
+                            evidence={"would_fetch": [lead.get("website")]})
     return ActionResult(True, f"would verify {lead.get('name')} (lead {lead_id}) "
                               "with Places status, its address and one Perplexity read")
 
@@ -296,3 +358,41 @@ async def contact_refusal(lead_id: int) -> str | None:
         return (f"lead {lead_id}'s verification is {row.get('verdict')}; an "
                 "unverified lead is never contacted")
     return None
+
+
+# the owner, 2026-10-28: outreach goes to US leads only. A two-letter state and a
+# ZIP at the end of the address ("Brooklyn, NY 11201"), or a country part
+# that says the US.
+_US_STATE_ZIP = re.compile(
+    r"\b(A[KLRZ]|C[AOT]|D[CE]|FL|GA|HI|I[ADLN]|K[SY]|LA|M[ADEINOST]|N[CDEHJMVY]"
+    r"|O[HKR]|PA|PR|RI|S[CD]|T[NX]|UT|V[AT]|W[AIVY])\s+\d{5}(?:-\d{4})?\b")
+_US_NAMES = frozenset({"usa", "us", "u.s.", "u.s.a.", "united states",
+                       "united states of america"})
+
+
+def is_us_lead(lead: dict[str, Any]) -> bool:
+    """A Sales CSV row (its import refuses every non-US row), the remote-US
+    segment, or an address that shows the US. Anything else is not US."""
+    if lead.get("segment") == "remote_us" or lead.get("source") == "csv":
+        return True
+    address = str(lead.get("address") or "").strip()
+    if not address:
+        return False
+    if address.rsplit(",", 1)[-1].strip().lower() in _US_NAMES:
+        return True
+    return bool(_US_STATE_ZIP.search(address))
+
+
+async def us_refusal(lead_id: int) -> str | None:
+    """Why this lead is not a US lead, or None. A lead that cannot be read is
+    a refusal (fails closed)."""
+    try:
+        lead = await _store.get_lead(int(lead_id))
+    except Exception as exc:                            # noqa: BLE001
+        return f"lead {lead_id} could not be read ({type(exc).__name__})"
+    if lead is None:
+        return f"no such lead: {lead_id}"
+    if is_us_lead(lead):
+        return None
+    return (f"lead {lead_id} is not shown to be in the US; outreach goes to "
+            "US businesses only")

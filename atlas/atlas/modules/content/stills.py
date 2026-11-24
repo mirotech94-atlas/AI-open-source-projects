@@ -1,7 +1,7 @@
 """The free render path's two inputs: Gemini stills and Fish narration.
 
 **Stills.** `GEMINI_IMAGE_MODEL` (default `gemini-3.1-flash-image`;
-`gemini-3-pro-image` also works -- both verified live on Miro's key, Task
+`gemini-3-pro-image` also works -- both verified live on the owner's key, Task
 55) through `generateContent`, asking for an image at 9:16. The key rides
 in the `x-goog-api-key` header, never `?key=` (the ed4a247 leak pattern
 `kernel.llm` still uses for text). A 404 means the model name is wrong for
@@ -69,12 +69,15 @@ async def still(prompt: str, *, aspect: str = "9:16") -> tuple[bytes | None, str
     return None, "Gemini returned no image"
 
 
-async def narration(text: str) -> tuple[bytes | None, str, str | None]:
-    """`(mp3, voice_note, None)` or `(None, "", reason)`. Never raises."""
+async def narration(text: str, speed: float | None = None, model: str | None = None
+                    ) -> tuple[bytes | None, str, str | None]:
+    """`(mp3, voice_note, None)` or `(None, "", reason)`. Never raises.
+    `speed` is Fish's prosody speed (None: unchanged, the reels' pace);
+    `model` the Fish model (None: FISH_AUDIO_MODEL, the reels' own)."""
     if not os.getenv("FISH_AUDIO_API_KEY", "").strip():
         return None, "", "FISH_AUDIO_API_KEY not set — the free render needs narration"
     from .._fish import fish_request
-    url, headers, body = fish_request(text)
+    url, headers, body = fish_request(text, speed=speed, model=model)
     voice = os.getenv("REELS_FISH_VOICE_ID", "").strip()
     if voice:
         body["reference_id"] = voice

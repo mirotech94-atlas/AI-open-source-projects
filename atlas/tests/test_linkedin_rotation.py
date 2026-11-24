@@ -11,16 +11,27 @@ import pytest
 from atlas.modules import linkedin
 from atlas.modules.linkedin import media, store, sweep
 
+
+@pytest.fixture(autouse=True)
+def _flycheap_as_fixture_page(monkeypatch):
+    """These tests drive the page mechanics with FlyCheap as their example
+    page. FlyCheap is retired by default (the owner, 2026-10-09); that default is
+    pinned in test_linkedin_retired.py, not here."""
+    from atlas.modules import linkedin as _li
+    monkeypatch.setitem(_li.PAGES, "guardian", _li.KNOWN_PAGES["guardian"])
+    monkeypatch.setitem(_li.PAGES, "flycheap", _li.KNOWN_PAGES["flycheap"])
+
+
 BATCH = """KIND: image
 TEXT: Stop overpaying for flights.
 We search 700+ airlines so you don't have to.
-https://flycheap.live #travel #deals
+https://flycheap.example #travel #deals
 IMAGE_PROMPT: a boarding pass dissolving into a route line
 ---
 KIND: video
 TEXT: Watch fares drop in real time.
 FlyCheap finds the gap fares.
-https://flycheap.live #flights
+https://flycheap.example #flights
 VIDEO_PROMPT: a route line animating across a map
 ---
 KIND: poll
@@ -122,7 +133,7 @@ async def test_a_poll_with_only_one_option_is_dropped(monkeypatch):
 
 
 async def test_an_image_block_with_a_banned_link_is_dropped(monkeypatch):
-    bad = BATCH.replace("https://flycheap.live #travel #deals",
+    bad = BATCH.replace("https://flycheap.example #travel #deals",
                         "https://flycheap.example.com #travel #deals")
 
     class C:
@@ -139,7 +150,7 @@ async def test_an_image_block_with_a_banned_link_is_dropped(monkeypatch):
 
 async def test_an_image_or_video_block_missing_the_link_is_dropped(monkeypatch):
     bad = BATCH.replace(
-        "We search 700+ airlines so you don't have to.\nhttps://flycheap.live "
+        "We search 700+ airlines so you don't have to.\nhttps://flycheap.example "
         "#travel #deals",
         "We search 700+ airlines so you don't have to. #travel #deals")
 
@@ -179,7 +190,7 @@ async def test_refill_marks_image_and_video_as_needs_media(monkeypatch):
 
 
 async def test_refill_never_keeps_a_banned_link(monkeypatch):
-    bad = BATCH.replace("https://flycheap.live #travel #deals",
+    bad = BATCH.replace("https://flycheap.example #travel #deals",
                         "https://flycheap.example.com #travel #deals")
 
     class C:
@@ -219,7 +230,7 @@ async def test_refill_keeps_the_bank_at_least_three_deep(monkeypatch):
 async def test_fill_media_attaches_the_image_and_flips_the_entry_to_draft(
         state, monkeypatch, tmp_path):
     entry = {"id": "B1", "status": "needs_media", "kind": "image",
-             "text": "hook https://flycheap.live #x", "media_prompt": "a prompt",
+             "text": "hook https://flycheap.example #x", "media_prompt": "a prompt",
              "created": store.today(), "drafted_by": "atlas", "card_rev": 1,
              "frozen": False, "media": None}
     state(_doc(entry))
@@ -239,7 +250,7 @@ async def test_fill_media_attaches_the_image_and_flips_the_entry_to_draft(
 
 async def test_fill_media_leaves_the_entry_pending_on_a_refusal(state, monkeypatch):
     entry = {"id": "B1", "status": "needs_media", "kind": "video",
-             "text": "hook https://flycheap.live #x", "media_prompt": "a prompt",
+             "text": "hook https://flycheap.example #x", "media_prompt": "a prompt",
              "created": store.today(), "drafted_by": "atlas", "card_rev": 1,
              "frozen": False, "media": None}
     state(_doc(entry))
@@ -272,7 +283,7 @@ async def test_fill_media_never_touches_a_poll(state, monkeypatch):
 
 async def test_signals_offer_no_card_for_needs_media(state):
     entry = {"id": "B1", "status": "needs_media", "kind": "image",
-             "text": "hook https://flycheap.live #x", "media_prompt": "p",
+             "text": "hook https://flycheap.example #x", "media_prompt": "p",
              "created": store.today(), "drafted_by": "atlas", "card_rev": 1,
              "frozen": False, "media": None}
     state(_doc(entry))
@@ -287,7 +298,7 @@ async def test_a_draft_card_carries_the_media_as_an_attachment(state, tmp_path):
     pic = tmp_path / "pic.png"
     pic.write_bytes(b"x")
     entry = {"id": "B1", "status": "draft", "kind": "image",
-             "text": "hook https://flycheap.live #x", "media": str(pic),
+             "text": "hook https://flycheap.example #x", "media": str(pic),
              "created": store.today(), "drafted_by": "atlas", "card_rev": 1,
              "frozen": False}
     state(_doc(entry))
@@ -317,7 +328,7 @@ async def test_the_daily_publish_card_carries_the_media_too(state, tmp_path):
     pic = tmp_path / "pic.png"
     pic.write_bytes(b"x")
     entry = {"id": "B1", "status": "approved", "kind": "image",
-             "text": "hook https://flycheap.live #x", "media": str(pic)}
+             "text": "hook https://flycheap.example #x", "media": str(pic)}
     state(_doc(entry))
     sig, = [s for s in await linkedin.MODULE.signals()
            if s.suggests == "linkedin.publish_post"]
@@ -352,7 +363,7 @@ async def test_the_approval_hash_covers_the_poll_not_just_its_intro(state):
 
 async def test_media_fill_check_generates_pending_media(state, monkeypatch):
     entry = {"id": "B1", "status": "needs_media", "kind": "image",
-             "text": "hook https://flycheap.live #x", "media_prompt": "p",
+             "text": "hook https://flycheap.example #x", "media_prompt": "p",
              "created": store.today(), "drafted_by": "atlas", "card_rev": 1,
              "frozen": False, "media": None}
     state(_doc(entry))
@@ -381,7 +392,7 @@ async def test_media_fill_check_is_ok_with_nothing_pending(state):
 
 async def test_media_fill_check_degrades_when_still_pending(state, monkeypatch):
     entry = {"id": "B1", "status": "needs_media", "kind": "video",
-             "text": "hook https://flycheap.live #x", "media_prompt": "p",
+             "text": "hook https://flycheap.example #x", "media_prompt": "p",
              "created": store.today(), "drafted_by": "atlas", "card_rev": 1,
              "frozen": False, "media": None}
     state(_doc(entry))
@@ -406,12 +417,12 @@ async def test_media_fill_check_is_unknown_without_a_state_file(tmp_path, monkey
 ACADEMY_BATCH = """KIND: image
 TEXT: Your AI agent should never hold your bank login.
 One lesson from Build a Safe AI Operator.
-https://shop.mapfront.io #AI #SmallBusiness
+https://agency.example.com #AI #SmallBusiness
 IMAGE_PROMPT: a closed menu of named actions, abstract, warm light
 ---
 KIND: video
 TEXT: Make $5,000 a month with this course.
-https://shop.mapfront.io #AI
+https://agency.example.com #AI
 VIDEO_PROMPT: coins falling
 ---
 KIND: poll
@@ -430,19 +441,21 @@ def test_the_academy_page_exists_only_with_its_id(monkeypatch):
     assert linkedin._academy_page() is None
     monkeypatch.setenv(linkedin.ACADEMY_PAGE_ENV, "123456789")
     spec = linkedin._academy_page()
-    assert spec["id"] == "123456789" and spec["link"] == "https://shop.mapfront.io"
+    assert spec["id"] == "123456789" and spec["link"] == "https://agency.example.com/academy/"
     assert spec["name"] == "ATLAS Academy" and spec["bank_key"] == "academy_page"
     assert importlib  # the module-level join runs at boot; the function is what is pinned
 
 
 async def test_academy_drafts_teach_one_thing_and_never_claim_income(monkeypatch):
-    """Miro, 2026-10-06: advertise the course page on LinkedIn. The lane
+    """the owner, 2026-10-06: advertise the course page on LinkedIn. The lane
     sells safety, never money: a block with an income claim is dropped
     before it is a draft (the reels' own rule)."""
-    monkeypatch.setitem(linkedin.PAGES, "academy", {
+    academy = {
         "page_key": "academy_page", "bank_key": "academy_page",
         "followers_field": "followers", "id": "123456789",
-        "name": "ATLAS Academy", "link": "https://shop.mapfront.io"})
+        "name": "ATLAS Academy", "link": "https://agency.example.com"}
+    monkeypatch.setitem(linkedin.PAGES, "academy", academy)
+    monkeypatch.setitem(linkedin.KNOWN_PAGES, "academy", academy)
     seen = {}
 
     async def fake_think(need, system, messages, **k):
@@ -454,6 +467,48 @@ async def test_academy_drafts_teach_one_thing_and_never_claim_income(monkeypatch
 
     monkeypatch.setattr("atlas.kernel.llm.think", fake_think)
     items = await sweep.draft_posts(_doc(), "academy", 3)
-    assert "ATLAS Academy" in seen["system"] and "shop.mapfront.io" in seen["system"]
+    assert "ATLAS Academy" in seen["system"] and "agency.example.com" in seen["system"]
     assert "Never an income or earnings claim" in seen["system"]
     assert [i["kind"] for i in items] == ["image", "poll"], "the $5,000 video is dropped"
+
+
+MARKDOWN_BATCH = """**Hook: Unlock AI safety in minutes**
+Learn the core check-list for a Safe AI Operator.
+https://agency.example.com
+#AItraining #SafetyFirst
+
+*IMAGE_PROMPT: Abstract geometric network of glowing nodes forming a shield.*
+
+---
+
+**Hook: Boost sales with AI fast**
+See a 5-step AI-powered pitch in action.
+https://agency.example.com
+#SellWithAI #Growth
+
+*VIDEO_PROMPT: Animated slide sequence of sleek icons, no people.*
+
+---
+
+**Quick poll: Which AI skill will you master next?**
+What should our next micro-lesson cover?
+Options: Build a Safe AI Operator | Sell With AI | AI for Every Age
+
+---"""
+
+
+def test_a_markdown_batch_from_a_free_model_still_parses():
+    """2026-10-06: the free bench answered the drafting prompt in markdown
+    ('**Hook: ...**', '*IMAGE_PROMPT: ...*', 'Options: a | b') and every
+    block was dropped. The kind is read off the prompt line or the options
+    line; the words are the model's own, nothing is invented."""
+    spec = {"name": "ATLAS Academy", "link": "https://agency.example.com"}
+    items = sweep._parse_batch(MARKDOWN_BATCH, spec)
+    assert [i["kind"] for i in items] == ["image", "video", "poll"]
+    assert items[0]["text"].startswith("Unlock AI safety in minutes\nLearn the core")
+    assert "https://agency.example.com" in items[0]["text"]
+    assert items[0]["media_prompt"].startswith("Abstract geometric network")
+    assert items[2]["poll"]["question"] == "What should our next micro-lesson cover?"
+    assert items[2]["poll"]["options"] == ["Build a Safe AI Operator", "Sell With AI",
+                                           "AI for Every Age"]
+    assert sweep._parse_batch("just prose, no prompt, no options", spec) == []

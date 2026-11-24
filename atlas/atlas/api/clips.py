@@ -1,4 +1,4 @@
-"""Where the agent on Miro's Mac reads clips to submit to Whop, and says it did.
+"""Where the agent on the owner's Mac reads clips to submit to Whop, and says it did.
 
     GET  /clips/whop/pending               posted clips awaiting submission, and
                                            the drafts to upload for approval
@@ -8,7 +8,7 @@
     GET  /clips/links/pending              TikTok clips still without a link
     POST /clips/links/{clip_id}            {"url": "..."}  a TikTok video link
 
-Miro, 2026-09-29: the Whop submission is made by an agent in his own Chrome,
+the owner, 2026-09-29: the Whop submission is made by an agent in his own Chrome,
 never by ATLAS. Exactly like `/handoffs`: mesh-only by the middleware
 (`/clips` is not in PUBLIC_PATHS; `MESH_ALLOWED_CIDRS`, which carries the
 `ATLAS_TRUSTED_IPS` addresses Caddy lets in) and authenticated with the
@@ -17,10 +17,10 @@ address is not a credential. The record is not written here: the POST hands
 it through `kernel.unattended.run_tier1` (the one door an API surface has)
 to the executor as `clips.record_whop_submission` (Tier 1, its dry run
 first, audited, rate-limited, refused while ATLAS is paused or watch-only),
-with no approver -- the agent's word is not Miro's.
+with no approver -- the agent's word is not the owner's.
 
 The links route (2026-09-30) takes the same bearer on the same mesh: a
-Mac-side task reads the public @atlasclips12 profile in a browser and hands
+Mac-side task reads the public @example_handle profile in a browser and hands
 in candidate video URLs for clips Postiz posted without one. Its word is
 not written either: `clips.links.record_tiktok_link` reads TikTok's own
 public oEmbed and records the link only when TikTok confirms the account,
@@ -78,7 +78,7 @@ async def whop_draft_submitted(clip_id: int, authorization: str = Header("")) ->
     from ..kernel.unattended import run_tier1
     got = await run_tier1(
         "clips.record_draft_submitted", {"clip_id": int(clip_id)},
-        "the agent on Miro's Mac uploaded this clip's draft on Whop")
+        "the agent on the owner's Mac uploaded this clip's draft on Whop")
     if not got.ok:
         raise HTTPException(409, got.detail[:300])
     return {"ok": True, "detail": got.detail,
@@ -106,7 +106,7 @@ async def whop_draft_decided(clip_id: int, request: Request,
         "clips.record_draft_decision",
         {"clip_id": int(clip_id), "approved": approved, "note": note},
         f"the brand {'approved' if approved else 'rejected'} this clip's draft on "
-        f"Whop, as the agent on Miro's Mac read it")
+        f"Whop, as the agent on the owner's Mac read it")
     if not got.ok:
         raise HTTPException(409, got.detail[:300])
     return {"ok": True, "detail": got.detail,
@@ -136,7 +136,7 @@ async def whop_post_now(clip_id: int, authorization: str = Header("")) -> dict:
         raise HTTPException(409, f"clip {clip_id}'s platform {row.get('platform')} "
                                  f"has no automatic post configured")
     got = await run_tier1(action, {"clip_id": int(clip_id)},
-                          "the agent on Miro's Mac is submitting this clip's live "
+                          "the agent on the owner's Mac is submitting this clip's live "
                           "link on Whop and needs it posted now")
     if not got.ok:
         raise HTTPException(409, got.detail[:300])
@@ -162,7 +162,7 @@ async def whop_submitted(clip_id: int, request: Request,
     got = await run_tier1(
         "clips.record_whop_submission",
         {"clip_id": int(clip_id), "post_url": post_url.strip()[:500]},
-        "the agent on Miro's Mac submitted this clip on Whop")
+        "the agent on the owner's Mac submitted this clip on Whop")
     if not got.ok:
         raise HTTPException(409, got.detail[:300])
     return {"ok": True, "detail": got.detail,

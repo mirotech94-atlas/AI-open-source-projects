@@ -122,11 +122,11 @@ async def test_r01_one_intent_enqueued_five_times_is_one_effect(pg):
     runs: list = []
     install("fake.send", runs, evidence={"message_id": "m1"})
     got = await asyncio.gather(*[
-        outbox.enqueue("fake.send", {"to": "miro"}, destination="miro",
+        outbox.enqueue("fake.send", {"to": "owner"}, destination="owner",
                        occurrence="card#7") for _ in range(5)])
     assert len({g.outbox_id for g in got}) == 1
     # Same text, a different logical occurrence: a real second request.
-    again = await outbox.enqueue("fake.send", {"to": "miro"}, destination="miro",
+    again = await outbox.enqueue("fake.send", {"to": "owner"}, destination="owner",
                                  occurrence="card#8")
     assert again.created and again.outbox_id != got[0].outbox_id
     done = await outbox.dispatch(limit=10)
@@ -139,7 +139,7 @@ async def test_r01_one_intent_enqueued_five_times_is_one_effect(pg):
 async def test_r03_a_worker_that_dies_before_dispatch_is_resumed_once(pg):
     runs: list = []
     install("fake.send", runs, evidence={"message_id": "m1"})
-    q = await outbox.enqueue("fake.send", {"to": "miro"}, destination="miro",
+    q = await outbox.enqueue("fake.send", {"to": "owner"}, destination="owner",
                              occurrence="o1")
     claimed = await outbox._claim("worker-a", TTL)       # A claims, then dies
     assert claimed is not None and runs == []
@@ -241,7 +241,7 @@ async def test_r04_an_action_that_raised_is_reconciled_not_retried(pg):
 async def test_r05_a_stale_worker_cannot_commit_its_outbox_result(pg):
     runs: list = []
     install("fake.send", runs, evidence={"message_id": "m1"})
-    q = await outbox.enqueue("fake.send", {"to": "miro"}, destination="miro",
+    q = await outbox.enqueue("fake.send", {"to": "owner"}, destination="owner",
                              occurrence="o5")
     row = await outbox._claim("worker-a", TTL)
     assert await outbox._fence_for_dispatch(row, "worker-a")
@@ -299,7 +299,7 @@ async def test_r05_job_leases_fence_and_the_token_only_grows(pg):
 async def test_r06_database_down_means_nothing_is_accepted_or_run(pg, monkeypatch):
     runs: list = []
     install("fake.send", runs, evidence={"message_id": "m1"})
-    q = await outbox.enqueue("fake.send", {"to": "miro"}, destination="miro",
+    q = await outbox.enqueue("fake.send", {"to": "owner"}, destination="owner",
                              occurrence="o6")
     await _close_pool()
     monkeypatch.setenv("DATABASE_URL", "postgresql://postgres:test@127.0.0.1:1/x")
@@ -320,7 +320,7 @@ async def test_r06_database_lost_after_the_run_is_not_reported_delivered(
         pg, monkeypatch):
     runs: list = []
     install("fake.send", runs, evidence={"message_id": "m1"})
-    q = await outbox.enqueue("fake.send", {"to": "miro"}, destination="miro",
+    q = await outbox.enqueue("fake.send", {"to": "owner"}, destination="owner",
                              occurrence="o8")
     real = state.fetch_one
 
@@ -354,7 +354,7 @@ async def test_r07_a_failed_notice_is_retried_alone(pg):
         w.workflow_id, "READY", "RUNNING", fence, "fake.restart", {"to": "api"},
         destination="api", occurrence="incident#3")
     assert oid is not None
-    note = await outbox.enqueue("fake.notify", {"to": "miro"}, kind="notice",
+    note = await outbox.enqueue("fake.notify", {"to": "owner"}, kind="notice",
                                 destination="slack:decisions",
                                 occurrence="incident#3:receipt",
                                 workflow_id=w.workflow_id)

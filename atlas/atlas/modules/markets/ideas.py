@@ -1,6 +1,6 @@
-"""Trade idea cards -- ATLAS suggests, Miro approves or declines, on PAPER.
+"""Trade idea cards -- ATLAS suggests, the owner approves or declines, on PAPER.
 
-Miro, 2026-09-29: "ATLAS sends trade suggestions, I approve or decline".
+the owner, 2026-09-29: "ATLAS sends trade suggestions, I approve or decline".
 ATLAS never places a real trade (money out is Tier 3, permanently
 denied); an idea is a card with a plain order ticket he may copy to his own
 broker if he chooses, and a paper position in ATLAS's own idea book.
@@ -632,7 +632,7 @@ async def scan(day: date) -> str:
 
 # ------------------------------------------------- a TradingView alert
 #
-# Miro's own chart alerts land in `tradingview_alerts` (tradingview.py) and
+# the owner's own chart alerts land in `tradingview_alerts` (tradingview.py) and
 # become one factual Slack line each. This runs the SAME idea rules on that
 # one ticker, once per alert, and hands back one line for that Slack
 # message: a paper idea card if a rule fired and the caps allow, else why

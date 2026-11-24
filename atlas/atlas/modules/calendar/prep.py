@@ -9,7 +9,7 @@ Uses `Need.PRIVATE` for the write-up itself -- this is relationship history,
 the same class of content as personal mail, and it never needs to leave the
 box to produce a decent paragraph.
 
-Their company's latest news (Miro, 2026-09-28, from a "top 6 agents" reel:
+Their company's latest news (the owner, 2026-09-28, from a "top 6 agents" reel:
 "company news scraper" before each meeting): the one outside attendee's
 company domain -- never a name, never the history -- goes to Perplexity's
 search, and the answer is shown with the time it was read. Free-mail
@@ -65,7 +65,7 @@ def company_domain(event: dict) -> str | None:
 
 async def company_news(domain: str) -> tuple[str | None, datetime | None, str | None]:
     """`(text, read_at, None)`, or `(None, None, why)`. Only the domain leaves
-    the box. The text is Perplexity's, shown to Miro as read, never acted on."""
+    the box. The text is Perplexity's, shown to the owner as read, never acted on."""
     if os.getenv("MEETING_NEWS", "on").strip().lower() in {"off", "0", "false", "no"}:
         return None, None, "switched off (MEETING_NEWS=off)"
     from .. import _perplexity
@@ -126,7 +126,7 @@ async def prep_card(event: dict) -> str:
     try:
         reply = await think(
             Need.PRIVATE,
-            "You are preparing Miro for a meeting that starts in 30 minutes. "
+            "You are preparing the owner for a meeting that starts in 30 minutes. "
             "Given the context below, write in under 100 words: what this "
             "person probably wants from the meeting, and one thing worth "
             "raising. No preamble, no repeating the history back verbatim.",

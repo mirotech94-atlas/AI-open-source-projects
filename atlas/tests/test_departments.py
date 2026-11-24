@@ -48,8 +48,6 @@ def _declared() -> tuple[dict[str, Action], set[str]]:
 @pytest.fixture(scope="module")
 def world():
     mp = pytest.MonkeyPatch()
-    # guardian.contain is declared only while its write token is set.
-    mp.setenv("GUARDIAN_WRITE_TOKEN", "test-write-token-not-real")
     agent_module.build_roster()
     actions, modules = _declared()
     yield {"actions": actions, "modules": modules,
@@ -68,7 +66,7 @@ def _count(kind: str) -> dict[str, int]:
 # ------------------------------------------------------------ completeness
 
 def test_every_agent_job_and_action_lands_in_exactly_one_department(world):
-    assert len(world["agents"]) >= 19
+    assert set(world["agents"]) == set(agent_module.AGENT_NAMES)
     placed = dept.place(world["agents"], POLICIES, world["actions"])
     assert placed.unplaced == {}, placed.unplaced
     assert set(placed.agents) == set(world["agents"])
@@ -131,7 +129,7 @@ def test_departments_from_the_reel_are_all_there():
     names = {d.key for d in DEPARTMENTS}
     assert names == {"knowledge", "money", "content", "sales", "ops", "admin",
                      "strategy"}
-    assert dept.BY_KEY["money"].head == "markets"
+    assert dept.BY_KEY["money"].head == YOU
     assert dept.BY_KEY["strategy"].head == YOU
 
 
@@ -146,8 +144,10 @@ def test_actions_and_pause_scopes_follow_their_namespace():
 
 
 def test_layers_are_derived_for_agents_and_declared_for_jobs(world):
-    assert dept.agent_layer(world["agents"]["concierge"].tools) is Layer.AGENTIC
-    assert dept.agent_layer(world["agents"]["markets"].tools) is Layer.AGENT
+    # No kept agent holds ask_specialist since 2026-10-28: every seat is one
+    # agent with a model; the agentic layer is the tool, not a seat.
+    assert dept.agent_layer({"ask_specialist", "sql_query"}) is Layer.AGENTIC
+    assert dept.agent_layer(world["agents"]["sales"].tools) is Layer.AGENT
     assert JOBS["checks"].layer is Layer.AUTOMATION
     assert JOBS["agency_meeting"].layer is Layer.AGENTIC
     assert {x["key"] for x in dept.LAYERS} == set(Layer)

@@ -20,7 +20,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOY = ROOT / "ops" / "deploy"
 SERVER_DIR = "/opt/atlas/bootstrap/deploy"
-HOST = "root@203.0.113.10"
+HOST = "root@203.0.113.191"
 SCRIPTS = ("deploy.sh", "deploy-gate.sh")
 
 

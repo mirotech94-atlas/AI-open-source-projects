@@ -3,7 +3,7 @@
     python -m atlas.cli import-reel data/import/<file>.mp4 "<caption>" \\
         [--series "<title>" --part N --of M]
 
-Miro, 2026-09-28: "Veo makes the clips for the reel series, sends them to
+the owner, 2026-09-28: "Veo makes the clips for the reel series, sends them to
 ATLAS, and ATLAS uploads them to all the platforms available -- simple." The
 episode jobs render on Veo and call this. It files the video -- one
 `content_media` row with its public `/media` token, one `story_script`
@@ -13,8 +13,8 @@ Facebook Page and TikTok when every automatic check passes, and anything
 that fails one (or automatic posting switched off, or the day's automatic
 posts used) becomes the ordinary Tier 2 card, the reason first.
 
-The file must already sit under `IMPORT_DIR` (on the host:
-/opt/atlas/data/app/import/), so the command can never be pointed at an
+The file must already sit under `IMPORT_DIR` (on the Mac:
+~/atlas-agency/data/app/import/), so the command can never be pointed at an
 arbitrary path. Refused before any row is written: a caption without the
 AI disclosure or naming a real brand or person, and a file ffprobe cannot
 read. Everything else about the file -- native 1080x1920, a length inside
@@ -181,7 +181,7 @@ async def import_reel(path: str, caption: str, *, series: str | None = None,
         # The day's automatic posts are used. Nothing retries a one-off
         # import on its own, so it is marked waiting and the reels tick
         # posts it once the cap frees (`post_waiting`) -- no card, no
-        # meddling (Miro, 2026-09-28).
+        # meddling (the owner, 2026-09-28).
         await execute_sql("UPDATE content_drafts SET status = 'waiting' "
                           "WHERE id = $1", draft["id"])
         return Imported(True, f"filed media {media_id}; today's automatic posts "

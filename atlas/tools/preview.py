@@ -53,7 +53,7 @@ CHECK_ROWS = [
      "degraded", "18/21 recorded, 3 missing"),
     ("inroots", "standup_bot", ago(31), NOW + timedelta(minutes=29), 3600,
      "ok", "last bot message 12 min ago"),
-    ("vpsie", "instances", ago(14), NOW + timedelta(minutes=46), 3600,
+    ("cloudco", "instances", ago(14), NOW + timedelta(minutes=46), 3600,
      "ok", "7 running, 0 stopped"),
 ]
 
@@ -84,7 +84,7 @@ PROPOSAL = {
               "clicks are not being attributed.",
     "evidence": json.dumps({
         "clicks": 412, "bookings": 0,
-        "broken": ["https://flycheap.live/go/abc (marker missing from redirect)"],
+        "broken": ["https://flycheap.example/go/abc (marker missing from redirect)"],
     }),
     "rollback_plan": "Restore the link table from snapshot "
                      "snap-2026-09-22T03-40Z, which is taken before any write.",
@@ -92,12 +92,12 @@ PROPOSAL = {
     "created_at": ago(6), "expires_at": NOW + timedelta(hours=3, minutes=54),
     "dry_run": "would regenerate the link table; 6 sampled link(s) are "
                "currently broken\n\n"
-               "  flycheap.live/go/abc   marker missing   -> would rewrite\n"
-               "  flycheap.live/go/def   marker missing   -> would rewrite\n"
-               "  flycheap.live/go/ghi   HTTP 404         -> would rewrite\n"
-               "  flycheap.live/go/jkl   marker missing   -> would rewrite\n"
-               "  flycheap.live/go/mno   marker missing   -> would rewrite\n"
-               "  flycheap.live/go/pqr   marker missing   -> would rewrite\n\n"
+               "  flycheap.example/go/abc   marker missing   -> would rewrite\n"
+               "  flycheap.example/go/def   marker missing   -> would rewrite\n"
+               "  flycheap.example/go/ghi   HTTP 404         -> would rewrite\n"
+               "  flycheap.example/go/jkl   marker missing   -> would rewrite\n"
+               "  flycheap.example/go/mno   marker missing   -> would rewrite\n"
+               "  flycheap.example/go/pqr   marker missing   -> would rewrite\n\n"
                "snapshot snap-2026-09-22T03-40Z would be taken first\n"
                "no other table is touched",
     "dry_run_ok": True, "dry_run_at": ago(6),
@@ -257,11 +257,11 @@ def _register_modules() -> None:
         ("flycheap", "flycheap", "412 clicks, 0 bookings"),
         ("guardian", "Guardian", "canary unverified"),
         ("inroots", "InRoots", "18/21 recorded"),
-        ("vpsie", "VPSie", "7 running"),
+        ("cloudco", "CloudCo", "7 running"),
     ):
         REGISTRY.modules[name] = FakeModule(name, title, line)
     for name in ("calendar", "mail", "gitlab", "instagram", "tiktok",
-                 "linkedin", "netbird", "stripe_billing", "mirotech", "fiverr"):
+                 "linkedin", "netbird", "stripe_billing", "exampleco", "fiverr"):
         REGISTRY.disabled[name] = f"missing env: {name.upper()}_TOKEN"
 
 

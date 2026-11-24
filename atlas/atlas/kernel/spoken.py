@@ -1,7 +1,7 @@
-"""The kernel door for a Mac action Miro says out loud on the dashboard.
+"""The kernel door for a Mac action the owner says out loud on the dashboard.
 
 Nothing under `atlas/api` may call `execute` (the AST ban in tests/test_api
-.py). Miro, 2026-09-28, chose to relax one thing: "talking to ATLAS on the
+.py). the owner, 2026-09-28, chose to relax one thing: "talking to ATLAS on the
 dashboard should run the Mac action straight away, for Mac actions only".
 This is that door, as narrow as `kernel.unattended`:
 

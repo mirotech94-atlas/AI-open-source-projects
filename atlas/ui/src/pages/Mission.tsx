@@ -1,8 +1,7 @@
 import { Suspense, lazy, useEffect, useState, type JSX } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  api, normaliseHealth, type ActivityRow, type AgendaEntry, type GuardianFeed,
-  type IncidentRef, type IncidentVector,
+  api, normaliseHealth, type ActivityRow, type AgendaEntry,
 } from "../api";
 import { useDraggableTiles } from "../hooks/useDraggableTiles";
 import { useFresh } from "../hooks/useFresh";
@@ -44,7 +43,7 @@ const BUCKETS = 24;
 // here so the panel can say "Not linked" about one that is absent — the API
 // reports what IS wired and has no way to name what is not.
 const KNOWN_VENDORS: readonly string[] =
-  ["anthropic", "openai", "ollama", "openrouter"];
+  ["anthropic", "openai", "local", "openrouter"];
 
 function clock(iso: string | null): string {
   if (!iso) return "—";
@@ -78,180 +77,6 @@ function tagFor(row: ActivityRow): "INFO" | "WARN" | "TIP" | "LIVE" {
   return normaliseHealth(row.health) === "ok" ? "INFO" : "WARN";
 }
 
-type FeedStep = GuardianFeed["steps"][number];
-
-/** The word a containment step is drawn with: its proposal's own state, or
- *  the raw status when that status has no honest one of the four (failed,
- *  expired). Never DONE for something the hub has not done. */
-function stepWord(step: FeedStep): string {
-  return step.state ?? step.status.toUpperCase();
-}
-
-/** One canonical (verb, key) identity for a proposal AND for the vector step
- *  it might answer -- Task 52's three real actions each carry different
- *  params shapes (mac+network, network alone, alert_key+op), so matching on
- *  a fixed "kind"/"target" pair the way `guardian.contain` used to no longer
- *  works for any of them. */
-export function stepKey(action: string, params: Record<string, unknown>): string {
-  if (action === "guardian.mark_untrusted") return `mark_untrusted|${String(params.mac ?? "")}`;
-  if (action === "guardian.rescan") return `rescan|${String(params.network ?? "")}`;
-  if (action === "guardian.alert_op") return `alert_op|${String(params.alert_key ?? "")}`;
-  return `${String(params.kind ?? action)}|${String(params.target ?? "")}`;
-}
-
-function verbLabel(verb: string, key: string): string {
-  if (verb === "mark_untrusted") return `mark ${key} untrusted`;
-  if (verb === "rescan") return `rescan ${key}`;
-  if (verb === "alert_op") return `alert_op ${key}`;
-  return `${verb} ${key}`;
-}
-
-function manualLabel(manual: { kind: string; target: string }): string {
-  if (manual.kind === "disable_account") return `disable account ${manual.target}`;
-  if (manual.kind === "block_ip") return `block ${manual.target}`;
-  if (manual.kind === "isolate_host") return `isolate ${manual.target}`;
-  if (manual.kind === "mark_untrusted") return `mark ${manual.target} untrusted`;
-  return `${manual.kind} ${manual.target}`;
-}
-
-function stepSummary(action: string, params: Record<string, unknown>): string {
-  if (action === "guardian.mark_untrusted") return `mark ${String(params.mac ?? "")} untrusted`;
-  if (action === "guardian.rescan") return `rescan ${String(params.network ?? "")}`;
-  if (action === "guardian.alert_op") {
-    return `${String(params.op ?? "alert_op")} ${String(params.alert_key ?? "")}`;
-  }
-  return `${String(params.kind ?? action)} ${String(params.target ?? "")}`;
-}
-
-/** Which of `feed.steps` answers each vector in THIS incident, keyed by
- *  `stepKey`. Only proposals naming one of this incident's own alerts,
- *  raised no earlier than it opened. `guardian.mark_untrusted` and
- *  `guardian.rescan` carry their own narration-only `alert_key` (never sent
- *  to the hub -- see incident.py) precisely so this filter can reach them
- *  too: without it, a mark_untrusted proposal for the same mac raised for
- *  an earlier, unrelated (possibly since-closed) incident could paint THIS
- *  incident's vector as done. A `plan_incident.opened` this file cannot
- *  parse means the time bound cannot be trusted either, so nothing matches
- *  at all -- failing CLOSED, never open. Exported and pure so this
- *  correlation is unit-testable without rendering the panel. */
-export function stepMatchesFor(
-  feed: GuardianFeed, planIncident: IncidentRef | null, vectors: IncidentVector[],
-): Map<string, FeedStep> {
-  const alerts = new Set<string>([
-    ...(planIncident?.alert_keys ?? []),
-    ...vectors.map((v) => v.evidence.alert ?? "").filter(Boolean),
-  ]);
-  const opened = planIncident?.opened ? new Date(planIncident.opened).getTime() : NaN;
-  const latest = new Map<string, FeedStep>();
-  if (Number.isNaN(opened)) return latest;          // fail closed: no bound, no match
-  for (const step of feed.steps) {
-    const stepAlert = String(step.params.alert_key ?? step.params.alert_id ?? "");
-    if (!alerts.has(stepAlert)) continue;
-    if (new Date(step.at).getTime() < opened) continue;
-    const key = stepKey(step.action, step.params);
-    if (!latest.has(key)) latest.set(key, step);    // rows arrive newest first
-  }
-  return latest;
-}
-
-/** The Guardian incident console. Drawn only from rows: the plan the
- *  `guardian.open_incidents` check recorded, the `guardian.contain`
- *  proposals, and the audit log. Nothing here can approve, block or release
- *  — approvals are answered by text, never from this screen. */
-function IncidentPanel({ feed, fetchedAt }: {
-  feed: GuardianFeed;
-  fetchedAt: Date | null;
-}): JSX.Element | null {
-  const inc = feed.open_incidents;
-  if (!inc || inc.value === null || inc.value <= 0) return null;
-  const plan = inc.plan;
-  const vectors = plan?.vectors ?? [];
-  const latest = stepMatchesFor(feed, inc.plan_incident, vectors);
-
-  return (
-    <Panel title="Incident" className="mc-incident"
-           right={`${inc.value} open${inc.incidents_read !== null
-             && inc.total !== null && inc.total > inc.incidents_read
-             ? ` (first ${inc.incidents_read} read)` : ""} · read ${clock(inc.at)}`}>
-      <div className="ir-head">
-        <span className="ir-op" data-operator={plan?.operator ?? "unknown"}>
-          operator: {(plan?.operator ?? "unknown").toUpperCase()}
-        </span>
-        <span className="ir-note">
-          {plan
-            ? `${vectors.length} vector${vectors.length === 1 ? "" : "s"} · plan read ${clock(plan.observed_at)}`
-            : `no plan: ${inc.plan_unavailable ?? "the incident names no alert to analyse"}`}
-        </span>
-      </div>
-
-      {plan?.say && <p className="ir-say">{plan.say}</p>}
-
-      {vectors.length > 0 && (
-        <ol className="ir-console">
-          {vectors.map((v, i) => {
-            const step = v.step;
-            const manual = v.manual;
-            // A manual (Tier 3 for ATLAS) entry is never matched to a
-            // proposal row: there is no proposal for it, by design.
-            const row = step && !manual
-              ? latest.get(`${step[0]}|${step[1]}`) ?? null : null;
-            const word = manual ? "MANUAL"
-              : row ? stepWord(row) : step ? "NOT RAISED" : "NO STEP";
-            const badgeState = manual ? "MANUAL" : row?.state ?? "none";
-            return (
-              <li key={`${v.evidence.alert ?? v.target}-${i}`}
-                  data-state={badgeState}>
-                <span className="n">VECTOR {i + 1}/{vectors.length}</span>
-                <span className="what">
-                  {v.kind} → {v.target}
-                  {v.evidence.host && v.evidence.host !== v.target
-                    ? <span className="note"> on {v.evidence.host}</span> : null}
-                </span>
-                <span className="rep" data-known={String(v.reputation !== null)}>
-                  reputation: {v.reputation ? `${v.reputation} (hub)` : "unknown"}
-                </span>
-                <span className="step">
-                  {manual
-                    ? `${manualLabel(manual)} — ${manual.note}`
-                    : step ? verbLabel(step[0], step[1]) : "—"}
-                  <b className="badge" data-state={badgeState}>{word}</b>
-                </span>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-
-      {feed.steps.length > 0 && (
-        <ul className="ir-steps">
-          {feed.steps.slice(0, 8).map((s) => (
-            <li key={s.id} data-state={s.state ?? "none"}>
-              <b className="badge" data-state={s.state ?? "none"}>{stepWord(s)}</b>
-              <span className="what">{stepSummary(s.action, s.params)}</span>
-              <span className="t">{clock(s.decided_at ?? s.at)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {feed.log.length > 0 && (
-        <ul className="ir-log">
-          {feed.log.slice(0, 6).map((e) => (
-            <li key={e.id}>
-              <span className="t">{clock(e.at)}</span>
-              <span className="what">{e.event}{e.detail ? ` — ${e.detail}` : ""}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p className="stamp mc-stamp">
-        {readStamp(fetchedAt)} · every step waits for Miro; nothing here acts
-      </p>
-    </Panel>
-  );
-}
-
 export function Mission({ reloadKey, voice, search }: {
   reloadKey: number;
   voice: ReturnType<typeof useVoice>;
@@ -275,7 +100,6 @@ export function Mission({ reloadKey, voice, search }: {
   const graph = useFresh(() => api.memoryGraph(), [reloadKey]);
   const agenda = useFresh(() => api.agenda(), [reloadKey]);
   const tasks = useFresh(() => api.tasks(), [reloadKey]);
-  const guardian = useFresh(() => api.guardianFeed(), [reloadKey]);
 
   // One tick a minute, so "in 42m" and "expiring in <1h" stay true without a
   // refetch. Nothing here re-reads the server; the numbers are unchanged, only
@@ -481,11 +305,6 @@ export function Mission({ reloadKey, voice, search }: {
           </Panel>
         </div>
       </div>
-
-      {/* --- incident: only while Guardian has one open ------------------ */}
-      {guardian.data && (
-        <IncidentPanel feed={guardian.data} fetchedAt={guardian.fetchedAt} />
-      )}
 
       {/* --- row 2 -------------------------------------------------------- */}
       <div className="mc-r2">

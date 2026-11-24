@@ -331,7 +331,7 @@ async def test_note_summary_never_carries_an_injected_marker_from_the_transcript
         monkeypatch):
     """The transcript reaches the summariser as untrusted data, wrapped, and
     the summary is a model's own words back -- an injected instruction
-    inside what Miro said must never end up copied into the durable,
+    inside what the owner said must never end up copied into the durable,
     recallable memory."""
     remembered: dict = {}
 
@@ -670,10 +670,10 @@ async def test_check_home_ip_change_starts_tracking_a_fresh_away_address(
         monkeypatch):
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
 
     async def presence(**_):
-        return {"peers": {"miro-iphone": {"connected": True,
+        return {"peers": {"owner-iphone": {"connected": True,
                                           "connection_ip": "198.51.100.4",
                                           "home": False}}}
 
@@ -685,8 +685,8 @@ async def test_check_home_ip_change_starts_tracking_a_fresh_away_address(
 
     obs = await rhythm_module.check_home_ip_change()
     assert obs.health is Health.OK
-    assert obs.evidence["away"]["miro-iphone"]["ip"] == "198.51.100.4"
-    since = datetime.fromisoformat(obs.evidence["away"]["miro-iphone"]["since"])
+    assert obs.evidence["away"]["owner-iphone"]["ip"] == "198.51.100.4"
+    since = datetime.fromisoformat(obs.evidence["away"]["owner-iphone"]["since"])
     assert (datetime.now(UTC) - since).total_seconds() < 5
 
 
@@ -697,17 +697,17 @@ async def test_check_home_ip_change_keeps_since_continuous_on_the_same_ip(
     never cross the 12h threshold."""
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
     old_since = (datetime.now(UTC) - timedelta(hours=5)).isoformat()
     recent = (datetime.now(UTC) - timedelta(minutes=10)).isoformat()
 
     async def presence(**_):
-        return {"peers": {"miro-iphone": {"connected": True,
+        return {"peers": {"owner-iphone": {"connected": True,
                                           "connection_ip": "198.51.100.4",
                                           "home": False}}}
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4",
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4",
                                          "since": old_since}},
                 "observed_at": recent}
 
@@ -715,7 +715,7 @@ async def test_check_home_ip_change_keeps_since_continuous_on_the_same_ip(
     monkeypatch.setattr(rhythm_module, "last_evidence", prior)
 
     obs = await rhythm_module.check_home_ip_change()
-    assert obs.evidence["away"]["miro-iphone"]["since"] == old_since
+    assert obs.evidence["away"]["owner-iphone"]["since"] == old_since
     assert obs.value == pytest.approx(5.0, abs=0.05)
     assert obs.evidence["observed_at"]
 
@@ -727,18 +727,18 @@ async def test_check_home_ip_change_resets_since_after_a_stale_gap(
     trusted across it, even though the address is unchanged."""
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
     old_since = (datetime.now(UTC) - timedelta(hours=5)).isoformat()
     stale = (datetime.now(UTC) - rhythm_module.HOME_IP_STALE_AFTER
             - timedelta(minutes=1)).isoformat()
 
     async def presence(**_):
-        return {"peers": {"miro-iphone": {"connected": True,
+        return {"peers": {"owner-iphone": {"connected": True,
                                           "connection_ip": "198.51.100.4",
                                           "home": False}}}
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4",
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4",
                                          "since": old_since}},
                 "observed_at": stale}
 
@@ -746,7 +746,7 @@ async def test_check_home_ip_change_resets_since_after_a_stale_gap(
     monkeypatch.setattr(rhythm_module, "last_evidence", prior)
 
     obs = await rhythm_module.check_home_ip_change()
-    since = datetime.fromisoformat(obs.evidence["away"]["miro-iphone"]["since"])
+    since = datetime.fromisoformat(obs.evidence["away"]["owner-iphone"]["since"])
     assert (datetime.now(UTC) - since).total_seconds() < 5
 
 
@@ -754,17 +754,17 @@ async def test_check_home_ip_change_resets_since_when_the_address_changes(
         monkeypatch):
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
     old_since = (datetime.now(UTC) - timedelta(hours=5)).isoformat()
     recent = (datetime.now(UTC) - timedelta(minutes=10)).isoformat()
 
     async def presence(**_):
-        return {"peers": {"miro-iphone": {"connected": True,
+        return {"peers": {"owner-iphone": {"connected": True,
                                           "connection_ip": "198.51.100.9",
                                           "home": False}}}
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4",
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4",
                                          "since": old_since}},
                 "observed_at": recent}
 
@@ -772,24 +772,24 @@ async def test_check_home_ip_change_resets_since_when_the_address_changes(
     monkeypatch.setattr(rhythm_module, "last_evidence", prior)
 
     obs = await rhythm_module.check_home_ip_change()
-    since = datetime.fromisoformat(obs.evidence["away"]["miro-iphone"]["since"])
+    since = datetime.fromisoformat(obs.evidence["away"]["owner-iphone"]["since"])
     assert (datetime.now(UTC) - since).total_seconds() < 5
 
 
 async def test_check_home_ip_change_drops_a_peer_that_is_home_now(monkeypatch):
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
     old_since = (datetime.now(UTC) - timedelta(hours=5)).isoformat()
     recent = (datetime.now(UTC) - timedelta(minutes=10)).isoformat()
 
     async def presence(**_):
-        return {"peers": {"miro-iphone": {"connected": True,
+        return {"peers": {"owner-iphone": {"connected": True,
                                           "connection_ip": "203.0.113.7",
                                           "home": True}}}
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4",
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4",
                                          "since": old_since}},
                 "observed_at": recent}
 
@@ -829,7 +829,7 @@ async def test_check_home_ip_change_is_unknown_when_the_mesh_is_unreachable(
     review asked, rather than a hand-built presence dict."""
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
     rhythm._PRESENCE_CACHE.clear()
 
     async def unreachable(_path):
@@ -853,14 +853,14 @@ async def test_check_home_ip_change_is_unknown_when_every_peer_is_unrecognised(
 
     async def presence(**_):
         return {"peers": {}, "reason": "the mesh cannot say whether these "
-                                       "are connected: miro-iphone"}
+                                       "are connected: owner-iphone"}
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
     monkeypatch.setattr(rhythm, "presence", presence)
 
     obs = await rhythm_module.check_home_ip_change()
     assert obs.health is Health.UNKNOWN
-    assert "miro-iphone" in obs.detail
+    assert "owner-iphone" in obs.detail
 
 
 
@@ -874,7 +874,7 @@ async def test_home_ip_change_signal_does_not_fire_before_12_hours(monkeypatch):
     recent = (datetime.now(UTC) - timedelta(minutes=5)).isoformat()
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4", "since": since}},
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4", "since": since}},
                 "observed_at": recent}
 
     monkeypatch.setattr(rhythm_module, "last_evidence", prior)
@@ -889,7 +889,7 @@ async def test_home_ip_change_signal_fires_after_12_hours(monkeypatch):
     recent = (datetime.now(UTC) - timedelta(minutes=5)).isoformat()
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4", "since": since}},
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4", "since": since}},
                 "observed_at": recent}
 
     async def never_notified(_sql, *_args):
@@ -900,7 +900,7 @@ async def test_home_ip_change_signal_fires_after_12_hours(monkeypatch):
     signals = await rhythm_module._home_ip_change_signals()
     assert len(signals) == 1
     assert signals[0].title == "Home IP may have changed to 198.51.100.4"
-    assert "miro-iphone" in signals[0].body
+    assert "owner-iphone" in signals[0].body
     assert "198.51.100.4" in signals[0].body
     assert "update HOME_IPS" in signals[0].body
     assert signals[0].severity.name == "INFO"
@@ -913,7 +913,7 @@ async def test_home_ip_change_signal_does_not_repeat_within_7_days(monkeypatch):
     recent = (datetime.now(UTC) - timedelta(minutes=5)).isoformat()
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4", "since": since}},
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4", "since": since}},
                 "observed_at": recent}
 
     async def already_notified(_sql, *_args):
@@ -936,7 +936,7 @@ async def test_home_ip_change_signal_does_not_fire_on_a_stale_reading(
             - timedelta(minutes=1)).isoformat()
 
     async def prior(_prop, _check):
-        return {"away": {"miro-iphone": {"ip": "198.51.100.4", "since": since}},
+        return {"away": {"owner-iphone": {"ip": "198.51.100.4", "since": since}},
                 "observed_at": stale}
 
     async def never_notified(_sql, *_args):
@@ -969,13 +969,13 @@ async def test_home_ip_change_signal_never_fires_end_to_end_for_a_home_address(
     for an address inside HOME_IPS" without a hand-built presence dict."""
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
-    monkeypatch.setenv("HOME_IPS", "203.0.113.50")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("HOME_IPS", "100.64.0.59")
     rhythm._PRESENCE_CACHE.clear()
 
     async def peers(_path):
-        return [{"id": "1", "name": "miro-iphone", "connected": True,
-                "connection_ip": "203.0.113.50"}], None
+        return [{"id": "1", "name": "owner-iphone", "connected": True,
+                "connection_ip": "100.64.0.59"}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
 
@@ -1190,12 +1190,12 @@ async def test_the_home_ip_check_waits_longer_for_the_mesh_than_an_alert_does(
     holding an alert; it can wait."""
     from atlas.modules import rhythm as rhythm_module
 
-    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
     asked: list[float | None] = []
 
     async def presence(*, timeout=None):
         asked.append(timeout)
-        return {"peers": {"miro-iphone": {"connected": True,
+        return {"peers": {"owner-iphone": {"connected": True,
                                           "connection_ip": "198.51.100.4",
                                           "home": True}}}
 
@@ -1220,7 +1220,7 @@ async def test_read_presence_honours_the_budget_it_is_given(monkeypatch):
 
     monkeypatch.setattr(netbird, "_get", slow)
     monkeypatch.setattr(rhythm, "PRESENCE_TIMEOUT_S", 0.05)
-    quick = await rhythm._read_presence(["miro-iphone"], "")
+    quick = await rhythm._read_presence(["owner-iphone"], "")
     assert "did not answer within 0.05s" in quick["reason"]
-    patient = await rhythm._read_presence(["miro-iphone"], "", timeout=1.0)
+    patient = await rhythm._read_presence(["owner-iphone"], "", timeout=1.0)
     assert "did not answer" not in (patient.get("reason") or "")

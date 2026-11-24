@@ -1,11 +1,11 @@
 """Channel routing.
 
-ATLAS talks to Miro over whichever channel suits the moment, and listens on all
+ATLAS talks to the owner over whichever channel suits the moment, and listens on all
 of them. A Channel is a plugin like anything else: implement the protocol, drop
 it in `atlas/channels/`, and it joins the routing table.
 
 Routing is by severity, not preference, because the failure mode of this whole
-system is Miro muting it in week three.
+system is the owner muting it in week three.
 """
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ class Outbound:
     # only for a reply to something he typed: the answer belongs where the
     # question was asked, under it. Before this every typed reply went to
     # the `decisions` topic carrying a thread ts from another channel, so
-    # "how many servers do I have?" asked in #vpsie was answered in
+    # "how many servers do I have?" asked in #cloudco was answered in
     # #atlas-decisions, detached from the question (2026-09-27). Channels
     # other than Slack ignore it.
     channel: str = ""
@@ -71,6 +71,17 @@ class Outbound:
     # INCIDENT, RESOLVED. Empty lets the channel derive it; it is never the
     # execution status, which the body states.
     presentation: str = ""
+    # The Slack header, word for word, when the "[Project] TYPE: title" form
+    # is not the right one: a proposal card's "[Area] #357 · what approving
+    # does" (kernel/board.py). The title stays the card's key ("#357 — …"):
+    # `sent_ref`, the receipts and the spoken opening all read it.
+    header: str = ""
+
+
+# A line by itself in a body: what is above it is the decision, what is below
+# it the reason and evidence. Slack draws it as a divider; a channel that
+# shows text shows the line.
+CARD_RULE = "────────"
 
 
 @dataclass(frozen=True, slots=True)
@@ -153,7 +164,7 @@ async def attach_to_card(pid: int, *, topic: str, path: str, filename: str,
 
 @dataclass(frozen=True, slots=True)
 class Inbound:
-    """Something Miro said, from any channel, normalised."""
+    """Something the owner said, from any channel, normalised."""
 
     channel: str
     sender: str
@@ -165,7 +176,7 @@ class Inbound:
 class Channel(Protocol):
     name: str
     rich: bool          # supports buttons
-    interactive: bool   # Miro can reply through it
+    interactive: bool   # the owner can reply through it
 
     async def send(self, msg: Outbound) -> str | None: ...
     async def available(self) -> bool: ...
@@ -274,7 +285,7 @@ async def _audit_undelivered(msg: Outbound) -> None:
 
 # ---------------------------------------------------------------- brevity
 #
-# Miro, 2026-09-24: "ATLAS can call me anytime in an emergency; he should
+# the owner, 2026-09-24: "ATLAS can call me anytime in an emergency; he should
 # realise I'm not home when I'm not on my internet and be quick and straight
 # to the point." Calling him anytime is already the CRITICAL path. What this
 # adds is the second half: when `rhythm.presence()` says he is off his own
@@ -316,7 +327,7 @@ def shorten(text: str, sentences: int = BRIEF_SENTENCES) -> str:
 # more useful when he is away from his own network. G2 of the reel audit:
 # "Jarvis calls you mid-workout: 30 seconds, one decision."
 CALL_AWAY_LINE = (
-    "Miro is out (not on his own network). Open with the single decision "
+    "the owner is out (not on his own network). Open with the single decision "
     "you need in one sentence, keep this call under 30 seconds, offer to "
     "text the details, and do not call again about this once he is home."
 )
@@ -348,7 +359,7 @@ async def brevity(msg: Outbound) -> tuple[Outbound, bool]:
     """(the message to send, whether it may ring the phone).
 
     "He should realise I'm not home when I'm not on my internet and be
-    quick" — Miro.
+    quick" — the owner.
 
     Unchanged and free to ring unless he is known to be out — then an
     alert's body is cut to two sentences and says so (`TRIMMED`), and the
@@ -491,7 +502,7 @@ async def notify(msg: Outbound) -> list[str]:
         # numbered reply list rather than vanishing. Without this exemption a
         # CRITICAL proposal (which always carries approve/decline/detail
         # buttons) reached sms and slack only -- the phone call, the one
-        # channel that works when Miro is away from a screen, never fired.
+        # channel that works when the owner is away from a screen, never fired.
         if (msg.buttons and not channel.rich and used
                 and msg.severity < Severity.CRITICAL):
             continue

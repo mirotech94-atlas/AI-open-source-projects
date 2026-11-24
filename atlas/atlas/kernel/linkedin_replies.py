@@ -1,7 +1,7 @@
 """Answering what people send the Guardian and FlyCheap LinkedIn pages,
 through the one path that acts.
 
-Miro, 2026-10-07: "make sure when requests come for either page you will see
+the owner, 2026-10-07: "make sure when requests come for either page you will see
 it and reply to it". `modules/linkedin/requests.py` reads the requests and
 page inboxes into `linkedin_requests` (a collector); this drives the reply,
 the way `kernel.lead_followup.replies` drives an agency lead's:
@@ -17,7 +17,7 @@ that said no -- a service request, a rule the draft breaks, the daily cap,
 `LINKEDIN_REPLY_AUTOSEND=off`) is an answer: the row is marked held and the
 card carries the reason and the draft. A draft that could not be written at
 all is an alert with their words, so a request is never silently dropped.
-The receipt is what makes the reply's sign-off ("Miro sees this thread")
+The receipt is what makes the reply's sign-off ("the owner sees this thread")
 true. While the LinkedIn browser is busy (a sweep, a publish, a scan) the
 send waits for a later tick rather than queueing behind it.
 """

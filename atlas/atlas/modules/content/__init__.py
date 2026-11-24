@@ -1,7 +1,7 @@
 """content — voice notes, the Sunday call, a good Slack thread, into drafts.
 
 What it watches: how many drafted rows in `content_drafts` are still
-`status='draft'`, waiting on Miro to read them. A pile past ten means he
+`status='draft'`, waiting on the owner to read them. A pile past ten means he
 has stopped reading them, not that there is nothing to write.
 
 What it may do: `content.draft` (Tier AUTO) — read one of four sources
@@ -21,7 +21,7 @@ Phase 18 adds `content.render_video` (Tier AUTO): turn an approved
 does reaches a follower:
 `instagram.publish` is the separate, Tier ASK step where a human decides
 whether the result is worth posting. `RENDER_MONTHLY_CAP` (default 200) is
-a credit cap, not a purchase — OpenArt is paid for on a plan Miro already
+a credit cap, not a purchase — OpenArt is paid for on a plan the owner already
 holds, and this only refuses to spend further credits already committed,
 checked BEFORE the MCP is ever called. `ai_label` is written as the
 literal `TRUE` in the `content_media` insert; there is no parameter that
@@ -33,7 +33,7 @@ with a shared character sheet, Groq-timed captions burned in with libass;
 `GEMINI_API_KEY`, under `VEO_MONTHLY_SECONDS` for the whole story, checked
 before the first clip; Veo bills per second, and it runs unattended under
 that cap exactly as OpenArt does under `RENDER_MONTHLY_CAP` -- the cap is
-Miro's standing approval, ruled in Task 55, and `render_backend` shows the
+the owner's standing approval, ruled in Task 55, and `render_backend` shows the
 seconds used against it), else **openart** (`OPENART_TOKEN`, the path below),
 else **local** (free: Gemini stills or typographic cards, Fish narration,
 ffmpeg zoompan, "Made with AI" burned into every frame). ffmpeg missing is
@@ -62,7 +62,7 @@ decision. So the row also gets its own `media_token`
 session in front, the token the entire defence.
 
 **Publishing is Tier ASK, always.** `instagram.publish` and
-`tiktok.upload_draft` exist, both Tier ASK, because a post under Miro's
+`tiktok.upload_draft` exist, both Tier ASK, because a post under the owner's
 name is his decision to make. The one publish action here,
 `content.publish_reel` (Task 55, `crosspost.py`), is Tier ASK too: one
 card that sends an AI-stories reel to the stories Instagram account, the
@@ -75,7 +75,7 @@ external agent that drives a browser a human authenticated, and the row
 Endpoints this assumes: Postgres (`voice_turns`, `reports`, `memories`,
 `content_media`, `render_spend`), an LLM (`kernel.llm.think`), and the
 OpenArt MCP server at `OPENART_MCP_URL` — a URL and a JSON-RPC shape
-neither of which has been confirmed against the real service, so Miro can
+neither of which has been confirmed against the real service, so the owner can
 correct them.
 """
 from __future__ import annotations
@@ -148,7 +148,7 @@ log = logging.getLogger("atlas.content")
 
 
 async def check_drafts() -> Observation:
-    """Drafts waiting on Miro. Past ten, the pile is the finding — writing
+    """Drafts waiting on the owner. Past ten, the pile is the finding — writing
     more would not help; only he can clear it by reading them."""
     try:
         # A reel's script is reviewed on its reel card, not in the drafts
@@ -304,7 +304,7 @@ def _prompt_refusal(script: reel_script.Script) -> str | None:
 
 BACKENDS = ("auto",)
 NO_SLIDES = ("no slideshow reels: every reel is real motion video, so the "
-             "free stills render is never used for one (Miro, 2026-09-27)")
+             "free stills render is never used for one (the owner, 2026-09-27)")
 
 
 async def _choice(script: reel_script.Script, backend: str) -> render.Choice:
@@ -376,11 +376,11 @@ async def render_video(draft_id: int, backend: str = "auto") -> ActionResult:
         return ActionResult(False, f"refused: {why}")
     choice = await _choice(script, backend)
     if choice.backend in render.VEO_BACKENDS:
-        # No stills fallback any more (Miro, 2026-09-27: "action and movement
+        # No stills fallback any more (the owner, 2026-09-27: "action and movement
         # ... not just slides"): a Veo quota bump fails the render, says so,
         # and the reel waits for tomorrow's clips -- unless Higgsfield is
         # configured: then what Veo's day or month cannot make is made
-        # there, under HIGGSFIELD_MONTHLY_USD (Miro, 2026-09-29).
+        # there, under HIGGSFIELD_MONTHLY_USD (the owner, 2026-09-29).
         return await render.render_veo(draft_id, script)
     if choice.backend == "local":
         return ActionResult(False, f"refused: {NO_SLIDES} ({choice.why})")
@@ -538,7 +538,7 @@ async def check_render_backend() -> Observation:
     choice = await render.choose_backend(probe)
     evidence["backend"] = choice.backend
     if choice.backend == render.HIGGSFIELD_ONLY:
-        # Veo is off (Miro, 2026-09-30): the render stands or falls with
+        # Veo is off (the owner, 2026-09-30): the render stands or falls with
         # Higgsfield, so its own check is this check's verdict -- FAILING
         # while Higgsfield refuses (no credits), never OK on Veo's account.
         budget = await higgsfield.check_budget()
@@ -569,7 +569,7 @@ async def check_render_backend() -> Observation:
                            detail="; ".join(unknown) + f" — {detail}",
                            evidence=evidence)
     # Veo has no balance to read; its last refusal is the reading. A 402
-    # (2026-09-30) stops every Veo beat until Miro tops up, so this is
+    # (2026-09-30) stops every Veo beat until the owner tops up, so this is
     # FAILING, with the time Veo said so, until Veo next accepts a clip.
     if (since := veo.depleted_since()) is not None:
         evidence["veo_credits"] = "depleted"
@@ -650,9 +650,6 @@ class ContentModule:
                   timedelta(minutes=30), Severity.NORMAL,
                   "every posted AI reel is on every configured platform, or "
                   "why not", baseline_sigma=None),
-            Check("higgsfield_budget", higgsfield.check_budget, timedelta(hours=6),
-                  Severity.NORMAL, "Higgsfield overflow spend against its "
-                  "monthly cap, and whether its key works", baseline_sigma=None),
             Check("shorts_lane", shorts.check_shorts_lane, timedelta(hours=6),
                   Severity.NORMAL, "the last YouTube Short, this week's count "
                   "and the next one due", baseline_sigma=None),
@@ -663,8 +660,8 @@ class ContentModule:
             Action(
                 name="content.draft",
                 tier=Tier.AUTO,     # writes a draft row; nothing leaves ATLAS
-                summary="Draft a LinkedIn post, eBay listing, flycheap deal "
-                        "post or short-form script from a source",
+                summary="Draft a LinkedIn post, eBay listing or short-form "
+                        "script from a source",
                 run=draft, dry_run=draft_dry, rollback=draft_rollback,
                 params={"kind": f"one of: {', '.join(KINDS)}",
                         "source": "voice:<n> | weekly | slack:<thread_ts> | "
@@ -740,7 +737,7 @@ class ContentModule:
                                     # VEO_DAILY_CLIPS. Past Veo's daily
                                     # allowance, Higgsfield overflow runs
                                     # under HIGGSFIELD_MONTHLY_USD, the same
-                                    # kind of standing approval (Miro,
+                                    # kind of standing approval (the owner,
                                     # 2026-09-29)
                 summary="Bank one 30-day-calendar reel's Veo clips within "
                         "today's allowance, and assemble it once all exist",
@@ -772,7 +769,7 @@ class ContentModule:
             ),
             Action(
                 name="content.autopublish_reel",
-                tier=Tier.AUTO,     # Miro, 2026-09-27: fully automated. Posts
+                tier=Tier.AUTO,     # the owner, 2026-09-27: fully automated. Posts
                                     # only past autopublish_check (switch,
                                     # daily cap, AI label, guard, a 1080x1920
                                     # render with sound); the rollback deletes
@@ -789,7 +786,7 @@ class ContentModule:
             ),
             Action(
                 name="content.post_missing_leg",
-                tier=Tier.AUTO,     # Miro, 2026-09-29: an AI reel is on every
+                tier=Tier.AUTO,     # the owner, 2026-09-29: an AI reel is on every
                                     # platform. Posts ONLY a leg the reel's own
                                     # run was refused for a retryable reason
                                     # (credentials, 5xx, timeout, rate limit),
@@ -810,7 +807,7 @@ class ContentModule:
             ),
             Action(
                 name="content.publish_short",
-                tier=Tier.AUTO,     # Miro, 2026-09-29: the best AI reel of
+                tier=Tier.AUTO,     # the owner, 2026-09-29: the best AI reel of
                                     # the week to YouTube Shorts, three a
                                     # week, on its own. Posts only a reel
                                     # that already posted as an AI reel in

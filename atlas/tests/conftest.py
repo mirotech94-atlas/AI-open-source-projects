@@ -1,6 +1,7 @@
 """Test fixtures. No database, no network, no LLM."""
 from __future__ import annotations
 
+import asyncio
 import os
 import pathlib
 import sys
@@ -8,9 +9,29 @@ import sys
 import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
-os.environ.setdefault("DATABASE_URL", "postgresql://test/test")
+FAKE_DATABASE_URL = "postgresql://test/test"
+os.environ.setdefault("DATABASE_URL", FAKE_DATABASE_URL)
+
+import asyncpg
 
 from atlas.kernel import state
+
+_real_create_pool = asyncpg.create_pool
+
+
+@pytest.fixture(autouse=True)
+def _the_fake_database_refuses_at_once(monkeypatch):
+    """Code a test did not stub that reaches for Postgres finds it refused at
+    once. Without this the pool resolves the host `test` over real DNS, and
+    the resolver -- a CI runner's above all -- decides how long that takes:
+    a test that budgets its loop in wall-clock time then fails at random.
+    A real DSN (the *_pg tests set one) is passed through untouched."""
+    def create_pool(dsn=None, *args, **kwargs):
+        if dsn == FAKE_DATABASE_URL:
+            raise ConnectionRefusedError("no database in the unit tests")
+        return _real_create_pool(dsn, *args, **kwargs)
+
+    monkeypatch.setattr(asyncpg, "create_pool", create_pool)
 
 
 @pytest.fixture
@@ -22,6 +43,22 @@ def memory_backend():
         yield fake
     finally:
         state.set_backend(previous)
+
+
+@pytest.fixture
+def quiet_loop(monkeypatch):
+    """`scheduler.loop` with every step a no-op, run for a counted number of
+    passes (tests/scheduler_support.py)."""
+    from atlas.kernel import scheduler
+    from tests.scheduler_support import QuietLoop
+
+    scheduler._tasks.clear()
+    yield QuietLoop(monkeypatch)
+    # A detached task outliving its test would still be pending in the next
+    # one, holding objects bound to an event loop that has since closed.
+    for task in scheduler._tasks.values():
+        task.cancel()
+    scheduler._tasks.clear()
 
 
 @pytest.fixture
@@ -78,6 +115,16 @@ def _voice_cache_in_tmp(monkeypatch, tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _no_presenter_clips(monkeypatch, tmp_path):
+    """the owner's committed presenter clips (academy/presenter.py) stay out of a
+    test unless it asks for them: every test sees an empty presenter
+    directory, the narrated fallback."""
+    empty = tmp_path / "presenter-none"
+    empty.mkdir()
+    monkeypatch.setenv("ACADEMY_PRESENTER_DIR", str(empty))
+
+
+@pytest.fixture(autouse=True)
 def _closed_breakers():
     """Every test starts with every model breaker closed: the breaker's
     state is per process, and one test's failing fake provider must not
@@ -90,3 +137,69 @@ def _closed_breakers():
     breaker.reset()
     outage.reset()
     quota.reset()
+
+
+@pytest.fixture(autouse=True)
+def _the_boot_reap_retries_do_not_sleep(monkeypatch):
+    """`atlas.api.main.lifespan` retries its orphan reap 12 times, 10 s apart,
+    when Postgres is unreachable -- right for a database still recovering,
+    120 s of nothing for the unit tests' fake one (every `with TestClient(app)`
+    paid it: five tests at 120 s each). Only that one sleep, found by the
+    calling function, is skipped; every other sleep is the real one."""
+    real_sleep = asyncio.sleep
+
+    def sleep(delay, *args, **kwargs):
+        caller = sys._getframe(1)
+        if caller.f_code.co_name == "lifespan" and \
+                caller.f_globals.get("__name__") == "atlas.api.main":
+            return real_sleep(0)
+        return real_sleep(delay, *args, **kwargs)
+
+    monkeypatch.setattr(asyncio, "sleep", sleep)
+
+
+# --- parallel runs (-n N, docs/test-loop.md) ---------------------------------
+
+def _split_dsn(dsn: str, database: str) -> str:
+    from urllib.parse import urlsplit, urlunsplit
+    return urlunsplit(urlsplit(dsn)._replace(path=f"/{database}"))
+
+
+async def _create_database(dsn: str) -> None:
+    from urllib.parse import urlsplit
+    name = urlsplit(dsn).path.lstrip("/")
+    conn = await asyncpg.connect(_split_dsn(dsn, "postgres"))
+    try:
+        if not await conn.fetchval(
+                "SELECT 1 FROM pg_database WHERE datname = $1", name):
+            await conn.execute(f'CREATE DATABASE "{name}"')
+    finally:
+        await conn.close()
+
+
+def pytest_configure(config):
+    """Under xdist each worker gets its own throwaway database, `<db>_<worker>`,
+    created on demand: the *_pg fixtures TRUNCATE, so two workers must never
+    share one. ATLAS_TEST_PG_DSN is read at import by those files, which is
+    after this hook. A serial run is untouched."""
+    worker = os.environ.get("PYTEST_XDIST_WORKER")
+    dsn = os.environ.get("ATLAS_TEST_PG_DSN", "")
+    if worker and dsn:
+        from urllib.parse import urlsplit
+        base = urlsplit(dsn).path.lstrip("/") or "atlas"
+        mine = _split_dsn(dsn, f"{base}_{worker}")
+        import asyncio
+        asyncio.run(_create_database(mine))
+        os.environ["ATLAS_TEST_PG_DSN"] = mine
+    if getattr(config.option, "numprocesses", None) and \
+            getattr(config.option, "dist", "") == "load":
+        config.option.dist = "loadgroup"     # lets `serial` pin a group to a worker
+
+
+def pytest_collection_modifyitems(items):
+    """Every `serial` test joins one xdist group, so it runs on a single worker,
+    one after another. Without -n this does nothing."""
+    for item in items:
+        if item.get_closest_marker("serial") and \
+                not item.get_closest_marker("xdist_group"):
+            item.add_marker(pytest.mark.xdist_group("serial"))

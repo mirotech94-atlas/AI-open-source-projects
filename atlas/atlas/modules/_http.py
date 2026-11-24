@@ -98,8 +98,21 @@ def redact_stored(text: Any) -> str:
     return _SENSITIVE_PARAM.sub(r"\1<redacted>", result)
 
 
-def explain(exc: BaseException) -> str:
-    """A useful, secret-free description of why a call failed."""
+def _api_message(response: httpx.Response) -> str:
+    """Google-style `{"error": {"message": ...}}`, redacted and short, or ""."""
+    try:
+        err = response.json().get("error")
+    except (ValueError, AttributeError):
+        return ""
+    msg = err.get("message") if isinstance(err, dict) else err
+    if not isinstance(msg, str) or not msg.strip():
+        return ""
+    return redact(" ".join(msg.split()))[:240]
+
+
+def explain(exc: BaseException, detail: bool = False) -> str:
+    """A useful, secret-free description of why a call failed. `detail`
+    adds the API's own error message (redacted) to an HTTP error."""
     if isinstance(exc, httpx.HTTPStatusError):
         code = exc.response.status_code
         hint = {
@@ -111,7 +124,9 @@ def explain(exc: BaseException) -> str:
             429: "rate limited",
         }.get(code, "")
         path = redact(str(exc.request.url.path))
-        return f"HTTP {code} from {path}{' — ' + hint if hint else ''}"
+        said = _api_message(exc.response) if detail else ""
+        return (f"HTTP {code} from {path}{' — ' + hint if hint else ''}"
+                f"{': ' + said if said else ''}")
     if isinstance(exc, httpx.TimeoutException):
         return "timed out"
     if isinstance(exc, httpx.HTTPError):
@@ -129,6 +144,7 @@ async def _request(
     data: dict[str, Any] | None = None,
     timeout: float = 25.0,
     base_url: str = "",
+    detail: bool = False,
 ) -> tuple[Any, str | None]:
     """Shared body of `get_json` and `post_json`. Never raises."""
     try:
@@ -139,7 +155,7 @@ async def _request(
                 json=json_body, data=data)
             response.raise_for_status()
     except Exception as exc:                            # noqa: BLE001
-        return None, explain(exc)
+        return None, explain(exc, detail)
 
     try:
         return response.json(), None
@@ -157,14 +173,16 @@ async def get_json(
     params: dict[str, Any] | None = None,
     timeout: float = 25.0,
     base_url: str = "",
+    detail: bool = False,
 ) -> tuple[Any, str | None]:
     """GET and parse JSON. Returns `(data, None)` or `(None, reason)`.
+    `detail=True` puts the API's own error message in `reason`.
 
     Never raises. A caller turning `reason` into an Observation should use
     `Health.UNKNOWN`: we did not measure the thing, so we do not know.
     """
     return await _request("GET", url, headers=headers, params=params,
-                          timeout=timeout, base_url=base_url)
+                          timeout=timeout, base_url=base_url, detail=detail)
 
 
 async def post_json(
@@ -188,6 +206,60 @@ async def post_json(
     return await _request("POST", url, headers=headers, params=params,
                           json_body=json_body, data=data,
                           timeout=timeout, base_url=base_url)
+
+
+async def post_body(
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    params: dict[str, Any] | None = None,
+    content: bytes | None = None,
+    json_body: dict[str, Any] | None = None,
+    timeout: float = 60.0,
+    detail: bool = True,
+) -> tuple[Any, str | None]:
+    """POST raw bytes (a file upload) or JSON to an API whose 2xx answer may
+    be empty or not JSON. Returns `(parsed JSON or None, None)` on any 2xx,
+    `(None, reason)` otherwise. Same contract as `post_json`: never raises,
+    and `reason` has been through `explain()`, so no credential leaks."""
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.request(
+                "POST", url, headers=headers, params=params,
+                content=content, json=json_body)
+            response.raise_for_status()
+    except Exception as exc:                            # noqa: BLE001
+        return None, explain(exc, detail)
+    try:
+        return response.json(), None
+    except ValueError:
+        return None, None
+
+
+async def send_body(
+    method: str,
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+    json_body: dict[str, Any] | None = None,
+    timeout: float = 25.0,
+) -> tuple[Any, str | None]:
+    """PUT / DELETE / PATCH to an API whose 2xx answer is usually empty (Search
+    Console adds and removes properties and sitemaps that way). `(parsed JSON or
+    None, None)` on any 2xx, `(None, reason)` otherwise; never raises, and the
+    reason has been through `explain()`. Reaching an outside write through here
+    is only ever done from a catalogued action (`kernel/executor.py`)."""
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.request(method.upper(), url, headers=headers,
+                                            json=json_body)
+            response.raise_for_status()
+    except Exception as exc:                            # noqa: BLE001
+        return None, explain(exc, True)
+    try:
+        return response.json(), None
+    except ValueError:
+        return None, None
 
 
 async def get_bytes(

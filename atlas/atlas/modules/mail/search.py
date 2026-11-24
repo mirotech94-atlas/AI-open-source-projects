@@ -148,6 +148,8 @@ def _sync_imap(account, words: tuple[str, ...], days: int, limit: int) -> list[d
     try:
         conn.login(account.email, account.password)
         conn.select("INBOX", readonly=True)
+        from . import spam
+        validity = spam.uidvalidity(conn)
         since = (datetime.now(UTC) - timedelta(days=days)).strftime("%d-%b-%Y")
         typ, data = conn.uid("SEARCH", None, _imap_criteria(words, since))
         if typ != "OK":
@@ -168,6 +170,8 @@ def _sync_imap(account, words: tuple[str, ...], days: int, limit: int) -> list[d
             stable = (msg.get("Message-ID") or "").strip() or f"uid:{uid.decode()}"
             out.append({
                 "id": f"imap:{account.name}:{stable}",
+                "key": spam.imap_key(account.name, validity, uid.decode(),
+                                     msg.get("Message-ID")),
                 "account": account.email or account.name,
                 "subject": _decode(msg.get("Subject")),
                 "sender": _decode(msg.get("From")),

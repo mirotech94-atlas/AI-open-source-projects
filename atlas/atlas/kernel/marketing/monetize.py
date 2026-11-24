@@ -7,7 +7,7 @@ numbers, so the rules are strict and the tests enforce them:
   time it was read (invariant 6). No fact, no idea.
 * **When nothing is measured, the answer is zero ideas and a note saying so.**
   Not one hedged idea, not a plausible-sounding list. The note names each
-  source and why it could not be read, which is the thing that tells Miro
+  source and why it could not be read, which is the thing that tells the owner
   what to fix.
 * **No revenue figures.** `est_note` is prose about the mechanism and what
   would have to be true. A number nobody measured would be an estimate
@@ -21,23 +21,15 @@ What each source actually measures — read from the modules, not assumed:
   youtube   `channel_stats` gives subscribers, views, video count, and
             `partner_eligibility` compares subscribers against YouTube's own
             published 1,000 threshold. The watch-hours and Shorts-views paths
-            are not measured by that module, and it says so; so does this one.
-  flycheap  `/api/health` reports database rows, poll freshness, providers,
-            delivery feed, users and active routes. **Nothing in flycheap
-            measures affiliate clicks or bookings** — the module's docstring
-            records that the affiliate-marker action was deliberately removed.
-            So an affiliate idea here rests on audience size alone and says
-            plainly that conversion is unmeasured.
-  guardian  the hub gives a security score, sensor/network counts and open
-            alerts. **There is no subscriber count anywhere in the module**, so
-            no subscriber-based sponsorship number is available and none is
-            invented.
-  mirotech  `price_check` returns eBay *active asks*, and its own result text
+            are measured channel-wide by `academy.ypp.ypp_progress` (Analytics),
+            not by `partner_eligibility`, so nothing here claims them; Studio →
+            Earn is the authority.
+  exampleco  `price_check` returns eBay *active asks*, and its own result text
             says these are not sold prices. Any spread quoted here carries
             that caveat verbatim.
   agency    `agency_leads` gives the pipeline: how many leads are waiting.
 
-Ranking is evidence strength times how little the idea needs from Miro. An
+Ranking is evidence strength times how little the idea needs from the owner. An
 idea resting on two measured facts that he can act on in one click outranks a
 single-fact idea that needs him to negotiate a contract.
 
@@ -60,9 +52,9 @@ from ..state import fetch_one
 
 log = logging.getLogger("atlas.marketing")
 
-BUSINESSES: tuple[str, ...] = ("flycheap", "guardian", "mirotech", "agency")
+BUSINESSES: tuple[str, ...] = ("exampleco", "agency")
 
-# How much a requirement costs Miro, as a multiplier on evidence strength. A
+# How much a requirement costs the owner, as a multiplier on evidence strength. A
 # toggle in a console he already owns is cheap; a signature is not.
 EFFORT: dict[str, float] = {
     "toggle": 1.0,        # flip something in a console he already has
@@ -75,7 +67,7 @@ EFFORT: dict[str, float] = {
 MONEY_OUT = "money out — Tier 3, you decide"
 
 # What a source reader returns for a business it has nothing to say about —
-# guardian's hub for a flycheap question, a channel that does not exist. It is
+# eBay listings for an agency question, a channel that does not exist. It is
 # not a failure, so it never appears in the "unreadable" note: listing four
 # sources that were never relevant buries the one line that matters.
 NOT_APPLICABLE = "not applicable to this business"
@@ -84,9 +76,7 @@ NOT_APPLICABLE = "not applicable to this business"
 # check of ATLAS's own — so the question passes Perplexity's name rule and
 # asks about the world, not about him.
 DESCRIPTIONS: dict[str, str] = {
-    "flycheap": "a flight-fare alert website with email alerts for tracked routes",
-    "guardian": "a home and small-office network security monitoring subscription",
-    "mirotech": "a used enterprise IT and networking hardware reseller on eBay",
+    "exampleco": "a used enterprise IT and networking hardware reseller on eBay",
     "agency": "a one-person web design studio selling new websites to local shops",
 }
 
@@ -145,8 +135,9 @@ def _score(evidence: dict, effort: str) -> float:
 async def _youtube_facts(business: str) -> tuple[dict | None, str | None]:
     """Partner-programme eligibility, as the youtube module measured it.
 
-    Not recomputed here: `partner_eligibility` already refuses to claim the
-    watch-hours and Shorts-views paths it cannot measure, and duplicating its
+    Not recomputed here: `partner_eligibility` refuses to claim the
+    watch-hours and Shorts-views paths (those are measured channel-wide by
+    `academy.ypp.ypp_progress`, with Studio → Earn as the authority), and duplicating its
     comparison would be a second place for the threshold to drift.
     """
     try:
@@ -166,66 +157,19 @@ async def _youtube_facts(business: str) -> tuple[dict | None, str | None]:
             "observed_at": data["read_at"], "detail": data["detail"]}, None
 
 
-async def _flycheap_facts(business: str) -> tuple[dict | None, str | None]:
-    """Audience size from `/api/health`. Bookings and affiliate clicks are
-    not measured anywhere in the module, and that is reported, not filled in."""
-    if business != "flycheap":
-        return None, NOT_APPLICABLE
-    try:
-        from ...modules.flycheap import _health_payload
-        data, reason = await _health_payload()
-    except Exception as exc:                            # noqa: BLE001
-        return None, f"flycheap: {exc}"
-    if reason is not None:
-        return None, f"flycheap /api/health: {reason}"
-    metrics = ((data or {}).get("checks") or {}).get("metrics") or {}
-    users = metrics.get("users")
-    routes = metrics.get("activeRoutes", metrics.get("active_routes"))
-    if users is None and routes is None:
-        return None, ("flycheap /api/health reported no user or route counts "
-                      "under checks.metrics")
-    now = datetime.now(UTC)
-    return {"users": users, "active_routes": routes, "observed_at": now,
-            "bookings_measured": False,
-            "detail": (f"{users} users, {routes} active routes, read "
-                       f"{now:%H:%M} UTC")}, None
-
-
-async def _guardian_facts(business: str) -> tuple[dict | None, str | None]:
-    """The hub's own overview score and network count. Guardian measures no
-    subscriber count, so no subscriber-based number is offered."""
-    if business != "guardian":
-        return None, NOT_APPLICABLE
-    try:
-        from ...modules.guardian import check_overview, check_sensors
-        overview = await check_overview()
-        sensors = await check_sensors()
-    except Exception as exc:                            # noqa: BLE001
-        return None, f"guardian: {exc}"
-    from ..contracts import Health
-    if overview.health is Health.UNKNOWN and sensors.health is Health.UNKNOWN:
-        return None, (f"guardian hub unreadable: "
-                      f"{overview.detail or sensors.detail}")
-    at = overview.at or datetime.now(UTC)
-    return {"score": overview.value, "networks": sensors.value,
-            "subscribers_measured": False, "observed_at": at,
-            "detail": (f"{overview.detail or 'score not read'}; "
-                       f"{sensors.detail or 'sensors not read'}")}, None
-
-
-async def _mirotech_facts(business: str) -> tuple[dict | None, str | None]:
+async def _ownertech_facts(business: str) -> tuple[dict | None, str | None]:
     """Active listings. eBay *sold* prices are not measured by the module —
-    `mirotech.price_check` returns active asks and says so in its own text."""
-    if business != "mirotech":
+    `exampleco.price_check` returns active asks and says so in its own text."""
+    if business != "exampleco":
         return None, NOT_APPLICABLE
     try:
-        from ...modules.mirotech import check_listings
+        from ...modules.exampleco import check_listings
         obs = await check_listings()
     except Exception as exc:                            # noqa: BLE001
-        return None, f"mirotech: {exc}"
+        return None, f"exampleco: {exc}"
     from ..contracts import Health
     if obs.health is Health.UNKNOWN or obs.value is None:
-        return None, f"mirotech: {obs.detail or 'listings not read'}"
+        return None, f"exampleco: {obs.detail or 'listings not read'}"
     at = obs.at or datetime.now(UTC)
     return {"listings": obs.value, "sold_prices_measured": False,
             "observed_at": at, "detail": obs.detail}, None
@@ -275,91 +219,17 @@ def _youtube_ideas(facts: dict) -> list[dict]:
     }]
 
 
-def _flycheap_ideas(facts: dict) -> list[dict]:
-    at = facts["observed_at"]
-    evidence = {}
-    if facts.get("users") is not None:
-        evidence["users"] = _fact(facts["users"], at, facts["detail"])
-    if facts.get("active_routes") is not None:
-        evidence["active_routes"] = _fact(facts["active_routes"], at,
-                                          facts["detail"])
-    unmeasured = ("flycheap measures no affiliate clicks and no bookings — "
-                  "the module's own docstring records that the affiliate "
-                  "action was removed — so conversion is unknown, not low.")
-    return [
-        {
-            "business": "flycheap",
-            "idea": "Flight-booking affiliate on the routes already tracked",
-            "mechanism": "affiliate",
-            "evidence": evidence,
-            "requires": "sign an affiliate agreement with a booking provider",
-            "est_note": ("Audience size is measured; conversion is not. "
-                         + unmeasured),
-            "effort": "negotiate",
-            "costs_money": False,
-            "score": _score(evidence, "negotiate"),
-        },
-        {
-            "business": "flycheap",
-            "idea": "Paid alerts tier for the routes with the most watchers",
-            "mechanism": "product",
-            "evidence": evidence,
-            "requires": "price it — only you can decide what it is worth",
-            "est_note": ("Rests on the measured user and route counts above. "
-                         "No revenue figure is offered: nothing here measures "
-                         "willingness to pay."),
-            "effort": "decide",
-            "costs_money": False,
-            "score": _score(evidence, "decide"),
-        },
-        {
-            "business": "flycheap",
-            "idea": "Paid placement on a deals newsletter to grow the list",
-            "mechanism": "paid_acquisition",
-            "evidence": evidence,
-            "requires": MONEY_OUT,
-            "est_note": ("Listed because it is the obvious lever and it is "
-                         "permanently out of ATLAS's reach. " + unmeasured),
-            "effort": "spend",
-            "costs_money": True,
-            "score": _score(evidence, "spend"),
-        },
-    ]
-
-
-def _guardian_ideas(facts: dict) -> list[dict]:
-    at = facts["observed_at"]
-    evidence = {}
-    if facts.get("score") is not None:
-        evidence["security_score"] = _fact(facts["score"], at, facts["detail"])
-    if facts.get("networks") is not None:
-        evidence["networks"] = _fact(facts["networks"], at, facts["detail"])
-    return [{
-        "business": "guardian",
-        "idea": "Hardware/sensor affiliate alongside the monitored networks",
-        "mechanism": "affiliate",
-        "evidence": evidence,
-        "requires": "sign an affiliate agreement with a hardware vendor",
-        "est_note": ("Rests on the measured network count above. Guardian "
-                     "measures no subscriber or audience count anywhere, so "
-                     "no sponsorship reach figure is offered."),
-        "effort": "negotiate",
-        "costs_money": False,
-        "score": _score(evidence, "negotiate"),
-    }]
-
-
-def _mirotech_ideas(facts: dict) -> list[dict]:
+def _ownertech_ideas(facts: dict) -> list[dict]:
     at = facts["observed_at"]
     evidence = {"listings": _fact(facts["listings"], at, facts["detail"])}
     return [{
-        "business": "mirotech",
+        "business": "exampleco",
         "idea": "Reprice the slowest listings against completed sales",
         "mechanism": "product",
         "evidence": evidence,
         "requires": "set the prices — changing what buyers pay is yours",
         "est_note": ("Rests on the measured listing count above. Sold prices "
-                     "are not measured: `mirotech.price_check` returns eBay "
+                     "are not measured: `exampleco.price_check` returns eBay "
                      "active asks and says so in its own result, so no spread "
                      "is quoted here."),
         "effort": "decide",
@@ -387,7 +257,7 @@ def _agency_ideas(facts: dict) -> list[dict]:
 
 
 def _sources():
-    """The five sources, resolved at call time.
+    """The three sources, resolved at call time.
 
     Built here rather than as a module constant so each reader is looked up
     when `ideas()` runs. A tuple captured at import time would freeze the
@@ -396,9 +266,7 @@ def _sources():
     """
     return (
         ("youtube", _youtube_facts, _youtube_ideas),
-        ("flycheap", _flycheap_facts, _flycheap_ideas),
-        ("guardian", _guardian_facts, _guardian_ideas),
-        ("mirotech", _mirotech_facts, _mirotech_ideas),
+        ("exampleco", _ownertech_facts, _ownertech_ideas),
         ("agency", _agency_facts, _agency_ideas),
     )
 
@@ -408,7 +276,7 @@ async def ideas(business: str, *, limit: int = 3) -> dict:
 
     Nothing here writes a row or runs anything. `cycle.weekly()` hands what
     comes back to `marketing.propose_idea`, the Tier AUTO action that records
-    it, and Miro reads it in the brief.
+    it, and the owner reads it in the brief.
     """
     found: list[dict] = []
     unmeasured: list[str] = []

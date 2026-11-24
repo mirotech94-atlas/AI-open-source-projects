@@ -7,8 +7,8 @@ this module worth waking someone for.
 
 Three corrections over the previous version:
 
-* **It pointed at `api.netbird.io`**, the hosted service. Miro runs his own
-  NetBird at `mironetbird.example.com`. A token minted on the self-hosted server
+* **It pointed at `api.netbird.io`**, the hosted service. the owner runs his own
+  NetBird at `mesh.example.com`. A token minted on the self-hosted server
   would have authenticated against a SaaS account that has none of his peers
   — the same class of error as reading Guardian from its marketing domain.
 
@@ -37,9 +37,9 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ...kernel.contracts import Check, Health, Observation, Severity, Signal
-from .._http import explain, get_json
+from .._http import get_json
 
-BASE = os.getenv("NETBIRD_API_URL", "https://mironetbird.example.com").rstrip("/")
+BASE = os.getenv("NETBIRD_API_URL", "https://mesh.example.com").rstrip("/")
 
 NO_TOKEN = ("no NETBIRD_TOKEN set. Create a personal access token in the "
             "NetBird console at " + BASE + " (Settings -> Users -> your "
@@ -123,7 +123,7 @@ async def check_new_peers() -> Observation:
     connection, so a timestamp test reports every returning laptop as an
     arrival — which is how this alert would have become background noise.
     """
-    from ...kernel.state import last_evidence
+    from ...kernel.state import last_evidence_read
 
     peers, reason = await _get("/peers")
     if reason:
@@ -135,17 +135,27 @@ async def check_new_peers() -> Observation:
             "new_peers", Health.UNKNOWN,
             detail="no peer carried an id, key or ip; cannot tell peers apart")
 
-    prior = await last_evidence("netbird", "new_peers")
+    prior, readable = await last_evidence_read("netbird", "new_peers")
+    if not readable:
+        # The history could not be read. Baselining now would absorb any peer
+        # that joined during the gap, and answering "no new peers" would be a
+        # guess: nobody knows what the last reading held.
+        return Observation(
+            "new_peers", Health.UNKNOWN,
+            detail="could not read the last peer list, so arrivals cannot be "
+                   "told from the peers already known")
     known: list[Any] = prior.get("known") if isinstance(prior, dict) else None
 
     if not isinstance(known, list) or not known:
         # First run, or no history. Declaring every existing peer "new" would
         # be a false alarm on the very first reading, which is the worst
-        # possible introduction to this alert.
+        # possible introduction to this alert. It also asserts no zero: the
+        # value is None, so the board never shows "0 arrivals" for a reading
+        # that compared nothing.
         return Observation(
-            "new_peers", Health.OK, 0.0, "peers",
-            f"baseline recorded: {len(current)} peer(s) known. Arrivals are "
-            f"reported from the next run onwards.",
+            "new_peers", Health.OK, None, None,
+            f"baseline recorded: {len(current)} peer(s) known. No arrivals are "
+            f"asserted yet; they are reported from the next run onwards.",
             evidence={"known": sorted(current), "baseline": True})
 
     arrived = [label for ident, label in current.items()
@@ -234,7 +244,7 @@ class NetBirdModule:
         )
 
     def actions(self):
-        return ()          # mesh changes are Miro's, not ATLAS's
+        return ()          # mesh changes are the owner's, not ATLAS's
 
     async def signals(self):
         obs = await check_new_peers()

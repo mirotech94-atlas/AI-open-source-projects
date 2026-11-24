@@ -610,14 +610,20 @@ def test_action_names_are_namespaced_and_not_denied():
 def test_module_declares_no_required_env():
     assert agency.MODULE.requires_env == ()
     assert agency.MODULE.optional_env == (
-        "GOOGLE_PLACES_API_KEY", "GOOGLE_PAGESPEED_API_KEY")
+        "GOOGLE_PLACES_API_KEY", "GOOGLE_PAGESPEED_API_KEY",
+        "VERCEL_TOKEN", "VERCEL_TEAM_ID", "GMAIL_APP_PASSWORD")
 
 
 def test_checks_have_no_baseline_and_run_daily():
     from datetime import timedelta
     for check in agency.MODULE.checks():
         assert check.baseline_sigma is None
-        assert check.interval == timedelta(days=1)
+        # The Vercel token check runs every 30 minutes (a card waits on it).
+        # The contact delivery check runs every 10 minutes (a late message waits on it).
+        want = (timedelta(minutes=30) if check.name == "vercel"
+                else timedelta(minutes=10) if check.name == "contact_delivery"
+                else timedelta(days=1))
+        assert check.interval == want
 
 
 # ------------------------------------------------ the no-executor-path test
@@ -648,3 +654,15 @@ def test_no_file_in_the_module_imports_the_executor():
     for f in files:
         for mod in _imports_of(f):
             assert "executor" not in mod, f"{f.name} imports {mod}"
+
+
+@pytest.mark.parametrize("name", ["agency.send_outreach", "agency.send_invite",
+                                  "agency.send_agreement"])
+def test_every_send_to_a_client_is_a_verbose_card_in_agency_decisions(name):
+    """Six agents, 2026-10-27: the three sends are Tier 2 cards, shown in
+    full (recipient, subject, body or agreement and price)."""
+    action = {a.name: a for a in agency.MODULE.actions()}[name]
+    assert action.tier is Tier.ASK and action.card_only and action.verbose_card
+    assert action.topic_for is not None and action.topic_for({}) == "agency_decisions"
+    assert action.card_detail is not None
+    assert action.dry_run is not None and action.rollback is not None

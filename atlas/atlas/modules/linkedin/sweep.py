@@ -23,7 +23,7 @@ import re
 import sys
 from typing import Any
 
-from . import PAGES
+from . import KNOWN_PAGES, PAGES
 from .browser import (
     HardStop,
     NoSession,
@@ -35,17 +35,39 @@ from .browser import (
     lock,
     snapshot,
 )
-from .store import bank, file_lock, load, log_run, page_obj, save, stamp, today
+from .store import (
+    bank,
+    file_lock,
+    has_banned_link,
+    load,
+    log_run,
+    page_obj,
+    save,
+    stamp,
+    today,
+)
 
 log = logging.getLogger("atlas.linkedin.sweep")
 
-PROFILE = "https://www.linkedin.com/in/myron-mekhael-841196242/"
+PROFILE = "https://www.linkedin.com/in/example-profile/"
 BUDGET_S = 600
 
 
 def _names_in(text: str, names: list[str]) -> set[str]:
     low = text.lower()
     return {n for n in names if n and n.lower() in low}
+
+
+_SENT_LIST_MARKERS = ("withdraw", "no pending invitations", "no sent invitations",
+                      "no pending invites", "haven't sent", "have not sent")
+
+
+def _sent_list_rendered(text: str) -> bool:
+    """True when the page text shows a rendered Sent list: a Withdraw button
+    on a row, or LinkedIn's own empty-list wording. Without one of these an
+    empty match is a page that did not load, not a list with nobody in it."""
+    low = (text or "").lower()
+    return any(m in low for m in _SENT_LIST_MARKERS)
 
 
 def _int(pattern: str, text: str) -> int | None:
@@ -177,6 +199,14 @@ class Sweep:
         pending = [i for i in self.state.get("sent_invites", [])
                    if isinstance(i, dict) and i.get("status") == "pending"]
         still = _names_in(text, [i["name"] for i in pending])
+        if pending and not still and not _sent_list_rendered(text):
+            # Pending invites, none found, and nothing on the page that a
+            # rendered Sent list always has. That is a page that did not
+            # load its list, not "all of them were accepted": raising makes
+            # the surface count as unread (UNKNOWN) and flips no status.
+            raise RuntimeError(
+                "the sent-invitations list did not render; "
+                f"{len(pending)} pending invite(s) left unchanged")
         for inv in pending:
             inv["last_checked"] = stamp()
             if inv["name"] not in still:
@@ -279,6 +309,29 @@ class Sweep:
                     break
         self.note(f"{spec['name']} post analytics: {len(posts)} posts on ledger")
 
+    async def page_notifications(self, page, key: str) -> None:
+        """The company page's own admin notifications (read-only). Reactions,
+        comments, mentions and new followers on the page, not on the owner's
+        profile. Only the count and what is new are kept."""
+        spec = PAGES[key]
+        text = await goto(page, f"https://www.linkedin.com/company/{spec['id']}"
+                                f"/admin/notifications/all/")
+        obj = page_obj(self.state, key)
+        seen = obj.setdefault("notifications_seen", [])
+        keep = [ln.strip() for ln in text.split("\n")
+                if re.search(r"commented|reacted|mentioned|shared|reposted|"
+                             r"started following|followed|liked|tagged",
+                             ln, re.IGNORECASE)]
+        new = [ln for ln in keep if ln not in seen][:15]
+        for ln in new:
+            seen.append(ln)
+            self.note(f"{spec['name']} page notification: {ln[:140]}", news=True)
+        del seen[:-200]
+        obj["notifications_read"] = {"when": stamp(), "relevant": len(keep),
+                                     "new": len(new)}
+        self.note(f"{spec['name']} page notifications: {len(keep)} relevant, "
+                  f"{len(new)} new")
+
     async def dashboard(self, page) -> None:
         text = await goto(page, "https://www.linkedin.com/dashboard/")
         row = {"date": today(),
@@ -302,6 +355,14 @@ class Sweep:
     # -------------------------------------------------------------- refill
 
     async def refill(self, key: str) -> None:
+        if key == "mmt":
+            # A fresh MMT bank holder is stored in state, and its posts are
+            # never reshared to the owner's profile unless he turns that on.
+            hold = self.state.setdefault(KNOWN_PAGES[key]["bank_key"], {})
+            hold.setdefault("post_bank", [])
+            post = hold.setdefault("posting", {})
+            post.setdefault("enabled", True)
+            post.setdefault("reshare_to_profile", False)
         entries, posting, holder = bank(self.state, key)
 
         # A draft with a pending approval card is frozen: `approve_draft`
@@ -339,12 +400,38 @@ class Sweep:
                       f"already wait on approval or media; more would add "
                       f"nothing publishable")
             return
+        if key == "mmt":
+            from ..sagemmt.weekly import enabled as sage_owns_calendar
+            if sage_owns_calendar():
+                # Sage owns the page calendar while SAGE_MMT_LINKEDIN is on;
+                # her weekly job drafts, the sweep does not refill the series.
+                self.note(f"{PAGES[key]['name']}: calendar is Sage's, no series refill")
+                return
+            # The fixed fact-backed series, never the model (invariant 6).
+            from .mmt_series import series_due
+            new = series_due(self.state, live_ok=None)[:3]
+            if not new:
+                self.note(f"{PAGES[key]['name']}: series complete, nothing to draft")
+                return
+            used = {str(e.get("id")) for e in entries} | (pending or set())
+            for item in new:
+                if item["series_id"] in used:
+                    continue
+                entry = _new_entry(item["series_id"], item)
+                entry["series_id"] = item["series_id"]
+                entry["fact_ids"] = item["fact_ids"]
+                entry["drafted_by"] = item["drafted_by"]
+                entries.append(entry)
+            holder["post_bank"] = entries
+            self.note(f"{PAGES[key]['name']}: drafted {len(new)} series post(s), "
+                      f"awaiting approval", news=True)
+            return
         try:
             new = await draft_posts(self.state, key, 3)
         except Exception as exc:                        # noqa: BLE001
             self.note(f"{PAGES[key]['name']}: refill failed: {exc}")
             return
-        prefix = "B" if key == "flycheap" else "G"
+        prefix = {"flycheap": "B", "guardian": "G"}.get(key, "A")   # A: Academy
         # An id with a pending card stays reserved even if its entry has
         # somehow vanished from the bank -- a fresh draft must never inherit
         # an approval meant for different words.
@@ -381,6 +468,8 @@ class Sweep:
                                    lambda p, k=key: self.page_followers(p, k))
                 await self.surface(page, f"{key}-analytics",
                                    lambda p, k=key: self.page_analytics(p, k))
+                await self.surface(page, f"{key}-notifications",
+                                   lambda p, k=key: self.page_notifications(p, k))
             await self.surface(page, "dashboard", self.dashboard)
             if self.read:
                 await keep_session(ctx)
@@ -417,12 +506,12 @@ def _new_entry(entry_id: str, item: dict[str, Any]) -> dict[str, Any]:
 
 
 # The short text every image/video post is limited to -- "about a third of
-# today's [text-only] length" (Miro, Task 64): a hook, at most 2 more short
+# today's [text-only] length" (the owner, Task 64): a hook, at most 2 more short
 # lines, the link, 1-2 hashtags. Enforced in code, not only asked of the
 # model: clamped rather than trusted.
 MAX_SHORT_CHARS = 280
-MAX_POLL_QUESTION_CHARS = 140     # LinkedIn's own limit, unverified -- ASSUMED
-MAX_POLL_OPTION_CHARS = 30        # LinkedIn's own limit, unverified -- ASSUMED
+MAX_POLL_QUESTION_CHARS = 140     # LinkedIn's own limit, read live 2026-10-13
+MAX_POLL_OPTION_CHARS = 30        # LinkedIn's own limit, read live 2026-10-13
 MIN_POLL_OPTIONS = 2
 MAX_POLL_OPTIONS = 4
 
@@ -450,8 +539,7 @@ def _parse_fields(block: str) -> dict[str, str]:
 def _links_ok(text: str, spec: dict[str, str]) -> bool:
     """The same rule `publish.gate` enforces on an approved entry, asked
     here too so a banned or missing link never even reaches the bank."""
-    if any(b in text for b in ("example.com", "pulsedemo", "my.guarder.io",
-                               "admin.guarder.io")):
+    if has_banned_link(text):
         return False
     return spec["link"] in text
 
@@ -474,8 +562,7 @@ def _to_item(fields: dict[str, str], spec: dict[str, str]) -> dict[str, Any] | N
         # A poll intro carries no link requirement -- LinkedIn's poll has no
         # room for one -- but a banned one still refuses the block, the same
         # as an image or video's TEXT.
-        if any(b in intro for b in ("example.com", "pulsedemo", "my.guarder.io",
-                                    "admin.guarder.io")):
+        if has_banned_link(intro):
             return None
         if not question or len(options) < MIN_POLL_OPTIONS:
             return None
@@ -486,11 +573,56 @@ def _to_item(fields: dict[str, str], spec: dict[str, str]) -> dict[str, Any] | N
     return None
 
 
+_MD_PROMPT = re.compile(r"^\W*(IMAGE_PROMPT|VIDEO_PROMPT)\s*:\s*(.+?)\W*$", re.IGNORECASE)
+_MD_OPTIONS = re.compile(r"^\W*options?\s*:\s*(.+?)\W*$", re.IGNORECASE)
+
+
+def _loose_fields(block: str) -> dict[str, str]:
+    """The fields of a block that ignored the FIELD: shape -- the free
+    models write markdown (2026-10-06: '**Hook: ...**', '*IMAGE_PROMPT:
+    ...*', 'Options: a | b | c'); every block of a good batch was dropped.
+    The prompt line names the kind, 'Options:' names a poll, and the rest of
+    the lines are the text. Nothing is invented: a block with neither is
+    still nothing."""
+    lines = [ln.strip() for ln in block.splitlines() if ln.strip()]
+    if not lines:
+        return {}
+    out: dict[str, str] = {}
+    text: list[str] = []
+    for ln in lines:
+        if (m := _MD_PROMPT.match(ln)):
+            out[m.group(1).upper()] = m.group(2).strip()
+            continue
+        if (m := _MD_OPTIONS.match(ln)):
+            out["OPTIONS"] = m.group(1).strip()
+            continue
+        # A "Block 3 -- KIND: poll" heading is the model echoing the prompt,
+        # never post text (2026-10-13, G18).
+        if re.match(r"^\W*block\s*\d+\b", ln, flags=re.IGNORECASE):
+            continue
+        clean = re.sub(r"^\W*(hook|intro|text|question)\s*:\W*", "",
+                       ln.strip("*_ ").strip(), flags=re.IGNORECASE)
+        clean = clean.strip("*_ ").strip()
+        if clean:
+            text.append(clean)
+    if "IMAGE_PROMPT" in out or "VIDEO_PROMPT" in out:
+        out["KIND"] = "image" if "IMAGE_PROMPT" in out else "video"
+        out["TEXT"] = "\n".join(text)
+    elif "OPTIONS" in out:
+        out["KIND"] = "poll"
+        question = next((ln for ln in reversed(text) if ln.endswith("?")), "")
+        out["QUESTION"] = re.sub(r"^\W*quick poll\s*:\s*", "", question, flags=re.IGNORECASE)
+        out["INTRO"] = next((ln for ln in text if ln != question), "")
+    return out
+
+
 def _parse_batch(text: str, spec: dict[str, str]) -> list[dict[str, Any]]:
     blocks = re.split(r"(?m)^\s*-{3,}\s*$", text)
     items = []
     for block in blocks:
         fields = _parse_fields(block)
+        if "KIND" not in fields:
+            fields = _loose_fields(block)
         item = _to_item(fields, spec)
         if item is not None:
             items.append(item)
@@ -511,19 +643,21 @@ async def draft_posts(state: dict[str, Any], key: str, count: int) -> list[dict[
     """
     from ...kernel.llm import Message, Need, think
 
+    if key == "mmt":
+        return []          # a second lock: MMT posts come only from mmt_series
     spec = PAGES[key]
     entries, _, _ = bank(state, key)
     recent = [str(e.get("text") or (e.get("poll") or {}).get("question", ""))[:200]
              for e in entries[-6:]]
     framing = {
-        "flycheap": "Myron is co-founder and developer of FlyCheap",
-        "academy": ("Myron built ATLAS Academy: practical AI courses for work and "
+        "flycheap": "the owner is co-founder and developer of FlyCheap",
+        "academy": ("the owner built ATLAS Academy: practical AI courses for work and "
                     "everyday life, written from running his own AI agent. Name "
                     "one course or lesson idea per post (Build a Safe AI Operator, "
                     "Sell With AI, AI for Every Age), teach one concrete thing, "
                     "and point to the store. Never an income or earnings claim, "
                     "never a price, never a guarantee"),
-    }.get(key, "Myron founded and owns Vault")
+    }.get(key, "the owner founded and owns Vault")
     rules = (
         f"Write exactly 3 LinkedIn posts for the {spec['name']} company page, "
         f"one of each kind in this order: image, video, poll. Pictures speak "
@@ -612,7 +746,13 @@ async def run_sweep() -> dict[str, Any]:
 
 
 async def _run_sweep() -> dict[str, Any]:
-    state = load()
+    # No state file yet is a first run, not an error: starting from nothing
+    # lets the run record how it went (even "no session"), so every check that
+    # reads the file can say why it cannot measure instead of "no state".
+    try:
+        state = load()
+    except FileNotFoundError:
+        state = {}
     sweep = Sweep(state)
     outcome = "ok"
     try:

@@ -1,4 +1,4 @@
-"""Miro, 2026-09-29: the AI-stories reels "improve over time with each video".
+"""the owner, 2026-09-29: the AI-stories reels "improve over time with each video".
 A new series is planned from what the last ones earned -- real numbers only,
 an unread series is "not read" (never 0), and unreadable results plan the
 series exactly as before."""
@@ -163,7 +163,7 @@ async def test_a_title_already_on_file_is_refused(memory_backend, monkeypatch):
     assert not result.ok and "already a series" in result.detail
 
 
-async def test_the_next_format_leans_to_what_earned_within_miros_priority(
+async def test_the_next_format_leans_to_what_earned_within_the_owners_priority(
         memory_backend, monkeypatch):
     first, earner = "haunted office saga", "desert cliffhanger series"
     assert playbook.priority(first) == playbook.priority(earner)

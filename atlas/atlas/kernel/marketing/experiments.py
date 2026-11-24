@@ -4,7 +4,7 @@ The loop, in four steps:
 
 1. `propose(business, platform)` reads the playbook, the last eight weeks of
    that platform's measured posts, the trailing 4-week baseline for the
-   platform's metric, and the judgment layer's read of what Miro approves for
+   platform's metric, and the judgment layer's read of what the owner approves for
    `youtube.set_visibility` — so the agent can tell the difference between
    "this idea is bad" and "he keeps declining this kind of post". It asks the
    model for exactly one hypothesis with a variant it can draft, and returns
@@ -90,7 +90,7 @@ PLATFORM_BASELINE_CHECK: dict[str, tuple[str, str]] = {
     "tiktok": ("video_stats", "tiktok.video_stats (views, last 5 videos)"),
 }
 
-# Miro's course (atlas/modules/course) is measured differently: not per post
+# the owner's course (atlas/modules/course) is measured differently: not per post
 # on a platform, but by what the store saw of the post's UTM campaign -- the
 # experiment id. Its reading comes from `modules.course.measure`, its
 # baseline from earlier course experiments' own readings, and its window is
@@ -99,7 +99,7 @@ PLATFORM_BASELINE_CHECK: dict[str, tuple[str, str]] = {
 COURSE_BUSINESS = "course"
 COURSE_METRIC = "store_visits"
 
-# The publish decision whose approval history tells the agent whether Miro is
+# The publish decision whose approval history tells the agent whether the owner is
 # declining a whole kind of post. Read only — `policy.predict` refuses Tier 3
 # before it computes anything, and nothing here writes to the judgment layer.
 PUBLISH_DECISION = "youtube.set_visibility"
@@ -243,7 +243,7 @@ async def baseline_for(platform: str, metric: str, *, business: str = "",
 # ------------------------------------------------------------ the proposal
 
 SYSTEM = """
-You plan one marketing experiment for Miro, for a single business on a single
+You plan one marketing experiment for the owner, for a single business on a single
 platform. You are given the playbook — what previous experiments actually
 measured — the trailing baseline for the platform's metric, the recent posts,
 and what the approval record says about this kind of publishing.
@@ -262,9 +262,8 @@ Answer with JSON only, no prose around it:
 {"hypothesis": "...", "variant": "...", "draft_kind": "...",
  "draft_source": "..."}
 
-draft_kind must be one of: linkedin_post, ebay_listing, flycheap_deal,
-short_script. draft_source must be one of: weekly, voice:<n>,
-slack:<thread_ts>. Never note:<text> -- only Miro writes notes.
+draft_kind must be one of: linkedin_post, ebay_listing, short_script. draft_source must be one of: weekly, voice:<n>,
+slack:<thread_ts>. Never note:<text> -- only the owner writes notes.
 """.strip()
 
 
@@ -349,11 +348,11 @@ async def propose(business: str, platform: str
     if data is None:
         return None, reason
 
-    # A `note:` source is Miro dictating a note; a model filling it in is a
+    # A `note:` source is the owner dictating a note; a model filling it in is a
     # note nobody wrote. On 2026-09-27 that produced seven short scripts
-    # about "the Miro board" (the whiteboard app) from invented notes.
+    # about "the the owner board" (the whiteboard app) from invented notes.
     if str(data["draft_source"]).strip().lower().startswith("note:"):
-        return None, ("the model proposed a note: source, which only Miro can "
+        return None, ("the model proposed a note: source, which only the owner can "
                       "write; drafts come from weekly, voice or slack sources")
     losing = playbook.losing_variants(lessons)
     if str(data["variant"]).strip() in losing:
@@ -380,7 +379,7 @@ async def attach(experiment_id: int, posted_ref: str, *,
                  after: timedelta = MEASURE_AFTER) -> datetime:
     """Record that the experiment's post went out, and when to read it.
 
-    Called once Miro has approved publishing through the platform's own Tier
+    Called once the owner has approved publishing through the platform's own Tier
     ASK gate. This function does not publish and cannot: it writes three
     columns and returns the measurement deadline.
     """

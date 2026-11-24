@@ -1,9 +1,10 @@
 #!/bin/bash
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 # Install the nightly backup and weekly housekeeping on the ATLAS host, and
 # the backup receiver on the GitLab VM. Idempotent; run as root on the ATLAS
 # host after the files are in /opt/atlas/bootstrap/backup.
 set -euo pipefail
-OFFSITE_HOST="${1:-203.0.113.10}"
+OFFSITE_HOST="${1:-203.0.113.147}"
 KEY=/root/.ssh/atlas_backup_ed25519
 [ -f "$KEY" ] || ssh-keygen -q -t ed25519 -N "" -C "atlas-backup@$(hostname)" -f "$KEY"
 # The receiver: user atlasbak, which may only write under /srv/atlas-backups.

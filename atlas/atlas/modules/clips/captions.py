@@ -20,7 +20,7 @@ Pure: no I/O, no clock, no model. The post text is one of the campaign's
 approved samples (chosen by key, never written by a model -- COD forbids
 made-up claims), and every rule the campaign states about captions is
 checked here, so a caption that would get the post rejected is refused
-before a file is ever handed to Miro.
+before a file is ever handed to the owner.
 
 **Hooks.** A campaign whose `caption_rules["wording"]` is `"free"` (its doc
 says exact wording is not required) may open the approved text with one of
@@ -105,7 +105,7 @@ def with_hook(campaign: Campaign, text: str, hook: str = "",
     check_text(campaign, hooked)
     return hooked
 
-# Niche tags a clip may add after its campaign's required ones (Miro,
+# Niche tags a clip may add after its campaign's required ones (the owner,
 # 2026-09-29), per campaign slug and caption key ("*" for every key). Closed
 # and in code; each is still refused by `build_caption` unless it is in the
 # campaign's own hashtag pool, and never past MAX_HASHTAGS. ATLUS asks that

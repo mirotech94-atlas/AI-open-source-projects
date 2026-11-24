@@ -283,7 +283,7 @@ async def test_hook_off_by_default_never_calls_verify(hands_on, monkeypatch):
 
     monkeypatch.setattr(v, "verify", spy)
     _install()
-    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="miro"))
+    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="owner"))
     await _settle()
     assert got.ok and called == []
     assert not any(e.startswith("verify.") for e in _events(hands_on))
@@ -297,7 +297,7 @@ async def test_hook_on_records_a_verify_event(hands_on, monkeypatch, temp_verifi
         return v.verified(id=result.evidence["id"])
 
     original = _install()
-    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="miro"))
+    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="owner"))
     # The action's own result, untouched bar the executor's RA-B3 stamp.
     assert got == dataclasses.replace(original, dispatched=True)
     await _settle()
@@ -310,7 +310,7 @@ async def test_hook_on_records_a_verify_event(hands_on, monkeypatch, temp_verifi
 async def test_hook_with_no_verifier_records_unknown(hands_on, monkeypatch):
     monkeypatch.setenv("ATLAS_VERIFY_AFTER", "on")
     _install("ztestnone.act")
-    got = await execute(ExecutionRequest("ztestnone.act", {}, "r", approved_by="miro"))
+    got = await execute(ExecutionRequest("ztestnone.act", {}, "r", approved_by="owner"))
     assert got.ok
     await _settle()
     assert _events(hands_on)[-1] == "verify.unknown"
@@ -325,7 +325,7 @@ async def test_a_raising_verifier_does_not_break_execute(hands_on, monkeypatch,
         raise RuntimeError("provider exploded")
 
     original = _install()
-    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="miro"))
+    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="owner"))
     # The action's own result, untouched bar the executor's RA-B3 stamp.
     assert got == dataclasses.replace(original, dispatched=True)
     await _settle()
@@ -340,7 +340,7 @@ async def test_a_raising_verify_call_does_not_break_execute(hands_on, monkeypatc
 
     monkeypatch.setattr(v, "verify", broken)
     original = _install()
-    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="miro"))
+    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="owner"))
     # The action's own result, untouched bar the executor's RA-B3 stamp.
     assert got == dataclasses.replace(original, dispatched=True)
     await _settle()
@@ -357,7 +357,7 @@ async def test_a_failed_action_is_not_read_back(hands_on, monkeypatch):
 
     monkeypatch.setattr(v, "verify", spy)
     _install(ok=False)
-    await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="miro"))
+    await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="owner"))
     await _settle()
     assert called == []
 
@@ -375,7 +375,7 @@ async def test_a_cancelled_read_back_never_reaches_the_caller(hands_on, monkeypa
         return v.verified(id=1)
 
     original = _install()
-    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="miro"))
+    got = await execute(ExecutionRequest("ztest.act", {}, "r", approved_by="owner"))
     # The action's own result, untouched bar the executor's RA-B3 stamp.
     assert got == dataclasses.replace(original, dispatched=True)
     from atlas.kernel import background
@@ -807,7 +807,7 @@ async def test_calendar_raises_is_unknown(net, cal):
 async def test_calendar_book_with_attendee_scope(net, cal):
     params = {"to": "Ana@Example.com", "summary": "Focus",
               "start": "2026-10-01T09:00:00-04:00", "minutes": 60}
-    me = {"email": "miro@example.com", "self": True, "organizer": True}
+    me = {"email": "owner@example.com", "self": True, "organizer": True}
     net.on(r"/events/e1$", body=_event(attendees=[me, {"email": "ana@example.com"}]))
     got = await v.verify("calendar.book_with", params, BLOCK_RESULT)
     assert got.state is v.State.VERIFIED
@@ -859,16 +859,16 @@ async def test_calendar_reconcile(net, cal):
     assert got.state is v.State.CONTRADICTED
 
 
-# ================================================================== vpsie
+# ================================================================== cloudco
 
 @pytest.fixture
 def vps(monkeypatch):
-    from atlas.modules import vpsie
+    from atlas.modules import cloudco
 
     async def tok():
         return SECRET
 
-    monkeypatch.setattr(vpsie, "_access_token", tok)
+    monkeypatch.setattr(cloudco, "_access_token", tok)
 
 
 def _snap_result(queued_minutes_ago=20, **statuses) -> ActionResult:
@@ -884,76 +884,76 @@ def _snap(vm, status="active", name="atlas-20260928-1000"):
     return {"identifier": f"s-{vm}", "name": name, "vmIdentifier": vm, "status": status}
 
 
-async def test_vpsie_verified_per_instance(net, vps):
+async def test_cloudco_verified_per_instance(net, vps):
     net.on(r"/snapshot$", body={"data": [_snap("vm1"), _snap("vm2")]})
-    got = await v.verify("vpsie.snapshot_all", {"reason": "r"}, _snap_result())
+    got = await v.verify("cloudco.snapshot_all", {"reason": "r"}, _snap_result())
     assert got.state is v.State.VERIFIED
     assert set(got.evidence) == {"host-vm1", "host-vm2"}
     _no_secret(got)
 
 
-async def test_vpsie_partial_success_is_contradicted_listing_failures(net, vps):
+async def test_cloudco_partial_success_is_contradicted_listing_failures(net, vps):
     """RA-D2: ok on partial failure used to read as success."""
     net.on(r"/snapshot$", body={"data": [_snap("vm1")]})
     result = _snap_result(vm1="queued", vm2="failed")
-    got = await v.verify("vpsie.snapshot_all", {"reason": "r"}, result)
+    got = await v.verify("cloudco.snapshot_all", {"reason": "r"}, result)
     assert got.state is v.State.CONTRADICTED
     assert "host-vm2" in got.reason and "host-vm1" not in got.reason
 
-    got = await v.verify("vpsie.snapshot_all", {"reason": "r"}, _snap_result())
+    got = await v.verify("cloudco.snapshot_all", {"reason": "r"}, _snap_result())
     assert got.state is v.State.CONTRADICTED and "host-vm2: no snapshot" in got.reason
 
     net.routes.clear()
     net.on(r"/snapshot$", body={"data": [_snap("vm1"), _snap("vm2", "error")]})
-    got = await v.verify("vpsie.snapshot_all", {"reason": "r"}, _snap_result())
+    got = await v.verify("cloudco.snapshot_all", {"reason": "r"}, _snap_result())
     assert got.state is v.State.CONTRADICTED
 
 
-async def test_vpsie_unknown(net, vps):
+async def test_cloudco_unknown(net, vps):
     net.on(r"/snapshot$", body={"data": [_snap("vm1")]})
-    got = await v.verify("vpsie.snapshot_all", {}, _snap_result(queued_minutes_ago=0))
+    got = await v.verify("cloudco.snapshot_all", {}, _snap_result(queued_minutes_ago=0))
     assert got.state is v.State.UNKNOWN and "not listed yet" in got.reason
 
     net.routes.clear()
     net.on(r"/snapshot$", body={"data": [{"name": "atlas-20260928-1000"}]})
-    got = await v.verify("vpsie.snapshot_all", {}, _snap_result())
+    got = await v.verify("cloudco.snapshot_all", {}, _snap_result())
     assert got.state is v.State.UNKNOWN
 
     net.routes.clear()
     net.on(r"/snapshot$", 401, {"error": True, "message": "bad credentials"})
-    got = await v.verify("vpsie.snapshot_all", {}, _snap_result())
+    got = await v.verify("cloudco.snapshot_all", {}, _snap_result())
     assert got.state is v.State.UNKNOWN
     assert got.failure_class is v.FailureClass.AUTH
 
 
-async def test_vpsie_an_empty_list_proves_nothing(net, vps):
+async def test_cloudco_an_empty_list_proves_nothing(net, vps):
     """Pagination of /snapshot is unverified: when none of this run's
     snapshots are visible, absence is unknown, not contradicted."""
     net.on(r"/snapshot$", body={"data": [_snap("vm9", name="atlas-20260101-0000")]})
-    got = await v.verify("vpsie.snapshot_all", {}, _snap_result(queued_minutes_ago=60))
+    got = await v.verify("cloudco.snapshot_all", {}, _snap_result(queued_minutes_ago=60))
     assert got.state is v.State.UNKNOWN
 
 
-async def test_vpsie_raises_is_unknown(net, vps):
+async def test_cloudco_raises_is_unknown(net, vps):
     net.on(r"/snapshot$", raises=httpx.ConnectError("refused"))
-    got = await v.verify("vpsie.snapshot_all", {}, _snap_result())
+    got = await v.verify("cloudco.snapshot_all", {}, _snap_result())
     assert got.state is v.State.UNKNOWN
     _no_secret(got)
 
 
-async def test_vpsie_reconcile(net, vps):
+async def test_cloudco_reconcile(net, vps):
     started = datetime(2026, 9, 28, 10, 0, 30, tzinfo=UTC)
     net.on(r"/vm$", body={"data": [{"identifier": "vm1", "hostname": "a"},
                                    {"identifier": "vm2", "hostname": "b"}]})
     net.on(r"/snapshot$", body={"data": [
         _snap("vm1"), _snap("vm2", name="atlas-20260927-0900")]})
-    got = await v.reconcile_unknown("vpsie.snapshot_all", {}, {"at": started})
+    got = await v.reconcile_unknown("cloudco.snapshot_all", {}, {"at": started})
     assert got.state is v.State.CONTRADICTED and "b: no snapshot" in got.reason
 
 
 async def test_snapshot_all_records_each_instance(monkeypatch):
     """The action's own evidence names every target, so the read-back can."""
-    from atlas.modules import vpsie
+    from atlas.modules import cloudco
 
     async def get(path, **_p):
         return {"data": [{"identifier": "vm1", "hostname": "a"},
@@ -967,10 +967,10 @@ async def test_snapshot_all_records_each_instance(monkeypatch):
     async def no_sleep(_s):
         return None
 
-    monkeypatch.setattr(vpsie, "_get", get)
-    monkeypatch.setattr(vpsie, "_post", post)
-    monkeypatch.setattr(vpsie.asyncio, "sleep", no_sleep)
-    result = await vpsie.snapshot_all("r")
+    monkeypatch.setattr(cloudco, "_get", get)
+    monkeypatch.setattr(cloudco, "_post", post)
+    monkeypatch.setattr(cloudco.asyncio, "sleep", no_sleep)
+    result = await cloudco.snapshot_all("r")
     assert result.ok                                    # unchanged semantics
     legs = result.evidence["instances"]
     assert legs["vm1"]["status"] == "queued" and legs["vm2"]["status"] == "failed"

@@ -23,6 +23,7 @@ import re
 import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 from xml.sax.saxutils import escape as xml_escape
 
@@ -32,6 +33,7 @@ from fastapi.responses import FileResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from ..boot import boot
+from ..channels import slack_socket
 from ..kernel import scheduler
 from ..kernel.agents import route
 from ..kernel.approvals import decide
@@ -39,30 +41,36 @@ from ..kernel.registry import REGISTRY
 from ..modules.realestate.api import router as realestate_router
 from . import peers, ui_paths
 from .academy import router as academy_router
+from .academy_support import router as academy_support_router
+from .academy_videos import router as academy_videos_router
 from .agency import router as agency_router
+from .agency_contact import router as agency_contact_router
+from .agency_previews import router as agency_previews_router
 from .airglass import router as airglass_router
 from .call_me import router as call_me_router
 from .clips import router as clips_router
 from .dashboard import router as dashboard_router
 from .deliver import router as deliver_router
 from .handoffs import router as handoffs_router
+from .hud import router as hud_router
 from .ig_funnels import router as ig_funnel_router
 from .mac_agent import router as mac_agent_router
 from .media import router as media_router
-from .preview_request import router as preview_request_router
-from .screening import router as screening_router
+from .projects import router as projects_router
+from .public_ping import router as public_ping_router
+from .learn import router as learn_router
 from .selfmodel import router as selfmodel_router
 from .site_chat import router as site_chat_router
 from .slack_events import router as slack_events_router
 from .stripe_mapfront import router as stripe_mapfront_router
 from .system_check import router as system_check_router
-from .tls_ask import router as tls_ask_router
 from .tradingview import router as tradingview_router
 from .vault_export import router as vault_router
 from .views import router as views_router
 from .voice import router as voice_router
 from .voice_offline import router as voice_offline_router
 from .webild import router as webild_router
+from .whatsapp import router as whatsapp_router
 from .workboard import router as workboard_router
 
 
@@ -92,6 +100,11 @@ async def lifespan(_app: FastAPI):
             logging.getLogger("atlas.api").exception(
                 "could not reap orphaned approvals (attempt %d of 12)", attempt + 1)
             await asyncio.sleep(10)
+    # Slack without a public URL: the Socket Mode client, only when
+    # SLACK_APP_TOKEN is set. Its check is registered either way, so a
+    # missing token reads UNKNOWN with the reason, never absent.
+    slack_socket.register_check()
+    sock = slack_socket.start()
     task = asyncio.create_task(scheduler.loop())
     try:
         yield
@@ -102,7 +115,10 @@ async def lifespan(_app: FastAPI):
         # triage, a browser popup closing -- cancelled, waited for (bounded)
         # and named in the log if it was cut short.
         task.cancel()
-        await asyncio.wait([task], timeout=10)
+        if sock is not None:
+            sock.cancel()
+        await asyncio.wait([t for t in (task, sock) if t is not None], timeout=10)
+        slack_socket.unregister_check()
         from ..kernel.background import cancel_all
         await cancel_all()
         from ..boot import shutdown
@@ -132,13 +148,17 @@ class _NoAudioTokens(logging.Filter):
     /media/{token}, /deliver/{checkout_session} and ATLAS Academy's
     /public/academy/file/{token}, and uvicorn's access log writes every
     request path. So is the checkout session in /public/academy/access's
-    `session_id=` query. Redacted before any handler sees it -- a log line
-    must never be a way to the audio, the video or the paid file."""
+    `session_id=` query, and the library token in /public/academy/library's
+    `t=` query. Redacted before any handler sees it -- a log line must never
+    be a way to the audio, the video, the paid file or a buyer's purchases.
+    (/public/academy/recover and /public/academy/subscribe are POSTs: the email
+    is in the body, which no access log writes. The subscribe-confirm and
+    unsubscribe links carry their token in `t=`, redacted below.)"""
 
     _TOKEN = re.compile(
         r"(?<![\w.-])(/webhooks/twilio/audio/|/media/|/deliver/|/public/academy/file/)"
         r"[^\s?\"']+")
-    _QUERY = re.compile(r"(?<=[?&])(session_id=)[^\s&#\"']+")
+    _QUERY = re.compile(r"(?<=[?&])(session_id=|t=)[^\s&#\"']+")
 
     def _clean(self, text: str) -> str:
         return self._QUERY.sub(r"\1<token>", self._TOKEN.sub(r"\1<token>", text))
@@ -168,12 +188,32 @@ PUBLIC_PATHS = ("/webhooks/", "/healthz", "/media/", "/deliver/",
 # by its own signature (atlas/api/stripe_mapfront.py).
 # ATLAS Academy's buyer page is one exact path (atlas/api/academy.py); its
 # Stripe webhook, like Mapfront's, is on record here too.
+# The store's contact and Help forms and the landing page's preview request
+# post to /public/agency/contact (2026-11-14); the mailto: address stays on the
+# page as plain text.
 PUBLIC_EXACT = frozenset({"/hooks/tradingview", "/webhooks/stripe-mapfront",
                           "/webhooks/stripe-academy", "/public/academy/access",
-                          "/public/academy/contact", "/public/academy/review",
-                          # The agency landing page's "ask for a free preview" form
-                          # (atlas/api/preview_request.py).
-                          "/public/preview-request"})
+                          "/public/academy/review",
+                          # Self-service recovery (email + Stripe receipt number)
+                          # and the one-hour purchase library it signs.
+                          "/public/academy/recover", "/public/academy/library",
+                          # The store's AI help chat (atlas/api/academy_support.py).
+                          "/public/academy/chat",
+                          # The store's video gallery: GET only, read-only
+                          # (atlas/api/academy_videos.py).
+                          "/public/academy/videos",
+                          # Free updates signup (atlas/api/academy.py): the form
+                          # post, the double opt-in confirm link and the
+                          # one-click unsubscribe link. `t=` is redacted in logs.
+                          "/public/academy/subscribe",
+                          "/public/academy/subscribe/confirm",
+                          "/public/academy/unsubscribe",
+                          # The website contact form (atlas/api/agency_contact.py):
+                          # one POST, stored first, delivered by the executor.
+                          "/public/agency/contact",
+                          # Public edge liveness: the edge rewrites exactly
+                          # GET /healthz here (atlas/api/public_ping.py).
+                          "/public/ping"})
 _PUBLIC_PREFIXES = tuple(p for p in PUBLIC_PATHS if p not in PUBLIC_EXACT)
 # Whole-path patterns, never prefixes: the AI chat on client sites
 # (atlas/api/site_chat.py) is `/public/site-chat/` plus exactly one DNS label.
@@ -225,7 +265,7 @@ _effective_client = peers.effective_client
 
 
 def _device_certified(request: Request) -> bool:
-    """Miro's own device, off the mesh, holding its client certificate.
+    """the owner's own device, off the mesh, holding its client certificate.
 
     Caddy verifies the certificate against ATLAS's private device CA during
     the TLS handshake and forwards its SHA-256 fingerprint in
@@ -261,6 +301,67 @@ async def _mesh_only(request: Request, call_next):
             log.warning("refusing mesh-only path %s from %s", path, client)
             return PlainTextResponse("not here", status_code=404)
     return await call_next(request)
+
+
+# The names the API is really served as on the Mac: the published loopback
+# port, the Dockerfile HEALTHCHECK's localhost, and the compose service name
+# the shop and proxy containers use.
+DEFAULT_ALLOWED_HOSTS = ("127.0.0.1:8080", "localhost:8080", "api:8080")
+
+
+def _allowed_hosts() -> frozenset[str] | None:
+    """The Host allowlist, or None when it is off.
+
+    Switched on by setting ATLAS_ALLOWED_HOSTS (a comma list of extra
+    `host:port` names; the defaults are always in). Unset, it is off: the
+    server behind Caddy is reached under its public names, and switching it
+    on by default would have refused every one of them."""
+    raw = os.getenv("ATLAS_ALLOWED_HOSTS", "").strip()
+    if not raw:
+        return None
+    extra = {h.strip().lower() for h in raw.split(",") if h.strip()}
+    return frozenset(DEFAULT_ALLOWED_HOSTS) | extra
+
+
+# Added after `_mesh_only`, so it runs before it: a request is first asked
+# which name it came for. A page on evil.example that rebinds its name to
+# 127.0.0.1 (DNS rebinding) reaches the loopback API with `Host:
+# evil.example`, and the unauthenticated /public/* and /webhooks/* routes
+# would otherwise answer it. 421 Misdirected Request: wrong name, not
+# wrong caller.
+@app.middleware("http")
+async def _host_allowlist(request: Request, call_next):
+    allowed = _allowed_hosts()
+    if allowed is not None:
+        host = request.headers.get("host", "").strip().lower()
+        if host not in allowed:
+            log.warning("refusing %s for Host %r", request.url.path, host[:100])
+            return PlainTextResponse("misdirected request", status_code=421)
+    return await call_next(request)
+
+
+# The same policy Caddy sets on 443 (Caddyfile), so the SPA shell carries it
+# on the plain :8080 port too, now that the page can answer a card (the owner
+# 2026-10-29: GUI decisions). Only the SPA shell: other HTML pages set their
+# own, and a response that already carries one keeps it.
+# `frame-src 'self'` (2026-10-30): the Previews panel frames the built demo
+# sites from /api/agency/preview/, each sandboxed and under its own CSP.
+CONTENT_SECURITY_POLICY = (
+    "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; "
+    "style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; "
+    "media-src 'self' blob:; manifest-src 'self'; connect-src 'self'; "
+    "frame-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'")
+
+
+@app.middleware("http")
+async def _spa_csp(request: Request, call_next):
+    response = await call_next(request)
+    endpoint = request.scope.get("endpoint")
+    if (getattr(endpoint, "__name__", "") == "spa"
+            and response.headers.get("content-type", "").startswith("text/html")
+            and "content-security-policy" not in response.headers):
+        response.headers["Content-Security-Policy"] = CONTENT_SECURITY_POLICY
+    return response
 
 
 # The newest observation, read at most once per HEARTBEAT_CACHE_S: /healthz is
@@ -315,12 +416,18 @@ async def _heartbeat() -> dict[str, int | None]:
     }
 
 
+# A stable name the menu-bar app (bootstrap/mac/menubar/main.swift) requires
+# before it grants the camera or microphone: whatever listens on ATLAS's port
+# must say it is ATLAS. Not a secret; it only tells ATLAS from a stray process.
+SERVICE_NAME = "atlas-agency"
+
+
 @app.get("/healthz")
 async def healthz() -> dict:
     # "ok" means what it always meant -- the process answers -- whatever the
     # heartbeat says. Docker's HEALTHCHECK and the deploy gate read "ok"; the
     # judgement on the ages stays with the watchdog.
-    return {"ok": True, "modules": len(REGISTRY.modules),
+    return {"ok": True, "service": SERVICE_NAME, "modules": len(REGISTRY.modules),
             "checks": len(REGISTRY.checks), "heartbeat": await _heartbeat()}
 
 
@@ -383,9 +490,16 @@ async def slack_hook(
 
     form = await request.form()
     payload = json.loads(form.get("payload", "{}"))
+    await handle_interaction(payload)
+    return {"ok": True}
 
+
+async def handle_interaction(payload: dict) -> None:
+    """A button click, from whichever transport carried it: the signed HTTP
+    route above, or Socket Mode (atlas/channels/slack_socket.py), where the
+    `xapp-` token that opened the socket stands in for the signature."""
     # A valid Slack signature proves the request came from Slack, not that it
-    # came from Miro. Without this check, approval authority is "anyone in the
+    # came from the owner. Without this check, approval authority is "anyone in the
     # workspace who can see the card".
     clicker = (payload.get("user") or {}).get("id", "")
     allowed = {u for u in os.getenv("SLACK_APPROVER_IDS", "").split(",") if u}
@@ -394,16 +508,16 @@ async def slack_hook(
         log.error("SLACK_APPROVER_IDS is unset — refusing to act on a Slack click")
         await _slack_reply(reply_to, "Approvals over Slack are not "
                            "configured. Nothing was done.", ephemeral=True)
-        return {"ok": True}
+        return
     if clicker not in allowed:
         log.warning("slack user %r is not an approver", clicker)
         await _slack_reply(reply_to, "You are not an approver for ATLAS. "
                            "Nothing was done.", ephemeral=True)
-        return {"ok": True}
+        return
 
     action = (payload.get("actions") or [{}])[0].get("value", "")
     if ":" not in action:
-        return {"ok": True}
+        return
     verdict, pid = action.split(":", 1)
     # "Acknowledge" on an alert: stop telling him about this check until it
     # changes. Answered here, before the proposal path — it is not a decision
@@ -417,9 +531,9 @@ async def slack_hook(
             f"{ACK_DAYS} days, or sooner if it gets worse or recovers and "
             f"breaks again." if health else
             f"I don't know a check called {pid}; nothing was muted.")
-        return {"ok": True}
+        return
     if not pid.isdigit():
-        return {"ok": True}
+        return
 
     # "Details" is a READ, and it sits on every proposal card. Sending it
     # through decide() answered "unknown verdict 'detail'" in the channel --
@@ -429,11 +543,10 @@ async def slack_hook(
     if verdict == "detail":
         await _slack_reply(reply_to, await _proposal_detail(int(pid)),
                            ephemeral=True)
-        return {"ok": True}
+        return
 
     verdict_result = await decide(int(pid), verdict, via=f"slack:{clicker}")
     await _slack_reply(reply_to, verdict_result.receipt())
-    return {"ok": True}
 
 
 async def _proposal_detail(pid: int) -> str:
@@ -494,6 +607,13 @@ async def slack_command(
         raise HTTPException(401, "bad signature")
 
     form = await request.form()
+    return await handle_command(dict(form))
+
+
+async def handle_command(form: dict) -> dict:
+    """`/atlas ...` from either transport. The dict is the immediate answer:
+    the HTTP response body, or the Socket Mode ack's `payload`
+    (atlas/channels/slack_socket.py)."""
     user = str(form.get("user_id") or "")
     text = str(form.get("text") or "").strip()
     reply_to = str(form.get("response_url") or "")
@@ -605,7 +725,7 @@ async def twilio_sms(request: Request,
     Deleted by accident in the commit that added the brand mark -- a
     scripted edit to this file dropped it, the route table got shorter, and
     nothing failed: no test covered it, so the suite stayed green and I told
-    Miro the path was intact while it was gone. A route disappearing is
+    the owner the path was intact while it was gone. A route disappearing is
     silent in a way a broken route is not.
     """
     form = dict(await request.form())
@@ -616,9 +736,9 @@ async def twilio_sms(request: Request,
         raise HTTPException(503, "not configured")
     if not _verify_twilio(url, form, x_twilio_signature):
         raise HTTPException(401, "bad signature")
-    # Only Miro's own number may issue commands. Anyone else -- a local
+    # Only the owner's own number may issue commands. Anyone else -- a local
     # business answering outreach that said "call or text" -- is passed to
-    # Miro in Slack, quoted, and gets no reply: no command runs, nothing is
+    # the owner in Slack, quoted, and gets no reply: no command runs, nothing is
     # promised, and the words never reach a model (invariant 4).
     if form.get("From") != os.getenv("TWILIO_TO"):
         # A lead's reply -- or a STOP from anyone -- is taken in first,
@@ -845,7 +965,7 @@ async def twilio_voice_inbound(request: Request,
         from . import reception
         sid = str(form.get("CallSid") or request.query_params.get("CallSid") or "")
         if reception.enabled() and sid and caller:
-            # The business line (Miro, 2026-09-27): answered as Miro, with
+            # The business line (the owner, 2026-09-27): answered as the owner, with
             # no hands -- nothing on it reaches the executor.
             reception.open_call(sid, caller, await reception.lead_for(caller))
             host = os.getenv("ATLAS_HOST", "").strip()
@@ -1038,7 +1158,7 @@ async def twilio_agency_turn(request: Request,
         text, done = lead_call.FAILED, True
     clip = await phone.clip(text)
     if call.transferring:
-        # The lead said yes to the owner: bridge to Miro's phone, with the
+        # The lead said yes to the owner: bridge to the owner's phone, with the
         # whisper on its own signed route and the outcome on the dial route.
         return Response(media_type="application/xml",
                         content=lead_call.transfer_twiml(call, clip, host, token))
@@ -1052,7 +1172,7 @@ async def twilio_agency_turn(request: Request,
 @app.post("/webhooks/twilio/agency/whisper")
 async def twilio_agency_whisper(request: Request,
                                 x_twilio_signature: str = Header("")) -> Response:
-    """What Miro hears before a transferred lead is bridged to him: the
+    """What the owner hears before a transferred lead is bridged to him: the
     child leg of the `<Dial>`, admitted on its ParentCallSid being a lead
     call this process holds, the secret, and `To` being his own number."""
     form = dict(await request.form())
@@ -1075,7 +1195,7 @@ async def twilio_agency_whisper(request: Request,
 @app.post("/webhooks/twilio/agency/dial")
 async def twilio_agency_dial(request: Request,
                              x_twilio_signature: str = Header("")) -> Response:
-    """How the transfer to Miro ended (the `<Dial>` action, on the lead's
+    """How the transfer to the owner ended (the `<Dial>` action, on the lead's
     own call): he answered and they talked, or the lead hears that he will
     call back today and Slack is alerted. Either way the call ends here."""
     form = dict(await request.form())
@@ -1098,7 +1218,7 @@ async def twilio_agency_dial(request: Request,
 async def twilio_agency_status(request: Request,
                                x_twilio_signature: str = Header("")) -> dict:
     """How a lead call ended. Never `escalation.record_outcome`: a lead not
-    answering is not Miro declining a call."""
+    answering is not the owner declining a call."""
     form = dict(await request.form())
     url = _public_url(request)
     if url is None or not _verify_twilio(url, form, x_twilio_signature):
@@ -1174,7 +1294,7 @@ async def _phone_turn(form: dict, turn: int, resume: int = 0) -> Response:
         # The stop window after a spoken yes was read back: "stop" or 2
         # cancels; anything else, silence included, goes ahead.
         heard = str(form.get("SpeechResult") or "").strip()
-        phone.remember(call, "Miro", f"(pressed {digit})" if digit else heard or "(said nothing)")
+        phone.remember(call, "the owner", f"(pressed {digit})" if digit else heard or "(said nothing)")
         task = phone.spawn_turn(phone.finish_confirm(call, digit, heard))
         return await _deliver(phone, call, task, turn + 1, 0, host)
 
@@ -1183,7 +1303,7 @@ async def _phone_turn(form: dict, turn: int, resume: int = 0) -> Response:
         # remembered on the call, logged, or shown to a model.
         outcome = phone.check_pin(call, digit) if digit else "wrong-empty"
         if outcome == "ok":
-            phone.remember(call, "Miro", "(entered the PIN)")
+            phone.remember(call, "the owner", "(entered the PIN)")
             line_ = phone.PIN_OK
             phone.remember(call, "ATLAS", line_)
             return Response(media_type="application/xml", content=phone.listening(
@@ -1221,7 +1341,7 @@ async def _phone_turn(form: dict, turn: int, resume: int = 0) -> Response:
             speech=speech))
 
     phone.heard(call)
-    phone.remember(call, "Miro", f"(pressed {digit}) {said}" if digit in _KEYPAD
+    phone.remember(call, "the owner", f"(pressed {digit}) {said}" if digit in _KEYPAD
                    else said)
     # Approve, decline, or answer. Decided inside phone.respond so that
     # "do it" is matched before anything reaches a model, and cannot be
@@ -1283,7 +1403,7 @@ async def _deliver(phone, call: str, task: asyncio.Task, turn: int, resume: int,
             spoken, await phone.clip(spoken), host, turn=turn,
             digits=phone.pin_length()))
     if phone.machine(call):
-        # A recording, not Miro: say where it is and hang up.
+        # A recording, not the owner: say where it is and hang up.
         return Response(media_type="application/xml", content=phone.closing(
             spoken, await phone.clip(spoken), host))
     speech = not phone.outbound(call) or phone.human(call)
@@ -1448,7 +1568,7 @@ async def _handle_command(text: str, *, via: str) -> str:
 # ---------------------------------------------------------------- mesh-only
 
 # The old mesh-only /ask and /agents routes are gone (audit 2026-09-28): they
-# had no sign-in, nothing called them, and any page Miro visited from the mesh
+# had no sign-in, nothing called them, and any page the owner visited from the mesh
 # could POST a task to the agents. The signed-in dashboard's /api/voice/ask
 # and /api/agents are the ways in.
 
@@ -1463,6 +1583,8 @@ async def _handle_command(text: str, *, via: str) -> str:
 # fetch a rendered video the same way Twilio fetches `/webhooks/twilio/audio`
 # — an unguessable, expiring token stands in for a session there too.
 app.include_router(dashboard_router)
+app.include_router(public_ping_router)
+app.include_router(agency_previews_router)
 app.include_router(media_router)
 app.include_router(voice_router)
 app.include_router(voice_offline_router)
@@ -1474,23 +1596,30 @@ app.include_router(clips_router)
 app.include_router(vault_router)
 app.include_router(deliver_router)
 app.include_router(academy_router)
-app.include_router(preview_request_router)
-app.include_router(screening_router)
+app.include_router(academy_support_router)
+app.include_router(academy_videos_router)
+app.include_router(learn_router)
 app.include_router(selfmodel_router)
 app.include_router(system_check_router)
 app.include_router(views_router)
 app.include_router(agency_router)
+app.include_router(agency_contact_router)
+app.include_router(hud_router)
 app.include_router(tradingview_router)
-# Caddy's on-demand TLS ask for *.mapfront.io; mesh-only AND Caddy-only
-# (atlas/api/tls_ask.py). Not in PUBLIC_PATHS, never proxied publicly.
-app.include_router(tls_ask_router)
 app.include_router(stripe_mapfront_router)
 app.include_router(site_chat_router)
 app.include_router(call_me_router)
+# the owner's WhatsApp questions (Twilio sandbox): read-only, signed, owner-only
+# (atlas/api/whatsapp.py). Under /webhooks/, so public by the path rule.
+app.include_router(whatsapp_router)
 app.include_router(webild_router)
 app.include_router(realestate_router)
 app.include_router(workboard_router)
+# The ECC channel's page, and the Mac's bearer-token progress sync
+# (mesh-only like /handoffs: nothing under /api is public).
 app.include_router(ig_funnel_router)
+# The local project board and remediation list (read-only; writes are actions).
+app.include_router(projects_router)
 
 
 # ------------------------------------------------------- browser extension
@@ -1624,6 +1753,54 @@ async def _same_miss(request: Request, exc: Exception) -> Response:
         detail = "not found"
     return JSONResponse({"detail": detail}, status_code=404)
 
+# The app icons and the manifest (2026-10-29): exact names, each the built
+# file with its own type. The SPA catch-all answered them with index.html,
+# so an installed ATLAS Agency showed no icon. Registered whether or not the
+# UI is built (a missing file is a 404, never the shell), and read from
+# `ui_paths.STATIC` at request time.
+UI_FILES = {"apple-touch-icon.png": "image/png", "icon-192.png": "image/png",
+            "icon-512.png": "image/png",
+            "manifest.webmanifest": "application/manifest+json"}
+
+
+def _ui_file_route(name: str, media_type: str) -> None:
+    async def serve() -> FileResponse:
+        path = ui_paths.STATIC / name
+        if not path.is_file():
+            raise HTTPException(404, "not found")
+        return FileResponse(path, media_type=media_type)
+    app.add_api_route(f"/{name}", serve, methods=["GET"], include_in_schema=False,
+                      name=f"ui_file_{name}")
+
+
+for _name, _type in UI_FILES.items():
+    _ui_file_route(_name, _type)
+
+
+@app.get("/favicon.svg", include_in_schema=False)
+async def favicon() -> FileResponse:
+    """Explicit, because the SPA catch-all would answer with index.html.
+
+    A browser asking for an icon and receiving an HTML document does not
+    error -- it just shows no icon, which looks like the file is missing.
+    """
+    icon = ui_paths.STATIC / "favicon.svg"
+    if not icon.is_file():
+        raise HTTPException(404, "not found")
+    return FileResponse(icon, media_type="image/svg+xml")
+
+
+def spa_shell(index: Path) -> FileResponse:
+    """The SPA shell, revalidated on every load.
+
+    `index.html` names the hashed bundles of the current build; a cached copy
+    keeps an old page on screen after a rebuild (2026-10-29: the short Command
+    Center). `no-cache` lets the browser keep it but asks the server first;
+    the hashed `/assets` keep their own caching.
+    """
+    return FileResponse(index, headers={"Cache-Control": "no-cache"})
+
+
 if STATIC.is_dir():
     app.mount("/assets", StaticFiles(directory=str(STATIC / "assets")),
               name="assets")
@@ -1632,18 +1809,6 @@ if STATIC.is_dir():
     if (STATIC / "fonts").is_dir():
         app.mount("/fonts", StaticFiles(directory=str(STATIC / "fonts")),
                   name="fonts")
-
-    @app.get("/favicon.svg", include_in_schema=False)
-    async def favicon() -> FileResponse:
-        """Explicit, because the SPA catch-all would answer with index.html.
-
-        A browser asking for an icon and receiving an HTML document does not
-        error -- it just shows no icon, which looks like the file is missing.
-        """
-        icon = STATIC / "favicon.svg"
-        if not icon.is_file():
-            raise HTTPException(404, "not found")
-        return FileResponse(icon, media_type="image/svg+xml")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa(full_path: str) -> FileResponse:
@@ -1660,7 +1825,7 @@ if STATIC.is_dir():
         index = STATIC / "index.html"
         if not index.is_file():
             raise HTTPException(404, "dashboard is not built")
-        return FileResponse(index)
+        return spa_shell(index)
 else:
     log.warning("ui/dist is missing — the dashboard will not be served. "
                 "Build it with: cd ui && npm ci && npm run build")

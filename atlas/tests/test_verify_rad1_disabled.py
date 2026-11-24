@@ -1,6 +1,6 @@
 """Read-back verifiers for the modules that are off in prod (RA-D1):
 youtube (upload, set_visibility, draft_metadata), tiktok.upload_draft,
-screening.book_slot and mirotech.price_check.
+screening.book_slot and exampleco.price_check.
 
 Providers are faked at `httpx.AsyncClient.send`; the fake records any method
 but GET and the fixture fails the test at teardown if one was sent (an
@@ -94,7 +94,7 @@ def _no_secret(got: v.Verification) -> None:
 
 
 ACTIONS = ["youtube.upload", "youtube.set_visibility", "youtube.draft_metadata",
-           "tiktok.upload_draft", "screening.book_slot", "mirotech.price_check"]
+           "tiktok.upload_draft", "screening.book_slot", "exampleco.price_check"]
 
 
 @pytest.mark.parametrize("action", ACTIONS)
@@ -113,11 +113,12 @@ def test_only_set_visibility_has_a_reconciler():
 
 @pytest.fixture
 def yt(monkeypatch):
-    """Switch the flycheap channel on, with a warm token cache."""
+    """Switch a stand-in "flycheap" channel on, with a warm token cache."""
     from atlas.modules.youtube import api
     for suffix in ("CLIENT_ID", "CLIENT_SECRET", "CHANNEL_ID"):
         monkeypatch.setenv(f"YOUTUBE_FLYCHEAP_{suffix}", "x")
     monkeypatch.setenv("YOUTUBE_FLYCHEAP_REFRESH_TOKEN", SECRET)
+    monkeypatch.setitem(api.CHANNELS, "flycheap", "YOUTUBE_FLYCHEAP_")
     monkeypatch.setitem(api._token_cache, "flycheap", (SECRET, time.time() + 600))
     return api
 
@@ -457,7 +458,7 @@ async def test_book_slot_off_is_disabled(net, db, cal_on, monkeypatch, off):
     _no_secret(got)
 
 
-# ================================================================== mirotech
+# ================================================================== exampleco
 
 PC_RESULT = ActionResult(True, "3 comparables", evidence={"prices": [300.0, 100.0,
                                                                      200.0]})
@@ -471,7 +472,7 @@ def ebay_on(monkeypatch):
 
 
 async def test_price_check_unknown_by_design_when_on(net, ebay_on):
-    got = await v.verify("mirotech.price_check", {"query": "PA-3220"}, PC_RESULT)
+    got = await v.verify("exampleco.price_check", {"query": "PA-3220"}, PC_RESULT)
     assert got.state is v.State.UNKNOWN and got.failure_class is None
     assert "writes nothing" in got.reason
     assert got.evidence["run_recorded"] == {"comparables": 3, "low": 100.0,
@@ -483,10 +484,10 @@ async def test_price_check_unknown_by_design_when_on(net, ebay_on):
 @pytest.mark.parametrize("off", ["module", "env"])
 async def test_price_check_off_is_disabled(net, ebay_on, monkeypatch, off):
     if off == "module":
-        monkeypatch.setenv("ATLAS_DISABLED_MODULES", "mirotech")
+        monkeypatch.setenv("ATLAS_DISABLED_MODULES", "exampleco")
     else:
         monkeypatch.delenv("EBAY_CLIENT_ID")
-    got = await v.verify("mirotech.price_check", {"query": "x"}, PC_RESULT)
+    got = await v.verify("exampleco.price_check", {"query": "x"}, PC_RESULT)
     assert got.state is v.State.UNKNOWN
     assert got.failure_class is v.FailureClass.DISABLED
     assert net.seen == []

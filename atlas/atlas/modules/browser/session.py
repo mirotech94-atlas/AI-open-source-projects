@@ -1,6 +1,6 @@
 """The browser itself: open a page, search, find a business, submit a form.
 
-"Google" in Miro's words means "search the web". Google's own results page
+"Google" in the owner's words means "search the web". Google's own results page
 blocks headless browsers and is denied by policy, so search goes through Brave
 (when `BRAVE_API_KEY` is set) or DuckDuckGo's HTML endpoint, and the browser
 opens the results. The browser never signs in anywhere — a page that needs a
@@ -20,7 +20,7 @@ recorded plus every current frame: a page that went anywhere it may not is
 refused and both are discarded (the same after a form submit). That detects
 the hop; it cannot un-send the one GET the hop made, nor stop page script
 sending what it read — only an egress rule or a filtering proxy on the box
-closes those, which is Miro's call (see the module docstring and
+closes those, which is the owner's call (see the module docstring and
 `_netguard`). WebSockets opened by any page's worker skip
 `route_web_socket`; they are recorded (a `websocket` listener on every page
 of the context) and refuse the read, but their handshake has already been

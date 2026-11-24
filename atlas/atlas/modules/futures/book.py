@@ -202,10 +202,10 @@ async def advance(symbol: str, interval: str, spec_: Spec, bars: list[Bar], *,
     booked trade). On the very first run the history only warms the
     features: booking starts from the newest bar, never before the start.
 
-    `paused` is the module's pause (the breaker set it, or Miro did): open
+    `paused` is the module's pause (the breaker set it, or the owner did): open
     positions still exit by their rules, nothing new is taken. When it is
     lifted the halt clears and the breaker's peak restarts from here --
-    Miro's resume is the reset, and only his."""
+    the owner's resume is the reset, and only his."""
     now = now or datetime.now(UTC)
     saved = await state()
     if saved is None:

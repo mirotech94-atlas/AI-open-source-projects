@@ -1,6 +1,6 @@
 """The Brain: ATLAS's real agents, jobs and actions grouped into departments.
 
-Miro, 2026-09-29, after a reel ("37 AI agents run my entire company"): make
+the owner, 2026-09-29, after a reel ("37 AI agents run my entire company"): make
 the Agency tab read like a company -- departments with a head, how much of
 each runs without him, what is waiting on him, and each seat's standard
 operating procedure. The twist is ATLAS's own rule: nothing is invented.
@@ -87,69 +87,78 @@ class Department:
     core: bool = False
 
 
+# the owner, 2026-10-28: eight agents, nine with mmt (agents.AGENT_NAMES). The retired agents'
+# seats are gone; their jobs and modules stay where their work still lands,
+# and a department with no agent of its own is headed by "you".
 DEPARTMENTS: tuple[Department, ...] = (
     Department(
-        "knowledge", "Knowledge Core", "concierge",
-        "the front door: the one agent that can ask another agent "
-        "(ask_specialist); reads people, conversations, vault and library "
-        "memory",
-        agents=("concierge",),
-        jobs=("judgment",),
-        modules=("vault", "lessons", "research", "perplexity", "assistant"),
-        head_has_tool="ask_specialist",
+        "knowledge", "Knowledge Core", "research",
+        "owns the research module (missions.OWNERS): competitor watches, "
+        "profiles and the weekly report",
+        agents=("research",),
+        jobs=("judgment", "research_scan", "research_weekly", "assistant_notices"),
+        modules=("vault", "lessons", "research", "perplexity", "assistant",
+                 "scrape", "owner_memory"),
+        head_owns_missions=True,
         core=True),
     Department(
-        "money", "Money & Markets", "markets",
-        "owns the markets module (missions.OWNERS)",
-        agents=("markets",),
+        "money", "Money & Markets", YOU,
+        "no agent leads it since 2026-10-28: the markets cards and alerts "
+        "are written to you",
+        agents=(),
         jobs=("playlist", "ideas", "market_alerts"),
         # `futures` keeps its own clock (modules/futures/job.py: futures_tick,
         # futures_daily, futures_weekly), so its jobs are not scheduler
         # POLICIES and are not listed here; the module is.
-        modules=("markets", "stripe", "purchasing", "realestate", "futures"),
-        head_owns_missions=True),
+        modules=("markets", "stripe", "purchasing", "realestate", "futures")),
     Department(
-        "content", "Content & Reels", "growth",
-        "owns instagram, linkedin, tiktok and content (missions.OWNERS); the "
-        "reels producer hands off to it",
-        agents=("growth", "reels"),
+        "content", "Content & YouTube", "content",
+        "owns academy, youtube, church and reddit (missions.OWNERS)",
+        agents=("content",),
         jobs=("reels", "reels_nudge", "calendar", "clips", "clip_links", "funnels",
-              "academy_reel", "linkedin_replies"),
+              "academy_reel", "academy_tutorial", "academy_teaching", "academy_videos",
+              "youtube_learn", "linkedin_replies", "linkedin_autopost", "church",
+              "content_weekly"),
         modules=("content", "instagram", "tiktok", "youtube", "linkedin",
-                 "clips", "football"),
-        handoffs_to_head=("reels",),
+                 "clips", "football", "church", "reddit", "ytlearn"),
         head_owns_missions=True),
     Department(
-        "sales", "Sales & Course", "marketing",
-        "owns marketing and content (missions.OWNERS); hands off to the "
-        "agency and Mirotech",
-        agents=("marketing", "agency", "commerce", "fiverr", "mirotech"),
-        jobs=("marketing", "measure", "lead_replies", "agency_lead_board"),
-        modules=("marketing", "course", "agency", "fiverr", "mirotech", "shop",
-                 "academy"),
-        head_hands_off_to=("agency", "mirotech"),
+        "sales", "Sales & Sites", "sales",
+        "owns the sales module (missions.OWNERS); BizOps and SEO hand off to it",
+        agents=("sales", "sites", "bizops", "seo", "mmt"),
+        jobs=("marketing", "measure", "lead_replies", "agency_lead_board",
+              "academy_support", "academy_subscribe", "agency_contact", "sales_shift", "sites_shift", "bizops_digest",
+              "bizops_find_repeats", "seo_rank", "mmt_shift", "sage_mmt_weekly"),
+        modules=("marketing", "course", "agency", "fiverr", "exampleco", "shop",
+                 "academy", "sales", "bizops", "seo", "mmt", "sagemmt"),
+        handoffs_to_head=("bizops", "seo"),
         head_owns_missions=True),
     Department(
-        "ops", "Ops & Infra", "ops",
-        "Guardian, inRoots, VPSie and the Sentinel all hand off to Operations",
-        agents=("ops", "sentinel", "guardian", "vpsie", "flycheap", "inroots"),
-        jobs=("checks", "signals", "fixes", "outbox", "retention", "approvals"),
-        modules=("vpsie", "guardian", "flycheap", "inroots", "netbird",
-                 "backups", "gitlab", "nightshift", "delegate", "comms", "voice"),
-        handoffs_to_head=("guardian", "inroots", "vpsie", "sentinel")),
+        "ops", "Ops & QA", "qa",
+        "owns the qa module (missions.OWNERS): the gate, passive checks and "
+        "missed runs",
+        agents=("qa",),
+        jobs=("checks", "signals", "fixes", "outbox", "retention", "approvals",
+              "approvals_board", "qa_verify_runs", "whatsapp_daily", "whatsapp_alerts",
+              "whatsapp_cards", "owner_calls", "draft_notice"),
+        modules=("cloudco", "inroots", "netbird",
+                 "backups", "gitlab", "nightshift", "delegate", "comms", "voice",
+                 "approvals_board", "projects", "qa", "localstack", "atlas"),
+        head_owns_missions=True),
     Department(
-        "admin", "Admin & Comms", "inbox",
-        "Scheduling and Commerce hand their correspondence to Inbox",
-        agents=("inbox", "scheduler", "school"),
-        jobs=("rhythm",),
+        "admin", "Personal Ops", "inbox",
+        "the one agent that drafts his mail (mail_draft_reply), on the local "
+        "model; it also answers what no other agent claims",
+        agents=("inbox",),
+        jobs=("rhythm", "inbox_shift"),
         modules=("mail", "calendar", "messages", "messaging", "matrix_rooms",
-                 "mac", "browser", "screening", "school", "rhythm"),
-        handoffs_to_head=("scheduler", "commerce")),
+                 "mac", "browser", "screening", "school", "rhythm", "cameras"),
+        head_has_tool="mail_draft_reply"),
     Department(
         "strategy", "Strategy", YOU,
         "no agent leads it: the brief, the weekly summary, the nightly review "
         "and the agency meeting are all written to you",
-        agents=("analyst",),
+        agents=(),
         jobs=("brief", "weekly", "review", "agency_meeting", "agent_shifts",
               "missions"),
         modules=("posthog",)),
@@ -185,6 +194,134 @@ JOBS: dict[str, Job] = {
         "every scheduler cycle", "pending cards past their expiry",
         "nothing: an expired card is expired, never run (silence is not consent)",
         Layer.AUTOMATION, result="the card's status"),
+    "sales_shift": Job(
+        "daily at SALES_SHIFT_HOUR (09:00 New York); a missed day is skipped",
+        "new CSV files in data/sales/inbox/, new and qualified Sales leads, "
+        "their own sites, today's card count",
+        "code rules only: verified, researched, qualified; QA passes the draft "
+        "before a card", Layer.AUTOMATION,
+        actions=("sales.import_csv", "sales.find_leads", "agency.verify",
+                 "sales.research_lead",
+                 "sales.qualify", "agency.find_email", "agency.draft_outreach",
+                 "qa.check_draft"),
+        result="agency.send_outreach cards (Tier 2), at most SALES_DAILY_CARDS a "
+               "day; nothing is sent"),
+    "inbox_shift": Job(
+        "daily 07:00 New York; a missed day is skipped",
+        "every MAIL_ACCOUNTS mailbox (owner over IMAP, read-only) and the "
+        "commitments classify() already stored",
+        "code rules and the capped classifier: who is owed a reply today; an "
+        "unreadable mailbox is UNKNOWN, never zero", Layer.AUTOMATION,
+        result="a schedule_runs detail; nothing drafted or sent (IMAP has no "
+               "draft path)"),
+    "sites_shift": Job(
+        "daily 08:00 New York; a missed day is skipped",
+        "agency_leads, agency_sites, agency_outreach, pending cards, site_<slug> "
+        "checks", "code rules only: with AGENCY_AUTO_BUILD=on, up to three "
+        "waiting leads get a mockup and a built site", Layer.AUTOMATION,
+        actions=("agency.mockup", "agency.build_site", "agency.publish_vercel"),
+        result="agency.publish_vercel cards (Tier 2); the owner email card only "
+               "after the owner approves the publish; nothing published or sent here"),
+    "mmt_shift": Job(
+        "daily 09:00 New York; a missed day is skipped",
+        "public tutoring-centre pages (robots, daily cap, none of linkedin, "
+        "instagram or facebook), mmt_prospects, mmt_intros",
+        "code rules and a closed-schema extract: discover, score by code, draft "
+        "one intro per prospect from facts with a verbatim quote; off unless "
+        "MMT_DISCOVERY is on", Layer.AUTOMATION,
+        actions=("mmt.discover", "mmt.score", "mmt.draft_intro"),
+        result="mmt.send_intro cards (Tier 2); nothing sent here"),
+    "whatsapp_daily": Job(
+        "daily at WHATSAPP_DAILY_HOUR (20:00) New York; off unless WHATSAPP_DAILY=on; "
+        "unsent, it retries every 30 min until midnight",
+        "the same 24 h reads as the agent report: agent_runs, actions_log, checks, "
+        "the work board",
+        "nothing: lines are built by code per agent (Mark, Bea, Sage, Sam, Rex, "
+        "Felix); an unreadable source says UNKNOWN", Layer.AUTOMATION,
+        actions=("mmt.notify_daily",),
+        result="one WhatsApp to the owner per New York date (Tier 1, notify only); "
+               "nothing sent under ATLAS_WATCH_ONLY; a failed send leaves one Slack "
+               "note"),
+    "whatsapp_alerts": Job(
+        "every pass; off unless WHATSAPP_ALERTS=on; at most WHATSAPP_ALERTS_PER_HOUR "
+        "(3) an hour",
+        "the health checks: a reading that turned from OK to failing in the last "
+        "30 minutes (UNKNOWN and degraded never count)",
+        "nothing: one plain line per reading built by code", Layer.AUTOMATION,
+        actions=("mmt.notify_alert",),
+        result="one WhatsApp to the owner per failing reading (Tier 1, notify only); "
+               "nothing sent under ATLAS_WATCH_ONLY; a refused send leaves one Slack "
+               "note"),
+    "draft_notice": Job(
+        "every pass, at the interval set in code; first run starts at the newest "
+        "draft so old drafts are not replayed",
+        "content_drafts: rows newer than the stored mark",
+        "nothing is decided by a model: one fixed Slack card per new draft, the "
+        "draft text wrapped as untrusted",
+        Layer.AUTOMATION,
+        actions=(),
+        result="one Slack card per new content draft; reads drafts, writes only the "
+               "mark; sends nothing outward but Slack"),
+    "assistant_notices": Job(
+        "every pass; off unless the assistant is on; at most 1 an hour and 3 a day "
+        "(rolling), nothing in QUIET_HOURS, the same thing once per window",
+        "what ATLAS already holds: a check that went from OK to failing, a "
+        "proposal waiting over 2 hours, the cameras-online count dropping",
+        "nothing: the text is fixed templates filled from fixed fields in code, "
+        "outside words defanged; severity is NORMAL, never a page",
+        Layer.AUTOMATION,
+        actions=("assistant.update_owner",),
+        result="one Slack DM to the owner per thing worth telling (Tier 1); nothing "
+               "under ATLAS_WATCH_ONLY"),
+    "owner_calls": Job(
+        "every pass; off unless OWNER_CALLS=on; at most CALL_MAX_PER_DAY (3) a day, "
+        "nothing in quiet hours",
+        "the WhatsApp alerts and urgent cards already sent: one the owner has not "
+        "answered for CALL_ESCALATE_MINUTES (15) while the problem is still there",
+        "nothing: the words are fixed text in code, <Say> only; one call per event",
+        Layer.AUTOMATION,
+        actions=("mmt.call_owner",),
+        result="one phone call to the owner per unanswered event (Tier 1); nothing "
+               "under ATLAS_WATCH_ONLY; a call that could not be placed leaves one "
+               "Slack note"),
+    "whatsapp_cards": Job(
+        "every pass; off unless WHATSAPP_CARDS=on; at most WHATSAPP_CARDS_PER_HOUR "
+        "(5) an hour, nothing in quiet hours",
+        "the approvals board: pending, unexpired Tier 2 cards nobody has messaged "
+        "about (first run: the newest 5 only)",
+        "nothing: one plain line per card built by code from the action; a code "
+        "only for cards on the WhatsApp allowlist", Layer.AUTOMATION,
+        actions=("mmt.notify_card",),
+        result="one WhatsApp to the owner per pending card (Tier 1, notify only; "
+               "the decision stays on the portal); nothing sent under "
+               "ATLAS_WATCH_ONLY; a closed WhatsApp window leaves one Slack note"),
+    "sage_mmt_weekly": Job(
+        "weekly, Monday 10:00 New York; a missed week is skipped",
+        "the TutorSite page's own numbers from the LinkedIn sweep's state file "
+        "(UNKNOWN if unreadable, each with its read time), the four public "
+        "tutoring.example pages (robots, wrapped as untrusted)",
+        "code rules and fixed fact-backed angles: up to SAGE_MMT_MAX_POSTS_PER_WEEK "
+        "(default 3) post drafts that pass the claim check, and an SEO note of "
+        "three suggested edits; off unless SAGE_MMT_LINKEDIN is on", Layer.AUTOMATION,
+        actions=("sagemmt.draft_week", "sagemmt.draft_seo_note"),
+        result="linkedin.approve_draft cards and one sagemmt.accept_seo_note card "
+               "(Tier 2); nothing posted or changed here"),
+    "qa_verify_runs": Job(
+        "every QA_VERIFY_RUNS_MIN (hourly)", "the scheduled windows of the last day "
+        "(POLICIES) against schedule_runs",
+        "nothing: a window with no done row is a miss, by code; each miss is one "
+        "remediation task on the local board, never a retry", Layer.AUTOMATION,
+        actions=("qa.verify_runs",),
+        result="a qa_results row; open remediation tasks turn qa.open_remediation "
+               "DEGRADED"),
+    "approvals_board": Job(
+        "every scheduler cycle when the pending cards changed, else every "
+        "APPROVALS_BOARD_REFRESH_MIN", "pending cards: action, params, expiry, link",
+        "nothing: each line is rendered from the action and its params in code; it "
+        "lists cards and can approve none", Layer.AUTOMATION,
+        actions=("approvals_board.create_channel",),
+        result="the one pinned \"Waiting for you\" message in #approvals, edited "
+               "in place"),
     "signals": Job(
         "every SIGNAL_INTERVAL_S", "what each module wants to say",
         "nothing: a signal naming an action becomes a Tier 2 card, one without "
@@ -240,6 +377,68 @@ JOBS: dict[str, Job] = {
                  "content.render_video", "content.publish_reel",
                  "content.autopublish_reel"),
         result="the reels digest"),
+    "church": Job(
+        "daily from CHURCH_SHIFT_HOUR New York time", "church_posts (the Mac's "
+        "synced calendar), church_events, church_ideas and the community calendar",
+        "nothing by model: which reviewed posts fit today's YouTube budget and "
+        "the Facebook window, by rule", Layer.AUTOMATION,
+        actions=("church.schedule_youtube_shorts", "church.schedule_facebook_reels",
+                 "church.weekly_plan"),
+        result="a shift entry in church_events and at most one batch card per "
+               "platform"),
+    "bizops_digest": Job(
+        "daily at 08:00 New York time", "agency_deals, bizops_invoices, "
+        "bizops_onboardings, bizops_automation_ideas",
+        "nothing by model: code rules (a won or paid deal, a past due date)",
+        Layer.AUTOMATION,
+        actions=("bizops.start_onboarding", "bizops.draft_payment_reminder",
+                 "bizops.daily_digest"),
+        result="onboarding projects, reminder cards and a reports row (kind "
+               "bizops_digest) to #agency-alerts; nothing is sent"),
+    "bizops_find_repeats": Job(
+        "daily at 07:00 New York time", "14 days of sent-mail subjects and board "
+        "task titles (wrapped as untrusted)",
+        "code rules only: a pattern seen 3+ times", Layer.AUTOMATION,
+        actions=("bizops.find_repeats",),
+        result="bizops.propose_automation cards (Tier 2)"),
+    "seo_rank": Job(
+        "daily at 07:00 New York time (audits, client reports and Academy "
+        "gaps on Mondays)", "each client site with a domain, agency.example.com "
+        "and agency.example.com (GET only), free search results, the recorded "
+        "Search Console and PageSpeed readings",
+        "nothing by model: code picks the rank, the audit items, the next "
+        "actions and the gaps", Layer.AUTOMATION,
+        actions=("seo.rank_snapshot", "seo.audit_site", "seo.weekly_report",
+                 "seo.keyword_gaps"),
+        result="seo_ranks rows ('not measured' without a free provider), "
+               "seo_audits rows (UNKNOWN when a site cannot be read) and "
+               "seo_reports rows (a missing reading says 'not measured')"),
+    "research_scan": Job(
+        "daily at 06:00 New York time", "each watched competitor page (through "
+        "the scraper: robots.txt, deny list, daily cap; text wrapped as "
+        "untrusted)", "nothing by model: dates are stripped and pages compared "
+        "in code; prices are parsed in code", Layer.AUTOMATION,
+        actions=("research.daily_scan",),
+        result="research_changes and research_prices rows with source and read "
+               "time; 3 failed reads in a row make one remediation task"),
+    "research_weekly": Job(
+        "Sunday 18:00 New York time", "competitor homepages and, with "
+        "YOUTUBE_API_KEY, their upload dates", "a free model labels offer, "
+        "positioning, strengths and weaknesses as model judgement; prices and "
+        "cadence are measured in code", Layer.AUTOMATION,
+        actions=("research.refresh_profile", "research.weekly_report"),
+        result="competitor_profiles with history, and a reports row (kind "
+               "research_weekly)"),
+    "content_weekly": Job(
+        "Monday 08:00 New York time", "youtube_videos, academy_tutorial_posts, "
+        "academy_content_plan, academy_title_tests, schedule_runs, handoffs, "
+        "church_posts and PostHog store views",
+        "nothing by model: the report, the plan and the title decisions are "
+        "code rules", Layer.AUTOMATION,
+        actions=("academy.weekly_growth_report", "academy.plan_content",
+                 "academy.switch_title"),
+        result="a reports row (kind weekly), planned topics, title test steps and "
+               "deduplicated #agency-alerts lines"),
     "reels_nudge": Job(
         "daily at 17:00", "today's reel cards", "nothing: a reminder if one waits",
         Layer.AUTOMATION, result="a reminder in the reels channel"),
@@ -283,6 +482,45 @@ JOBS: dict[str, Job] = {
         Layer.AUTOMATION,
         actions=("academy.render_promo_reel", "clips.autopublish_promo"),
         result="the day's Academy reel on the clips accounts, or its card"),
+    "academy_tutorial": Job(
+        "daily at ACADEMY_TUTORIALS_HOUR_UTC", "the tutorial catalog "
+        "(tutorial_series.py) and academy_tutorial_posts (what is already up)",
+        "nothing: every word is code-held copy; the post is gated in code "
+        "(tutorials.autopublish_check)", Layer.AUTOMATION,
+        actions=("academy.render_tutorial", "academy.autopublish_tutorial",
+                 "academy.pin_comment", "academy.add_to_lab_playlist",
+                 "academy.take_out_of_lab_playlist"),
+        result="the next episode on YouTube in its series playlist, or its card"),
+    # the owner, 2026-10-13: two Shorts a day -- the teaching Short has
+    # its own slot, 23 UTC on alternate New York days, not the tutorial tick.
+    "academy_teaching": Job(
+        "daily at ACADEMY_TEACHING_HOUR_UTC on alternate New York days",
+        "academy_tutorial_posts (public tutorials), academy_promo_posts (cuts "
+        "already posted, the day's count) and each episode's render",
+        "nothing: the cut and its words are code-held (tutorial_short.py); the "
+        "post is gated in code (promo.autopublish_check)", Layer.AUTOMATION,
+        actions=("academy.render_teaching_short", "clips.autopublish_promo",
+                 "academy.flag_synthetic_short"),
+        result="a teaching Short cut from a public tutorial on the clips "
+               "accounts, or held by the day's cap; every day, the AI flag on "
+               "the last 14 days of Academy Shorts that lack it"),
+    "academy_videos": Job(
+        "every ACADEMY_VIDEOS_REFRESH_MIN", "academy_tutorial_posts (public "
+        "tutorials) and the live videos.json", "nothing: the page is built from "
+        "catalog and post rows in code", Layer.AUTOMATION,
+        actions=("academy.publish_shop",),
+        result="agency.example.com/videos/ listing every public tutorial"),
+    "youtube_learn": Job(
+        "daily at YOUTUBE_LEARN_HOUR New York time; a missed day is skipped",
+        "the links the owner pasted (video_lessons, queued) and the Academy channel's "
+        "public videos (academy_tutorial_posts); each transcript is read-only "
+        "(UNKNOWN when it has no captions or cannot be read), wrapped as untrusted",
+        "nothing: a model only writes the takeaways, which code counts, trims and "
+        "screens; at most 5 pasted and 3 channel videos a day; off unless "
+        "YOUTUBE_LEARN=on and held under ATLAS_WATCH_ONLY", Layer.AUTOMATION,
+        actions=("ytlearn.save_video_notes",),
+        result="a lessons card per video; approving only saves the note for you "
+               "to read, it changes no prompt, rule, code or setting"),
     "lead_replies": Job(
         "every AGENCY_REPLY_TICK_MIN", "lead messages queued for a reply",
         "the reply's words (a model drafts with the sales playbook; every "
@@ -291,13 +529,53 @@ JOBS: dict[str, Job] = {
         result="a draft and its Tier 2 send card"),
     "linkedin_replies": Job(
         "every LINKEDIN_REPLY_TICK_MIN", "linkedin_requests: people who wrote "
-        "to the Guardian or FlyCheap page or requested its services",
+        "to an active company page or requested its services",
         "the reply's words (a model drafts from the page's fact sheet; every "
         "figure, date, promise, link and honesty rule checked in code)",
         Layer.AGENTIC,
         actions=("linkedin.draft_request_reply", "linkedin.send_request_reply"),
         result="a reply in the page's own inbox thread and a Slack receipt, or "
                "its Tier 2 card with the reason"),
+    "linkedin_autopost": Job(
+        "every LINKEDIN_AUTOPUBLISH_TICK_MIN", "the LinkedIn state file: the Vault "
+        "page's post bank, posting days and hours, the last sweep and the alerts",
+        "nothing: the post is the bank's next approved entry, byte for byte, and "
+        "every gate is in code (publish.autopublish_refusal)", Layer.AUTOMATION,
+        actions=("linkedin.autopublish_post", "linkedin.publish_post"),
+        result="the Vault page's post and a Slack receipt, or the Tier 2 publish "
+               "card with \"Held for you: <reason>\""),
+    "academy_support": Job(
+        "every ACADEMY_SUPPORT_TICK_MIN", "academy_support_tickets: the store's Help "
+        "form, the support mailbox (support_mail, a collector) and chat questions "
+        "sent on",
+        "the reply's words (a model drafts from the support KB only; routing, every "
+        "price, refund, money, legal and honesty rule and the grounding checked in "
+        "code)",
+        Layer.AGENTIC,
+        actions=("academy.draft_support_reply", "academy.send_support_reply",
+                 "academy.create_support_channel"),
+        result="an email reply from the support address and a Slack receipt, or its "
+               "Tier 2 card with the reason; tickets near two business days posted"),
+    "academy_subscribe": Job(
+        "every 5 minutes", "academy_subscribers: free-updates signups from the "
+        "store form, pending until their owner confirms",
+        "nothing is decided by a model: fixed confirmation text, the address "
+        "typed on the form, a 24-hour resend limit and a daily cap, all in code",
+        Layer.AUTOMATION,
+        actions=("academy.send_signup_confirmation",),
+        result="one confirmation email per pending signup; an unconfirmed signup "
+               "is deleted after 7 days; never a newsletter"),
+    "agency_contact": Job(
+        "every minute", "agency_site_messages: messages typed into the website "
+        "contact forms, stored first, then sent to the owner",
+        "nothing is decided by a model: the owner email (Reply-To the visitor), the "
+        "WhatsApp text and the auto-reply are fixed templates, each channel retried "
+        "up to 3 times, all in code",
+        Layer.AUTOMATION,
+        actions=("agency.deliver_contact",),
+        result="one email and one WhatsApp message to the owner per site message, plus an "
+               "auto-reply to the visitor; a channel that cannot deliver is reported, "
+               "never marked sent"),
     "agency_lead_board": Job(
         "daily at BRIEF_HOUR", "agency leads, outreach, replies, consent, "
         "contacts and deals", "nothing: counts read from tables, no model",

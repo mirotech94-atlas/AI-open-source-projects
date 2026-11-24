@@ -27,7 +27,7 @@ Lebanon to United Kingdom.
 Online check-in opens 30 hours before departure."""
 
 MSG = {"id": "gmail:abc", "account": "me@example.com", "subject": "Booking confirmed",
-       "sender": "MEA <noreply@mea.com.lb>", "at": datetime(2026, 9, 1, tzinfo=UTC),
+       "sender": "MEA <contact70@example.com>", "at": datetime(2026, 9, 1, tzinfo=UTC),
        "body": EMAIL}
 
 GOOD = {"kind": "flight", "confirmation": "QX7P2L", "flight_number": "ME 201",
@@ -145,7 +145,7 @@ def db(monkeypatch):
     return fake
 
 
-ME = Account(name="myron", kind="google", email="me@example.com", refresh_token="t")
+ME = Account(name="owner", kind="google", email="me@example.com", refresh_token="t")
 
 
 async def test_sweep_stores_grounded_bookings_and_marks_the_email(monkeypatch, db):

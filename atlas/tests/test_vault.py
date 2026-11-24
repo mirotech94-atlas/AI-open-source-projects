@@ -129,11 +129,12 @@ async def test_check_index_is_degraded_without_ollama_and_names_the_count(
         tmp_path, monkeypatch):
     monkeypatch.setattr(index, "vault_dir", lambda: tmp_path)
     monkeypatch.delenv("OLLAMA_URL", raising=False)
+    monkeypatch.delenv("ATLAS_EMBED_URL", raising=False)
     monkeypatch.setattr(index, "fetch_one", _counts(3, 41))
     obs = await index.check_index()
     assert obs.health is Health.DEGRADED
     assert obs.value == 3.0
-    assert "OLLAMA_URL unset" in obs.detail
+    assert "ATLAS_EMBED_URL unset" in obs.detail
     assert "keyword match only" in obs.detail
     assert "41" in obs.detail
 
@@ -172,7 +173,7 @@ async def test_index_all_kinds_a_file_under_skills_as_skill_not_by_content(
     monkeypatch.setattr(index, "vault_dir", lambda: tmp_path)
     skills_dir = tmp_path / "skills"
     skills_dir.mkdir()
-    (skills_dir / "vpsie.md").write_text(
+    (skills_dir / "cloudco.md").write_text(
         "the parties hereby agree to the lease and insurance policy",
         encoding="utf-8")
 
@@ -198,7 +199,7 @@ async def test_index_all_kinds_a_file_under_skills_as_skill_not_by_content(
     assert problems == []
     assert remembered[0][2]["kind"] == "skill"
 
-    doc_args = stored[str(skills_dir / "vpsie.md")]
+    doc_args = stored[str(skills_dir / "cloudco.md")]
     assert doc_args[3] == "skill"          # (path, sha256, title, kind, chunks)
 
 
@@ -316,6 +317,7 @@ async def test_reindex_dry_says_what_the_backfill_would_do(tmp_path, monkeypatch
 async def test_reindex_dry_without_ollama_mentions_no_backfill(tmp_path, monkeypatch):
     monkeypatch.setattr(index, "vault_dir", lambda: tmp_path)
     monkeypatch.delenv("OLLAMA_URL", raising=False)
+    monkeypatch.delenv("ATLAS_EMBED_URL", raising=False)
     result = await index.reindex_dry()
     assert result.detail == "no new or changed files to index"
 
@@ -336,6 +338,7 @@ async def test_index_all_reports_a_backfill_that_stopped(tmp_path, monkeypatch):
 async def test_index_all_does_not_backfill_without_ollama(tmp_path, monkeypatch):
     monkeypatch.setattr(index, "vault_dir", lambda: tmp_path)
     monkeypatch.delenv("OLLAMA_URL", raising=False)
+    monkeypatch.delenv("ATLAS_EMBED_URL", raising=False)
 
     async def backfill(namespaces):
         raise AssertionError("nothing to embed with")
@@ -498,9 +501,9 @@ async def test_reindex_rollback_is_a_no_op():
 
 # -------------------------------------------------------- memory scoping
 
-def test_concierge_and_inbox_scopes_include_vault_and_library():
+def test_the_inbox_scope_includes_vault_and_library():
     build_roster()
-    for name in ("concierge", "inbox"):
+    for name in ("inbox",):
         scope = ROSTER[name].memory_scope
         assert "vault" in scope, f"{name} cannot recall documents"
         assert "library" in scope, f"{name} cannot recall readings"
@@ -590,13 +593,13 @@ async def test_seed_skill_inserts_when_the_source_is_new(monkeypatch):
     monkeypatch.setattr(library, "fetch_one", fake_fetch_one)
     monkeypatch.setattr(library, "execute_sql", fake_execute_sql)
 
-    changed = await library.seed_skill("Mirotech", "atlas/skills/mirotech.py",
+    changed = await library.seed_skill("ExampleCo", "atlas/skills/exampleco.py",
                                        "pricing playbook")
 
     assert changed is True
     assert "INSERT INTO library_entries" in calls["write"][0]
     assert "'skill'" in calls["write"][0]
-    assert calls["write"][1] == ("Mirotech", "atlas/skills/mirotech.py",
+    assert calls["write"][1] == ("ExampleCo", "atlas/skills/exampleco.py",
                                  "pricing playbook")
 
 
@@ -605,7 +608,7 @@ async def test_seed_skill_updates_in_place_when_the_source_matches_and_changed(
     calls: dict = {}
 
     async def fake_fetch_one(sql, *args):
-        return {"id": 3, "title": "Mirotech", "notes": "old playbook"}
+        return {"id": 3, "title": "ExampleCo", "notes": "old playbook"}
 
     async def fake_execute_sql(sql, *args):
         calls["write"] = (sql, args)
@@ -613,17 +616,17 @@ async def test_seed_skill_updates_in_place_when_the_source_matches_and_changed(
     monkeypatch.setattr(library, "fetch_one", fake_fetch_one)
     monkeypatch.setattr(library, "execute_sql", fake_execute_sql)
 
-    changed = await library.seed_skill("Mirotech", "atlas/skills/mirotech.py",
+    changed = await library.seed_skill("ExampleCo", "atlas/skills/exampleco.py",
                                        "new playbook")
 
     assert changed is True
     assert "UPDATE library_entries" in calls["write"][0]
-    assert calls["write"][1] == (3, "Mirotech", "new playbook")
+    assert calls["write"][1] == (3, "ExampleCo", "new playbook")
 
 
 async def test_seed_skill_is_a_no_op_when_nothing_changed(monkeypatch):
     async def fake_fetch_one(sql, *args):
-        return {"id": 3, "title": "Mirotech", "notes": "same playbook"}
+        return {"id": 3, "title": "ExampleCo", "notes": "same playbook"}
 
     async def fake_execute_sql(sql, *args):
         raise AssertionError("no write should happen when nothing changed")
@@ -631,7 +634,7 @@ async def test_seed_skill_is_a_no_op_when_nothing_changed(monkeypatch):
     monkeypatch.setattr(library, "fetch_one", fake_fetch_one)
     monkeypatch.setattr(library, "execute_sql", fake_execute_sql)
 
-    changed = await library.seed_skill("Mirotech", "atlas/skills/mirotech.py",
+    changed = await library.seed_skill("ExampleCo", "atlas/skills/exampleco.py",
                                        "same playbook")
 
     assert changed is False

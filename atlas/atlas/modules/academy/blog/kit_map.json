@@ -1,0 +1,12 @@
+{
+  "_note": "Keyword to catalog product, from the owner's site pack (2026-10-18). A post with no kit of its own pairs with the first rule whose keyword is in its title, summary or tags. `product` is a catalog.json slug: the title and the link are the catalog's own, a rule naming a slug the catalog doesn't have is dropped, and the line shows only while the product is on sale.",
+  "rules": [
+    {"keywords": ["safe", "operator", "approval", "human review", "agent rules"], "product": "safe-ai-operator"},
+    {"keywords": ["obsidian", "vault", "notes", "second brain"], "product": "claude-obsidian-vault-kit"},
+    {"keywords": ["n8n", "workflow", "small business", "booking", "lead", "invoice", "local business"], "product": "local-business-automation-pack"},
+    {"keywords": ["scam", "family", "parents", "grandparents", "deepfake"], "product": "family-ai-scam-defence-workbook"},
+    {"keywords": ["sell", "sales", "ebay", "listing", "store"], "product": "sell-with-ai"},
+    {"keywords": ["every age", "kids", "seniors", "beginner's guide"], "product": "ai-for-every-age"},
+    {"keywords": ["business lessons", "30 lessons"], "product": "30-business-lessons"}
+  ]
+}

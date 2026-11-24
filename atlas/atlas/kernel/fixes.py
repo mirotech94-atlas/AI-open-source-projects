@@ -1,6 +1,6 @@
 """Degraded checks get a fix, not just a colour.
 
-Miro, 2026-09-27: "always watch the degraded status on the app and always
+the owner, 2026-09-27: "always watch the degraded status on the app and always
 find a way to fix it." A check that has read DEGRADED or FAILING for
 `LASTING_HOURS` or more is handed to the agent roster once per
 `RETRY_HOURS`, with its own evidence, and asked to diagnose it and fix it
@@ -75,17 +75,21 @@ async def lasting(now: datetime | None = None) -> list[Lasting]:
     at least LASTING_HOURS ago (no OK reading in between), oldest first."""
     now = now or datetime.now(UTC)
     rows = await fetch_all(
-        """SELECT DISTINCT ON (o.check_id)
-                  p.name AS module, c.name AS check, o.health, o.detail,
+        # Newest row per check first, then the two look-backs once per check:
+        # the old form ran both sub-selects for every stored row before
+        # DISTINCT ON threw most of them away (70 s at 12k rows, which made
+        # the whole Command Center overview time out).
+        """SELECT p.name AS module, c.name AS check, o.health, o.detail,
                   (SELECT max(o2.at) FROM observations o2
                     WHERE o2.check_id = o.check_id AND o2.health = 'ok') AS last_ok,
                   (SELECT min(o3.at) FROM observations o3
                     WHERE o3.check_id = o.check_id
                       AND o3.at > now() - interval '30 days') AS first_seen
-             FROM observations o
+             FROM (SELECT DISTINCT ON (check_id) check_id, health, detail
+                     FROM observations
+                    ORDER BY check_id, at DESC) o
              JOIN checks c ON c.id = o.check_id
-             JOIN properties p ON p.id = c.property_id
-            ORDER BY o.check_id, o.at DESC""")
+             JOIN properties p ON p.id = c.property_id""")
     out: list[Lasting] = []
     floor = timedelta(hours=_hours("FIX_LASTING_HOURS", LASTING_HOURS))
     from .registry import REGISTRY
@@ -178,7 +182,7 @@ def prompt(item: Lasting, now: datetime) -> str:
         f"detail, quoted as data:\n{wrap_untrusted(item.detail, 'check')}\n\n"
         "Diagnose it from the evidence your read tools give you. If an action "
         "in your catalog would fix it, call that action now -- it becomes a "
-        "card for Miro when it needs his approval. If none can, say in two "
+        "card for the owner when it needs his approval. If none can, say in two "
         "sentences the exact manual step he should take. Never claim to have "
         "fixed anything you only proposed."
     )
@@ -231,7 +235,7 @@ def incident_body(item: Lasting, said: str, observed: datetime | None,
         "",
         (f"*Next step:* check {item.key.split('.', 1)[0]} directly, against "
          f"the observation above, and tell me what you find"),
-        "*Owner:* Miro",
+        "*Owner:* the owner",
         (f"*Retry:* not before {retry:%a %d %b %H:%M} UTC, and only if it "
          f"changes; unchanged, it is raised again {remind:%a %d %b} (acknowledge "
          f"it to silence it)"),

@@ -26,6 +26,7 @@ import type { AskReply, SystemCheck, VoiceFocus } from "../api";
 import { carryFocus, checklistDelayMs } from "./focus";
 import { initialBargeIn, peakOf, stepBargeIn, type BargeInState } from "./bargeIn";
 import { planInterrupt, tapAction, type InterruptCause } from "./interrupt";
+import { levelOf } from "./sparks";
 
 /**
  * The voice conversation, as a state machine.
@@ -48,11 +49,24 @@ import { planInterrupt, tapAction, type InterruptCause } from "./interrupt";
  */
 export type { Phase } from "./loop";
 
+/** ATLAS's own voice: the local clone of the NotebookLM host. `health` is
+ *  "ok" only when its server answered just now; otherwise "unknown" and Fish
+ *  Audio speaks (`speaking`). */
+export interface VoiceSource {
+  voice: string;
+  health: "ok" | "unknown";
+  as_of: string;
+  reason: string | null;
+  speaking: "clone" | "fish" | "none";
+  disclosure: string;
+}
+
 export interface Capabilities {
   transcription: boolean;
   answering: boolean;
-  /** Fish Audio text-to-speech is configured (FISH_AUDIO_API_KEY). */
+  /** Some voice can speak: the local clone, or Fish Audio. */
   speech: boolean;
+  voice_source?: VoiceSource;
   /** True only when BOTH a Picovoice key and the trained keyword file exist. */
   wake_word: boolean;
   /** The Picovoice key itself, or null. Browser-side by design. */
@@ -119,6 +133,10 @@ export interface VoiceState {
   /** The turns of this conversation, oldest first. */
   log: Turn[];
   bars: number[];
+  /** How loud ATLAS's own voice is right now, 0..1, read off the analyser on
+   *  the clip that is playing. 0 whenever nothing is playing, so the speaking
+   *  sparks stop in silence. Stable: safe to call from an animation frame. */
+  outputLevel: () => number;
   capabilities: Capabilities | null;
   wake: () => void;
   dismiss: () => void;
@@ -151,7 +169,7 @@ const FISH_TIMEOUT_MS = 15_000;
 // pause for thought -- so the turn ended mid-sentence and the half he had not
 // said yet was simply lost. Three constants instead of one:
 // Quiet before the turn is over. 2600 felt like being ignored, and so did
-// 1200 (Miro, 2026-10-06: "should answer once I stop speaking").
+// 1200 (the owner, 2026-10-06: "should answer once I stop speaking").
 const SPEECH_TAIL_MS = 750;
 const MIN_UTTERANCE_MS = 900; // a cough or a chair scrape must not end it
 const MAX_UTTERANCE_MS = 45000; // an open mic in a noisy room must not run on
@@ -166,7 +184,7 @@ const NO_SPEECH_MS = 7000;    // nothing heard at all on the FIRST turn: say so
 //
 // The fix for that was to measure the room for the first 500ms and set the
 // floor from it. That was worse, and in the more likely direction: people
-// start talking straight away. Miro says the wake word and what he wants in
+// start talking straight away. the owner says the wake word and what he wants in
 // one breath, so the calibration window sampled HIS VOICE, set the floor at
 // speech level, and then nothing he said could ever exceed it.
 //
@@ -394,6 +412,16 @@ export function useVoice(enabled: boolean): VoiceState {
     return out;
   };
 
+  /** The output level for the speaking sparks: the analyser's RMS on the
+   *  playing clip, never a guess. 0 with no analyser or no clip. */
+  const outputLevel = useCallback((): number => {
+    const analyser = speaker.current;
+    if (!analyser || !speaking.current) return 0;
+    const data = speakerData.current;
+    analyser.getByteTimeDomainData(data);
+    return levelOf(data);
+  }, []);
+
   const stopSpeaking = useCallback((): void => {
     // The rest of a reply's sentences are not said after this.
     speechRun.current += 1;
@@ -433,7 +461,7 @@ export function useVoice(enabled: boolean): VoiceState {
 
   /** Fish Audio could not voice this line: say so once, on screen and in
    *  the console, and play ATLAS's kept Fish clip of "I couldn't reach my
-   *  voice" when there is one. Never a system voice (Miro, 2026-10-06: "the
+   *  voice" when there is one. Never a system voice (the owner, 2026-10-06: "the
    *  voice is Fish Audio, not the sound of Siri or anything else"). Null
    *  when nothing is kept: the answer is then text alone. */
   const voiceUnreachable = useCallback(async (why: string): Promise<Blob | null> => {
@@ -569,7 +597,7 @@ export function useVoice(enabled: boolean): VoiceState {
     return played && answerVoiced;
   }, []);
 
-  /** Say a reply sentence by sentence (Miro, 2026-10-06: "should answer once
+  /** Say a reply sentence by sentence (the owner, 2026-10-06: "should answer once
    *  I stop speaking"): every sentence goes to Fish Audio at once and the
    *  first plays as soon as its audio is back, while the rest are made.
    *  True when the reply was voiced. */
@@ -622,7 +650,7 @@ export function useVoice(enabled: boolean): VoiceState {
     setBars(out ?? reading.bars);
 
     // Talking over an answer. `out` is null when the voice plays without an
-    // analyser: then echo and Miro cannot be told apart, and it never fires.
+    // analyser: then echo and the owner cannot be told apart, and it never fires.
     if (
       phaseRef.current === "responding" &&
       speaking.current &&
@@ -648,7 +676,7 @@ export function useVoice(enabled: boolean): VoiceState {
       const now = Date.now();
       if (speaking.current) {
         // ATLAS is talking (the acknowledgement). His own voice is not
-        // Miro's turn: the clock starts when ATLAS stops.
+        // the owner's turn: the clock starts when ATLAS stops.
         turnStarted.current = now;
         quietSince.current = now;
       }
@@ -1264,13 +1292,25 @@ export function useVoice(enabled: boolean): VoiceState {
       // Re-arm the wake gate; the effect restarts the detector.
       loop.current = { ...loop.current, handsFree: true };
       setHandsFree(true);
+    } else {
+      // "Mic off" with hands-free armed: start again, and let `mic` /
+      // `detectorProblem` show the real outcome (denied, unavailable).
+      if (detectorKind === null || detectorKind === "click-to-talk") {
+        // Nothing phrase-based to rebuild: just open the microphone.
+        void openMic();
+      } else {
+        // A detector that did not come up: rebuild it (the effect reopens
+        // the mic for the phrase detectors).
+        gateStopped.current = null;
+        setDetectorEpoch((n) => n + 1);
+      }
     }
-  }, [mic, detectorKind, endConversation]);
+  }, [mic, detectorKind, endConversation, openMic]);
 
   return {
     phase, status: statusOf(phase), mic, detector: detectorKind, detectorClap,
     detectorProblem, handsFree, transcript, answer, typed, problem, focus, kind, check,
-    speechProblem, log, bars,
+    speechProblem, log, bars, outputLevel,
     capabilities, wake, dismiss, interrupt, tap, toggleMic, speak,
   };
 }

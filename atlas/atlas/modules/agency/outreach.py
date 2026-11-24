@@ -6,10 +6,9 @@ and every guard `send_dry` and `send_outreach` check lives in one place
 (`_guarded`) so the two can never drift into checking different things —
 `send_dry` IS what `send_outreach` would have done, minus the SMTP call.
 
-**It sends without a card** (Tier AUTO since 2026-10-01; Miro, after the
-client previews rebuilt: "email clients about it", and his standing rule
-that anything not urgent runs without a card -- he approves only
-emergencies). Only past every guard below AND the holds in `auto_hold`,
+**It is a card** (Tier ASK since 2026-10-27, six agents: every send to a
+client waits for the owner). Even approved, it goes only past every guard below
+AND the holds in `auto_hold` (an approved card answers the autosend holds),
 each decided in code, never by a model:
 
   * the row is the draft `draft_outreach` wrote for the email channel: its
@@ -17,10 +16,10 @@ each decided in code, never by a model:
     body edited by hand or written by anything else does not go;
   * the address is one the business published on its own site, read by
     `agency.find_email` (`agency_lead_emails`) -- never guessed, never typed;
-  * the preview is live: `agency.deploy_site` succeeded for this lead, so
+  * the preview is live: `agency.publish_vercel` succeeded for this lead, so
     the email's link opens;
   * one outreach email per lead, ever, unless the lead wrote back: a second
-    message to someone who never answered is Miro's call, not ATLAS's;
+    message to someone who never answered is the owner's call, not ATLAS's;
   * `AGENCY_OUTREACH_AUTOSEND` is not off (on by default).
 
 A hold is answered by a card: `kernel.lead_followup.follow_site` raises
@@ -37,15 +36,11 @@ Guards run in this order, matching AGENCY.md §2.5 and CAN-SPAM:
 1. the outreach row exists and is still a `draft` (not already sent)
 2. `to_address` is set and is not on the permanent suppression list
 3. `sends_today() < AGENCY_DAILY_CAP` (default 10)
-4. `AGENCY_SEND_DOMAIN` (default `mapfront.io`) is set, and is not `example.com`
-   or a subdomain of it —
-   a young sending domain that gets blacklisted takes the *main* domain's
-   deliverability down with it if they are ever the same one
-5. the address this will actually send FROM (`AGENCY_SEND_FROM`, default
-   miro@mapfront.io; `AGENCY_SMTP_USER` only when that is an address, since
-   Resend's SMTP user is the word "resend") is itself on `AGENCY_SEND_DOMAIN`
-   — guard 4 is pointless if the message goes out from a mailbox on a
-   different domain entirely
+4. the sender is ATLAS Agency's fixed Gmail address (`AGENCY_SENDER`, the owner
+   2026-10-30), never on example.com, and `GMAIL_APP_PASSWORD` is set: without
+   it nothing is sent ("GMAIL_APP_PASSWORD missing")
+5. the body names no "mapfront": a draft written before the switch to ATLAS
+   Agency (2026-10-30) is refused, never sent with a dead link
 6. CAN-SPAM: a postal address line, an opt-out line ("reply STOP" or
    "unsubscribe"), and a non-empty subject
 7. at most one follow-up per lead: a `followup_of` row whose OWN
@@ -54,17 +49,23 @@ Guards run in this order, matching AGENCY.md §2.5 and CAN-SPAM:
 8. the holds of `auto_hold`, listed above, unless an approved card is
    running this send
 
-The email itself is written by code, not a model (`email_body`), in Miro's
-own framing (2026-10-01): "This is ATLAS Academy (Mapfront). We looked at
-<business>'s website and thought it needed help / <business> has no
-website that we could find, so we built a free preview: <url>. Reply or
-call <Mapfront's number> and we'll walk you through it; if you'd like, we
-can put you through to the owner." No claim about results, no figure, the
-CAN-SPAM footer, and the `— sent by Miro's assistant` trailer -- the
+The email itself is written by code, not a model (`email_body`), in the owner's
+own framing (2026-10-01, brand ATLAS Agency since 2026-10-30): "This is
+ATLAS Agency. We looked at <business>'s website and thought it needed help
+/ <business> has no website that we could find, so we built a free
+preview: <url>. Reply or call <our number> and we'll walk you through it;
+if you'd like, we can put you through to the owner." No claim about results, no figure, the
+CAN-SPAM footer, and the `— sent by the owner's assistant` trailer -- the
 assistant wrote every word, and the trailer says so honestly. The model
 still drafts the `call_script` and `one_pager` kinds, which nothing sends.
 An email draft needs a live preview to point at: without one it is refused,
 because "we built you a free preview" would not be true yet.
+
+Agency mail goes out FROM owner@example.com through Gmail SMTP
+(smtp.gmail.com:587, STARTTLS) with the app password in
+`GMAIL_APP_PASSWORD`, sender name "ATLAS Agency", Reply-To the same address
+(`_gmail_send`). `_smtp_send` (AGENCY_SMTP_*) stays only for ATLAS Academy's
+mail, which is not the agency's to change.
 
 Sending itself uses `aiosmtplib` when it is importable, and falls back to
 the stdlib `smtplib` off the event loop (`asyncio.to_thread`) otherwise — a
@@ -79,7 +80,7 @@ import importlib.util
 import os
 from datetime import UTC, date, datetime, time, timedelta
 from email.message import EmailMessage
-from email.utils import make_msgid
+from email.utils import formataddr, make_msgid
 from typing import Any
 
 from ...kernel.contracts import ActionResult
@@ -89,19 +90,22 @@ from .._http import explain
 from . import _store
 from .audit import audit_lead
 
-TRAILER = "— sent by Miro's assistant"
+TRAILER = "— sent by the owner's assistant"
 # The head of every hold's detail, so `kernel.lead_followup` tells a hold
 # (a card with the reason) from a refusal, the way `clips.posting.HELD` does.
 HELD = "held for you"
-# Miro, 2026-10-01: what the email calls us. The number and the domain are
-# Mapfront's, so the brand carries it in brackets.
-BRAND = "ATLAS Academy (Mapfront)"
-# Miro, 2026-09-30: Mapfront's address. Outreach and replies go out from it
-# (Resend), and replies to it are forwarded into his Gmail ("myron").
-# hello@ was the address first announced; replies to it are still read.
-DEFAULT_SEND_FROM = "miro@mapfront.io"
-DEFAULT_SEND_DOMAIN = "mapfront.io"
-LEGACY_ADDRESSES = ("hello@mapfront.io",)
+# the owner, 2026-10-30: the agency is "ATLAS Agency". Agency mail goes out from
+# this Gmail address (fixed: no env var can point it elsewhere) and its public
+# link is the storefront. 2026-11-14: ATLAS Academy's mail (receipts, sign-up,
+# support) uses the same address, so this is the ONE place the sender lives.
+BRAND = "ATLAS Agency"
+AGENCY_SENDER = "owner@example.com"
+AGENCY_URL = "https://agency.example.com"
+GMAIL_SMTP = ("smtp.gmail.com", 587)
+GMAIL_MISSING = "GMAIL_APP_PASSWORD missing: nothing was sent"
+# ATLAS Academy's sender (`_send_from_address`, `_smtp_send`) defaults to it too.
+DEFAULT_SEND_FROM = AGENCY_SENDER
+DEFAULT_SEND_DOMAIN = AGENCY_SENDER.partition("@")[2]
 
 # Plain writing, adapted from the stop-slop skill (Hardik Pandya, MIT): an
 # owner who spots an AI tell in the first line stops reading.
@@ -125,8 +129,30 @@ DRAFT_SYSTEM = (
 )
 
 
+def agency_sender() -> str:
+    """The address every agency email goes out from (the owner, 2026-10-30)."""
+    return AGENCY_SENDER
+
+
+def sender_problem() -> str | None:
+    """Why the agency sender cannot send right now: never from example.com
+    (that is the storefront, not a mailbox), and never without the app
+    password. Shared by outreach, replies and agreements."""
+    domain = agency_sender().lower().partition("@")[2]
+    if domain == "example.com" or domain.endswith(".example.com"):
+        return "the sending address must not be on example.com"
+    return gmail_problem()
+
+
+def gmail_problem() -> str | None:
+    """Why agency mail cannot go out now, or None."""
+    if not os.getenv("GMAIL_APP_PASSWORD", "").strip():
+        return GMAIL_MISSING
+    return None
+
+
 def _send_from_address() -> str:
-    """The address this module will actually put in `From:`. A separate
+    """ATLAS Academy's sender (unchanged; not the agency's). The address this module will actually put in `From:`. A separate
     `AGENCY_SEND_FROM` lets the mailbox ATLAS authenticates as
     (`AGENCY_SMTP_USER`, which may be a relay account) differ from the
     address a reply lands in, while still tying both to the one guard that
@@ -140,7 +166,7 @@ def _send_from_address() -> str:
 
 
 def send_domain() -> str:
-    """AGENCY_SEND_DOMAIN, default Mapfront's own (mapfront.io)."""
+    """AGENCY_SEND_DOMAIN, default the domain of the agency sender (gmail.com)."""
     raw = os.getenv("AGENCY_SEND_DOMAIN")
     return (DEFAULT_SEND_DOMAIN if raw is None else raw).strip().lower()
 
@@ -225,7 +251,7 @@ def body_sha(body: str) -> str:
 
 
 async def auto_hold(outreach: dict[str, Any]) -> str | None:
-    """Why this email is held for Miro rather than sent on its own, or None.
+    """Why this email is held for the owner rather than sent on its own, or None.
     Asked last, after every guard of the draft itself, and never of an
     approved card: his approval is the answer to a hold."""
     if answered_by_card():
@@ -246,7 +272,8 @@ async def auto_hold(outreach: dict[str, Any]) -> str | None:
                 "business's own site (agency.find_email)")
     links = await _store.lead_links(lead_id)
     if preview_url(links) is None:
-        return f"{HELD}: the preview is not deployed yet (agency.deploy_site)"
+        return (f"{HELD}: the preview is not published on Vercel yet "
+                "(agency.publish_vercel)")
     if await _store.has_outreach(lead_id) and (
             await _store.latest_lead_message(lead_id)) is None:
         return (f"{HELD}: lead {lead_id} was already emailed once and has not "
@@ -265,10 +292,13 @@ async def _guarded(outreach_id: int) -> tuple[dict[str, Any] | None, str | None]
         return None, (f"outreach {outreach_id} is not a draft "
                       f"(status={outreach.get('status')!r})")
 
-    from .verify import contact_refusal
+    from .verify import contact_refusal, us_refusal
     unverified = await contact_refusal(int(outreach.get("lead_id") or 0))
     if unverified is not None:
         return None, unverified
+    not_us = await us_refusal(int(outreach.get("lead_id") or 0))
+    if not_us is not None:
+        return None, not_us
 
     to_address = (outreach.get("to_address") or "").strip().lower()
     if not to_address:
@@ -281,21 +311,14 @@ async def _guarded(outreach_id: int) -> tuple[dict[str, Any] | None, str | None]
     if sent_today >= cap:
         return None, f"daily send cap reached ({sent_today}/{cap})"
 
-    domain = send_domain()
-    if not domain:
-        return None, "AGENCY_SEND_DOMAIN is not set"
-    if domain == "example.com" or domain.endswith(".example.com"):
-        return None, "AGENCY_SEND_DOMAIN must not be example.com or a subdomain of it"
-
-    from_address = _send_from_address()
-    if not from_address:
-        return None, "AGENCY_SEND_FROM / AGENCY_SMTP_USER is not set"
-    _local, _, from_domain = from_address.lower().partition("@")
-    if not from_domain or from_domain != domain:
-        return None, (f"the sending address {from_address!r} is not on "
-                      f"AGENCY_SEND_DOMAIN ({domain})")
+    problem = sender_problem()
+    if problem:
+        return None, problem
 
     body = outreach.get("body") or ""
+    if "mapfront" in body.lower():
+        return None, ("the draft names mapfront, written before the switch to "
+                      "ATLAS Agency: draft it again")
     postal = os.getenv("AGENCY_POSTAL_ADDRESS", "")
     missing = can_spam_ok(body, postal)
     if not (outreach.get("subject") or "").strip():
@@ -331,7 +354,7 @@ def pretty_phone(number: str) -> str:
 
 
 def mapfront_number() -> str:
-    """The business line (`api.reception`), where Mapfront's AI assistant
+    """The business line (`api.reception`), where the agency's AI assistant
     answers; "" while it is switched off -- nothing ever gives out a number
     nobody answers."""
     on = os.getenv("RECEPTION_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
@@ -341,20 +364,20 @@ def mapfront_number() -> str:
 
 def callback_line() -> str:
     """The number a business rings back on. The AI answers it, so it is
-    Mapfront's number, never "Miro's"."""
+    the agency's number, never "the owner's"."""
     number = mapfront_number()
-    return f"Questions? Call or text Mapfront at {number}." if number else ""
+    return f"Questions? Call or text {BRAND} at {number}." if number else ""
 
 
 def more_info_line() -> str:
-    """Every drafted reply to a lead carries this (Miro, 2026-09-30)."""
+    """Every drafted reply to a lead carries this (the owner, 2026-09-30)."""
     number = mapfront_number()
-    return (f"For more information, call or text Mapfront at {number}; our AI "
+    return (f"For more information, call or text {BRAND} at {number}; our AI "
             "assistant answers any time.") if number else ""
 
 
 def escalation_phone() -> str:
-    """Miro's own phone, for a lead who asks for him: AGENCY_ESCALATION_PHONE,
+    """the owner's own phone, for a lead who asks for him: AGENCY_ESCALATION_PHONE,
     else TWILIO_TO (the number ATLAS already rings him on). Never in a first
     cold email: only in replies, and on the line when someone asks for a
     person or is upset."""
@@ -365,31 +388,23 @@ def escalation_phone() -> str:
 
 def escalation_line() -> str:
     number = escalation_phone()
-    return f"To speak to Miro directly, call {number}." if number else ""
+    return f"To speak to the owner directly, call {number}." if number else ""
 
 
 def preview_url(links: dict[str, Any]) -> str | None:
     """The public address of what was built for the lead, once it is live:
-    the client's own domain, else https://<slug>.mapfront.io/. None before a
-    deploy -- a path on this box is never something to send."""
-    from . import hosting
-    if not links.get("deployed"):
+    the domain `agency.publish_vercel` recorded (or the client's own). None
+    before that -- there is no box-hosted fallback any more (the owner,
+    2026-10-30: demos live on Vercel only)."""
+    if not links.get("deployed") or not links.get("domain"):
         return None
-    if links.get("domain"):
-        return f"https://{links['domain']}/"
-    slug = links.get("slug")
-    if slug and hosting.slug_problem(slug) is None:
-        return hosting.public_url(str(slug))
-    return None
+    return f"https://{links['domain']}/"
 
 
 def call_me_url(links: dict[str, Any]) -> str | None:
-    """The "Have Mapfront call me" form on a live preview (`callme.py`)."""
-    from . import hosting
-    slug = links.get("slug")
-    if not links.get("deployed") or not slug or hosting.slug_problem(slug):
-        return None
-    return hosting.public_url(str(slug)) + "#call-me"
+    """The call-me form was served by this box, which no longer serves demos:
+    no preview carries it, so there is no link."""
+    return None
 
 
 def site_lines(links: dict[str, Any]) -> list[str]:
@@ -405,37 +420,59 @@ def site_lines(links: dict[str, Any]) -> list[str]:
     return lines
 
 
+_NOT_A_SITE = ("instagram.com", "facebook.com", "booksy.com", "yelp.com",
+               "linktr.ee", "tiktok.com", "google.com", "square.site")
+
+
+def has_own_site(lead: dict[str, Any]) -> bool:
+    """A business whose only web presence is a social or booking page has no
+    website of its own: the email must not say "your website" to it."""
+    site = str(lead.get("website") or "").strip().lower()
+    return bool(site) and not any(h in site for h in _NOT_A_SITE)
+
+
+def email_subject(lead: dict[str, Any], *, followup: bool = False) -> str:
+    name = " ".join(str(lead.get("name") or "your business").split())
+    head = ("A free website for " if not has_own_site(lead)
+            else "A free redesign demo for ")
+    return ("Following up: " if followup else "") + head + name
+
+
 def email_body(lead: dict[str, Any], live: str, links: dict[str, Any],
                *, followup: bool = False) -> str:
-    """Miro's framing (2026-10-01), written by code so a model can neither
-    inflate it nor drop a line: who we are, what we looked at (only a site
-    the lead has: saying "your website" to a business with none is the
-    first untrue thing in the email), the free preview, how to reach us,
-    and the owner on request. Then the CAN-SPAM footer and the trailer."""
+    """the owner's copy (2026-10-30), written by code so a model can neither
+    inflate it nor drop a line. Two variants: no website of its own, or a
+    website that can be improved (only the latter is told "we looked at your
+    website"). Then the CAN-SPAM footer the send guard requires."""
     name = " ".join(str(lead.get("name") or "your business").split())
-    if lead.get("website"):
-        looked = (f"We looked at {name}'s website and thought it needed help, "
-                  f"so we built a free preview: {live}")
+    asks = ("Just reply with what you'd want on it (booking, payments, a "
+            "gallery, maps, reviews, whatever makes sense) and I'll take it "
+            "from there.")
+    if has_own_site(lead):
+        intro = (f"I'm the owner, I run an agency called {BRAND}. I came across "
+                 f"the website for {name} and thought it could be doing more "
+                 f"for you, so I put together a demo of a redesigned one. No "
+                 f"charge, have a look: {live}")
+        offer = ("If you like it, we can get a proper version live in under a "
+                 "week for $300, everything included. The real one has a lot "
+                 "more to it than the demo (integrations, search, the works). "
+                 + asks)
     else:
-        looked = (f"{name} has no website that we could find, so we built a "
-                  f"free preview: {live}")
-    number = mapfront_number()
-    reach = (f"Reply to this email or call Mapfront at {number} and we'll walk "
-             "you through it; if you'd like, we can put you through to the owner."
-             if number else
-             "Reply to this email and we'll walk you through it; if you'd like, "
-             "we can put you through to the owner.")
-    parts = [f"This is {BRAND}."]
+        intro = (f"I'm the owner, I run an agency called {BRAND}. I noticed "
+                 f"{name} doesn't have a website yet, so I built a demo of one "
+                 f"for you. No charge, have a look: {live}")
+        offer = ("If you like it, we can have your live site up in under a "
+                 "week for $300, everything included. The real one has a lot "
+                 "more to it than the demo (integrations, search, the works). "
+                 + asks)
+    parts = ["Hi,"]
     if followup:
-        parts.append("A short follow-up to our last email, in case it was missed.")
-    parts.extend([looked, reach])
-    call_me = call_me_url(links)
-    if call_me:
-        parts.append(f"Rather talk it through? Have us call you: {call_me}")
+        parts.append("Following up on my last email in case it got buried.")
+    parts.extend([intro, offer, "the owner"])
     postal = os.getenv("AGENCY_POSTAL_ADDRESS", "").strip()
-    if postal:
-        parts.append(postal)
-    parts.extend(["Reply STOP to opt out.", TRAILER])
+    footer = f"{BRAND} · {AGENCY_URL}"
+    parts.append(f"{footer} · {postal}" if postal else footer)
+    parts.append("If you'd rather not hear from me, just reply stop.")
     return "\n\n".join(parts)
 
 
@@ -450,7 +487,7 @@ async def _model_draft(lead: dict[str, Any], audit: Any, mockup_path: str | None
         f"Business name: {lead.get('name')}\n"
         f"Category: {lead.get('category')}\n"
         f"Audit findings:\n{findings_text}\n"
-        f"What Miro built: {built}\n"
+        f"What the owner built: {built}\n"
         f"{'This is a follow-up to an earlier message that got no reply.' if parent_id else ''}"
     )
     wrapped = wrap_untrusted(material, "agency-audit")
@@ -483,7 +520,7 @@ async def draft_outreach(lead_id: int, kind: str) -> ActionResult:
     if kind == "email":
         if live is None:
             return ActionResult(False, "refused: no live preview to point the email "
-                                       "at; deploy the site first (agency.deploy_site)")
+                                       "at; publish it on Vercel first (agency.publish_vercel)")
         # Only an address the business published on its own site
         # (`agency.find_email`), never a guess.
         from .contacts import published_email
@@ -491,8 +528,7 @@ async def draft_outreach(lead_id: int, kind: str) -> ActionResult:
         to_address = (found or {}).get("address")
         body = email_body(lead, live, links, followup=parent_id is not None)
         sha = body_sha(body)
-        subject = (f"Following up: a free website preview for {lead.get('name')}"
-                   if parent_id else f"A free website preview for {lead.get('name')}")
+        subject = email_subject(lead, followup=parent_id is not None)
     else:
         body = await _model_draft(lead, audit, mockup_path, parent_id, live)
 
@@ -505,7 +541,8 @@ async def draft_outreach(lead_id: int, kind: str) -> ActionResult:
     return ActionResult(
         True, f"drafted {kind} outreach #{outreach_id} for lead {lead_id}",
         evidence={"outreach_id": outreach_id, "kind": kind, "followup_of": parent_id,
-                 "to": to_address, "text": body, "preview_url": live,
+                 "to": to_address, "subject": subject, "text": body,
+                 "preview_url": live,
                  "lead_features": lead_features, "audit_severity": audit.severity,
                  "body_sha": body_sha(body)[:12]},
         rollback_token=str(outreach_id))
@@ -545,41 +582,47 @@ async def send_dry(outreach_id: int) -> ActionResult:
     if reason is not None:
         return ActionResult(False, reason)
     lead_features = await _lead_features_for(outreach["lead_id"])
+    # Exactly what approving sends: the address, the subject, the words and
+    # the preview they point at (the card shows them; nothing is sent here).
+    links = await _store.lead_links(int(outreach["lead_id"]))
     return ActionResult(
         True, f"would send outreach {outreach_id} to {outreach['to_address']}",
-        evidence={"lead_features": lead_features})
+        evidence={"lead_features": lead_features, "to": outreach.get("to_address"),
+                  "subject": outreach.get("subject"), "text": outreach.get("body"),
+                  "preview_url": preview_url(links)})
 
 
-async def _smtp_send(from_address: str, to_address: str, subject: str,
-                     body: str, message_id: str | None = None
-                     ) -> tuple[bool, str | None]:
-    host = os.getenv("AGENCY_SMTP_HOST")
-    port_raw = os.getenv("AGENCY_SMTP_PORT")
-    user = os.getenv("AGENCY_SMTP_USER")
-    password = os.getenv("AGENCY_SMTP_PASSWORD")
-    if not (host and port_raw and user and password):
-        return False, "AGENCY_SMTP_HOST/PORT/USER/PASSWORD not fully configured"
-    try:
-        port = int(port_raw)
-    except ValueError:
-        return False, "AGENCY_SMTP_PORT is not a number"
-
+def _message(from_header: str, to_address: str, subject: str, body: str,
+             message_id: str | None, reply_to: str | None = None,
+             headers: dict[str, str] | None = None,
+             html: str | None = None) -> EmailMessage:
     message = EmailMessage()
-    message["From"] = from_address
+    message["From"] = from_header
     message["To"] = to_address
     message["Subject"] = subject
+    if reply_to:
+        message["Reply-To"] = reply_to
     if message_id:
         # Our own id, so the read-back can find this message (RA-D1).
         message["Message-ID"] = message_id
+    for name, value in (headers or {}).items():
+        message[name] = value
     message.set_content(body)
+    if html:
+        message.add_alternative(html, subtype="html")
+    return message
 
+
+async def _deliver(message: EmailMessage, host: str, port: int, user: str,
+                   password: str) -> tuple[bool, str | None]:
+    """STARTTLS, then login. Errors through `explain`: no password shows."""
     if importlib.util.find_spec("aiosmtplib") is not None:
         import aiosmtplib
         try:
             await aiosmtplib.send(message, hostname=host, port=port, username=user,
                                   password=password, start_tls=True)
         except Exception as exc:                            # noqa: BLE001
-            return False, explain(exc)
+            return False, _scrub(explain(exc), password)
         return True, None
 
     def _send_sync() -> None:
@@ -592,8 +635,93 @@ async def _smtp_send(from_address: str, to_address: str, subject: str,
     try:
         await asyncio.to_thread(_send_sync)
     except Exception as exc:                            # noqa: BLE001
-        return False, explain(exc)
+        return False, _scrub(explain(exc), password)
     return True, None
+
+
+def _scrub(reason: str, password: str) -> str:
+    """`explain` redacts known token shapes; an app password has none, so
+    take it out by value too."""
+    return reason.replace(password, "[redacted]") if password else reason
+
+
+async def _gmail_send(to_address: str, subject: str, body: str,
+                      message_id: str | None = None) -> tuple[bool, str | None]:
+    """Agency mail: From "ATLAS Agency" <owner@example.com> through
+    smtp.gmail.com:587 STARTTLS with GMAIL_APP_PASSWORD. Fails closed, with
+    no connection attempted, when the password is empty."""
+    problem = gmail_problem()
+    if problem:
+        return False, problem
+    password = os.getenv("GMAIL_APP_PASSWORD", "").strip()
+    sender = agency_sender()
+    message = _message(formataddr((BRAND, sender)), to_address, subject, body,
+                       message_id, reply_to=sender)
+    host, port = GMAIL_SMTP
+    ok, reason = await _deliver(message, host, port, sender, password)
+    if not ok:
+        return False, f"Gmail refused the message, nothing was sent: {reason}"
+    return True, None
+
+
+RESEND_SMTP = ("smtp.resend.com", 587, "resend")
+
+
+def _smtp_config(from_address: str = "") -> tuple[str, int, str, str] | None:
+    """ATLAS Academy's relay: the four AGENCY_SMTP_* when all are set; else
+    Gmail SMTP when `from_address` is the agency's own Gmail sender and
+    GMAIL_APP_PASSWORD is set (Resend cannot send From a gmail.com address);
+    else Resend's SMTP relay from RESEND_API_KEY alone; else None. Raises
+    ValueError when AGENCY_SMTP_PORT is set but not a number."""
+    host = os.getenv("AGENCY_SMTP_HOST")
+    port_raw = os.getenv("AGENCY_SMTP_PORT")
+    user = os.getenv("AGENCY_SMTP_USER")
+    password = os.getenv("AGENCY_SMTP_PASSWORD")
+    if host and port_raw and user and password:
+        return host, int(port_raw), user, password
+    gmail_pw = os.getenv("GMAIL_APP_PASSWORD", "").strip()
+    if gmail_pw and from_address.strip().lower() == agency_sender().lower():
+        return (*GMAIL_SMTP, agency_sender(), gmail_pw)
+    key = os.getenv("RESEND_API_KEY", "").strip()
+    if key:
+        relay, port, login = RESEND_SMTP
+        return relay, port, login, key
+    return None
+
+
+async def _smtp_send(from_address: str, to_address: str, subject: str,
+                     body: str, message_id: str | None = None,
+                     headers: dict[str, str] | None = None,
+                     html: bool = False) -> tuple[bool, str | None]:
+    """ATLAS Academy's mail (AGENCY_SMTP_*, else Gmail when it is sent from
+    the agency's Gmail address, else Resend); agency mail uses `_gmail_send`."""
+    try:
+        config = _smtp_config(from_address)
+    except ValueError:
+        return False, "AGENCY_SMTP_PORT is not a number"
+    if config is None:
+        return False, ("mail is not configured: set AGENCY_SMTP_HOST/PORT/USER/"
+                       "PASSWORD, or RESEND_API_KEY for Resend's SMTP relay")
+    host, port, user, password = config
+    page = None
+    if html:                       # the Academy look; cold agency mail stays plain
+        from ..academy import mail_template
+        page = mail_template.render(subject, body)
+    message = _message(from_address, to_address, subject, body, message_id,
+                       headers=headers, html=page)
+    ok, reason = await _deliver(message, host, port, user, password)
+    if not ok and host == RESEND_SMTP[0]:
+        reason = ("Resend refused the message, nothing was sent (is the sending "
+                  f"domain verified in Resend?): {reason}")
+    return ok, reason
+
+
+def _owner_signed(body: str) -> bool:
+    """the owner's own cold email (2026-10-31): signed "the owner" and ending on the
+    CAN-SPAM opt-out line instead of the assistant trailer."""
+    lines = [ln.strip() for ln in body.rstrip().splitlines() if ln.strip()]
+    return ("the owner" in lines and bool(lines)
+            and ("reply stop" in lines[-1].lower() or "unsubscribe" in lines[-1].lower()))
 
 
 async def send_outreach(outreach_id: int) -> ActionResult:
@@ -609,15 +737,16 @@ async def send_outreach(outreach_id: int) -> ActionResult:
     if outreach.get("kind") != "email":
         return ActionResult(False, f"refused: kind is {outreach.get('kind')!r}, not 'email'")
     body = outreach["body"]
-    if not body.endswith(TRAILER):
-        return ActionResult(False, "refused: body does not end with the assistant trailer")
+    if not (body.endswith(TRAILER) or _owner_signed(body)):
+        return ActionResult(False, "refused: body does not end with the assistant trailer "
+                                   "or the owner's signature and the opt-out line")
 
-    from_address = _send_from_address()
+    from_address = agency_sender()
     # A Message-ID of ATLAS's own making: SMTP returns no id, and this is the
     # one handle a read-back of the sent copy can search for (RA-D1).
     message_id = make_msgid(domain=from_address.rpartition("@")[2] or None)
-    ok, send_reason = await _smtp_send(
-        from_address, outreach["to_address"], outreach.get("subject") or "", body,
+    ok, send_reason = await _gmail_send(
+        outreach["to_address"], outreach.get("subject") or "", body,
         message_id=message_id)
     if not ok:
         return ActionResult(False, f"send failed: {send_reason}")

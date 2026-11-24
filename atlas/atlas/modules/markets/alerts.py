@@ -1,6 +1,6 @@
-"""markets.alert -- Ivan tells Miro when something happened. It never trades.
+"""markets.alert -- Ivan tells the owner when something happened. It never trades.
 
-Miro, 2026-09-29: "act, not just watch". The act is a Slack message to him,
+the owner, 2026-09-29: "act, not just watch". The act is a Slack message to him,
 nothing more: a Tier 1 action (`markets.alert`) run by the kernel's alert
 tick (`kernel/market_alerts.py`) through `executor.execute`, like every
 other action. What it alerts on, each from a reading already taken, with
@@ -16,7 +16,7 @@ that reading's time:
   baseline read stored;
 * **Alinea trailing VOO** by the Alinea check's own rule (more than 5
   points over at least 90 days, `alinea.py`), once per statement;
-* **Miro's own TradingView alert**, each one TradingView sent to
+* **the owner's own TradingView alert**, each one TradingView sent to
   /hooks/tradingview (`tradingview.py`): its name, ticker, TradingView's
   price and time, and Ivan's own latest price with its read time when he
   has one. Marked notified in `tradingview_alerts` only once delivered.
@@ -229,7 +229,7 @@ async def gather(now: datetime) -> list[Event]:
 
 
 async def tradingview_events(now: datetime) -> list[Event]:
-    """Miro's own TradingView alerts not yet delivered (`tradingview.py`).
+    """the owner's own TradingView alerts not yet delivered (`tradingview.py`).
     A read that fails is logged and skipped: TradingView's table must not
     hold back a move, a filing or Alinea."""
     from .tradingview import EVENT_FIELDS, pending_tradingview_events
@@ -336,7 +336,7 @@ async def alert_dry(key: str) -> ActionResult:
     why = _problem(row, now, await claimed_today(now), daily_cap())
     if why:
         return ActionResult(False, why)
-    return ActionResult(True, f"would send Miro: {row['title']}",
+    return ActionResult(True, f"would send the owner: {row['title']}",
                         evidence={"key": key, "kind": row["kind"]})
 
 

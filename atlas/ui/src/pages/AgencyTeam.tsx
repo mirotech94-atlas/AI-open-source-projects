@@ -1,6 +1,6 @@
 /**
  * What the old Agents tab (Fleet) showed that the Agency room did not, moved
- * here whole when the two tabs became one (Miro, 2026-09-29: "keep only
+ * here whole when the two tabs became one (the owner, 2026-09-29: "keep only
  * agency"): the "Run all agents" warm-up, the org chart with each business's
  * deep dive (checks, last runs, memory scope), and the live feed of runs.
  * Every read keeps its own read time; nothing here writes anything except
@@ -11,6 +11,8 @@ import { api, type AgentFeedItem, type AgentSummary } from "../api";
 import { current } from "../core/core-tiles";
 import { useFresh, type Fresh } from "../hooks/useFresh";
 import { checkReading } from "./fleetModel";
+import { FRONT_DOOR_AGENT, isRetiredAgent } from "./roster";
+import { outcomeDetail, outcomeLine } from "./outcomeText";
 
 /** How the "Run all agents" button waits for its own results to land: it
  *  polls the roster every 5s (its own read, not the world's) and gives up
@@ -21,7 +23,6 @@ const WARM_POLL_MS = 5000;
 // past one, and a button that gave up at 60 s invited a second, refused click.
 const WARM_MAX_POLLS = 36;
 
-const CONCIERGE = "concierge";
 /** How many feed rows to search for a business's own runs. The Live feed
  *  panel shows the newest 40 of these -- the same read, sliced twice. */
 export const FEED_SEARCH_LIMIT = 200;
@@ -97,12 +98,13 @@ export function RunAllAgents({
 }
 
 /** A business's own second-tier reports: the role agents it hands off to,
- *  minus concierge and any other business. Two levels deep, no third. */
+ *  minus the front door and any other business. Two levels deep, no third. */
 function roleReports(
   business: AgentSummary, roster: AgentSummary[], businessNames: Set<string>,
 ): AgentSummary[] {
   return business.handoff
-    .filter((name) => name !== CONCIERGE && !businessNames.has(name))
+    .filter((name) => name !== FRONT_DOOR_AGENT && !isRetiredAgent(name)
+      && !businessNames.has(name))
     .map((name) => roster.find((a) => a.name === name) ?? {
       name, title: name, display: name, brief: "", need: null, available: false,
       providers: [], tools: 0, last_run_at: null, last_outcome: null,
@@ -190,8 +192,8 @@ function DeepDive({
                 {item.to ? ` → ${item.to}` : ""}
               </span>
               <span className="task">{item.task || "—"}</span>
-              <span className="outcome" title={item.outcome ?? undefined}>
-                {item.outcome || "—"}
+              <span className="outcome" title={outcomeDetail(item.outcome) ?? undefined}>
+                {outcomeLine(item.outcome) ?? "—"}
               </span>
               <span className="t">{clock(item.at)}</span>
             </li>
@@ -230,14 +232,15 @@ export function OrgChart({
 }): JSX.Element | null {
   const overview = useFresh(() => api.overview(), [reloadKey]);
   const [selected, setSelected] = useState<string | null>(null);
-  const concierge = roster.find((a) => a.name === CONCIERGE) ?? null;
-  // A business is a roster agent concierge hands off to that is ALSO a real
-  // module (`/api/overview`'s own list): concierge.handoff mixes businesses
-  // with role agents, and nothing in AgentSummary alone tells them apart.
+  // The front door (inbox) leads; the seven other roster agents report to it.
+  // A report is clickable when it is ALSO a real module (`/api/overview`'s
+  // own list): nothing in AgentSummary alone tells the two apart.
+  const lead = roster.find((a) => a.name === FRONT_DOOR_AGENT) ?? null;
   const moduleNames = new Set((overview.data?.modules ?? []).map((m) => m.module));
-  const reports = concierge ? roster.filter((a) => concierge.handoff.includes(a.name)) : [];
+  const reports = lead
+    ? roster.filter((a) => a.name !== lead.name && !isRetiredAgent(a.name)) : [];
   const selectedAgent = selected ? roster.find((a) => a.name === selected) ?? null : null;
-  if (!concierge) return null;
+  if (!lead) return null;
 
   return (
     <>
@@ -253,7 +256,7 @@ export function OrgChart({
           <p className="stamp">Click a business for its checks, last runs and memory scope.</p>
           <div className="org-chart">
             <div className="org-top">
-              <span className="org-node">{concierge.title}</span>
+              <span className="org-node">{lead.title}</span>
             </div>
             {reports.length > 0 && (
               <div className="org-children"
@@ -315,8 +318,8 @@ export function LiveFeed({ feed }: { feed: Fresh<{ items: AgentFeedItem[] }> }):
                 {item.to ? ` → ${item.to}` : ""}
               </span>
               <span className="task">{item.task || "—"}</span>
-              <span className="outcome" title={item.outcome ?? undefined}>
-                {item.outcome || "—"}
+              <span className="outcome" title={outcomeDetail(item.outcome) ?? undefined}>
+                {outcomeLine(item.outcome) ?? "—"}
               </span>
               <span className="t">{clock(item.at)}</span>
             </li>

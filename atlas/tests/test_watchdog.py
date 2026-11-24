@@ -312,3 +312,151 @@ def test_crash_is_never_a_success_code(net, tmp_path, monkeypatch):
     code = wd.main(["--env-file", str(env), "--state", str(tmp_path / "s.json")])
     assert code == wd.EXIT_CRASHED
     assert code not in (wd.EXIT_OK, wd.EXIT_NOT_OK)
+
+
+def test_default_url_is_local_atlas():
+    assert wd.DEFAULT_URL == "http://127.0.0.1:8080/healthz"
+
+
+@pytest.mark.parametrize(("url", "applies"), [
+    ("http://127.0.0.1:8080/healthz", False),
+    ("http://localhost:8080/healthz", False),
+    ("https://127.0.0.1/healthz", True),
+    ("http://atlas.example.test/healthz", True),
+    (URL, True),
+])
+def test_tls_applies_only_off_loopback_http(url, applies):
+    assert wd.tls_applies(url) is applies
+
+
+def test_run_checks_local_http_skips_tls_remote_http_is_unknown(monkeypatch, tmp_path):
+    monkeypatch.setattr(wd, "fetch_healthz",
+                        lambda u: (wd.Result("healthz", wd.OK, "ok"), {}))
+    cfg = _cfg(tmp_path)
+    cfg.url = "http://127.0.0.1:8080/healthz"
+    assert [r.name for r in wd.run_checks(cfg)] == ["healthz", "heartbeat"]
+    cfg.url = "http://atlas.example.test/healthz"
+    tls = {r.name: r for r in wd.run_checks(cfg)}["tls"]
+    assert tls.state == wd.UNKNOWN
+
+
+# ------------------------------------------- Spark: user paths and URL (Phase 1)
+
+def test_non_root_defaults_are_user_paths(monkeypatch, tmp_path):
+    """The Spark has no sudo: without root the env file and state fall back to
+    XDG paths under the user's home, never /etc or /var/lib."""
+    monkeypatch.delenv("ATLAS_WATCHDOG_ENV_FILE", raising=False)
+    monkeypatch.delenv("ATLAS_WATCHDOG_STATE", raising=False)
+    monkeypatch.delenv("CREDENTIALS_DIRECTORY", raising=False)
+    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+    monkeypatch.delenv("XDG_STATE_HOME", raising=False)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setattr(wd.os, "geteuid", lambda: 1000)
+    assert wd.default_env_file() == tmp_path / ".config/atlas-watchdog/watchdog.env"
+    assert wd.default_state() == tmp_path / ".local/state/atlas-watchdog/state.json"
+    monkeypatch.setattr(wd.os, "geteuid", lambda: 0)
+    assert str(wd.default_env_file()) == wd.DEFAULT_ENV_FILE
+    assert str(wd.default_state()) == wd.DEFAULT_STATE
+
+
+def test_xdg_variables_are_honoured(monkeypatch, tmp_path):
+    monkeypatch.setattr(wd.os, "geteuid", lambda: 1000)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "c"))
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "s"))
+    assert wd.default_env_file() == tmp_path / "c/atlas-watchdog/watchdog.env"
+    assert wd.default_state() == tmp_path / "s/atlas-watchdog/state.json"
+
+
+def test_url_comes_from_the_env_file(monkeypatch, tmp_path):
+    for k in ("ATLAS_WATCHDOG_WEBHOOK", "ATLAS_WATCHDOG_URL", "CREDENTIALS_DIRECTORY"):
+        monkeypatch.delenv(k, raising=False)
+    env = tmp_path / "watchdog.env"
+    env.write_text(f"ATLAS_WATCHDOG_WEBHOOK={HOOK}\n"
+                   "ATLAS_WATCHDOG_URL=https://agency.example.test/healthz\n")
+    env.chmod(0o600)
+    cfg = wd.load_config(str(env), str(tmp_path / "s.json"))
+    assert cfg.url == "https://agency.example.test/healthz"
+    assert cfg.seen_path == tmp_path / "seen.json"      # next to the state file
+
+
+def test_the_example_env_names_the_variable_with_no_secret():
+    text = (_PATH.parent / "watchdog.env.example").read_text()
+    assert "ATLAS_WATCHDOG_WEBHOOK=" in text
+    assert "hooks.slack.com/services/" not in text.replace(
+        "https://hooks.slack.com/services/<", "")         # placeholder form only
+    assert "xoxb-" not in text
+
+
+# --------------------------------------------- reverse heartbeat: seen.json
+
+def _seen(cfg) -> dict:
+    return json.loads((cfg.state_path.parent / "seen.json").read_text())
+
+
+def test_seen_is_written_with_no_webhook(net, tmp_path):
+    """The record exists before the webhook branch, and says the route is not
+    configured, so ATLAS can never read the watchdog as healthy from it."""
+    net.healthz = _healthy_with_heartbeat()
+    cfg = _cfg(tmp_path, webhook=None)
+    assert wd.run(cfg) == wd.EXIT_NO_ROUTE
+    seen = _seen(cfg)
+    assert seen["route_configured"] is False
+    assert seen["healthz_state"] == "OK" and seen["last_healthz_ok_at"]
+    assert not cfg.state_path.exists()
+
+
+def test_seen_with_a_webhook_records_the_read(net, tmp_path):
+    net.healthz = _healthy_with_heartbeat()
+    cfg = _cfg(tmp_path)
+    assert wd.run(cfg) == wd.EXIT_OK
+    seen = _seen(cfg)
+    assert seen["route_configured"] is True and seen["healthz_state"] == "OK"
+    assert seen["at"] == seen["last_healthz_ok_at"]
+    assert HOOK not in json.dumps(seen) and "hooks.slack" not in json.dumps(seen)
+
+
+def test_seen_keeps_the_last_good_read_when_healthz_fails(net, tmp_path):
+    net.healthz = _healthy_with_heartbeat()
+    cfg = _cfg(tmp_path)
+    wd.run(cfg)
+    good = _seen(cfg)["last_healthz_ok_at"]
+    net.healthz = urllib.error.URLError("refused")
+    wd.run(cfg)
+    seen = _seen(cfg)
+    assert seen["healthz_state"] == "FAIL"
+    assert seen["last_healthz_ok_at"] == good           # not advanced by a failure
+
+
+def test_seen_is_written_even_when_the_alert_cannot_be_sent(net, tmp_path):
+    net.healthz = urllib.error.URLError("refused")
+    net.slack_fails = True
+    cfg = _cfg(tmp_path)
+    assert wd.run(cfg) == wd.EXIT_SEND_FAILED
+    assert _seen(cfg)["healthz_state"] == "FAIL"
+
+
+def test_bot_token_route_counts_as_configured_and_posts(net, tmp_path, monkeypatch):
+    cfg = _cfg(tmp_path, webhook=None)
+    cfg.slack_token, cfg.slack_channel = "xoxb-1-2-secretpart", "C123"
+    assert cfg.route
+    sent = []
+    monkeypatch.setattr(wd, "post_bot", lambda t, c, text: sent.append((t, c)))
+    wd.run(cfg)
+    assert sent == [("xoxb-1-2-secretpart", "C123")]
+    assert json.loads(cfg.seen_path.read_text())["route_configured"] is True
+
+
+def test_dead_local_port_reads_fail_and_alerts_never_ok(tmp_path):
+    """No fakes on the network side: a loopback port nothing listens on (the
+    tunnel or ATLAS is down) is FAIL, the heartbeat is UNKNOWN, never OK."""
+    import socket
+    s = socket.socket()
+    s.bind(("127.0.0.1", 0))
+    port = s.getsockname()[1]
+    s.close()
+    cfg = _cfg(tmp_path)
+    cfg.url = f"http://127.0.0.1:{port}/healthz"
+    res = {r.name: r for r in wd.run_checks(cfg)}
+    assert res["healthz"].state == wd.FAIL
+    assert res["heartbeat"].state == wd.UNKNOWN
+    assert "tls" not in res

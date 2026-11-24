@@ -74,7 +74,7 @@ def _knowledge(monkeypatch, *, fails: bool = False) -> list[str]:
 @pytest.mark.parametrize("where", [
     {"channel": "C0GENERAL"},                                  # a channel
     {"channel": "C0FLYCHEAP", "thread_ts": "1699999999.000001"},  # a thread
-    {"channel": "D0MIRO", "channel_type": "im"},               # a DM
+    {"channel": "D0OWNER", "channel_type": "im"},               # a DM
 ])
 async def test_D01_a_question_in_any_channel_is_answered_where_it_was_asked(
         pg, slack, monkeypatch, where):
@@ -126,7 +126,7 @@ def test_D02_yes_under_one_card_approves_exactly_that_card(
     monkeypatch.setattr(slack_events, "_parent", parent)
     post(client, message("yes", ts="1.5", thread_ts="1.0"))
     settle()
-    assert decided == [(83, "approve", "slack:UMIRO")]
+    assert decided == [(83, "approve", "slack:UOWNER")]
 
 
 @pytest.mark.parametrize("text", ["yes", "do it", "approve"])
@@ -165,7 +165,7 @@ def test_D03_decline_declines_and_never_executes(client, decisions, memory_backe
     _pending(memory_backend, 82)
     post(client, message("decline"))
     settle()
-    assert decided == [(82, "decline", "slack:UMIRO")]
+    assert decided == [(82, "decline", "slack:UOWNER")]
 
 
 # -------------------------------------------------------------------- D05
@@ -174,7 +174,7 @@ def test_D03_decline_declines_and_never_executes(client, decisions, memory_backe
 async def test_D05_a_diagnostic_that_hits_its_tool_limit_checkpoints_unknowns_and_a_next_step(
         pg, monkeypatch):
     from atlas.kernel import fixes
-    await seed_check("vpsie", "balance", "failing", "balance read 3.10 USD", hours=4)
+    await seed_check("cloudco", "balance", "failing", "balance read 3.10 USD", hours=4)
     posted: list = []
 
     async def route(_prompt):

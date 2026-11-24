@@ -1,5 +1,5 @@
 """RA-F3: drafts ATLAS starts by itself stop at the review backlog cap; one
-Miro asked for (a voice or Slack source) is never held back."""
+the owner asked for (a voice or Slack source) is never held back."""
 from __future__ import annotations
 
 import pytest

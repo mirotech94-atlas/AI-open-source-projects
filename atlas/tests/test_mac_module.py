@@ -1,4 +1,4 @@
-"""The Mac bridge: instant, but only for Miro asking directly; asleep is an
+"""The Mac bridge: instant, but only for the owner asking directly; asleep is an
 instant refusal, never a job that runs when the lid opens."""
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _awake(mem, seconds_ago=5):
 
 def test_every_mac_action_is_principal_only_with_a_dry_run():
     """Tier by tier in tests/test_mac_control.py. `open_url` and `quit_app`
-    were left out of the first version; Miro asked for them on 2026-09-28 as
+    were left out of the first version; the owner asked for them on 2026-09-28 as
     Tier 2 cards, and on 2026-10-06 they became Tier 1 (his 2026-09-30
     ruling: not urgent, no card). The message and the Shortcut stay cards."""
     for a in mac.MODULE.actions():
@@ -45,17 +45,17 @@ def test_every_mac_action_is_principal_only_with_a_dry_run():
 
 
 @pytest.mark.parametrize("who", [None, "sms:+1555", "phone:+1555", "agent:ops"])
-async def test_nothing_but_miro_asking_directly_can_drive_the_mac(registered, who):
+async def test_nothing_but_owner_asking_directly_can_drive_the_mac(registered, who):
     _awake(registered)
     out = await executor.execute(ExecutionRequest(
         "mac.open_app", {"app": "Notes"}, "because", approved_by=who))
-    assert not out.ok and "only Miro" in out.detail
+    assert not out.ok and "only the owner" in out.detail
 
 
 async def test_an_asleep_mac_is_refused_at_once_and_nothing_is_queued(registered):
     _awake(registered, seconds_ago=3600)
     out = await executor.execute(ExecutionRequest(
-        "mac.open_app", {"app": "Notes"}, "asked", approved_by="slack:UMIRO"))
+        "mac.open_app", {"app": "Notes"}, "asked", approved_by="slack:UOWNER"))
     assert not out.ok and "asleep" in out.detail
     assert not any("INSERT INTO mac_jobs" in q for q, _ in registered.sql_log)
 
@@ -103,7 +103,7 @@ def test_a_reminder_keeps_the_clock_time_he_said(given, want):
 
 
 async def test_said_on_the_signed_in_dashboard_a_mac_action_runs_now(monkeypatch):
-    """Miro: 'yes, for Mac actions only'. A phone turn still gets a card."""
+    """the owner: 'yes, for Mac actions only'. A phone turn still gets a card."""
     from atlas.api import voice
     from atlas.kernel import intent, spoken
     from atlas.kernel.contracts import ActionResult

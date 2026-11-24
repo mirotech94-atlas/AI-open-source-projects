@@ -19,7 +19,7 @@
 #
 # As with the hand model, SHA-256s are printed rather than checked against a
 # published list, because there is none to check against -- printing them
-# lets Miro record the values and compare them later.
+# lets the owner record the values and compare them later.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

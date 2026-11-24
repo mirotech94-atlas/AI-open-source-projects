@@ -10,14 +10,18 @@ to the cheapest provider that satisfies it. Three reasons this matters:
 """
 from __future__ import annotations
 
+import asyncio
+import collections
 import dataclasses
 import enum
 import json
 import logging
 import os
 import re
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, ClassVar, Protocol, overload
 
 from ..modules._http import redact, redact_stored
@@ -315,6 +319,439 @@ class OllamaProvider:
         return False
 
 
+# Hosts a local model may sit on: this machine or the Docker host as seen from
+# a container, by name, or a loopback/private address literal. Anything else
+# is someone else's server, and PRIVATE work is the content that must not go
+# there. LOCAL_LLM_ALLOWED_HOSTS (comma-separated) replaces the name list.
+_DEFAULT_LOCAL_HOSTS = ("host.docker.internal", "localhost", "127.0.0.1")
+
+
+def _local_allowed_hosts() -> frozenset[str]:
+    raw = os.getenv("LOCAL_LLM_ALLOWED_HOSTS", "")
+    names = {h.strip().lower().rstrip(".") for h in raw.split(",") if h.strip()}
+    return frozenset(names or _DEFAULT_LOCAL_HOSTS)
+
+
+def _local_ip_ok(ip: Any) -> bool:
+    """Loopback or private only, after unwrapping IPv6 forms that carry an
+    IPv4 address (::ffff:a.b.c.d, 6to4, Teredo). Unspecified, reserved,
+    multicast and link-local (cloud metadata lives there) are refused."""
+    import ipaddress
+    if isinstance(ip, ipaddress.IPv6Address):
+        if ip.ipv4_mapped is not None:
+            return _local_ip_ok(ip.ipv4_mapped)
+        if ip.sixtofour is not None:
+            return _local_ip_ok(ip.sixtofour)
+        if ip.teredo is not None:
+            return all(_local_ip_ok(v4) for v4 in ip.teredo)
+    if ip.is_loopback:                  # ::1 sits inside reserved ::/8
+        return True
+    if (ip.is_unspecified or ip.is_reserved or ip.is_multicast
+            or ip.is_link_local):
+        return False
+    return bool(ip.is_private)
+
+
+def local_base_url_ok(url: str) -> bool:
+    """True only for an http(s) URL with no userinfo whose host is a name in
+    the allow-list (LOCAL_LLM_ALLOWED_HOSTS) or a loopback/private address
+    literal. Other names, bare single-label ones included, are refused: DNS
+    decides where a name goes. This is the line that keeps a typo in
+    LOCAL_LLM_BASE_URL from sending personal mail to a cloud API."""
+    import ipaddress
+    from urllib.parse import urlsplit
+    try:
+        parts = urlsplit(url.strip())
+        host = (parts.hostname or "").lower()
+        parts.port                      # noqa: B018 - raises on a bad port
+    except ValueError:
+        return False
+    if parts.scheme not in ("http", "https") or not host or "@" in parts.netloc:
+        return False
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return host.rstrip(".") in _local_allowed_hosts()
+    return _local_ip_ok(ip)
+
+
+def _local_client(timeout: float) -> Any:
+    """The only HTTP client that talks to the local model: no proxy or CA
+    settings from the environment (HTTP(S)_PROXY would carry PRIVATE text
+    off the machine) and no redirects (a 3xx could point anywhere)."""
+    import httpx
+    return httpx.AsyncClient(timeout=timeout, trust_env=False,
+                             follow_redirects=False)
+
+
+class LocalOpenAIProvider:
+    """The local model: qwen3.8 on the Spark's vLLM, OpenAI-compatible.
+
+    the owner, 2026-10-28: always qwen3.8 on vLLM, never Ollama. vLLM listens on
+    the Spark's loopback only; the Mac reaches it through `spark-vllm.sh up`
+    (127.0.0.1:18000) and the api container through host.docker.internal.
+    `LOCAL_LLM_BASE_URL` selects it, `LOCAL_LLM_MODEL` names the model and
+    `LOCAL_LLM_API_KEY` is the bearer key (from .env, never logged).
+
+    Qwen3 thinks before answering by default, and a 32-token classify came
+    back with `content: null` and the budget spent on reasoning. Thinking is
+    off unless LOCAL_LLM_THINKING=true; an empty answer is a failure.
+    """
+
+    name = "local"
+    local = True        # the only kind of provider PRIVATE work may reach
+
+    def __init__(self, model: str | None = None) -> None:
+        self.model = model or os.getenv("LOCAL_LLM_MODEL", "") or "qwen3.8:27b"
+        self.base = os.getenv("LOCAL_LLM_BASE_URL", "").strip().rstrip("/")
+        # Optional second Spark (the owner, 2026-11-19). Unset means one endpoint,
+        # exactly as before; it is asked only after the first one fails.
+        self.base2 = os.getenv("LOCAL_LLM_BASE_URL_2", "").strip().rstrip("/")
+        self.timeout = _local_timeout()
+
+    def bases(self) -> list[str]:
+        """The local endpoints in the order they are asked: LOCAL_LLM_BASE_URL,
+        then LOCAL_LLM_BASE_URL_2 when set. Each must be a local address."""
+        out = [self.base]
+        if self.base2 and self.base2 != self.base:
+            if local_base_url_ok(self.base2):
+                out.append(self.base2)
+            else:
+                log.error("LOCAL_LLM_BASE_URL_2 is not a local address; ignored")
+        return out
+
+    def _headers(self) -> dict[str, str]:
+        key = os.getenv("LOCAL_LLM_API_KEY", "").strip()
+        return {"Authorization": f"Bearer {key}"} if key else {}
+
+    def _payload(self, system, messages, tools, max_tokens) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "messages": [{"role": "system", "content": system}]
+            + [{"role": m.role, "content": m.content} for m in messages],
+        }
+        if os.getenv("LOCAL_LLM_THINKING", "").strip().lower() not in (
+                "1", "true", "yes"):
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
+        if tools:
+            payload["tools"] = function_tools(tools)
+        return payload
+
+    async def _post_once(self, base: str, payload: dict[str, Any]) -> Any:
+        """One POST to one endpoint. A vLLM "context length" 400 is asked once
+        more with the answer room that fits."""
+        async with _local_client(self.timeout) as c:
+            r = await c.post(f"{base}/chat/completions",
+                             headers=self._headers(), json=payload)
+            fits = _vllm_fitting_max_tokens(
+                getattr(r, "status_code", 0), getattr(r, "text", ""),
+                payload["max_tokens"])
+            if fits is not None:
+                r = await c.post(f"{base}/chat/completions",
+                                 headers=self._headers(),
+                                 json={**payload, "max_tokens": fits})
+        return r
+
+    async def complete(self, system, messages, tools=None, max_tokens=2048):
+        if not local_base_url_ok(self.base):
+            raise RuntimeError("LOCAL_LLM_BASE_URL is not a local address")
+        import httpx
+        payload = self._payload(system, messages, tools, max_tokens)
+        started = time.monotonic()
+        order = _endpoint_order(self.bases())
+        for i, base in enumerate(order):
+            last = i == len(order) - 1
+            try:
+                r = await self._post_once(base, payload)
+            except httpx.TransportError:
+                # Tunnel down, host unreachable, timed out: the next endpoint
+                # is asked; the last one raises, as it always did.
+                _endpoint_down(base)
+                if last:
+                    raise
+                continue
+            if getattr(r, "status_code", 0) >= 500 and not last:
+                _endpoint_down(base)
+                continue
+            break
+        if r.status_code == 400 and tools and "tool" in r.text.lower():
+            LOCAL_TOOLS[self.model] = False
+            return ToolsUnsupported(self.model, provider=self.name)
+        r.raise_for_status()
+        data = r.json()
+        choice = (data.get("choices") or [{}])[0]
+        message = choice.get("message") or {}
+        calls = []
+        for i, c in enumerate(message.get("tool_calls") or []):
+            function = (c or {}).get("function") or {}
+            calls.append({"name": function.get("name", ""),
+                          "input": _arguments(function.get("arguments")),
+                          "id": c.get("id") or f"local-{i}"})
+        if tools:
+            LOCAL_TOOLS[self.model] = True
+        text = message.get("content") or ""
+        if not text and not calls:
+            raise RuntimeError(f"local model returned an empty answer "
+                               f"(finish_reason {choice.get('finish_reason')})")
+        usage = data.get("usage") or {}
+        out_tokens = int(usage.get("completion_tokens") or 0)
+        record_local_speed(out_tokens, time.monotonic() - started, None)
+        return Completion(
+            text=text, provider=self.name, model=self.model,
+            input_tokens=int(usage.get("prompt_tokens") or 0),
+            output_tokens=out_tokens,
+            tool_calls=calls or None)
+
+    async def complete_stream(self, system, messages, tools=None,
+                              max_tokens=2048, *, ttft_s: float | None = None,
+                              stall_s: float | None = None, on_text=None):
+        """`complete` over SSE (`stream: true`). The deadlines are the first
+        token (`ttft_s`) and the gap between tokens (`stall_s`), not the
+        whole call, so a slow Spark that is still producing is not cut off
+        while a dead one is given up on quickly. `on_text(delta)` sees each
+        piece of text as it arrives. A first-token timeout asks the next
+        endpoint when there is one; a stall raises `LocalStreamTimeout`."""
+        if not local_base_url_ok(self.base):
+            raise RuntimeError("LOCAL_LLM_BASE_URL is not a local address")
+        import httpx
+        payload = self._payload(system, messages, tools, max_tokens)
+        payload["stream"] = True
+        payload["stream_options"] = {"include_usage": True}
+        order = _endpoint_order(self.bases())
+        for i, base in enumerate(order):
+            last = i == len(order) - 1
+            try:
+                return await self._stream_once(base, payload, tools, ttft_s,
+                                               stall_s, on_text)
+            except (httpx.TransportError, LocalStreamTimeout) as exc:
+                if isinstance(exc, LocalStreamTimeout) and exc.stalled:
+                    raise
+                _endpoint_down(base)
+                if last:
+                    raise
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code < 500 or last:
+                    raise
+                _endpoint_down(base)
+        raise RuntimeError("no local endpoint configured")      # pragma: no cover
+
+    async def _stream_once(self, base, payload, tools, ttft_s, stall_s, on_text):
+        ttft_s = ttft_s if ttft_s else self.timeout
+        stall_s = stall_s if stall_s else self.timeout
+        started = time.monotonic()
+        text: list[str] = []
+        calls: dict[int, dict[str, Any]] = {}
+        usage: dict[str, Any] = {}
+        finish = None
+        first_at: float | None = None
+        async with _local_client(self.timeout) as c:
+            for attempt in (0, 1):
+                async with c.stream("POST", f"{base}/chat/completions",
+                                    headers=self._headers(), json=payload) as r:
+                    if r.status_code != 200:
+                        body = (await r.aread()).decode("utf-8", "replace")
+                        fits = (_vllm_fitting_max_tokens(
+                            r.status_code, body, payload["max_tokens"])
+                            if attempt == 0 else None)
+                        if fits is not None:
+                            payload = {**payload, "max_tokens": fits}
+                            continue
+                        if r.status_code == 400 and tools and "tool" in body.lower():
+                            LOCAL_TOOLS[self.model] = False
+                            return ToolsUnsupported(self.model, provider=self.name)
+                        r.raise_for_status()
+                    lines = r.aiter_lines().__aiter__()
+                    while True:
+                        wait = ttft_s if first_at is None else stall_s
+                        try:
+                            line = await asyncio.wait_for(lines.__anext__(), wait)
+                        except StopAsyncIteration:
+                            break
+                        except TimeoutError:
+                            raise LocalStreamTimeout(
+                                f"no first token in {wait:g}s" if first_at is None
+                                else f"stalled for {wait:g}s",
+                                stalled=first_at is not None) from None
+                        line = line.strip()
+                        if not line.startswith("data:"):
+                            continue
+                        body = line[5:].strip()
+                        if body == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(body)
+                        except ValueError:
+                            continue
+                        if chunk.get("usage"):
+                            usage = chunk["usage"]
+                        choice = (chunk.get("choices") or [{}])[0]
+                        finish = choice.get("finish_reason") or finish
+                        delta = choice.get("delta") or {}
+                        piece = delta.get("content") or ""
+                        tool_deltas = delta.get("tool_calls") or []
+                        if (piece or tool_deltas) and first_at is None:
+                            first_at = time.monotonic()
+                        if piece:
+                            text.append(piece)
+                            if on_text is not None:
+                                on_text(piece)
+                        for td in tool_deltas:
+                            slot = calls.setdefault(int(td.get("index") or 0), {
+                                "id": "", "name": "", "args": ""})
+                            slot["id"] = td.get("id") or slot["id"]
+                            fn = td.get("function") or {}
+                            slot["name"] = fn.get("name") or slot["name"]
+                            slot["args"] += fn.get("arguments") or ""
+                break
+        if tools:
+            LOCAL_TOOLS[self.model] = True
+        tool_calls = [{"name": s["name"], "input": _arguments(s["args"]),
+                       "id": s["id"] or f"local-{i}"}
+                      for i, (_, s) in enumerate(sorted(calls.items()))]
+        answer = "".join(text)
+        if not answer and not tool_calls:
+            raise RuntimeError(f"local model returned an empty answer "
+                               f"(finish_reason {finish})")
+        out_tokens = int(usage.get("completion_tokens") or 0)
+        ttft = (first_at - started) if first_at is not None else None
+        record_local_speed(out_tokens, time.monotonic() - started, ttft)
+        return Completion(
+            text=answer, provider=self.name, model=self.model,
+            input_tokens=int(usage.get("prompt_tokens") or 0),
+            output_tokens=out_tokens, tool_calls=tool_calls or None)
+
+    async def available(self) -> bool:
+        """Is the model listed by the server? Asked once at boot, so a
+        tunnel that is down, a wrong key or a wrong model name takes the
+        local route out of every chain instead of failing every call. With a
+        second endpoint configured, either one serving it is enough."""
+        if not local_base_url_ok(self.base):
+            log.error("LOCAL_LLM_BASE_URL is not a local address; PRIVATE work "
+                      "is refused rather than sent there")
+            return False
+        found = False
+        for base in self.bases():
+            names, why = await _read_models(base)
+            if names is None:
+                log.error("local model unreachable at %s (%s); is the Spark "
+                          "tunnel up (spark-vllm.sh up)?", base, why)
+            elif self.model in names:
+                found = True
+            else:
+                log.error("local model %r is not served at %s; it lists %s",
+                          self.model, base, sorted(names) or "nothing")
+        return found
+
+
+class LocalStreamTimeout(RuntimeError):
+    """The local stream gave no first token, or stopped producing, in time."""
+
+    def __init__(self, reason: str, stalled: bool = False) -> None:
+        self.stalled = stalled
+        super().__init__(f"local stream: {reason}")
+
+
+# A local endpoint that failed is asked last for this long, not skipped.
+ENDPOINT_COOLDOWN_S = 30.0
+_ENDPOINT_DOWN: dict[str, float] = {}
+
+
+def _endpoint_down(base: str) -> None:
+    _ENDPOINT_DOWN[base] = time.monotonic() + ENDPOINT_COOLDOWN_S
+
+
+def _endpoint_order(bases: list[str]) -> list[str]:
+    """Endpoints that are not cooling down first, in their configured order;
+    the cooling ones follow, so nothing is ever left unasked."""
+    now = time.monotonic()
+    return ([b for b in bases if _ENDPOINT_DOWN.get(b, 0.0) <= now]
+            + [b for b in bases if _ENDPOINT_DOWN.get(b, 0.0) > now])
+
+
+async def _read_models(base: str) -> tuple[set[str] | None, str]:
+    """(model ids, "") from `<base>/models`, or (None, why) when it cannot be
+    read. The Bearer key comes from env and is never logged."""
+    if not local_base_url_ok(base):
+        return None, "not a local address"
+    key = os.getenv("LOCAL_LLM_API_KEY", "").strip()
+    try:
+        async with _local_client(10) as c:
+            r = await c.get(f"{base}/models",
+                            headers={"Authorization": f"Bearer {key}"} if key else {})
+            r.raise_for_status()
+            return {str(m.get("id", "")) for m in r.json().get("data") or ()
+                    if isinstance(m, dict)}, ""
+    except Exception as exc:                            # noqa: BLE001
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        return None, f"{type(exc).__name__}{f' HTTP {status}' if status else ''}"
+
+
+async def served_models(base: str | None = None) -> set[str] | None:
+    """The model ids the local server lists at `base` (default
+    LOCAL_LLM_BASE_URL), or None when the list cannot be read."""
+    if base is None:
+        base = os.getenv("LOCAL_LLM_BASE_URL", "")
+    names, _ = await _read_models(base.strip().rstrip("/"))
+    return names
+
+
+_CTX_A = re.compile(r"maximum context length is (\d+) tokens.*?requested (\d+) "
+                    r"tokens \((\d+) in the messages", re.DOTALL)
+_CTX_B = re.compile(r"passed (\d+) input tokens.*?context length is only (\d+) "
+                    r"tokens", re.DOTALL)
+
+
+def _vllm_fitting_max_tokens(status: int, text: str, asked: int) -> int | None:
+    """The `max_tokens` that brings a vLLM "maximum context length" 400 under
+    the window, or None when the reply is not that or the room left for an
+    answer is under MIN_ANSWER_TOKENS (a truncated answer is worse than a
+    fall-through). Both vLLM wordings are read."""
+    if status != 400 or not isinstance(text, str):
+        return None
+    if m := _CTX_A.search(text):
+        limit, prompt = int(m.group(1)), int(m.group(3))
+    elif m := _CTX_B.search(text):
+        limit, prompt = int(m.group(2)), int(m.group(1))
+    else:
+        return None
+    fits = min(asked, limit - prompt - 64)
+    return fits if MIN_ANSWER_TOKENS <= fits < asked else None
+
+
+# (at, output_tokens, seconds, ttft or None) of recent local answers. In
+# process, bounded, read by the localstack `speed` check; nothing is
+# remembered across a restart, so a quiet window reads UNKNOWN.
+LOCAL_SPEED: collections.deque[tuple[float, int, float, float | None]] = (
+    collections.deque(maxlen=200))
+
+
+def record_local_speed(output_tokens: int, seconds: float,
+                       ttft: float | None) -> None:
+    if output_tokens > 0 and seconds > 0:
+        LOCAL_SPEED.append((time.time(), output_tokens, seconds, ttft))
+
+
+def local_speed(window_s: float, now: float | None = None) -> dict[str, Any] | None:
+    """Median tokens a second (and first-token time, when streamed) of the
+    samples in the last `window_s` seconds, with the newest sample's time.
+    None when the window holds no sample: never a remembered figure."""
+    import statistics
+    now = time.time() if now is None else now
+    rows = [s for s in LOCAL_SPEED if now - s[0] <= window_s]
+    if not rows:
+        return None
+    rates = [tokens / max(secs - (ttft or 0.0), 1e-6)
+             for _, tokens, secs, ttft in rows]
+    firsts = [t for *_, t in rows if t is not None]
+    return {"tps": statistics.median(rates),
+            "ttft": statistics.median(firsts) if firsts else None,
+            "n": len(rows), "at": max(s[0] for s in rows)}
+
+
+LOCAL_PROVIDERS = frozenset({"ollama", "local"})
+
+
 _NO_TOOLS = "does not support tools"
 
 
@@ -328,7 +765,7 @@ def _local_timeout() -> float:
 
 
 def private_cloud_allowed() -> bool:
-    """`ATLAS_PRIVATE_ALLOW_CLOUD`: Miro's explicit opt-in to letting PRIVATE
+    """`ATLAS_PRIVATE_ALLOW_CLOUD`: the owner's explicit opt-in to letting PRIVATE
     work fall through to a cloud model when the local one fails. Off unless
     set to 1, true or yes; unset means never. The one reader of the flag:
     `build_routes`, `_think_private` and `self_status` all ask here."""
@@ -408,7 +845,17 @@ def build_routes() -> None:
     ROUTES.clear()
     have_anthropic = bool(os.getenv("ANTHROPIC_API_KEY"))
     have_openai = bool(os.getenv("OPENAI_API_KEY"))
-    have_local = bool(os.getenv("OLLAMA_URL"))
+    # The local model: qwen3.8 on the Spark's vLLM (LOCAL_LLM_BASE_URL),
+    # the owner's rule since 2026-10-28. Ollama is legacy and only answers when
+    # OLLAMA_URL is set and LOCAL_LLM_BASE_URL is not. A base URL that is not
+    # a local address is refused here: PRIVATE then has no route at all.
+    local_url = os.getenv("LOCAL_LLM_BASE_URL", "").strip()
+    if local_url and not local_base_url_ok(local_url):
+        log.error("LOCAL_LLM_BASE_URL is not a loopback, Docker-host or "
+                  "private address; the local model is left out and PRIVATE "
+                  "work is refused")
+    have_vllm = bool(local_url) and local_base_url_ok(local_url)
+    have_local = have_vllm or (not local_url and bool(os.getenv("OLLAMA_URL")))
 
     have_groq = bool(os.getenv("GROQ_API_KEY"))
     have_gemini = bool(os.getenv("GEMINI_API_KEY"))
@@ -423,7 +870,10 @@ def build_routes() -> None:
     fast = AnthropicProvider(_env("ATLAS_MODEL_FAST", "claude-haiku-4-5"))
     mid = AnthropicProvider(_env("ATLAS_MODEL_REASON", "claude-sonnet-4-5"))
     deep = AnthropicProvider(_env("ATLAS_MODEL_DEEP", "claude-opus-4-1"))
-    local = OllamaProvider(_env("ATLAS_MODEL_LOCAL", "llama3.2:3b"))
+    global ANSWER_LOCAL
+    local: Provider = (LocalOpenAIProvider() if have_vllm
+                       else OllamaProvider(_env("ATLAS_MODEL_LOCAL", "llama3.2:3b")))
+    ANSWER_LOCAL = local if have_vllm else None
     other = OpenAIProvider(_env("ATLAS_MODEL_SECOND", "gpt-4o"))
     # Free tier. Model names checked live: the gemini-2.5-* family answers 404
     # "no longer available to new users" on a current key. On a free-tier key
@@ -455,7 +905,7 @@ def build_routes() -> None:
     # 2026-10-06: 1K requests and 200K tokens a day apiece for gpt-oss-120b,
     # gpt-oss-20b and qwen3.8-27b), and a cycle asks several HARD questions
     # in the same few seconds: three models are three answers a minute where
-    # one model was one. Miro: "pick all the free tiers".
+    # one model was one. the owner: "pick all the free tiers".
     groq_alt = GroqProvider(_env("ATLAS_MODEL_GROQ_ALT", "qwen/qwen3.8-27b"))
     # Groq retired llama-3.1-8b-instant and llama-3.3-70b-versatile: both
     # answered 404 at the 2026-10-07 boot, and its /models list that day had
@@ -518,7 +968,7 @@ def build_routes() -> None:
     # is not a failover for it — it is the thing being avoided. Falling back to
     # Haiku here meant that while the local model was misconfigured, every
     # private request went to Anthropic and the only sign was a warning per
-    # call. It fails closed, and says why -- unless Miro has explicitly opted
+    # call. It fails closed, and says why -- unless the owner has explicitly opted
     # in with ATLAS_PRIVATE_ALLOW_CLOUD, which is warned about once.
     cloud_ok = private_cloud_allowed() and have_anthropic
     if cloud_ok and not _WARNED_PRIVATE_CLOUD:
@@ -572,14 +1022,17 @@ def build_routes() -> None:
             [deep] + ([gem_deep] if have_gemini else [])
             + ([other] if have_openai else []))
 
-    # Miro, 2026-10-05: "use free tiers ai models without credit not paid
+    # the owner, 2026-10-05: "use free tiers ai models without credit not paid
     # tiers". With ATLAS_FREE_ONLY set, no paid model sits in any cloud chain
     # (PRIVATE is local and untouched). It is refused, loudly, when there is
     # no free bench: an instruction about cost must not leave ATLAS mute.
     if free_only():
         if free_deep:
             ROUTES[Need.TRIVIAL] = list(free_fast)
-            ROUTES[Need.DRAFT] = list(free_mid)
+            # the owner, 2026-10-29: the Spark's local model is the LAST, free
+            # fallback for drafts, so a drained free bench no longer ends a
+            # background shift with ReservedForOwner. Never a paid model.
+            ROUTES[Need.DRAFT] = list(free_mid) + ([local] if have_local else [])
             for need in (Need.REASON, Need.HARD, Need.CRITICAL):
                 ROUTES[need] = list(free_deep)
             if have_local and Need.PRIVATE in ROUTES:
@@ -601,22 +1054,113 @@ async def verify_local() -> bool:
     privacy promise quietly inverted.
     """
     local = next((p for chain in ROUTES.values() for p in chain
-                  if p.name == "ollama"), None)
+                  if getattr(p, "local", False)), None)
     if local is None:
         return False
-    for key in [k for k in DROPPED if k[1] == "ollama"]:
+    for key in [k for k in DROPPED if k[1] in LOCAL_PROVIDERS]:
         del DROPPED[key]
     if await local.available():
-        log.info("local model %s is pulled and serving", local.model)
+        log.info("local model %s (%s) is serving", local.model, local.name)
+        _LOCAL_DROP.clear()
         return True
-    _record_dropped({"ollama"}, {"ollama": "not pulled or not serving at boot"})
+    _record_dropped({local.name}, {local.name: "not pulled or not serving at boot"})
     for need, chain in list(ROUTES.items()):
-        ROUTES[need] = [p for p in chain if p.name != "ollama"]
+        ROUTES[need] = [p for p in chain if not getattr(p, "local", False)]
     if not ROUTES.get(Need.PRIVATE):
         ROUTES.pop(Need.PRIVATE, None)
         log.error("PRIVATE work is now refused rather than sent to an API "
-                  "provider — see the pull command above")
+                  "provider — see the reason above")
+    _LOCAL_DROP["provider"] = local
+    _start_readmit()
     return False
+
+
+# The local provider `verify_local` took out of the chains, kept so
+# `readmit_local` can put it back once the Spark serves again (no restart).
+_LOCAL_DROP: dict[str, Any] = {}
+_READMIT_TASK: asyncio.Task | None = None
+
+
+def _readmit_interval() -> float:
+    try:
+        return float(os.getenv("ATLAS_LOCAL_READMIT_S", "60"))
+    except ValueError:
+        return 60.0
+
+
+def _start_readmit() -> None:
+    """Start the re-admit loop as a kernel background task, once; it ends by
+    itself when local is back. ATLAS_LOCAL_READMIT_S=0 turns it off."""
+    global _READMIT_TASK
+    if _readmit_interval() <= 0 or (_READMIT_TASK and not _READMIT_TASK.done()):
+        return
+    from . import background
+    try:
+        _READMIT_TASK = background.spawn(_readmit_loop(), "llm.readmit_local")
+    except RuntimeError:                                # no running loop
+        _READMIT_TASK = None
+
+
+async def _readmit_loop() -> None:
+    while _LOCAL_DROP:
+        await asyncio.sleep(_readmit_interval())
+        try:
+            if await readmit_local():
+                return
+        except Exception as exc:                        # noqa: BLE001
+            log.warning("re-admit of the local model failed (%s)",
+                        type(exc).__name__)
+
+
+async def readmit_local() -> bool:
+    """After a boot drop: ask the local provider again and, when it serves,
+    put it back in ROUTES where `build_routes` places it under the current
+    flags (not at old indices that `verify_cloud` or failover may have
+    shifted), restore PRIVATE and clear the local DROPPED entries. True when
+    local was re-admitted; False when nothing was dropped or it is still
+    down (nothing changes). The localstack checks never call this."""
+    local = _LOCAL_DROP.get("provider")
+    if local is None or not await local.available():
+        return False
+    global ANSWER_LOCAL
+    saved_routes = {n: list(c) for n, c in ROUTES.items()}
+    saved_answer = ANSWER_LOCAL
+    try:
+        build_routes()
+        fresh = {n: list(c) for n, c in ROUTES.items()}
+    finally:
+        ROUTES.clear()
+        ROUTES.update(saved_routes)
+        ANSWER_LOCAL = saved_answer
+
+    def ident(p: Provider) -> tuple[str, str]:
+        return (str(p.name), str(getattr(p, "model", "") or ""))
+
+    for need, chain in fresh.items():
+        if not any(getattr(p, "local", False) for p in chain):
+            continue
+        current = ROUTES.get(need)
+        if current is None:
+            ROUTES[need] = [local if getattr(p, "local", False) else p
+                            for p in chain]
+            continue
+        if any(getattr(p, "local", False) for p in current):
+            continue
+        have = {ident(p) for p in current}
+        at = 0                      # after the last fresh neighbour still present
+        for i, p in enumerate(chain):
+            if getattr(p, "local", False):
+                break
+            if ident(p) in have:
+                at = next(j for j, q in enumerate(current)
+                          if ident(q) == ident(p)) + 1
+        ROUTES[need] = current[:at] + [local] + current[at:]
+    for key in [k for k in DROPPED if k[1] in LOCAL_PROVIDERS]:
+        del DROPPED[key]
+    _LOCAL_DROP.clear()
+    log.info("local model %s is serving again; re-admitted to the routes",
+             getattr(local, "model", "?"))
+    return True
 
 
 # Provider names verify_cloud() dropped at the last boot probe (401, 402,
@@ -709,7 +1253,7 @@ async def verify_cloud() -> dict[str, str]:
                 log.warning("provider %s did not answer at boot (%s: %s); "
                             "keeping it, since that is the outage the chain "
                             "is for", name, type(exc).__name__, exc)
-    for key in [k for k in DROPPED if k[1] != "ollama"]:
+    for key in [k for k in DROPPED if k[1] not in LOCAL_PROVIDERS]:
         del DROPPED[key]
     if dead:
         _record_dropped(dead, dead_why)
@@ -773,7 +1317,8 @@ async def discover_groq_models() -> list[str]:
         return []
     chain = ROUTES[Need.TRIVIAL]
     at = next((i for i, p in enumerate(chain)
-               if p.name in ("huggingface", "openrouter", "anthropic", "ollama")),
+               if p.name in ("huggingface", "openrouter", "anthropic")
+               or getattr(p, "local", False)),
               len(chain))
     ROUTES[Need.TRIVIAL] = chain[:at] + [GroqProvider(m) for m in found] + chain[at:]
     log.info("groq lists %s more chat model(s), added to the voice lane: %s",
@@ -791,6 +1336,106 @@ def _probe_key(provider: Any) -> str:
 
 
 
+# ---------------------------------------------------------------- answer lane
+# the owner, 2026-11-17: "use the qwen3.8:27B model always to answer and voice".
+# A call that answers a person passes `answer=True` and the Spark's qwen3.8
+# is asked FIRST, whatever Need it names; the Need's own chain is then only
+# the fallback. The provider is kept here, not read out of ROUTES, so a
+# tunnel that was down at boot (verify_local drops it from every chain) comes
+# back by itself: the breaker, not the boot probe, decides when to ask again.
+ANSWER_LOCAL: Provider | None = None
+_ANSWER: dict[str, Any] = {}
+
+
+def reset_answer_state() -> None:
+    """Forget the last answer (tests; a restart does this by itself)."""
+    _ANSWER.clear()
+
+
+def _note_answer(reply: Any, why: str | None) -> None:
+    """Remember which model last answered a person and, when it was not the
+    local one, why. Read by `answer_health` and so by the board."""
+    if not isinstance(reply, Completion):
+        return
+    local = getattr(reply, "provider", "") == "local" and why is None
+    _ANSWER.update(model=f"{reply.provider}:{reply.model}", local=local,
+                   why=why or "", at=time.time())
+    if not local:
+        log.warning("answered by %s:%s, not the local qwen (%s)",
+                    reply.provider, reply.model, why or "not asked")
+
+
+def answer_health() -> tuple[Any, str]:
+    """(Health, detail) for the lane that answers people. No answer yet is
+    UNKNOWN; the last one on qwen is OK; the last one on anything else is
+    DEGRADED and names why. Never OK from a configuration alone."""
+    from .contracts import Health
+    if not _ANSWER:
+        return Health.UNKNOWN, "no answer has run since boot"
+    when = datetime.fromtimestamp(_ANSWER["at"]).astimezone().strftime("%H:%M")
+    if _ANSWER["local"]:
+        return Health.OK, f"last answer by {_ANSWER['model']} at {when}"
+    return Health.DEGRADED, (f"last answer by {_ANSWER['model']} at {when}, "
+                             f"not the local qwen: {_ANSWER['why']}")
+
+
+def _answer_local_timeout() -> float:
+    """Seconds the local model gets to answer a person before the chain
+    behind it is asked (a short voice turn is abandoned at 12 s)."""
+    try:
+        return float(os.getenv("ATLAS_ANSWER_LOCAL_TIMEOUT_S", "10"))
+    except ValueError:
+        return 10.0
+
+
+def _env_seconds(key: str, default: float) -> float:
+    try:
+        return float(os.getenv(key, str(default)))
+    except ValueError:
+        return default
+
+
+async def _answer_local(system: str, messages: Sequence[Message],
+                        tools: list[dict[str, Any]] | None, max_tokens: int,
+                        deadline: str = "wall",
+                        ) -> tuple[Completion | None, str]:
+    """One try on the local model. (reply, "") on success, else (None, why).
+
+    `deadline="wall"` (the default, every current caller) caps the whole call
+    at ATLAS_ANSWER_LOCAL_TIMEOUT_S. `"ttft"` streams and gives up on the
+    first token (ATLAS_ANSWER_LOCAL_TTFT_S) or a gap between tokens
+    (ATLAS_ANSWER_LOCAL_STALL_S) instead, so a slow Spark that is still
+    producing is not cut off; a provider without `complete_stream` keeps the
+    wall clock."""
+    from ..modules._http import explain
+    from . import breaker
+    provider = ANSWER_LOCAL
+    if provider is None:
+        return None, "no local model configured (LOCAL_LLM_BASE_URL)"
+    key = breaker.key_of(provider)
+    if not breaker.allow(key):
+        return None, "local model skipped: its circuit is open"
+    try:
+        if deadline == "ttft" and hasattr(provider, "complete_stream"):
+            reply = await provider.complete_stream(
+                system, messages, tools, max_tokens,
+                ttft_s=_env_seconds("ATLAS_ANSWER_LOCAL_TTFT_S", 20.0),
+                stall_s=_env_seconds("ATLAS_ANSWER_LOCAL_STALL_S", 30.0))
+        else:
+            reply = await asyncio.wait_for(
+                provider.complete(system, messages, tools, max_tokens),
+                _answer_local_timeout())
+    except Exception as exc:                            # noqa: BLE001
+        breaker.failure(key, exc)
+        return None, f"local model failed: {explain(exc)}"[:200]
+    if isinstance(reply, ToolsUnsupported):
+        return None, "local model cannot call tools"
+    if _empty(reply):
+        return None, "local model answered nothing"
+    breaker.success(key)
+    return reply, ""
+
+
 @overload
 async def think(
     need: Need,
@@ -801,6 +1446,8 @@ async def think(
     *,
     model: str | None = None,
     interactive: bool | None = None,
+    answer: bool = False,
+    answer_deadline: str = "wall",
 ) -> Completion: ...
 @overload
 async def think(
@@ -812,6 +1459,8 @@ async def think(
     *,
     model: str | None = None,
     interactive: bool | None = None,
+    answer: bool = False,
+    answer_deadline: str = "wall",
 ) -> Completion | ToolsUnsupported: ...
 def _secret_free(system: str, messages: Sequence[Message]
                  ) -> tuple[str, list[Message]]:
@@ -851,6 +1500,57 @@ async def think(
     *,
     model: str | None = None,
     interactive: bool | None = None,
+    answer: bool = False,
+    answer_deadline: str = "wall",
+) -> Completion | ToolsUnsupported:
+    """Route one piece of work, timing it for `reply_timings` when a reply's
+    clock is running (a no-op otherwise; see `_think_routed` for the routing).
+
+    `answer=True` marks a reply to a person (chat, voice, support, Slack):
+    the local qwen3.8 is asked first whatever `need` says, and `need`'s own
+    chain is the fallback, recorded by `answer_health` (never for PRIVATE,
+    which is local already)."""
+    from . import reply_timing
+    why: str | None = None
+    reply: Completion | ToolsUnsupported | None = None
+    with reply_timing.stage("model"):
+        if answer and need != Need.PRIVATE:
+            sys_, msgs_ = _secret_free(system, messages)
+            reply, why = await _answer_local(sys_, msgs_, tools, max_tokens,
+                                             deadline=answer_deadline)
+            why = why or None
+        if reply is None:
+            try:
+                reply = await _think_routed(
+                    need, system, messages, tools, max_tokens,
+                    model=model, interactive=interactive)
+            except RuntimeError:
+                # Nothing else answered. An open circuit reorders the asking,
+                # it never turns "did not answer" into "did not ask".
+                if not (answer and need != Need.PRIVATE and ANSWER_LOCAL
+                        and why and "circuit is open" in why):
+                    raise
+                reply = await ANSWER_LOCAL.complete(
+                    *_secret_free(system, messages), tools, max_tokens)
+                why = None
+            if answer and need != Need.PRIVATE:
+                _note_answer(reply, why)
+        elif answer:
+            _note_answer(reply, None)
+    if isinstance(reply, Completion):
+        reply_timing.note(model=reply.model)
+    return reply
+
+
+async def _think_routed(
+    need: Need,
+    system: str,
+    messages: Sequence[Message],
+    tools: list[dict[str, Any]] | None = None,
+    max_tokens: int = 2048,
+    *,
+    model: str | None = None,
+    interactive: bool | None = None,
 ) -> Completion | ToolsUnsupported:
     """Route one piece of work. Falls through the chain on provider failure.
 
@@ -871,10 +1571,10 @@ async def think(
     `ToolsUnsupported` comes back only when `tools` were passed and the
     model cannot call them; `harness.think_turn` handles it.
 
-    `interactive` says whether Miro is waiting on this answer; None reads
+    `interactive` says whether the owner is waiting on this answer; None reads
     the turn's own flag (`quota.interactive()`). A deployment whose known
     daily allowance is under its reserve answers only interactive calls;
-    background work that finds nothing else raises `quota.ReservedForMiro`
+    background work that finds nothing else raises `quota.ReservedForOwner`
     without asking anyone (kernel/quota.py).
     """
     system, messages = _secret_free(system, messages)
@@ -925,7 +1625,7 @@ async def think(
         raise RuntimeError("no LLM provider configured")
     last: Exception | None = None
     # The free allowance first (kernel/quota.py): background work never
-    # spends what is kept for Miro, and nobody asks a deployment the
+    # spends what is kept for the owner, and nobody asks a deployment the
     # provider itself said is spent until its reset. Before the breakers,
     # so "every breaker is open, try them all" below can never re-admit a
     # reserved deployment for background work.
@@ -937,21 +1637,21 @@ async def think(
         # an OpenRouter model answers, so a spent count can come back.
         from .background import spawn
         spawn(quota.refresh_openrouter(), "quota.openrouter")
-    for_miro = quota.is_interactive() if interactive is None else interactive
-    rationed = [p for p in chain if quota.allowed(p, interactive_call=for_miro)]
+    for_owner = quota.is_interactive() if interactive is None else interactive
+    rationed = [p for p in chain if quota.allowed(p, interactive_call=for_owner)]
     if not rationed:
-        if not for_miro:
-            log.info("%s: every deployment is spent or kept for Miro; this "
+        if not for_owner:
+            log.info("%s: every deployment is spent or kept for the owner; this "
                      "background call waits for its next cycle", need)
-            raise quota.ReservedForMiro(
-                f"every {need} deployment is spent or kept for Miro")
-        # Miro is waiting: ask anyway. A provider may have come back early,
+            raise quota.ReservedForOwner(
+                f"every {need} deployment is spent or kept for the owner")
+        # the owner is waiting: ask anyway. A provider may have come back early,
         # and "no model answered" must mean they were asked.
         rationed = list(chain)
     elif len(rationed) < len(chain):
         log.info("skipping %s rationed deployment(s) for %s (%s)",
                  len(chain) - len(rationed), need,
-                 "interactive" if for_miro else "background")
+                 "interactive" if for_owner else "background")
     # A deployment whose breaker is open is skipped, not waited on
     # (kernel/breaker.py). If that would leave nothing to ask, the whole
     # chain is tried anyway: a breaker reorders the asking, it never turns
@@ -1025,7 +1725,7 @@ async def _think_private(
             return await provider.complete(system, messages, tools, max_tokens)
         except Exception as exc:                        # noqa: BLE001
             model = getattr(provider, "model", provider.name)
-            # Redacted: this reason reaches logs, transcripts and what Miro
+            # Redacted: this reason reaches logs, transcripts and what the owner
             # reads or hears.
             reason = f"{model}: {explain(exc)}"[:200]
             log.warning("PRIVATE provider failed (%s)", reason)
@@ -1038,9 +1738,11 @@ async def think_twice(
 ) -> tuple[Completion, Completion, bool]:
     """Two providers, in parallel, for anything irreversible. Returns both
     answers and whether they agree. Disagreement does not pick a winner — it
-    escalates to Miro, which is the correct behaviour for a system that is
+    escalates to the owner, which is the correct behaviour for a system that is
     about to do something it cannot undo."""
     system, messages = _secret_free(system, messages)
+    if critical_pair_on():
+        return await _think_twice_pair(system, messages, max_tokens)
     chain = ROUTES.get(Need.CRITICAL, [])
     if len(chain) < 2:
         # A check that cannot run is never a pass. Returning agree=True here
@@ -1094,6 +1796,98 @@ async def think_twice(
         max_tokens=8,
     )
     return a, b, verdict.text.strip().upper().startswith("AGREE")
+
+
+def critical_pair_on() -> bool:
+    """`ATLAS_CRITICAL_PAIR` (default off): the CRITICAL pair is the local
+    qwen plus a different free cloud model, refused as a pair when vendor OR
+    model family match, and judged by a third that is neither. Off leaves
+    `think_twice` exactly as it was."""
+    return os.getenv("ATLAS_CRITICAL_PAIR", "").strip().lower() in (
+        "1", "true", "yes")
+
+
+def _vendor(provider: Any) -> str:
+    """Who stands behind the model: the provider name, except an aggregator
+    (OpenRouter), where it is the model's own prefix."""
+    name = str(getattr(provider, "name", "?"))
+    model = str(getattr(provider, "model", "") or "")
+    if name == "openrouter" and "/" in model:
+        return model.split("/", 1)[0].lower()
+    return name.lower()
+
+
+def _family(provider: Any) -> str:
+    """The model family, read from the model id: `qwen3.8:27b` and
+    `qwen/qwen3.8-27b` -> qwen; `gpt-oss-120b` -> gpt; `claude-opus-4-1` ->
+    claude. Coarse on purpose: two models that might share a family are not
+    treated as independent."""
+    model = str(getattr(provider, "model", "") or "").lower()
+    leaf = model.rsplit("/", 1)[-1]
+    found = re.match(r"[a-z]+", leaf)
+    return found.group(0) if found else leaf
+
+
+async def _think_twice_pair(system: str, messages: Sequence[Message],
+                            max_tokens: int) -> tuple[Completion, Completion, bool]:
+    """`think_twice` under ATLAS_CRITICAL_PAIR. The local model authors first
+    when it is configured and its circuit is closed, then the CRITICAL chain
+    supplies the second author; a candidate whose vendor or family is already
+    among the answers is skipped. The adjudicator is chosen here in code from
+    the REASON chain: a different vendor and family from both authors, shown
+    both answers wrapped as untrusted. None left, or none answering, means
+    agree=False. Disagreement is never settled by picking a winner."""
+    from . import breaker
+    from .permissions import wrap_untrusted
+    candidates: list[Provider] = []
+    if ANSWER_LOCAL is not None and breaker.allow(breaker.key_of(ANSWER_LOCAL)):
+        candidates.append(ANSWER_LOCAL)
+    candidates += list(ROUTES.get(Need.CRITICAL, []))
+    answers: list[Completion] = []
+    authors: list[Provider] = []
+    for provider in candidates:
+        if any(_vendor(provider) == _vendor(a) or _family(provider) == _family(a)
+               for a in authors):
+            continue
+        try:
+            reply = await provider.complete(system, messages, None, max_tokens)
+        except Exception as exc:                        # noqa: BLE001
+            log.warning("CRITICAL pair: %s failed (%s), trying the next",
+                        provider.name, type(exc).__name__)
+            continue
+        if not isinstance(reply, Completion) or _empty(reply):
+            continue
+        answers.append(reply)
+        authors.append(provider)
+        if len(answers) == 2:
+            break
+    if len(answers) < 2:
+        log.error("CRITICAL pair: %d independent answer(s). Escalating "
+                  "unresolved.", len(answers))
+        if not answers:
+            raise RuntimeError("no provider answered the CRITICAL cross-check")
+        return answers[0], answers[0], False
+    a, b = answers
+    prompt = [Message("user", (
+        "Do these two answers reach the same conclusion?\n\n"
+        f"A:\n{wrap_untrusted(a.text, 'critical_answer_a')}\n\n"
+        f"B:\n{wrap_untrusted(b.text, 'critical_answer_b')}"))]
+    for judge in ROUTES.get(Need.REASON, []):
+        if any(_vendor(judge) == _vendor(x) or _family(judge) == _family(x)
+               for x in authors):
+            continue
+        try:
+            verdict = await judge.complete("Answer only AGREE or DIFFER.",
+                                           prompt, None, 8)
+        except Exception as exc:                        # noqa: BLE001
+            log.warning("CRITICAL pair: adjudicator %s failed (%s)",
+                        judge.name, type(exc).__name__)
+            continue
+        if isinstance(verdict, Completion) and verdict.text.strip():
+            return a, b, verdict.text.strip().upper().startswith("AGREE")
+    log.error("CRITICAL pair: no adjudicator independent of both authors; "
+              "escalating unresolved.")
+    return a, b, False
 
 
 _TOO_LARGE = re.compile(r"Limit (\d+), Requested (\d+)")
@@ -1295,7 +2089,7 @@ class CloudflareProvider(_OpenAICompatible):
         `image_url` data URL is the documented shape for the vision models;
         the top-level `image` byte array is marked deprecated. Note
         `@cf/meta/llama-3.2-11b-vision-instruct` needs a one-time Meta
-        licence "agree" sent from the account first -- Miro's to send, not
+        licence "agree" sent from the account first -- the owner's to send, not
         ATLAS's -- so it is only asked when ATLAS_MODEL_CLOUDFLARE_VISION
         names it."""
         import httpx
@@ -1631,7 +2425,7 @@ def vision_chain() -> list[Any]:
         pins.append(f"cloudflare:{extra}")
     chain: list[Any] = []
     for pin in pins:
-        if pin.partition(":")[0] == "ollama":
+        if pin.partition(":")[0] in LOCAL_PROVIDERS:
             log.error("ATLAS_MODELS_VISION: %r is local; a camera still is never "
                       "sent to the local route. Left out", pin)
             continue

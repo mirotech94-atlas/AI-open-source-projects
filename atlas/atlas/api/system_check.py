@@ -207,6 +207,52 @@ def spoken_line(summary: dict[str, int], modules: list[dict[str, Any]],
     return "; ".join(parts) + "." + tail + stamp
 
 
+def spoken_summary(summary: dict[str, int], modules: list[dict[str, Any]],
+                   agents: list[dict[str, Any]], oldest: datetime | None,
+                   unreadable: str | None = None,
+                   checked: datetime | None = None) -> str:
+    """What is SAID of the check: the host's short summary. The verdict and
+    the count first, then HOW MANY are not measured or need attention (never
+    which: the names stay on screen, in `spoken_line`), and the time it was
+    read (invariant 6). Same honesty as `spoken_line`: "all clear" only when
+    nothing is degraded, failing, unmeasured, not loaded or offline, and an
+    unreachable store is said, never read as fine (invariant 7)."""
+    ok, total = summary["ok"], summary["total"]
+    attention = summary["degraded"] + summary["failing"]
+    unmeasured = summary["unknown"] + summary.get("not_loaded", 0)
+    offline = [a for a in agents if not a["online"]]
+    at = oldest or checked
+    when = f"as of {_clock(at)}" if at else "just now"
+
+    if unreadable:
+        return ("I can't reach my record store, so I can't read anything right "
+                f"now. I tried at {_clock(checked or at)}." if (checked or at)
+                else "I can't reach my record store, so I can't read anything "
+                     "right now.")
+    if total == 0:
+        return (f"I'm not measuring anything yet, so I can't say it's clear, {when}.")
+    count = f"{ok} of {total} {_plural(total, 'check', 'checks')} passed"
+    if attention == 0 and unmeasured == 0 and not offline:
+        return f"All clear: {count}, {when}."
+
+    lead = (f"{count}, {when}" if attention
+            else f"Mostly fine: {count}, {when}" if ok
+            else f"I couldn't measure much: {count}, {when}")
+    more: list[str] = []
+    if attention:
+        more.append(f"{attention} {_plural(attention, 'needs', 'need')} attention")
+    if unmeasured:
+        more.append(f"{unmeasured} {_plural(unmeasured, 'is', 'are')} not measured")
+    said = lead + "."
+    if more:
+        said += " " + more[0][0].upper() + more[0][1:]
+        said += (f", and {more[1]}" if len(more) > 1 else "") + "."
+    if offline:
+        said += (f" {len(offline)} {_plural(len(offline), 'agent is', 'agents are')}"
+                 " offline.")
+    return said
+
+
 async def build() -> dict[str, Any]:
     """Agents, modules and the spoken line, from one fresh read."""
     now = _now()
@@ -279,6 +325,7 @@ async def build() -> dict[str, Any]:
         "oldest_reading": oldest.isoformat() if oldest else None,
         "unreadable": unreadable,
         "line": spoken_line(summary, modules, agents, oldest, unreadable, now),
+        "spoken": spoken_summary(summary, modules, agents, oldest, unreadable, now),
     }
 
 

@@ -1,6 +1,6 @@
-"""agency.escalate -- when a lead conversation rings Miro's phone.
+"""agency.escalate -- when a lead conversation rings the owner's phone.
 
-Miro, 2026-09-29: "Phone me ONLY for emergencies." Everything else from a
+the owner, 2026-09-29: "Phone me ONLY for emergencies." Everything else from a
 lead -- a question, "not now", a hot lead, a deal agreed -- goes to Slack
 (and, where there is something to approve, a card). An emergency is:
 
@@ -104,13 +104,15 @@ async def _gates(now: datetime) -> str | None:
     return None
 
 
-async def _ring(lines: list[str], now: datetime) -> None:
+async def _ring(lines: list[str], now: datetime, title: str | None = None) -> None:
     global _LAST_RING
     from ...kernel import comms, escalation
     from ...kernel.comms import Outbound
     voice = comms.CHANNELS["voice"]
     body = " ".join(lines)
-    title = "Agency emergency" if len(lines) == 1 else f"{len(lines)} agency emergencies"
+    if title is None:
+        title = ("Agency emergency" if len(lines) == 1
+                 else f"{len(lines)} agency emergencies")
     await voice.send(Outbound(title=title, body=body, severity=Severity.HIGH,
                               topic="agency", kind="alert"))
     escalation.record(Severity.HIGH, title=title)
@@ -131,7 +133,7 @@ async def emergency(business: str, kind: str, slack_body: str) -> str:
             lines = [line for _at, line in _PENDING] + [spoken]
             _PENDING.clear()
             await _ring(lines, now)
-            outcome = "rang Miro"
+            outcome = "rang the owner"
         else:
             if why != "quiet hours":
                 _PENDING.append((now, spoken))
@@ -149,6 +151,35 @@ async def emergency(business: str, kind: str, slack_body: str) -> str:
     return outcome
 
 
+async def ring_owner(title: str, line: str, *, slack_body: str | None = None) -> str:
+    """Ring the owner -- only ever the owner's own voice channel, there is no
+    number to pass -- with `line`, under the same gates as an emergency
+    (quiet hours, `escalation.may_call(HIGH)`, the agency call gap).
+    Slack always gets it. A gated call is not held: it is news, not an
+    emergency, and Slack has it. `line` is built by ATLAS from its own
+    labels, never from text it read. Never raises."""
+    from ...kernel.comms import Outbound, notify
+    now = _now()
+    outcome = "held"
+    try:
+        why = await _gates(now)
+        if why is None:
+            await _ring([line], now, title=title)
+            outcome = "rang the owner"
+        else:
+            outcome = f"not rung: {why}"
+    except Exception as exc:                            # noqa: BLE001
+        log.warning("agency owner call failed: %s", type(exc).__name__)
+        outcome = f"not rung: the call failed ({type(exc).__name__})"
+    try:
+        await notify(Outbound(
+            title=title, body=f"{slack_body or line}\n\nPhone: {outcome}.",
+            severity=Severity.HIGH, topic="agency", kind="alert"))
+    except Exception as exc:                            # noqa: BLE001
+        log.warning("agency owner call not posted: %s", type(exc).__name__)
+    return outcome
+
+
 async def flush() -> str | None:
     """Ring for what was held, once the gates allow. Called each signals
     cycle. Stale lines are dropped: Slack already has them."""
@@ -162,7 +193,7 @@ async def flush() -> str | None:
         lines = [line for _at, line in _PENDING]
         _PENDING.clear()
         await _ring(lines, now)
-        return "rang Miro"
+        return "rang the owner"
     except Exception as exc:                            # noqa: BLE001
         log.warning("agency held call failed: %s", type(exc).__name__)
         return None

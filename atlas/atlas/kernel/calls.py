@@ -40,7 +40,7 @@ def _flatten(transcript: list[Any]) -> str:
     for turn in transcript[-MAX_TURNS:]:
         if not isinstance(turn, dict):
             continue
-        who = "Miro" if turn.get("role") == "user" else "ATLAS"
+        who = "the owner" if turn.get("role") == "user" else "ATLAS"
         said = " ".join(str(turn.get("message") or "").split())
         if said and said.strip(". …"):
             lines.append(f"{who}: {said}")
@@ -60,7 +60,7 @@ async def summarise(transcript: list[Any]) -> str | None:
     try:
         completion = await think(
             Need.DRAFT,
-            "Summarise this phone call between Miro and ATLAS in at most "
+            "Summarise this phone call between the owner and ATLAS in at most "
             "three short lines, plain text, no headings:\n"
             "  discussed: <what>\n"
             "  decided: <what, or 'nothing'>\n"

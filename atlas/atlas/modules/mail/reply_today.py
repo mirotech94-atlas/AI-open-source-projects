@@ -1,4 +1,4 @@
-"""The "Reply today" card: which emails need Miro's answer today.
+"""The "Reply today" card: which emails need the owner's answer today.
 
 One card a day, after BRIEF_HOUR, raised as a Signal by `MailModule.signals()`
 (no action: it tells him, it does nothing). Read-only against every mailbox.
@@ -32,6 +32,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ...kernel.contracts import Severity, Signal
+from . import spam
 
 log = logging.getLogger("atlas.mail.reply_today")
 
@@ -44,7 +45,7 @@ RECEIPT_WORDS = ("receipt", "invoice", "your order", "order confirm",
 NEWSLETTER_WORDS = ("newsletter", "digest", "weekly", "news@", "updates@")
 
 COUNTED = ("receipts", "newsletters", "notifications", "can_wait", "no_reply",
-           "not_read")
+           "not_read", "spam", "unsure", "spam_unknown")
 
 # The last card, for `brief_line()`: brief() is synchronous and must not
 # query anything itself, so it says what the last read found, and when.
@@ -95,6 +96,7 @@ def sort_person(classification: dict, age_h: float) -> str:
 
 async def _google_items(account) -> list[dict]:
     from . import _api, _header
+    from . import spam as _spam
 
     data = await _api("/threads", account=account,
                       q="is:unread -category:promotions -category:social "
@@ -122,6 +124,10 @@ async def _google_items(account) -> list[dict]:
             "list_unsubscribe": bool(_header(last, "List-Unsubscribe")),
             "bulk": _header(last, "Precedence").lower() in ("bulk", "list"),
             "snippet": snippets.get(thread["id"], ""),
+            # for the spam check: the receiving server's own stamp, Reply-To
+            "key": f"gmail:{last.get('id', thread['id'])}",
+            "reply_to": _header(last, "Reply-To"),
+            "auth": _spam.item_from_gmail(last)["auth"],
         })
     return out
 
@@ -131,6 +137,18 @@ async def _items(account) -> list[dict]:
         from .imap import unread_headers
         return await unread_headers(account)
     return await _google_items(account)
+
+
+def _spam_item(account, item: dict) -> dict:
+    out = dict(item)
+    out["key"] = item.get("key") or (
+        spam.mid_key(account.name, str(item["id"])) if account.kind == "imap"
+        else f"gmail:{item['id']}")
+    return out
+
+
+async def _spam_verdict(account, item: dict):
+    return await spam.check(_spam_item(account, item), account)
 
 
 async def read(accounts=None, now: datetime | None = None) -> ReplyToday:
@@ -162,6 +180,19 @@ async def read(accounts=None, now: datetime | None = None) -> ReplyToday:
             if account.is_me(sender):
                 continue                     # he replied last; nothing owed
             result.looked += 1
+            # Spam first, from the same stored verdict everything else reads.
+            # Spam and unsure mail is counted and never listed or classified;
+            # a check that could not run is its own count and the mail is
+            # still read (hiding it would be a guess).
+            flagged = await _spam_verdict(account, item)
+            if flagged.verdict == spam.SPAM:
+                result.counts["spam"] += 1
+                continue
+            if flagged.verdict == spam.UNSURE:
+                result.counts["unsure"] += 1
+                continue
+            if flagged.verdict == spam.UNKNOWN:
+                result.counts["spam_unknown"] += 1
             kind = machine_kind(sender, subject,
                                 list_unsubscribe=item.get("list_unsubscribe", False),
                                 bulk=item.get("bulk", False))
@@ -218,6 +249,12 @@ def render(card: ReplyToday) -> tuple[str, str]:
     lines.append(f"Not listed: {c['receipts']} receipt(s), {c['newsletters']} "
                  f"newsletter(s), {c['notifications']} notification(s), "
                  f"{c['can_wait']} that can wait, {c['no_reply']} needing no reply.")
+    if c["spam"] or c["unsure"]:
+        lines.append(f"Held back: {c['spam']} spam, {c['unsure']} unsure "
+                     f"(not suggested for replies; nothing was moved or deleted).")
+    if c["spam_unknown"]:
+        lines.append(f"{c['spam_unknown']} not spam-checked: whether they are "
+                     f"spam is not known.")
     if c["not_read"]:
         lines.append(f"{c['not_read']} not read by the local model: whether they "
                      f"need you is not known.")

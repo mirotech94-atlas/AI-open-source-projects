@@ -58,8 +58,8 @@ def test_no_compose_service_floats_on_latest():
         assert ":" in image.split("/")[-1], f"{image} has no tag"
 
 
-def test_ollama_is_pinned_to_a_version_and_digest():
+def test_no_ollama_image_is_pulled_at_all():
+    """The local model is qwen3.8 on the Spark's vLLM (2026-10-28); there is
+    no Ollama container left to pin."""
     compose = (ROOT / "docker-compose.yml").read_text()
-    m = re.search(r"^\s*image:\s*(ollama/ollama\S*)", compose, re.MULTILINE)
-    assert m
-    assert re.fullmatch(r"ollama/ollama:\d+\.\d+\.\d+@sha256:[0-9a-f]{64}", m.group(1))
+    assert not re.search(r"^\s*image:\s*ollama/", compose, re.MULTILINE)

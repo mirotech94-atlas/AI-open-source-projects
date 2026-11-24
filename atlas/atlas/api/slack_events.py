@@ -41,6 +41,23 @@ log = logging.getLogger("atlas.slack_events")
 
 router = APIRouter(prefix="/webhooks/slack")
 
+def _owner_id() -> str:
+    """the owner's own Slack id: `SLACK_OWNER_ID`, else the sole approver, else none
+    (no private reads on Slack until it is known)."""
+    explicit = os.getenv("SLACK_OWNER_ID", "").strip()
+    if explicit:
+        return explicit
+    ids = _approvers()
+    return next(iter(ids)) if len(ids) == 1 else ""
+
+
+def _private_sink(user: str, channel_type: str) -> bool:
+    """True only in the owner's own DM with ATLAS: a direct message (`im`) from his
+    own user id. Never a channel, a group or another approver."""
+    owner = _owner_id()
+    return bool(owner) and channel_type == "im" and user == owner
+
+
 def _approvers() -> set[str]:
     return {u for u in os.getenv("SLACK_APPROVER_IDS", "").split(",") if u}
 
@@ -288,7 +305,7 @@ _NAMED: dict[str, tuple[str, ...]] = {
     "instagram": ("instagram.",),
     "youtube": ("youtube.",),
     "issue": ("gitlab.",), "gitlab": ("gitlab.",), "ticket": ("gitlab.",),
-    "snapshot": ("vpsie.",), "vpsie": ("vpsie.",), "server": ("vpsie.",),
+    "snapshot": ("cloudco.",), "cloudco": ("cloudco.",), "server": ("cloudco.",),
     "invoice": ("stripe.",), "payment": ("stripe.",),
     "reply": ("mail.", "matrix_rooms.", "fiverr.", "instagram.reply"),
     "email": ("mail.",), "calendar": ("calendar.",),
@@ -417,7 +434,15 @@ async def events(request: Request,
     if x_slack_retry_num:
         log.info("slack retry %s for %s", x_slack_retry_num,
                  payload.get("event_id") or "an event without an id")
+    return await handle_event(payload)
 
+
+async def handle_event(payload: dict) -> dict[str, Any]:
+    """One Events API callback, from either transport: the signed HTTP route
+    above, or Socket Mode (atlas/channels/slack_socket.py), where the `xapp-`
+    token that opened the socket stands in for the signature. Everything that
+    makes a message count -- approver ids, the durable duplicate check --
+    is here, so both transports pass through it."""
     event = payload.get("event") or {}
     if event.get("type") != "message" or event.get("subtype"):
         return {"ok": True}
@@ -504,7 +529,8 @@ async def events(request: Request,
             return await go(_reply("That was all quoted text, so I read it as "
                                    "someone else's words. Nothing was executed.",
                                    channel, thread), "slack reply", "quoted")
-        return await go(_request(mine, user, channel, thread), "slack request",
+        return await go(_request(mine, user, channel, thread,
+                                  str(event.get("channel_type") or "")), "slack request",
                         "request")
     return {"ok": True}
 
@@ -512,7 +538,7 @@ async def events(request: Request,
 def _addressed(text: str, channel: str, channel_type: str) -> bool:
     """Is this message for ATLAS?
 
-    Miro, 2026-09-27: "all Slack channels, I should be able to talk to them
+    the owner, 2026-09-27: "all Slack channels, I should be able to talk to them
     and interact normally." The workspace is ATLAS's own and only an
     approver's words ever reach here (`events` drops everyone else), so any
     channel ATLAS is in is a conversation with ATLAS -- unless the message
@@ -547,7 +573,7 @@ def _is_conversation(text: str) -> bool:
 
 
 CONVERSE = (
-    "You are ATLAS, answering Miro in Slack. Talk like a colleague who "
+    "You are ATLAS, answering the owner in Slack. Talk like a colleague who "
     "knows his systems: react to what he said, answer it plainly, ask one "
     "short follow-up only if it helps. Short paragraphs, Slack markdown is "
     "fine. Numbers about his own businesses and systems come only from the "
@@ -584,7 +610,7 @@ async def _converse(text: str) -> str:
             Need.DRAFT, await live_context() + "\n\n" + await tasks.context_text()
             + "\n\n" + found + "\n\n" + CONVERSE,
             [Message("user", wrap_untrusted(text, "slack", principal=True))],
-            max_tokens=900), timeout=40)
+            max_tokens=900, answer=True), timeout=40)
         answer = (getattr(completion, "text", "") or "").strip()
         if answer and not _looks_cut(answer):
             return answer
@@ -622,7 +648,7 @@ _SEARCH = re.compile(
 
 def search_terms(text: str) -> str | None:
     """The words to search when the message is a search of his own records,
-    else None. "search irubyana drafts", "what do you have on vpsie".
+    else None. "search irubyana drafts", "what do you have on cloudco".
     "search for flights to Rome" is still a search of his records -- it
     finds nothing and says so, never books anything."""
     found = _SEARCH.match(text or "")
@@ -750,8 +776,9 @@ async def _assistant(request, user: str) -> str:
                             "assistant")
 
 
-@quota.for_miro
-async def _request(text: str, user: str, channel: str, ts: str) -> None:
+@quota.for_owner
+async def _request(text: str, user: str, channel: str, ts: str,
+                   channel_type: str = "") -> None:
     """A typed request from an approver. Slack is a channel that can
     approve, so the ask is the approval: Tier 1 and 2 run, Tier 3 is
     refused, and either way he gets one line back in the thread.
@@ -763,7 +790,7 @@ async def _request(text: str, user: str, channel: str, ts: str) -> None:
     from .voice import is_order
 
     # "search <words>": his own records, listed, no model in the loop
-    # (kernel/search.py). Miro, 2026-10-06: a search engine of his own.
+    # (kernel/search.py). the owner, 2026-10-06: a search engine of his own.
     if (sought := search_terms(text)) is not None:
         from ..kernel import search as records
         try:
@@ -823,14 +850,33 @@ async def _request(text: str, user: str, channel: str, ts: str) -> None:
             # "What did you do with my request", "what are you working on":
             # the record itself, no model (kernel/tasks.py).
             body = await tasks.status_text(words)
+        elif (assistant.door_enabled("slack") and assistant.propose_enabled()
+              and assistant.GO_AHEAD.match(words)):
+            # `ASSISTANT_PROPOSE`: "do it" hands his own previous message to
+            # the action picker, which raises a card and runs nothing.
+            from ..kernel.flows import ask
+            body = await ask.answer(
+                lambda: assistant.converse(
+                    words, channel="slack", who=user,
+                    conversation=f"slack:{channel}",
+                    private_ok=_private_sink(user, channel_type)),
+                "assistant")
         elif _is_conversation(text) and not _is_knowledge_question(text):
             # Talk, not a command: "how's it going", "why is guardian slow",
             # "what did you do overnight". Answered like a colleague, over
             # the live checks (the same grounding the voice uses), in the
             # channel it was asked in.
             from ..kernel.flows import ask
-            body = await ask.answer(lambda: _converse(_unaddressed(text)),
-                                    "live status")
+            if assistant.door_enabled("slack"):
+                body = await ask.answer(
+                    lambda: assistant.converse(
+                    words, channel="slack", who=user,
+                    conversation=f"slack:{channel}",
+                    private_ok=_private_sink(user, channel_type)),
+                    "assistant")
+            else:
+                body = await ask.answer(lambda: _converse(_unaddressed(text)),
+                                        "live status")
         elif _is_knowledge_question(text):
             # A general-knowledge question -- medicine, technology, history --
             # is answered by the knowledge module (Perplexity first, with its
@@ -840,8 +886,16 @@ async def _request(text: str, user: str, channel: str, ts: str) -> None:
             # a bacterium", and NO_ACTION was the wrong answer to it.
             from ..kernel import knowledge
             from ..kernel.flows import ask
-            body = await ask.answer(lambda: knowledge.answer(_unaddressed(text)),
-                                    "knowledge")
+            if assistant.door_enabled("slack"):
+                body = await ask.answer(
+                    lambda: assistant.converse(
+                    words, channel="slack", who=user,
+                    conversation=f"slack:{channel}",
+                    private_ok=_private_sink(user, channel_type)),
+                    "assistant")
+            else:
+                body = await ask.answer(lambda: knowledge.answer(_unaddressed(text)),
+                                        "knowledge")
         else:
             outcome = await intent.act(text, channel="slack", who=user)
             body = outcome.spoken

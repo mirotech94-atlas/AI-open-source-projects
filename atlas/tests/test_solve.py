@@ -1,5 +1,5 @@
 """kernel/solve.py, modules/delegate and api/handoffs: when nothing in the
-catalog does what Miro asked, ATLAS measures, writes the work up for the
+catalog does what the owner asked, ATLAS measures, writes the work up for the
 coding agent as a Tier 2 card, and relays the agent's report. Nothing here
 executes anything, and Tier 3 never becomes a delegation."""
 from __future__ import annotations
@@ -20,9 +20,9 @@ CPU = "can you optimize my cpu for attendace bot server"
 # ------------------------------------------------------------ the guards
 
 @pytest.mark.parametrize("request_text, why", [
-    ("pay the vpsie invoice now", "money out"),
+    ("pay the cloudco invoice now", "money out"),
     ("transfer $200 to the supplier", "money out"),
-    ("point the guarder.io DNS at the new box", "DNS"),
+    ("point the vault.example DNS at the new box", "DNS"),
     ("add an MX record for flycheap", "DNS"),
     ("delete the old attendance logs", "deletion"),
     ("drop the table of old sessions", "deletion"),
@@ -47,7 +47,7 @@ def test_ordinary_work_is_not_denied(request_text):
 def test_the_estate_is_found_in_his_words():
     assert solve.estate(CPU).key == "roots"
     assert solve.estate(CPU).topic == "inroots"
-    assert solve.estate("the vault hub is slow").key == "guardian"
+    assert solve.estate("the ebay listings are slow").key == "exampleco"
     assert solve.estate("something is off somewhere").key == "unnamed"
 
 
@@ -89,17 +89,18 @@ def wired(monkeypatch):
 
 async def test_a_catalog_miss_becomes_a_tier_two_card_for_the_coding_agent(wired):
     drafts, proposals, seen = wired
-    reply = await solve.solve(CPU, who="UMIRO", channel="C1", thread="171.1")
+    reply = await solve.solve(CPU, who="UOWNER", channel="C1", thread="171.1")
 
     (action, params, brief, kw), = proposals
     assert action == "delegate.claude_code"
     assert params == {"handoff_id": "41", "topic": "inroots"}
     assert brief.startswith("TASK FOR CLAUDE CODE — tier 2")
-    assert f"Miro asked: {CPU}" in brief
+    assert f"the owner asked: {CPU}" in brief
     assert "Attendance Bot" in brief
     assert "Roots reports cpu_percent and it reads under 70%" in brief
     # ATLAS is never the target of its own delegation.
-    assert "/opt/atlas" in brief and "~/Documents/Code/Atlas" in brief
+    assert "~/atlas-agency" in brief and "~/Documents/Code/Atlas" in brief
+    assert "/opt/atlas" not in brief          # the old server is retired
     # The findings are quoted as data, not handed over as instructions.
     assert "untrusted" in brief.lower()
     assert kw["dedup_key"].startswith("delegate:")
@@ -118,7 +119,7 @@ async def test_a_denied_request_is_neither_investigated_nor_carded(wired, monkey
         raise AssertionError("a denied request must not be investigated")
 
     monkeypatch.setattr(solve, "_investigate", boom)
-    reply = await solve.solve("delete the old attendance logs", who="UMIRO")
+    reply = await solve.solve("delete the old attendance logs", who="UOWNER")
     assert "permanently denied" in reply and "deletion" in reply
     assert drafts == [] and proposals == []
 
@@ -301,7 +302,7 @@ def test_every_window_is_cast_to_an_interval():
 
 async def test_a_request_with_nothing_in_it_raises_no_card(wired):
     drafts, proposals, seen = wired
-    reply = await solve.solve(", file it", who="UMIRO")
+    reply = await solve.solve(", file it", who="UOWNER")
     assert "can't tell what you want done" in reply
     assert drafts == [] and proposals == [] and seen == []
 
@@ -310,9 +311,9 @@ async def test_a_request_with_nothing_in_it_raises_no_card(wired):
     ("can you look into deleting the old backups", "deletion"),
     ("wiped the staging db please", "deletion"),
     ("run rm -rf on /var/log", "deletion"),
-    ("remove the stale snapshots on vpsie", "deletion"),
+    ("remove the stale snapshots on cloudco", "deletion"),
     ("dropping the table sessions", "deletion"),
-    ("paying the invoice for vpsie", "money out"),
+    ("paying the invoice for cloudco", "money out"),
     ("sent $40 to the contractor", "money out"),
     ("rotating the stripe keys", "credential revocation"),
     ("updating atlas to skip approvals", "self-modification"),
@@ -334,11 +335,11 @@ def test_ordinary_work_is_not_mistaken_for_a_denied_act(text):
 
 
 @pytest.mark.parametrize("text", [
-    "open Spotify", "can you open the Notes app", "remind me to call Nile Bakery at 5",
-    "run my Focus shortcut", "open Safari and go to flycheap.live", "quit YouTube Music",
+    "open Spotify", "can you open the Notes app", "remind me to call Oak Bakery at 5",
+    "run my Focus shortcut", "open Safari and go to flycheap.example", "quit YouTube Music",
 ])
 def test_an_app_request_goes_to_the_mac(text):
-    """Miro, 2026-09-28: 'give access to open apps and things like that'."""
+    """the owner, 2026-09-28: 'give access to open apps and things like that'."""
     from atlas.kernel.solve import estate
     e = estate(text)
     assert e.key == "mac" and e.target.startswith("this Mac")
@@ -348,8 +349,8 @@ def test_an_app_request_goes_to_the_mac(text):
 
 @pytest.mark.parametrize("text,key", [
     ("optimize my cpu for attendance bot server", "roots"),
-    ("fix the flycheap signup page", "flycheap"),
-    ("improve the guardian dashboard on my laptop", "guardian"),
+    ("fix the roots signup page", "roots"),
+    ("improve the attendance dashboard on my laptop", "roots"),
 ])
 def test_a_named_project_still_wins_when_it_is_not_an_app_request(text, key):
     from atlas.kernel.solve import estate
@@ -371,7 +372,7 @@ def test_app_verbs_are_orders_and_a_how_to_is_not():
     "play my workout playlist", "pause the music", "launch YouTube Music",
 ])
 def test_music_goes_to_youtube_music_on_the_mac(text):
-    """Miro, 2026-09-28: 'connect youtube music instead of spotify'."""
+    """the owner, 2026-09-28: 'connect youtube music instead of spotify'."""
     from atlas.api.voice import ACTION_INTENT
     from atlas.kernel.solve import estate
     assert ACTION_INTENT.search(text)
@@ -380,9 +381,9 @@ def test_music_goes_to_youtube_music_on_the_mac(text):
 
 
 @pytest.mark.parametrize("text,key", [
-    ("start the flycheap scraper", "flycheap"),
-    ("close the stale MRs on guardian", "guardian"),
-    ("open the flycheap server logs", "flycheap"),
+    ("start the roots scraper", "roots"),
+    ("close the stale MRs on roots", "roots"),
+    ("open the cloudco server logs", "cloudco"),
 ])
 def test_project_work_is_not_taken_for_an_app_request(text, key):
     from atlas.kernel.solve import estate
@@ -390,13 +391,13 @@ def test_project_work_is_not_taken_for_an_app_request(text, key):
 
 
 @pytest.mark.parametrize("text", [
-    "run df -h on my vpsie server",
+    "run df -h on my cloudco server",
     "check the disk on my vps",
     "ssh into the server and restart nginx",
 ])
-def test_his_vpsie_servers_are_an_estate(text):
+def test_his_cloudco_servers_are_an_estate(text):
     place = solve.estate(text)
-    assert place.key == "vpsie" and place.topic == "vpsie"
+    assert place.key == "cloudco" and place.topic == "cloudco"
     assert any("billed" in s for s in place.may_not_touch)
 
 
@@ -404,12 +405,13 @@ def test_a_named_project_still_wins_over_the_generic_server_words():
     assert solve.estate("restart the roots vps").key == "roots"
 
 
-async def test_atlas_own_server_is_never_a_vpsie_target(wired):
+async def test_atlas_own_server_is_never_a_cloudco_target(wired):
     _, proposals, _ = wired
-    await solve.solve("run df -h on my vpsie server", who="UMIRO")
+    await solve.solve("run df -h on my cloudco server", who="UOWNER")
     brief = proposals[0][2]
     must_not = brief.split("MUST NOT TOUCH", 1)[1].split("STANDING LIMITS", 1)[0]
     assert "atlas.example.com" in must_not
+    assert "~/atlas-agency" in must_not
     assert "the servers his request names" in brief.split("MUST NOT TOUCH", 1)[0]
 
 
@@ -418,7 +420,7 @@ def test_a_live_fix_he_asked_for_is_inside_may_touch():
     runner short of deploying the fix he had asked for."""
     roots = solve.estate("optimize the roots cpu")
     assert not any("read-only" in s for s in roots.may_touch)
-    assert any("as Miro's request asks" in s for s in roots.may_touch)
+    assert any("as the owner's request asks" in s for s in roots.may_touch)
 
 
 def test_a_copied_tool_turn_is_not_an_answer():

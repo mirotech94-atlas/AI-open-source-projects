@@ -96,7 +96,7 @@ def _refuse(action: str, why: str) -> Prediction:
 
 
 async def predict(action: str, severity: int, *, at=None) -> Prediction:
-    """P(Miro approves) for this action right now, with reasons — or ABSTAIN.
+    """P(the owner approves) for this action right now, with reasons — or ABSTAIN.
 
     Tier 3 is refused first. The registry's decision for a NEVER action is
     the only thing consulted, and it is read, never written.

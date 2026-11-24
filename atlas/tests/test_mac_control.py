@@ -1,4 +1,4 @@
-"""Everyday Mac control (Miro, 2026-09-28): iMessage, URLs, Shortcuts, quit,
+"""Everyday Mac control (the owner, 2026-09-28): iMessage, URLs, Shortcuts, quit,
 volume, notifications. Closed, validated, tiered in code.
 
 The Mac side of the same rules (quoting, the Shortcut allowlist) is in
@@ -54,7 +54,7 @@ TIER = {
     "mac.open_app": Tier.AUTO, "mac.play_music": Tier.AUTO,
     "mac.music_control": Tier.AUTO, "mac.add_reminder": Tier.AUTO,
     "mac.set_volume": Tier.AUTO, "mac.notify": Tier.AUTO,
-    # Tier 1 since 2026-10-06 (Miro's 2026-09-30 ruling: not urgent, no card).
+    # Tier 1 since 2026-10-06 (the owner's 2026-09-30 ruling: not urgent, no card).
     "mac.open_url": Tier.AUTO, "mac.quit_app": Tier.AUTO,
     "mac.web_search": Tier.AUTO, "mac.new_note": Tier.AUTO,
     "mac.send_imessage": Tier.ASK, "mac.run_shortcut": Tier.ASK,
@@ -104,7 +104,7 @@ def test_quit_and_url_keep_their_parameter_checks_as_tier_1():
 
 @pytest.mark.parametrize("to,kind", [
     ("+15551234567", "phone"), ("+447911123456", "phone"),
-    ("miro@example.com", "email"), ("a.b+c@sub.example.co.uk", "email"),
+    ("owner@example.com", "email"), ("a.b+c@sub.example.co.uk", "email"),
     ("Mum", "contact"), ("Jean-Luc O'Brien", "contact"), ("Zoë", "contact"),
 ])
 def test_a_recipient_is_a_phone_an_email_or_a_contact_name(to, kind):
@@ -208,7 +208,7 @@ async def test_approved_on_slack_the_message_goes_through_the_executor(
         return ["slack"]
 
     monkeypatch.setattr(approvals, "notify", fake_notify)
-    verdict = await decide(12, "approve", via="slack:UMIRO")
+    verdict = await decide(12, "approve", via="slack:UOWNER")
     # Answered at once (Slack's 3 s window); the Mac work runs after it.
     assert verdict.ok and verdict.outcome == "started", verdict.render()
     await approvals.RUNNING[12]
@@ -244,7 +244,7 @@ def test_a_plain_http_url_opens(url, host):
     "file:///etc/passwd", "javascript:alert(1)", "data:text/html,hi",
     "ftp://example.com", "x-apple.systempreferences:com.apple.preference",
     "vnc://host", "smb://host/share", "ssh://host", "shortcuts://run-shortcut?name=x",
-    "https://user:pw@example.com/", "https://atlas.example.com@evil.io/",
+    "https://user:pw@example.com/", "https://contact63@example.com/",
     "https://exa mple.com", "https://example.com/\nx", " https://example.com",
     "-a https://example.com", "https:example.com", "https:///path",
     "https://example.com\\@evil.io", "https://e\u202example.com",
@@ -256,7 +256,7 @@ def test_anything_but_a_plain_http_url_is_refused(url):
 
 @pytest.mark.parametrize("url,own", [
     ("https://atlas.example.com/x", True), ("https://m.youtube.com/", True),
-    ("https://admin.shopify.com/store/x", True), ("https://flycheap.live", True),
+    ("https://admin.shopify.com/store/x", True), ("https://flycheap.example", True),
     ("https://youtube.com.evil.io/", False), ("https://notyoutube.com/", False),
     ("https://evil-atlas.example.com.io/", False),
 ])
@@ -268,7 +268,7 @@ async def test_the_url_dry_run_says_whether_it_is_one_of_his_sites(
     assert ("not one of your sites" in out.detail) is (not own)
 
 
-async def test_open_url_runs_straight_away_for_miro_and_its_undo_is_honest(
+async def test_open_url_runs_straight_away_for_owner_and_its_undo_is_honest(
         registered):
     _awake(registered)
     _mac_answers(registered, detail="opened x.com in your browser")
@@ -322,7 +322,7 @@ async def test_quit_runs_straight_away_and_the_undo_reopens_only_what_it_quit(
     token = json.dumps({"app": "Notes", "quit_by_us": True})
     _mac_answers(registered, detail="Notes quit", token=token)
     out = await executor.execute(ExecutionRequest(
-        "mac.quit_app", {"app": "Notes"}, "asked", approved_by="slack:UMIRO"))
+        "mac.quit_app", {"app": "Notes"}, "asked", approved_by="slack:UOWNER"))
     assert out.ok and out.rollback_token == token
     await mac.undo_quit_app(token)
     assert _jobs(registered)[-1] == ("open_app", {"app": "Notes"})
@@ -450,12 +450,12 @@ async def test_the_volume_dry_run_reads_the_level_and_the_undo_restores_it(regis
     assert back.ok and _jobs(registered) == [("set_volume", {"level": 19})]
 
 
-async def test_set_volume_runs_straight_away_for_miro(registered):
+async def test_set_volume_runs_straight_away_for_owner(registered):
     _awake(registered)
     _mac_answers(registered, detail="volume set to 60 (it was 19)",
                  token=json.dumps({"previous": 19}))
     out = await executor.execute(ExecutionRequest(
-        "mac.set_volume", {"level": 60}, "asked", approved_by="slack:UMIRO"))
+        "mac.set_volume", {"level": 60}, "asked", approved_by="slack:UOWNER"))
     assert out.ok and out.rollback_token == json.dumps({"previous": 19})
     assert ("set_volume", {"level": 60}) in _jobs(registered)
 
@@ -517,7 +517,7 @@ async def test_a_live_agent_is_ok(memory_backend):
     "text Mum I'm running late", "Jarvis, message Sam that I'm outside",
     "iMessage +15551234567 on my way", "set the volume to 30",
     "turn the volume down", "mute", "notify me when the build is done",
-    "open flycheap.live", "go to https://atlas.example.com/dashboard",
+    "open flycheap.example", "go to https://atlas.example.com/dashboard",
     "run my Morning shortcut", "quit Safari",
 ])
 def test_everyday_mac_requests_are_heard_as_orders(said):

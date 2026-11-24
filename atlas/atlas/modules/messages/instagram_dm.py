@@ -35,6 +35,9 @@ GRAPH = "https://graph.facebook.com/v21.0"
 
 
 def _cfg() -> tuple[str, str] | None:
+    from ..instagram import switched_off
+    if switched_off():
+        return None                 # the owner, 2026-10-11: Instagram is off
     ig_id = os.getenv("INSTAGRAM_ACCOUNT_ID", "").strip()
     token = os.getenv("INSTAGRAM_TOKEN", "").strip()
     if not ig_id or not token:
@@ -76,7 +79,7 @@ async def _page_token(page_id: str, user_token: str) -> tuple[str | None, str | 
     return str(token), None
 
 
-# Both accounts' DMs (Miro enabled message access on both, 2026-09-27):
+# Both accounts' DMs (the owner enabled message access on both, 2026-09-27):
 # (label, env prefix for the IG account and token, env names for its Page).
 DM_ACCOUNTS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("main", "INSTAGRAM_", ("INSTAGRAM_PAGE_ID",)),
@@ -97,7 +100,7 @@ def _account(prefix: str, page_envs: tuple[str, ...]) -> tuple[str, str, str] | 
 
 async def recent(limit: int = 25) -> tuple[list[dict], str | None]:
     """Recent DM threads on every configured account, flattened to one
-    entry per message, each tagged with its `account`. Includes Miro's own
+    entry per message, each tagged with its `account`. Includes the owner's own
     outgoing messages (`is_from_me`). A thread id from the stories account
     is prefixed `stories:` so the two accounts' threads never collide. When
     one account cannot be read its reason is returned beside the other's
@@ -244,7 +247,7 @@ async def send(thread_id: str, recipient_id: str,
     the Graph send endpoint does not address. `thread_id` (the stored
     conversation id) only picks which account, Page and Page token send
     it, the way the conversations are read. The one call in this file that
-    puts a message in front of someone who is not Miro; reached only from
+    puts a message in front of someone who is not the owner; reached only from
     `messages.reply`."""
     acct, bare, why = _account_for(thread_id)
     if acct is None:

@@ -1,6 +1,6 @@
 """Words said to the Mac, read in code: no model, nothing run here.
 
-Miro, 2026-10-06, from a reel of a voice assistant that opens apps
+the owner, 2026-10-06, from a reel of a voice assistant that opens apps
 mid-sentence: "open Notes, once you're there create a new note, make the
 title say hello"; "open the browser and google something"; "open x.com".
 `plan()` turns one utterance into an ordered list of catalog actions with
@@ -159,9 +159,18 @@ SITE_ALIASES = {
     "instagram": "www.instagram.com", "tiktok": "www.tiktok.com",
     "linkedin": "www.linkedin.com", "facebook": "www.facebook.com",
     "netflix": "www.netflix.com", "amazon": "www.amazon.com",
-    "atlas": "atlas.example.com", "flycheap": "flycheap.live",
-    "fly cheap": "flycheap.live", "hacker news": "news.ycombinator.com",
+    "atlas": "http://127.0.0.1:8080", "flycheap": "flycheap.example",
+    "fly cheap": "flycheap.example", "hacker news": "news.ycombinator.com",
 }
+# ATLAS runs on this Mac (atlas.example.com was deleted 2026-10-27), so its alias
+# carries its own scheme; every other alias is an https host.
+
+
+def _alias_url(name: str) -> str:
+    target = SITE_ALIASES[name]
+    return target if "://" in target else "https://" + target
+
+
 _BROWSER = re.compile(r"^(?:the\s+|my\s+)?(?:web\s+)?(?:browser|internet)$",
                       re.IGNORECASE)
 BROWSER_HOME = "https://www.google.com"
@@ -346,8 +355,7 @@ def parse_clause(clause: str) -> Parsed:
         if not target or _PRONOUN.match(target):
             return _Ask("Which site? Say its address, like x.com.")
         url = as_url(target) or (
-            "https://" + SITE_ALIASES[target.lower()]
-            if target.lower() in SITE_ALIASES else None)
+            _alias_url(target.lower()) if target.lower() in SITE_ALIASES else None)
         if url is None:
             return _Ask(f"Which address is {target}? Say it like {target.lower()}.com.")
         return Step("mac.open_url", {"url": url}, said)
@@ -362,7 +370,7 @@ def parse_clause(clause: str) -> Parsed:
             return Step("mac.open_url", {"url": url}, said)
         lowered = target.lower()
         if lowered in SITE_ALIASES and lowered not in APP_ALIASES:
-            return Step("mac.open_url", {"url": "https://" + SITE_ALIASES[lowered]}, said)
+            return Step("mac.open_url", {"url": _alias_url(lowered)}, said)
         if (two := _two(target, "open")) is not None:
             return two
         return Step("mac.open_app", {"app": _app_name(target)}, said)

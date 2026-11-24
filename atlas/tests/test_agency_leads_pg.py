@@ -114,11 +114,14 @@ async def test_a_reply_matches_our_outreach(pg):
 
 async def test_deals_close_the_first_sale_price(pg):
     lead_id = await _lead()
-    assert (await pricing.terms()).first_sale_open
+    # The first-sale price is retired (500 new / 300 returning): a paid deal
+    # makes the lead returning, a lost one does not.
+    assert (await pricing.terms(lead_id)).returning is False
     deal = await _store.insert_deal(lead_id, "lost", None, "")
-    assert (await pricing.terms()).first_sale_open        # lost is not a sale
+    assert (await pricing.terms(lead_id)).returning is False   # lost is not a sale
     await _store.insert_deal(lead_id, "paid", 300, "")
-    assert not (await pricing.terms()).first_sale_open
+    terms = await pricing.terms(lead_id)
+    assert terms.returning is True and terms.price == terms.floor
     await _store.undo_deal(deal)
     assert await _store.count_closed_deals() == 1
 
@@ -199,21 +202,21 @@ async def test_stripe_events_payments_and_the_first_sale_price(pg):
     await _store.release_stripe_event("evt_1")
     assert await _store.claim_stripe_event("evt_1", "invoice.paid")
 
-    assert (await pricing.terms()).first_sale_open
-    # An unmatched payment is still a sale.
+    assert (await pricing.terms(lead_id)).returning is False
+    # An unmatched payment names no lead, so it makes nobody returning.
     await _store.insert_payment(event_id="evt_0", source="invoice", object_id="in_0",
                                 matched_by="none", amount_minor=10000, currency="usd")
-    assert not (await pricing.terms()).first_sale_open
+    assert (await pricing.terms(lead_id)).returning is False
     await state.execute_sql("TRUNCATE agency_payments")
     deal = await _store.insert_paid_deal(lead_id, 50050, "usd", "stripe evt_1")
     pid = await _store.insert_payment(
         event_id="evt_1", source="checkout", object_id="cs_1", payment_intent="pi_1",
         lead_id=lead_id, matched_by="reference", amount_minor=50050,
         currency="usd", deal_id=deal)
-    assert not (await pricing.terms()).first_sale_open
+    assert (await pricing.terms(lead_id)).returning is True   # a paid deal
     found = await _store.payment_for("pi_1", None)
     assert found["id"] == pid and found["lead_name"] == "Joe's Plumbing"
     assert found["amount_minor"] == 50050
     await _store.set_payment_status(pid, "refunded", 50050)
     await _store.set_deal_status(deal, "refunded")
-    assert (await pricing.terms()).first_sale_open
+    assert (await pricing.terms(lead_id)).returning is False   # refunded: not a sale

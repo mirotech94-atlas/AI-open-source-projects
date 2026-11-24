@@ -4,7 +4,7 @@
 #   /opt/atlas/bootstrap/deploy/deploy.sh <commit sha>
 #   ATLAS_DEPLOY_DRY=1 deploy.sh <sha>   # rehearse: say what would change, change nothing
 #
-# Miro, 2026-09-28: deploys automated, so no session runs `docker compose`
+# the owner, 2026-09-28: deploys automated, so no session runs `docker compose`
 # on the api by hand again (three at once left it stuck in "Created"). This
 # is the deploy session's own proven procedure, written down:
 #

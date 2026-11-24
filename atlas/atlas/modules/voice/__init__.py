@@ -13,9 +13,9 @@ CRITICAL call never goes silent -- but it says nothing about itself, so:
   * one INFO signal a day while `/v1/tts` keeps answering 402, recorded by
     `api.phone.clip` through `note_tts_status`: audio again clears it.
 
-What it may do: nothing. It has no actions; topping up is Miro's.
+What it may do: nothing. It has no actions; topping up is the owner's.
 
-Endpoints it assumes, so Miro can correct them:
+Endpoints it assumes, so the owner can correct them:
   * `POST https://api.fish.audio/v1/tts` -- verified live on 2026-09-24
     (200 with MP3; 402 when the API credit is spent).
   * `GET https://api.fish.audio/wallet/self/api-credit` with the bearer --

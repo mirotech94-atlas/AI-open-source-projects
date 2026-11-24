@@ -1,0 +1,511 @@
+{
+ "safe-ai-operator": {
+  "videos": [
+   {
+    "label": "Lesson 0.1: The week-one failure",
+    "src": "clip-1.mp4",
+    "poster": "clip-1.jpg",
+    "seconds": 60,
+    "full_minutes": 4
+   }
+  ],
+  "books": [
+   {
+    "label": "The guide",
+    "total": 93,
+    "pages": [
+     {
+      "src": "book-1-p1.jpg",
+      "page": 1,
+      "w": 1000,
+      "h": 1416
+     },
+     {
+      "src": "book-1-p2.jpg",
+      "page": 2,
+      "w": 1000,
+      "h": 1416
+     },
+     {
+      "src": "book-1-p4.jpg",
+      "page": 4,
+      "w": 1000,
+      "h": 1416
+     },
+     {
+      "src": "book-1-p5.jpg",
+      "page": 5,
+      "w": 1000,
+      "h": 1416
+     }
+    ]
+   }
+  ],
+  "kit": {
+   "label": "The starter agent (zip)",
+   "tree": [
+    {
+     "path": "safe-operator/.gitignore",
+     "bytes": 106
+    },
+    {
+     "path": "safe-operator/README.md",
+     "bytes": 7149
+    },
+    {
+     "path": "safe-operator/pyproject.toml",
+     "bytes": 998
+    },
+    {
+     "path": "safe-operator/safe_operator/__init__.py",
+     "bytes": 234
+    },
+    {
+     "path": "safe-operator/safe_operator/__main__.py",
+     "bytes": 128
+    },
+    {
+     "path": "safe-operator/safe_operator/actions.py",
+     "bytes": 2913
+    },
+    {
+     "path": "safe-operator/safe_operator/agent.py",
+     "bytes": 5140
+    },
+    {
+     "path": "safe-operator/safe_operator/approvals.py",
+     "bytes": 6150
+    },
+    {
+     "path": "safe-operator/safe_operator/catalog.py",
+     "bytes": 4545
+    },
+    {
+     "path": "safe-operator/safe_operator/cli.py",
+     "bytes": 7382
+    },
+    {
+     "path": "safe-operator/safe_operator/collectors/__init__.py",
+     "bytes": 210
+    },
+    {
+     "path": "safe-operator/safe_operator/collectors/sales.py",
+     "bytes": 4748
+    },
+    {
+     "path": "safe-operator/safe_operator/collectors/website.py",
+     "bytes": 1614
+    },
+    {
+     "path": "safe-operator/safe_operator/contracts.py",
+     "bytes": 5785
+    },
+    {
+     "path": "safe-operator/safe_operator/db.py",
+     "bytes": 2168
+    },
+    {
+     "path": "safe-operator/safe_operator/executor.py",
+     "bytes": 7791
+    },
+    {
+     "path": "safe-operator/safe_operator/llm.py",
+     "bytes": 4867
+    },
+    {
+     "path": "safe-operator/safe_operator/pause.py",
+     "bytes": 2326
+    },
+    {
+     "path": "safe-operator/safe_operator/secrets.py",
+     "bytes": 2380
+    },
+    {
+     "path": "safe-operator/safe_operator/tiers.py",
+     "bytes": 1066
+    },
+    {
+     "path": "safe-operator/safe_operator/untrusted.py",
+     "bytes": 1965
+    },
+    {
+     "path": "safe-operator/tests/conftest.py",
+     "bytes": 3038
+    },
+    {
+     "path": "safe-operator/tests/test_agent.py",
+     "bytes": 3818
+    },
+    {
+     "path": "safe-operator/tests/test_approvals.py",
+     "bytes": 1973
+    },
+    {
+     "path": "safe-operator/tests/test_catalog.py",
+     "bytes": 2205
+    },
+    {
+     "path": "safe-operator/tests/test_collectors.py",
+     "bytes": 4259
+    },
+    {
+     "path": "safe-operator/tests/test_contracts.py",
+     "bytes": 2074
+    },
+    {
+     "path": "safe-operator/tests/test_executor.py",
+     "bytes": 7879
+    },
+    {
+     "path": "safe-operator/tests/test_tiers.py",
+     "bytes": 875
+    },
+    {
+     "path": "safe-operator/tests/test_untrusted_and_secrets.py",
+     "bytes": 2926
+    }
+   ],
+   "readme": "safe-operator/README.md",
+   "excerpt": [
+    "# safe-operator",
+    "",
+    "The starter agent for **Build a Safe AI Operator** by the owner.",
+    "",
+    "It is a small AI operator for a small business. It watches your website and",
+    "your sales, shows what it saw to a language model, and lets the model suggest",
+    "**one action by name** from a closed menu. Then code, not the model, decides",
+    "whether that action may happen at all.",
+    "",
+    "It is built to be unable to burn you:",
+    "",
+    "- it ships in **watch-only mode**, where nothing can act;",
+    "- it has **one** function that performs actions, and that function checks",
+    "  everything, in a fixed order, every time;",
+    "- five kinds of action (moving money, DNS, deleting, revoking keys, changing",
+    "  its own code) are **permanently denied** in code;",
+    "- an unanswered approval request **expires**. It never runs on a timeout.",
+    "",
+    "This is course code. It is small on purpose, so you can read all of it in an",
+    "evening and change it with confidence."
+   ],
+   "readme_lines": 156
+  }
+ },
+ "30-business-lessons": {
+  "books": [
+   {
+    "label": "The ebook",
+    "total": 35,
+    "pages": [
+     {
+      "src": "book-1-p1.jpg",
+      "page": 1,
+      "w": 1000,
+      "h": 1417
+     },
+     {
+      "src": "book-1-p3.jpg",
+      "page": 3,
+      "w": 1000,
+      "h": 1417
+     },
+     {
+      "src": "book-1-p4.jpg",
+      "page": 4,
+      "w": 1000,
+      "h": 1417
+     },
+     {
+      "src": "book-1-p5.jpg",
+      "page": 5,
+      "w": 1000,
+      "h": 1417
+     }
+    ]
+   }
+  ]
+ },
+ "claude-obsidian-vault-kit": {
+  "kit": {
+   "label": "The vault (zip)",
+   "tree": [
+    {
+     "path": "Vault Kit/CLAUDE.md",
+     "bytes": 2293
+    },
+    {
+     "path": "Vault Kit/Clients/Client template.md",
+     "bytes": 582
+    },
+    {
+     "path": "Vault Kit/Content/Content calendar.md",
+     "bytes": 461
+    },
+    {
+     "path": "Vault Kit/Content/Idea template.md",
+     "bytes": 694
+    },
+    {
+     "path": "Vault Kit/Home.md",
+     "bytes": 598
+    },
+    {
+     "path": "Vault Kit/Inbox/Inbox.md",
+     "bytes": 265
+    },
+    {
+     "path": "Vault Kit/Projects/Project template.md",
+     "bytes": 866
+    },
+    {
+     "path": "Vault Kit/Prompts/Prompt library.md",
+     "bytes": 7811
+    },
+    {
+     "path": "Vault Kit/README.md",
+     "bytes": 2507
+    },
+    {
+     "path": "Vault Kit/Weekly Review.md",
+     "bytes": 815
+    }
+   ],
+   "readme": "Vault Kit/README.md",
+   "excerpt": [
+    "# Claude + Obsidian Vault Kit",
+    "",
+    "A starter Obsidian vault for running a small business with Claude. It is a folder of plain Markdown notes: a home page, templates for clients, projects and content, a weekly review, a prompt library, and a `CLAUDE.md` file that tells Claude how to work in the vault.",
+    "",
+    "Nothing here needs a plugin or an account with us. Your notes stay in this folder on your computer and open in Obsidian without an internet connection. Claude needs internet and your own Claude account.",
+    "",
+    "## Setup (about five minutes)",
+    "",
+    "1. **Install Obsidian.** Download it from https://obsidian.md and install it.",
+    "2. **Unzip this kit** somewhere you keep documents, for example your Documents folder. You get a folder called `Vault Kit`. Rename it if you like, for example to your business name.",
+    "3. **Open the folder as a vault.** In Obsidian, choose **Open folder as vault** and pick the folder. Open [[Home]]."
+   ],
+   "readme_lines": 35
+  }
+ },
+ "ai-for-every-age": {
+  "videos": [
+   {
+    "label": "Everyday AI for Adults, lesson 0.1: How this course works",
+    "src": "clip-1.mp4",
+    "poster": "clip-1.jpg",
+    "seconds": 60,
+    "full_minutes": 6
+   },
+   {
+    "label": "Safe and Simple AI 60+, lesson 0.1: How this book works",
+    "src": "clip-2.mp4",
+    "poster": "clip-2.jpg",
+    "seconds": 60,
+    "full_minutes": 4
+   }
+  ],
+  "books": [
+   {
+    "label": "Everyday AI for Adults",
+    "total": 182,
+    "pages": [
+     {
+      "src": "book-1-p1.jpg",
+      "page": 1,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p2.jpg",
+      "page": 2,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p5.jpg",
+      "page": 5,
+      "w": 1000,
+      "h": 1295
+     }
+    ]
+   },
+   {
+    "label": "Safe and Simple AI 60+ (large print)",
+    "total": 87,
+    "pages": [
+     {
+      "src": "book-2-p1.jpg",
+      "page": 1,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-2-p2.jpg",
+      "page": 2,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-2-p5.jpg",
+      "page": 5,
+      "w": 1000,
+      "h": 1295
+     }
+    ]
+   }
+  ]
+ },
+ "local-business-automation-pack": {
+  "books": [
+   {
+    "label": "The guide",
+    "total": 29,
+    "pages": [
+     {
+      "src": "book-1-p1.jpg",
+      "page": 1,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p2.jpg",
+      "page": 2,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p3.jpg",
+      "page": 3,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p5.jpg",
+      "page": 5,
+      "w": 1000,
+      "h": 1295
+     }
+    ]
+   }
+  ],
+  "kit": {
+   "label": "The pack (zip)",
+   "tree": [
+    {
+     "path": "Local Business Automation Pack/Local Business Automation Pack.pdf",
+     "bytes": 1368911
+    },
+    {
+     "path": "Local Business Automation Pack/workflows/1-site-health-check.json",
+     "bytes": 7562
+    },
+    {
+     "path": "Local Business Automation Pack/workflows/2-lead-form-drafted-reply.json",
+     "bytes": 8591
+    },
+    {
+     "path": "Local Business Automation Pack/workflows/3-missed-call-text-back.json",
+     "bytes": 8276
+    },
+    {
+     "path": "Local Business Automation Pack/workflows/4-review-request-after-job.json",
+     "bytes": 8553
+    },
+    {
+     "path": "Local Business Automation Pack/workflows/README.md",
+     "bytes": 4629
+    },
+    {
+     "path": "Local Business Automation Pack/workflows/docker-compose.yml",
+     "bytes": 1086
+    }
+   ],
+   "readme": "Local Business Automation Pack/workflows/README.md",
+   "excerpt": [
+    "# Local Business Automation Pack: the four workflows",
+    "",
+    "Last verified: 1 Oct 2026",
+    "",
+    "Four n8n workflow files you can import, each matching a chapter of the guide. They draft; they never send."
+   ],
+   "readme_lines": 65
+  }
+ },
+ "family-ai-scam-defence-workbook": {
+  "books": [
+   {
+    "label": "The workbook",
+    "total": 55,
+    "pages": [
+     {
+      "src": "book-1-p1.jpg",
+      "page": 1,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p2.jpg",
+      "page": 2,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p3.jpg",
+      "page": 3,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p6.jpg",
+      "page": 6,
+      "w": 1000,
+      "h": 1295
+     }
+    ]
+   }
+  ]
+ },
+ "sell-with-ai": {
+  "videos": [
+   {
+    "label": "Lesson 0.1: What this course is, and what it isn't",
+    "src": "clip-1.mp4",
+    "poster": "clip-1.jpg",
+    "seconds": 60,
+    "full_minutes": 4
+   }
+  ],
+  "books": [
+   {
+    "label": "The ebook edition",
+    "total": 89,
+    "pages": [
+     {
+      "src": "book-1-p1.jpg",
+      "page": 1,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p2.jpg",
+      "page": 2,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p4.jpg",
+      "page": 4,
+      "w": 1000,
+      "h": 1295
+     },
+     {
+      "src": "book-1-p5.jpg",
+      "page": 5,
+      "w": 1000,
+      "h": 1295
+     }
+    ]
+   }
+  ]
+ }
+}

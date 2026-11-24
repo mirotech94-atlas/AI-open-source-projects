@@ -1,4 +1,4 @@
-"""The football (soccer) reels lane (Miro, 2026-09-29): stat reels built
+"""The football (soccer) reels lane (the owner, 2026-09-29): stat reels built
 from API-Football's numbers, never from footage, faces or crests."""
 from __future__ import annotations
 
@@ -192,7 +192,7 @@ NFL = ("nfl", "touchdown", "quarterback", "super bowl", "american football",
 
 
 def test_the_lane_is_soccer_and_never_american_football():
-    """Miro, 2026-09-29: football means soccer. Nothing the lane writes --
+    """the owner, 2026-09-29: football means soccer. Nothing the lane writes --
     style, shots, topics, leagues, clubs, hashtags -- names the American game;
     the drafting prompt names it only to forbid it."""
     texts = [lane.STYLE, lane.HASHTAGS, *lane.SHOTS.values(),

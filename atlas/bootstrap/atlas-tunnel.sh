@@ -10,7 +10,7 @@
 # mesh or this tunnel.
 set -euo pipefail
 
-HOST="${ATLAS_HOST:-203.0.113.10}"
+HOST="${ATLAS_HOST:-203.0.113.191}"
 NAME="${ATLAS_NAME:-atlas.example.com}"
 KEY="${ATLAS_KEY:-$HOME/.ssh/id_rsa}"
 HOSTS=/etc/hosts

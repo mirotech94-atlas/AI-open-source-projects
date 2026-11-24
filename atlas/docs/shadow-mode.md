@@ -10,14 +10,14 @@ page 16, "Shadow, canary and soak":
 > observation period…
 
 **Nothing is shadowed by default, and this change enables nothing.** Every
-step below needs Miro's approval, given separately for that step.
+step below needs the owner's approval, given separately for that step.
 
 ## What shadow mode does
 
 A shadowed module keeps doing everything except acting:
 
 - its checks still observe;
-- its proposals are still made and still reach Miro;
+- its proposals are still made and still reach the owner;
 - Tier 1 fixes are still chosen.
 
 When one of those would run, it is refused before `execute.start`. Nothing
@@ -103,7 +103,7 @@ when there is one, so the report needs no change.
 
 ## The 48-hour shadow procedure
 
-Each numbered step needs Miro's approval for that step.
+Each numbered step needs the owner's approval for that step.
 
 1. **Choose the scope.** Watch-only is **off** in prod (Gate 9, opened
    2026-09-22), so a shadow is the per-module way to "disable external
@@ -132,7 +132,7 @@ Each numbered step needs Miro's approval for that step.
    path (plan, page 16).
 
    **Approving a card during the window uses it up.** A Tier 2 card for a
-   shadowed module still reaches Miro. Approving it claims the proposal,
+   shadowed module still reaches the owner. Approving it claims the proposal,
    and `execute` then refuses with "not run: … shadow mode". The proposal
    ends `failed`, and the receipt says "Failed: not run: … shadow mode".
    This is how a pause already behaves. Watch-only is different: it leaves
@@ -153,7 +153,7 @@ Each numbered step needs Miro's approval for that step.
      value prints as `UNAUTHORIZED EFFECTS` and **blocks the rollout**.
    - **Duplicates.** The same action and reason, repeated for one cause, is
      noise to fix (RA-B6, RA-F1) before a canary.
-6. **Decide**, and it is Miro's decision: go to canaries, extend, or stop.
+6. **Decide**, and it is the owner's decision: go to canaries, extend, or stop.
    Record the decision and the report next to FINDINGS RA-G1.
 
 Rollout is **blocked** if any of the following remains: an unauthorized
@@ -163,7 +163,7 @@ reported as a passing subset.
 
 ## Canary steps, after the shadow
 
-Each canary needs Miro's separate approval for the **exact action,
+Each canary needs the owner's separate approval for the **exact action,
 destination and payload**. Testing is not an exemption from confirmation
 (plan, page 16). One module at a time, lowest risk first:
 

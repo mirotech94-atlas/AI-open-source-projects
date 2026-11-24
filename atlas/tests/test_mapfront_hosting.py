@@ -1,8 +1,8 @@
-"""Mapfront hosting: `agency.deploy_site`'s local target and Caddy's TLS ask.
+"""Preview hosting: `agency.deploy_site`'s local target (path-based previews).
 
 A site is published on this box under `hosting.PUBLISH_ROOT` (one release
 per deploy, made live by swapping a relative symlink) and served by Caddy
-at `https://<slug>.mapfront.io`. Everything here runs on `tmp_path`; the
+at `https://agency.example.com/preview/<slug>/`. Everything here runs on `tmp_path`; the
 store is monkeypatched, nothing touches a socket.
 """
 from __future__ import annotations
@@ -14,6 +14,14 @@ from pathlib import Path
 import pytest
 
 from atlas.modules.agency import _store, build, deploy, hosting
+
+
+@pytest.fixture(autouse=True)
+def _box_deploy_path(monkeypatch):
+    """The box deploy path is kept for rollback and tested here; since
+    2026-10-30 it refuses live (Vercel only, test_agency_gmail_brand.py)."""
+    from atlas.modules.agency import deploy as _deploy
+    monkeypatch.setattr(_deploy, "VERCEL_ONLY", False)
 
 
 def _async_returns(value):
@@ -41,7 +49,7 @@ def _ready_site(monkeypatch, site_dir: Path, heading: str = "Pipes, fixed") -> P
 def local(monkeypatch, tmp_path):
     """Local target, publish root and build dir both under tmp_path."""
     monkeypatch.delenv("AGENCY_DEPLOY_HOST", raising=False)
-    monkeypatch.delenv("AGENCY_SITES_DOMAIN", raising=False)
+    monkeypatch.delenv("AGENCY_PREVIEW_ORIGIN", raising=False)
     root = tmp_path / "publish"
     monkeypatch.setattr(hosting, "PUBLISH_ROOT", root)
     monkeypatch.setattr(build, "SITES_DIR", tmp_path / "builds")
@@ -98,11 +106,80 @@ def test_local_mode_is_unset_or_the_word_local(monkeypatch):
     assert not hosting.local_mode()
 
 
-def test_sites_domain_defaults_to_mapfront(monkeypatch):
-    monkeypatch.delenv("AGENCY_SITES_DOMAIN", raising=False)
-    assert hosting.sites_domain() == "mapfront.io"
-    monkeypatch.setenv("AGENCY_SITES_DOMAIN", "Example.COM.")
-    assert hosting.public_url("joes-7") == "https://joes-7.example.com/"
+def test_preview_origin_defaults_to_the_agency_host(monkeypatch):
+    monkeypatch.delenv("AGENCY_PREVIEW_ORIGIN", raising=False)
+    assert hosting.preview_origin() == "https://agency.example.com"
+    assert hosting.public_url("joes-7") == "https://agency.example.com/preview/joes-7/"
+    assert hosting.public_host("joes-7") == "agency.example.com"
+    monkeypatch.setenv("AGENCY_PREVIEW_ORIGIN", " https://Example.COM/ ")
+    assert hosting.public_url("joes-7") == "https://example.com/preview/joes-7/"
+
+
+@pytest.mark.parametrize("bad", ["http://example.com", "example.com", "javascript:1",
+                                 "https://a.com/path", "https://user@a.com", "https://"])
+def test_a_bad_preview_origin_falls_back_to_the_default(monkeypatch, bad):
+    monkeypatch.setenv("AGENCY_PREVIEW_ORIGIN", bad)
+    assert hosting.preview_origin() == "https://agency.example.com"
+
+
+def test_preview_slug_is_read_from_a_preview_url_path():
+    assert hosting.slug_of_preview_path("/preview/joes-7/") == "joes-7"
+    assert hosting.slug_of_preview_path("/preview/joes-7") == "joes-7"
+    assert hosting.slug_of_preview_path("/preview/joes-7/menu/a.html") == "joes-7"
+    for bad in ("/", "/preview/", "/preview//x", "/preview/Joes/", "/previews/joes-7/",
+                "/preview/../joes-7/", "/x/preview/joes-7/", "preview/joes-7/", ""):
+        assert hosting.slug_of_preview_path(bad) is None, bad
+
+
+# ----------------------------------------- absolute paths under /preview/<slug>/
+
+PAGE = (b'<a href="/">home</a> <a href=\'/menu.html\'>m</a> <a href="#top">t</a>'
+        b'<a href="about.html">a</a><a href="//cdn.example/x.js">c</a>'
+        b'<a href="https://example.com/">e</a><a href="mailto:a@b.co">m</a>'
+        b'<link rel="stylesheet" href="/assets/x.css"><img src="/img/a.png" '
+        b'srcset="/img/a.png 1x, /img/b.png 2x"><form action="/send" method="post">'
+        b'<div style="background:url(/img/bg.png)"></div><style>.a{background:url(\'/i.png\')}</style>')
+
+
+def test_absolute_paths_in_html_are_moved_under_the_preview_prefix():
+    out = hosting.prefix_html(PAGE, "joes-7").decode()
+    p = "/preview/joes-7/"
+    assert f'<a href="{p}">home</a>' in out
+    assert f"href='{p}menu.html'" in out
+    assert f'href="{p}assets/x.css"' in out and f'src="{p}img/a.png"' in out
+    assert f'srcset="{p}img/a.png 1x, {p}img/b.png 2x"' in out
+    assert f'action="{p}send"' in out
+    assert f"url({p}img/bg.png)" in out and f"url('{p}i.png')" in out
+    for kept in ('href="#top"', 'href="about.html"', 'href="//cdn.example/x.js"',
+                 'href="https://example.com/"', 'href="mailto:a@b.co"'):
+        assert kept in out, kept
+    assert "<base" not in out          # a <base> would turn every #anchor into a page load
+
+
+def test_prefixing_is_idempotent_and_keeps_every_other_byte():
+    once = hosting.prefix_html(PAGE, "joes-7")
+    assert hosting.prefix_html(once, "joes-7") == once
+    odd = b"<p>caf\xc3\xa9 \xff\xfe</p>"
+    assert hosting.prefix_html(odd, "joes-7") == odd
+
+
+async def test_publish_prefixes_html_only(monkeypatch, tmp_path, local):
+    root, _ = local
+    site = _serve(monkeypatch, tmp_path)
+    (site / "index.html").write_bytes((site / "index.html").read_bytes()
+                                      + b'<img src="/img/x.png" alt="a pipe">')
+    (site / "img").mkdir()
+    (site / "img" / "x.png").write_bytes(b"\x89PNG")
+    css = b"body{background:url(/img/x.png)}"
+    (site / "style.css").write_bytes(css)
+    (site / "app.js").write_bytes(b'fetch("/api/x")')
+    result = await deploy.deploy_site("joes-7")
+    assert result.ok, result.detail
+    live = root / "joes-7"
+    assert b'src="/preview/joes-7/img/x.png"' in (live / "index.html").read_bytes()
+    assert (live / "style.css").read_bytes() == css
+    assert (live / "app.js").read_bytes() == b'fetch("/api/x")'
+    assert b'src="/img/x.png"' in (site / "index.html").read_bytes()  # build untouched
 
 
 def test_the_default_publish_root_is_not_the_build_dir():
@@ -119,7 +196,7 @@ async def test_publish_is_a_relative_link_to_a_copied_release(monkeypatch, tmp_p
     _serve(monkeypatch, tmp_path)
     result = await deploy.deploy_site("joes-7")
     assert result.ok, result.detail
-    assert result.evidence["url"] == "https://joes-7.mapfront.io/"
+    assert result.evidence["url"] == "https://agency.example.com/preview/joes-7/"
     link = root / "joes-7"
     assert link.is_symlink()
     target = os.readlink(link)
@@ -278,7 +355,7 @@ async def test_deploy_dry_names_the_public_url(monkeypatch, tmp_path, local):
     _serve(monkeypatch, tmp_path)
     preview = await deploy.deploy_dry("joes-7")
     assert preview.ok, preview.detail
-    assert "https://joes-7.mapfront.io/" in preview.detail
+    assert "https://agency.example.com/preview/joes-7/" in preview.detail
     assert "first release" in preview.detail and "index.html (" in preview.detail
     assert not root.exists() or not (root / "joes-7").exists()
 
@@ -292,35 +369,20 @@ async def test_rsync_target_still_refuses_without_a_root(monkeypatch):
     assert not result.ok and "AGENCY_DEPLOY_ROOT" in result.detail
 
 
-def test_published_domain_falls_back_to_the_mapfront_host(monkeypatch):
+def test_published_domain_falls_back_to_the_preview_host(monkeypatch):
     monkeypatch.delenv("AGENCY_DEPLOY_HOST", raising=False)
-    monkeypatch.delenv("AGENCY_SITES_DOMAIN", raising=False)
+    monkeypatch.delenv("AGENCY_PREVIEW_ORIGIN", raising=False)
     assert deploy.published_domain({"slug": "joes-7", "deployed_at": "x"}) \
-        == "joes-7.mapfront.io"
+        == "agency.example.com"
+    assert deploy.published_url({"slug": "joes-7", "deployed_at": "x"}) \
+        == "https://agency.example.com/preview/joes-7/"
+    assert deploy.published_url({"slug": "joes-7", "deployed_at": None}) is None
     assert deploy.published_domain({"slug": "joes-7", "deployed_at": None}) is None
     assert deploy.published_domain({"slug": "joes-7", "domain": "joes.com",
                                     "deployed_at": "x"}) == "joes.com"
+    assert deploy.published_url({"slug": "joes-7", "domain": "joes.com",
+                                 "deployed_at": "x"}) == "https://joes.com/"
     monkeypatch.setenv("AGENCY_DEPLOY_HOST", "deploy@web1")
     assert deploy.published_domain({"slug": "joes-7", "deployed_at": "x"}) is None
 
 
-# ---------------------------------------------------------------- tls ask
-
-async def test_tls_allowed_only_for_the_apex_www_and_published_slugs(
-        monkeypatch, tmp_path, local):
-    root, _ = local
-    _serve(monkeypatch, tmp_path)
-    assert (await deploy.deploy_site("joes-7")).ok
-    for name in ("mapfront.io", "www.mapfront.io", "joes-7.mapfront.io",
-                 "JOES-7.mapfront.io", "joes-7.mapfront.io."):
-        assert hosting.tls_allowed(name, root), name
-    for name in ("nope.mapfront.io", "a.joes-7.mapfront.io", "joes-7.mapfront.io.evil",
-                 "evil.com", "", "mapfront.io.evil.com", "mail.mapfront.io",
-                 "_landing.mapfront.io", ".releases.mapfront.io",
-                 "..mapfront.io", "joes-7.example.com"):
-        assert not hosting.tls_allowed(name, root), name
-
-
-def test_tls_denies_a_real_directory_that_is_not_a_release(tmp_path):
-    (tmp_path / "rogue").mkdir()
-    assert not hosting.tls_allowed("rogue.mapfront.io", tmp_path)

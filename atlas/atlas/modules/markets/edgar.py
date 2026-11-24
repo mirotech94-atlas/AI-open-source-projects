@@ -1,6 +1,6 @@
 """SEC EDGAR, read only: the watchlist's new filings and insider trades.
 
-Miro, 2026-09-29: Ivan should "act, not just watch", with more market data.
+the owner, 2026-09-29: Ivan should "act, not just watch", with more market data.
 This is the more-data half, and it only reads. For each watchlist ticker it
 maps the ticker to its SEC CIK (SEC's own `company_tickers.json`, cached a
 day), reads the company's filing index from data.sec.gov's JSON API, and
@@ -76,7 +76,7 @@ CODES = {"P": "purchase", "S": "sale"}
 
 NO_UA = ("SEC_USER_AGENT is not set, so SEC EDGAR was not asked: SEC requires "
          "a User-Agent naming who asks with a contact address, e.g. "
-         "SEC_USER_AGENT='ATLAS ops@yourdomain.com'")
+         "SEC_USER_AGENT='ATLAS contact76@example.com'")
 LABEL = "watch only, never a trade"
 
 _ACCESSION = re.compile(r"^\d{10}-\d{2}-\d{6}$")

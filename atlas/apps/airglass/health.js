@@ -7,7 +7,8 @@
 // non-integer age is UNKNOWN. Anything that could not be read is UNKNOWN,
 // never OK (CLAUDE.md invariant 7).
 
-export const HEALTH_URL = 'https://atlas.example.com/healthz';
+// Local ATLAS (atlas.example.com was deleted 2026-10-27).
+export const HEALTH_URL = 'http://127.0.0.1:8080/healthz';
 export const HEARTBEAT_MAX_S = 900;
 export const POLL_MS = 60_000;
 

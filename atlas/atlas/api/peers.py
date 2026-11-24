@@ -27,6 +27,27 @@ def from_proxy(request: Request) -> bool:
         return False
 
 
+# Set by the public-internet proxy (Caddyfile.public, shop-public) on every
+# request it forwards, overwriting anything the client sent. OrbStack rewrites
+# the source of published-port traffic to the docker gateway (192.168.x.1), so
+# for these requests the real client address is unknowable and the forwarded
+# address would look like a LAN/mesh peer. The marker is believed from ANY
+# peer, not only from PROXY_NETWORK: under OrbStack the compose network is
+# 192.168.x (outside 172.16.0.0/12), so a proxy-only rule would silently ignore
+# it and judge the internet by Caddy's own (mesh-listed) address. It can only
+# LOWER trust -- "public" is not an IP, so the mesh guard refuses it on every
+# non-public path -- so a forged one gains nothing.
+PUBLIC_EDGE_HEADER = "x-atlas-public"
+PUBLIC_CLIENT = "public"
+
+
+def from_public_edge(request: Request) -> bool:
+    """Whether the request says it came from the public internet.
+
+    Believed from any peer, because it only ever lowers trust."""
+    return request.headers.get(PUBLIC_EDGE_HEADER, "").strip() == "1"
+
+
 def effective_client(request: Request) -> str:
     """The address to judge this request by.
 
@@ -37,6 +58,10 @@ def effective_client(request: Request) -> str:
     any other peer is ignored, so a public client cannot claim a mesh address.
     """
     peer = request.client.host if request.client else ""
+    if from_public_edge(request):
+        # Not an IP: never inside a mesh network, so the mesh guard refuses it
+        # on every non-public path; the per-address limiters share one bucket.
+        return PUBLIC_CLIENT
     if from_proxy(request):
         first = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
         if first:
@@ -85,6 +110,14 @@ class PerAddressLimiter:
                 self._evict(now)
             events = self._events[key] = deque()
         events.append(now)
+
+    def retry_after(self, key: str) -> float:
+        """Seconds until `key` may have another event; 0 when it may now."""
+        now = time.monotonic()
+        events = self._prune(key, now)
+        if events is None or len(events) < self.limit:
+            return 0.0
+        return max(0.0, self.window - (now - events[-self.limit]))
 
     def allow(self, key: str) -> bool:
         """Record an event and say whether it is within the limit."""

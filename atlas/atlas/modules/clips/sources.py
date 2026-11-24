@@ -2,7 +2,7 @@
 
 Footage comes ONLY from a campaign's official folder (frame.io, MediaSilo,
 WeTransfer or Drive). ATLAS never fetches from those: the download is
-Miro's, or a Mac-side step's, and it lands in
+the owner's, or a Mac-side step's, and it lands in
 
     data/clips/<campaign slug>/source/
 
@@ -59,7 +59,7 @@ def trash_dir(slug: str) -> Path:
 
 def brand_dir(slug: str) -> Path:
     """The campaign's own brand assets (logo.png, banner.png), placed by
-    Miro: on the server `./data/app/clips/<slug>/brand/`. Never fetched."""
+    the owner: on the server `./data/app/clips/<slug>/brand/`. Never fetched."""
     return campaign_dir(slug) / "brand"
 
 
@@ -147,7 +147,7 @@ def _flag(value: Any) -> bool:
 
 async def _known(slug: str, only_new: bool = False) -> set[str]:
     """The sha256s already registered -- or, with `only_new`, on file in ANY
-    state, so a registration Miro rolled back (retired) stays back. The
+    state, so a registration the owner rolled back (retired) stays back. The
     unattended intake always asks with `only_new`; by hand, registering a
     retired file again brings it back."""
     if only_new:
@@ -209,7 +209,7 @@ async def register_sources(campaign: str, only_new: bool = False) -> ActionResul
 
 
 async def register_sources_rollback(token: str) -> ActionResult:
-    """Retires the rows it registered; the files stay where Miro put them."""
+    """Retires the rows it registered; the files stay where the owner put them."""
     ids = [int(i) for i in json.loads(token)["ids"]]
     for sid in ids:
         await execute_sql(

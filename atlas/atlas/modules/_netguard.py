@@ -2,7 +2,7 @@
 a search engine or an agent chose.
 
 ATLAS runs next to its own API, which trusts 127.0.0.0/8 and the mesh as
-Miro. A fetch of `http://localtest.me:8080/api/memory` — a public name that
+the owner. A fetch of `http://localtest.me:8080/api/memory` — a public name that
 resolves to 127.0.0.1 — would hand his memory to the prompt, and the next
 fetch could carry it out in a query string. Reading is the leak, so every
 fetch of an outside-chosen URL asks `assert_public` first, and every redirect
@@ -24,7 +24,7 @@ What this does not close, stated so nobody relies on it for more:
     detects and refuses such a page afterwards; httpx callers here follow
     redirects by hand and check each hop first).
 The lasting fix is at the network layer — an egress rule denying these ranges
-to the fetching process, or a filtering forward proxy. That is Miro's call.
+to the fetching process, or a filtering forward proxy. That is the owner's call.
 """
 from __future__ import annotations
 
@@ -120,6 +120,38 @@ async def _check_host(host: str) -> str | None:
         if why:
             return f"{host} resolves to a {why} address, not the public web"
     return None
+
+
+async def resolve_public(host: str) -> tuple[str | None, str | None]:
+    """Resolve `host` once, uncached, for a caller that then dials the
+    address itself (no second lookup, so no DNS-rebinding window between the
+    check and the connection). Returns (address, None) when every address
+    the host resolves to is public, else (None, reason)."""
+    host = (host or "").strip().lower().rstrip(".")
+    if not host:
+        return None, "no host; not fetched"
+    ip = literal(host)
+    if ip is not None:
+        why = blocked(ip)
+        return (None, f"{host} is a {why} address, not the public web") if why \
+            else (str(ip), None)
+    try:
+        addresses = await _getaddrinfo(host)
+    except (OSError, UnicodeError) as exc:
+        return None, f"{host} does not resolve ({type(exc).__name__}); not fetched"
+    if not addresses:
+        return None, f"{host} does not resolve; not fetched"
+    chosen: str | None = None
+    for address in addresses:
+        try:
+            ip = ipaddress.ip_address(address.split("%", 1)[0])
+        except ValueError:
+            return None, f"{host} resolved to something that is not an address"
+        why = blocked(ip)
+        if why:
+            return None, f"{host} resolves to a {why} address, not the public web"
+        chosen = chosen or str(ip)
+    return chosen, None
 
 
 async def assert_public(url: str) -> str | None:

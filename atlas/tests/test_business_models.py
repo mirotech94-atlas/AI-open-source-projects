@@ -1,4 +1,4 @@
-"""Task 53: each business agent owns its model, Hermes by default.
+"""Task 53: each business owns its model, Hermes by default.
 
 `businesses.resolved_model()` is the only place a business's `"provider:
 model"` pin is decided; this file is about that decision, not about `think()`
@@ -13,10 +13,8 @@ from dataclasses import replace
 import pytest
 
 from atlas.kernel import businesses
-from atlas.kernel.agents import ROSTER, build_roster
 from atlas.kernel.businesses import BUSINESSES, BY_NAME, DEFAULT_MODEL
 from atlas.kernel.llm import Need
-from atlas.tools.builtin import register_all
 
 NON_PRIVATE = [b for b in BUSINESSES if b.need is not Need.PRIVATE]
 
@@ -26,37 +24,40 @@ def _fresh(monkeypatch):
     """Every test gets the real tool catalog, a clean roster, no leftover
     `ATLAS_AGENT_MODEL_*` override, and a fresh once-per-process warning set
     (a module-level list, so it survives across tests unless cleared)."""
-    register_all()
     for biz in BUSINESSES:
         monkeypatch.delenv(f"ATLAS_AGENT_MODEL_{biz.name.upper()}", raising=False)
     businesses._WARNED_PRIVATE_MODEL.clear()
-    build_roster()
+
+
+def _model(name: str) -> str | None:
+    """The pin the business would run on. The business agents left the roster
+    on 2026-10-28; their data and the resolution rule stay."""
+    return businesses.resolved_model(BY_NAME[name])
 
 
 def test_every_non_private_business_defaults_to_hermes_on_openrouter():
     assert DEFAULT_MODEL == "openrouter:qwen/qwen3-235b-a22b-2507"
     for biz in NON_PRIVATE:
-        assert ROSTER[biz.name].model == DEFAULT_MODEL, biz.name
+        assert businesses.resolved_model(biz) == DEFAULT_MODEL, biz.name
 
 
 def test_the_env_override_wins_over_the_default(monkeypatch):
-    monkeypatch.setenv("ATLAS_AGENT_MODEL_FLYCHEAP", "anthropic:claude-haiku-4-5")
-    build_roster()
-    assert ROSTER["flycheap"].model == "anthropic:claude-haiku-4-5"
+    monkeypatch.setenv("ATLAS_AGENT_MODEL_CLOUDCO", "anthropic:claude-haiku-4-5")
+    assert _model("cloudco") == "anthropic:claude-haiku-4-5"
     # An untouched business is unaffected by another one's override.
-    assert ROSTER["guardian"].model == DEFAULT_MODEL
+    assert _model("inroots") == DEFAULT_MODEL
 
 
 def test_the_env_override_wins_over_the_businesss_own_field(monkeypatch):
-    pinned = replace(BY_NAME["flycheap"], model="groq:openai/gpt-oss-120b")
+    pinned = replace(BY_NAME["cloudco"], model="groq:openai/gpt-oss-120b")
     assert businesses.resolved_model(pinned) == "groq:openai/gpt-oss-120b"
 
-    monkeypatch.setenv("ATLAS_AGENT_MODEL_FLYCHEAP", "anthropic:claude-haiku-4-5")
+    monkeypatch.setenv("ATLAS_AGENT_MODEL_CLOUDCO", "anthropic:claude-haiku-4-5")
     assert businesses.resolved_model(pinned) == "anthropic:claude-haiku-4-5"
 
 
 def test_a_businesss_own_field_beats_the_hermes_default():
-    pinned = replace(BY_NAME["mirotech"], model="gemini:gemini-pro-latest")
+    pinned = replace(BY_NAME["exampleco"], model="gemini:gemini-pro-latest")
     assert businesses.resolved_model(pinned) == "gemini:gemini-pro-latest"
 
 
@@ -64,9 +65,9 @@ def test_the_school_agent_ignores_a_cloud_pin_with_one_warning(monkeypatch, capl
     monkeypatch.setenv("ATLAS_AGENT_MODEL_SCHOOL",
                        "openrouter:nousresearch/hermes-4-405b")
     with caplog.at_level(logging.WARNING, logger="atlas.businesses"):
-        build_roster()
+        _model("school")
 
-    assert ROSTER["school"].model is None
+    assert _model("school") is None
     warnings = [r for r in caplog.records if r.levelname == "WARNING"
                and "school" in r.getMessage()]
     assert len(warnings) == 1
@@ -77,8 +78,8 @@ def test_the_school_warning_fires_once_per_process_not_once_per_boot(
         monkeypatch, caplog):
     monkeypatch.setenv("ATLAS_AGENT_MODEL_SCHOOL", "openrouter:x")
     with caplog.at_level(logging.WARNING, logger="atlas.businesses"):
-        build_roster()
-        build_roster()
+        _model("school")
+        _model("school")
     warnings = [r for r in caplog.records if "school" in r.getMessage()
                and "ignored" in r.getMessage()]
     assert len(warnings) == 1
@@ -86,9 +87,9 @@ def test_the_school_warning_fires_once_per_process_not_once_per_boot(
 
 def test_school_with_no_pin_set_warns_not_at_all(caplog):
     with caplog.at_level(logging.WARNING, logger="atlas.businesses"):
-        build_roster()
+        _model("school")
     assert not any("school" in r.getMessage() for r in caplog.records)
-    assert ROSTER["school"].model is None
+    assert _model("school") is None
 
 
 def test_resolved_model_direct_for_every_private_business():

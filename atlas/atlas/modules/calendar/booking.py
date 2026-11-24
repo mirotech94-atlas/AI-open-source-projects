@@ -38,7 +38,7 @@ async def offer_slots(to: str, subject: str, slots: str) -> ActionResult:
     irreversible: a sent email cannot be un-sent the way a draft can."""
     tok = await _mail_token()
     body = (f"Hi,\n\nWould any of these work for a quick meeting?\n\n{slots}\n\n"
-           f"Best,\nMiro")
+           f"Best,\nOwner")
     raw = base64.urlsafe_b64encode(
         f"To: {to}\r\nSubject: {subject}\r\n"
         f"MIME-Version: 1.0\r\n"

@@ -44,22 +44,22 @@ async def test_a_bare_hostname_gets_a_scheme(monkeypatch):
     seen: list[str] = []
     fake_client(monkeypatch, {"_matrix/client/versions": FakeResponse(200)}, seen)
 
-    result = await cli._resolve_homeserver("chat.example.org")
-    assert result == "https://chat.example.org"
+    result = await cli._resolve_homeserver("chat.internal.example")
+    assert result == "https://chat.internal.example"
     assert all(u.startswith("https://") for u in seen), seen
 
 
 async def test_a_server_name_is_resolved_to_its_api_host(monkeypatch):
-    """example.org is the server name; the API lives at chat.example.org. Only the
+    """internal.example is the server name; the API lives at chat.internal.example. Only the
     well-known lookup knows that."""
     seen: list[str] = []
     fake_client(monkeypatch, {
         ".well-known/matrix/client": FakeResponse(
-            200, {"m.homeserver": {"base_url": "https://chat.example.org"}}),
+            200, {"m.homeserver": {"base_url": "https://chat.internal.example"}}),
         "_matrix/client/versions": FakeResponse(200),
     }, seen)
 
-    assert await cli._resolve_homeserver("https://example.org") == "https://chat.example.org"
+    assert await cli._resolve_homeserver("https://internal.example") == "https://chat.internal.example"
 
 
 async def test_a_host_that_does_not_answer_the_api_is_refused(monkeypatch):
@@ -68,7 +68,7 @@ async def test_a_host_that_does_not_answer_the_api_is_refused(monkeypatch):
     fake_client(monkeypatch, {"_matrix/client/versions": FakeResponse(404)}, seen)
 
     with pytest.raises(SystemExit, match="not answering the Matrix client API"):
-        await cli._resolve_homeserver("https://example.org")
+        await cli._resolve_homeserver("https://internal.example")
 
 
 async def test_no_well_known_is_fine_when_the_host_answers_directly(monkeypatch):

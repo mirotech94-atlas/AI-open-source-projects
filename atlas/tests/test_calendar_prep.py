@@ -475,7 +475,7 @@ async def test_prep_card_says_the_local_model_is_down_and_keeps_the_facts(
 def test_company_domain_skips_our_own_domain_and_free_mail():
     event = {"attendees": [
         {"email": "me@mine.example", "self": True},
-        {"email": "pat@gmail.com"},
+        {"email": "contact48@example.com"},
         {"email": "ann@mine.example"},
         {"email": "lee@acme.example"},
     ]}
@@ -484,7 +484,7 @@ def test_company_domain_skips_our_own_domain_and_free_mail():
 
 def test_no_company_domain_when_everyone_is_on_free_mail():
     event = {"attendees": [{"email": "me@x.example", "self": True},
-                           {"email": "pat@outlook.com"}]}
+                           {"email": "contact49@example.com"}]}
     assert prep.company_domain(event) is None
 
 

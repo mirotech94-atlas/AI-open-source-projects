@@ -115,30 +115,16 @@ class _Shifted(datetime):
         return datetime.now(tz) + timedelta(seconds=10)
 
 
-async def test_the_loop_stamps_each_finished_pass(fresh):
-    async def noop() -> None:
-        return None
-
-    for name in ("_run_checks", "expire_stale", "_maybe_signals",
-                 "_maybe_brief", "_maybe_weekly", "_maybe_marketing",
-                 "_maybe_reels", "_maybe_calendar",
-                 "_maybe_review", "_maybe_rhythm", "_maybe_purge",
-                 "_maybe_tournament", "_maybe_fixes", "_maybe_agent_shifts"):
-        fresh.setattr(scheduler, name, noop)
-    fresh.setattr(scheduler, "_durable_enabled", lambda: False)
-    scheduler._tasks.clear()
-    task = asyncio.create_task(scheduler.loop(interval=0.01))
-    try:
-        await asyncio.sleep(0.1)
-    finally:
-        task.cancel()
-        with pytest.raises(asyncio.CancelledError):
-            await task
-        for t in scheduler._tasks.values():
-            t.cancel()
-        scheduler._tasks.clear()
-    assert scheduler.LAST_CYCLE_AT is not None
-    assert time.monotonic() - scheduler.LAST_CYCLE_AT < 1
+async def test_the_loop_stamps_each_finished_pass(fresh, quiet_loop):
+    started = time.monotonic()
+    await quiet_loop.run(passes=3)
+    finished = time.monotonic()
+    # stamps[k] is what pass k left behind; stamps[0] is from before the loop.
+    stamped = quiet_loop.stamps[1:4]
+    assert quiet_loop.stamps[0] is None
+    assert None not in stamped, f"a finished pass left no stamp: {stamped}"
+    # Each pass writes its own, later stamp: interval=0.01 lies between two.
+    assert started <= stamped[0] < stamped[1] < stamped[2] <= finished
 
 
 def test_healthz_carries_the_heartbeat_and_ok_keeps_its_meaning(
@@ -158,6 +144,9 @@ def test_healthz_carries_the_heartbeat_and_ok_keeps_its_meaning(
     with TestClient(main.app, client=("203.0.113.9", 51000)) as client:
         body = client.get("/healthz").json()
     assert body["ok"] is True
+    # The menu-bar app grants the camera/microphone only after /healthz
+    # names this exact service (bootstrap/mac/menubar/main.swift).
+    assert body["service"] == "atlas-agency"
     assert body["heartbeat"]["observation_age_s"] is None
     assert body["heartbeat"]["cycle_age_s"] >= 5000
     assert set(body["heartbeat"]) == {"cycle_age_s", "observation_age_s"}

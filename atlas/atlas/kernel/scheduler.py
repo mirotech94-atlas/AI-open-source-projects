@@ -11,7 +11,7 @@ from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 
 from ..modules._http import explain, redact
-from . import background
+from . import background, board
 from .approvals import expire_stale, propose
 from .contracts import Health, Observation, Severity, Tier, implements
 from .detect import Finding, correlate, evaluate
@@ -39,6 +39,14 @@ _check_ids: dict[str, int] = {}
 # off the box can tell a turning loop from a stalled one (RA-F4).
 LAST_CYCLE_AT: float | None = None
 
+# A fresh process has no schedule (`_next_run` is memory only), so its first
+# pass runs EVERY check, however long its interval. Until then each reads
+# UNKNOWN on the board. The first pass is held to this budget: a check allowed
+# longer is cut at it, on that first run only, and reads UNKNOWN with the
+# reason (never OK, never a silent wait). Normal timeouts apply afterwards.
+FIRST_PASS_BUDGET_S = 45.0
+FIRST_PASS_DONE = False
+
 
 async def _check_id(key: str) -> int:
     if key in _check_ids:
@@ -61,24 +69,37 @@ async def _check_id(key: str) -> int:
 
 
 async def run_once() -> list[Finding]:
+    global FIRST_PASS_DONE
     now = time.monotonic()
     due = [k for k, c in REGISTRY.checks.items()
            if now >= _next_run.get(k, 0.0)]
     findings: list[Finding] = []
 
+    first = not FIRST_PASS_DONE
+
     async def _run(key: str) -> None:
         check = REGISTRY.checks[key]
         _next_run[key] = now + check.interval.total_seconds()
+        limit = check.timeout.total_seconds()
+        cut = first and limit > FIRST_PASS_BUDGET_S
+        if cut:
+            limit = FIRST_PASS_BUDGET_S
         try:
-            obs = await asyncio.wait_for(
-                check.run(), timeout=check.timeout.total_seconds())
+            obs = await asyncio.wait_for(check.run(), timeout=limit)
         except TimeoutError:
             # A check that timed out did not measure anything. Dropping it here
             # made a hanging collector invisible: no observation, no finding,
             # and the property silently stopped being watched.
             obs = Observation(
                 check=key, health=Health.UNKNOWN,
-                detail=f"timed out after {check.timeout.total_seconds():.0f}s")
+                detail=(f"first run after start cut at {limit:.0f}s; it re-runs "
+                        f"on the next pass" if cut
+                        else f"timed out after {limit:.0f}s"))
+            if cut:
+                # Not a verdict on the check: run it again on the next pass,
+                # with its own timeout, instead of leaving it UNKNOWN for a
+                # whole interval.
+                _next_run[key] = time.monotonic()
             log.warning("check %s timed out", key)
         except Exception as exc:                        # noqa: BLE001
             obs = Observation(
@@ -99,6 +120,10 @@ async def run_once() -> list[Finding]:
             findings.append(replace(finding, id=finding_id))
 
     await asyncio.gather(*(_run(k) for k in due), return_exceptions=True)
+    if first:
+        FIRST_PASS_DONE = True
+        log.info("first check pass after start: %d checks in %.1fs",
+                 len(due), time.monotonic() - now)
     return findings
 
 
@@ -176,6 +201,7 @@ async def handle(findings: list[Finding]) -> None:
                     evidence=finding.observation.evidence,
                     rollback_plan=proposal.rollback_plan,
                     confidence=proposal.confidence,
+                    urgent=proposal.urgent,
                     # Keyed on the CAUSE, not the check. Six Stripe checks
                     # blind on one missing key, and four Fiverr checks behind
                     # one bot wall, raised ten cards for two problems when
@@ -204,7 +230,7 @@ PAGE_WINDOW = "24 hours"
 
 
 async def page(finding: Finding) -> bool:
-    """A failing HIGH or CRITICAL check reaches Miro whether or not there is
+    """A failing HIGH or CRITICAL check reaches the owner whether or not there is
     an action for it.
 
     Until this, a finding only left the building as a proposal card: the
@@ -292,6 +318,85 @@ def _cause_key(finding) -> str:
     return finding.check
 
 
+# the owner, 2026-09-30 and again 2026-10-12 (memory approval-policy): "whatever
+# you think should be done should be automatically approved, but whatever is
+# really urgent should only need human approval." A signal that suggests one
+# of THESE actions runs it through the executor instead of raising a card --
+# each is Tier 1 in its module's code (dry run + rollback, invariant 8), and
+# this list is closed, like `unattended.ALLOWED`: adding a name here is a
+# code change, never a runtime one. Before this, every signal became a card
+# whatever its tier, so school.draft_work and messages.draft (both Tier 1)
+# raised 13 and 4 cards in 30 days that nobody needed to answer.
+#
+# Never a card_only or principal_only action (`clips.submit_to_whop` is
+# Tier 1 but records OWNER's own Whop submission: run by itself it would write
+# a false record), and only while the action is Tier 1 in the registry.
+SIGNAL_AUTORUN: frozenset[str] = frozenset({
+    "school.draft_work",        # a draft row in content_drafts; rollback discards it
+    "messages.draft",           # draft text on messages_inbound; nothing is sent
+    "linkedin.approve_draft",   # bank status draft -> approved; rollback flips it back
+})
+
+
+def signal_autorun_enabled() -> bool:
+    """`ATLAS_SIGNAL_AUTORUN` (on by default): off sends every signal back to
+    a card, as before 2026-10-12. Read fresh each cycle."""
+    return os.getenv("ATLAS_SIGNAL_AUTORUN", "on").strip().lower() not in (
+        "0", "off", "false", "no")
+
+
+def autoruns(action: str) -> bool:
+    """Whether a signal naming `action` runs it rather than carding it."""
+    if action not in SIGNAL_AUTORUN or not signal_autorun_enabled():
+        return False
+    spec = REGISTRY.actions.get(action)
+    decision = REGISTRY.decisions.get(action)
+    return (spec is not None and decision is not None and decision.allowed
+            and decision.tier is Tier.AUTO
+            and not getattr(spec, "card_only", False)
+            and not getattr(spec, "principal_only", False))
+
+
+async def _autorun(module: str, signal) -> tuple[str, str]:
+    """Run a signal's Tier 1 action through the one path that acts.
+
+    Returns ("done", detail) when it ran, ("held", detail) when ATLAS's own
+    state held it (watch-only, a pause, an hourly ceiling): then the signal
+    is still told to him as a plain notice -- never swallowed, and never a
+    card an approval could not run either -- or ("card", reason) when the
+    dry run or the run said no: then the card is raised as before, the
+    reason first."""
+    from .approvals import topic_for_action
+    from .comms import Outbound, notify
+    from .executor import ExecutionRequest, execute
+    from .lead_followup import _held, _hold_reason
+    action = str(signal.suggests)
+    made = await execute(ExecutionRequest(
+        action=action, params=dict(signal.params or {}),
+        reason=f"{signal.title} (runs itself: Tier 1, memory approval-policy)"))
+    topic = topic_for_action(action, dict(signal.params or {})) or module
+    if _held(made):
+        log.info("signal %s held: %s", action, made.detail)
+        await notify(Outbound(title=signal.title, body=signal.body,
+                              severity=signal.severity, topic=topic))
+        return "held", made.detail
+    if not made.ok:
+        return "card", _hold_reason(made.detail)
+    try:
+        await notify(Outbound(
+            title=f"Done on its own: {signal.title}"[:150],
+            body=(f"{made.detail}\n\n{signal.body}\n\n`{action}` is Tier 1 (your "
+                  f"rule, 2026-10-12); ATLAS_SIGNAL_AUTORUN=off sends it back to "
+                  f"a card.")[:3000],
+            # The signal's own weight: a coursework deadline stays HIGH.
+            severity=signal.severity,
+            topic=topic,
+            kind="receipt"))
+    except Exception:                                   # noqa: BLE001
+        log.warning("signal %s ran, but its receipt was not sent", action)
+    return "done", made.detail
+
+
 async def collect_signals() -> int:
     """Ask every module what it wants to say, and route it.
 
@@ -299,9 +404,11 @@ async def collect_signals() -> int:
     the kernel routes them — and nothing did. A module could emit one and it
     went nowhere.
 
-    A signal that names an action becomes a Tier 2 proposal, so it reaches Miro
-    as an approval card carrying the dry run. A signal that names none is just
-    told to him.
+    A signal that names an action becomes a proposal, so it reaches the owner as an
+    approval card carrying the dry run -- unless the action is on the closed
+    `SIGNAL_AUTORUN` list and Tier 1 in code: then it runs through the
+    executor and he gets a receipt, and only a refusal is the card. A signal
+    that names none is just told to him.
     """
     from .approvals import propose, topic_for_action
     from .comms import attach_to_card
@@ -341,10 +448,23 @@ async def collect_signals() -> int:
                 # The action is chosen by the module, from the closed catalog —
                 # the reasoner is not involved and cannot be, because a module
                 # knows which room and which text and it does not.
+                lead = ""
+                if autoruns(signal.suggests):
+                    try:
+                        outcome, said = await _autorun(name, signal)
+                    except Exception as exc:
+                        # One action that raises must not take the rest of
+                        # this cycle's signals with it: it is the card.
+                        log.exception("signal %s autorun raised", signal.suggests)
+                        outcome, said = "card", f"it could not run ({explain(exc)})"
+                    if outcome != "card":
+                        continue
+                    lead = (f"Held for you: {said}. Approving runs every check "
+                            f"again and does it if it passes now.\n")
                 try:
                     pid = await propose(
                         action=signal.suggests, params=signal.params,
-                        reason=signal.body, severity=signal.severity,
+                        reason=lead + signal.body, severity=signal.severity,
                         evidence={"signal": signal.title},
                         # Signals already dedup on title for 24h, but that
                         # window expires while a proposal can still be
@@ -489,7 +609,7 @@ async def _audit_shift_skip(agent_name: str, reasons: list[str], now: datetime) 
 
 
 async def _maybe_agent_shifts() -> None:
-    """"Every agent that is READY ... runs on its schedule, always" (Miro,
+    """"Every agent that is READY ... runs on its schedule, always" (the owner,
     2026-09-27). Once per cycle, for every roster agent in a fixed
     (alphabetical) order:
 
@@ -499,8 +619,8 @@ async def _maybe_agent_shifts() -> None:
         gets the one-shot self-test (`agents.warmup`) instead of a shift.
       * ready, has run before, and its shift is due (`agents.shift_due`,
         read from `agent_runs`, so a restart cannot cause a double run) ->
-        one real run through its own `Agent.run()` with the fixed
-        `agents.SHIFT_PROMPT` -- the normal agent path, with its own tools,
+        one real run through its own `Agent.run()` with its own shift
+        (`agents.shift_prompt`) -- the normal agent path, with its own tools,
         never warmup's tool-free clone.
 
     At most `SHIFT_LIMIT_PER_CYCLE` self-tests-or-shifts START this cycle;
@@ -514,13 +634,10 @@ async def _maybe_agent_shifts() -> None:
     from . import agents as agents_module
 
     now = _now()
-    rows = await fetch_all(
-        """SELECT agent, max(at) AS last_any,
-                  max(at) FILTER (WHERE task LIKE $1) AS last_shift
-           FROM agent_runs GROUP BY agent""",
-        agents_module.SHIFT_LIKE)
+    rows = await fetch_all(shift_rows_sql(), *shift_rows_args(now))
     last_any = {r["agent"]: r["last_any"] for r in rows}
     last_shift = {r["agent"]: r["last_shift"] for r in rows}
+    failures = {r["agent"]: list(r.get("failures") or []) for r in rows}
 
     started = 0
     for name in sorted(agents_module.ROSTER):
@@ -543,17 +660,90 @@ async def _maybe_agent_shifts() -> None:
             started += 1
             continue
 
-        if not agents_module.shift_due(name, last_shift.get(name), now):
+        if not agents_module.shift_due(name, last_shift.get(name), now,
+                                       failures=failures.get(name, [])):
             continue
+        task = agents_module.shift_prompt(name)
         try:
-            await agent.run(agents_module.SHIFT_PROMPT)
+            await agent.run(task)
         except Exception as exc:
             from .harness import record_run
+            from .quota import ReservedForOwner
+            if isinstance(exc, ReservedForOwner):
+                # The free allowance left is the owner's: not a failure of the
+                # agent, and retried after SHIFT_RETRY_MIN like one.
+                outcome = agents_module.SHIFT_DEFERRED + " quota"
+                log.info("agent shift deferred for %s: quota kept for the owner", name)
+            else:
+                outcome = f"{agents_module.SHIFT_FAILED} {explain(exc)}"
+                log.exception("agent shift failed for %s", name)
             await record_run(
-                name, agents_module.SHIFT_PROMPT, model="", provider="",
-                turns=0, outcome=f"shift failed: {explain(exc)}", transcript=[])
-            log.exception("agent shift failed for %s", name)
+                name, task, model="", provider="",
+                turns=0, outcome=outcome, transcript=[])
         started += 1
+
+    for name in sorted(agents_module.ROSTER):
+        if last_any.get(name) is None or not agents_module.readiness(name)[0]:
+            continue
+        st = agents_module.shift_state(
+            name, last_shift.get(name), failures.get(name, []), now)
+        if st.state in ("failed", "overdue"):
+            await _alert_shift(name, st, now)
+
+
+def shift_rows_sql() -> str:
+    """Per agent: the last run of any kind, the last SUCCESSFUL shift (a
+    failed, deferred, unanswered or tool-limit-stopped one never counts as
+    the day's shift; `agents.SHIFT_UNSUCCESSFUL_LIKE`) and the times of
+    failed/deferred shift attempts in the last two days. Shared by the
+    scheduler step and `/api/agents`, so both read the same truth."""
+    return """SELECT agent, max(at) AS last_any,
+                  max(at) FILTER (WHERE task LIKE $1
+                        AND coalesce(outcome, '') <> ''
+                        AND NOT (outcome LIKE ANY($2::text[]))) AS last_shift,
+                  max(at) FILTER (WHERE task LIKE $1) AS last_attempt,
+                  array_agg(at ORDER BY at) FILTER (WHERE task LIKE $1
+                        AND (coalesce(outcome, '') = ''
+                             OR outcome LIKE ANY($2::text[]))
+                        AND at >= $3::timestamptz) AS failures
+           FROM agent_runs GROUP BY agent"""
+
+
+def shift_rows_args(now: datetime) -> tuple:
+    from . import agents as agents_module
+    return (agents_module.SHIFT_LIKE, list(agents_module.SHIFT_UNSUCCESSFUL_LIKE),
+            now - timedelta(hours=48))
+
+
+async def _alert_shift(name: str, st, now: datetime) -> None:
+    """One FAILING alert per agent per UTC day, claimed in `schedule_runs`
+    so a restart never repeats it. No channel configured is not silence:
+    it is audited as `agent.shift_alert_unrouted` and the page says so."""
+    from . import occurrence
+    from .audit import audit
+    from .comms import Outbound, notify
+
+    job, window = f"agent-shift-alert:{name}", now.astimezone(UTC).date().isoformat()
+    if not await occurrence.claim(job, window):
+        return
+    slot = st.slot.astimezone(UTC).strftime("%H:%M UTC") if st.slot else "unknown"
+    what = ("every attempt failed" if st.state == "failed"
+            else "is overdue")
+    body = (f"Agent {name}: today's shift (slot {slot}) {what}; "
+            f"{st.attempts} attempt(s) since the slot.")
+    try:
+        channels = await notify(Outbound(
+            title=f"{name} shift FAILING", body=body, severity=Severity.HIGH,
+            topic="agents", kind="alert", incident_key=job))
+    except Exception as exc:                            # noqa: BLE001
+        log.warning("shift alert for %s could not be sent (%s)", name,
+                    type(exc).__name__)
+        await occurrence.release(job, window)
+        return
+    if not channels:
+        await audit("agent.shift_alert_unrouted", name,
+                    {"slot": slot, "state": st.state, "attempts": st.attempts})
+    await occurrence.done(job, window)
 
 
 async def _maybe_rhythm() -> None:
@@ -592,7 +782,7 @@ async def _maybe_brief() -> None:
     never came back on is recorded 'skipped', never sent late.
     """
     global _last_brief_date
-    # Miro, 2026-10-06: "weekly only" -- the Monday summary (_maybe_weekly)
+    # the owner, 2026-10-06: "weekly only" -- the Monday summary (_maybe_weekly)
     # is the report; cards still arrive as they happen. BRIEF_DAILY=on
     # brings the morning brief back.
     if not _daily_brief_on():
@@ -836,7 +1026,7 @@ async def _maybe_weekly() -> None:
 async def _maybe_playlist() -> None:
     """The Claude playlist (paper)'s weekly proposal (markets/playlist.py),
     on PLAYLIST_DAY (Sunday) at PLAYLIST_HOUR (15:00) in America/New_York --
-    Miro's time, whatever the host's zone. It reads closes, asks the REASON
+    the owner's time, whatever the host's zone. It reads closes, asks the REASON
     route (Claude first) for target weights, checks them and raises one
     approval card; nothing moves without his yes.
 
@@ -886,6 +1076,325 @@ async def _maybe_ideas() -> None:
         raise
     await occurrence.done("ideas", w.key)
     log.info("trade idea scan for %s: %s", w.key, status)
+
+
+def _sales_hour() -> int:
+    try:
+        return min(23, max(0, int(os.getenv("SALES_SHIFT_HOUR", "9"))))
+    except ValueError:
+        return 9
+
+
+def _sales_windows(now: datetime, horizon: timedelta) -> list:
+    """Daily at SALES_SHIFT_HOUR, New York time, whatever zone `now` is in."""
+    from zoneinfo import ZoneInfo
+
+    from .missed import daily
+    return daily(lambda: _sales_hour())(now.astimezone(ZoneInfo("America/New_York")),
+                                        horizon)
+
+
+def _content_windows(now: datetime, horizon: timedelta) -> list:
+    """Monday 08:00 New York time, whatever zone `now` is in."""
+    from zoneinfo import ZoneInfo
+
+    from .missed import weekly
+    return weekly(lambda: 0, lambda: 8)(now.astimezone(ZoneInfo("America/New_York")),
+                                        horizon)
+
+
+def _ny_daily(hour: int):  # type: ignore[no-untyped-def]
+    """Daily at `hour`, New York time, whatever zone `now` is in."""
+    def windows(now: datetime, horizon: timedelta) -> list:
+        from zoneinfo import ZoneInfo
+
+        from .missed import daily
+        return daily(lambda: hour)(now.astimezone(ZoneInfo("America/New_York")),
+                                   horizon)
+    return windows
+
+
+_bizops_digest_windows = _ny_daily(8)
+_bizops_repeats_windows = _ny_daily(7)
+_seo_rank_windows = _ny_daily(7)
+_research_scan_windows = _ny_daily(6)
+_inbox_shift_windows = _ny_daily(7)
+_sites_shift_windows = _ny_daily(8)
+_mmt_shift_windows = _ny_daily(9)
+
+
+def _whatsapp_daily_windows(now: datetime, horizon: timedelta) -> list:
+    """Daily at WHATSAPP_DAILY_HOUR (default 20), New York time; the hour is read
+    at call time so a change needs a restart, not a redeploy."""
+    from zoneinfo import ZoneInfo
+
+    from . import whatsapp_daily
+    from .missed import daily
+    return daily(whatsapp_daily.hour)(now.astimezone(ZoneInfo("America/New_York")),
+                                      horizon)
+def _sage_mmt_windows(now: datetime, horizon: timedelta) -> list:
+    """Monday 10:00 New York time, whatever zone `now` is in."""
+    from zoneinfo import ZoneInfo
+
+    from .missed import weekly
+    return weekly(lambda: 0, lambda: 10)(now.astimezone(ZoneInfo("America/New_York")),
+                                         horizon)
+
+
+def _youtube_learn_windows(now: datetime, horizon: timedelta) -> list:
+    """Daily at YOUTUBE_LEARN_HOUR (default 11), New York time."""
+    from zoneinfo import ZoneInfo
+
+    from . import video_learn
+    from .missed import daily
+    return daily(video_learn.hour)(now.astimezone(ZoneInfo("America/New_York")),
+                                   horizon)
+
+
+def _research_weekly_windows(now: datetime, horizon: timedelta) -> list:
+    """Sunday 18:00 New York time, whatever zone `now` is in."""
+    from zoneinfo import ZoneInfo
+
+    from .missed import weekly
+    return weekly(lambda: 6, lambda: 18)(now.astimezone(ZoneInfo("America/New_York")),
+                                         horizon)
+
+
+async def _maybe_bizops(job: str, run) -> None:  # type: ignore[no-untyped-def]
+    """A BizOps day (modules/bizops): every step an executor call, so
+    watch-only holds it. Missed-run policy: skip-stale, claimed once."""
+    from zoneinfo import ZoneInfo
+
+    from . import missed, occurrence
+    now = _now().astimezone(ZoneInfo("America/New_York"))
+    w = await missed.due(POLICIES[job], now)
+    if w is None:
+        return
+    if not await occurrence.claim_once(job, w.key, w.scheduled_for):
+        return
+    try:
+        status = await run()
+    except BaseException as exc:
+        await occurrence.fail(job, w.key, explain(exc)
+                              if isinstance(exc, Exception) else "cancelled")
+        raise
+    # What the day did, kept on its schedule_runs row (plan 2026-10-30, C2).
+    try:
+        detail = json.dumps(status, default=str)[:900]
+    except (TypeError, ValueError):
+        detail = str(status)[:900]
+    await occurrence.done(job, w.key, detail=detail)
+    log.info("%s %s: %s", job, w.key, status)
+
+
+async def _maybe_bizops_digest() -> None:
+    from ..modules import bizops
+    await _maybe_bizops("bizops_digest", bizops.run_daily)
+
+
+async def _maybe_bizops_find_repeats() -> None:
+    from ..modules import bizops
+    await _maybe_bizops("bizops_find_repeats", bizops.run_find_repeats)
+
+
+async def _maybe_seo_rank() -> None:
+    from ..modules import seo
+    await _maybe_bizops("seo_rank", seo.run_daily)
+
+
+async def _maybe_inbox_shift() -> None:
+    """The Inbox shift (modules/mail/shift.py): 07:00 New York, reads only."""
+    from ..modules.mail import shift
+    await _maybe_bizops("inbox_shift", shift.run)
+
+
+async def _maybe_sites_shift() -> None:
+    """The Sites shift (modules/agency/sites_shift.py): 08:00 New York. Builds
+    only under AGENCY_AUTO_BUILD=on, and raises the publish card; never
+    publishes or emails."""
+    from ..modules.agency import sites_shift
+    await _maybe_bizops("sites_shift", sites_shift.run)
+
+
+async def _maybe_mmt_shift() -> None:
+    """The MMT shift (modules/mmt/shift.py): 09:00 New York. Discovery and
+    drafts only, off unless MMT_DISCOVERY is on; every send is a Tier 2 card.
+    Imported lazily inside the claimed run: a missing module is a failed run
+    on the schedule_runs row, never a clean one."""
+    async def run():  # type: ignore[no-untyped-def]
+        from ..modules.mmt import shift
+        return await shift.run()
+    await _maybe_bizops("mmt_shift", run)
+
+
+async def _maybe_whatsapp_alerts() -> None:
+    """A check that went from OK to failing, told once on WhatsApp
+    (kernel/whatsapp_alerts.py). Off unless WHATSAPP_ALERTS=on; every send is the
+    Tier 1 action `mmt.notify_alert` through the executor."""
+    from . import whatsapp_alerts
+    if not whatsapp_alerts.enabled():
+        return
+    status = await whatsapp_alerts.run()
+    if status.get("sent") or status.get("slack_notes"):
+        log.info("whatsapp_alerts: %s", status)
+
+
+async def _maybe_owner_calls() -> None:
+    """A serious event nobody answered, escalated to one phone call
+    (kernel/owner_calls.py). Off unless OWNER_CALLS=on; every call is the Tier 1
+    action `mmt.call_owner` through the executor."""
+    from . import owner_calls
+    if not owner_calls.enabled():
+        return
+    status = await owner_calls.run()
+    if status.get("called"):
+        log.info("owner_calls: %s", status)
+
+
+async def _maybe_assistant_notices() -> None:
+    """The assistant's short updates to the owner (modules/assistant/notices.py): scan
+    for what is worth telling, then send what the caps allow. Every send is the
+    Tier 1 action `assistant.update_owner` through the executor."""
+    from ..modules.assistant import notices
+    await notices.step()
+
+
+async def _maybe_whatsapp_cards() -> None:
+    """Pending Tier 2 cards that never reached WhatsApp, caught up
+    (kernel/whatsapp_cards.py). Off unless WHATSAPP_CARDS=on; every send is the
+    Tier 1 action `mmt.notify_card` through the executor."""
+    from . import whatsapp_cards
+    if not whatsapp_cards.enabled():
+        return
+    status = await whatsapp_cards.run()
+    if status.get("sent") or status.get("slack_notes"):
+        log.info("whatsapp_cards: %s", status)
+
+
+_whatsapp_daily_last_try: float = 0.0
+WHATSAPP_DAILY_RETRY_S = 1800.0
+
+
+async def _maybe_whatsapp_daily() -> None:
+    """The 8 PM New York WhatsApp report (kernel/whatsapp_daily.py): one read, one
+    Tier 1 send through the executor. Off unless WHATSAPP_DAILY=on.
+
+    Missed-run policy: skip-stale until midnight New York, with retry. A window
+    that is not sent (watch-only, box down, send failed) is released and tried
+    again every 30 minutes until midnight; it is done only after a send, so at
+    most one send per New York date (the outbox dedupes it as well)."""
+    global _whatsapp_daily_last_try
+    from . import missed, occurrence, whatsapp_daily
+    if not whatsapp_daily.enabled():
+        return
+    if time.monotonic() - _whatsapp_daily_last_try < WHATSAPP_DAILY_RETRY_S:
+        return
+    from zoneinfo import ZoneInfo
+    now = _now().astimezone(ZoneInfo("America/New_York"))
+    w = await missed.due(POLICIES["whatsapp_daily"], now)
+    if w is None:
+        return
+    if not await occurrence.claim("whatsapp_daily", w.key, w.scheduled_for):
+        return
+    _whatsapp_daily_last_try = time.monotonic()
+    try:
+        status = await whatsapp_daily.run()
+    except BaseException as exc:
+        await occurrence.release("whatsapp_daily", w.key)
+        if not isinstance(exc, Exception):
+            raise
+        log.exception("whatsapp daily failed; will retry in 30 minutes")
+        return
+    detail = json.dumps(status, default=str)[:900]
+    if status.get("sent") or status.get("uncertain"):
+        # Sent, or in doubt (Twilio may have delivered): closed, never retried.
+        await occurrence.done("whatsapp_daily", w.key, detail=detail)
+        log.info("whatsapp_daily %s: %s", w.key, detail)
+    else:
+        await occurrence.release("whatsapp_daily", w.key)
+        log.info("whatsapp_daily %s not sent, retry in 30 minutes: %s", w.key, detail)
+async def _maybe_sage_mmt_weekly() -> None:
+    """Sage's TutorSite page week (modules/sagemmt/weekly.py): Monday 10:00
+    New York. Drafts only, off unless SAGE_MMT_LINKEDIN is on; every draft and
+    the SEO note is a Tier 2 card. Imported lazily inside the claimed run."""
+    async def run():  # type: ignore[no-untyped-def]
+        from ..modules.sagemmt import weekly
+        return await weekly.run()
+    await _maybe_bizops("sage_mmt_weekly", run)
+
+
+async def _maybe_youtube_learn() -> None:
+    """ATLAS listens to YouTube videos (kernel/video_learn.py): the owner's queued
+    links, then the Academy channel's next public videos, each a Tier 2 lessons
+    card. Off unless YOUTUBE_LEARN=on -- checked BEFORE the window is claimed, so
+    an off job writes no schedule_runs row -- and held under ATLAS_WATCH_ONLY."""
+    from . import video_learn
+    from .executor import watch_only
+    if not video_learn.enabled() or watch_only():
+        return
+    await _maybe_bizops("youtube_learn", video_learn.tick)
+
+
+async def _maybe_research_scan() -> None:
+    from ..modules import research
+    await _maybe_bizops("research_scan", research.run_scan)
+
+
+async def _maybe_research_weekly() -> None:
+    from ..modules import research
+    await _maybe_bizops("research_weekly", research.run_weekly)
+
+
+async def _maybe_content_weekly() -> None:
+    """The Content agent's week (academy/growth.py run_weekly): the growth
+    report, the content plan, title test steps, then the alerts.
+
+    Missed-run policy: skip-stale. Every step is an executor call (watch-only
+    holds it); a missed Monday is skipped, the next reads afresh."""
+    from zoneinfo import ZoneInfo
+
+    from ..modules.academy import growth
+    from . import missed, occurrence
+    now = _now().astimezone(ZoneInfo("America/New_York"))
+    w = await missed.due(POLICIES["content_weekly"], now)
+    if w is None:
+        return
+    if not await occurrence.claim_once("content_weekly", w.key, w.scheduled_for):
+        return
+    try:
+        status = await growth.run_weekly()
+    except BaseException as exc:
+        await occurrence.fail("content_weekly", w.key, explain(exc)
+                              if isinstance(exc, Exception) else "cancelled")
+        raise
+    await occurrence.done("content_weekly", w.key)
+    log.info("content week %s: %s", w.key, status)
+
+
+async def _maybe_sales_shift() -> None:
+    """The Sales shift (modules/sales/shift.py): daily at 09:00 New York.
+
+    Missed-run policy: skip-stale. A shift runs only on its own day; a missed
+    day is recorded 'skipped', never run late. Claimed once: every step is an
+    executor call (watch-only holds it) and only cards come out of it."""
+    from zoneinfo import ZoneInfo
+
+    from ..modules.sales import shift
+    from . import missed, occurrence
+    now = _now().astimezone(ZoneInfo("America/New_York"))
+    w = await missed.due(POLICIES["sales_shift"], now)
+    if w is None:
+        return
+    if not await occurrence.claim_once("sales_shift", w.key, w.scheduled_for):
+        return
+    try:
+        status = await shift.run()
+    except BaseException as exc:
+        await occurrence.fail("sales_shift", w.key, explain(exc)
+                              if isinstance(exc, Exception) else "cancelled")
+        raise
+    await occurrence.done("sales_shift", w.key)
+    log.info("sales shift for %s: %s", w.key, status)
 
 
 _last_marketing_date: date | None = None
@@ -1091,27 +1600,136 @@ async def _maybe_clips() -> None:
 
 
 _academy_reel_task: asyncio.Task | None = None
-_last_academy_reel_date: date | None = None
+_academy_reel_slots: set[tuple] = set()
 
 
 async def _maybe_academy_reel() -> None:
-    """The daily Academy reel for the clips accounts
-    (`modules.academy.reel.daily`), once a day from
-    `ACADEMY_PROMO_HOUR_UTC`, off the loop: a Fish call and ffmpeg. It
+    """The Academy reel for the clips accounts (`modules.academy.reel.daily`)
+    at each of `ACADEMY_PROMO_HOURS_UTC` (16 and 23 UTC: noon and 7 pm in
+    New York; the owner, 2026-10-11, "2x per day"), off the loop. It
     renders through the executor and posts through
     `clips.autopublish_promo` (Tier 1, gated in code; a held reel is a
     card). `ACADEMY_PROMO_REELS=off` stops it."""
-    global _academy_reel_task, _last_academy_reel_date
+    global _academy_reel_task
     from ..modules.academy import reel
     if not reel.enabled():
         return
     now = _now()
-    if now.hour < reel.hour_utc() or _last_academy_reel_date == now.date():
+    slot = reel.due_slot(now, _academy_reel_slots)
+    if slot is None:
         return
     if _academy_reel_task is not None and not _academy_reel_task.done():
         return
-    _last_academy_reel_date = now.date()
+    # Every slot that has come today is spent by this run: a box that was
+    # down through two slots posts once when it is back, not twice in a row.
+    _academy_reel_slots.update((now.date(), h) for h in reel.hours_utc() if h <= now.hour)
     _academy_reel_task = background.spawn(reel.daily(), "the daily Academy reel")
+
+
+_academy_tutorial_task: asyncio.Task | None = None
+_last_academy_tutorial_date: date | None = None
+
+
+async def _maybe_academy_tutorial() -> None:
+    """The next ATLAS Academy YouTube tutorial (`modules.academy.tutorials.
+    daily`), once a day from `ACADEMY_TUTORIALS_HOUR_UTC`, off the loop:
+    Fish calls, Chromium stills and ffmpeg. One draft per series per day,
+    each series' next rung in order. It renders and posts through the executor
+    (`academy.render_tutorial`, `academy.autopublish_tutorial`, Tier 1 gated
+    in code; a held episode is a card). What the hourly ceiling held that run
+    is tried again (`tutorials.catch_up`) once `tutorials.retry_due`, the same
+    UTC day, one run at a time (2026-10-16). `ACADEMY_TUTORIALS=off` stops it."""
+    global _academy_tutorial_task, _last_academy_tutorial_date
+    from ..modules.academy import tutorials
+    if not tutorials.enabled():
+        return
+    now = _now()
+    if now.hour < tutorials.hour_utc():
+        return
+    if _academy_tutorial_task is not None and not _academy_tutorial_task.done():
+        return
+    if _last_academy_tutorial_date != now.date():
+        _last_academy_tutorial_date = now.date()
+        _academy_tutorial_task = background.spawn(tutorials.daily(),
+                                                  "the daily Academy tutorial")
+        return
+    if tutorials.retry_due(now):
+        _academy_tutorial_task = background.spawn(
+            tutorials.catch_up(), "the Academy tutorials the hourly ceiling held")
+
+
+_academy_teaching_task: asyncio.Task | None = None
+_last_academy_teaching_date: date | None = None
+
+
+async def _maybe_academy_teaching() -> None:
+    """The Academy teaching Short (`modules.academy.tutorials.teaching_tick`),
+    once a day from `ACADEMY_TEACHING_HOUR_UTC` (23), off the loop. It posts
+    only on alternate New York days (`tutorials.teaching_day`), so the 2 a day
+    cap (the owner, 2026-10-13: two Shorts a day) is shared with the
+    engine's 16 and 23 UTC Shorts. It renders and posts through the executor
+    (`academy.render_teaching_short`, `clips.autopublish_promo`, Tier 1 gated
+    in code). Every day it also runs the AI-flag catch-up
+    (`academy.flag_synthetic_short`, the owner 2026-10-17) over the last 14 days,
+    and the metadata refresh of already-public videos
+    (`academy.refresh_video_metadata`, the owner 2026-10-18; 3 a day, each once).
+    `ACADEMY_TUTORIALS=off` stops it."""
+    global _academy_teaching_task, _last_academy_teaching_date
+    from ..modules.academy import tutorials
+    if not tutorials.enabled():
+        return
+    now = _now()
+    if (now.hour < tutorials.teaching_hour_utc()
+            or _last_academy_teaching_date == now.date()):
+        return
+    if _academy_teaching_task is not None and not _academy_teaching_task.done():
+        return
+    _last_academy_teaching_date = now.date()
+    _academy_teaching_task = background.spawn(tutorials.teaching_tick(),
+                                              "the Academy teaching Short")
+
+
+_academy_videos_task: asyncio.Task | None = None
+_last_academy_videos_at: datetime | None = None
+
+
+async def _maybe_academy_videos() -> None:
+    """Keep agency.example.com/videos/ current: every
+    ACADEMY_VIDEOS_REFRESH_MIN (default 15) compare the public tutorials
+    with the live videos.json and, only on a difference, republish the store
+    through the executor (`academy.publish_shop`, Tier 1 with its staged
+    release and rollback). `ACADEMY_VIDEOS_REFRESH=off` stops it."""
+    global _academy_videos_task, _last_academy_videos_at
+    if os.getenv("ACADEMY_VIDEOS_REFRESH", "on").strip().lower() in ("0", "off", "false", "no"):
+        return
+    now = _now()
+    every = timedelta(minutes=max(5, int(os.getenv("ACADEMY_VIDEOS_REFRESH_MIN", "15") or 15)))
+    if _academy_videos_task is not None and not _academy_videos_task.done():
+        return
+    if _last_academy_videos_at is not None and now - _last_academy_videos_at < every:
+        return
+    _last_academy_videos_at = now
+    from ..modules.academy import publish
+    _academy_videos_task = background.spawn(publish.refresh_videos(),
+                                            "the Free Lessons page refresh")
+
+
+_church_task: asyncio.Task | None = None
+
+
+async def _maybe_church() -> None:
+    """The ECC channel's daily shift (`modules.church.shift`), off the loop:
+    once a New York day from CHURCH_SHIFT_HOUR it reads the synced calendar,
+    records gaps and feasts, and raises at most one Tier 2 batch card per
+    platform. `CHURCH_SHIFT=off` stops it; under ATLAS_WATCH_ONLY its cards
+    are still raised and their runs are refused by the executor."""
+    global _church_task
+    from ..modules.church import shift
+    if not shift.enabled():
+        return
+    if _church_task is not None and not _church_task.done():
+        return
+    _church_task = background.spawn(shift.run_if_due(), "the ECC channel shift")
 
 
 _clip_links_task: asyncio.Task | None = None
@@ -1249,6 +1867,141 @@ async def _maybe_linkedin_replies() -> None:
                                               "the LinkedIn page replies")
 
 
+_linkedin_autopost_task: asyncio.Task | None = None
+_last_linkedin_autopost_at: datetime | None = None
+
+
+async def _maybe_linkedin_autopost() -> None:
+    """The Vault LinkedIn page's approved post, published on its own
+    (`kernel.linkedin_autopost.tick`, the owner 2026-10-11) every
+    `LINKEDIN_AUTOPUBLISH_TICK_MIN` minutes, off the loop: a post holds the
+    LinkedIn browser for minutes."""
+    global _linkedin_autopost_task, _last_linkedin_autopost_at
+    from . import linkedin_autopost
+    now = _now()
+    if _linkedin_autopost_task is not None and not _linkedin_autopost_task.done():
+        return
+    if (_last_linkedin_autopost_at is not None
+            and now - _last_linkedin_autopost_at < linkedin_autopost.interval()):
+        return
+    _last_linkedin_autopost_at = now
+    _linkedin_autopost_task = background.spawn(linkedin_autopost.tick(),
+                                               "the Vault LinkedIn post")
+
+
+_academy_support_task: asyncio.Task | None = None
+_last_academy_support_at: datetime | None = None
+
+
+async def _maybe_academy_support() -> None:
+    """ATLAS Academy support (`kernel.academy_support.tick`) every
+    `ACADEMY_SUPPORT_TICK_MIN` minutes, off the loop: it reads the support
+    mailbox and a draft is a model call."""
+    global _academy_support_task, _last_academy_support_at
+    from . import academy_support
+    now = _now()
+    if _academy_support_task is not None and not _academy_support_task.done():
+        return
+    if (_last_academy_support_at is not None
+            and now - _last_academy_support_at < academy_support.interval()):
+        return
+    _last_academy_support_at = now
+    _academy_support_task = background.spawn(academy_support.tick(),
+                                              "the Academy support replies")
+
+
+_draft_notice_task: asyncio.Task | None = None
+_last_draft_notice_at: datetime | None = None
+
+
+async def _maybe_draft_notice() -> None:
+    """New content drafts -> one Slack card each (`kernel.draft_notice.tick`)."""
+    global _draft_notice_task, _last_draft_notice_at
+    from . import draft_notice
+    now = _now()
+    if _draft_notice_task is not None and not _draft_notice_task.done():
+        return
+    if (_last_draft_notice_at is not None
+            and now - _last_draft_notice_at < draft_notice.interval()):
+        return
+    _last_draft_notice_at = now
+    _draft_notice_task = background.spawn(draft_notice.tick(), "the draft notices")
+
+
+_academy_subscribe_task: asyncio.Task | None = None
+_last_academy_subscribe_at: datetime | None = None
+
+
+async def _maybe_academy_subscribe() -> None:
+    """Queued storefront signup confirmations (`kernel.academy_subscribe.tick`)
+    every five minutes, off the loop: it may send mail."""
+    global _academy_subscribe_task, _last_academy_subscribe_at
+    from . import academy_subscribe
+    now = _now()
+    if _academy_subscribe_task is not None and not _academy_subscribe_task.done():
+        return
+    if (_last_academy_subscribe_at is not None
+            and now - _last_academy_subscribe_at < academy_subscribe.interval()):
+        return
+    _last_academy_subscribe_at = now
+    _academy_subscribe_task = background.spawn(academy_subscribe.tick(),
+                                               "the Academy signup confirmations")
+
+
+_agency_contact_task: asyncio.Task | None = None
+_last_agency_contact_at: datetime | None = None
+
+
+async def _maybe_agency_contact() -> None:
+    """Website contact messages (`kernel.agency_contact.tick`) every minute:
+    each waiting channel goes through `agency.deliver_contact`, then Twilio is
+    asked what became of the WhatsApp messages it accepted."""
+    global _agency_contact_task, _last_agency_contact_at
+    from . import agency_contact
+    now = _now()
+    if _agency_contact_task is not None and not _agency_contact_task.done():
+        return
+    if (_last_agency_contact_at is not None
+            and now - _last_agency_contact_at < agency_contact.interval()):
+        return
+    _last_agency_contact_at = now
+    _agency_contact_task = background.spawn(agency_contact.tick(),
+                                            "the website contact messages")
+
+
+_qa_runs_task: asyncio.Task | None = None
+_last_qa_runs_at: datetime | None = None
+
+
+def _qa_runs_interval() -> timedelta:
+    try:
+        minutes = int(os.getenv("QA_VERIFY_RUNS_MIN", "60"))
+    except ValueError:
+        minutes = 60
+    return timedelta(minutes=max(15, minutes))
+
+
+async def _qa_verify_runs() -> None:
+    from .executor import ExecutionRequest, execute
+    await execute(ExecutionRequest(
+        action="qa.verify_runs", params={},
+        reason="hourly: every scheduled window of the last day ran"))
+
+
+async def _maybe_qa_verify_runs() -> None:
+    """QA's hourly look at the scheduled windows (`qa.verify_runs`) through
+    the executor, off the loop. A miss becomes a remediation task; nothing
+    is retried."""
+    global _qa_runs_task, _last_qa_runs_at
+    now = _now()
+    if _qa_runs_task is not None and not _qa_runs_task.done():
+        return
+    if _last_qa_runs_at is not None and now - _last_qa_runs_at < _qa_runs_interval():
+        return
+    _last_qa_runs_at = now
+    _qa_runs_task = background.spawn(_qa_verify_runs(), "QA's check of missed runs")
+
+
 async def _maybe_reels() -> None:
     """The AI-stories account's day (`kernel.reels.daily`), once a day at or
     after BRIEF_HOUR, off the loop like the marketing pass: it may wait on
@@ -1290,8 +2043,21 @@ def _playlist_hour() -> int:
 
 
 def _idea_windows(now: datetime, horizon: timedelta) -> list:
-    from ..modules.markets.ideas import windows
-    return windows(now, horizon)
+    from ..modules.markets.ideas import TZ, windows
+    return windows(now.astimezone(TZ), horizon)     # 16:30 New York, any `now`
+
+
+def _playlist_windows(now: datetime, horizon: timedelta) -> list:
+    from ..modules.markets.playlist import TZ
+    from .missed import weekly
+    return weekly(lambda: _playlist_day(), lambda: _playlist_hour())(
+        now.astimezone(TZ), horizon)
+
+
+def _youtube_learn_on() -> bool:
+    from . import video_learn
+    from .executor import watch_only
+    return video_learn.enabled() and not watch_only()
 
 
 def _policies() -> dict:
@@ -1302,6 +2068,7 @@ def _policies() -> dict:
     eight_weeks = timedelta(weeks=8)
     table = [
         JobPolicy("brief", stale, retry=True, windows=daily(lambda: _brief_hour()),
+                  enabled=_daily_brief_on,
                   why="a morning brief is only worth reading that day; a "
                       "failed send is retried until local midnight"),
         JobPolicy("agency_meeting", stale, retry=True,
@@ -1329,7 +2096,7 @@ def _policies() -> dict:
                   why="one plan for the coming week; a partial filing is "
                       "never filed again"),
         JobPolicy("playlist", once, horizon=eight_weeks,
-                  windows=weekly(lambda: _playlist_day(), lambda: _playlist_hour()),
+                  windows=_playlist_windows,
                   why="one paper-playlist proposal on recovery, never one per "
                       "missed week; claimed once, so a card is raised at most "
                       "once a week (New York time)"),
@@ -1337,6 +2104,49 @@ def _policies() -> dict:
                   why="every 5 minutes; a missed tick is skipped, never replayed "
                       "-- the next sweep reads from each media's comment "
                       "watermark, and every send is keyed once per commenter"),
+        JobPolicy("sales_shift", stale, windows=_sales_windows,
+                  why="the Sales shift is that day's cards; a missed day is "
+                      "skipped, never run late (New York time)"),
+        JobPolicy("inbox_shift", stale, windows=_inbox_shift_windows,
+                  why="the Inbox morning read; a missed day is skipped, the next "
+                      "reads the mailbox afresh (New York time)"),
+        JobPolicy("sites_shift", stale, windows=_sites_shift_windows,
+                  why="the Sites morning: up to three demos and their publish "
+                      "cards; a missed day is skipped, never run late"),
+        JobPolicy("mmt_shift", stale, windows=_mmt_shift_windows,
+                  why="the TutorSite morning: discovery, scores and intro "
+                      "drafts as cards; a missed day is skipped, never run late"),
+        JobPolicy("whatsapp_daily", stale, windows=_whatsapp_daily_windows,
+                  retry=True,
+                  why="the 8 PM agent report on WhatsApp, once per New York date; "
+                      "unsent (watch-only, down, failed) it retries every 30 min "
+                      "until midnight, then is skipped, never sent for a past day"),
+        JobPolicy("sage_mmt_weekly", stale, windows=_sage_mmt_windows,
+                  why="Sage's TutorSite page week: draft posts and one SEO "
+                      "note as cards; a missed week is skipped, never run late"),
+        JobPolicy("youtube_learn", stale, windows=_youtube_learn_windows,
+                  enabled=_youtube_learn_on,
+                  why="listens to queued and Academy YouTube videos and raises "
+                      "lessons cards; a missed day is skipped, the next pass "
+                      "takes what is still queued"),
+        JobPolicy("bizops_digest", stale, windows=_bizops_digest_windows,
+                  why="the BizOps morning: onboardings, reminders and the "
+                      "digest; a missed day is skipped, the next reads afresh"),
+        JobPolicy("bizops_find_repeats", stale, windows=_bizops_repeats_windows,
+                  why="a 14-day scan; a missed day is skipped, the next one "
+                      "covers it"),
+        JobPolicy("seo_rank", stale, windows=_seo_rank_windows,
+                  why="a rank snapshot (audits on Mondays); a missed day is "
+                      "skipped, the next reads afresh"),
+        JobPolicy("research_scan", stale, windows=_research_scan_windows,
+                  why="a read of every watched page; a missed day is skipped, the "
+                      "next compares against the last read"),
+        JobPolicy("research_weekly", stale, windows=_research_weekly_windows,
+                  why="the Sunday profiles and report; a missed week is skipped, "
+                      "the next reads afresh"),
+        JobPolicy("content_weekly", stale, windows=_content_windows,
+                  why="the Content agent's Monday; a missed week is skipped, "
+                      "never run late -- the next one reads everything afresh"),
         JobPolicy("ideas", stale, windows=_idea_windows,
                   why="a trade idea is only worth that day's close; a missed "
                       "weekday is skipped, never scanned late (New York time)"),
@@ -1357,6 +2167,10 @@ def _policies() -> dict:
         JobPolicy("calendar", once, guard="reel_calendar + the daily post cap",
                   why="every 30 min; after an outage its backlog drains at "
                       "the daily cap and one card a day, never all at once"),
+        JobPolicy("church", stale, guard="church_events (one shift a New York day)",
+                  why="the ECC channel's day; a missed day is not run late -- "
+                      "the next shift reads the calendar afresh, and each card "
+                      "is keyed per platform per day"),
         JobPolicy("measure", once, guard="experiments (measure_due)",
                   why="daily sweep closing every experiment already due; "
                       "one pass covers any number of missed days"),
@@ -1364,6 +2178,10 @@ def _policies() -> dict:
     for name, why in (
             ("checks", "every cycle; observing twice is harmless"),
             ("approvals", "expiry sweep; one pass settles every lapsed card"),
+            ("approvals_board", ("redraws the one #approvals board when the pending "
+                                 "set changed, or every APPROVALS_BOARD_REFRESH_MIN; "
+                                 "a missed redraw is the next one, so nothing is "
+                                 "replayed")),
             ("signals", "every SIGNAL_INTERVAL_S; one pass after recovery"),
             ("rhythm", "hourly rebuild of a rolling baseline"),
             ("retention", "hourly purge; one pass removes all that is due"),
@@ -1375,24 +2193,82 @@ def _policies() -> dict:
             ("clip_links", ("every CLIPS_LINKS_MIN; reads Postiz and fills a "
                             "clip's link only where it is still empty, so one "
                             "pass after recovery catches up within 14 days")),
-            ("academy_reel", ("once a day from ACADEMY_PROMO_HOUR_UTC; skip-stale: "
-                              "a box down at that hour posts today's reel when it "
-                              "comes back the same day, and academy_promo_posts "
-                              "caps it at one, so nothing doubles")),
+            ("academy_reel", ("at each ACADEMY_PROMO_HOURS_UTC slot (16, 23); "
+                              "skip-stale: a box down through a slot posts once "
+                              "when it is back the same day, and academy_promo_posts "
+                              "keeps three hours between posts and caps the day at "
+                              "CLIPS_PROMO_PER_DAY, so nothing doubles")),
+            ("academy_tutorial", ("once a day from ACADEMY_TUTORIALS_HOUR_UTC, then "
+                                  "hourly the same day for what the hourly ceiling "
+                                  "held; skip-stale: academy_tutorial_posts caps it "
+                                  "per day and keys each episode, so nothing posts "
+                                  "twice")),
+            ("academy_teaching", ("once a day from ACADEMY_TEACHING_HOUR_UTC, on "
+                                  "alternate New York days; skip-stale: "
+                                  "academy_promo_posts caps the day at "
+                                  "CLIPS_PROMO_PER_DAY and keys each cut by its slug, "
+                                  "so nothing posts twice")),
+            ("academy_videos", ("every ACADEMY_VIDEOS_REFRESH_MIN; compares the "
+                                "public tutorials with the live page and republishes "
+                                "only on a difference, so a missed run catches up")),
             ("lead_replies", ("every AGENCY_REPLY_TICK_MIN; each queued lead "
                               "message is claimed once, and one queued over a "
-                              "day ago is left to Miro, so nothing is replayed")),
+                              "day ago is left to the owner, so nothing is replayed")),
             ("linkedin_replies", ("every LINKEDIN_REPLY_TICK_MIN; each page request "
                                   "is claimed once and answered once per inbound, and "
-                                  "one over three days old is left to Miro, so "
+                                  "one over three days old is left to the owner, so "
                                   "nothing is replayed")),
+            ("linkedin_autopost", ("every LINKEDIN_AUTOPUBLISH_TICK_MIN; the page's "
+                                   "gate allows one post a day and marks it "
+                                   "published (or posted_unverified) before the "
+                                   "next tick, so a missed run posts later the "
+                                   "same day and nothing posts twice")),
+            ("academy_support", ("every ACADEMY_SUPPORT_TICK_MIN; each ticket is "
+                                 "claimed once, keyed by its form id or Gmail id, "
+                                 "answered once per inbound, and one over seven days "
+                                 "old is left to the owner, so nothing is replayed")),
+            ("agency_contact", ("every minute; each waiting message channel is "
+                                "claimed once and delivered once, a failed channel "
+                                "retries up to 3 times, and the row is stored before "
+                                "anything is sent, so a missed run only delays "
+                                "delivery and no message is lost")),
+            ("academy_subscribe", ("every 5 minutes; each queued confirmation is "
+                                   "claimed once and sent once, a pending signup "
+                                   "unconfirmed after 7 days is deleted, so a missed "
+                                   "run only delays the mail and nothing is replayed")),
+            ("qa_verify_runs", ("every QA_VERIFY_RUNS_MIN (60); it only reads "
+                                "schedule_runs and raises deduped tasks, so a "
+                                "missed pass is covered by the next one")),
             ("missions", ("every MISSIONS_TICK_MIN; each mission works its "
                           "next step out from the agency tables, so one pass "
                           "after recovery resumes it, and one past its "
                           "deadline lapses with a report")),
             ("market_alerts", ("every MARKETS_ALERT_MIN; each event is keyed "
                                "in markets_alerts and sent once, under the "
-                               "daily cap; one missed a day expires unsent"))):
+                               "daily cap; one missed a day expires unsent")),
+            ("whatsapp_cards", ("every pass; a pending, unexpired Tier 2 card that "
+                                "was never messaged is sent once (claim per card, "
+                                "shared with the at-creation copy), newest 5 only on "
+                                "the first run, so a missed pass is covered by the "
+                                "next and nothing is replayed")),
+            ("whatsapp_alerts", ("every pass; only a failing reading that was OK "
+                                 "just before it and is under 30 minutes old counts, "
+                                 "each reading is sent once (outbox slot), so a "
+                                 "missed pass is covered by the next and nothing "
+                                 "is replayed")),
+            ("draft_notice", ("every 5 minutes; a high-water mark in "
+                              "draft_notice_mark means each new content draft gets "
+                              "one Slack card, so a missed pass is covered by the "
+                              "next and nothing is replayed")),
+            ("assistant_notices", ("every pass; off unless the assistant is on; "
+                                   "rows are deduped per thing and capped at 1 an "
+                                   "hour and 3 a day, so a missed pass is covered by "
+                                   "the next and nothing is replayed")),
+            ("owner_calls", ("every pass; off unless OWNER_CALLS=on; an alert or "
+                             "urgent card unanswered for CALL_ESCALATE_MINUTES gets "
+                             "one call, keyed per event in effect_claims, so a "
+                             "missed pass is covered by the next (3 h lookback) "
+                             "and nothing is called twice"))):
         table.append(JobPolicy(name, once, guard="interval (process memory)",
                                why=why))
     return {p.job: p for p in table}
@@ -1420,7 +2296,11 @@ STEP_TIMEOUT_S = float(os.getenv("SCHEDULER_STEP_TIMEOUT_S", "600"))
 SLOW_STEP_S = 10.0
 
 _DETACHED = ("signals", "brief", "weekly", "retention", "judgment", "fixes",
-            "agent_shifts", "agency_meeting", "playlist", "ideas")
+            "agent_shifts", "agency_meeting", "playlist", "ideas",
+            "approvals_board", "sales_shift", "content_weekly", "bizops_digest",
+            "bizops_find_repeats", "seo_rank", "research_scan", "research_weekly",
+            "inbox_shift", "sites_shift", "mmt_shift", "whatsapp_daily",
+            "sage_mmt_weekly", "youtube_learn")
 
 # How long a detached step may run before it is cancelled (RA-D3). Without
 # one, a hung step kept its name "running" and skipped every later cycle:
@@ -1434,6 +2314,30 @@ DETACHED_DEADLINE_S = {
     # One model call for the polish (bounded inside at 120 s) plus reads.
     "agency_meeting": 600.0,
     "playlist": 900.0, "ideas": 900.0,
+    # Executor calls in series: a few site reads and drafts per lead.
+    "sales_shift": 1800.0,
+    # One IMAP read plus the capped classifier calls.
+    "inbox_shift": 900.0,
+    # Up to three mockup + build executor calls and the reads.
+    "sites_shift": 1800.0,
+    # Capped public fetches (politeness delays) plus a few extract calls.
+    "mmt_shift": 1800.0,
+    # One report read and at most a few Twilio sends.
+    "whatsapp_daily": 300.0,
+    # Four capped public fetches, one state read, two executor calls.
+    "sage_mmt_weekly": 900.0,
+    # Up to eight videos: a transcript read and up to five model calls each.
+    "youtube_learn": 3000.0,
+    # A report, a plan and a few title steps: reads and executor calls.
+    "content_weekly": 900.0,
+    # A few executor calls: onboardings, reminders, the digest; one scan.
+    "bizops_digest": 600.0, "bizops_find_repeats": 300.0,
+    # Executor calls in series: one search per keyword, a few page reads.
+    "seo_rank": 900.0,
+    # Page reads in series through the scraper; up to ten profile refreshes.
+    "research_scan": 1200.0, "research_weekly": 1800.0,
+    # A few Slack calls: the board, and at most five card links looked up.
+    "approvals_board": 180.0,
     # Only in the loop with ATLAS_DURABLE_CORE=on (_DURABLE_DETACHED). The
     # pass starts a row only while a whole execute budget still fits (see
     # _outbox_pass), so this deadline does not cut a dispatch off mid-run.
@@ -1505,11 +2409,12 @@ async def loop(interval: float = 30.0) -> None:
     while True:
         # Each responsibility is isolated. The brief and the retention run are
         # not allowed to depend on checks, reasoning or notifications having
-        # gone well — those are exactly the mornings Miro most needs a brief.
+        # gone well — those are exactly the mornings the owner most needs a brief.
         durable_on = _durable_enabled()
         steps = (
             ("checks", _run_checks),
             ("approvals", expire_stale),
+            ("approvals_board", board.step),
             ("signals", _maybe_signals),
             ("brief", _maybe_brief),
             ("agency_meeting", _maybe_agency_meeting),
@@ -1518,16 +2423,47 @@ async def loop(interval: float = 30.0) -> None:
             ("marketing", _maybe_marketing),
             ("playlist", _maybe_playlist),
             ("ideas", _maybe_ideas),
+            ("sales_shift", _maybe_sales_shift),
+            ("inbox_shift", _maybe_inbox_shift),
+            ("sites_shift", _maybe_sites_shift),
+            ("mmt_shift", _maybe_mmt_shift),
+            ("whatsapp_daily", _maybe_whatsapp_daily),
+            ("whatsapp_alerts", _maybe_whatsapp_alerts),
+            ("owner_calls", _maybe_owner_calls),
+            ("assistant_notices", _maybe_assistant_notices),
+            ("whatsapp_cards", _maybe_whatsapp_cards),
+            ("sage_mmt_weekly", _maybe_sage_mmt_weekly),
+            ("youtube_learn", _maybe_youtube_learn),
+            ("content_weekly", _maybe_content_weekly),
+            ("bizops_digest", _maybe_bizops_digest),
+            ("bizops_find_repeats", _maybe_bizops_find_repeats),
+            ("seo_rank", _maybe_seo_rank),
+            ("research_scan", _maybe_research_scan),
+            ("research_weekly", _maybe_research_weekly),
             ("reels", _maybe_reels),
             ("calendar", _maybe_calendar),
             ("clips", _maybe_clips),
             ("clip_links", _maybe_clip_links),
+            # the owner, 2026-10-13: two Shorts a day. The teaching tick is
+            # spawned before the reel's 23 UTC slot, so on a teaching day its
+            # seconds-long cut normally takes the slot before the reel's
+            # minutes-long render (tutorials.teaching_tick).
+            ("academy_teaching", _maybe_academy_teaching),
             ("academy_reel", _maybe_academy_reel),
+            ("academy_tutorial", _maybe_academy_tutorial),
+            ("academy_videos", _maybe_academy_videos),
+            ("church", _maybe_church),
             ("market_alerts", _maybe_market_alerts),
             ("funnels", _maybe_funnels),
             ("missions", _maybe_missions),
             ("lead_replies", _maybe_lead_replies),
             ("linkedin_replies", _maybe_linkedin_replies),
+            ("linkedin_autopost", _maybe_linkedin_autopost),
+            ("academy_support", _maybe_academy_support),
+            ("draft_notice", _maybe_draft_notice),
+            ("academy_subscribe", _maybe_academy_subscribe),
+            ("agency_contact", _maybe_agency_contact),
+            ("qa_verify_runs", _maybe_qa_verify_runs),
             ("review", _maybe_review),
             ("rhythm", _maybe_rhythm),
             ("retention", _maybe_purge),
@@ -1650,7 +2586,7 @@ async def _run_checks() -> None:
     findings = await run_once()
     if not findings:
         return
-    # Anything Miro acknowledged from Slack neither pages nor raises a card
+    # Anything the owner acknowledged from Slack neither pages nor raises a card
     # until it changes. See acks.py.
     from .acks import filter_acked
     findings = await filter_acked(findings)

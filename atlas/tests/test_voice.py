@@ -80,7 +80,7 @@ async def test_an_action_request_with_no_catalog_action_is_only_described(
 
 async def test_an_action_request_becomes_an_approval_not_an_execution(
         client, memory_backend, monkeypatch):
-    """Miro asked for voice to send email and book things. The standing rule
+    """the owner asked for voice to send email and book things. The standing rule
     is that there is no path from talking to ATLAS to changing anything.
 
     Both hold: the spoken request becomes a Tier 2 proposal he approves
@@ -377,7 +377,7 @@ async def test_a_question_gets_a_plain_answer(client, monkeypatch):
 
 async def test_the_transcript_is_delimited_as_his_request(client, monkeypatch):
     """The dashboard microphone sits behind the login on the mesh, so what it
-    hears is Miro's request -- the same ruling `_queue_steps` already makes for
+    hears is the owner's request -- the same ruling `_queue_steps` already makes for
     the riskier action path. Wrapped as outside data, the model "summarised
     and classified" his questions instead of answering them (prod,
     2026-09-28). The delimiters and the marker scrub are unchanged."""
@@ -875,7 +875,6 @@ def _capture_tts(monkeypatch) -> list[tuple]:
 
 
 @pytest.mark.parametrize(("choice", "env", "ref"), [
-    ("female", "FISH_VOICE_FEMALE", "fem-ref-1"),
     ("male", "FISH_VOICE_MALE", "male-ref-1"),
 ])
 async def test_speak_uses_the_named_voice_from_env(
@@ -888,6 +887,22 @@ async def test_speak_uses_the_named_voice_from_env(
     assert response.status_code == 200, response.text
     assert response.headers["x-voice"] == choice
     assert calls == [("Here is my update.", ref)]
+
+
+async def test_female_is_answered_in_atlas_s_own_voice(client, monkeypatch):
+    """the owner, 2026-10-11: "don't use the girl voice, only use the guy voice at
+    all times." "female" is still accepted (a 200, the closed set kept) but
+    speaks as ATLAS, even with FISH_VOICE_FEMALE set."""
+    from atlas.kernel.personas import ATLAS_VOICE
+    assert voice._speak_voice("female") == (ATLAS_VOICE, None)
+    monkeypatch.setenv("FISH_AUDIO_API_KEY", FISH_KEY)
+    monkeypatch.setenv("FISH_VOICE_FEMALE", "fem-ref-1")
+    calls = _capture_tts(monkeypatch)
+    response = client.post("/api/voice/speak", json={"text": "Hi.", "voice": "female"})
+    assert response.status_code == 200
+    assert response.headers["x-voice"] == "atlas"
+    assert calls == [("Hi.",)]
+    assert "female" not in voice.SPEAK_VOICE_ENV
 
 
 async def test_speak_without_a_voice_or_with_atlas_is_atlas_unchanged(
@@ -929,26 +944,26 @@ async def test_speak_refuses_a_voice_outside_the_closed_three(
 
 
 async def test_a_named_voice_keeps_every_existing_guard(client, monkeypatch, caplog):
-    monkeypatch.setenv("FISH_VOICE_FEMALE", "fem-ref-1")
+    monkeypatch.setenv("FISH_VOICE_MALE", "male-ref-1")
     # length cap
     monkeypatch.setenv("FISH_AUDIO_API_KEY", FISH_KEY)
     too_long = "word " * 1000
     assert client.post("/api/voice/speak",
-                       json={"text": too_long, "voice": "female"}).status_code == 413
+                       json={"text": too_long, "voice": "male"}).status_code == 413
 
     # redaction
     async def leaky(*_args) -> bytes:
         raise RuntimeError(f"401 for Authorization: Bearer {FISH_KEY}")
 
     monkeypatch.setattr(voice, "_fish_tts", leaky)
-    response = client.post("/api/voice/speak", json={"text": "Hi.", "voice": "female"})
+    response = client.post("/api/voice/speak", json={"text": "Hi.", "voice": "male"})
     assert response.status_code == 502
     assert FISH_KEY not in response.text and FISH_KEY not in caplog.text
 
     # no key
     monkeypatch.delenv("FISH_AUDIO_API_KEY", raising=False)
     assert client.post("/api/voice/speak",
-                       json={"text": "Hi.", "voice": "female"}).status_code == 503
+                       json={"text": "Hi.", "voice": "male"}).status_code == 503
 
 
 def test_the_fish_request_takes_a_named_voice_over_atlas(monkeypatch):
@@ -1160,21 +1175,21 @@ def test_a_system_check_never_swallows_an_action_or_an_unrelated_phrase(said):
 
 
 def test_resolve_focus_names_the_business_he_asked_about():
-    assert voice.resolve_focus("how is flycheap doing", "…") == {
-        "screen": "/status", "module": "flycheap"}
-    assert voice.resolve_focus("how's fly cheap doing", "…") == {
-        "screen": "/status", "module": "flycheap"}
+    assert voice.resolve_focus("how is cloudco doing", "…") == {
+        "screen": "/status", "module": "cloudco"}
+    assert voice.resolve_focus("how's net bird doing", "…") == {
+        "screen": "/status", "module": "netbird"}
 
 
 def test_resolve_focus_prefers_the_transcript_then_the_answer(monkeypatch):
     from atlas.kernel.registry import REGISTRY
-    monkeypatch.setattr(REGISTRY, "modules", {"mirotech": object(), "flycheap": object()})
+    monkeypatch.setattr(REGISTRY, "modules", {"exampleco": object(), "netbird": object()})
     monkeypatch.setattr(REGISTRY, "disabled", {})
-    assert voice.resolve_focus("is guardian ok", "FlyCheap is fine too") == {
-        "screen": "/status", "module": "guardian"}
+    assert voice.resolve_focus("is cloudco ok", "NetBird is fine too") == {
+        "screen": "/status", "module": "cloudco"}
     assert voice.resolve_focus("what is waiting on me",
-                               "Mirotech has two listings to review.") == {
-        "screen": "/status", "module": "mirotech"}
+                               "ExampleCo has two listings to review.") == {
+        "screen": "/status", "module": "exampleco"}
 
 
 def test_resolve_focus_system_check_is_the_fleet():
@@ -1182,8 +1197,8 @@ def test_resolve_focus_system_check_is_the_fleet():
 
 
 def test_an_action_naming_a_business_focuses_the_business_not_the_fleet():
-    assert voice.resolve_focus("system check and restart flycheap", "I would.") == {
-        "screen": "/status", "module": "flycheap"}
+    assert voice.resolve_focus("system check and restart cloudco", "I would.") == {
+        "screen": "/status", "module": "cloudco"}
 
 
 def test_an_answer_saying_an_ordinary_word_in_passing_is_not_a_focus(monkeypatch):
@@ -1203,7 +1218,7 @@ def test_an_answer_names_only_modules_the_registry_knows(monkeypatch):
     from atlas.kernel.registry import REGISTRY
     monkeypatch.setattr(REGISTRY, "modules", {})
     monkeypatch.setattr(REGISTRY, "disabled", {})
-    assert voice.resolve_focus("what is waiting on me", "Mirotech has two.") is None
+    assert voice.resolve_focus("what is waiting on me", "ExampleCo has two.") is None
 
 
 def test_resolve_focus_is_none_when_nothing_is_named():
@@ -1292,13 +1307,13 @@ async def test_how_are_you_is_still_the_self_model(client, monkeypatch):
 
 async def test_a_status_question_focuses_the_business_it_names(client, monkeypatch):
     async def fake_route(question, *_a, **_k):
-        return "FlyCheap: 4 of 5 checks OK, last read 21:12; signups unmeasured."
+        return "CloudCo: 4 of 5 checks OK, last read 21:12; signups unmeasured."
 
     monkeypatch.setattr("atlas.kernel.agents.route", fake_route)
     body = client.post("/api/voice/ask",
-                       json={"transcript": "how is flycheap doing"}).json()
+                       json={"transcript": "how is cloudco doing"}).json()
     assert body["kind"] == "question"
-    assert body["focus"] == {"screen": "/status", "module": "flycheap"}
+    assert body["focus"] == {"screen": "/status", "module": "cloudco"}
 
 
 async def test_an_ordinary_question_has_no_focus(client, monkeypatch):
@@ -1654,7 +1669,7 @@ async def test_open_the_build_report_is_a_view(client, monkeypatch):
 
 async def test_the_dashboard_is_him_so_its_words_reach_the_picker_as_his(
         client, memory_backend, monkeypatch):
-    """A signed-in session on the mesh IS Miro. Wrapped as outside data, the
+    """A signed-in session on the mesh IS the owner. Wrapped as outside data, the
     picker's JSON prompt was refused every time ({"action": null})."""
     seen: list = []
 
@@ -1709,15 +1724,15 @@ async def test_live_context_hands_the_model_every_check_and_the_names(monkeypatc
     async def rows(sql, *a):
         if "FROM proposals" in sql:
             return [{"action": "gitlab.open_issue"}]
-        return [{"module": "vpsie", "check": "balance", "health": "failing",
+        return [{"module": "cloudco", "check": "balance", "health": "failing",
                  "detail": "0.6 months of runway", "at": fresh,
                  "interval_s": 300},
-                {"module": "vpsie", "check": "instances", "health": "ok",
+                {"module": "cloudco", "check": "instances", "health": "ok",
                  "detail": "9 up", "at": fresh, "interval_s": 300}]
     monkeypatch.setattr(voice, "fetch_all", rows)
     ctx = await voice.live_context()
-    assert "vpsie.balance: failing — 0.6 months of runway" in ctx
-    assert "vpsie.instances: ok — 9 up" in ctx
+    assert "cloudco.balance: failing — 0.6 months of runway" in ctx
+    assert "cloudco.instances: ok — 9 up" in ctx
     assert "1 decision(s) waiting" in ctx
     assert "Vipsy" in ctx                      # the mishearing is named
 
@@ -1743,7 +1758,7 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
     from atlas.kernel import agents
     if not agents.ROSTER:
         agents.build_roster()       # boot does this; the test client skips boot
-    said = "how is vpsie looking"
+    said = "how is cloudco looking"
     assert not voice.is_system_check(said)
     assert not voice.is_knowledge(said)
     assert voice.view_target(said) is None
@@ -1755,14 +1770,14 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
             return []
         if "FROM checks" in sql:
             return [
-                {"module": "vpsie", "check": "balance", "health": "failing",
+                {"module": "cloudco", "check": "balance", "health": "failing",
                  "detail": "0.6 months of runway",
                  "at": now - timedelta(minutes=2), "interval_s": 300},
                 # OK, but two days old on a five-minute check.
-                {"module": "vpsie", "check": "instances", "health": "ok",
+                {"module": "cloudco", "check": "instances", "health": "ok",
                  "detail": "9 up", "at": now - timedelta(days=2),
                  "interval_s": 300},
-                {"module": "vpsie", "check": "backups", "health": None,
+                {"module": "cloudco", "check": "backups", "health": None,
                  "detail": None, "at": None, "interval_s": 300},
             ]
         return []
@@ -1773,7 +1788,7 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
     async def fake_think(need, system, messages, *a, **k):
         from atlas.kernel.llm import Completion
         prompts.append(system)
-        return Completion(text="VPSie billing is failing; instances are "
+        return Completion(text="CloudCo billing is failing; instances are "
                                "not known right now.",
                           provider="fake", model="fake")
 
@@ -1787,21 +1802,21 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
 
     assert len(prompts) == 1, "one grounded call, not the agent loop"
     ctx = prompts[0]
-    assert "vpsie.balance: failing — 0.6 months of runway (read " in ctx
-    assert "vpsie.instances: unknown" in ctx
-    assert "vpsie.instances: ok" not in ctx
+    assert "cloudco.balance: failing — 0.6 months of runway (read " in ctx
+    assert "cloudco.instances: unknown" in ctx
+    assert "cloudco.instances: ok" not in ctx
     assert "9 up" not in ctx, "a stale reading's number is not today's"
-    assert "vpsie.backups: unknown — never measured" in ctx
+    assert "cloudco.backups: unknown — never measured" in ctx
     # The rows are what the far end said: quoted, never instructions.
     rows_at = ctx.index("<untrusted_data source='checks'>")
-    assert rows_at < ctx.index("vpsie.balance: failing") < ctx.index(
+    assert rows_at < ctx.index("cloudco.balance: failing") < ctx.index(
         "</untrusted_data>")
-    # VPSie is Daniel's (tests/test_voice_routing.py): the same one grounded
-    # call, answered in his name.
-    assert body["answer"].startswith("Here's Daniel: VPSie billing is failing")
-    assert body["agent"] == "vpsie"
-    assert body["focus"] == {"screen": voice.BUSINESS_FOCUS["vpsie"],
-                             "module": "vpsie"}
+    # CloudCo's agent left the roster on 2026-10-28: ATLAS answers in its own
+    # voice from the same one grounded call.
+    assert body["answer"].startswith("CloudCo billing is failing")
+    assert body["agent"] != "cloudco"
+    assert body["focus"] == {"screen": voice.BUSINESS_FOCUS["cloudco"],
+                             "module": "cloudco"}
 
 
 async def test_groq_whisper_hears_the_microphone(monkeypatch):
@@ -1856,3 +1871,211 @@ def test_a_refusal_says_why_when_it_is_known(monkeypatch):
                          "Say why it is different to clear it.")
     assert voice._refusal("x.y", blocked) == voice.FAILED_TWICE
     assert voice._refusal("x.y", ValueError("cannot propose x.y: unknown")) is None
+
+
+# ------------------------------------------------ the host's way of speaking
+#
+# the owner, 2026-11-10: every spoken answer is a short summary, like the
+# NotebookLM host -- the answer first, one to three short sentences, plain
+# warm words, a number always with the time it was read, nothing read out as
+# a list or spelled letter by letter. The screen keeps the detail.
+
+import re
+from datetime import UTC, datetime
+
+from atlas.api import ear, system_check
+
+
+def _sentences(said: str) -> list[str]:
+    return [s for s in re.split(r"(?<=[.!?])\s+", said.strip()) if s]
+
+
+def test_a_long_answer_is_said_as_its_first_three_sentences():
+    text = ("CloudCo is fine as of 7:52. Billing is the one thing to watch. "
+            "A card failed twice. The retry runs at nine. Then it runs again. "
+            "More sentences follow here.")
+    said = ear.for_ear(text)
+    assert said is not None
+    assert _sentences(said)[0].startswith("CloudCo is fine as of 7:52")
+    assert len(_sentences(said)) <= 3
+    assert "retry runs at nine" not in said
+
+
+def test_a_list_is_never_read_aloud():
+    text = ("Three things need you.\n- Approve the Stripe refund\n"
+            "- Rotate the mail key\n- Review the draft post")
+    said = ear.for_ear(text)
+    assert said == "Three things need you."
+
+
+def test_a_list_with_no_lead_in_is_counted_not_read():
+    said = ear.for_ear("- one thing\n- another thing\n- a third thing")
+    assert said is not None and "3" in said and "another" not in said
+
+
+def test_please_note_the_source_is_not_said():
+    text = ("Everything looks fine as of 7:52. Please note the source of this "
+            "data is the checks table.")
+    assert ear.for_ear(text) == "Everything looks fine as of 7:52."
+
+
+def test_but_a_note_that_says_a_source_is_unreachable_is_kept():
+    text = "Billing reads fine as of 7:52. Please note Stripe is unreachable right now."
+    said = ear.for_ear(text)
+    assert said is not None and "unreachable" in said
+
+
+def test_a_pile_of_module_names_becomes_a_few_words():
+    text = "Not measured: calendar, gitlab, gmail_inbox, stripe_billing and netbird."
+    said = ear.for_ear(text, names=frozenset({"calendar", "gitlab", "netbird"}))
+    assert said is not None
+    for name in ("calendar", "gitlab", "gmail_inbox", "stripe_billing", "netbird"):
+        assert name not in said
+    assert "not measured" in said.lower()
+
+
+def test_one_module_name_is_still_said():
+    said = ear.for_ear("Netbird is down as of 7:52.", names=frozenset({"netbird"}))
+    assert said == "Netbird is down as of 7:52."
+
+
+def test_ids_and_long_tokens_are_not_spelled_out():
+    text = ("Proposal 6f0c9a1be2d34c57a8b9 is waiting. The token "
+            "sk_FAKE_placeholder is not shown. "
+            "See https://x.example/a/b?c=1.")
+    said = ear.for_ear(text)
+    assert said is not None
+    assert "6f0c9a1be2d3" not in said and "sk_live" not in said and "http" not in said
+
+
+def test_markdown_and_check_keys_are_not_said():
+    said = ear.for_ear("**Guardian** is `down`: guardian.cert failed (read 03:12).")
+    assert said is not None
+    assert "*" not in said and "`" not in said and "guardian.cert" not in said
+
+
+def test_an_unknown_in_a_later_sentence_is_never_cut_away():
+    text = ("Stripe is fine as of 7:52. Mail is fine. Chat is fine. "
+            "Hosting is unknown, I couldn't read it.")
+    said = ear.for_ear(text)
+    assert said is not None and "unknown" in said and len(_sentences(said)) <= 3
+
+
+def test_what_is_short_already_is_said_unchanged():
+    assert ear.for_ear("CloudCo is unknown right now.") == "CloudCo is unknown right now."
+    assert ear.for_ear(None) is None and ear.for_ear("   ") is None
+
+
+def test_the_words_per_answer_are_capped():
+    said = ear.for_ear("word " * 200 + "end.")
+    assert said is not None and len(said.split()) <= ear.MAX_WORDS
+
+
+def test_an_order_keeps_its_card_line():
+    typed = ("I'll queue the refund for you. One card to approve. Check it. "
+             "Then done.\n\nQueued — approve it in Slack.")
+    said = voice.for_speech(typed, wants_action=True)
+    assert said is None or "approve it in Slack" in said
+
+
+def test_the_voice_prompt_asks_for_the_host_style():
+    style = voice.VOICE_STYLE.lower()
+    assert "one to three short sentences" in style
+    assert "no lists" in style
+    assert "please note" in style
+    assert "as of" in voice.FIGURES_LINE
+
+
+NOW = datetime(2026, 11, 10, 7, 52, tzinfo=UTC)
+
+
+def test_the_system_check_is_said_without_a_single_module_name():
+    summary = {"ok": 38, "degraded": 0, "failing": 0, "unknown": 2,
+               "total": 40, "not_loaded": 1}
+    modules = [{"title": "Calendar", "name": "calendar", "unknown": 1, "enabled": True,
+                "not_measured": "no GOOGLE_ key"},
+               {"title": "GitLab", "name": "gitlab", "unknown": 1, "enabled": True,
+                "not_measured": "no GITLAB_TOKEN"}]
+    agents = [{"name": "school", "online": False, "reason": "no local model"}]
+    said = system_check.spoken_summary(summary, modules, agents, NOW, None, NOW)
+    assert "38 of 40" in said
+    assert "Calendar" not in said and "GitLab" not in said and "school" not in said
+    assert "GOOGLE_" not in said
+    assert "not measured" in said.lower() or "can't read" in said.lower()
+    assert "offline" in said.lower()
+    assert system_check._clock(NOW) in said            # invariant 6
+    assert len(_sentences(said)) <= 3
+
+
+def test_the_spoken_system_check_says_all_clear_only_when_it_is():
+    summary = {"ok": 3, "degraded": 0, "failing": 0, "unknown": 0,
+               "total": 3, "not_loaded": 0}
+    said = system_check.spoken_summary(summary, [], [], NOW, None, NOW)
+    assert said.lower().startswith("all clear") and "3 of 3" in said
+    bad = dict(summary, unknown=1, ok=2)
+    mods = [{"title": "Guardian", "name": "guardian", "unknown": 1, "enabled": True,
+             "not_measured": "never read"}]
+    assert "all clear" not in system_check.spoken_summary(
+        bad, mods, [], NOW, None, NOW).lower()
+
+
+def test_the_spoken_system_check_says_when_the_store_is_unreachable():
+    summary = {"ok": 0, "degraded": 0, "failing": 0, "unknown": 3,
+               "total": 3, "not_loaded": 0}
+    said = system_check.spoken_summary(summary, [], [], None, "the record store", NOW)
+    assert "can't" in said.lower() and "all clear" not in said.lower()
+    assert system_check._clock(NOW) in said
+
+
+async def test_the_system_check_answer_speaks_the_summary_and_types_the_detail(
+        client, monkeypatch):
+    built = {"line": "Everything I can measure is fine: 38 of 40 checks passed. "
+                     "Not measured: Calendar (no GOOGLE_ key), GitLab (no GITLAB_TOKEN).",
+             "spoken": "Mostly fine: 38 of 40 checks passed, as of 7:52.",
+             "modules": [], "agents": [], "summary": {}}
+
+    async def build():
+        return built
+
+    monkeypatch.setattr(system_check, "build", build)
+    reply = client.post("/api/voice/ask", json={"transcript": "run a system check"})
+    body = reply.json()
+    assert body["kind"] == "system_check"
+    assert "Calendar" in body["answer"]
+    assert body["spoken"] == "Mostly fine: 38 of 40 checks passed, as of 7:52."
+
+
+def test_a_rescued_unreachable_sentence_is_said_whole():
+    long = " ".join(["word"] * 40) + "."
+    why = ("The payments source is unreachable right now so I could not read "
+           "any of the billing numbers today.")
+    said = ear.for_ear(f"{long} {why}")
+    assert said is not None
+    assert said.endswith(why)
+    assert len(said.split()) <= ear.MAX_WORDS
+
+
+def test_a_lone_long_honest_sentence_is_not_cut_before_its_why():
+    text = " ".join(["word"] * 50) + " and billing is unreachable."
+    said = ear.for_ear(text)
+    assert said is not None and "unreachable" in said
+
+
+def test_a_number_kept_by_the_cut_keeps_its_read_time():
+    text = ("You made 4,200 dollars today. Twelve orders came in. Three were "
+            "refunded. Two are still open. All of that as of 7:52.")
+    said = ear.for_ear(text)
+    assert said is not None and "4,200" in said
+    assert "as of 7:52" in said.lower()
+
+
+def test_a_number_cut_from_its_read_time_mid_sentence_keeps_it():
+    text = ("Revenue is 4,200 " + " ".join(["and more"] * 30)
+            + " as of 7:52.")
+    said = ear.for_ear(text)
+    assert said is not None and "4,200" in said and "7:52" in said
+
+
+def test_no_read_time_is_invented_when_the_source_had_none():
+    said = ear.for_ear("You have 3 drafts waiting.")
+    assert said == "You have 3 drafts waiting."

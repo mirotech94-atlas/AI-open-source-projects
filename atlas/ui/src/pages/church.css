@@ -1,0 +1,66 @@
+/* The ECC Channel tab. The church brand's three colours are accents here
+ * only, scoped to `.church` (the way academy.css scopes `.ac-skin`): deep
+ * teal, parchment and muted gold. Health keeps the HUD's own colours --
+ * nothing below restyles a health state, and a gap is amber, never OK. */
+
+.church {
+  --church-teal: #223c42;
+  --church-parchment: #f7f3e9;
+  --church-gold: #b78b3d;
+}
+
+.church .label::before,
+.church .label::after { color: var(--church-gold); }
+
+.church-head { border-left: 3px solid var(--church-gold); margin-bottom: 12px; }
+.church-name { font-size: 14px; letter-spacing: .04em; color: var(--church-parchment); }
+.church-name-ar { font-size: 15px; color: var(--church-gold); margin: 2px 0 4px; }
+
+.church-strip {
+  display: grid; gap: 10px; margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.church-stat { display: flex; flex-direction: column; gap: 4px; }
+.church .k {
+  font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--church-gold);
+}
+.church-stat[data-warn] { border-color: var(--amber); }
+
+.church-warn { margin-bottom: 12px; border-color: var(--amber); }
+.church-warn ul, .church-list { margin: 6px 0 0; padding-left: 18px; }
+.church-warn li[data-urgent] { color: var(--amber); }
+.church-list { padding: 8px 13px 10px 28px; }
+.church-list li[data-major] b { color: var(--church-gold); }
+
+.church-cols {
+  display: grid; gap: 12px; margin-bottom: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+.church-h {
+  margin: 0; padding: 9px 13px; font-size: 11px; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--church-parchment);
+  background: var(--church-teal); border-bottom: 1px solid var(--church-gold);
+}
+
+/* A slot with no post: the row the eye should land on. */
+.church .sheet tr[data-gap] td { color: var(--amber); }
+.church .sheet tr[data-gap] td:first-child { box-shadow: inset 3px 0 0 var(--amber); }
+
+.church-chip {
+  display: inline-block; padding: 0 7px; margin-right: 4px; border-radius: 999px;
+  font-size: 10.5px; letter-spacing: .04em; border: 1px solid var(--line);
+  color: var(--text-dim); white-space: nowrap;
+}
+.church-chip[data-tone="done"] { border-color: var(--church-gold); color: var(--church-parchment);
+  background: var(--church-teal); }
+.church-chip[data-tone="ready"] { border-color: var(--church-gold); color: var(--church-gold); }
+.church-chip[data-tone="review"] { border-color: var(--amber); color: var(--amber); }
+.church-chip[data-tone="planned"] { border-style: dashed; }
+.church-chip[data-tone="bad"] { border-color: var(--red); color: var(--red); }
+.church-chip[data-tone="gap"] { border-color: var(--amber); color: var(--amber);
+  border-style: dashed; }
+
+@media (max-width: 520px) {
+  .church-cols { grid-template-columns: 1fr; }
+}

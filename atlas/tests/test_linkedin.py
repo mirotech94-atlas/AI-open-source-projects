@@ -15,6 +15,17 @@ from atlas.kernel.contracts import Health, Severity
 from atlas.modules import linkedin
 
 
+@pytest.fixture(autouse=True)
+def _flycheap_as_fixture_page(monkeypatch):
+    """These tests drive the page mechanics with FlyCheap as their example
+    page. FlyCheap is retired by default (the owner, 2026-10-09); that default is
+    pinned in test_linkedin_retired.py, not here."""
+    from atlas.modules import linkedin as _li
+    monkeypatch.setitem(_li.PAGES, "guardian", _li.KNOWN_PAGES["guardian"])
+    monkeypatch.setitem(_li.PAGES, "flycheap", _li.KNOWN_PAGES["flycheap"])
+
+
+
 @pytest.fixture
 def state(tmp_path, monkeypatch):
     """Writes a state file and points the module at it."""
@@ -40,11 +51,21 @@ def bank(*statuses: str, enabled: bool = True, per_day: int = 1) -> dict:
 # ------------------------------------------------ missing state is UNKNOWN
 
 async def test_every_check_is_unknown_without_a_state_file(tmp_path, monkeypatch):
+    from atlas.modules.linkedin import browser as li_browser
+    from atlas.modules.linkedin import store
     monkeypatch.setattr(linkedin, "STATE", tmp_path / "absent.json")
-    for check in linkedin.MODULE.checks():
+    monkeypatch.setattr(store, "RUNS", tmp_path / "runs")
+    monkeypatch.setattr(li_browser, "SESSION", tmp_path / "no_session.json")
+    # The sweep runs last: it writes the file the other checks read.
+    for check in sorted(linkedin.MODULE.checks(), key=lambda c: c.name == "sweep"):
         obs = await check.run()
         assert obs.health is Health.UNKNOWN, check.name
-        assert "absent.json" in obs.detail, "say which path was tried"
+        if check.name == "sweep":
+            # The sweep is the writer: with no state it starts one and says
+            # what stopped it (here, no saved session).
+            assert "no_session.json" in obs.detail
+        else:
+            assert "absent.json" in obs.detail, "say which path was tried"
 
 
 async def test_corrupt_state_is_unknown_not_ok(tmp_path, monkeypatch):
@@ -98,7 +119,7 @@ async def test_the_two_pages_read_different_locations(state):
 
 async def test_an_absent_bank_is_unknown_not_zero(state):
     """"No bank found" and "the bank is empty" are different facts. Reporting
-    the first as FAILING would page Miro about a path that changed."""
+    the first as FAILING would page the owner about a path that changed."""
     state({"improver": {}})
     obs = await linkedin.post_runway("flycheap")
     assert obs.health is Health.UNKNOWN
@@ -216,7 +237,7 @@ async def test_old_alerts_do_not_page_forever(state):
 async def test_runway_does_not_also_raise_a_signal(state):
     """The check reports runway as DEGRADED/FAILING at Severity.HIGH, which
     is actionable and routes on its own. A signal too is two notifications
-    for one fact — and the second one is what makes Miro mute the first."""
+    for one fact — and the second one is what makes the owner mute the first."""
     state({"improver": bank("approved")})
     assert [s for s in await linkedin.MODULE.signals() if "runs out" in s.title] == []
 
@@ -234,9 +255,9 @@ async def test_open_items_are_surfaced_with_their_blocker(state):
     """The key is date-suffixed, so the name is not fixed."""
     state({"open_items_2026_09_21": [
         {"what": "delete and repost B11 text-only, or leave it?",
-         "blocked_by": "Myron's decision"}]})
+         "blocked_by": "the owner's decision"}]})
     signal, = [s for s in await linkedin.MODULE.signals() if "waiting on you" in s.title]
-    assert "Myron's decision" in signal.body
+    assert "the owner's decision" in signal.body
 
 
 async def test_agenda_names_the_day_each_page_goes_quiet(state):

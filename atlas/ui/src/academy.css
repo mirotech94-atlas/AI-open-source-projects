@@ -1,6 +1,6 @@
 /* ATLAS Academy — the dashboard's chrome and its home page.
  *
- * Tokens from atlas/modules/academy/assets/style.css (shop.mapfront.io):
+ * Tokens from atlas/modules/academy/assets/style.css (agency.example.com):
  * paper, navy ink, one marigold signal; Cabinet Grotesk display, Atkinson
  * Hyperlegible Next body. Fonts are self-hosted under /fonts (the site CSP
  * is font-src 'self').
@@ -335,7 +335,7 @@ html:has(.ac-shell), html:has(.ac-shell) body { background: var(--paper); }
   background: transparent;
 }
 
-/* --- Needs you: the marigold is spent here, on what waits on Miro. --- */
+/* --- Needs you: the marigold is spent here, on what waits on the owner. --- */
 .ac-needs { border-color: color-mix(in srgb, var(--accent) 55%, var(--rule)); }
 .ac-needs-count { margin: 0 0 var(--s3); color: var(--ink-2); font-size: var(--text-sm); max-width: 70ch; }
 .ac-needs-count b { font-family: var(--font-display); font-size: 1.6rem; color: var(--ink);

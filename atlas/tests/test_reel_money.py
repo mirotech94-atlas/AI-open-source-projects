@@ -258,7 +258,7 @@ def world(monkeypatch):
 
     async def pageviews(since, until):
         assert (since, until) == (SINCE, UNTIL)
-        return {"views": 120, "visitors": 40, "sites": [("flycheap.live", 90)]}, None
+        return {"views": 120, "visitors": 40, "sites": [("flycheap.example", 90)]}, None
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", fetch_all)
     monkeypatch.setattr(shop, "sales_since", sales_since)
@@ -334,7 +334,7 @@ async def test_a_reel_past_the_metrics_window_does_not_make_its_type_unknown(wor
 
 async def test_a_product_sold_outside_stripe_links_is_unknown(world):
     world["products"][1].update(payment_link_id=None,
-                                payment_link_url="https://flycheap.live/pricing")
+                                payment_link_url="https://flycheap.example/pricing")
     t = await rm.analyse(NOW)
     assert t.rows["travel"].state == "unknown"
     assert "not a Stripe payment link" in t.rows["travel"].why

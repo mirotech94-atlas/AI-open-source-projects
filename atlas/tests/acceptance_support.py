@@ -246,7 +246,7 @@ async def drain_background() -> None:
 # ------------------------------------------------------------------- Slack
 
 SLACK_SECRET = "acceptance-secret"
-APPROVER = "UMIRO"
+APPROVER = "UOWNER"
 
 
 @pytest.fixture(name="slack")

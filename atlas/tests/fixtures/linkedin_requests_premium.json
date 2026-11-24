@@ -1,0 +1,745 @@
+{
+ "_about": "The Guardian service page's Requests tab, 2026-10-12 18:22 UTC. `outline` is the page outline the scan saved (data-test hooks, no text). `premium` is what PREMIUM_JS and DETAIL_JS returned in a read-only run that clicked only the list rows; names, services, ages and Ralph Listy's first three answers are as the screenshot shows them; the other locations and answers are placeholders. The controls are the real ones: the upsell link and two links back to this page; no button, form or text box in any pane.",
+ "url": "https://www.linkedin.com/service-marketplace/provider/requests/",
+ "outline": [
+  {
+   "tag": "h1",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-smp-service-requests__header="
+   ],
+   "text": "Requests",
+   "editable": false
+  },
+  {
+   "tag": "button",
+   "role": "",
+   "label": "Service request types information",
+   "tests": [
+    "data-test-smp-service-requests__more-info-button="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "svg",
+   "role": "none",
+   "label": "",
+   "tests": [
+    "data-test-icon=question-small"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-service-requests__list-container="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-premium-service-requests-list="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "header",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-premium-service-requests__list-header="
+   ],
+   "text": "Premium requests",
+   "editable": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "label": "",
+   "tests": [],
+   "text": "Premium requests",
+   "editable": false
+  },
+  {
+   "tag": "svg",
+   "role": "none",
+   "label": "",
+   "tests": [
+    "data-test-icon=premium-chip-small"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "ul",
+   "role": "tablist",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-premium-service-requests__list="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "li",
+   "role": "tab",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-premium-service-requests__list-item=0"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__creator-profile-image="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__creator-name="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__project-title="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__project-status="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "li",
+   "role": "tab",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-premium-service-requests__list-item=1"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__creator-profile-image="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__creator-name="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__project-title="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__project-status="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "li",
+   "role": "tab",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-premium-service-requests__list-item=2"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__creator-profile-image="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__creator-name="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__project-title="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-list-item__project-status="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-direct-service-requests-list="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "header",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-direct-service-requests__list-header="
+   ],
+   "text": "Direct requests",
+   "editable": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "label": "",
+   "tests": [],
+   "text": "Direct requests",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-direct-requests-list__no-direct-requests="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "section",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-marketplace-service-requests__detail="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__entity-lockup="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "svg",
+   "role": "img",
+   "label": "Premium",
+   "tests": [
+    "data-test-service-requests-detail__premium-logo=",
+    "data-test-icon=premium-badge-xxxsmall"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "h2",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__project-title="
+   ],
+   "text": "Computer Networking\nComputer Networking",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__location="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__project-status="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__entity-metadata="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "label": "",
+   "tests": [],
+   "text": "Unlock this request and get up to 30 more potential clients ",
+   "editable": false
+  },
+  {
+   "tag": "li",
+   "role": "",
+   "label": "",
+   "tests": [],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "svg",
+   "role": "none",
+   "label": "",
+   "tests": [
+    "data-test-icon=check-small"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "li",
+   "role": "",
+   "label": "",
+   "tests": [],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "svg",
+   "role": "none",
+   "label": "",
+   "tests": [
+    "data-test-icon=check-small"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "li",
+   "role": "",
+   "label": "",
+   "tests": [],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "svg",
+   "role": "none",
+   "label": "",
+   "tests": [
+    "data-test-icon=check-small"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-app-aware-link="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__creator-profile-image-link=",
+    "data-test-app-aware-link="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__creator-profile-image="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "a",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__creator-title-link=",
+    "data-test-app-aware-link="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__creator-title="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "div",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__creator-badge="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__creator-subtitle="
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "h3",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-label="
+   ],
+   "text": "Project details\nProject details",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-question=0"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-answer=0"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-question=1"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-answer=1"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-question=2"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-answer=2"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-question=3"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-answer=3"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-question=4"
+   ],
+   "text": "",
+   "editable": false
+  },
+  {
+   "tag": "p",
+   "role": "",
+   "label": "",
+   "tests": [
+    "data-test-service-requests-detail__description-answer=4"
+   ],
+   "text": "",
+   "editable": false
+  }
+ ],
+ "text": "Guardian’s Services\nAdmin view\nService page\nRequests\nClient projects\nRequests\nPremium requests\nRalph Listy\nRalph Listy\nComputer Networking\nComputer Networking\n2d ago\n2 days ago\n--\n--\nCybersecurity\nCybersecurity\n5d ago\n5 days ago\nconnecting contracts, software delivery & acceptance\nCybersecurity\n6d ago\n6 days ago\nDirect requests\nNo direct requests. Requests for your services will appear here when a client reaches out from your service page.\n",
+ "premium": {
+  "list": true,
+  "direct_empty": true,
+  "items": [
+   {
+    "name": "Ralph Listy",
+    "title": "Computer Networking",
+    "age": "2d ago",
+    "selected": true,
+    "controls": 0
+   },
+   {
+    "name": "--",
+    "title": "Cybersecurity",
+    "age": "5d ago",
+    "selected": false,
+    "controls": 0
+   },
+   {
+    "name": "connecting contracts, software delivery & acceptance",
+    "title": "Cybersecurity",
+    "age": "6d ago",
+    "selected": false,
+    "controls": 0
+   }
+  ],
+  "panes": [
+   {
+    "title": "Computer Networking",
+    "location": "Worcester, Massachusetts",
+    "age": "2d ago",
+    "creator": "Ralph Listy",
+    "subtitle": "Student at Harvard University",
+    "qa": [
+     [
+      "What type of computer networking services?",
+      "Network design / configuration / wireless networking, Cloud based solutions, Intranet and internet security, Virus prevention"
+     ],
+     [
+      "If this is for a business, what is the size of your business?",
+      "Individual"
+     ],
+     [
+      "What is the scope of this project?",
+      "One time project"
+     ]
+    ],
+    "controls": [
+     {
+      "tag": "a",
+      "label": "",
+      "text": "Reactivate Premium: 50% Off",
+      "editable": false
+     },
+     {
+      "tag": "a",
+      "label": "",
+      "text": "Ralph Listy",
+      "editable": false
+     },
+     {
+      "tag": "a",
+      "label": "",
+      "text": "Ralph Listy",
+      "editable": false
+     }
+    ],
+    "text": "Computer Networking\nComputer Networking\n\nWorcester, Massachusetts\n\n2d ago\n\nUnlock this request and get up to 30 more potential clients each month\nAttract and convert more clients with a custom call to action button\nSee who’s visited your Page\nGrow your followers faster with auto-invites\nReactivate Premium: 50% Off\n\nCancel anytime. No hidden fees.\n\nRalph Listy\n\nRalph Listy\n\nStudent at Harvard University\n\nProject details\nProject details\n\nWhat type of computer networking services?\n\nNetwork design / configuration / wireless networking, Cloud based solutions, Intranet and internet security, Virus prevention\n\nIf this is for a business, what is the size of your business?\n\nIndividual\n\nWhat is the scope of this project?\n\nOne time project"
+   },
+   {
+    "title": "Cybersecurity",
+    "location": "Placeholder City, Washington",
+    "age": "5d ago",
+    "creator": "--",
+    "subtitle": "",
+    "qa": [
+     [
+      "Please describe your project and what you need",
+      "Placeholder: help protect our organization."
+     ],
+     [
+      "When would you like this project completed?",
+      "This week"
+     ]
+    ],
+    "controls": [
+     {
+      "tag": "a",
+      "label": "",
+      "text": "Reactivate Premium: 50% Off",
+      "editable": false
+     },
+     {
+      "tag": "a",
+      "label": "",
+      "text": "",
+      "editable": false
+     },
+     {
+      "tag": "a",
+      "label": "",
+      "text": "--",
+      "editable": false
+     }
+    ],
+    "text": "Cybersecurity\nCybersecurity\n\nPlaceholder City, Washington\n\n5d ago\n\nUnlock this request and get up to 30 more potential clients each month\nAttract and convert more clients with a custom call to action button\nSee who’s visited your Page\nGrow your followers faster with auto-invites\nReactivate Premium: 50% Off\n\nCancel anytime. No hidden fees.\n\n--\n\n--\n\nProject details\nProject details\n\nPlease describe your project and what you need\n\nPlaceholder: help protect our organization.\n\nWhen would you like this project completed?\n\nThis week"
+   },
+   {
+    "title": "Cybersecurity",
+    "location": "Placeholder Metropolitan Area",
+    "age": "6d ago",
+    "creator": "connecting contracts, software delivery & acceptance",
+    "subtitle": "",
+    "qa": [
+     [
+      "Please describe your project and what you need",
+      "Placeholder: security certifications for a small business."
+     ],
+     [
+      "When would you like this project completed?",
+      "Within the next two months"
+     ]
+    ],
+    "controls": [
+     {
+      "tag": "a",
+      "label": "",
+      "text": "Reactivate Premium: 50% Off",
+      "editable": false
+     },
+     {
+      "tag": "a",
+      "label": "",
+      "text": "connecting contracts, software delivery & acceptance",
+      "editable": false
+     },
+     {
+      "tag": "a",
+      "label": "",
+      "text": "connecting contracts, software delivery & acceptance",
+      "editable": false
+     }
+    ],
+    "text": "Cybersecurity\nCybersecurity\n\nPlaceholder Metropolitan Area\n\n6d ago\n\nUnlock this request and get up to 30 more potential clients each month\nAttract and convert more clients with a custom call to action button\nSee who’s visited your Page\nGrow your followers faster with auto-invites\nReactivate Premium: 50% Off\n\nCancel anytime. No hidden fees.\n\nconnecting contracts, software delivery & acceptance\n\nconnecting contracts, software delivery & acceptance\n\nProject details\nProject details\n\nPlease describe your project and what you need\n\nPlaceholder: security certifications for a small business.\n\nWhen would you like this project completed?\n\nWithin the next two months"
+   }
+  ]
+ }
+}

@@ -8,6 +8,13 @@
 // The brain view's row shape lives beside the layout that consumes it, so the
 // pure module can be tested without pulling this file (and `fetch`) in.
 import type { BrainRegion } from "./core/brain-layout";
+import type { ChurchOverview } from "./pages/churchModel";
+import type { SiteEvents, SitesOverview } from "./pages/sitesModel";
+import type { AcademyCalendar } from "./pages/deskModel";
+import type {
+  CameraAlerts, CameraClips, CameraEvents, CameraMode, CamerasOverview, Coverage, People,
+} from "./pages/camerasModel";
+import type { ProjectsRead, RemediationRead } from "./pages/remediationModel";
 
 export type { BrainRegion };
 
@@ -28,7 +35,15 @@ export interface CheckSummary {
   health: string;
   /** Set aside from the module's colour: not set up, or deliberately paused.
    *  Still UNKNOWN underneath -- never OK. */
-  state?: { kind: "not_set_up" | "paused"; label: string } | null;
+  state?: {
+    kind: "not_set_up" | "paused" | "parked" | "retired";
+    label: string;
+    until?: string;
+    reason?: string;
+  } | null;
+  /** When the check was last actually read (null: never). Shown beside any
+   *  UNKNOWN so the reader sees how old the last reading is. */
+  last_read_at?: string | null;
   detail: string;
   observed_at: string | null;
   next_run_at: string | null;
@@ -182,7 +197,21 @@ export interface ReportSummary {
   excerpt: string;
 }
 
+/** One count on the board's line about itself, with the time it was counted. */
+export interface SelfTestCount { n: number; read_at: string }
+
+/** The board's self-test line: how many checks ran, how many are UNKNOWN,
+ *  how many are parked -- each with its read time (invariant 6). */
+export interface SelfTest {
+  read_at: string;
+  checks_run: SelfTestCount & { of: number; oldest_reading_at: string | null };
+  unknown: SelfTestCount;
+  parked: SelfTestCount;
+  retired: SelfTestCount;
+}
+
 export interface Overview extends Envelope {
+  self_test?: SelfTest;
   modules: ModuleTile[];
   pending_approvals: number;
   watch_only: boolean;
@@ -237,6 +266,8 @@ export interface Judgment extends Envelope {
 export interface Approvals extends Envelope {
   proposals: Proposal[];
   watch_only: boolean;
+  /** Pending cards older than 10 min that never reached WhatsApp; null = unreadable. */
+  whatsapp_undelivered?: number | null;
 }
 
 export interface Finding {
@@ -287,12 +318,12 @@ export interface ModuleDetail extends Envelope {
   watch_only: boolean;
 }
 
-// Task 69: "lead" for concierge, "businesses" for every agent
+// Task 69: "lead" for the front door (inbox), "businesses" for every agent
 // `businesses.BY_NAME` builds, "functions" for the rest -- derived
 // server-side, never guessed here.
 export type AgentGroup = "lead" | "businesses" | "functions";
 
-export interface AgentSummary {
+export interface AgentSummary extends AgentRosterFields {
   name: string;
   title: string;
   // The redesigned map's own shortened name for this card ("Vault" for
@@ -329,6 +360,85 @@ export interface AgentSummary {
   // Its person-like persona (`atlas/kernel/personas.py`) -- presentation
   // only. Optional so an older server, or a hand-built summary, still types.
   persona?: Persona;
+}
+
+// The roster fields of GET /api/agents (the owner 2026-10-29). Optional so an
+// older server still types; a missing status reads as UNKNOWN.
+export interface AgentRosterFields {
+  role?: string;
+  status?: "ok" | "idle" | "failing" | "unknown";
+  shift_state?: string;
+  last_shift_at?: string | null;
+  last_shift_outcome?: string | null;
+  // The last outcome, cleaned like `last_outcome` but longer (<= 1200 chars):
+  // what an expanded Team row shows. Never raw model prose.
+  last_outcome_detail?: string | null;
+  attempts_today?: number | null;
+  today_output?: number | null;
+  alert_unrouted?: boolean;
+  scheduler_cycle_age_s?: number | null;
+  read_at?: string;
+}
+
+export interface DecisionVerdict {
+  ok: boolean;
+  outcome: string;
+  detail: string;
+  proposal_id: number;
+  action: string | null;
+  executed: boolean;
+}
+
+export interface ReadBlock {
+  state: "ok" | "unknown";
+  read_at: string | null;
+  reason: string | null;
+}
+
+export interface PipelineRow {
+  client: string;
+  kind: "site" | "lead";
+  stage: string | null;
+  next_step: string | null;
+  /** Site rows only: the site's health; "unknown" renders the grey chip. */
+  health?: "ok" | "degraded" | "failing" | "unknown";
+  reason: string | null;
+  read_at: string | null;
+}
+
+export interface PipelineRead extends Envelope {
+  rows: PipelineRow[];
+  sites: ReadBlock;
+  leads: ReadBlock;
+  read_at: string;
+}
+
+export interface QuotaPool {
+  requests_left: number | null;
+  requests_limit: number | null;
+  tokens_limit: number | null;
+  tokens_used_24h: number | null;
+  blocked_s: number;
+  why: string | null;
+}
+
+export interface SpendRead {
+  used: number | null;
+  cap: number | null;
+  read_at: string | null;
+  reason?: string | null;
+  state?: string;
+  month?: string;
+}
+
+export interface MoneyRead extends Envelope {
+  costs: {
+    free_quota: { pools: Record<string, QuotaPool>; read_at: string };
+    perplexity: SpendRead;
+    places: SpendRead;
+  };
+  revenue: { value: number | null; state: string; reason: string; read_at: string };
+  read_at: string;
 }
 
 export interface AgentLadder {
@@ -414,6 +524,91 @@ export interface MeetingTurn {
   /** The whole turn as one spoken paragraph, under the speak cap. */
   speech: string;
   read_at: string;
+}
+
+/** `GET /api/agency/activity` (`kernel/agent_activity.py`): each roster
+ *  agent's now / yesterday / issues. Every section has its own `read_at`;
+ *  a figure whose read failed is null and the read is named in `unread`. */
+export interface ActivityCard { id: number; action: string; tier: number; expires_at: string | null }
+export interface AgentActivityNow {
+  read_at: string;
+  headline: string | null;
+  in_flight: number | null;
+  waiting: number | null;
+  cards: ActivityCard[];
+  running_jobs: string[];
+  last_run: { at: string | null; failed: boolean } | null;
+  last_run_known: boolean;
+  unread: string[];
+}
+export interface AgentActivityYesterday {
+  read_at: string;
+  day: string;
+  from: string;
+  to: string;
+  runs: number | null;
+  failed_runs: number | null;
+  last_run_at: string | null;
+  actions_ok: number | null;
+  actions_failed: number | null;
+  last_actions: Array<{ action: string; at: string | null; ok: boolean | null }>;
+  cards_expired: number | null;
+  unread: string[];
+}
+export type ActivityIssueKind =
+  | "runs_failed" | "check_failing" | "check_degraded" | "check_unknown"
+  | "job_failed" | "job_stalled" | "cards_expired";
+export interface ActivityIssue {
+  kind: ActivityIssueKind;
+  at: string | null;
+  count?: number;
+  module?: string;
+  check?: string;
+  stale?: boolean;
+  job?: string;
+  action?: string;
+}
+export interface AgentActivity {
+  name: string;
+  label: string;
+  title: string;
+  modules: string[];
+  now: AgentActivityNow;
+  yesterday: AgentActivityYesterday;
+  issues: { read_at: string; count: number; items: ActivityIssue[]; unread: string[] };
+}
+export interface AgencyActivity {
+  served_at: string;
+  read_at: string;
+  agents: AgentActivity[];
+  errors: Record<string, string>;
+}
+
+/** `GET /api/agency/seo`: the seo checks' last readings per site. A null
+ *  figure was not read (UNKNOWN), never 0. */
+export interface SeoCheckReading { health: Health; at: string | null; why: string | null }
+export interface SeoSite {
+  slug: string;
+  domain: string;
+  search: {
+    clicks: number | null; impressions: number | null; ctr: number | null;
+    position: number | null; striking: number | null; losing: number | null;
+    read_at: string | null; range: { start: string; end: string } | null;
+  } | null;
+  vitals: {
+    mobile: number | null; desktop: number | null; mobile_lcp_ms: number | null;
+    regressions: number | null; read_at: string | null;
+  } | null;
+  issues: string[];
+  unread: string[];
+}
+export interface SeoPanelData {
+  served_at: string;
+  read_at: string;
+  checks: { search_console: SeoCheckReading | null; core_web_vitals: SeoCheckReading | null };
+  sites: SeoSite[];
+  reports: { slug: string; kind: string; week: string; at: string | null }[];
+  errors: Record<string, string>;
 }
 
 export interface Meeting extends Envelope {
@@ -650,7 +845,7 @@ export interface Tasks extends Envelope {
 }
 
 // --- the work board (GET /api/tasks/board, kernel/workboard.py) ---------
-// One row per agent: what it has in hand, what waits on Miro, what it did
+// One row per agent: what it has in hand, what waits on the owner, what it did
 // in the window, and its modules' own progress. A count that is `null`
 // could not be read (the seat's `unread` names the table) -- unknown, never 0.
 
@@ -1143,105 +1338,6 @@ export interface Weather {
   observed_at: string | null;
 }
 
-/** The four words a Guardian containment step is drawn with. A proposal
- *  whose status has none of them (failed, expired) carries `state: null`
- *  and the raw status is shown instead — it never borrows DONE. */
-export type StepState = "PROPOSED" | "APPROVED" | "DONE" | "REFUSED";
-
-/** A hub NetworkRef, inlined on an alert or a device — Task 52's
- *  cross-reference source for `network` (never guessed; see incident.py). */
-export interface NetworkRef {
-  id: string; slug: string; name: string; colour: string;
-}
-
-export interface IncidentVector {
-  kind: string;
-  target: string;
-  evidence: {
-    alert?: string; host?: string | null; account?: string;
-    source?: string; observed_at?: string;
-  };
-  first_seen: string | null;
-  reputation: string | null;
-  // Neither guessed: null unless the hub's own records name them. mac comes
-  // only from the primary vector's evidence blob; network is cross-
-  // referenced from the same alert's row elsewhere (see incident.py).
-  mac: string | null;
-  network: NetworkRef | null;
-  // The one AUTOMATIC step that answers this vector, as [verb, key], or
-  // null — "mark_untrusted"+mac today, the only kind Task 52 computes
-  // without asking. Several vectors can share one.
-  step: [string, string] | null;
-  // Something only Miro can do: disable a named account (credential
-  // revocation, Tier 3 for ATLAS), or containment/mark_untrusted this file
-  // could not automate (no containment API, or a missing mac/network).
-  manual: { kind: string; target: string; note: string } | null;
-}
-
-export interface IncidentPlan {
-  alert_id: string;
-  vectors: IncidentVector[];
-  operator: "bot" | "live" | "unknown";
-  // Each of Task 52's three real actions has its own params shape: mark_
-  // untrusted (mac, network), rescan (network), alert_op (alert_key, op,
-  // hours) — `guardian.contain` never appears here any more, since it
-  // always refuses (see incident.py).
-  steps: Array<{
-    action: string;
-    params: Record<string, unknown>;
-    why: string;
-    tier: number;
-    observed_at: string;
-  }>;
-  persistence_checks: string[];
-  say: string;
-  manual: Array<{ kind: string; target: string; why: string; note: string;
-                  observed_at: string }>;
-  observed_at: string | null;
-}
-
-export interface IncidentRef {
-  iid: string | null; entity: string | null;
-  sev: string | null; opened: string | null;
-  alert_keys: string[];
-}
-
-export interface GuardianFeed extends Envelope {
-  open_incidents: {
-    at: string;
-    health: string;
-    value: number | null;
-    detail: string;
-    incidents: IncidentRef[];
-    plan: IncidentPlan | null;
-    narration: string | null;
-    plan_unavailable: string | null;
-    // The incident the plan was built for; step state is keyed on it.
-    plan_incident: IncidentRef | null;
-    total: number | null;
-    incidents_read: number | null;
-  } | null;
-  steps: Array<{
-    id: number;
-    at: string;
-    action: string;
-    params: Record<string, unknown>;
-    status: string;
-    state: StepState | null;
-    reason: string;
-    decided_at: string | null;
-    expires_at: string | null;
-  }>;
-  log: Array<{
-    id: number;
-    at: string;
-    event: string;
-    subject: string;
-    detail: string;
-    state: StepState | null;
-  }>;
-}
-
 export interface Ambient extends Envelope {
   clock: string;
   timezone: string | null;
@@ -1263,7 +1359,7 @@ export interface Ambient extends Envelope {
 export const SCREEN_ROUTES: readonly string[] = [
   "/", "/core", "/tasks", "/calendar", "/conversations", "/knowledge", "/tools",
   "/workflows", "/marketing", "/status", "/activity", "/reports", "/fleet", "/memory",
-  "/airglass",
+  "/airglass", "/church", "/sites",
 ];
 
 /** Where the dashboard should look after an answer. A view command ("show
@@ -1334,7 +1430,7 @@ export interface AskReply extends Envelope {
   /** What to SAY, when shorter than `answer` (which is still typed in full):
    *  no "More:" section, no config names. Null: say `answer`. */
   spoken?: string | null;
-  /** Which agent answered ("concierge", "markets", ...). */
+  /** Which agent answered ("inbox", "sites", ...). */
   agent?: string | null;
 }
 
@@ -1364,18 +1460,80 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-// Every call here is a GET except login, logout, `ask` -- the existing
+// Every call here is a GET except login, `ask` -- the existing
 // read-only `/voice/ask` route the microphone already uses: it answers, and
 // anything that would act only ever becomes a proposal -- and `warmAgents`
 // (Task 59), which never reaches the executor either: it only asks every
 // roster agent for a tool-free self-introduction, so the fleet's LAST RUN
 // and MODEL stop reading "never". There is still nothing here that can act
-// on the world.
+// on the world. One exception, the owner 2026-10-29 (GUI decisions):
+// `decideProposal` answers a pending Tier 2 card through the same `decide`
+// Slack uses; under watch-only an approve is refused and nothing runs.
+/** `GET /api/hud` (`kernel/hud.py`): what ATLAS is doing now. Every section
+ *  has its own `read_at`; a figure whose read failed is null and the read is
+ *  named in `unread`. No request text, no params: names, statuses, times. */
+export type HudTaskState =
+  | "running" | "waiting_for_you" | "expired" | "failed" | "declined" | "done"
+  | "answered" | "unknown";
+export type HudSurfaceState =
+  | "working" | "idle" | "failed" | "watch_only" | "refused" | "paused"
+  | "rate_limited" | "qa_held" | "unknown";
+export interface HudTask {
+  id: number; at: string | null; source: string; route: string; status: string;
+  state: HudTaskState; cards: number[]; done_at: string | null;
+}
+export interface HudCard {
+  id: number; action: string; tier: number; created_at: string | null;
+  expires_at: string | null; expired: boolean;
+}
+export interface HudSurface {
+  key: string; label: string; state: HudSurfaceState; why: string | null;
+  last_action: string | null; last_at: string | null; pending_cards: number | null;
+  health: string; tool_seen: { agent: string; tool: string; at: string | null } | null;
+  read_at: string; unread: string[];
+}
+export interface HudMission {
+  id: number; agent: string; recipe: string; status: string; phase: string;
+  steps_done: number; updated_at: string | null; deadline: string | null;
+}
+export interface HudSnapshot {
+  read_at: string;
+  served_at?: string;
+  watch_only: boolean;
+  tasks: { read_at: string; items: HudTask[] | null; unread: string[] };
+  missions: { read_at: string; items: HudMission[] | null; unread: string[] };
+  waiting: { read_at: string; count: number | null; cards: HudCard[] | null; unread: string[] };
+  surfaces: { read_at: string; items: HudSurface[]; unread: string[] };
+  approved_in_slack: Array<{ action: string; at: string | null; label: string }>;
+  jobs: {
+    read_at: string;
+    running: Array<{ name: string; claimed_at: string | null; stalled: boolean | null }> | null;
+    background: string[];
+    mac: Array<{ op: string; status: string; created_at: string | null }> | null;
+    mac_last_seen: string | null;
+    unread: string[];
+  };
+  errors: Record<string, string>;
+}
+
+function camerasPost(body: unknown, csrf: string): RequestInit {
+  return {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+    body: JSON.stringify(body),
+  };
+}
+
 export const api = {
+  hud: () => request<HudSnapshot>("/hud"),
   session: () =>
     request<Envelope & {
       authenticated: boolean; user: string | null;
       configured: boolean; watch_only: boolean;
+      // HMAC of the session cookie, sent back as X-CSRF-Token on the one
+      // write this page makes (POST /approvals/{id}/decision); null when
+      // signed out.
+      csrf?: string | null;
     }>("/session"),
 
   login: (password: string) =>
@@ -1384,7 +1542,6 @@ export const api = {
       body: JSON.stringify({ password }),
     }),
 
-  logout: () => request<Envelope>("/logout", { method: "POST" }),
 
   overview: () => request<Overview>("/overview"),
   /** Every stored reading of one check, oldest first (1 to 30 days). */
@@ -1405,6 +1562,24 @@ export const api = {
   judgment: () => request<Judgment>("/judgment"),
 
   approvals: () => request<Approvals>("/approvals"),
+
+  /** the owner 2026-10-29: GUI decisions. Decline or approve one pending Tier 2
+   *  card; the server re-checks session, Origin, CSRF, tier (from code) and
+   *  watch-only, and answers with `decide`'s own Verdict. Approve under
+   *  watch-only is refused and the card stays pending. */
+  decideProposal: (pid: number, verdict: "approve" | "decline", csrf: string) =>
+    request<Envelope & { verdict: DecisionVerdict; watch_only: boolean }>(
+      `/approvals/${pid}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+        body: JSON.stringify({ verdict }),
+      }),
+
+  /** Each client and lead: stage, next step, or the reason there is none. */
+  pipeline: () => request<PipelineRead>("/pipeline"),
+
+  /** Free-tier pools, Perplexity and Places spend; revenue is UNKNOWN. */
+  money: () => request<MoneyRead>("/money"),
 
   findings: (params: { module?: string; severity?: number; limit?: number }) => {
     const search = new URLSearchParams();
@@ -1449,6 +1624,10 @@ export const api = {
   // The Agency room: ATLAS and every agent, read from agent_runs. Without
   // `live`, today's stored meeting (or a live build if none yet); with it,
   // rebuilt from the records now.
+  agencyActivity: () => request<AgencyActivity>("/agency/activity"),
+
+  agencySeo: () => request<SeoPanelData>("/agency/seo"),
+
   agencyMeeting: (live = false) =>
     request<Meeting>(live ? "/agency/meeting?live=1" : "/agency/meeting"),
 
@@ -1469,8 +1648,6 @@ export const api = {
       ...(name ? { body: JSON.stringify({ name }) } : {}),
     }),
 
-  guardianFeed: (limit = 50) =>
-    request<GuardianFeed>(`/guardian/feed?limit=${limit}`),
 
   memoryGraph: () =>
     request<Envelope & {
@@ -1563,6 +1740,51 @@ export const api = {
   tools: () => request<Tools>("/tools"),
 
   workflows: () => request<Workflows>("/workflows"),
+  church: () => request<ChurchOverview>("/church/overview"),
+  camerasOverview: () => request<CamerasOverview>("/cameras/overview"),
+  cameraEvents: () => request<CameraEvents>("/cameras/events"),
+  cameraAlerts: () => request<CameraAlerts>("/cameras/alerts"),
+  cameraClips: () => request<CameraClips>("/cameras/clips"),
+  cameraCoverage: () => request<Coverage>("/cameras/coverage"),
+  /** ATLAS-side mode only; the server re-checks session, Origin and CSRF. */
+  setCameraMode: (mode: CameraMode, csrf: string) =>
+    request<Envelope & { mode: CameraMode }>("/cameras/mode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
+      body: JSON.stringify({ mode }),
+    }),
+  /** Face recognition: people slots and clusters. A 503 is UNKNOWN, never empty. */
+  cameraPeople: () => request<People>("/cameras/people"),
+  setPersonName: (slot: number, name: string, csrf: string) =>
+    request<Envelope & { ok: boolean; slot: number; name: string }>(
+      `/cameras/people/${slot}/name`, camerasPost({ name }, csrf)),
+  assignCluster: (id: string, slot: number | null, csrf: string) =>
+    request<Envelope & { ok: boolean }>(
+      `/cameras/clusters/${encodeURIComponent(id)}/assign`, camerasPost({ slot }, csrf)),
+  markClusterHousehold: (id: string, slot: number | null, csrf: string) =>
+    request<Envelope & { ok: boolean }>(
+      `/cameras/clusters/${encodeURIComponent(id)}/household`, camerasPost({ slot }, csrf)),
+  forgetFaces: (scope: "all" | "slot", slot: number | null, csrf: string) =>
+    request<Envelope & { ok: boolean; removed: number }>(
+      "/cameras/faces/forget",
+      camerasPost(scope === "slot" ? { scope, slot, confirm: "FORGET" }
+        : { scope, confirm: "FORGET" }, csrf)),
+  sites: () => request<SitesOverview>("/agency/sites"),
+  /** The built demo sites the Previews panel frames (atlas/api/agency_previews.py). */
+  agencyPreviews: () => request<PreviewsList>("/agency/previews"),
+  /** The local project board: projects with their open task counts. */
+  projects: () => request<ProjectsRead>("/projects"),
+  /** Remediation tasks (the QA agent's), open first. */
+  remediation: () => request<RemediationRead>("/remediation"),
+
+  /** Posted tutorials per series and today's next-up order (no date). */
+  academyCalendar: () => request<AcademyCalendar>("/academy/calendar"),
+
+  /** {name: set?} for the fixed list of secret names. Never a value. */
+  settingsSecrets: () =>
+    request<Envelope & { secrets: Record<string, boolean> }>("/settings/secrets"),
+  siteEvents: (slug: string) =>
+    request<SiteEvents>(`/agency/sites/${encodeURIComponent(slug)}/events`),
 
   marketing: () => request<Marketing>("/marketing"),
 
@@ -1583,5 +1805,16 @@ export const api = {
    *  for speech, and anything that would act still becomes a proposal. */
   ask: (transcript: string) =>
     request<AskReply>(
-      "/voice/ask", { method: "POST", body: JSON.stringify({ transcript }) }),
+      "/voice/ask", { method: "POST",
+        body: JSON.stringify({ transcript, typed: true }) }),
 };
+
+export interface PreviewItem {
+  lead_id: number | null;
+  name: string;
+  slug: string;
+  built: boolean;
+  /** Token-scoped frame URL: a sandboxed frame sends no cookie. */
+  src?: string;
+}
+export interface PreviewsList { previews: PreviewItem[]; read_at: string }

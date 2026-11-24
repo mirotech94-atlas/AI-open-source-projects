@@ -1,4 +1,4 @@
-"""The 20 launch items, rendered (Miro, 2026-09-29, reel DdH5iyOzkZH).
+"""The 20 launch items, rendered (the owner, 2026-09-29, reel DdH5iyOzkZH).
 
 Every client site ATLAS builds — a brochure from a GetLayers mockup or a
 one-product store page — leaves `agency.build_site` with the same set of
@@ -43,6 +43,7 @@ from html import escape
 from html.parser import HTMLParser
 from urllib.parse import quote_plus, urlparse
 
+from . import client as _client
 from .client import ClientData, Faq
 from .ogimage import _contrast, _readable, _rgb
 
@@ -638,7 +639,7 @@ def privacy_page(client: ClientData, analytics: Analytics | None,
         forms += (f"<p>Online booking happens on "
                   f"{escape(provider(client) or 'a booking service')}'s own site, "
                   "which handles what you give it under its own terms.</p>")
-    if client.package is None:
+    if client.package is None and _client.PUBLIC_DOOR:
         # A preview carries "Have Mapfront call me" (callme.py): Mapfront's
         # form, not the business's, and this page says so.
         forms = forms.replace("<p>It has no forms", "<p>Apart from the call-back "
@@ -654,7 +655,7 @@ def privacy_page(client: ClientData, analytics: Analytics | None,
     if client.chat:
         chat = ("<p data-atlas=\"chat-privacy\">The chat on this site is an AI "
                 "assistant, not a person. What you type in it is sent to Mapfront "
-                "(miro@mapfront.io), who runs the assistant, and to an AI provider "
+                "(owner@example.com), who runs the assistant, and to an AI provider "
                 "to write the answer, which handles them under its own terms. "
                 "Mapfront does not store the words: only a count of questions is "
                 "kept. The chat uses no cookies and keeps nothing on your device. "
@@ -704,7 +705,7 @@ def not_found_page(client: ClientData, analytics: Analytics | None) -> str:
                 body=body, analytics=analytics, noindex=True, prefix="/")
 
 
-# The AI assistants' crawlers (Miro, 2026-10-06, from a reel on "AI search
+# The AI assistants' crawlers (the owner, 2026-10-06, from a reel on "AI search
 # visibility": customers ask ChatGPT and friends for "best roofer near me").
 # A sold site names them and allows them explicitly, so a stricter default
 # somewhere upstream never shuts them out; a preview stays noindex and gets

@@ -53,13 +53,13 @@ const hazel = agent({
 const marcus = agent({
   name: "ops", label: "Marcus", title: "Operations", department: "ops",
   department_name: "Ops & Infra", head: true, head_label: "Marcus",
-  modules: ["nightshift", "vpsie"],
-  in_flight: [row({ kind: "nightshift", id: 3, summary: "add the board", repo: "Miro/ai",
+  modules: ["nightshift", "cloudco"],
+  in_flight: [row({ kind: "nightshift", id: 3, summary: "add the board", repo: "the owner/ai",
                     branch: "board", preview_url: null })],
   recent: { missions: [], outbox: [],
             nightshift: [row({ kind: "nightshift", id: 2, status: "done", summary: "old",
-                               repo: "Miro/ai", branch: "x", finished: "2026-09-28T02:00:00+00:00" })],
-            executions: { "vpsie.snapshot": { ok: 3, failed: 1 } }, verify: { verified: 2 } },
+                               repo: "the owner/ai", branch: "x", finished: "2026-09-28T02:00:00+00:00" })],
+            executions: { "cloudco.snapshot": { ok: 3, failed: 1 } }, verify: { verified: 2 } },
   jobs: [{ name: "checks", when: "every cycle", layer: "automation", recorded: false,
            last_run: null, last_run_known: false, next_due: null }],
   counts: { in_flight: 1, waiting: 0 }, headline: "1 nightshift job(s) queued or running",
@@ -75,7 +75,7 @@ const you = agent({ name: "you", label: "You", title: "sign-off", department: "s
                     department_name: "Strategy", head: true, head_label: "You",
                     waiting: [{ id: 9, action: "retired.thing", tier: 2, reason: "stray",
                                 created_at: null, expires_at: null }],
-                    counts: { in_flight: 0, waiting: 1 }, headline: "1 card(s) waiting on Miro" });
+                    counts: { in_flight: 0, waiting: 1 }, headline: "1 card(s) waiting on the owner" });
 
 function board(agents: BoardAgent[] = [ivan, hazel, unknownSeat, marcus, you]): Board {
   return {
@@ -114,7 +114,7 @@ describe("tasksModel", () => {
     const all = board().agents;
     expect(filterAgents(all, "hazel").map((a) => a.name)).toEqual(["agency"]);
     expect(filterAgents(all, "Ops").map((a) => a.name)).toEqual(["ops"]);
-    expect(filterAgents(all, "vpsie").map((a) => a.name)).toEqual(["ops"]);
+    expect(filterAgents(all, "cloudco").map((a) => a.name)).toEqual(["ops"]);
     expect(filterAgents(all, "money").map((a) => a.name)).toEqual(["markets"]);
     expect(filterAgents(all, "")).toHaveLength(5);
     expect(filterAgents(all, "zzz")).toHaveLength(0);
@@ -144,12 +144,12 @@ describe("tasksModel", () => {
 describe("TasksView", () => {
   it("shows decisions by soonest expiry across seats", () => {
     const urgent = agent({ ...marcus, waiting: [{
-      id: 8, action: "vpsie.snapshot", tier: 2, reason: "backup",
+      id: 8, action: "cloudco.snapshot", tier: 2, reason: "backup",
       created_at: null, expires_at: "2026-09-29T09:30:00+00:00",
     }], counts: { in_flight: 1, waiting: 1 } });
     const html = render(board([hazel, urgent, you]));
     const cards = html.slice(html.indexOf('<div class="panel wb-waiting"'));
-    const positions = ["#8 vpsie.snapshot", "#7 agency.send_outreach", "#9 retired.thing"]
+    const positions = ["#8 cloudco.snapshot", "#7 agency.send_outreach", "#9 retired.thing"]
       .map((text) => cards.indexOf(text));
     expect(positions.every((at) => at >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
@@ -157,12 +157,12 @@ describe("TasksView", () => {
 
   it("leaves expired decisions after ones that can still be answered", () => {
     const expired = agent({ ...marcus, waiting: [{
-      id: 8, action: "vpsie.snapshot", tier: 2, reason: "backup",
+      id: 8, action: "cloudco.snapshot", tier: 2, reason: "backup",
       created_at: null, expires_at: "2026-09-29T08:00:00+00:00",
     }], counts: { in_flight: 1, waiting: 1 } });
     const html = render(board([hazel, expired]));
     const cards = html.slice(html.indexOf('<div class="panel wb-waiting"'));
-    expect(cards.indexOf("#7 agency.send_outreach")).toBeLessThan(cards.indexOf("#8 vpsie.snapshot"));
+    expect(cards.indexOf("#7 agency.send_outreach")).toBeLessThan(cards.indexOf("#8 cloudco.snapshot"));
   });
 
   it("marks a failed board refresh unknown instead of showing cached counts", () => {
@@ -210,7 +210,7 @@ describe("TasksView", () => {
     expect(table).toBeGreaterThan(marcusAt);
     expect(nextAt === -1 || table < nextAt).toBe(true);
     expect(html).toContain("add the board");
-    expect(html).toContain('<td class="wb-wide">Miro/ai</td>');
+    expect(html).toContain('<td class="wb-wide">the owner/ai</td>');
   });
 
   it("filters the sections and says so when nothing matches", () => {

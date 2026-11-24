@@ -14,6 +14,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any
 
+from .board_state import SWITCHED_OFF
 from .contracts import Action, Check, Module, Tier
 from .permissions import Decision, classify
 
@@ -34,10 +35,13 @@ class Registry:
         """Every module under `package`, except those named in
         `ATLAS_DISABLED_MODULES` (a comma list). A module switched off that
         way is recorded in `disabled` with that reason, so it reads "off by
-        choice", never UNKNOWN and never silently absent (Miro, 2026-09-27:
+        choice", never UNKNOWN and never silently absent (the owner, 2026-09-27:
         "we don't need YouTube")."""
         off = {m.strip().lower() for m in
                os.getenv("ATLAS_DISABLED_MODULES", "").split(",") if m.strip()}
+        # The committed list (`board_state.SWITCHED_OFF`) is the same switch,
+        # kept in code so a decision survives a redeploy of the env file.
+        committed = {k.lower(): v for k, v in SWITCHED_OFF.items()}
         pkg = importlib.import_module(package)
         for info in pkgutil.iter_modules(pkg.__path__):
             if info.name.startswith("_"):
@@ -45,6 +49,12 @@ class Registry:
             if info.name.lower() in off:
                 self.disabled[info.name] = "switched off (ATLAS_DISABLED_MODULES)"
                 log.info("module %s switched off by ATLAS_DISABLED_MODULES",
+                         info.name)
+                continue
+            if info.name.lower() in committed:
+                self.disabled[info.name] = (
+                    f"switched off (committed: {committed[info.name.lower()]})")
+                log.info("module %s switched off by the committed list",
                          info.name)
                 continue
             self.load(f"{package}.{info.name}", info.name)

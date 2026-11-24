@@ -1,8 +1,10 @@
 import { useState, type JSX } from "react";
 import { api, type AgentSummary } from "../api";
-import { NeuralMap, type NodeModel } from "../components/NeuralMap";
+import { NeuralMap, type NodeBadge, type NodeModel } from "../components/NeuralMap";
 import { cardName } from "../components/neuralLayout";
-import { connectionsFor } from "./agentMapLayout";
+import { connectionsFor, dotFor, radialLayout, type CardDot } from "./agentMapLayout";
+import { rosterRow } from "./opsFloorModel";
+import { outcomeLine } from "./outcomeText";
 
 /** The detail panel's links, with direction kept: who this agent hands
  *  work to (its own `handoff`, roster agents only), who hands work to it,
@@ -85,7 +87,7 @@ export function Detail({
       <p className="agent-map-detail-brief">{agent.brief}</p>
       <div className="line">{agent.tools} tool{agent.tools === 1 ? "" : "s"}</div>
       <dl className="agent-map-facts">
-        <dt>Last run</dt><dd>{rel(agent.last_run_at)} — {agent.last_outcome || "—"}</dd>
+        <dt>Last run</dt><dd>{rel(agent.last_run_at)} — {outcomeLine(agent.last_outcome) ?? "—"}</dd>
         <dt>Model</dt><dd>{modelLine(agent)}</dd>
         <dt>Next shift</dt><dd>{agent.next_shift_at ? rel(agent.next_shift_at) : "off"}</dd>
         <dt>Ready</dt><dd>{agent.ready ? "yes" : "no"}</dd>
@@ -128,17 +130,21 @@ export function Detail({
 }
 
 export function AgentMap({
-  agents, readFailed = false, onSelect, onWarmed, modelFor,
+  agents, readFailed = false, onSelect, onWarmed, modelFor, badgeFor, fill = false,
 }: {
+  /** Fill the parent's width and height (the Agency tab). */
+  fill?: boolean;
   agents: AgentSummary[];
   readFailed?: boolean;
+  /** The Agency tab: a count under a node's name (`NeuralMap`). */
+  badgeFor?: ((name: string) => NodeBadge | null) | undefined;
   /** Home: each node's model and its state (`NeuralMap`). */
   modelFor?: ((name: string) => NodeModel | null) | undefined;
   /** Called with an agent's name on click or Enter/Space. */
   onSelect: (name: string) => void;
   /** Called after the detail panel's "Run self-test" starts, and again once
    *  it has likely finished, so the caller can reload the roster. */
-  onWarmed?: () => void;
+  onWarmed?: (() => void) | undefined;
 }): JSX.Element {
   const [selected, setSelected] = useState<string | null>(null);
   const selectedAgent = selected ? agents.find((a) => a.name === selected) ?? null : null;
@@ -151,14 +157,146 @@ export function AgentMap({
   // The map itself is the shared neural view (the Agency tab draws the same
   // one); this page adds the selected agent's details and self-test.
   return (
-    <div className="agent-map" data-has-selection={selected !== null || undefined}>
+    <div className="agent-map" data-fill={fill || undefined}
+         data-has-selection={selected !== null || undefined}>
       <NeuralMap agents={agents} readFailed={readFailed} selected={selected}
-                 onActivate={activate} label="Agent map" modelFor={modelFor} />
+                 onActivate={activate} label="Agent map" modelFor={modelFor}
+                 badgeFor={badgeFor} fill={fill} />
       {selectedAgent && <Detail agent={selectedAgent} links={detailLinks(selectedAgent.name, agents)}
                                      onWarmed={onWarmed} />}
       {readFailed && (
         <p className="agent-map-caption stamp">
           Could not read the roster; every neuron above is UNKNOWN, not stale.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------ radial (v2)
+
+/** A node's state on the radial map. A failed roster read, or an agent whose
+ *  own status is unknown, is UNKNOWN: grey, dashed, the word. Never ready. */
+export type RadialState = CardDot | "failing";
+
+export function radialState(a: AgentSummary, readFailed: boolean, now: number): RadialState {
+  if (readFailed) return "unknown";
+  const row = rosterRow({ status: a.status ?? null, shift_state: a.shift_state ?? null });
+  if (row.state === "unknown") return "unknown";
+  if (row.state === "failing") return "failing";
+  return dotFor(a, false, now);
+}
+
+const STATE_WORD: Record<RadialState, string> = {
+  ready: "Ready", working: "Working now", "not-ready": "Not ready",
+  unknown: "Unknown", failing: "Failing",
+};
+
+const clip = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+/**
+ * The Agency tab's map: ATLAS in the middle, one node per roster agent on a
+ * ring, curved links. Light moves along a link only while the roster read is
+ * fresh (`fresh`) and that agent is not UNKNOWN; the motion itself lives in
+ * `desk.css` inside prefers-reduced-motion: no-preference. Selection is held
+ * by the parent so the agent's card can open with it.
+ */
+export function RadialMap({
+  agents, readFailed = false, fresh = false, selected, onSelect, onWarmed, now = Date.now(),
+}: {
+  agents: AgentSummary[];
+  readFailed?: boolean;
+  fresh?: boolean;
+  selected: string | null;
+  onSelect: (name: string | null) => void;
+  onWarmed?: (() => void) | undefined;
+  now?: number;
+}): JSX.Element {
+  const [hover, setHover] = useState<string | null>(null);
+  const layout = radialLayout(agents);
+  const { frame } = layout;
+  const byName = new Map(agents.map((a) => [a.name, a]));
+  const focus = hover && byName.has(hover) ? hover : selected;
+  const lit = connectionsFor(focus, agents);
+  const states = new Map(agents.map((a) => [a.name, radialState(a, readFailed, now)]));
+  const flowing = fresh && !readFailed;
+  const selectedAgent = selected ? byName.get(selected) ?? null : null;
+
+  const activate = (name: string): void => onSelect(selected === name ? null : name);
+
+  return (
+    <div className="agent-map rm" data-radial=""
+         data-fresh={flowing || undefined} data-read-failed={readFailed || undefined}
+         data-has-selection={selected !== null || undefined}>
+      <div className="rm-scroll">
+        <svg className="rm-web" viewBox={`0 0 ${frame.w} ${frame.h}`} role="group"
+             aria-label="Agent map">
+          <g className="rm-links" aria-hidden="true">
+            {layout.links.map((l) => {
+              if (l.kind === "memory" && !(focus !== null && (l.from === focus || l.to === focus))) {
+                return null;
+              }
+              const touches = focus !== null && (l.from === focus || l.to === focus);
+              const live = l.kind === "spoke" && flowing && states.get(l.to) !== "unknown";
+              return (
+                <path key={l.id} className="rm-link" d={l.d} data-kind={l.kind}
+                      data-from={l.from} data-to={l.to}
+                      data-lit={touches || undefined} data-flow={live || undefined} />
+              );
+            })}
+          </g>
+          <g className="rm-core" transform={`translate(${frame.cx} ${frame.cy})`} aria-hidden="true">
+            <circle className="rm-core-disc" r={30} />
+            <text className="rm-core-label" y={4} textAnchor="middle">ATLAS</text>
+          </g>
+          {layout.nodes.map((p) => {
+            const a = byName.get(p.name);
+            if (!a) return null;
+            const st = states.get(p.name) ?? "unknown";
+            const role = a.role ?? a.title;
+            const linked = lit.handoff.has(p.name) || lit.memory.has(p.name);
+            return (
+              <g key={p.name} className="rm-node" data-agent={p.name} data-state={st}
+                 data-selected={selected === p.name || undefined}
+                 data-linked={linked || undefined}
+                 transform={`translate(${p.x} ${p.y})`} tabIndex={0} role="button"
+                 aria-pressed={selected === p.name}
+                 aria-label={`${cardName(a)}: ${role}. ${STATE_WORD[st]}${readFailed ? " (roster read failed)" : ""}.`}
+                 onClick={() => activate(p.name)}
+                 onKeyDown={(ev) => {
+                   if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); activate(p.name); }
+                 }}
+                 onMouseEnter={() => setHover(p.name)} onMouseLeave={() => setHover(null)}
+                 onFocus={() => setHover(p.name)} onBlur={() => setHover(null)}>
+                <circle className="rm-disc" r={22} />
+                <text className="rm-n" y={42} textAnchor="middle">{cardName(a)}</text>
+                <text className="rm-r" y={57} textAnchor="middle">{clip(role, 28)}</text>
+                <text className="rm-w" y={71} textAnchor="middle"
+                      data-unknown={st === "unknown" || undefined}>{STATE_WORD[st]}</text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+      {agents.length === 0 && (
+        <p className="rm-empty">
+          {readFailed ? "Unknown: the roster could not be read." : "No agents on the roster."}
+        </p>
+      )}
+      <div className="rm-legend">
+        <span><i className="k-sq" data-k="ready" />Ready</span>
+        <span><i className="k-sq" data-k="working" />Ran in the last 2 min</span>
+        <span><i className="k-sq" data-k="not-ready" />Not ready</span>
+        <span><i className="k-sq" data-k="failing" />Failing</span>
+        <span><i className="k-sq" data-k="unknown" />Unknown</span>
+      </div>
+      {selectedAgent && (
+        <Detail agent={selectedAgent} links={detailLinks(selectedAgent.name, agents)}
+                onWarmed={onWarmed} />
+      )}
+      {readFailed && (
+        <p className="agent-map-caption stamp">
+          Could not read the roster; every node above is UNKNOWN, not stale.
         </p>
       )}
     </div>

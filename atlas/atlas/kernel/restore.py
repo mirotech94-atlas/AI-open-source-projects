@@ -9,7 +9,7 @@ blind resend the plan forbids.
 The real restore procedure (docs/restore-drill.md, "A real restore") records
 one `restores` row right after `pg_restore`, with the app stopped:
 
-    INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'miro');
+    INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'owner');
 
 `python -m atlas.cli restore-fence <dump>` records the same row and applies
 the fence at once. While any `restores` row is unfenced:
@@ -126,7 +126,7 @@ async def apply() -> Fenced:
 
 
 async def _after(got: Fenced) -> None:
-    """Audit, move the waiting workflows, and tell Miro once. Best effort:
+    """Audit, move the waiting workflows, and tell the owner once. Best effort:
     the fence itself has already landed."""
     from .audit import audit
     from .outbox import _advance

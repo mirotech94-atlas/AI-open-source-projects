@@ -11,7 +11,7 @@
  *
  *   porcupine    On-device, nothing leaves the machine. Needs a Picovoice
  *                access key AND a keyword file trained for "atlas" in the
- *                Picovoice console. Both belong to Miro's account.
+ *                Picovoice console. Both belong to the owner's account.
  *
  *   local-whisper  On-device speech, no cloud key. whisper-tiny.en runs in
  *                a Web Worker in this tab (`localWake.ts`), reading two-second
@@ -57,6 +57,7 @@
 export type { Detector, DetectorKind } from "./detectorCore";
 export { createClickToTalk, fallbackAfterStartFailure } from "./detectorCore";
 import { createClickToTalk, withClap, type Detector } from "./detectorCore";
+import { isWakePhrase } from "./wakePhrase";
 
 /**
  * Loaded only when a key exists, and only on demand — the bundle must cost
@@ -137,11 +138,12 @@ function loadSpeechApi(): Detector | null {
 
       engine.onresult = (event: SpeechRecognitionEventLike): void => {
         for (let i = event.resultIndex; i < event.results.length; i += 1) {
-          const heard = event.results[i]?.[0]?.transcript ?? "";
-          // Anything containing "atlas" wakes him -- "hey atlas", "atlas?",
-          // "ok atlas". Matching the bare word is deliberate: a strict
-          // two-word phrase is the thing people get wrong out loud.
-          if (/\batlas\b/i.test(heard)) {
+          const result = event.results[i];
+          const heard = result?.[0]?.transcript ?? "";
+          // "Atlas" and "Hey Atlas" both wake him (`wakePhrase.ts`, the same
+          // rule as the on-device gate) -- but not "the atlas report", nor the
+          // interim "atlas" that "atlas report" begins as.
+          if (isWakePhrase(heard, result?.isFinal ?? true)) {
             onWake();
             return;
           }
@@ -189,7 +191,7 @@ interface SpeechRecognitionLike {
 
 interface SpeechRecognitionEventLike {
   resultIndex: number;
-  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+  results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }>;
 }
 
 /**

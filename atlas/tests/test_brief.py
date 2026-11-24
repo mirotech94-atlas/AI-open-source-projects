@@ -281,6 +281,9 @@ async def test_the_brief_still_runs_when_checks_and_reasoning_fail(monkeypatch):
     # The LinkedIn page replies draft with a model and drive a browser.
     monkeypatch.setattr(scheduler, "_maybe_linkedin_replies",
                         lambda: note("linkedin_replies"))
+    # Academy support reads a mailbox and drafts with a model.
+    monkeypatch.setattr(scheduler, "_maybe_academy_support",
+                        lambda: note("academy_support"))
 
     async def stop(_seconds):
         raise KeyboardInterrupt
@@ -292,14 +295,15 @@ async def test_the_brief_still_runs_when_checks_and_reasoning_fail(monkeypatch):
 
     # The inline steps ran past the failing one, in order.
     assert ran == ["approvals", "agency_lead_board", "marketing", "lead_replies",
-                   "linkedin_replies", "review", "rhythm"]
+                   "linkedin_replies", "academy_support", "review", "rhythm"]
     # The expensive ones no longer run inline — a reply draft runs a model per
     # message, and while that held the cycle nothing was checked at all. They
     # are dispatched as their own tasks, and they still all run.
     await asyncio.gather(*scheduler._tasks.values())
     scheduler._tasks.clear()
-    assert sorted(ran) == ["agency_lead_board", "agency_meeting", "agent_shifts",
-                           "approvals", "brief", "judgment", "lead_replies",
+    assert sorted(ran) == ["academy_support", "agency_lead_board", "agency_meeting",
+                           "agent_shifts", "approvals", "brief", "judgment",
+                           "lead_replies",
                            "linkedin_replies", "marketing", "retention", "review", "rhythm",
                            "signals", "weekly"]
 
@@ -357,7 +361,7 @@ async def test_a_long_running_failure_says_how_long(monkeypatch, memory_backend)
         if "DISTINCT ON" in sql:
             return [{"health": "failing",
                      "detail": "no snapshots and no backups exist",
-                     "check_name": "protection", "property": "vpsie"}]
+                     "check_name": "protection", "property": "cloudco"}]
         if "min(o.at)" in sql:
             return [{"since": datetime.now(UTC) - timedelta(days=7)}]
         return []

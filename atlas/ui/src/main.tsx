@@ -5,9 +5,11 @@ import { App } from "./App";
 import "./hud.css";
 import "./academy.css";
 import "./command.css";
+import "./desk.css";
+import "./motion.css";
 import { applyTheme, readTheme } from "./theme";
 
-// Before the first paint: a saved light/dark choice, else the device's.
+// Before the first paint. Dark only (brand: black + royal blue).
 applyTheme(readTheme());
 
 const root = document.getElementById("root");

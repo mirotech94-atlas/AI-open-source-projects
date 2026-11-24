@@ -1,7 +1,7 @@
 """Task 55 (a) and (b): what each Instagram account may post, and where the
 AI-stories account's cards land.
 
-Miro, relayed from production: @flycheaphp (`main`) posts ONLY FlyCheap /
+the owner, relayed from production: @flycheaphp (`main`) posts ONLY FlyCheap /
 travel / cheap-flight content, never AI story reels; AI reels go ONLY to
 @atlasstories3 (`stories`). Enforced at PROPOSE time, not only in a prompt:
 
@@ -32,6 +32,12 @@ from atlas.modules.content.drafts import AI_LABEL
 LABELLED = f"a short story\n\n{AI_LABEL}"
 
 
+@pytest.fixture(autouse=True)
+def _slack_card_on(monkeypatch):
+    """These tests read the Slack card; it is opt-in now (APPROVALS_SLACK)."""
+    monkeypatch.setenv("APPROVALS_SLACK", "on")
+
+
 @pytest.fixture
 def both_accounts(monkeypatch):
     monkeypatch.setenv("INSTAGRAM_ACCOUNT_ID", "mid")
@@ -46,10 +52,10 @@ def _publish_action():
 
 # ------------------------------------------------------------- the table
 
-def test_account_kinds_is_exactly_what_miro_ruled():
+def test_account_kinds_is_exactly_what_owner_ruled():
     assert instagram.ACCOUNT_KINDS == {"main": {"flycheap", "travel"},
                                        "stories": {"ai_story"},
-                                       # + the store promo, Miro 2026-10-05
+                                       # + the store promo, the owner 2026-10-05
                                        "clips": {"campaign_clip", "store_promo"}}
     assert set(instagram.ACCOUNT_KINDS) == set(instagram.ACCOUNTS)
 
@@ -229,7 +235,7 @@ async def test_an_action_without_a_vet_is_unaffected(memory_backend, monkeypatch
 # ================================================================== (b)
 # #instagram-reels: the stories account's cards and its overnight report.
 
-REELS_ID = "C0C3XH0F6S3"
+REELS_ID = "C0SLACKCH02"
 
 
 @pytest.fixture
@@ -463,7 +469,7 @@ async def test_an_unset_reels_channel_is_degraded_never_silent(monkeypatch):
     from atlas.kernel.contracts import Health
     from atlas.modules import content
     monkeypatch.delenv("SLACK_INSTAGRAM_REELS_CHANNEL", raising=False)
-    monkeypatch.setenv("SLACK_CHANNELS", "vpsie:CVPS")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS")
     obs = await content.check_reels_channel()
     assert obs.health == Health.DEGRADED
     assert obs.detail == ("SLACK_INSTAGRAM_REELS_CHANNEL unset — cards fall to "
@@ -471,7 +477,7 @@ async def test_an_unset_reels_channel_is_degraded_never_silent(monkeypatch):
     monkeypatch.setenv("SLACK_INSTAGRAM_REELS_CHANNEL", REELS_ID)
     assert (await content.check_reels_channel()).health == Health.OK
     monkeypatch.delenv("SLACK_INSTAGRAM_REELS_CHANNEL")
-    monkeypatch.setenv("SLACK_CHANNELS", "vpsie:CVPS,instagram_stories:CX")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS,instagram_stories:CX")
     assert (await content.check_reels_channel()).health == Health.OK
 
 

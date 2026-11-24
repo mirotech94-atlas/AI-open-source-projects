@@ -30,7 +30,7 @@ guard. This finds the address a lead PUBLISHED, and only that:
 Every address is stored with its provenance (`agency_lead_emails`: the URL it
 was read on, the time, same-domain or not). Page text is untrusted
 (invariant 4); nothing here puts it in a prompt, and the address itself only
-ever lands in an email's To: line, after Miro approves the send.
+ever lands in an email's To: line, after the owner approves the send.
 """
 from __future__ import annotations
 
@@ -41,7 +41,6 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from html.parser import HTMLParser
 from typing import Any
-from urllib import robotparser
 from urllib.parse import urljoin, urlsplit
 
 import httpx
@@ -52,7 +51,7 @@ from .._http import explain
 
 log = logging.getLogger("atlas.agency.contacts")
 
-USER_AGENT = "ATLAS-contact/1.0 (+https://mapfront.io/)"
+USER_AGENT = "ATLAS-contact/1.0 (+https://agency.example.com/)"
 FETCH_TIMEOUT = 8.0
 MAX_PAGES = 4
 MAX_BYTES = 1_500_000
@@ -249,24 +248,10 @@ def normal_site(website: str | None) -> str | None:
 # ---------------------------------------------------------------- fetching
 
 async def _robots(client: httpx.AsyncClient, site: str) -> tuple[Any, str | None]:
-    """(parser, None) or (None, why nothing may be fetched). 4xx: no rules."""
-    from .._netguard import get_public
-    parts = urlsplit(site)
-    url = f"{parts.scheme}://{parts.netloc}/robots.txt"
-    parser = robotparser.RobotFileParser()
-    try:
-        response, why = await get_public(client, url, headers={"User-Agent": USER_AGENT})
-    except Exception as exc:                            # noqa: BLE001
-        return None, f"robots.txt unreadable: {explain(exc)}"
-    if response is None:
-        return None, f"robots.txt not fetched: {why}"
-    if 400 <= response.status_code < 500:
-        parser.parse([])
-        return parser, None
-    if response.status_code != 200:
-        return None, f"robots.txt answered HTTP {response.status_code}"
-    parser.parse(response.text[:200_000].splitlines())
-    return parser, None
+    """(parser, None) or (None, why nothing may be fetched). 4xx: no rules.
+    The shared scraper's rule (`_scrape.robots_for`), with this module's UA."""
+    from .._scrape import robots_for
+    return await robots_for(client, site, agent_ua=USER_AGENT)
 
 
 async def _page(client: httpx.AsyncClient, url: str, home_key: str

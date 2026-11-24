@@ -31,7 +31,7 @@ import {
 const Bust = lazy(() => import("../core/Bust").then((m) => ({ default: m.Bust })));
 
 /**
- * Home: the one page Miro asked for (2026-10-06) -- what needs him, the
+ * Home: the one page the owner asked for (2026-10-06) -- what needs him, the
  * week, ATLAS itself, who is working, health, workflows and marketing --
  * each a short, plain section with a "More" link to its full page.
  *
@@ -682,7 +682,7 @@ export function Home({ reloadKey, voice, overview, counters, gaze = null }: {
   return (
     <div className="ac-home ac-skin">
       <div className="ac-hello">
-        <h1>{greeting(now)}, Miro.</h1>
+        <h1>{greeting(now)}, the owner.</h1>
         <p>
           {now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}
           {c && c.watch_only && " · watch-only: ATLAS reads, it does not act"}

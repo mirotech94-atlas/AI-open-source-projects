@@ -1,12 +1,12 @@
 """Knowledge mode: general expertise, not measurement.
 
-Miro asked for a system with real knowledge of everything -- medicine,
+the owner asked for a system with real knowledge of everything -- medicine,
 technology, anatomy, whatever comes up -- that can help and enlighten him the
 way a well-read expert would, not the way a search engine would. This is
 deliberately its own small module rather than a tool any agent can reach for:
 every other answer in ATLAS is a measurement with a source and a timestamp,
 and invariant 6 (never guess a number) exists to keep it that way. A question
-about the anatomy of the knee is not a question about Miro's data, so
+about the anatomy of the knee is not a question about the owner's data, so
 answering it never touches a collector, a check, or a number on a dashboard.
 
 `answer()` is the whole module: one call to the model, no tools, nothing to
@@ -26,7 +26,7 @@ legal answers keep their professional line last. Without the key, or when
 Perplexity cannot answer (cap, refusal, unreachable), this behaves exactly as
 before: one model call, no tools, no sources.
 
-Every answer is also kept (Task 60, Miro: "anytime I ask about something
+Every answer is also kept (Task 60, the owner: "anytime I ask about something
 make sure that its knowledge base increases"): `library.keep_answer` writes
 it into `library_entries` as kind='answer', source the citation URLs when
 Perplexity answered (else "model"), notes the exact text handed back.
@@ -73,7 +73,7 @@ LIBRARY_WRITE_TIMEOUT = 2.0
 # there is no source to say is unreachable, only what is known, what is not,
 # and what is argued about.
 EXPERT_SYSTEM = """
-You are answering a general-knowledge question for Miro -- medicine,
+You are answering a general-knowledge question for the owner -- medicine,
 technology, anatomy, history, or any other field, never a question about his
 own systems, businesses or numbers.
 
@@ -210,7 +210,7 @@ async def answer(question: str, *, quick: bool = False) -> str:
     import time
     started = time.monotonic()
     # Spoken, a question that needs no fresh fact skips the search and goes
-    # straight to the fast model (Miro, 2026-10-06: "should answer once I
+    # straight to the fast model (the owner, 2026-10-06: "should answer once I
     # stop speaking"; Perplexity's spoken path can take 12 s). One that asks
     # for something current -- today, latest, news, a price, the weather, a
     # score -- still searches: a remembered fact would be a guess.
@@ -223,7 +223,7 @@ async def answer(question: str, *, quick: bool = False) -> str:
         composed, source = result
     else:
         # Spoken (`quick`), it is the voice lane's small fast models with a
-        # short answer's room (Miro, 2026-10-06: "should answer once I stop
+        # short answer's room (the owner, 2026-10-06: "should answer once I stop
         # speaking"); typed, the deep lane.
         completion = await think(
             Need.TRIVIAL if quick else Need.HARD,

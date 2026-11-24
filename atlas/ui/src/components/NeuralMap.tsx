@@ -44,21 +44,25 @@ const STATE_WORD: Record<CardDot, string> = {
 
 const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
-function useStageWidth(): [React.RefObject<HTMLDivElement>, number] {
+function useStageSize(): [React.RefObject<HTMLDivElement>, { w: number; h: number }] {
   const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
+  const [size, setSize] = useState({ w: 0, h: 0 });
   useIsoLayoutEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    setWidth(el.getBoundingClientRect().width);
+    const set = (w: number, h: number): void =>
+      setSize((cur) => (Math.round(cur.w) === Math.round(w) && Math.round(cur.h) === Math.round(h)
+        ? cur : { w, h }));
+    const r = el.getBoundingClientRect();
+    set(r.width, r.height);
     const ro = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width;
-      if (w !== undefined) setWidth(w);
+      const c = entries[0]?.contentRect;
+      if (c) set(c.width, c.height);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  return [ref, width];
+  return [ref, size];
 }
 
 function useNow(fixed: number | undefined): number {
@@ -80,11 +84,22 @@ export interface NodeModel {
   title: string;
 }
 
+/** A count the node carries under its name (the Agency tab: the previews
+ *  waiting on the owner's card, on the `sites` neuron). `unknown` is a count that
+ *  could not be read: grey, dashed, with the word, never a zero. */
+export interface NodeBadge {
+  label: string;
+  title: string;
+  unknown?: boolean;
+}
+
 function NeuronNode({
   neuron, compact, state, now, selected, connected, active, speaking, pulsing, onActivate, onHover,
-  model,
+  model, badge = null, fill = false,
 }: {
+  fill?: boolean;
   model: NodeModel | null;
+  badge?: NodeBadge | null;
   neuron: Neuron;
   compact: boolean;
   state: CardDot;
@@ -122,12 +137,14 @@ function NeuronNode({
       style={{
         left: `${neuron.px}%`, top: `${neuron.py}%`,
         ["--size" as string]: `${neuron.size}px`,
+        ...(fill && (neuron.side === "left" || neuron.side === "right")
+          ? { ["--label-max" as string]: `${neuron.labelMax}px` } : {}),
       }}
       tabIndex={0}
       role="button"
       aria-pressed={selected}
-      aria-label={`${cardName(a)}: ${a.brief}. ${detail}${notReady ? `: ${a.reasons[0]}` : ""}.${model ? ` Model: ${model.title}.` : ""}`}
-      title={`${notReady ? `${detail}: ${a.reasons[0]}` : detail}${model ? `\nModel: ${model.title}` : ""}`}
+      aria-label={`${cardName(a)}: ${a.brief}. ${detail}${notReady ? `: ${a.reasons[0]}` : ""}.${model ? ` Model: ${model.title}.` : ""}${badge ? ` ${badge.title}.` : ""}`}
+      title={`${notReady ? `${detail}: ${a.reasons[0]}` : detail}${model ? `\nModel: ${model.title}` : ""}${badge ? `\n${badge.title}` : ""}`}
       onClick={() => onActivate(a.name)}
       onKeyDown={key}
       onMouseEnter={() => onHover(a.name)}
@@ -147,6 +164,12 @@ function NeuronNode({
           <span className="nn-model" data-dot={model.dot} title={model.title}>
             <i aria-hidden="true" />
             {!compact && <span>{model.label}</span>}
+          </span>
+        )}
+        {badge && (
+          <span className="nn-badge" data-unknown={badge.unknown || undefined}
+                title={badge.title}>
+            {badge.label}
           </span>
         )}
       </span>
@@ -174,18 +197,27 @@ export interface NeuralMapProps {
   /** Home's agency map: the model each agent runs on, by name. Optional,
    *  so the Agency room's map is unchanged. */
   modelFor?: ((name: string) => NodeModel | null) | undefined;
+  /** The Agency tab: a count under a node's name, by agent name. */
+  badgeFor?: ((name: string) => NodeBadge | null) | undefined;
+  /** Fill the parent's width AND height instead of keeping the frame's
+   *  aspect ratio: the layout is computed for the measured stage (1 frame
+   *  unit = 1 CSS px), so nothing is letterboxed. Wide variant only; the
+   *  phone frame keeps its own shape. */
+  fill?: boolean;
 }
 
 export function NeuralMap({
   agents, readFailed = false, selected = null, onActivate, speaking = null,
   coreSpeaking = false, speakingKey = false, now: fixedNow, variant: fixedVariant,
-  label = "Agency map", modelFor,
+  label = "Agency map", modelFor, badgeFor, fill = false,
 }: NeuralMapProps): JSX.Element {
-  const [stage, width] = useStageWidth();
+  const [stage, size] = useStageSize();
+  const width = size.w;
   const now = useNow(fixedNow);
   const [hover, setHover] = useState<string | null>(null);
   const variant = fixedVariant ?? variantFor(width);
-  const layout = neuralLayout(agents, variant);
+  const filling = fill && variant === "wide";
+  const layout = neuralLayout(agents, variant, filling && size.h > 0 ? size : null);
   const { frame } = layout;
 
   // Hover or focus previews a neuron's synapses; selection holds them.
@@ -221,6 +253,8 @@ export function NeuralMap({
       onActivate={activate}
       onHover={setHover}
       model={modelFor ? modelFor(x.agent.name) : null}
+      badge={badgeFor ? badgeFor(x.agent.name) : null}
+      fill={filling}
     />
   );
 
@@ -230,6 +264,7 @@ export function NeuralMap({
     <div
       className="nn"
       data-variant={variant}
+      data-fill={filling || undefined}
       data-focus={focus !== null || undefined}
       data-speaking={speaking !== null || coreSpeaking || undefined}
       data-read-failed={readFailed || undefined}
@@ -239,7 +274,7 @@ export function NeuralMap({
         className="nn-stage"
         role="group"
         aria-label={label}
-        style={{ aspectRatio: `${frame.w} / ${frame.h}` }}
+        style={filling ? undefined : { aspectRatio: `${frame.w} / ${frame.h}` }}
       >
         <svg className="nn-web" viewBox={`0 0 ${frame.w} ${frame.h}`}
              preserveAspectRatio="xMidYMid meet" aria-hidden="true">

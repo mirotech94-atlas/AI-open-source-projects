@@ -1,7 +1,10 @@
 # Independent watchdog (RA-F4)
 
-Status 2026-09-28: **installed on the FlyCheap VPS (Miro OK'd); the timer stays
-disabled until Miro provides a Slack incoming webhook.** Code is in
+Status 2026-11-15: **built for the Spark (host `cloudco-spark`, ssh alias `spark`);
+nothing is installed there yet.** The exact install steps are in
+`ops/watchdog/INSTALL.md`; see "Phase 1" at the end of this file for the
+Spark, the reverse heartbeat (`watchdog_seen`) and the disk check. The older
+FlyCheap VPS install (2026-09-28) is retired with that server. Code is in
 `ops/watchdog/atlas_watchdog.py`, the tests are in `tests/test_watchdog.py`,
 and the units plus install steps are in `ops/watchdog/`. The `/healthz`
 heartbeat field it reads is built (below) and ships with the next deploy.
@@ -12,15 +15,15 @@ Everything ATLAS knows about its own health is in-process: `modules/comms`,
 `backups` and the scheduler itself. When the api process dies, when the
 scheduler loop stalls, or when the box fills its disk, nothing is left to
 say so. Docker's `HEALTHCHECK` marks a container unhealthy and does not
-restart it (FINDINGS F §2). The watchdog runs on the FlyCheap VPS
-(203.0.113.10), a different machine. It shares no process, database or
+restart it (FINDINGS F §2). The watchdog runs on the Spark (it was
+the FlyCheap VPS before that server was retired), a different machine. It shares no process, database or
 Slack credential with ATLAS.
 
 ## What it checks, every 5 minutes
 
 | Check | OK when | Otherwise |
 |---|---|---|
-| `healthz` | `GET https://atlas.example.com/healthz` → 200 within 10 s, body `{"ok": true, ...}` | FAIL (HTTP code, unreachable, slow, bad body) |
+| `healthz` | `GET <ATLAS_WATCHDOG_URL>` (see Phase 1 for the URL) → 200 within 10 s, body `{"ok": true, ...}` | FAIL (HTTP code, unreachable, slow, bad body) |
 | `tls` | chain and hostname verify with the system CA store, and more than 14 days remain | FAIL on a verify or handshake error, or under 14 days; UNKNOWN if the TCP connect itself fails (`healthz` already reports that) |
 | `heartbeat` | the scheduler's last cycle and the newest observation are both present and at most 900 s old | FAIL if either is over 900 s (a FAIL wins over a null partner); **UNKNOWN** when either age is null or missing, when `/healthz` has no `heartbeat` field (an ATLAS older than 2026-09-28), or when `healthz` is down |
 
@@ -36,12 +39,17 @@ until something changes.
   inside the same state, such as a new HTTP code while still FAIL, does not
   re-alert.
 - The route is a **Slack incoming webhook**, read from
-  `/etc/atlas-watchdog/watchdog.env` on the watchdog host. systemd passes it
-  in through `LoadCredential=`. It is never ATLAS's Slack bot token: a value
+  `~/.config/atlas-watchdog/watchdog.env` on the Spark (mode 0600; as root
+  `/etc/atlas-watchdog/watchdog.env`). The Spark runs it as a user unit and
+  has no sudo, so there is no `LoadCredential=`: the unit reads the file. It is never ATLAS's Slack bot token: a value
   that starts `xoxb-`/`xoxp-`/`xoxa-`/`xapp-` is refused, and so is anything
   that is not a `https://hooks.slack.com/` URL. The URL is never logged, and
   it is redacted from exception text.
-- **No webhook configured:** the checks still run and are logged. Then it logs
+- **Second route (2026-11-17):** with no webhook, `ATLAS_WATCHDOG_SLACK_TOKEN` (`xoxb-`)
+  and `ATLAS_WATCHDOG_SLACK_CHANNEL` make it post via `chat.postMessage` to that
+  one channel. Same file, mode 0600, never logged. A webhook, if set, wins.
+  Trade-off: a revoked bot token silences this route too.
+- **No route configured:** the checks still run and are logged. Then it logs
   `no alternate route configured` and exits 2 on every run. State is not
   advanced, so the first run after a webhook is added announces whatever is
   wrong at that moment.
@@ -54,8 +62,9 @@ until something changes.
   itself crashed. A crash can never exit with a code the unit treats as
   success, so it shows up as a failed unit and not as a quiet run.
 
-State is one JSON file (`/var/lib/atlas-watchdog/state.json`, systemd
-`StateDirectory`), replaced atomically with `mkstemp` + `os.replace`.
+State is one JSON file (`~/.local/state/atlas-watchdog/state.json` for a
+user; `/var/lib/atlas-watchdog/state.json` as root), replaced atomically with
+`mkstemp` + `os.replace`.
 
 ## Heartbeat: the `/healthz` field (built 2026-09-28)
 
@@ -135,3 +144,113 @@ and that change is announced once.
   exit 2.
 - The FlyCheap VPS has Python 3.13.5 and systemd 257 (read-only check). Nothing
   was installed there.
+
+
+## Phase 1 "Never blind" (2026-11-15)
+
+### Where it runs, and which URL it reads
+
+The box is the **Spark**. It has user systemd 255 with linger on, Python
+3.12.3, curl and rsync, and **no sudo**, so the watchdog is installed as a
+**user** timer with XDG paths (`ops/watchdog/atlas-watchdog.user.service` and
+`.user.timer`, steps in `ops/watchdog/INSTALL.md`). Nothing was installed by
+this change.
+
+The URL is `ATLAS_WATCHDOG_URL` in the box's env file. Read-only checks from
+the Spark on 2026-11-15, public https only:
+
+| URL | Answer from the Spark |
+|---|---|
+| `https://agency.example.com/` | 200 |
+| `https://agency.example.com/healthz` | **404** |
+
+`/healthz` answers 404 on the public name because `Caddyfile.public` has no
+`/healthz` handle (only `Caddyfile`, the mesh one, has it). The Spark cannot
+reach the mesh address. **Lead action:** add an exact-path `/healthz` handle to
+`Caddyfile.public` that proxies to `api:8080`, with the same header
+stripping as the academy block. Until that ships the watchdog logs
+`healthz FAIL: HTTP 404` on every run, and the `watchdog_seen` check reads
+UNKNOWN (it requires a good read; see below). That is the honest state, not
+a bug. The route publishes two integers (the heartbeat ages) and nothing else.
+
+### Reverse heartbeat: who watches the watcher
+
+If the watchdog dies, nothing would say so. So every watchdog run writes
+`seen.json` next to its state file:
+
+```json
+{"at": "...", "last_healthz_ok_at": "...", "healthz_state": "OK",
+ "route_configured": true, "label": "spark"}
+```
+
+`last_healthz_ok_at` moves only when `/healthz` was read OK; otherwise the
+previous good time is kept. The file holds no URL and no webhook.
+
+A launchd job on the Mac (`ops/watchdog/host/pull_watchdog_seen.sh`, every 5
+minutes) copies it with the Mac's **own** ssh key to
+`data/app/backups/watchdog_seen.json` and adds `pulled_at`. ATLAS reads it as
+`/app/data/backups/watchdog_seen.json`. The Spark gets no key to the Mac and
+ATLAS gets no key to the Spark: nothing is shared (21.F.4). A failed pull
+leaves the old file alone, so `pulled_at` stops moving.
+
+ATLAS check **`watchdog_seen`** (HIGH, every 5 min) is OK or UNKNOWN, never
+FAILING and never a guess:
+
+- OK: `pulled_at`, `at` and `last_healthz_ok_at` are all at most 15 minutes
+  old, none is in the future, and `route_configured` is true. The value is the
+  seconds since the last good `/healthz` read.
+- UNKNOWN: file missing or unreadable, a time missing or unparseable, any of
+  the three older than 15 minutes (pull job dead, watchdog silent, or
+  `/healthz` unreadable), a time in the future beyond 2 minutes of skew, or no
+  alert route configured on the watchdog. The detail names which.
+
+Rejected: reading a User-Agent or header from the watchdog's requests. A header
+can be forged by anyone who can reach the public route, so it proves nothing.
+
+### Disk check
+
+Inside the container `shutil.disk_usage` reads the OrbStack VM, not the Mac, so
+the old check was reading the wrong disk. A launchd job on the Mac
+(`ops/watchdog/host/disk_status.sh`, every 15 minutes) measures the real data
+volume and writes `data/app/backups/disk.json`: read time, total and free
+bytes, and the five largest folders under a fixed list of roots
+(`ATLAS_DISK_ROOTS`; never all of `$HOME`). It only reads.
+
+ATLAS check **`disk`** (HIGH, every 30 min):
+
+- FAILING at or below an **absolute floor** (`ATLAS_DISK_FLOOR_GIB`, default 4);
+  DEGRADED (WARN) at or below `ATLAS_DISK_WARN_GIB` (default 10) **or** below 15%
+  free. The fraction is a secondary rule that can only warn, never fail (The owner,
+  2026-11-15: a 96%-full disk with ~17 GiB free reads WARN). The floors are
+  defaults and are not tuned to any one reading; the lead sets them.
+- UNKNOWN if `disk.json` is missing, unreadable, has bad numbers, or is older
+  than 1 hour. Never OK.
+- The detail carries the read time and the largest folders, and, when not OK,
+  "ATLAS deletes nothing: free space by hand". ATLAS never deletes (Tier 3).
+- The old rule (DEGRADED when housekeeping had not run) is removed: nothing
+  runs housekeeping on the Mac, so it could only ever have been noise.
+
+Tests: `tests/test_backups.py` (the check, the two host jobs with fake
+`df`/`du`/`ssh`) and `tests/test_watchdog.py` (user paths, URL from the env
+file, `seen.json`).
+
+
+## Simplest working design (2026-11-18): reverse tunnel
+
+ATLAS runs on the Mac (api on 127.0.0.1:8080). The public `/healthz` on
+agency.example.com is a static Caddy answer: it stays 200 when ATLAS is dead, so it
+cannot be the thing the watchdog trusts. Instead a launchd job on the Mac
+(`ops/watchdog/host/watchdog_tunnel.sh`, `com.atlas.watchdog-tunnel`, KeepAlive)
+holds `ssh -N -R 127.0.0.1:8080:127.0.0.1:8080 spark`. The Spark watchdog reads
+`http://127.0.0.1:8080/healthz` (its own loopback) and gets the real api answer,
+heartbeat ages included. Loopback on both ends, nothing published, no key from
+the Spark to the Mac. The Spark port is 8080 on purpose: the api's Host
+allowlist only accepts `127.0.0.1:8080`. Tunnel or ATLAS down means `healthz`
+FAIL (alert), never OK. `tls` is skipped for loopback http. Alerts only on a
+state change, no daily report. Install: `ops/watchdog/INSTALL.md` part B (same
+sed/bootstrap as the other two jobs), then set `ATLAS_WATCHDOG_URL` on the Spark.
+
+**Healthz-only (security review):** the tunnel does not point at the api, which
+may trust loopback callers. It points at `ops/watchdog/host/healthz_proxy.py`
+(`com.atlas.watchdog-proxy`, Mac 127.0.0.1:18081), which answers only
+`GET /healthz` (exact path, no headers forwarded) and 404s everything else.

@@ -1,10 +1,12 @@
-"""Mapfront hosting: client sites published on this box at `<slug>.mapfront.io`.
+"""Preview hosting: client sites published on this box at
+`https://agency.example.com/preview/<slug>/` (path-based: no wildcard DNS, no
+per-slug certificate; the owner 2026-11-14).
 
-`agency.deploy_site` (Tier ASK) has two targets. With `AGENCY_DEPLOY_HOST`
+`agency.deploy_site` (Tier AUTO) has two targets. With `AGENCY_DEPLOY_HOST`
 set to a host it rsyncs over ssh as before. Unset, or `local`, it publishes
 here, into `PUBLISH_ROOT` -- `/app/data/sites` in the api container, the
 host's `./data/app/sites`, mounted READ-ONLY into Caddy at `/srv/sites`,
-where the `*.mapfront.io` block serves `/srv/sites/{labels.2}`.
+where Caddy's `/preview/*` handle serves `/srv/sites/<slug>`.
 
 Layout under the root, one release per deploy::
 
@@ -20,7 +22,8 @@ sees the old release or the new one and never half of each.
 Three things are refused rather than trusted:
 
 * a slug outside `SLUG_RE` or in `RESERVED` -- the slug becomes a public
-  hostname, and `www`, `mail`, `_dmarc` and friends belong to the domain;
+  path segment (and was a hostname label before), so it stays one safe DNS
+  label; the names the domain itself uses stay reserved;
 * a symlink (or anything but a regular file or directory) in the built
   tree. Caddy follows symlinks, and its own `/data` holds the ACME
   account and certificate keys: a built "file" that pointed there would
@@ -30,9 +33,11 @@ Three things are refused rather than trusted:
   every unapproved build, variant and rollback copy would be public with
   no card in between.
 
-`tls_allowed` is the question Caddy's on-demand TLS asks before it mints a
-certificate (`/internal/tls-ask`, atlas/api/tls_ask.py): the apex, `www`,
-or exactly one label that is a published slug. Nothing else.
+Static HTML cannot assume it lives at `/`: `prefix_html` rewrites root-absolute
+`href`/`src`/`action`/`srcset`/`url(...)` in the release's `.html` files to
+`/preview/<slug>/...` after the launch check passes (other file types are
+never touched, and no `<base>` is injected: it would turn every `#anchor`
+into a page load).
 """
 from __future__ import annotations
 
@@ -62,12 +67,27 @@ RESERVED = frozenset({
 })
 
 
-def sites_domain() -> str:
-    """`AGENCY_SITES_DOMAIN`, lowercased, no trailing dot. The Caddyfile
-    hardcodes the same name (an env var in a directive that expands empty
-    takes the whole listener down), so the default must agree with it."""
-    raw = os.getenv("AGENCY_SITES_DOMAIN", "").strip().lower().strip(".")
-    return raw or "mapfront.io"
+DEFAULT_PREVIEW_ORIGIN = "https://agency.example.com"
+PREVIEW_PREFIX = "/preview/"
+
+
+def preview_origin() -> str:
+    """`AGENCY_PREVIEW_ORIGIN`: scheme and host of the page that serves the
+    previews, `https` only, no path, no credentials. Anything else falls
+    back to the default. The Caddyfile hardcodes the same name, so the
+    default must agree with it."""
+    raw = os.getenv("AGENCY_PREVIEW_ORIGIN", "").strip().lower().rstrip("/")
+    if re.fullmatch(r"https://[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::\d{1,5})?", raw):
+        return raw
+    return DEFAULT_PREVIEW_ORIGIN
+
+
+def slug_of_preview_path(path: str) -> str | None:
+    """The slug in `/preview/<slug>/...`, or None when `path` is not one."""
+    if not isinstance(path, str) or not path.startswith(PREVIEW_PREFIX):
+        return None
+    slug = path[len(PREVIEW_PREFIX):].split("/", 1)[0]
+    return slug if slug and SLUG_RE.fullmatch(slug) else None
 
 
 def local_mode() -> bool:
@@ -75,8 +95,14 @@ def local_mode() -> bool:
     return not host or host.lower() == "local"
 
 
+def vercel_mode() -> bool:
+    """Previews publish on Vercel through `agency.publish_vercel` (a card);
+    the box's own deploy refuses."""
+    return os.getenv("AGENCY_DEPLOY_HOST", "").strip().lower() == "vercel"
+
+
 def slug_problem(slug: object) -> str | None:
-    """Why `slug` cannot be a public subdomain, or None when it can."""
+    """Why `slug` cannot be a public preview path segment, or None when it can."""
     if not isinstance(slug, str) or not slug:
         return "the slug is empty"
     if not SLUG_RE.fullmatch(slug):
@@ -89,12 +115,59 @@ def slug_problem(slug: object) -> str | None:
     return None
 
 
-def public_host(slug: str) -> str:
-    return f"{slug}.{sites_domain()}"
+def public_host(slug: str = "") -> str:
+    """The host every preview is served from (the slug is in the path)."""
+    return preview_origin().removeprefix("https://")
 
 
 def public_url(slug: str) -> str:
-    return f"https://{public_host(slug)}/"
+    return f"{preview_origin()}{PREVIEW_PREFIX}{slug}/"
+
+
+_ATTR = re.compile(
+    rb"""(\b(?:href|src|action|formaction|poster|data-src)\s*=\s*)(["'])/(?!/)""", re.I)
+_SRCSET = re.compile(rb"""(\bsrcset\s*=\s*)(["'])(.*?)\2""", re.I | re.S)
+_CSS_URL = re.compile(rb"""(\burl\(\s*)(["']?)/(?!/)""", re.I)
+
+
+def prefix_html(data: bytes, slug: str) -> bytes:
+    """`data` with every root-absolute URL moved under `/preview/<slug>/`.
+    Bytes in, bytes out: nothing else changes, and a second pass changes
+    nothing. `//host/x`, `https://`, `#x`, `mailto:` and relative links stay."""
+    pre = f"{PREVIEW_PREFIX}{slug}/".encode()
+
+    def fix(rx: re.Pattern[bytes], blob: bytes) -> bytes:
+        out, last = [], 0
+        for m in rx.finditer(blob):
+            out.append(blob[last:m.start()])
+            tail = blob[m.end():m.end() + len(pre) - 1]
+            out.append(m.group(0) if b"/" + tail == pre
+                       else m.group(1) + m.group(2) + pre)
+            last = m.end()
+        out.append(blob[last:])
+        return b"".join(out)
+
+    def srcset(m: re.Match[bytes]) -> bytes:
+        value = re.sub(rb"(^|,\s*)/(?!/)(?!" + re.escape(pre[1:]) + rb")",
+                       lambda n: n.group(1) + pre, m.group(3))
+        return m.group(1) + m.group(2) + value + m.group(2)
+
+    return fix(_CSS_URL, fix(_ATTR, _SRCSET.sub(srcset, data)))
+
+
+def prefix_release(release: Path, slug: str) -> int:
+    """Blocking. Rewrite the `.html` files of a staged release in place with
+    `prefix_html`; every other file is left alone. Returns how many changed."""
+    changed = 0
+    for path in release.rglob("*"):
+        if path.suffix.lower() in (".html", ".htm") and path.is_file() \
+                and not path.is_symlink():
+            old = path.read_bytes()
+            new = prefix_html(old, slug)
+            if new != old:
+                path.write_bytes(new)
+                changed += 1
+    return changed
 
 
 def root_problem(root: Path, build_dir: Path) -> str | None:
@@ -207,24 +280,3 @@ def prune_releases(root: Path, slug: str, keep: set[str]) -> None:
     for stamp in stamps[KEEP_RELEASES:]:
         if stamp not in keep:
             discard_release(root, slug, stamp)
-
-
-# ---------------------------------------------------------------- tls ask
-
-def tls_allowed(domain: str, root: Path | None = None) -> bool:
-    """Whether Caddy may obtain a certificate for `domain`. Blocking (a stat)."""
-    name = (domain or "").strip().lower().rstrip(".")
-    apex = sites_domain()
-    if name in (apex, f"www.{apex}"):
-        return True
-    suffix = f".{apex}"
-    if not name.endswith(suffix):
-        return False
-    label = name[: -len(suffix)]
-    if slug_problem(label) is not None:
-        return False
-    base = PUBLISH_ROOT if root is None else root
-    try:
-        return live_release(base, label) is not None and (base / label).is_dir()
-    except (ValueError, OSError):
-        return False

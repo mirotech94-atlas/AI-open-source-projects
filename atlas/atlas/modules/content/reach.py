@@ -1,4 +1,4 @@
-"""Reach without paid promotion (Miro, 2026-09-29): which AI-stories reel
+"""Reach without paid promotion (the owner, 2026-09-29): which AI-stories reel
 deserves a boost, and when in the day a reel should post.
 
 **Promote candidates** (`candidates`, the `promote_candidates` check, and

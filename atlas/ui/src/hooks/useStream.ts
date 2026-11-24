@@ -69,7 +69,7 @@ export function useStream(
       // "agent": an agent run started or finished (harness.record_run and
       // the run loops). A card's expiry arrives as a "decision".
       for (const kind of ["hello", "heartbeat", "check", "finding",
-                          "proposal", "decision", "agent"]) {
+                          "proposal", "decision", "agent", "audit", "tool"]) {
         source.addEventListener(kind, mark(kind));
       }
     };

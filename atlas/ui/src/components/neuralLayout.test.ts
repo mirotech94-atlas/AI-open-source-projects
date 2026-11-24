@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AgentSummary } from "../api";
 import {
-  COMPACT_BELOW_PX, PULSE_WINDOW_MS, WIDE_FRAME, cardName, isPulsing, neuralLayout,
+  COMPACT_BELOW_PX, FILL_MIN, labelRoom, PULSE_WINDOW_MS, WIDE_FRAME, fillFrame, cardName, isPulsing, neuralLayout,
   neuronSize, shortName, sideFor, synapsePairs, variantFor,
 } from "./neuralLayout";
 
@@ -242,5 +242,73 @@ describe("sideFor", () => {
     expect(sideFor(-10, 1)).toBe("left");
     expect(sideFor(1, -10)).toBe("top");
     expect(sideFor(-1, 10)).toBe("bottom");
+  });
+});
+
+describe("fill frame (the Agency tab's map fills its container)", () => {
+  it("keeps the wide frame's vertical radii and its inner/outer ratio", () => {
+    const f = fillFrame(WIDE_FRAME.w, WIDE_FRAME.h);
+    expect(f.inner.ry).toBe(WIDE_FRAME.inner.ry);
+    expect(f.outer.ry).toBe(WIDE_FRAME.outer.ry);
+    expect(f.inner.rx / f.outer.rx).toBeCloseTo(WIDE_FRAME.inner.rx / WIDE_FRAME.outer.rx, 1);
+  });
+
+  it("uses the width: the outer ring grows with the stage and leaves a 170 px label margin", () => {
+    const narrow = fillFrame(1100, 700);
+    const wide = fillFrame(1869, 700);
+    expect(wide.outer.rx).toBeGreaterThan(narrow.outer.rx);
+    for (const f of [narrow, wide]) expect(f.cx - f.outer.rx).toBeGreaterThanOrEqual(169);
+  });
+
+  it("is 1 unit per CSS px and keeps the rings inside the stage", () => {
+    for (const [w, h] of [[1380, 700], [1869, 880], [1100, 520]] as const) {
+      const f = fillFrame(w, h);
+      expect([f.w, f.h]).toEqual([w, h]);
+      expect(f.cx).toBe(w / 2);
+      expect(f.cy).toBe(h / 2);
+      // The outer ring clears the top and bottom edges, and leaves room at
+      // both sides for the labels that read outward.
+      expect(f.cy - f.outer.ry).toBeGreaterThan(h * 0.08);
+      expect(f.cx - f.outer.rx).toBeGreaterThanOrEqual(170);
+      expect(f.inner.rx).toBeLessThan(f.outer.rx);
+      expect(f.inner.ry).toBeLessThan(f.outer.ry);
+    }
+  });
+
+  it("clamps a tiny or unmeasured stage", () => {
+    const f = fillFrame(0, 0);
+    expect([f.w, f.h]).toEqual([FILL_MIN.w, FILL_MIN.h]);
+    expect(fillFrame(NaN, NaN).w).toBe(FILL_MIN.w);
+  });
+
+  it("neuralLayout uses the measured size; compact ignores it; no size = wide frame", () => {
+    const sized = neuralLayout(roster, "wide", { w: 1869, h: 880 });
+    expect(sized.frame.w).toBe(1869);
+    expect(sized.lead!.px).toBeCloseTo(50, 0);
+    // Every neuron stays inside the frame, and every roster agent is placed once.
+    expect(sized.byName.size).toBe(roster.length);
+    for (const n of sized.byName.values()) {
+      expect(n.px).toBeGreaterThan(0); expect(n.px).toBeLessThan(100);
+      expect(n.py).toBeGreaterThan(0); expect(n.py).toBeLessThan(100);
+    }
+    expect(neuralLayout(roster, "wide").frame).toEqual(WIDE_FRAME);
+    expect(neuralLayout(roster, "compact", { w: 1869, h: 880 }).frame.w).toBe(400);
+  });
+});
+
+describe("label clamp (no label crosses the frame edge)", () => {
+  it("labelRoom leaves the gap and edge margin on the label's side", () => {
+    expect(labelRoom(1000, 200, "left", 10)).toBe(200 - 5 - 7 - 8);
+    expect(labelRoom(1000, 800, "right", 10)).toBe(1000 - 800 - 5 - 7 - 8);
+    expect(labelRoom(1000, 40, "left", 10)).toBe(90);
+  });
+
+  it.each([[1440, 900 - 160], [1913, 1080 - 160]])("at %i px every side label fits inside the frame", (w, h) => {
+    const l = neuralLayout(roster, "wide", { w, h });
+    for (const n of l.byName.values()) {
+      if (n.side === "left") expect(n.x - n.size / 2 - 7 - n.labelMax).toBeGreaterThanOrEqual(0);
+      if (n.side === "right") expect(n.x + n.size / 2 + 7 + n.labelMax).toBeLessThanOrEqual(w);
+      expect(n.labelMax).toBeGreaterThanOrEqual(90);
+    }
   });
 });

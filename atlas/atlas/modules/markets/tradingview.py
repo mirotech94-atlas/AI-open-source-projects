@@ -1,9 +1,9 @@
-"""TradingView alerts: Miro's own chart alerts, read in. ATLAS never trades on them.
+"""TradingView alerts: the owner's own chart alerts, read in. ATLAS never trades on them.
 
-Miro sets an alert on a TradingView chart; TradingView POSTs its message to
+the owner sets an alert on a TradingView chart; TradingView POSTs its message to
 `/hooks/tradingview` (`atlas/api/tradingview.py`), which authenticates it,
 validates it against the closed set of fields below and stores it here, in
-`tradingview_alerts`. Nothing else happens. An alert is Miro's own chart
+`tradingview_alerts`. Nothing else happens. An alert is the owner's own chart
 line crossing, not advice, and nothing in ATLAS acts on one: there is no
 order code anywhere in ATLAS, and money out is Tier 3, permanently denied.
 
@@ -18,7 +18,7 @@ What reads the table:
   `wrap_untrusted`, because they are text from outside;
 * the markets.alert pipeline (`alerts.gather`), through
   `pending_tradingview_events()`: each stored alert becomes one Slack
-  alert to Miro (topic `markets`), under that pipeline's dedupe, daily cap,
+  alert to the owner (topic `markets`), under that pipeline's dedupe, daily cap,
   quiet hours and advice-word ban. A row is marked notified only by
   `mark_tradingview_notified`, which `alerts.alert` calls once the alert
   has been delivered.
@@ -55,7 +55,7 @@ OWN_READING_FRESH = timedelta(hours=6)
 BRIEF_ALERTS = 3
 KIND = "tradingview"
 SOURCE = "tradingview alerts"
-FOOTER = ("Miro's own TradingView alert, relayed: not advice, and ATLAS never "
+FOOTER = ("the owner's own TradingView alert, relayed: not advice, and ATLAS never "
           "trades on it.")
 
 ACTION_HINTS = frozenset({"buy", "sell", "long", "short", "exit", "alert"})
@@ -460,13 +460,13 @@ def brief_line() -> str:
     from ...kernel.permissions import wrap_untrusted
     block = ("\n" + wrap_untrusted(json.dumps(words, ensure_ascii=False), SOURCE)
              if words else "")
-    return (f"TradingView (Miro's own chart alerts; not advice, never traded on): "
+    return (f"TradingView (the owner's own chart alerts; not advice, never traded on): "
             f"{_state['today']} today; latest: {facts} (read {at:%H:%M} UTC){block}")
 
 
 # -------------------------------------------------------- the alert pipeline
 
-# Slack reads `<...>` as a link or a mention; the alert's name is Miro's
+# Slack reads `<...>` as a link or a mention; the alert's name is the owner's
 # own text but still outside text, so it is shown, never interpreted.
 _SLACK_ANGLE = str.maketrans({"<": "\u2039", ">": "\u203a"})
 

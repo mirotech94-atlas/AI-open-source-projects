@@ -1,7 +1,7 @@
 """The numbers a lead is given, and the links outreach carries (2026-09-30).
 
 Mapfront's line (TWILIO_FROM, answered by the AI) goes in every outreach
-email and reply while RECEPTION_ENABLED is on; Miro's own number
+email and reply while RECEPTION_ENABLED is on; the owner's own number
 (AGENCY_ESCALATION_PHONE, else TWILIO_TO) only in replies, never in a first
 cold email. Every number here is a fake 555 one.
 """
@@ -14,10 +14,11 @@ from atlas.modules.agency import _store, contacts, outreach, pricing, replies
 from atlas.modules.agency.audit import Audit
 
 LINE = "+17185550000"
-MIRO = "+19175550199"
+OWNER = "+19175550199"
 LEAD = {"id": 7, "name": "Joe's Plumbing", "category": "plumber",
         "website": "https://joesplumbing.example", "phone": "(718) 555-0101"}
-LIVE = {"domain": None, "slug": "joes-plumbing-7", "deployed": True,
+LIVE = {"domain": "demo-site.vercel.example", "slug": "joes-plumbing-7",
+        "deployed": True,
         "webild_url": None, "mockup": None}
 
 
@@ -33,7 +34,7 @@ def _env(monkeypatch):
     monkeypatch.setattr(verify, "contact_refusal", _returns(None))
     monkeypatch.setenv("RECEPTION_ENABLED", "1")
     monkeypatch.setenv("TWILIO_FROM", LINE)
-    monkeypatch.setenv("TWILIO_TO", MIRO)
+    monkeypatch.setenv("TWILIO_TO", OWNER)
     monkeypatch.delenv("AGENCY_ESCALATION_PHONE", raising=False)
     monkeypatch.delenv("AGENCY_SITES_DOMAIN", raising=False)
     monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "1 Test Ave, Staten Island, NY 10312")
@@ -49,17 +50,17 @@ def test_pretty_phone(raw, shown):
     assert outreach.pretty_phone(raw) == shown
 
 
-def test_lines_name_mapfront_and_only_while_the_line_answers(monkeypatch):
-    assert outreach.callback_line() == "Questions? Call or text Mapfront at (718) 555-0000."
+def test_lines_name_atlas_agency_and_only_while_the_line_answers(monkeypatch):
+    assert outreach.callback_line() == "Questions? Call or text ATLAS Agency at (718) 555-0000."
     assert outreach.more_info_line() == (
-        "For more information, call or text Mapfront at (718) 555-0000; our AI "
+        "For more information, call or text ATLAS Agency at (718) 555-0000; our AI "
         "assistant answers any time.")
     monkeypatch.delenv("RECEPTION_ENABLED")
     assert outreach.callback_line() == outreach.more_info_line() == ""
 
 
 def test_the_escalation_number_prefers_its_own_setting(monkeypatch):
-    assert outreach.escalation_line() == "To speak to Miro directly, call (917) 555-0199."
+    assert outreach.escalation_line() == "To speak to the owner directly, call (917) 555-0199."
     monkeypatch.setenv("AGENCY_ESCALATION_PHONE", "+12125550123")
     assert outreach.escalation_phone() == "(212) 555-0123"
     monkeypatch.delenv("AGENCY_ESCALATION_PHONE")
@@ -69,10 +70,9 @@ def test_the_escalation_number_prefers_its_own_setting(monkeypatch):
 
 def test_links_only_once_live():
     assert outreach.site_lines({**LIVE, "deployed": False}) == []
+    # Vercel previews carry no call-me form (2026-10-30).
     assert outreach.site_lines(LIVE) == [
-        "See the site we built for you: https://joes-plumbing-7.mapfront.io/",
-        ("Rather talk it through? Have us call you: "
-         "https://joes-plumbing-7.mapfront.io/#call-me")]
+        "See the site we built for you: https://demo-site.vercel.example/"]
 
 
 def _outreach_fakes(monkeypatch, *, email=None, links=LIVE):
@@ -97,17 +97,16 @@ def _outreach_fakes(monkeypatch, *, email=None, links=LIVE):
     return seen
 
 
-async def test_outreach_carries_the_preview_the_form_and_mapfronts_number(monkeypatch):
+async def test_outreach_carries_the_preview_and_the_agency_number(monkeypatch):
     seen = _outreach_fakes(monkeypatch, email={"address": "office@joesplumbing.example"})
     result = await outreach.draft_outreach(7, "email")
     assert result.ok
     body = seen["body"]
-    assert "https://joes-plumbing-7.mapfront.io/" in body
-    assert "https://joes-plumbing-7.mapfront.io/#call-me" in body
-    assert "call Mapfront at (718) 555-0000" in body
-    assert "1 Test Ave, Staten Island, NY 10312" in body and "Reply STOP" in body
+    assert "https://demo-site.vercel.example/" in body
+    assert "#call-me" not in body and "mapfront" not in body.lower()
+    assert "1 Test Ave, Staten Island, NY 10312" in body and "reply stop" in body
     assert outreach.can_spam_ok(body, "1 Test Ave, Staten Island, NY 10312") == []
-    # Miro's own number is for escalation only, never a cold email.
+    # the owner's own number is for escalation only, never a cold email.
     assert "555-0199" not in body
     assert seen["to"] == "office@joesplumbing.example"
     assert result.evidence["to"] == "office@joesplumbing.example"
@@ -129,7 +128,7 @@ async def test_a_reply_always_gives_both_numbers(monkeypatch):
     monkeypatch.setattr(_store, "lead_message_bodies", _returns(["What's included?"]))
     monkeypatch.setattr(_store, "lead_email", _returns("joe@example.com"))
     monkeypatch.setattr(_store, "is_suppressed", _returns(False))
-    monkeypatch.setattr(_store, "count_closed_deals", _returns(0))
+    monkeypatch.setattr(_store, "lead_returning", _returns(False))
     monkeypatch.setattr(_store, "lead_links", _returns(LIVE))
     monkeypatch.setattr(_store, "insert_reply_draft", _returns(21))
     monkeypatch.setattr(replies, "audit_lead", _returns(Audit(None, [], {}, 0)))
@@ -138,11 +137,11 @@ async def test_a_reply_always_gives_both_numbers(monkeypatch):
     result = await replies.draft_reply(7, "email")
     assert result.ok, result.detail
     body = result.evidence["text"]
-    assert ("For more information, call or text Mapfront at (718) 555-0000; our AI "
+    assert ("For more information, call or text ATLAS Agency at (718) 555-0000; our AI "
             "assistant answers any time.") in body
-    assert "To speak to Miro directly, call (917) 555-0199." in body
+    assert "To speak to the owner directly, call (917) 555-0199." in body
     assert body.rstrip().endswith(outreach.TRAILER)
     # The numbers are not read as prices.
     assert set(pricing.find_prices(body)) == {500}
-    assert replies.refusal(body, pricing.Terms(500, 300, 100, 0), objection=False) is None
+    assert replies.refusal(body, pricing.Terms(500, 300, returning=False)) is None
 

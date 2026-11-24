@@ -451,36 +451,29 @@ async def test_the_plan_drafts_a_standing_rule_and_never_enacts_one(monkeypatch)
 @pytest.mark.asyncio
 async def test_no_measured_fact_means_no_ideas_and_a_plain_note(monkeypatch):
     monkeypatch.setattr(monetize, "_youtube_facts",
-                        _async_return((None, "no YOUTUBE_FLYCHEAP_CHANNEL_ID set")))
-    monkeypatch.setattr(monetize, "_flycheap_facts",
-                        _async_return((None, "flycheap /api/health unreachable")))
-    monkeypatch.setattr(monetize, "_guardian_facts",
-                        _async_return((None, "no GUARDIAN_API_TOKEN set")))
-    monkeypatch.setattr(monetize, "_mirotech_facts",
+                        _async_return((None, "no YOUTUBE_ACADEMY_CHANNEL_ID set")))
+    monkeypatch.setattr(monetize, "_ownertech_facts",
                         _async_return((None, "no eBay token")))
     monkeypatch.setattr(monetize, "_agency_facts",
                         _async_return((None, "agency_leads unreadable")))
 
-    result = await monetize.ideas("flycheap")
+    result = await monetize.ideas("exampleco")
     assert result["ideas"] == []
     assert "no measured facts" in result["note"]
-    assert "flycheap /api/health unreachable" in result["note"]
+    assert "no eBay token" in result["note"]
 
 
 @pytest.mark.asyncio
 async def test_every_idea_carries_evidence_with_an_observed_at(monkeypatch):
     read_at = datetime(2026, 9, 24, 9, 12, tzinfo=UTC)
     monkeypatch.setattr(monetize, "_youtube_facts", _async_return((
-        {"channel": "flycheap", "subscribers": 1240,
+        {"channel": "exampleco", "subscribers": 1240,
          "eligible_on_subscribers": True, "observed_at": read_at,
          "detail": "eligible: 1,240 of 1,000 subscribers, read 09:12"}, None)))
-    monkeypatch.setattr(monetize, "_flycheap_facts",
-                        _async_return((None, "nothing measures bookings")))
-    monkeypatch.setattr(monetize, "_guardian_facts", _async_return((None, "x")))
-    monkeypatch.setattr(monetize, "_mirotech_facts", _async_return((None, "x")))
+    monkeypatch.setattr(monetize, "_ownertech_facts", _async_return((None, "x")))
     monkeypatch.setattr(monetize, "_agency_facts", _async_return((None, "x")))
 
-    result = await monetize.ideas("flycheap")
+    result = await monetize.ideas("exampleco")
     assert result["ideas"]
     for idea in result["ideas"]:
         assert idea["requires"]
@@ -492,16 +485,15 @@ async def test_every_idea_carries_evidence_with_an_observed_at(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_anything_that_costs_money_is_listed_not_actioned(monkeypatch):
-    for name in ("_youtube_facts", "_guardian_facts", "_mirotech_facts",
-                 "_agency_facts"):
+    for name in ("_youtube_facts", "_ownertech_facts"):
         monkeypatch.setattr(monetize, name, _async_return((None, "unmeasured")))
-    monkeypatch.setattr(monetize, "_flycheap_facts", _async_return((
-        {"users": 412, "active_routes": 88,
+    monkeypatch.setattr(monetize, "_agency_facts", _async_return((
+        {"leads_waiting": 4,
          "observed_at": datetime(2026, 9, 24, 9, 0, tzinfo=UTC),
-         "bookings_measured": False,
-         "detail": "412 users, 88 active routes, read 09:00"}, None)))
+         "detail": "4 lead(s) waiting, read 09:00"}, None)))
 
-    result = await monetize.ideas("flycheap")
+    result = await monetize.ideas("agency")
+    assert result["ideas"]
     spends = [i for i in result["ideas"] if i.get("costs_money")]
     for idea in spends:
         assert idea["requires"] == "money out — Tier 3, you decide"
@@ -511,16 +503,15 @@ async def test_anything_that_costs_money_is_listed_not_actioned(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_mirotech_never_claims_a_sold_price_it_did_not_measure(monkeypatch):
-    for name in ("_youtube_facts", "_guardian_facts", "_flycheap_facts",
-                 "_agency_facts"):
+async def test_ownertech_never_claims_a_sold_price_it_did_not_measure(monkeypatch):
+    for name in ("_youtube_facts", "_agency_facts"):
         monkeypatch.setattr(monetize, name, _async_return((None, "unmeasured")))
-    monkeypatch.setattr(monetize, "_mirotech_facts", _async_return((
+    monkeypatch.setattr(monetize, "_ownertech_facts", _async_return((
         {"listings": 31, "sold_prices_measured": False,
          "observed_at": datetime(2026, 9, 24, 8, 0, tzinfo=UTC),
          "detail": "31 active listings, read 08:00"}, None)))
 
-    result = await monetize.ideas("mirotech")
+    result = await monetize.ideas("exampleco")
     assert result["ideas"]
     joined = " ".join(i["est_note"] for i in result["ideas"])
     assert "sold" in joined.lower()
@@ -598,32 +589,6 @@ def test_the_marketing_day_defaults_to_sunday(monkeypatch):
     monkeypatch.setenv("MARKETING_DAY", "not a number")
     assert scheduler._marketing_day() == 6
 
-
-def test_the_marketing_agent_can_only_call_registered_non_tier_three_tools():
-    from atlas.kernel.agents import ROSTER, build_roster
-    from atlas.kernel.permissions import denial_reason
-    from atlas.kernel.tools import TOOLS
-    from atlas.tools.builtin import register_all
-
-    register_all()
-    build_roster()
-    agent = ROSTER["marketing"]
-    missing = agent.tools - set(TOOLS)
-    assert not missing, f"marketing names unregistered tool(s): {sorted(missing)}"
-    for name in sorted(agent.tools):
-        action = TOOLS[name].action
-        if action:
-            why = denial_reason(action)
-            assert why is None, f"{name} -> {action} is Tier 3: {why}"
-
-
-def test_the_marketing_agent_owns_the_playbook_scope():
-    from atlas.kernel.agents import ROSTER, build_roster
-    build_roster()
-    agent = ROSTER["marketing"]
-    assert "playbook" in agent.memory_scope
-    assert "experiments" in agent.memory_scope
-    assert "growth" in ROSTER, "marketing replaces nothing; growth stays"
 
 
 def test_the_new_read_and_write_tools_are_registered():
@@ -757,7 +722,7 @@ async def test_proposing_an_experiment_writes_a_row_and_a_draft(monkeypatch):
     monkeypatch.setattr(module, "content_draft", fake_draft)
 
     result = await module.propose_experiment(
-        "flycheap", "youtube", "route-deal shorts beat explainers",
+        "exampleco", "youtube", "route-deal shorts beat explainers",
         "route-deal short", draft_kind="short_script", draft_source="weekly")
     assert result.ok
     assert result.rollback_token == "11:5"
@@ -769,7 +734,7 @@ async def test_an_experiment_proposal_refuses_an_unknown_platform(monkeypatch):
     monkeypatch.setattr(module, "fetch_one",
                         _async_fail("must not reach the database"))
     result = await module.propose_experiment(
-        "flycheap", "myspace", "h", "v", draft_kind="short_script",
+        "exampleco", "myspace", "h", "v", draft_kind="short_script",
         draft_source="weekly")
     assert not result.ok
     assert "myspace" in result.detail
@@ -1080,7 +1045,7 @@ async def test_an_experiment_on_a_platform_with_no_hook_is_refused(
     monkeypatch.setattr(module, "fetch_one",
                         _async_fail("must not reach the database"))
     for fn in (module.propose_experiment, module.propose_experiment_dry):
-        result = await fn("flycheap", platform, "h", "v",
+        result = await fn("exampleco", platform, "h", "v",
                           draft_kind="short_script", draft_source="weekly")
         assert not result.ok
         assert (f"{platform} has no experiment hook yet; only youtube can "
@@ -1171,21 +1136,20 @@ def test_a_zero_baseline_is_never_a_win():
 @pytest.mark.asyncio
 async def test_a_source_that_does_not_apply_is_not_listed_as_unreadable(
         monkeypatch):
-    """"guardian: not a guardian question" in a flycheap note is noise that
+    """"agency: not an agency question" in a exampleco note is noise that
     buries the one line that matters."""
     monkeypatch.setattr(monetize, "_youtube_facts",
                         _async_return((None, "no CHANNEL_ID set")))
-    monkeypatch.setattr(monetize, "_flycheap_facts",
-                        _async_return((None, "flycheap /api/health unreachable")))
-    for name in ("_guardian_facts", "_mirotech_facts", "_agency_facts"):
-        monkeypatch.setattr(monetize, name,
-                            _async_return((None, monetize.NOT_APPLICABLE)))
+    monkeypatch.setattr(monetize, "_ownertech_facts",
+                        _async_return((None, "no eBay token")))
+    monkeypatch.setattr(monetize, "_agency_facts",
+                        _async_return((None, monetize.NOT_APPLICABLE)))
 
-    result = await monetize.ideas("flycheap")
+    result = await monetize.ideas("exampleco")
     assert result["ideas"] == []
     assert "no measured facts" in result["note"]
-    assert "flycheap /api/health unreachable" in result["note"]
-    for absent in ("guardian", "mirotech", "agency"):
+    assert "no eBay token" in result["note"]
+    for absent in ("agency",):
         assert absent not in result["note"], \
             f"{absent} is not applicable here and should not be listed"
 
@@ -1330,7 +1294,7 @@ async def test_the_scheduler_closes_an_experiment_only_through_the_executor(
 
 
 async def test_an_experiment_on_a_switched_off_platform_is_refused(monkeypatch):
-    """2026-09-27: youtube was off by Miro's word, and twelve YouTube
+    """2026-09-27: youtube was off by the owner's word, and twelve YouTube
     experiments still drafted the weekly report as 'short scripts'."""
     from atlas.kernel.registry import REGISTRY
     from atlas.modules import marketing as module
@@ -1342,6 +1306,6 @@ async def test_an_experiment_on_a_switched_off_platform_is_refused(monkeypatch):
     monkeypatch.setattr(module, "fetch_one", must_not_write)
     monkeypatch.setattr(module, "content_draft", must_not_write)
     for fn in (module.propose_experiment, module.propose_experiment_dry):
-        out = await fn("guardian", "youtube", "h", "v", draft_kind="short_script",
+        out = await fn("agency", "youtube", "h", "v", draft_kind="short_script",
                        draft_source="weekly")
         assert not out.ok and "switched off" in out.detail

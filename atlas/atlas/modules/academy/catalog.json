@@ -1,30 +1,76 @@
 {
   "store": {
     "name": "ATLAS Academy",
-    "domain": "shop.mapfront.io",
-    "author": "Miro (Myron Mekhael)",
-    "contact_email": "miro@mapfront.io",
-    "contact_email_note": "Configurable. No ATLAS Academy address was found in the vault, so this is Mapfront's address until Miro sets one.",
+    "domain": "agency.example.com",
+    "author": "the owner (the author)",
+    "contact_email": "owner@example.com",
+    "contact_email_note": "the owner's personal contact address (the contact page, the footer, Write to the owner).",
+    "support_email": "owner@example.com",
+    "support_email_note": "The store's support contact (the owner, 2026-10-11). Since 2026-11-14 it is the owner's own Gmail; the support mailbox reader (ACADEMY_SUPPORT_MAILBOX) only sees it if that Gmail forwards into the mailbox it reads.",
     "currency": "usd",
-    "facts_checked": "1 Oct 2026",
+    "facts_checked": "14 Nov 2026",
     "facts_note": "Every count on the site was read from the built files (pdfinfo, unzip -l, ls) on the date above. Re-check after any file changes.",
     "access_valid_days": null,
-    "access_valid_days_note": "Miro sets. null: the access page keeps working for as long as Stripe says the checkout is paid and not refunded; every visit asks Stripe again.",
-    "download_link_days": 7
+    "access_valid_days_note": "the owner sets. null: the access page keeps working for as long as Stripe says the checkout is paid and not refunded; every visit asks Stripe again.",
+    "download_link_days": 7,
+    "audiences": {
+      "local-service": {
+        "name": "A local service business handling inquiries",
+        "description": "An owner of a small service business, such as a plumber, cleaner, salon, repair shop, tutor or clinic, who answers leads, missed calls and review requests and wants each reply drafted and ready, with the owner deciding what is sent."
+      },
+      "freelancer": {
+        "name": "A freelancer organizing client work",
+        "description": "A freelancer or consultant who keeps clients, projects, proposals and a weekly review in one place, with Claude drafting and the freelancer checking and deciding."
+      }
+    },
+    "audiences_note": "Competitor report improvement 05 (11 Oct 2026): two narrow audiences. The examples come from the Automation Pack's Chapter 0 and the Vault Kit's own audience lines. the owner can rename or replace them.",
+    "support": {
+      "access_help": [
+        "A lost access page: write from the address you paid with and the link is sent to that address.",
+        "A download link that has expired: open your access page again; it makes fresh links each time.",
+        "A file that won't download, unzip or open."
+      ],
+      "covers": [
+        "A mistake in the material: a step that doesn't match what the product says, or a broken link inside a file.",
+        "A workflow or starter file that doesn't import, run or give the result its guide shows when you use the guide's own made-up test data.",
+        "Questions about what a product contains, before or after you buy."
+      ],
+      "not_covered": [
+        "Setting up, hosting or adapting a workflow or agent for your own business, accounts or data. That is implementation work, not part of a purchase.",
+        "Changes in other companies' tools (n8n, Docker, Obsidian, Claude, Google, Stripe). Each guide says when its screens were last checked and points to the tool's own help.",
+        "Legal, tax, financial or medical advice."
+      ],
+      "report_broken": [
+        "Write from the address you paid with, through the contact page, and include your Stripe receipt number if you have it.",
+        "Name the product and the lesson, chapter or file.",
+        "Say what you did, what the guide says you should see, and what you saw instead. Paste the exact error text.",
+        "Never send passwords, API keys or a real customer's details. Use the guide's made-up test data."
+      ],
+      "response_time": "the owner replies by email within 2 business days.",
+      "response_time_note": "DECIDED (the owner, 2026-10-11): within 2 business days, the same promise as the contact page's sent message (site.py, contact/sent).",
+      "updates": null,
+      "updates_note": "TO DECIDE (the owner): an update policy, e.g. whether buyers get corrected files free, for how long, and how they hear about them. Until then no panel states one. Today each guide dates its tool-dependent pages instead.",
+      "implementation_services": null,
+      "implementation_services_note": "TO DECIDE (the owner): whether to point buyers who want setup done for them to a paid service (for example Mapfront) and on what terms. Until then the support text says only that implementation is not part of a purchase."
+    }
   },
   "products": [
     {
       "slug": "safe-ai-operator",
       "title": "Build a Safe AI Operator",
       "kind": "Course",
-      "tags": ["build", "business", "automate"],
+      "tags": [
+        "build",
+        "business",
+        "automate"
+      ],
       "cover": "covers/safe-ai-operator.jpg",
-      "cover_alt": "Cover of Build a Safe AI Operator: a shield with a check mark and the line \"The AI that can't burn your business.\"",
-      "summary": "Build an AI agent that does real work for your business and can't move money, delete data or act without your OK.",
-      "intro": "A written course, by Miro, on the eight rules his own agent, ATLAS, runs on. You build a small operator that watches first, picks actions from a closed list, asks before it acts, and says \"unknown\" instead of guessing. Each lesson ends with one exercise on the starter agent.",
+      "cover_alt": "Cover of Build a Safe AI Operator: a shield with a check mark.",
+      "summary": "Build an AI agent for your business that picks actions from a closed list you define, waits for your approval on anything you haven't cleared to run alone, and refuses five kinds of action in code: moving money, DNS, deleting, revoking keys and changing itself.",
+      "intro": "A video course with a written guide (PDF) and a Python starter agent, by the owner, on the eight rules his own agent, ATLAS, runs on. You build a small operator that watches first, picks actions from a closed list, asks before any action you haven't cleared to run on its own, and says \"unknown\" instead of guessing. Each lesson ends with one exercise on the starter agent.",
       "benefits": [
         "Write checks that only read, and that report UNKNOWN when they can't see, never \"fine\".",
-        "Give the model a closed menu of actions, with every argument validated, so it can't write code or commands.",
+        "Give the model a closed menu of actions, with every argument validated, so it picks a name from your list instead of writing code or commands.",
         "Set tiers in code: runs by itself, asks you first, or never. Silence never counts as a yes.",
         "Keep emails and web pages from giving your agent orders, and keep keys out of the prompt.",
         "Put it to work: a receptionist, a content engine and laptop control, each with receipts."
@@ -143,7 +189,7 @@
       ],
       "audience": [
         "Founders, freelancers and technical small-business owners who want an agent that does real work.",
-        "People who have seen \"AI team runs my company\" videos and want the version that can't burn them."
+        "People who have seen \"AI team runs my company\" videos and want a version built around approval gates, a closed list of actions and a kill switch."
       ],
       "not_for": [
         "Anyone looking for a no-code tool. The course builds in Python.",
@@ -157,7 +203,7 @@
         },
         {
           "q": "Does the course include videos?",
-          "a": "No. This is the written edition: the PDF and the starter agent."
+          "a": "Yes. 28 narrated video lessons, to watch on your access page or download, plus the written guide (PDF, 93 pages) and the starter agent (zip)."
         },
         {
           "q": "Will it scan or test other people's systems?",
@@ -175,9 +221,9 @@
           "id": "safe-ai-operator",
           "name": "Build a Safe AI Operator",
           "price_usd": 20,
-          "price_note": "Miro, 2026-10-01: $20 (matches the Shopify price read 2026-09-29). Live Stripe link plink_1ULlC4AZE7Rk74vY6x9Ep7I2.",
+          "price_note": "the owner, 2026-10-01: $20 (matches the Shopify price read 2026-09-29). Live Stripe link plink_1ULlC4AZE7Rk74vY6x9Ep7I2.",
           "payment_link": "https://buy.stripe.com/dRm00icmberw2d63SJgnK08",
-          "stripe_price_id": "price_1ULlC3AZE7Rk74vY4CfIBYa5",
+          "stripe_price_id": "price_EXAMPLE_00",
           "files": [
             {
               "key": "operator-video-0-1",
@@ -329,6 +375,24 @@
               "label": "safe-operator starter agent (zip)",
               "path": "safe-ai-operator/safe-operator-starter.zip"
             }
+          ],
+          "inclusions": [
+            {
+              "kind": "video",
+              "label": "Narrated video lessons",
+              "count": 28,
+              "detail": "4 to 8 minutes each"
+            },
+            {
+              "kind": "guide",
+              "label": "Written guide (PDF)",
+              "detail": "93 pages, A4"
+            },
+            {
+              "kind": "files",
+              "label": "Starter agent (zip)",
+              "detail": "A Python package with its tests, a README and three demo actions, one per tier"
+            }
           ]
         }
       ],
@@ -337,13 +401,139 @@
         "Products/Build a Safe AI Operator/Sales page.md",
         "Products/Build a Safe AI Operator/Outline.md",
         "Products/Build a Safe AI Operator/Lesson *.md"
+      ],
+      "level": "Builder: Python",
+      "level_detail": "You write, or learn to write, some Python. Not a no-code course.",
+      "audiences": [
+        "freelancer",
+        "local-service"
+      ],
+      "finish": {
+        "deliverable": "A small Python agent running on your own computer: a watch command that checks a website and a sales source and reports UNKNOWN for anything it can't read, a closed menu of action names the model picks from, and an approval queue where an action waits for you, runs once when you approve it, and leaves a receipt.",
+        "preview": "The starter's approval flow, run on 11 Oct 2026: a proposed customer reply shows its dry run and its expiry, is refused while watch-only mode is on, runs once when approved with watch-only off, and can't be approved a second time."
+      },
+      "journey": {
+        "free_lessons": [
+          {
+            "series": "agents",
+            "slug": "what-an-ai-agent-is",
+            "status": "scripted"
+          },
+          {
+            "series": "agents",
+            "slug": "agent-safety-approvals",
+            "status": "planned"
+          }
+        ],
+        "exercise": "Think of one task you do every week. Are the steps always the same, or does it need decisions along the way?",
+        "paid_adds": [
+          {
+            "what": "Organised files",
+            "detail": "The starter agent as one Python package, one file per rule: catalog, tiers, approvals, executor, untrusted input, secrets, kill switch."
+          },
+          {
+            "what": "Full instructions",
+            "detail": "28 narrated video lessons and a 93-page guide."
+          },
+          {
+            "what": "Practice tasks",
+            "detail": "An exercise on the starter agent at the end of each lesson."
+          },
+          {
+            "what": "Expected outputs",
+            "detail": "The starter's README says what each command prints, and its test suite checks each of the eight rules."
+          }
+        ]
+      },
+      "tested": [
+        {
+          "tool": "safe-operator starter agent",
+          "version": "Python 3.14.7, pytest 9.1.1, httpx 0.28.1",
+          "checked_on": "2026-10-11",
+          "by": "An automated run on the starter zip in the owner's vault",
+          "what": "All 82 tests passed. The README's propose, pending, approve and watch commands printed what the README describes."
+        }
+      ],
+      "troubleshooting": [
+        {
+          "kind": "expected",
+          "problem": "approve says watch-only mode is on",
+          "example_input": "python -m safe_operator approve 1 --by owner",
+          "expected_output": "refused: watch-only mode is on; nothing may act",
+          "recovery": "This is the default, on purpose. For one test, run the command with WATCH_ONLY=false. Only false, 0, no or off turn it off; a typo leaves it on."
+        },
+        {
+          "kind": "expected",
+          "problem": "The same approval is refused the second time",
+          "example_input": "WATCH_ONLY=false python -m safe_operator approve 1 --by owner, twice",
+          "expected_output": "cannot approve #1: it is claimed",
+          "recovery": "An approval runs once. Propose the action again if you need it again."
+        },
+        {
+          "kind": "expected",
+          "problem": "An action name is refused",
+          "example_input": "python -m safe_operator propose wire_money --params '{}' --reason x --ttl 60",
+          "expected_output": "not proposed: unknown action 'wire_money'",
+          "recovery": "Only actions registered in the catalog can be proposed. Add a new one in actions.py with a strict params table, starting at Tier.ASK."
+        },
+        {
+          "kind": "setup",
+          "problem": "Sales reads UNKNOWN",
+          "example_input": "python -m safe_operator watch --url https://example.com",
+          "expected_output": "sales_today: UNKNOWN ... SALES_API_KEY is not set, so sales can't be read",
+          "recovery": "Correct until you connect a source: no number is shown when it can't be read. Set a restricted, read-only key and point SALES_API_URL at your provider (collectors/sales.py)."
+        },
+        {
+          "kind": "setup",
+          "problem": "The website reads UNKNOWN",
+          "example_input": "python -m safe_operator watch --url https://example.invalid",
+          "expected_output": "website: UNKNOWN ... could not reach https://example.invalid (ConnectError)",
+          "recovery": "The site couldn't be reached from your machine. Check the address and your connection; the check never reports a site it can't read as OK."
+        }
+      ],
+      "review_demo": {
+        "request": "A customer asked when their order ships. The operator proposes reply_to_customer for thread t1, with the reason \"customer asked when it ships\" and a one-hour expiry.",
+        "draft": "dry run: would reply on thread t1 with: Thanks, it ships Monday.",
+        "review_step": "The proposal waits in the pending list with its reason and expiry. Nothing has run. While watch-only mode is on, even an approval is refused.",
+        "on_approve": "With watch-only off: \"approved #1 by owner; handing it to the executor\", then \"done: (demo) replied on thread t1\". A second approval is refused: it is claimed.",
+        "on_silence": "expires in 3600s. If nobody answers, it simply does not run.",
+        "limits": "The demo actions describe what they would do and touch nothing. The gate covers actions that go through the executor; it doesn't check whether the reply says the right thing. You read the dry run before you approve."
+      },
+      "evidence": [
+        {
+          "kind": "sample-lesson",
+          "label": "Lesson 0.1, The week-one failure, in full",
+          "source": "Products/Build a Safe AI Operator/Lesson 0.1.md"
+        },
+        {
+          "kind": "page-image",
+          "label": "Lesson 1.2's exercise page: make it go grey",
+          "source": "Products/Build a Safe AI Operator/images/page-exercise.png"
+        },
+        {
+          "kind": "exercise",
+          "label": "The starter agent's README: the eight rules, where each lives in the code, and its test",
+          "source": "Products/Build a Safe AI Operator/safe-operator-starter.zip"
+        }
+      ],
+      "testimonials": [],
+      "unverified": [
+        "tested: run on the vault's safe-operator-starter.zip (sha256 49515f0c1fe03cfc72b4f44045b1eb7dbf1e7cde729e96bb72889a558480c356). Confirm the delivered copy on the server has the same hash.",
+        "tested: the README asks for Python 3.11 or newer; only 3.14.7 was run.",
+        "troubleshooting: the course has no troubleshooting chapter that was found; the preview uses the starter's own refusals, captured on 11 Oct 2026.",
+        "evidence: no finished learner project exists yet. Add one only from a real learner, with permission.",
+        "TO DECIDE (the owner): the cover's printed tagline (an absolute claim that the AI won't burn your business; it is printed on the image, and the alt text no longer repeats it) and the Module 5 title \"Approvals that can't be faked\" are absolute; they describe what buyers receive, so they were left as they are. Re-render the cover or retitle the module if you want them gone too."
       ]
     },
     {
       "slug": "30-business-lessons",
       "title": "30 Business Lessons",
       "kind": "Ebook",
-      "tags": ["business", "start", "money"],
+      "tags": [
+        "business",
+        "start",
+        "money"
+      ],
       "cover": "covers/30-business-lessons.jpg",
       "cover_alt": "Cover of 30 Business Lessons: starting a small AI-assisted service business, one honest step at a time.",
       "summary": "Starting a small AI-assisted service business, one honest step at a time: 30 short lessons and an offer worksheet.",
@@ -462,12 +652,24 @@
           "price_usd": 9,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/3cIbJ085V3MSeZSfBrgnK00",
-          "stripe_price_id": "price_1ULVPaAZE7Rk74vYuljEoMst",
+          "stripe_price_id": "price_EXAMPLE_01",
           "files": [
             {
               "key": "lessons-pdf",
               "label": "30 Business Lessons (PDF, 35 pages)",
               "path": "30-business-lessons/30-business-lessons.pdf"
+            }
+          ],
+          "inclusions": [
+            {
+              "kind": "guide",
+              "label": "Ebook (PDF)",
+              "detail": "35 pages, A5, 30 lessons"
+            },
+            {
+              "kind": "worksheet",
+              "label": "Offer Worksheet",
+              "detail": "One page, in the appendix"
             }
           ]
         }
@@ -476,13 +678,68 @@
         "Products/30 Business Lessons.md",
         "Products/Products index.md",
         "Products/dist/30-business-lessons.pdf"
+      ],
+      "level": "Beginner, no code",
+      "level_detail": "A PDF to read. No software to install.",
+      "audiences": [
+        "freelancer"
+      ],
+      "finish": {
+        "deliverable": "A one-page Offer Worksheet filled in for one service: one buyer, one recurring problem, one deliverable, the inputs and checks, the costs you might miss, what is excluded, a first interview question, and a test period with a spending limit decided before you start.",
+        "preview": "Lesson 1's Try this: write one sentence in this shape, \"For [one type of small business], I deliver [one defined deliverable], reviewed by me before it goes out.\" Then build one clearly labelled sample of that deliverable."
+      },
+      "journey": {
+        "free_lessons": [],
+        "exercise": "Write one sentence: \"For [one type of small business], I deliver [one defined deliverable], reviewed by me before it goes out.\"",
+        "paid_adds": [
+          {
+            "what": "Full instructions",
+            "detail": "30 short lessons, each with one idea, one Try this step and a takeaway."
+          },
+          {
+            "what": "Worksheet",
+            "detail": "The one-page Offer Worksheet in the appendix."
+          },
+          {
+            "what": "Practice tasks",
+            "detail": "A Try this step in every lesson."
+          }
+        ]
+      },
+      "review_demo": {
+        "request": "An owner's five most repeated customer questions.",
+        "draft": "Five written answers you draft, with personal details removed.",
+        "review_step": "The owner approves every price, time and policy in them.",
+        "on_approve": "The FAQ goes out with an update date and a route back to a human.",
+        "on_silence": "Nothing is published until the owner has approved it.",
+        "limits": "Lesson 6 calls this useful answers, not an unattended chatbot. The owner's approval is the check; the lesson doesn't promise more."
+      },
+      "evidence": [
+        {
+          "kind": "sample-lesson",
+          "label": "Lesson 1, Sell a result, not AI",
+          "source": "Products/30 Business Lessons.md"
+        },
+        {
+          "kind": "worksheet",
+          "label": "The Offer Worksheet (one page, ten questions)",
+          "source": "Products/30 Business Lessons.md"
+        }
+      ],
+      "testimonials": [],
+      "unverified": [
+        "journey: no free video teaches the offer exercise yet. The design brief proposes \"define one service offer\" (30 Business Lessons or Sell With AI); it is not one of the four scripted proposals."
       ]
     },
     {
       "slug": "claude-obsidian-vault-kit",
       "title": "Claude + Obsidian Vault Kit",
       "kind": "Kit",
-      "tags": ["business", "organize", "start"],
+      "tags": [
+        "business",
+        "organize",
+        "start"
+      ],
       "cover": "",
       "cover_alt": "The Vault Kit's folder tree: Home, CLAUDE, Weekly Review, and the Inbox, Clients, Projects, Content and Prompts folders.",
       "summary": "A starter Obsidian vault for running a small business with Claude: templates, a weekly review and 16 prompts.",
@@ -590,12 +847,34 @@
           "price_usd": 19,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/fZu6oG4TJabg2d60GxgnK01",
-          "stripe_price_id": "price_1ULVTcAZE7Rk74vYMQbRoMgt",
+          "stripe_price_id": "price_EXAMPLE_02",
           "files": [
             {
               "key": "vault-kit-zip",
               "label": "Claude + Obsidian Vault Kit (zip)",
               "path": "vault-kit/claude-obsidian-vault-kit.zip"
+            }
+          ],
+          "inclusions": [
+            {
+              "kind": "files",
+              "label": "Vault (zip of Markdown notes)",
+              "detail": "10 notes: 4 at the top level, 6 across 5 folders"
+            },
+            {
+              "kind": "guide",
+              "label": "README",
+              "detail": "Five-minute setup"
+            },
+            {
+              "kind": "files",
+              "label": "Prompt library",
+              "detail": "16 prompts"
+            },
+            {
+              "kind": "files",
+              "label": "CLAUDE.md",
+              "detail": "Rules for Claude inside the vault"
             }
           ]
         }
@@ -603,22 +882,102 @@
       "sources": [
         "Products/Claude + Obsidian Vault Kit.md",
         "Products/dist/claude-obsidian-vault-kit.zip"
+      ],
+      "level": "Beginner, no code",
+      "level_detail": "Needs the Obsidian app and your own Claude access.",
+      "audiences": [
+        "freelancer"
+      ],
+      "finish": {
+        "deliverable": "An Obsidian vault for your business: a note per client and per project, a dated weekly review, a prompt library, and a CLAUDE.md that tells Claude to keep your client's own words, leave a missing figure blank and draft messages rather than send them.",
+        "preview": "The kit's real Client template (who they are, the problem in their words, agreed work, a conversation log) and its Weekly Review (inbox, clients, projects, money \"only numbers you can check\", content, decisions, three priorities). The kit ships templates, not a filled-in example client."
+      },
+      "journey": {
+        "free_lessons": [
+          {
+            "series": "proposal",
+            "slug": "organize-client-notes-claude-obsidian",
+            "status": "proposed"
+          }
+        ],
+        "exercise": "Paste a short made-up conversation note into Claude with the prompt \"Turn a conversation into a client note\", then check that the client's own words stayed in their own section and the gaps are listed.",
+        "paid_adds": [
+          {
+            "what": "Organised files",
+            "detail": "10 linked notes: 4 at the top level, 6 across 5 folders, with a Home page."
+          },
+          {
+            "what": "Full instructions",
+            "detail": "A README with a five-minute setup."
+          },
+          {
+            "what": "Practice tasks",
+            "detail": "16 prompts, each for one job."
+          },
+          {
+            "what": "House rules for Claude",
+            "detail": "CLAUDE.md, read by Claude Code automatically."
+          }
+        ]
+      },
+      "tested": [
+        {
+          "tool": "Links between the kit's notes",
+          "version": "",
+          "checked_on": "2026-10-11",
+          "by": "An automated check of the kit's zip in the owner's vault",
+          "what": "All 17 links between the notes open a note inside the kit."
+        }
+      ],
+      "review_demo": {
+        "request": "Everything in Inbox/ needs sorting.",
+        "draft": "Claude proposes where each item belongs, an existing client or project note, a new content idea, or delete, with a one-line reason each.",
+        "review_step": "Claude shows the full plan as a list and waits for your yes before moving, creating or deleting anything.",
+        "on_approve": "Claude makes the moves you agreed to.",
+        "on_silence": "Nothing moves.",
+        "limits": "CLAUDE.md is an instruction Claude is asked to follow, not a lock. Read the plan before you say yes, and keep a copy of the vault."
+      },
+      "evidence": [
+        {
+          "kind": "template",
+          "label": "Client template",
+          "source": "Products/Vault Kit/Clients/Client template.md"
+        },
+        {
+          "kind": "template",
+          "label": "Weekly Review template",
+          "source": "Products/Vault Kit/Weekly Review.md"
+        },
+        {
+          "kind": "sample-lesson",
+          "label": "The prompt library (16 prompts)",
+          "source": "Products/Vault Kit/Prompts/Prompt library.md"
+        }
+      ],
+      "testimonials": [],
+      "unverified": [
+        "tested: not yet opened in a fresh Obsidian install or run with Claude Code (the product note's 'Before selling' checklist is unticked), so no Obsidian or Claude version can be stated.",
+        "finish: the report asks for a realistic example client note and weekly review. The kit has templates only; a clearly fictional sample would have to be written (for the kit, or only for the YouTube demo).",
+        "troubleshooting: the kit has no troubleshooting section; write one after the fresh-install test."
       ]
     },
     {
       "slug": "ai-for-every-age",
       "title": "AI for Every Age",
       "kind": "Course",
-      "tags": ["home", "senior"],
+      "tags": [
+        "home",
+        "senior"
+      ],
       "cover": "covers/everyday-ai-for-adults.jpg",
-      "cover_alt": "Cover of Everyday AI for Adults, from the AI for Every Age course: purple type on marigold with concentric arcs.",
-      "summary": "Two written courses for using AI safely at home: Everyday AI for Adults, and a large-print edition for readers 60 and over.",
+      "cover_alt": "Cover of Everyday AI for Adults, from the AI for Every Age course: black type on royal blue with concentric arcs, and the tag 60 narrated video lessons.",
+      "summary": "Two video courses, each with a companion PDF, for using AI at home with care: Everyday AI for Adults, and a large-print edition for readers 60 and over.",
       "intro": "Learn to question AI, use Claude safely for everyday tasks, and, in the adult edition, build your first useful automation. The large-print edition puts scam safety first and takes one step at a time. Buy one edition, or both for a household where more than one generation is learning.",
       "benefits": [
         "Ask better and check better: every lesson includes a step for checking the answer.",
         "Set up Claude on your own account, with privacy settings you understand.",
         "Spot voice-clone calls, deepfakes and AI-polished phishing, and know what to do if a scam gets through.",
-        "Build a first automation in n8n that asks before it acts (adult edition)."
+        "Build a first automation in n8n that logs and flags, and leaves the decision to you (adult edition)."
       ],
       "label": [
         {
@@ -627,7 +986,7 @@
         },
         {
           "name": "Safe and Simple AI 60+",
-          "value": "Video course: 17 narrated large-print video lessons of 4 to 7 minutes, plus one PDF, 87 pages, US Letter; 17-point body text"
+          "value": "Video course: 17 narrated large-print video lessons of 3 to 7 minutes, plus one PDF, 87 pages, US Letter; 17-point body text"
         },
         {
           "name": "Claude plan",
@@ -773,7 +1132,7 @@
       ],
       "audience": [
         "Adults who are new to AI, or who have tried a chatbot and want to use it with more care.",
-        "Parents who want house rules for AI, and small-business owners who want a first automation that asks before it acts.",
+        "Parents who want house rules for AI, and small-business owners who want a first automation that leaves decisions to a person.",
         "Adults 60 and over, or adults buying for a parent or grandparent: print it, sit together for Lesson 3.1, then let them take it from there."
       ],
       "not_for": [
@@ -804,7 +1163,7 @@
         },
         {
           "q": "What format are the files?",
-          "a": "PDF, sized for US Letter paper. Everyday AI for Adults comes as a zip with the PDF, a folder of n8n workflow files (JSON) and a Claude Skill. Open the PDFs on a phone, tablet or computer, or print them. For Safe and Simple AI 60+, printing is recommended."
+          "a": "Both editions are video courses: narrated lessons to watch on your access page or download, plus a PDF sized for US Letter paper. Everyday AI for Adults comes as a zip with the PDF, a folder of n8n workflow files (JSON) and a Claude Skill. Open the PDFs on a phone, tablet or computer, or print them. For Safe and Simple AI 60+, printing the PDF is recommended."
         },
         {
           "q": "Why are some lessons dated?",
@@ -822,11 +1181,11 @@
           "id": "ai-for-every-age-adults",
           "name": "Everyday AI for Adults",
           "cover": "covers/everyday-ai-for-adults.jpg",
-          "blurb": "The full adult course: 60 lessons, a 182-page PDF, 4 n8n workflow files and a ready-made Claude Skill.",
+          "blurb": "The full adult course: 60 video lessons, a 182-page PDF, 4 n8n workflow files and a ready-made Claude Skill.",
           "price_usd": 29,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/aFa00ieuj838cRKblbgnK02",
-          "stripe_price_id": "price_1ULVWAAZE7Rk74vYKfrrBpTE",
+          "stripe_price_id": "price_EXAMPLE_03",
           "files": [
             {
               "key": "aiea-adults-video-0-1",
@@ -1132,6 +1491,29 @@
               "key": "aiea-adults-zip",
               "label": "Everyday AI for Adults (zip: PDF, n8n workflows, Claude Skill)",
               "path": "ai-for-every-age/everyday-ai-for-adults.zip"
+            }
+          ],
+          "inclusions": [
+            {
+              "kind": "video",
+              "label": "Narrated video lessons, Everyday AI for Adults",
+              "count": 60,
+              "detail": "4 to 8 minutes each"
+            },
+            {
+              "kind": "guide",
+              "label": "Everyday AI for Adults (PDF)",
+              "detail": "182 pages, US Letter"
+            },
+            {
+              "kind": "files",
+              "label": "n8n workflow files",
+              "detail": "4, Builds 1 to 4"
+            },
+            {
+              "kind": "files",
+              "label": "Claude Skill",
+              "detail": "Ready to upload"
             }
           ]
         },
@@ -1139,11 +1521,11 @@
           "id": "ai-for-every-age-60plus",
           "name": "Safe and Simple AI 60+",
           "cover": "covers/safe-and-simple-ai-60plus.jpg",
-          "blurb": "The large-print edition: 17 lessons in an 87-page PDF, safety first, one step at a time.",
+          "blurb": "The large-print edition: 17 narrated video lessons and an 87-page large-print PDF, safety first, one step at a time.",
           "price_usd": 19,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/dRm4gy4TJbfk8Bu88ZgnK03",
-          "stripe_price_id": "price_1ULVXtAZE7Rk74vY7aJxyRNo",
+          "stripe_price_id": "price_EXAMPLE_04",
           "files": [
             {
               "key": "aiea-60plus-video-0-1",
@@ -1235,17 +1617,30 @@
               "label": "Safe and Simple AI 60+ (PDF, 87 pages)",
               "path": "ai-for-every-age/safe-and-simple-ai-60plus.pdf"
             }
+          ],
+          "inclusions": [
+            {
+              "kind": "video",
+              "label": "Narrated large-print video lessons, Safe and Simple AI 60+",
+              "count": 17,
+              "detail": "3 to 7 minutes each"
+            },
+            {
+              "kind": "guide",
+              "label": "Safe and Simple AI 60+ (PDF)",
+              "detail": "87 pages, US Letter, 17-point body text"
+            }
           ]
         },
         {
           "id": "ai-for-every-age-both",
           "name": "Both editions",
           "cover": "",
-          "blurb": "Everyday AI for Adults and Safe and Simple AI 60+, for a household where more than one generation is learning.",
+          "blurb": "Both video courses with their PDFs, Everyday AI for Adults and Safe and Simple AI 60+, for a household where more than one generation is learning.",
           "price_usd": 39,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/bJe7sK3PF6Z4eZS9d3gnK04",
-          "stripe_price_id": "price_1ULVZZAZE7Rk74vYGWRAWNEd",
+          "stripe_price_id": "price_EXAMPLE_05",
           "files": [
             {
               "key": "aiea-adults-video-0-1",
@@ -1641,6 +2036,40 @@
               "key": "aiea-60plus-pdf",
               "label": "Safe and Simple AI 60+ (PDF, 87 pages)",
               "path": "ai-for-every-age/safe-and-simple-ai-60plus.pdf"
+            }
+          ],
+          "inclusions": [
+            {
+              "kind": "video",
+              "label": "Narrated video lessons, Everyday AI for Adults",
+              "count": 60,
+              "detail": "4 to 8 minutes each"
+            },
+            {
+              "kind": "guide",
+              "label": "Everyday AI for Adults (PDF)",
+              "detail": "182 pages, US Letter"
+            },
+            {
+              "kind": "files",
+              "label": "n8n workflow files",
+              "detail": "4, Builds 1 to 4"
+            },
+            {
+              "kind": "files",
+              "label": "Claude Skill",
+              "detail": "Ready to upload"
+            },
+            {
+              "kind": "video",
+              "label": "Narrated large-print video lessons, Safe and Simple AI 60+",
+              "count": 17,
+              "detail": "3 to 7 minutes each"
+            },
+            {
+              "kind": "guide",
+              "label": "Safe and Simple AI 60+ (PDF)",
+              "detail": "87 pages, US Letter, 17-point body text"
             }
           ]
         }
@@ -1650,17 +2079,132 @@
         "Products/AI for Every Age/Sales page.md",
         "Products/AI for Every Age/shopify/*.html"
       ],
-      "not_listed": "The Free Family Scam-Safety Kit is a free email sign-up in the plan; the store has no sign-up, so it isn't listed."
+      "not_listed": "The Free Family Scam-Safety Kit is a free email sign-up in the plan; the store has no sign-up, so it isn't listed.",
+      "level": "Beginner, no code",
+      "level_detail": "Starts from zero. The 60+ edition is large print, one step at a time.",
+      "audiences": [],
+      "finish": {
+        "deliverable": "Everyday AI for Adults: your own first n8n workflow, built and tested (Build 1 needs no accounts), and a capstone you choose, build, test and document. Safe and Simple AI 60+: your own Claude account on your own phone, a family safe word and a callback number you saved yourself.",
+        "preview": "Build 1, Today's Plan Card, run on n8n 2.40.7 on 29 Sep 2026: with minutes set to 15 it ends at \"Do it now.\"; with 30 it ends at \"Split into two smaller steps.\""
+      },
+      "journey": {
+        "free_lessons": [
+          {
+            "series": "claude",
+            "slug": "what-is-claude",
+            "status": "scripted"
+          },
+          {
+            "series": "n8n",
+            "slug": "n8n-first-workflow",
+            "status": "scripted"
+          }
+        ],
+        "exercise": "Open claude.ai, start a chat, and ask for something real with a context, a goal and a format.",
+        "paid_adds": [
+          {
+            "what": "Full instructions",
+            "detail": "60 lessons for adults, 17 large-print lessons for 60+, each with a step for checking the answer."
+          },
+          {
+            "what": "Expected outputs",
+            "detail": "Large-print steps with a \"What you should see\" box after each one."
+          },
+          {
+            "what": "Organised files",
+            "detail": "4 n8n workflow files and a ready-made Claude Skill (adult edition)."
+          },
+          {
+            "what": "Troubleshooting",
+            "detail": "Lesson 7.10: fix two broken copies of Build 1, one loud failure and one quiet one."
+          },
+          {
+            "what": "Dated lessons",
+            "detail": "Lessons that depend on apps or prices say when they were last checked."
+          }
+        ]
+      },
+      "tested": [
+        {
+          "tool": "n8n (Docker image)",
+          "version": "2.40.7",
+          "checked_on": "2026-09-29",
+          "by": "Recorded in the course's workflows README",
+          "what": "All four workflow files imported with no errors and exported identically. Build 1 ran end to end. The Google Sheets and Gmail steps of Builds 2 to 4 were not run: they need a real Google login."
+        }
+      ],
+      "troubleshooting": [
+        {
+          "kind": "setup",
+          "problem": "A loud failure: the run stops with an error",
+          "example_input": "In Today's task, minutes set to type String with the value 15",
+          "expected_output": "Wrong type: '15' is a string but was expecting a number [condition 0, item 0]",
+          "recovery": "Change minutes back to type Number where it is set, then run again: the advice is \"Do it now.\""
+        },
+        {
+          "kind": "setup",
+          "problem": "A quiet failure: success, but the wrong answer",
+          "example_input": "The If condition reads {{ $json.minute }} and minutes is 30",
+          "expected_output": "Status success, advice \"Do it now.\" (wrong: 30 is more than 20)",
+          "recovery": "Open the If node: the expression preview shows no value. Correct it to {{ $json.minutes }}, run again, and check for \"Split into two smaller steps.\""
+        },
+        {
+          "kind": "setup",
+          "problem": "Success, but a column in the Sheet row is empty",
+          "example_input": "",
+          "expected_output": "",
+          "recovery": "Open the node that sets that field and read its input. The field is probably named differently, for example Subject with a capital S."
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "page-image",
+          "label": "A page of Lesson 7.5, Build 1: Today's Plan Card",
+          "source": "Products/AI for Every Age/images/5-adults-preview-lesson-7-5.png"
+        },
+        {
+          "kind": "page-image",
+          "label": "A page of Lesson 0.2, Who can use which AI",
+          "source": "Products/AI for Every Age/images/4-adults-preview-lesson-0-2.png"
+        },
+        {
+          "kind": "sample-lesson",
+          "label": "Safe and Simple AI 60+, Lesson 6.2: Voice-clone and family emergency scams",
+          "source": "Products/AI for Every Age/seniors/Lesson 6.2 - Voice-clone and family emergency scams.md"
+        },
+        {
+          "kind": "exercise",
+          "label": "Lesson 7.10's break-it-and-fix-it exercise",
+          "source": "Products/AI for Every Age/adults/Lesson 7.10 - Fixing problems with Executions.md"
+        }
+      ],
+      "testimonials": [],
+      "unverified": [
+        "TO DECIDE (the owner): the benefit and audience line said the first automation \"asks before it acts\". No build waits for a yes (Build 2 emails you to double-check after adding the row; Build 4 logs with review_needed), so both now say it leaves the decision to a person. Restore the old wording only if a lesson adds an approval step.",
+        "tested: the Google steps of Builds 2 to 4 have not been run (they need a real Google login); the review demo shows the lesson's recorded output of the step before the Sheet write."
+      ],
+      "review_demo": {
+        "request": "Build 4, Inbox sorting by label: a made-up email labelled AI-COURSE-TEST arrives in a test Gmail account.",
+        "draft": "The workflow keeps four fields for the Inbox log sheet: message_id, from: Test Sender <test.sender@example.com>, subject: AI course test 1, review_needed: true. The message body is dropped.",
+        "review_step": "review_needed is true, so a person decides what happens next.",
+        "on_approve": "You reply, file or delete the email yourself, in Gmail.",
+        "on_silence": "The email stays where it is. The workflow never replies, sends or deletes.",
+        "limits": "The build has no send, reply or delete step: its only Gmail node is the trigger, which reads. It can't judge the email for you; it only makes sure each one is logged for a person to look at."
+      }
     },
     {
       "slug": "local-business-automation-pack",
       "title": "Local Business Automation Pack",
       "kind": "Workflow pack",
-      "tags": ["business", "automate", "local"],
+      "tags": [
+        "business",
+        "automate",
+        "local"
+      ],
       "cover": "covers/local-business-automation-pack.jpg",
-      "cover_alt": "Cover of the Local Business Automation Pack: white and marigold type on plum with concentric arcs, and the flow Webhook, Validate, Draft (sent: false).",
-      "summary": "Four n8n automations for a local business that draft, never send: a site health check, a lead-form reply, a missed-call text-back and a review request, with a guide that explains every node.",
-      "intro": "A written guide and four importable n8n workflow files, by Miro. Each workflow checks its input, writes the lead, call, job or site status to a plain text file on your own machine, and drafts the reply for you to send. Nothing is sent by the files, and nothing needs an account, a key or a password. Import them in an afternoon, test them with made-up data, and keep the owner in the loop.",
+      "cover_alt": "Cover of the Local Business Automation Pack: white type on black with royal-blue concentric arcs, and the flow Webhook, Validate, Draft (sent: false).",
+      "summary": "Four n8n automations for a local business that prepare drafts for you to check and send yourself: a site health check, a lead-form reply, a missed-call text-back and a review request, with a guide that explains every node.",
+      "intro": "A written guide and four importable n8n workflow files, by the owner. Each workflow checks its input, writes the lead, call, job or site status to a plain text file on your own machine, and drafts the reply for you to send. Nothing is sent by the files, and nothing needs an account, a key or a password. Import them in an afternoon, test them with made-up data, and keep the owner in the loop.",
       "benefits": [
         "Know within 15 minutes when your website or booking page goes down, with a log that says OK, DOWN or UNKNOWN and never calls an unreadable site \"fine\".",
         "Catch every contact-form lead the moment it arrives, with a reply already drafted in your words.",
@@ -1759,7 +2303,7 @@
       "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
       "refund_note": "The store's standard 14-day terms, as on the other four titles.",
       "licence": "One purchase covers one business: the buyer and the people who work in that business may use the guide and the workflow files, including on the n8n they run for it. Please don't resell or share the files publicly. The buyer must be an adult.",
-      "licence_note": "Proposed 1 Oct 2026 (a business pack, so per business rather than per household). Miro to confirm.",
+      "licence_note": "Proposed 1 Oct 2026 (a business pack, so per business rather than per household). the owner to confirm.",
       "pairs_with": "safe-ai-operator",
       "pairs_reason": "The same rules, draft before send and unknown is never OK, taken further: an agent that picks actions from a closed list and asks before it acts.",
       "offers": [
@@ -1767,14 +2311,36 @@
           "id": "local-business-automation-pack",
           "name": "Local Business Automation Pack",
           "price_usd": 29,
-          "price_note": "Proposed from the market research of 30 Sep 2026 (Products/Roadmap.md): documented single n8n workflows sell at $29-45 and vertical kits at $35-59; Gumroad's $30-49 band converts best. Miro can change it.",
+          "price_note": "Proposed from the market research of 30 Sep 2026 (Products/Roadmap.md): documented single n8n workflows sell at $29-45 and vertical kits at $35-59; Gumroad's $30-49 band converts best. the owner can change it.",
           "payment_link": "https://buy.stripe.com/9B64gyae30AG3ha2OFgnK0b",
-          "stripe_price_id": "price_1ULlaRAZE7Rk74vYRsTnkkEa",
+          "stripe_price_id": "price_EXAMPLE_06",
           "files": [
             {
               "key": "lbap-zip",
               "label": "Local Business Automation Pack (zip: PDF guide, 4 n8n workflows, README, docker-compose)",
               "path": "local-business-automation-pack/local-business-automation-pack.zip"
+            }
+          ],
+          "inclusions": [
+            {
+              "kind": "guide",
+              "label": "Guide (PDF)",
+              "detail": "29 pages, US Letter, 10 chapters and an appendix"
+            },
+            {
+              "kind": "files",
+              "label": "n8n workflow files",
+              "detail": "4, nine nodes each, saved unpublished, no credentials inside"
+            },
+            {
+              "kind": "files",
+              "label": "README.md",
+              "detail": "Import, test, what was tested"
+            },
+            {
+              "kind": "files",
+              "label": "docker-compose.yml",
+              "detail": "n8n on your own computer, localhost only, file access fenced to one folder"
             }
           ]
         }
@@ -1784,17 +2350,170 @@
         "Products/Local Business Automation Pack/Sales page.md",
         "Products/Local Business Automation Pack/VERIFY-LOG.md",
         "Products/Local Business Automation Pack/guide/Chapter *.md"
+      ],
+      "level": "Some setup: Docker",
+      "level_detail": "No programming, but you run n8n with Docker on your own computer.",
+      "audiences": [
+        "local-service",
+        "freelancer"
+      ],
+      "finish": {
+        "deliverable": "Four n8n workflows on your own computer: each new lead, missed call or finished job gets a drafted reply in a plain text file for you to read and send yourself, and your website is checked every 15 minutes and logged as OK, DOWN or UNKNOWN.",
+        "preview": "The tested lead-form run from Chapter 4: a made-up lead (Dana Reyes, dana@example.com, \"Need a quote for a kitchen faucet repair\") comes back as {\"status\":\"draft\",\"sent\":false,...} with the drafted email, and one new row in inbox/Leads.md."
+      },
+      "journey": {
+        "free_lessons": [
+          {
+            "series": "proposal",
+            "slug": "customer-reply-draft-awaiting-approval",
+            "status": "proposed"
+          },
+          {
+            "series": "proposal",
+            "slug": "test-n8n-workflow-before-real-customer-info",
+            "status": "proposed"
+          }
+        ],
+        "exercise": "Send one good and one bad made-up lead to the Test URL: the first answers with sent: false and a draft, the second with \"phone is required\" and no new row.",
+        "paid_adds": [
+          {
+            "what": "Organised files",
+            "detail": "4 workflow files, a README, and a docker-compose.yml that fences file access to one folder."
+          },
+          {
+            "what": "Full instructions",
+            "detail": "A 29-page guide that explains every node."
+          },
+          {
+            "what": "Practice tasks",
+            "detail": "Test steps with made-up data in every workflow chapter."
+          },
+          {
+            "what": "Expected outputs",
+            "detail": "\"What you should see\" after each test call, and an appendix of what was run and what came back."
+          },
+          {
+            "what": "Troubleshooting",
+            "detail": "Chapter 8: the six usual problems, and what to swap on n8n Cloud."
+          },
+          {
+            "what": "Dated chapters",
+            "detail": "Every chapter shows the date it was last verified."
+          }
+        ],
+        "note": "The scripted episode \"Auto-Reply to Website Leads\" sends an automatic first reply by Gmail. The pack's workflows draft and never send, so that episode isn't this product's free lesson."
+      },
+      "tested": [
+        {
+          "tool": "n8n, self-hosted with Docker",
+          "version": "2.40.7",
+          "checked_on": "2026-10-01",
+          "by": "Recorded in the pack's verify log",
+          "what": "Imported with no errors and exported back identically. The site check ran with five cases (OK, OK with expected text, two DOWN, UNKNOWN). The three webhook workflows answered good input with a draft and sent: false, bad input with a 400 and no row, and a deliberately malicious test lead was escaped."
+        }
+      ],
+      "troubleshooting": [
+        {
+          "kind": "setup",
+          "problem": "\"The requested webhook ... is not registered\" (404)",
+          "example_input": "A call to the Production URL of a workflow that isn't published, or to a Test URL when the canvas isn't listening",
+          "expected_output": "404: the webhook is not registered",
+          "recovery": "For a test, select Execute workflow, then send one call per click. For production, publish the workflow; if you published from the command line, run docker compose restart."
+        },
+        {
+          "kind": "setup",
+          "problem": "\"Error in workflow\" (500) on every call",
+          "example_input": "An edit to the draft text with a quote mark inside it",
+          "expected_output": "500 on every call; n8n underlines the problem in Validate & draft",
+          "recovery": "Write we\\'re, or \"we are\", inside the draft."
+        },
+        {
+          "kind": "setup",
+          "problem": "Nothing appears in the inbox folder",
+          "example_input": "",
+          "expected_output": "",
+          "recovery": "Check in order: the run succeeded in Executions; the compose file still has ./inbox:/inbox and N8N_RESTRICT_FILE_ACCESS_TO=/inbox; the inbox folder exists and your user can write to it (on Linux, sudo chown 1000:1000 inbox)."
+        },
+        {
+          "kind": "setup",
+          "problem": "\"Access to the file ... is not allowed\"",
+          "example_input": "A file path changed in the workflow but not in the compose file",
+          "expected_output": "A permission error on Append to file",
+          "recovery": "The file fence is doing its job. Keep the workflow's /inbox/... path inside N8N_RESTRICT_FILE_ACCESS_TO, and change both together."
+        },
+        {
+          "kind": "setup",
+          "problem": "Every site is UNKNOWN at the same time",
+          "example_input": "A site that can't be reached, such as nonexistent-host.invalid",
+          "expected_output": "UNKNOWN, not reachable - getaddrinfo ENOTFOUND",
+          "recovery": "The machine running n8n couldn't reach anything (no internet, DNS down, laptop asleep), not your sites. Look at the next row before acting."
+        },
+        {
+          "kind": "setup",
+          "problem": "The schedule didn't run overnight",
+          "example_input": "",
+          "expected_output": "",
+          "recovery": "A sleeping laptop runs nothing, and missed runs are skipped, not caught up. For checks around the clock, run n8n on a machine that stays on."
+        },
+        {
+          "kind": "expected",
+          "problem": "A lead or call is refused with a 400",
+          "example_input": "A lead with no phone; a missed call from 555-0102",
+          "expected_output": "[\"phone is required\"]; [\"from must be an E.164 number, e.g. +15551234567\"]; no row written",
+          "recovery": "Correct behaviour. Fix the input or the form's field mapping, never the check."
+        },
+        {
+          "kind": "unsupported",
+          "problem": "Using n8n Cloud instead of self-hosting",
+          "example_input": "",
+          "expected_output": "The workflows import, but the file step isn't reliable on Cloud",
+          "recovery": "Replace the four file nodes with one Google Sheets node that appends a row, using a separate test Google account (Chapter 8)."
+        }
+      ],
+      "review_demo": {
+        "request": "A made-up lead from the contact form: Dana Reyes, dana@example.com, +1 (555) 010-2233, \"Need a quote for a kitchen faucet repair\".",
+        "draft": "Subject: Thanks for getting in touch with [Business name]. Hi Dana, thanks for reaching out to [Business name]. We got your message about \"Need a quote for a kitchen faucet repair\" and will get back to you within one business day.",
+        "review_step": "The workflow answers {\"status\":\"draft\",\"sent\":false,...,\"next\":\"owner approves before anything is sent\"} and adds a row to inbox/Leads.md. No workflow in the pack has a sending step.",
+        "on_approve": "You read the draft, change it if needed, and send it from your own email.",
+        "on_silence": "Nothing is sent. The draft stays in Leads.md.",
+        "limits": "The gate is the missing send step: nothing makes you read the file, and \"within one business day\" is yours to change to what you can keep. Chapter 9 explains adding a send step later, and why last."
+      },
+      "evidence": [
+        {
+          "kind": "page-image",
+          "label": "A page of Chapter 3, Workflow 1, Site health check",
+          "source": "Products/Local Business Automation Pack/images/2-preview-c3.png"
+        },
+        {
+          "kind": "page-image",
+          "label": "A page of Chapter 7, How the workflows protect you",
+          "source": "Products/Local Business Automation Pack/images/3-preview-c7.png"
+        },
+        {
+          "kind": "sample-lesson",
+          "label": "Chapter 4, Lead form to drafted reply",
+          "source": "Products/Local Business Automation Pack/guide/Chapter 4 - Workflow 2, Lead form to drafted reply.md"
+        }
+      ],
+      "testimonials": [],
+      "unverified": [
+        "tested: the verify log marks three items 'check before publishing': a lawyer to read Chapter 5's paragraph on US text-message consent; Docker Desktop's terms for small businesses (not fetched); n8n's 422 for a non-JSON body (carried over, not re-tested).",
+        "tested: n8n's docs listed 2.41.5 as current stable on 1 Oct 2026; the pack pins and was tested on 2.40.7. Re-test before stating a newer version.",
+        "journey: the owner to decide whether the free episode shows the pack's own workflow file or builds a smaller one on screen."
       ]
     },
     {
       "slug": "family-ai-scam-defence-workbook",
       "title": "The Family AI-Scam Defense Workbook",
       "kind": "Printable workbook",
-      "tags": ["home", "senior"],
+      "tags": [
+        "home",
+        "senior"
+      ],
       "cover": "covers/family-ai-scam-defence-workbook.jpg",
-      "cover_alt": "Cover of The Family AI-Scam Defense Workbook: white type on plum with marigold concentric arcs, and three labels: Safe word, Callback rule, By the phone.",
+      "cover_alt": "Cover of The Family AI-Scam Defense Workbook: white type on black with royal-blue concentric arcs, and three labels: Safe word, Callback rule, By the phone.",
       "summary": "A household plan you make in one sitting: a family safe word, a callback rule, a never-paste list, practice drills, and the pages you keep by the phone. A plan before the phone rings.",
-      "intro": "A printable workbook, by Miro. AI tools can now copy a voice, make up a video and write a message with no mistakes in it, so the old clues are not much help. This workbook does not try to teach you to spot fakes. It gives your family a few simple moves that still work when the fake is perfect: stop, hang up, call back on a number you already know. You read it together at the kitchen table, fill in the boxes with a pen, practise twice, and put the cards up.",
+      "intro": "A printable workbook, by the owner. AI tools can now copy a voice, make up a video and write a message with no mistakes in it, so the old clues are not much help. This workbook does not try to teach you to spot fakes. It gives your family a few simple moves that still work when the fake is perfect: stop, hang up, call back on a number you already know. You read it together at the kitchen table, fill in the boxes with a pen, practise twice, and put the cards up.",
       "benefits": [
         "Choose a family safe word the right way, and agree that asking for it is never rude.",
         "Hang up on any call that asks for money, a code or personal details, and call back on a number you wrote down while you were calm.",
@@ -1897,7 +2616,7 @@
       "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
       "refund_note": "The store's standard 14-day terms, as on the other titles.",
       "licence": "One purchase covers one household, including the relatives in that household's plan, so you can print pages for a parent who lives elsewhere. Please don't resell or share the file publicly. The buyer must be an adult.",
-      "licence_note": "Proposed 5 Oct 2026 (a household plan, so per household). Miro to confirm.",
+      "licence_note": "Proposed 5 Oct 2026 (a household plan, so per household). the owner to confirm.",
       "pairs_with": "ai-for-every-age",
       "pairs_reason": "The course teaches the app; the workbook is the household plan around it.",
       "offers": [
@@ -1905,14 +2624,31 @@
           "id": "family-ai-scam-defence-workbook",
           "name": "The Family AI-Scam Defense Workbook",
           "price_usd": 19,
-          "price_note": "Proposed in Products/Roadmap.md (1 Oct 2026): the one comparable workbook launched at CA$19.99; Etsy scam posters and senior guides sell at $1-6. Miro can change it. Live Stripe link plink_1UNJrRAZE7Rk74vYRlEwCe97, made 5 Oct 2026 at his word.",
+          "price_note": "Proposed in Products/Roadmap.md (1 Oct 2026): the one comparable workbook launched at CA$19.99; Etsy scam posters and senior guides sell at $1-6. the owner can change it. Live Stripe link plink_1UNJrRAZE7Rk74vYRlEwCe97, made 5 Oct 2026 at his word.",
           "payment_link": "https://buy.stripe.com/00w9ASfyn97cg3WdtjgnK0f",
-          "stripe_price_id": "price_1UNJqwAZE7Rk74vYgEGY7rHp",
+          "stripe_price_id": "price_EXAMPLE_07",
           "files": [
             {
               "key": "fasdw-pdf",
               "label": "The Family AI-Scam Defense Workbook (PDF, 55 pages, US Letter)",
               "path": "family-ai-scam-defence-workbook/family-ai-scam-defence-workbook.pdf"
+            }
+          ],
+          "inclusions": [
+            {
+              "kind": "guide",
+              "label": "Workbook (PDF)",
+              "detail": "55 pages, US Letter, 11 parts"
+            },
+            {
+              "kind": "worksheet",
+              "label": "Pages to keep",
+              "detail": "7 (A to G), including 4 cut-out cards, inside the PDF"
+            },
+            {
+              "kind": "worksheet",
+              "label": "Drill script cards",
+              "detail": "7 drills and a drill log, inside the PDF"
             }
           ]
         }
@@ -1922,17 +2658,86 @@
         "Products/Family AI-Scam Defense Workbook/Sales page.md",
         "Products/Family AI-Scam Defense Workbook/VERIFY-LOG.md",
         "Products/Family AI-Scam Defense Workbook/workbook/*.md"
+      ],
+      "level": "Beginner, no code",
+      "level_detail": "A printable workbook. Needs a printer and a pen.",
+      "audiences": [],
+      "finish": {
+        "deliverable": "A household callback plan on paper: a safe word chosen out loud, a callback list of numbers you already know, who calls whom if someone can't be reached, two drills practised, and the cards from Part 9 by the phone.",
+        "preview": "Part 3's rule: \"If a call or message asks for money, a code or personal details: stop, hang up, and call back on a number you already know.\" Then four steps, each with what you should see, and a callback list to fill in."
+      },
+      "journey": {
+        "free_lessons": [
+          {
+            "series": "proposal",
+            "slug": "family-callback-rule-practice",
+            "status": "proposed"
+          }
+        ],
+        "exercise": "Run Drill 1 at the kitchen table. The caller starts with \"This is a drill.\" The answerer asks for the family word, says \"I'll call you right back\", hangs up, and says out loud who they would call and where the number is.",
+        "paid_adds": [
+          {
+            "what": "Printable pages",
+            "detail": "7 pages to keep (A to G), including 4 cut-out cards."
+          },
+          {
+            "what": "Practice tasks",
+            "detail": "7 announced family drills with script cards, and a drill log."
+          },
+          {
+            "what": "Full instructions",
+            "detail": "A 55-page workbook in 11 parts."
+          },
+          {
+            "what": "If it happens",
+            "detail": "Part 8: who to contact, in what order, and where to report."
+          },
+          {
+            "what": "Dated sources",
+            "detail": "Official pages read on 5 Oct 2026, listed in Part 10."
+          }
+        ]
+      },
+      "tested": [
+        {
+          "tool": "Print check",
+          "version": "",
+          "checked_on": "2026-10-05",
+          "by": "Recorded in the workbook's verify log",
+          "what": "All 55 pages looked at as grey images for black-and-white printing. The official pages and phone numbers were read that day; the numbers were not dialled."
+        }
+      ],
+      "evidence": [
+        {
+          "kind": "sample-lesson",
+          "label": "Part 3, The callback rule",
+          "source": "Products/Family AI-Scam Defense Workbook/workbook/Part 3 - The callback rule.md"
+        },
+        {
+          "kind": "exercise",
+          "label": "Part 7, Drill 1: The call that sounds like family",
+          "source": "Products/Family AI-Scam Defense Workbook/workbook/Part 7 - Family drills.md"
+        }
+      ],
+      "testimonials": [],
+      "unverified": [
+        "review_demo: not applicable; the workbook teaches no AI tool.",
+        "TO DECIDE (the owner): the verify log asks the owner to read Part 6's \"When memory is a worry\" and \"If something has already happened\" for tone before publishing."
       ]
     },
     {
       "slug": "sell-with-ai",
       "title": "Sell With AI",
       "kind": "Course",
-      "tags": ["business", "start", "money"],
+      "tags": [
+        "business",
+        "start",
+        "money"
+      ],
       "cover": "covers/sell-with-ai.jpg",
-      "cover_alt": "Cover of Sell With AI: white type on dark blue with a faint grid, and the line \"Clips, digital products and an online store\".",
+      "cover_alt": "Cover of Sell With AI: white type on black with a faint grid and a royal-blue glow, and the line \"Clips, digital products and an online store\".",
       "summary": "Three ways one person sells with AI doing the repetitive work: clipping with permission, one digital product, and a small online store. The method, with no income promises.",
-      "intro": "A course by Miro on the three lanes he runs himself, with his own agent, ATLAS, doing the repetitive parts. You learn to cut clips only from footage you're allowed to use, to build and sell one product from something you already know, and to open a one-product store with a supplier you've tested. Each lesson ends with one thing to do. No figure for what you'll earn appears anywhere in it.",
+      "intro": "A course by the owner on the three lanes he runs himself, with his own agent, ATLAS, doing the repetitive parts. You learn to cut clips only from footage you're allowed to use, to build and sell one product from something you already know, and to open a one-product store with a supplier you've tested. Each lesson ends with one thing to do. No figure for what you'll earn appears anywhere in it.",
       "benefits": [
         "Join a clipping campaign that supplies its footage, read its rules as a checklist, and find, cut and caption the moments worth posting.",
         "Turn something you've actually done into one guide, kit or short course, with the model as your editor, and test it as a stranger would.",
@@ -1944,7 +2749,7 @@
       "label": [
         {
           "name": "Format",
-          "value": "Video course: 27 narrated video lessons of 5 to 7 minutes each. Also sold as an ebook with the same text."
+          "value": "Video course: 27 narrated video lessons of 4 to 7 minutes each. Also sold as an ebook with the same text."
         },
         {
           "name": "Ebook",
@@ -2057,7 +2862,7 @@
       "licence": "One purchase covers one household: everyone who lives in the buyer's home may use the guides and printables. Please don't resell or share them publicly. The buyer must be an adult. We never ask for a child's name, age or email.",
       "licence_note": "",
       "pairs_with": "safe-ai-operator",
-      "pairs_reason": "Sell With AI keeps AI to drafting and checking. Build a Safe AI Operator shows how to build the agent that does that safely: a closed list of actions, tiers, and approvals that can't be faked.",
+      "pairs_reason": "Sell With AI keeps AI to drafting and checking. Build a Safe AI Operator shows how to build the agent that does that with controls you can inspect: a closed list of actions, tiers set in code, and approvals that are claimed once and expire if nobody answers.",
       "offers": [
         {
           "id": "sell-with-ai-ebook",
@@ -2065,14 +2870,21 @@
           "cover": "",
           "blurb": "All 27 lessons as one PDF.",
           "price_usd": 19,
-          "price_note": "Proposed 4 Oct 2026 from the Roadmap's market read (ebooks $9-19; a full course text sits at the top of that band). Miro can change it.",
+          "price_note": "Proposed 4 Oct 2026 from the Roadmap's market read (ebooks $9-19; a full course text sits at the top of that band). the owner can change it.",
           "payment_link": "https://buy.stripe.com/eVqaEW2LB2IO5pi9d3gnK0c",
-          "stripe_price_id": "price_1UN1J8AZE7Rk74vYkSMrnylg",
+          "stripe_price_id": "price_EXAMPLE_08",
           "files": [
             {
               "key": "sell-ebook-pdf",
               "label": "Sell With AI (PDF, 89 pages)",
               "path": "sell-with-ai/sell-with-ai.pdf"
+            }
+          ],
+          "inclusions": [
+            {
+              "kind": "guide",
+              "label": "Ebook (PDF)",
+              "detail": "89 pages, US Letter, all 27 lessons"
             }
           ]
         },
@@ -2084,7 +2896,7 @@
           "price_usd": 39,
           "price_note": "Set 4 Oct 2026 (the $30-49 band). Live since the 27 videos landed on the server, 5 Oct 2026.",
           "payment_link": "https://buy.stripe.com/00wdR8gCr0AGdVO88ZgnK0d",
-          "stripe_price_id": "price_1UN1J9AZE7Rk74vYWTgu8L7J",
+          "stripe_price_id": "price_EXAMPLE_09",
           "files": [
             {
               "key": "sell-video-0-1",
@@ -2221,6 +3033,14 @@
               "label": "Lesson 4.4: Your first thirty days (video)",
               "path": "sell-with-ai/videos/lesson-4.4.mp4"
             }
+          ],
+          "inclusions": [
+            {
+              "kind": "video",
+              "label": "Narrated video lessons",
+              "count": 27,
+              "detail": "4 to 7 minutes each"
+            }
           ]
         },
         {
@@ -2231,7 +3051,7 @@
           "price_usd": 49,
           "price_note": "Set 4 Oct 2026. Live since the videos landed, 5 Oct 2026.",
           "payment_link": "https://buy.stripe.com/9B628q71R5V0g3WdtjgnK0e",
-          "stripe_price_id": "price_1UN1JAAZE7Rk74vY3kmR016y",
+          "stripe_price_id": "price_EXAMPLE_10",
           "files": [
             {
               "key": "sell-video-0-1",
@@ -2373,17 +3193,77 @@
               "label": "Sell With AI (PDF, 89 pages)",
               "path": "sell-with-ai/sell-with-ai.pdf"
             }
+          ],
+          "inclusions": [
+            {
+              "kind": "video",
+              "label": "Narrated video lessons",
+              "count": 27,
+              "detail": "4 to 7 minutes each"
+            },
+            {
+              "kind": "guide",
+              "label": "Ebook (PDF)",
+              "detail": "89 pages, US Letter, all 27 lessons"
+            }
           ]
         }
       ],
       "sources": [
         "ATLAS Vault/Products/Sell With AI/ (BRIEF.md, 27 lesson files), 4 Oct 2026"
+      ],
+      "level": "Beginner, no code",
+      "level_detail": "Needs a computer, a Claude account and a payment account.",
+      "audiences": [],
+      "finish": {
+        "deliverable": "One selling lane set up end to end. For a digital product: a page that describes only what's inside, a payment link, and delivery only after the payment provider confirms. For all three lanes: a weekly report where every number has a source and a time, or says unknown.",
+        "preview": "Lesson 3.5's drafting instruction: the model drafts each customer reply from the order record and your policy pages only, leaves a gap where a fact is missing, marks chargebacks, lawyers, injuries and safety problems urgent without drafting a reply, and never promises a refund, a replacement or a date."
+      },
+      "journey": {
+        "free_lessons": [],
+        "exercise": "",
+        "paid_adds": [
+          {
+            "what": "Full instructions",
+            "detail": "27 lessons in 4 modules, each ending with one thing to do."
+          },
+          {
+            "what": "Formats",
+            "detail": "Narrated videos, a PDF, or both."
+          }
+        ]
+      },
+      "review_demo": {
+        "request": "A customer message: where is my order, a question before buying, something's wrong, a return or cancellation, or everything else.",
+        "draft": "The model says which of the five kinds it is and drafts a reply from the order record and your policies, with a gap for any missing fact.",
+        "review_step": "The model writes; you send. Every reply, for at least the first few weeks.",
+        "on_approve": "You send it yourself, and any commitment is yours to make.",
+        "on_silence": "Nothing is sent.",
+        "limits": "Never automated: paying the supplier, refunds and replacements, replies that commit you to anything, and anything touching a dispute, a safety complaint or a legal threat."
+      },
+      "evidence": [
+        {
+          "kind": "sample-lesson",
+          "label": "Lesson 3.5, Customers, replies and what goes wrong",
+          "source": "Products/Sell With AI/Lesson 3.5 - Customers, replies and what goes wrong.md"
+        },
+        {
+          "kind": "exercise",
+          "label": "Lesson 0.3, Your stack, set up in an hour",
+          "source": "Products/Sell With AI/Lesson 0.3 - Your stack, set up in an hour.md"
+        }
+      ],
+      "testimonials": [],
+      "unverified": [
+        "journey: no free lesson maps to Sell With AI yet (the design brief's \"define one service offer\" could, if scoped to it).",
+        "tested: the BRIEF names a VERIFY-LOG.md, but none is in the Sell With AI folder, so no dated check can be stated.",
+        "troubleshooting: none packaged; the lessons have Common mistakes sections that could seed one."
       ]
     }
   ],
   "bundle": {
     "slug": "all-four",
-    "title": "All four",
+    "title": "AI Foundations Bundle - 4 Titles",
     "summary": "Four titles in one checkout: Build a Safe AI Operator, 30 Business Lessons, the Claude + Obsidian Vault Kit, and both editions of AI for Every Age. The Local Business Automation Pack, the Family AI-Scam Defense Workbook and Sell With AI are sold on their own.",
     "includes": [
       "safe-ai-operator",
@@ -2392,9 +3272,75 @@
       "ai-for-every-age-both"
     ],
     "price_usd": 79,
-    "price_note": "Miro, 2026-10-01: $79 (the four titles alone are $87). Live Stripe link plink_1ULlC4AZE7Rk74vY1ALQIYqt.",
+    "price_note": "the owner, 2026-10-01: $79 (the four titles alone are $87). Live Stripe link plink_1ULlC4AZE7Rk74vY1ALQIYqt.",
     "payment_link": "https://buy.stripe.com/7sYdR8cmb4QWcRKdtjgnK09",
-    "stripe_price_id": "price_1ULlC4AZE7Rk74vY6P2VtkMu",
+    "stripe_price_id": "price_EXAMPLE_11",
     "terms_note": "Each title keeps its own refund terms and licence."
-  }
+  },
+  "routes": [
+    {
+      "slug": "learn-together",
+      "title": "Learn together: an older learner and a family member",
+      "products": [
+        "family-ai-scam-defence-workbook",
+        "ai-for-every-age"
+      ],
+      "people": "Two adults: an older learner and a family member, at one table or by phone. Claude is for adults 18 and over, so only adults use the Claude lessons; a teenager can join the workbook's Drill 7, never Claude.",
+      "steps": [
+        {
+          "title": "First sitting: make the plan",
+          "who": "Both, at the kitchen table, with the workbook printed",
+          "do": "Read Parts 1 to 5 together, choose your safe word out loud, write your callback list, run two drills, fill in the \"If it happens\" page and put the cards up. The workbook's own timetable for this sitting adds up to about an hour and a half.",
+          "source": "Products/Family AI-Scam Defense Workbook/workbook/Part 0 - Start here.md"
+        },
+        {
+          "title": "Second sitting: the older learner's own Claude account",
+          "who": "The older learner types; the family member sits beside them",
+          "do": "Safe and Simple AI 60+, Lesson 0.1, then Lesson 3.1: the learner creates a free Claude account on their own phone with their own email. Accounts can't be shared.",
+          "source": "Products/AI for Every Age/seniors/Lesson 3.1 - Create your Claude account.md"
+        },
+        {
+          "title": "Practise the call that sounds like family",
+          "who": "The family member reads the caller's lines; the learner answers",
+          "do": "Safe and Simple AI 60+, Lesson 6.2: six steps with a made-up call. Ask for the family word, say \"I'll call you right back\", hang up, and call back on a number you saved yourself.",
+          "source": "Products/AI for Every Age/seniors/Lesson 6.2 - Voice-clone and family emergency scams.md"
+        },
+        {
+          "title": "If you live far apart: a drill by phone",
+          "who": "Both, on an arranged call",
+          "do": "Agree the day and time first, say \"This is a drill\" at the start and the end, and ring back straight away as yourself to ask how it felt. Drills 1 and 2 work this way.",
+          "source": "Products/Family AI-Scam Defense Workbook/workbook/Part 7 - Family drills.md"
+        },
+        {
+          "title": "Keep it going",
+          "who": "Both",
+          "do": "Write a line in the drill log each time you practise, and do the yearly check on Page G.",
+          "source": "Products/Family AI-Scam Defense Workbook/workbook/Part 9 - Pages to keep by the phone.md"
+        }
+      ],
+      "printables": [
+        "Page A: Callback cards",
+        "Page B: Our family callback list",
+        "Page C: If it happens",
+        "Page D: Two cards for the screen",
+        "Page E: What happened",
+        "Page F: Our family agreement",
+        "Page G: Our yearly check",
+        "Seven drill script cards and the drill log (Part 7)",
+        "Phrases that end a call (Part 3)",
+        "Safe and Simple AI 60+ as a large-print PDF (printing recommended)"
+      ],
+      "boundaries": [
+        "Every drill is announced and starts with \"This is a drill.\" Never test anyone with a call they are not expecting.",
+        "Use the made-up names in the scripts: never your real bank, real amounts or your real safe word.",
+        "The workbook gives your family a plan made ahead of time. It says on its first page that it can't promise to stop every scam.",
+        "US reporting sites and phone numbers, read on 5 Oct 2026."
+      ],
+      "overlap": "Some safety advice appears in both, from the same official sources. If you have the course, the new material in the workbook is Parts 6, 7 and 9 and the fuller reporting steps in Part 8.",
+      "unverified": [
+        "TO DECIDE (the owner): sell the workbook and Safe and Simple AI 60+ together as one offer, and at what price. No combined price exists; the route only names the two titles.",
+        "TO DECIDE (the owner): Safe and Simple AI 60+ Lesson 6.2's 'Try it' sends the reader to the free Family Scam-Safety Kit's callback card, which the store doesn't list. The workbook's Page A is the sold equivalent."
+      ]
+    }
+  ]
 }

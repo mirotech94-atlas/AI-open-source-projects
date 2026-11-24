@@ -208,7 +208,7 @@ async def test_record_outcome_reconciler(db):
 
 # ================================================================== nightshift
 
-NR_PARAMS = {"task": "fix the flaky test", "repo": "https://code.example.org/Miro/ai"}
+NR_PARAMS = {"task": "fix the flaky test", "repo": "https://git.internal.example/the owner/ai"}
 NR_RESULT = ActionResult(True, "running", evidence={
     "job_id": 42, "container": "nightshift-42", "branch": "nightshift/job-42"},
     rollback_token="42")

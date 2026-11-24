@@ -9,7 +9,7 @@ actually be read answers:
      only the public product JSON), so there is no order read path and sales
      are always UNKNOWN here. This is said on every reading rather than
      skipped quietly; Shopify's own analytics (Marketing > UTM campaigns)
-     shows them to Miro.
+     shows them to the owner.
   2. **PostHog pageviews on the store's domain**, when POSTHOG_PERSONAL_KEY is
      set: pageviews whose `utm_campaign` is the experiment id. First it asks
      whether the store has EVER sent PostHog an event -- a store that is not

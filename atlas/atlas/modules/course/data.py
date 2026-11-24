@@ -3,11 +3,11 @@ sections and quotes, and the UTM scheme that lets Shopify attribute a sale to
 the post that sent it.
 
 The products are the closed list in `catalog.py`; each one's words live in
-`products/<key>.json`, copied verbatim from Miro's vault (the server cannot
+`products/<key>.json`, copied verbatim from the owner's vault (the server cannot
 read the vault). The price is deliberately NOT here: it is read live from the
 store every time (`price.py`), never written down.
 
-The UTM scheme (Miro, 2026-09-29): `utm_source=<platform>&utm_medium=organic
+The UTM scheme (the owner, 2026-09-29): `utm_source=<platform>&utm_medium=organic
 &utm_campaign=<experiment id>`. `utm_medium` is always `organic` -- nothing in
 this module can buy reach -- and the campaign is the `marketing_experiments`
 id the post was filed under, so a visit or a sale reads back to exactly one

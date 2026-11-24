@@ -190,6 +190,39 @@ async def _check_draft(draft_id: str, thread_id: str, ev: dict[str, Any],
     return verified(**evidence)
 
 
+async def _check_imap_draft(draft_id: str, thread_id: str, ev: dict[str, Any],
+                            approved_body: str | None) -> Verification:
+    """The draft of an IMAP-read mailbox, read back from its Drafts folder by
+    Message-ID: replying to the approved message, with the recorded To,
+    Subject and body hashes. Read-only (Drafts opened readonly, BODY.PEEK)."""
+    from . import _address, _digest, imap_draft
+    evidence: dict[str, Any] = {"draft_id": draft_id, "thread_id": thread_id}
+    try:
+        found = await imap_draft.read_draft(draft_id)
+    except Exception as exc:                            # noqa: BLE001
+        return unknown(f"could not read draft {draft_id}", classify(exc), **evidence)
+    if found is None:
+        return contradicted(f"draft {draft_id} is not in the Drafts folder", **evidence)
+    got = {"to_sha256": _digest(_address(found["to"])),
+           "subject_sha256": _digest(found["subject"]),
+           "body_sha256": _digest(found["body"])}
+    evidence.update(got)
+    parsed = imap_draft.parse_thread_id(thread_id)
+    if parsed is None or found["in_reply_to"] != parsed[1]:
+        return contradicted("the draft replies to a different message", **evidence)
+    want_body = _digest(approved_body) if approved_body is not None else ev.get(
+        "body_sha256")
+    if not want_body:
+        return unknown("the run recorded no body hash to compare the draft with",
+                       **evidence)
+    if got["body_sha256"] != want_body:
+        return contradicted("the draft carries a different body", **evidence)
+    for key, what in (("to_sha256", "recipient"), ("subject_sha256", "subject")):
+        if ev.get(key) and ev[key] != got[key]:
+            return contradicted(f"the draft carries a different {what}", **evidence)
+    return verified(**evidence)
+
+
 @verifier("mail.draft_reply")
 async def verify_draft_reply(params: dict[str, Any], result: ActionResult
                              ) -> Verification:
@@ -200,9 +233,12 @@ async def verify_draft_reply(params: dict[str, Any], result: ActionResult
     thread_id = str(params.get("thread_id") or "")
     if not thread_id:
         return unknown("no thread id was approved", FailureClass.VALIDATION)
+    body = str(params.get("body") or "")
+    if thread_id.startswith("imap:"):
+        return await _check_imap_draft(draft_id, thread_id, ev,
+                                       body if body.strip() else None)
     if (off := _off()) is not None:
         return off
-    body = str(params.get("body") or "")
     return await _check_draft(draft_id, thread_id, ev, body if body.strip() else None)
 
 

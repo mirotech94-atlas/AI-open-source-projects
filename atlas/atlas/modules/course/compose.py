@@ -5,7 +5,7 @@ lesson's hook and line, the product's title, the live price, the tagged link,
 the age notice and the fixed own-product label. No model writes it, so nothing
 in it can be a claim nobody made. For the AI for Every Age products every hook
 and line is a sentence copied word for word from a lesson file; the Operator's
-come from Miro's outline.
+come from the owner's outline.
 
 A Spanish, Portuguese or Arabic post (the Operator's feed posts only) is the
 same English text translated by the model, and the card says so ("translation
@@ -165,7 +165,7 @@ def word_count(text: str) -> int:
 
 
 def article_refusal(text: str, link: str | None = None) -> str | None:
-    """Why an article draft may not go to Miro, or None: the SEO limits and
+    """Why an article draft may not go to the owner, or None: the SEO limits and
     the internal links to the product. Pure."""
     title, meta, body = article_parts(text)
     if not title:
@@ -211,7 +211,7 @@ def placeholder_refusal(source: str, translated: str) -> str | None:
 
 
 SYSTEM = """
-You translate one short marketing text for Miro's own online course from
+You translate one short marketing text for the owner's own online course from
 English into {language}. Translate faithfully and naturally; do not add, drop
 or strengthen anything.
 
@@ -253,7 +253,7 @@ async def compose(fmt: str, item: dict[str, str], language: str,
                   product: str = OPERATOR, *, age_notice: bool = False
                   ) -> tuple[dict[str, str] | None, str | None]:
     """{"text", "english", "translated"} or (None, reason). `english` is the
-    English post, shown on a translation's card for Miro to compare."""
+    English post, shown on a translation's card for the owner to compare."""
     if fmt not in FORMATS:
         return None, f"unknown format {fmt!r}"
     if language not in honesty.LANGUAGES:

@@ -246,8 +246,7 @@ def served(monkeypatch, tmp_path, memory_backend):
     (root / "vault-kit" / "claude-obsidian-vault-kit.zip").write_bytes(b"PK-kit")
     monkeypatch.setenv(delivery.FILES_ENV, str(root))
     monkeypatch.setenv(delivery.DOWNLOAD_KEY_ENV, "download-key")
-    api._pages.clear()
-    api._files.clear()
+    api._clear_limiters()
 
     class State:
         verdict = stripe_read.judge(_session(), cat)
@@ -328,7 +327,7 @@ def test_a_refund_is_recorded_but_not_posted_as_a_purchase_twice(served):
     assert updates[0][1] == "refunded"
 
 
-def test_an_unknown_price_is_posted_so_miro_can_fix_the_catalog(served):
+def test_an_unknown_price_is_posted_so_owner_can_fix_the_catalog(served):
     served.verdict = stripe_read.judge(_session(price="price_NOTOURS999"), served.cat)
     r = _access(served)
     assert r.status_code == 409
@@ -359,7 +358,7 @@ def test_a_file_not_on_the_server_says_so_instead_of_a_link(served):
 
 
 def test_the_access_page_is_rate_limited(served):
-    for _ in range(12):
+    for _ in range(api._SESSION_PAGES_LIMIT):
         _access(served)
     assert _access(served).status_code == 429
 
@@ -376,6 +375,39 @@ def test_a_signed_link_downloads_the_file(served):
     assert r.status_code == 200 and r.content == b"PK-kit"
     assert "attachment" in r.headers["content-disposition"]
     assert "claude-obsidian-vault-kit.zip" in r.headers["content-disposition"]
+
+
+def test_a_bought_pdf_shows_on_the_page_with_print_and_download(served):
+    import os
+    from pathlib import Path
+    root = Path(os.environ[delivery.FILES_ENV])
+    pdfs = [f for f in served.cat.bundle.offer.files if f.path.lower().endswith(".pdf")]
+    assert pdfs
+    for f in pdfs:
+        (root / f.path).parent.mkdir(parents=True, exist_ok=True)
+        (root / f.path).write_bytes(b"%PDF-1.4 test")
+    served.verdict = stripe_read.judge(_session(price=PRICE_BUNDLE), served.cat)
+    page = _access(served).text
+    assert 'class="pdf"' in page and "?view=1" in page
+    assert "Open full screen and print" in page and "Download PDF" in page
+    import re
+    url = re.search(r'src="[^"]*?(/public/academy/file/[^"]+?)\?view=1', page)
+    assert url
+    view = served.client.get(url.group(1) + "?view=1")
+    assert view.status_code == 200 and "inline" in view.headers["content-disposition"]
+    plain = served.client.get(url.group(1))
+    assert "attachment" in plain.headers["content-disposition"]
+
+
+def test_a_paid_purchase_post_says_whether_the_invoice_was_made(served):
+    _access(served)
+    [msg] = served.slack
+    assert "NO INVOICE" in msg.body
+    served.verdict = stripe_read.Verdict(**{**served.verdict.__dict__, "invoice": "in_123456789012345"})
+    served.db.responses["INSERT INTO academy_purchases"] = {"session_id": SID}
+    served.slack.clear()
+    _access(served)
+    assert "Invoice in_123456789" in served.slack[0].body
 
 
 def test_an_expired_link_says_so(served):
@@ -493,7 +525,9 @@ def test_a_video_lesson_plays_on_the_page_and_still_downloads(served, monkeypatc
         (root / f.path).write_bytes(b"x")
     r = _access(served)
     assert r.status_code == 200
-    players = re.findall(r'<video controls preload="metadata" src="([^"]+)"></video>', r.text)
-    assert len(players) == 28
-    assert all("/public/academy/file/v1.operator-video-" in p for p in players)
-    assert r.text.count("<video") == 28           # the PDF and the zip get no player
+    lessons = re.findall(r'<a class="lesson" href="([^"]+)" data-dl="([^"]+)"', r.text)
+    assert len(lessons) == 28
+    assert all("/public/academy/file/v1.operator-video-" in view for view, _dl in lessons)
+    assert all(view == dl + "?view=1" for view, dl in lessons)
+    assert r.text.count("<video") == 1             # one player; the PDF and zip get none
+    assert "default-src 'none'" in r.headers["content-security-policy"]

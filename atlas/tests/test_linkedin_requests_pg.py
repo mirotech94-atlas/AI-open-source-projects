@@ -39,6 +39,11 @@ async def _clean() -> None:
 @pytest.fixture
 async def pg(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", DSN)
+    # The Guardian page is retired by default (the owner, 2026-10-29): its rows stay but
+    # nothing reads them. These tests exercise the request store for that page, so
+    # they switch it on for the test only.
+    from atlas.modules import linkedin
+    monkeypatch.setitem(linkedin.PAGES, "guardian", linkedin.KNOWN_PAGES["guardian"])
     await _close_pool()
     previous = state.set_backend(state.PostgresBackend())
     from atlas import cli
@@ -90,6 +95,40 @@ async def test_an_item_is_recorded_once_and_reopens_only_on_new_words(pg):
     assert gone["status"] == "suppressed"
 
 
+async def test_a_locked_request_is_held_from_insert_and_alerted_once(pg):
+    """Locked: written held with the note in one statement (no driver can
+    claim it in between), held while locked whatever its words, the prior
+    state reported so the alert fires once; reopened only when unlocked."""
+    locked = lr.Item(page="guardian", source="service_request",
+                     surface="guardian-requests", external_key=f"{TEST_KEY}9/",
+                     requester="Ralph Listy", words="Location: Worcester",
+                     service_raw="Computer Networking", url=lr.GUARDIAN_REQUESTS_URL,
+                     locked=True, age="2d ago")
+    first = await lr.upsert_seen(locked, "computer_networking", "keyword", "", "")
+    assert first["inserted"] is True and first["status"] == "held"
+    assert first["note"].startswith(lr.LOCKED_NOTE) and first["prior_status"] is None
+    assert lr.newly_locked(locked, first)
+    rid = int(first["id"])
+    assert await lr.claim(rid) is False, "a locked request is never claimed"
+    assert rid not in {int(r["id"]) for r in await lr.awaiting_reply(50)}
+
+    locked.words, locked.age = "Location: Worcester\nMore words", "3d ago"
+    again = await lr.upsert_seen(locked, "other", "none", "", "")
+    assert again["status"] == "held", "new words do not reopen a locked request"
+    assert "3d ago" in again["note"]
+    assert not lr.newly_locked(locked, again), "alerted once"
+
+    locked.locked = False
+    opened = await lr.upsert_seen(locked, "other", "none", "", "")
+    assert opened["status"] == "new" and opened["note"] == ""
+    assert not lr.newly_locked(locked, opened)
+
+    await lr.set_status(rid, "suppressed", "rolled back")
+    locked.locked = True
+    gone = await lr.upsert_seen(locked, "other", "none", "", "")
+    assert gone["status"] == "suppressed"
+
+
 async def test_the_claim_is_atomic_and_the_page_can_close_a_thread(pg):
     rid = int((await lr.upsert_seen(item(2, "Can you set up our wifi?"),
                                     "computer_networking", "keyword", "", ""))["id"])
@@ -99,7 +138,7 @@ async def test_the_claim_is_atomic_and_the_page_can_close_a_thread(pg):
     assert await lr.claim(rid) is True
     assert rid in {int(r["id"]) for r in await lr.awaiting_reply(50)}
 
-    ours = item(2, "You: Yes. Miro will follow up here.")
+    ours = item(2, "You: Yes. the owner will follow up here.")
     await lr.mark_answered_on_page(ours)
     row = await lr.get_request(rid)
     assert row["status"] == "replied" and row["replied_sha"] == ours.inbound_sha

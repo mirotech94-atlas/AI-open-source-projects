@@ -125,7 +125,8 @@ def first_sentence(text: str | None, limit: int = EXCERPT_CHARS) -> str:
     """The first sentence of an outcome, redacted, one line, trimmed."""
     if not text:
         return ""
-    flat = " ".join(_MARKDOWN.sub("", redact(text)).split())
+    flat = " ".join(_MARKDOWN.sub(
+        "", agents_module.strip_untrusted(redact(text))).split())
     first = _SENTENCE_END.split(flat, maxsplit=1)[0].strip()
     if len(first) > limit:
         first = first[: limit - 1].rstrip() + "…"
@@ -403,7 +404,7 @@ def make_turn(name: str, agent: Any, data: Mapping[str, Mapping[str, Any]],
         "persona": as_dict(persona),
         "voice": persona.voice,
         "ready": ready,
-        # Its work is Miro's own data: kept off a model and out of Slack.
+        # Its work is the owner's own data: kept off a model and out of Slack.
         "private": getattr(getattr(agent, "need", None), "value", None) == "private",
         "status": status,
         "did": {"runs_24h": runs, "shifts_24h": shifts, "self_tests_24h": self_tests,
@@ -639,8 +640,7 @@ async def build(*, polish: bool = False, now: datetime | None = None) -> dict[st
     now = (now or datetime.now(UTC)).astimezone()
     read_at = datetime.now(UTC).isoformat()
     theme = theme_for(now.date())
-    # The roster's own order: concierge first, the role agents, then one
-    # agent per business -- the order `build_roster()` seats them in.
+    # The roster's own order -- the order `build_roster()` seats the eight in.
     turns = [make_turn(name, agent, data, now, read_at, theme)
              for name, agent in agents_module.ROSTER.items()]
     try:
@@ -814,7 +814,7 @@ BLOCKED_REASONS = 3
 
 
 def private_agents(meeting: Mapping[str, Any]) -> set[str]:
-    """The agents whose work is Miro's own data (`Need.PRIVATE`: inbox,
+    """The agents whose work is the owner's own data (`Need.PRIVATE`: inbox,
     school): flagged on their turn when it was built, and read from the
     roster too, so a meeting built before the flag existed is covered."""
     from .llm import Need

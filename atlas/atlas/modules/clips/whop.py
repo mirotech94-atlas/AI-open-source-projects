@@ -1,14 +1,14 @@
 """Whop: which posted clips wait to be claimed, the record that one was, and
 the counts the lane can honestly report.
 
-Miro, 2026-09-29, in writing: submitting a posted clip to its campaign on
+the owner, 2026-09-29, in writing: submitting a posted clip to its campaign on
 Whop is done by an agent on his Mac, in his own Chrome -- never by ATLAS,
 which has no verified way into his payout account and never tries one.
 ATLAS gives that agent two things, both mesh-only and behind the
 `HANDOFF_TOKEN` bearer (`atlas/api/clips.py`):
 
   * `pending()` -- every posted clip it may submit. A clip is listed only
-    when its post URL came from Miro's own word (`clips.record_link`) or
+    when its post URL came from the owner's own word (`clips.record_link`) or
     from the platform's own publish response (`post_url_source`, set by
     each writer in `posting.py`) -- never a URL a model wrote -- and only
     for a campaign with a usable `permission_source` AND a `whop_url` on
@@ -19,7 +19,7 @@ ATLAS gives that agent two things, both mesh-only and behind the
     recorded as submitted is never recorded again: the identical repeat by
     the agent returns ok with `already` and changes nothing (no rollback
     token, so undoing the repeat cannot undo the first); anything else --
-    Miro's card having recorded it first included -- is refused as a second
+    the owner's card having recorded it first included -- is refused as a second
     submission. Its rollback puts the clip back to posted in ATLAS's own
     records, and only a record the agent made.
 
@@ -49,7 +49,7 @@ from . import campaigns
 FALLBACK_AFTER = timedelta(hours=48)
 SUBMITTED_BY = "mac-agent"
 # Where a post URL may have come from for the agent to claim it: the
-# platform's own publish response, or Miro's word through clips.record_link.
+# platform's own publish response, or the owner's word through clips.record_link.
 TRUSTED_SOURCES = ("instagram", "youtube", "tiktok", "record_link")
 
 
@@ -117,14 +117,14 @@ async def _check(clip_id: int, post_url: str
         if row.get("submitted_by") == SUBMITTED_BY:
             return row, True, None
         return None, False, (f"clip {cid} was already recorded as submitted "
-                             f"({row.get('submitted_by') or 'by Miro'}, "
+                             f"({row.get('submitted_by') or 'by the owner'}, "
                              f"{row.get('submitted_at')}); a second submission "
                              f"is refused")
     if row["status"] != "posted":
         return None, False, f"clip {cid} is {row['status']}, not posted"
     if str(row.get("post_url_source") or "") not in TRUSTED_SOURCES:
         return None, False, (f"clip {cid}'s post URL did not come from the "
-                             f"platform or from Miro; it is not offered for Whop")
+                             f"platform or from the owner; it is not offered for Whop")
     campaign = await campaigns.load(str(row["campaign"]))
     why = _eligible(campaign)
     if why is not None:
@@ -190,7 +190,7 @@ async def record_submission_rollback(token: str) -> ActionResult:
 def offered(campaign: campaigns.Campaign | None, row: dict[str, Any]) -> bool:
     """Whether `pending()` would list this posted clip to the agent: a URL
     from a trusted source, of a campaign with permission and a whop_url.
-    Pure -- the same rule, so Miro's card waits only for what the agent
+    Pure -- the same rule, so the owner's card waits only for what the agent
     will actually see."""
     return (bool(row.get("post_url"))
             and str(row.get("post_url_source") or "") in TRUSTED_SOURCES
@@ -199,7 +199,7 @@ def offered(campaign: campaigns.Campaign | None, row: dict[str, Any]) -> bool:
 
 def card_due(campaign: campaigns.Campaign | None, row: dict[str, Any],
              now: datetime | None = None) -> bool:
-    """Whether Miro's clips.submit_to_whop card is due for a posted clip:
+    """Whether the owner's clips.submit_to_whop card is due for a posted clip:
     at once when the agent will never see it, else `FALLBACK_AFTER` after
     it posted."""
     if not offered(campaign, row):
@@ -208,7 +208,7 @@ def card_due(campaign: campaigns.Campaign | None, row: dict[str, Any],
 
 
 def fallback_due(posted_at: datetime | None, now: datetime | None = None) -> bool:
-    """Whether a posted, unsubmitted clip is old enough for Miro's card. A
+    """Whether a posted, unsubmitted clip is old enough for the owner's card. A
     clip with no posting time is due: nothing says the agent has it."""
     if posted_at is None:
         return True
@@ -278,11 +278,11 @@ async def check_posted() -> Observation:
 # Irubyana's campaign on Whop (verified 2026-10-01): "submit a draft for
 # review; drafts need brand approval before you post; once approved, post
 # and submit the live link". A clip of a campaign with
-# `approval_before_post` is cut as `draft_pending`; the agent on Miro's Mac
+# `approval_before_post` is cut as `draft_pending`; the agent on the owner's Mac
 # reads `drafts()` -- the file behind a signed, temporary `/media/clip.<token>`
 # link (the same link a post would use), its size against the campaign's
-# `max_file_mb` (Whop's form refuses more) -- uploads it in Miro's own Chrome
-# to the connected account (TikTok @atlasclips12) and records that through
+# `max_file_mb` (Whop's form refuses more) -- uploads it in the owner's own Chrome
+# to the connected account (TikTok @example_handle) and records that through
 # `clips.record_draft_submitted` (`draft_submitted`); the brand's answer comes
 # back through `clips.record_draft_decision`: approved -> `draft_approved`,
 # which the automatic legs post like any `made` clip; rejected -> `withdrawn`
@@ -295,7 +295,7 @@ DRAFT_LINK_TTL = timedelta(days=7)
 DRAFT_LINK_SLACK = timedelta(hours=1)
 MB = 1024 * 1024
 TOKEN_PREFIX = "clip."
-# The accounts Miro connected on Whop (read there 2026-10-01): a draft is
+# The accounts the owner connected on Whop (read there 2026-10-01): a draft is
 # submitted from one of these. YouTube is not among them, so a YouTube leg
 # of a campaign that wants drafts is never cut (`cut._plan` says why) and
 # an older one holds (`posting.approval_refusal`); nothing lists it here.

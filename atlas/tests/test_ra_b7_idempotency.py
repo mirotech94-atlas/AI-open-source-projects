@@ -195,6 +195,10 @@ class FakeStripe:
 
 @pytest.fixture
 def stripe(monkeypatch):
+    # Stripe watches no business since 2026-10-29; the retry path is
+    # business-generic, so the test declares a stand-in one.
+    monkeypatch.setattr(stripe_billing, "BUSINESSES", ("flycheap",))
+    monkeypatch.setitem(stripe_billing.ENV_FOR, "flycheap", "STRIPE_FLYCHEAP_KEY")
     monkeypatch.setenv(stripe_billing.ENV_FOR["flycheap"], "sk_test_x")
     fake = FakeStripe()
     _mock(monkeypatch, stripe_billing, fake.handler)
@@ -226,7 +230,7 @@ async def test_without_a_named_run_the_key_is_still_stable(stripe):
     assert stripe_billing.retry_key("in_1", "a") != stripe_billing.retry_key("in_2", "a")
 
 
-# Miro, 2026-09-28: "it should always charge the customer and give them a
+# the owner, 2026-09-28: "it should always charge the customer and give them a
 # receipt".
 
 async def test_a_paid_retry_emails_the_customer_a_receipt_once(stripe):
@@ -522,10 +526,10 @@ def homeserver(monkeypatch):
 async def test_matrix_reply_retried_twice_posts_once(claims, homeserver):
     _, puts = homeserver
     with idempotency.running("proposal:30"):
-        first = await mx.send_reply("!a:example.org", "on my way",
-                                    room_name="Project Falcon", to="@sam:example.org")
-        again = await mx.send_reply("!a:example.org", "on my way",
-                                    room_name="Project Falcon", to="@sam:example.org")
+        first = await mx.send_reply("!a:internal.example", "on my way",
+                                    room_name="Project Falcon", to="@sam:internal.example")
+        again = await mx.send_reply("!a:internal.example", "on my way",
+                                    room_name="Project Falcon", to="@sam:internal.example")
     assert first.ok and again.ok, (first, again)
     assert len(puts) == 1
     assert "already sent" in again.detail
@@ -538,12 +542,12 @@ async def test_the_matrix_txn_comes_from_the_run_not_the_clock(memory_backend,
     _, puts = homeserver
     for _ in range(2):
         with idempotency.running("proposal:30"):
-            assert (await mx.send_reply("!a:example.org", "on my way",
+            assert (await mx.send_reply("!a:internal.example", "on my way",
                                         room_name="Project Falcon",
-                                        to="@sam:example.org")).ok
+                                        to="@sam:internal.example")).ok
     with idempotency.running("proposal:31"):
-        await mx.send_reply("!a:example.org", "on my way", room_name="Project Falcon",
-                            to="@sam:example.org")
+        await mx.send_reply("!a:internal.example", "on my way", room_name="Project Falcon",
+                            to="@sam:internal.example")
     assert puts[0] == puts[1] != puts[2]
     assert puts[0].startswith("atlas-") and puts[0][6:].isalnum()
 
@@ -552,8 +556,8 @@ async def test_the_matrix_txn_comes_from_the_run_not_the_clock(memory_backend,
 async def test_a_reply_with_no_recipient_is_refused(homeserver, to):
     """RA-C5: it used to default to `@unknown` on the internal homeserver."""
     _, puts = homeserver
-    sent = await mx.send_reply("!a:example.org", "hi", room_name="Project Falcon", to=to)
-    dry = await mx.send_dry("!a:example.org", "hi", room_name="Project Falcon", to=to)
+    sent = await mx.send_reply("!a:internal.example", "hi", room_name="Project Falcon", to=to)
+    dry = await mx.send_dry("!a:internal.example", "hi", room_name="Project Falcon", to=to)
     assert not sent.ok and "recipient" in sent.detail
     assert not dry.ok and "recipient" in dry.detail
     assert puts == []
@@ -564,15 +568,15 @@ async def test_a_blank_room_name_is_read_from_the_homeserver(memory_backend,
     """RA-C5: a card with no room name reaching an attendance room."""
     state_, puts = homeserver
     state_["name"] = "Devs-Attendance"
-    sent = await mx.send_reply("!opaque:example.org", "done", room_name="",
-                               to="@sam:example.org")
-    dry = await mx.send_dry("!opaque:example.org", "done", room_name="",
-                            to="@sam:example.org")
+    sent = await mx.send_reply("!opaque:internal.example", "done", room_name="",
+                               to="@sam:internal.example")
+    dry = await mx.send_dry("!opaque:internal.example", "done", room_name="",
+                            to="@sam:internal.example")
     assert not sent.ok and "attendance bot" in sent.detail
     assert not dry.ok and "attendance bot" in dry.detail
     # A card whose name disagrees with the room's is judged on the room's.
-    lied = await mx.send_reply("!opaque:example.org", "done", room_name="Project Falcon",
-                               to="@sam:example.org")
+    lied = await mx.send_reply("!opaque:internal.example", "done", room_name="Project Falcon",
+                               to="@sam:internal.example")
     assert not lied.ok and puts == []
 
 
@@ -580,14 +584,14 @@ async def test_an_unnamed_dm_still_posts(memory_backend, homeserver):
     """Most DMs have no m.room.name: 404 is 'unnamed', matched by id alone."""
     state_, puts = homeserver
     state_["name_status"] = 404
-    result = await mx.send_reply("!dm:example.org", "yes", to="@sam:example.org")
+    result = await mx.send_reply("!dm:internal.example", "yes", to="@sam:internal.example")
     assert result.ok and len(puts) == 1
 
 
 async def test_an_unreadable_room_name_refuses(memory_backend, homeserver):
     state_, puts = homeserver
     state_["name_status"] = 500
-    result = await mx.send_reply("!a:example.org", "yes", to="@sam:example.org")
+    result = await mx.send_reply("!a:internal.example", "yes", to="@sam:internal.example")
     assert not result.ok and "could not be read" in result.detail
     assert puts == []
 
@@ -607,10 +611,10 @@ async def test_a_2xx_with_an_unreadable_body_counts_as_sent(claims, monkeypatch)
     import atlas.modules._http as http_mod
     _mock(monkeypatch, http_mod, handler)
     with idempotency.running("proposal:40"):
-        first = await mx.send_reply("!a:example.org", "hi", room_name="Project Falcon",
-                                    to="@sam:example.org")
-        again = await mx.send_reply("!a:example.org", "hi", room_name="Project Falcon",
-                                    to="@sam:example.org")
+        first = await mx.send_reply("!a:internal.example", "hi", room_name="Project Falcon",
+                                    to="@sam:internal.example")
+        again = await mx.send_reply("!a:internal.example", "hi", room_name="Project Falcon",
+                                    to="@sam:internal.example")
     assert first.ok and first.rollback_token is None
     assert again.ok and "already sent" in again.detail
     assert len(puts) == 1

@@ -9,7 +9,7 @@ never a guess that it would have worked.
 
 The argv builders are pure so their shape can be tested without ffmpeg:
 
-  * `stills_argv` -- the local backend, the pipeline Miro proved by hand on
+  * `stills_argv` -- the local backend, the pipeline the owner proved by hand on
     production: each still fed as a SINGLE input frame (no `-loop 1 -t`,
     because zoompan's `d=N` multiplies per input frame and a looped scene 1
     eats the whole clip), `zoompan` per scene, the scenes concatenated,
@@ -26,7 +26,7 @@ import re
 import shutil
 from dataclasses import dataclass
 
-# 60 fps delivery (Miro, 2026-09-27: "do 60fps"): the Graph API's ceiling
+# 60 fps delivery (the owner, 2026-09-27: "do 60fps"): the Graph API's ceiling
 # for a Reel. Veo renders 24, so a Veo reel is motion-interpolated up to it
 # first (`smooth_argv`); the stills path renders at 60 directly.
 FPS = 60
@@ -293,7 +293,7 @@ UHD_W, UHD_H = 2160, 3840
 
 
 def export_4k() -> bool:
-    """`REELS_EXPORT_4K` (on unless set to 0/false/no, Miro 2026-09-27: "make
+    """`REELS_EXPORT_4K` (on unless set to 0/false/no, the owner 2026-09-27: "make
     each reel 4K"): beside the 1080x1920 delivery file, write a 2160x3840
     ARCHIVE MASTER (lanczos + a light unsharp). It is an UPSCALE of Veo's
     native frames, and the card says so -- "4K master upscaled from 1080p",
@@ -463,7 +463,7 @@ async def mean_volume(path: str) -> float:
     return float("-inf") if found.group(1) == "-inf" else float(found.group(1))
 
 
-# Motion (RA-E5, plan D09; Miro's rule: real motion video only, never stills
+# Motion (RA-E5, plan D09; the owner's rule: real motion video only, never stills
 # or slides). `freezedetect` reports each stretch whose frames stay within
 # FREEZE_NOISE_DB of the stretch's first frame for at least FREEZE_MIN_S.
 # The frames are resampled to MOTION_FPS first, so a 24 fps Veo clip and

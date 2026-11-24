@@ -161,7 +161,7 @@ async def test_an_action_that_raises_writes_no_token_to_the_audit_chain(
         registry, monkeypatch):
     _raising_action(monkeypatch, dry_raises=False)
     result = await execute(ExecutionRequest("probe.leak", {}, "why",
-                                            approved_by="miro"))
+                                            approved_by="owner"))
     assert result.ok is False
     rows = registry.audit_rows
     assert any(r.event == "execute.error" for r in rows)
@@ -252,7 +252,7 @@ def test_insight_value_never_invents_a_zero():
 
 
 async def test_a_missing_follower_count_is_no_count(monkeypatch):
-    graph(monkeypatch, {"id": "1", "username": "miro"}, status=200)
+    graph(monkeypatch, {"id": "1", "username": "owner"}, status=200)
     obs = await instagram.check_token("main")
     assert obs.health == "ok", "the token works; that is what it measures"
     assert obs.value is None and "follower count not read" in obs.detail

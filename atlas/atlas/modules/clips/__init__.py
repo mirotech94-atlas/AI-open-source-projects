@@ -1,10 +1,10 @@
 """clips -- official brand clipping campaigns, cut from their own footage.
 
-Miro joined Clipping Culture on Whop (Content Rewards): brands pay per
+the owner joined Clipping Culture on Whop (Content Rewards): brands pay per
 1,000 views for short clips made ONLY from their official footage, under
 strict rules. This is that lane, beside reels and separate from it. Plan:
 "ATLAS Vault/Plans/Clipping lane.md". Posting accounts: Instagram
-@atlas.clipsdrop, TikTok @atlasclips12 (through Postiz) and the YouTube
+@example_handle, TikTok @example_handle (through Postiz) and the YouTube
 `clips` channel (Shorts).
 Content rule: gaming, trends, business and streamer clips only; no dating,
 nothing edgy -- `campaigns.refusal`. Permission rule: a campaign names who
@@ -21,7 +21,7 @@ The flow, and the tier of each step:
      activation passes the content rule, names a permission source and
      needs reviewed rules. Each campaign carries its format `preset`
      (blur | crop | split) and `max_accounts` per platform.
-  2. **Footage**: Miro (or a Mac-side step) downloads the official folder
+  2. **Footage**: the owner (or a Mac-side step) downloads the official folder
      into `data/clips/<slug>/source/`; ATLAS never scrapes frame.io,
      MediaSilo, WeTransfer or Drive. `clips.register_sources` (Tier 1)
      records each file's sha256 against the campaign.
@@ -31,20 +31,20 @@ The flow, and the tier of each step:
      for a campaign whose rules require them (`brand_assets`: Irubyana's
      "include brand logo", "twitch banner"), its own logo.png (bottom-right)
      and banner.png (a top strip) from `data/clips/<slug>/brand/`, placed
-     by Miro and never fetched; without them nothing is cut and the intake
+     by the owner and never fetched; without them nothing is cut and the intake
      raises a card saying which file to put where -- into
      `data/clips/<slug>/out/` -- one row per platform the lane posts to and
      the campaign pays for -- or, when its rules forbid the same video on
      several accounts (both live ones), ONE row, for the platform paying
      the most. Rollback moves its own files to `.trash/`, never deletes.
-  4. **Post** -- on its own (Miro, 2026-09-30: "the same way the AI reels
+  4. **Post** -- on its own (the owner, 2026-09-30: "the same way the AI reels
      lane does it", no card per post). `clips.publish_clip` (Tier 1) posts
      through the existing `instagram.publish` to the `clips` account
-     (@atlas.clipsdrop, content kind `campaign_clip`, the #Ad rule); a
+     (@example_handle, content kind `campaign_clip`, the #Ad rule); a
      TikTok row through `clips.publish_clip_tiktok` (Tier 1): Postiz, the
-     reels lane's path, to @atlasclips12 only; a YouTube row of a campaign
+     reels lane's path, to @example_handle only; a YouTube row of a campaign
      that pays on YouTube through `clips.publish_clip_youtube_postiz`
-     (Tier 1): Postiz, to the clips channel AtlasClips (@miroatlas) that
+     (Tier 1): Postiz, to the clips channel AtlasClips (@example_handle) that
      `POSTIZ_YOUTUBE_CLIPS_INTEGRATION` names, as a Short (9:16, at most
      60 s). Each is gated in code (`posting.py`, "automatic"): the campaign
      active with its permission named and reviewed rules, the caption in
@@ -64,7 +64,7 @@ The flow, and the tier of each step:
      it (both live ones do) stays on one platform per clip, the
      highest-paying, ties taken in turn. While an account is not
      configured the card is `clips.hand_off` instead: the file and exact
-     caption, for Miro to post by hand, his URL coming back through
+     caption, for the owner to post by hand, his URL coming back through
      `clips.record_link` (his word only). A YouTube row may still post
      through `clips.publish_clip_youtube` (Tier 2, one card per clip): the
      youtube module's Data API upload to its `clips` channel, then public
@@ -72,7 +72,7 @@ The flow, and the tier of each step:
   4b. **Draft** (Irubyana, 2026-10-01: "submit a draft for review; drafts
      need brand approval before you post"): a clip of a campaign with
      `approval_before_post` is cut as `draft_pending`, not `made`. The
-     agent on Miro's Mac reads it in `GET /clips/whop/pending` (`drafts`:
+     agent on the owner's Mac reads it in `GET /clips/whop/pending` (`drafts`:
      a signed, temporary download link and the file's size against the
      campaign's `max_file_mb` -- the cut's encode is sized under it, and a
      file over it is never offered), uploads it on Whop and records that
@@ -82,12 +82,12 @@ The flow, and the tier of each step:
      -> `draft_approved`, which step 4 posts like any waiting clip;
      rejected -> `withdrawn`, the note said in the clips channel. Nothing
      of such a campaign posts before `draft_approved`.
-  5. **Claim**: the agent on Miro's Mac submits each post on Whop in his own
-     Chrome (Miro, 2026-09-29) -- ATLAS never submits there itself --
+  5. **Claim**: the agent on the owner's Mac submits each post on Whop in his own
+     Chrome (the owner, 2026-09-29) -- ATLAS never submits there itself --
      reading `GET /clips/whop/pending` and recording each through
      `POST /clips/whop/{id}/submitted` (`clips.record_whop_submission`,
      Tier 1, `whop.py`). Only a post URL from the platform's own response or
-     Miro's `clips.record_link`, for a campaign with a permission source and
+     the owner's `clips.record_link`, for a campaign with a permission source and
      a `whop_url`, is offered. A clip it is offered gets the Tier 2
      `clips.submit_to_whop` card only as the fallback, 48 h after it posted
      unsubmitted; any other posted clip gets that card at once.
@@ -99,7 +99,7 @@ through the executor, within `CLIPS_DAILY_CAP` clips a day; and one
 waiting clip per platform is posted through the executor (the three Tier
 1 legs above) or held as a card with the reason. Every automatic post is
 a receipt in the clips channel. The hand-off and Whop cards follow from
-the signals pass on their own: Miro only drops footage and answers cards.
+the signals pass on their own: the owner only drops footage and answers cards.
 
 **Links** (`links.py`, every `CLIPS_LINKS_MIN` minutes): a clip Postiz
 posted without its URL gets it -- source the platform's, so step 5 offers
@@ -146,7 +146,7 @@ class ClipsModule:
             return
         for slug in resumed:
             log.warning("clip campaign %s was paused; resumed (never paused: "
-                        "Miro, 2026-10-01 and 2026-10-05)", slug)
+                        "the owner, 2026-10-01 and 2026-10-05)", slug)
 
     async def teardown(self) -> None: ...
 
@@ -171,8 +171,8 @@ class ClipsModule:
         return (
             Action(
                 name="clips.register_sources",
-                tier=Tier.AUTO,     # hashes files Miro placed; writes rows only
-                summary="Register the official footage Miro placed in a clip "
+                tier=Tier.AUTO,     # hashes files the owner placed; writes rows only
+                summary="Register the official footage the owner placed in a clip "
                         "campaign's source folder (sha256 per file)",
                 run=sources.register_sources, dry_run=sources.register_sources_dry,
                 rollback=sources.register_sources_rollback,
@@ -209,14 +209,14 @@ class ClipsModule:
             ),
             Action(
                 name="clips.record_budget",
-                tier=Tier.AUTO,     # one number on one row, as Miro said it
-                summary="Record the budget left on a clip campaign, as Miro "
+                tier=Tier.AUTO,     # one number on one row, as the owner said it
+                summary="Record the budget left on a clip campaign, as the owner "
                         "read it on Whop",
                 run=campaigns.record_budget, dry_run=campaigns.record_budget_dry,
                 rollback=campaigns.record_budget_rollback,
                 params={"campaign": "campaign slug",
-                        "usd": "budget left in US dollars, as Miro read it"},
-                # A number ATLAS reports must be one Miro gave, never one a
+                        "usd": "budget left in US dollars, as the owner read it"},
+                # A number ATLAS reports must be one the owner gave, never one a
                 # model read somewhere (invariant 6).
                 principal_only=True,
                 max_per_hour=10,
@@ -224,9 +224,9 @@ class ClipsModule:
             Action(
                 name="clips.hand_off",
                 tier=Tier.ASK,
-                summary="Clips ready to post by hand on @atlas.clipsdrop, "
-                        "@atlasclips12 or the clips YouTube channel: files and "
-                        "captions for Miro",
+                summary="Clips ready to post by hand on @example_handle, "
+                        "@example_handle or the clips YouTube channel: files and "
+                        "captions for the owner",
                 run=posting.hand_off, dry_run=posting.hand_off_dry,
                 rollback=posting.hand_off_rollback,
                 params={"campaign": "campaign slug",
@@ -236,13 +236,13 @@ class ClipsModule:
             ),
             Action(
                 name="clips.publish_clip",
-                tier=Tier.AUTO,     # Miro, 2026-09-30: clips post themselves.
+                tier=Tier.AUTO,     # the owner, 2026-09-30: clips post themselves.
                                     # Only past posting._publish_check (the
                                     # campaign, the #Ad caption, a 1080x1920
                                     # probe with sound, the account) and its
                                     # holds (CLIPS_AUTOPUBLISH, CLIPS_DAILY_CAP);
                                     # the rollback deletes the post
-                summary="Post one campaign clip to Instagram @atlas.clipsdrop, "
+                summary="Post one campaign clip to Instagram @example_handle, "
                         "once it passes every automatic check",
                 run=posting.publish_clip, dry_run=posting.publish_clip_dry,
                 rollback=posting.unpublish_clip,
@@ -254,7 +254,7 @@ class ClipsModule:
             ),
             Action(
                 name="clips.publish_clip_youtube",
-                tier=Tier.ASK,      # a public post under Miro's name; per clip
+                tier=Tier.ASK,      # a public post under the owner's name; per clip
                 summary="Post one campaign clip as a YouTube Short on the clips "
                         "channel: upload, then public",
                 run=posting.publish_clip_youtube,
@@ -268,10 +268,10 @@ class ClipsModule:
             ),
             Action(
                 name="clips.publish_clip_tiktok",
-                tier=Tier.AUTO,     # Miro, 2026-09-30: the same gates and holds
+                tier=Tier.AUTO,     # the owner, 2026-09-30: the same gates and holds
                                     # (posting._tiktok_check); the rollback
                                     # deletes the Postiz post while queued
-                summary="Post one campaign clip to TikTok @atlasclips12 through "
+                summary="Post one campaign clip to TikTok @example_handle through "
                         "Postiz, once it passes every automatic check",
                 run=posting.publish_clip_tiktok,
                 dry_run=posting.publish_clip_tiktok_dry,
@@ -284,7 +284,7 @@ class ClipsModule:
             ),
             Action(
                 name="clips.publish_clip_youtube_postiz",
-                tier=Tier.AUTO,     # Miro, 2026-09-30: the same gates and holds
+                tier=Tier.AUTO,     # the owner, 2026-09-30: the same gates and holds
                                     # plus the Shorts rule
                                     # (posting._youtube_postiz_check); the
                                     # rollback deletes the Postiz post while
@@ -309,7 +309,7 @@ class ClipsModule:
                 rollback=posting.record_link_rollback,
                 params={"clip_id": "id of a clip_outputs row",
                         "post_url": "the post's public URL"},
-                # It feeds a payout claim: only Miro's own word.
+                # It feeds a payout claim: only the owner's own word.
                 principal_only=True,
                 max_per_hour=20,
             ),
@@ -317,7 +317,7 @@ class ClipsModule:
                 name="clips.record_whop_submission",
                 tier=Tier.AUTO,     # a status on ATLAS's own row; nothing
                                     # leaves ATLAS. Never recorded twice.
-                summary="Record that the agent on Miro's Mac submitted a posted "
+                summary="Record that the agent on the owner's Mac submitted a posted "
                         "clip to its campaign on Whop",
                 run=whop.record_submission, dry_run=whop.record_submission_dry,
                 rollback=whop.record_submission_rollback,
@@ -332,7 +332,7 @@ class ClipsModule:
                 name="clips.record_draft_submitted",
                 tier=Tier.AUTO,     # a status on ATLAS's own row; nothing
                                     # leaves ATLAS. Never recorded twice.
-                summary="Record that the agent on Miro's Mac uploaded a clip as "
+                summary="Record that the agent on the owner's Mac uploaded a clip as "
                         "a draft on Whop, for the brand's approval",
                 run=whop.record_draft_submitted,
                 dry_run=whop.record_draft_submitted_dry,
@@ -361,7 +361,7 @@ class ClipsModule:
             ),
             Action(
                 name="clips.submit_to_whop",
-                tier=Tier.AUTO,     # Miro, 2026-10-06: the clips lane runs
+                tier=Tier.AUTO,     # the owner, 2026-10-06: the clips lane runs
                                     # with no card, submissions included
                                     # (was Tier 2 for his payout account); at
                                     # once for a clip the Mac agent never
@@ -378,7 +378,7 @@ class ClipsModule:
             ),
             Action(
                 name="clips.publish_promo",
-                tier=Tier.ASK,      # Miro, 2026-10-05 ("post on clips too"):
+                tier=Tier.ASK,      # the owner, 2026-10-05 ("post on clips too"):
                                     # the Academy store's own promo reel on
                                     # the clips accounts, by his tap only.
                                     # The campaign-clip doorways stay as
@@ -389,6 +389,9 @@ class ClipsModule:
                 rollback=promo.unpublish_promo, vet=promo.vet,
                 params={"media_id": "id of a finished content_media render",
                         "caption": "the caption, ending with the AI label",
+                        "youtube_caption": "optional: the YouTube Short's title (first "
+                                           "line) and description, ending with the "
+                                           "AI label",
                         "legs": "optional: a subset of instagram,tiktok,youtube "
                                 "to post to (a leg refused once, re-run alone)"},
                 card_only=True, verbose_card=True,
@@ -397,7 +400,7 @@ class ClipsModule:
             ),
             Action(
                 name="clips.autopublish_promo",
-                tier=Tier.AUTO,     # Miro, 2026-10-06: a daily Academy reel on
+                tier=Tier.AUTO,     # the owner, 2026-10-06: a daily Academy reel on
                                     # the clips accounts posts itself. Only
                                     # past promo.autopublish_check (the AI
                                     # label, the brand guard, the daily cap,
@@ -410,7 +413,13 @@ class ClipsModule:
                 rollback=promo.unpublish_promo, vet=promo.vet,
                 params={"media_id": "id of a finished content_media render",
                         "caption": "the caption, ending with the AI label",
-                        "slug": "the Academy product the reel is about"},
+                        "youtube_caption": "optional: the YouTube Short's title (first "
+                                           "line) and description, ending with the "
+                                           "AI label",
+                        "slug": "the Academy product the reel is about",
+                        "legs": "optional: a subset of tiktok,youtube to post to "
+                                "(default both); the daily reel sends 'youtube' "
+                                "when its product was posted in the last 48 h"},
                 runs_in_background=True,
                 max_per_hour=1,
             ),

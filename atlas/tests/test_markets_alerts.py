@@ -425,11 +425,3 @@ def test_the_tick_is_scheduled_with_a_missed_run_policy():
     assert market_alerts.interval() >= timedelta(minutes=5)
 
 
-def test_ivan_says_he_does_not_trade_and_knows_the_alerts():
-    from atlas.kernel.agents import ROSTER, build_roster
-    build_roster()
-    ivan = ROSTER["markets"]
-    assert "NEVER trade" in ivan.system and "does not trade" in ivan.system
-    assert "markets.alert" in ivan.system and "SEC EDGAR" in ivan.system
-    assert "Form 4" in ivan.brief and "never trades" in ivan.brief
-    assert not any("." in t for t in ivan.tools)        # he reads; the tick sends

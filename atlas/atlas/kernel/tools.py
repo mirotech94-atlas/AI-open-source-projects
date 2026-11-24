@@ -124,6 +124,19 @@ def _stamped(content: Any) -> Any:
     return content
 
 
+def _announce(agent: str, name: str, phase: str) -> None:
+    """Tell the portal HUD a read tool is in use: the agent, the tool and the
+    phase, never the parameters or the result. Fire-and-forget; it can never
+    fail a tool call."""
+    try:
+        from . import hud
+        from .events import publish
+        hud.note_tool(agent, name, phase)
+        publish("tool", agent=agent, tool=name, phase=phase)
+    except Exception:
+        log.debug("tool nudge failed", exc_info=True)
+
+
 async def invoke(
     name: str, params: dict[str, Any], *, agent: str, allowed: set[str]
 ) -> ToolResult:
@@ -138,6 +151,7 @@ async def invoke(
 
     if tool.read is not None:
         token = CURRENT_AGENT.set(agent)
+        _announce(agent, name, "start")
         try:
             return ToolResult(True, _stamped(await tool.read(**params)))
         except Exception as exc:
@@ -148,6 +162,7 @@ async def invoke(
             return ToolResult(False, f"{name} failed: {explain(exc)}")
         finally:
             CURRENT_AGENT.reset(token)
+            _announce(agent, name, "end")
 
     decision = REGISTRY.decisions.get(tool.action or "")
     if decision is None:

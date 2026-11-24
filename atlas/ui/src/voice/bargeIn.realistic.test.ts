@@ -13,7 +13,7 @@ import { BARGE_IN_HOLD_MS, initialBargeIn, stepBargeIn, type BargeInState } from
  *
  * The mic hears (a) the room's idle noise, (b) ATLAS leaking back through
  * the canceller -- `leak` x SPEAKER, 64 ms late, with a short room tail --
- * and (c) Miro, when he talks: the module's own calibration puts ordinary
+ * and (c) the owner, when he talks: the module's own calibration puts ordinary
  * speech near 0.28 on this scale, syllables and all.
  */
 const SPEAKER = [
@@ -46,8 +46,8 @@ function jitter(seed: number): () => number {
 
 const speakerAt = (i: number): number => SPEAKER[i % SPEAKER.length] ?? 0;
 
-/** Miro at an ordinary voice: syllables around `level`, short dips between. */
-function miro(t: number, rand: () => number, level = 0.28): number {
+/** the owner at an ordinary voice: syllables around `level`, short dips between. */
+function owner(t: number, rand: () => number, level = 0.28): number {
   const inSyllable = t % 190 < 150;
   return inSyllable ? level * (0.85 + 0.3 * rand()) : level * 0.45;
 }
@@ -93,7 +93,7 @@ describe("barge-in at real playback levels", () => {
     const rand = jitter(3);
     const { fired } = play({
       leak: 0.08, ms: 3000,
-      talks: (t) => (t >= from ? miro(t, rand) : null),
+      talks: (t) => (t >= from ? owner(t, rand) : null),
     });
     expect(fired).toHaveLength(1);
     expect(fired[0]! - from).toBeGreaterThanOrEqual(BARGE_IN_HOLD_MS);
@@ -105,7 +105,7 @@ describe("barge-in at real playback levels", () => {
     const rand = jitter(5);
     const { fired } = play({
       leak: 0.06, ms: 2500,
-      talks: (t) => (t >= from ? miro(t, rand, 0.22) : null),
+      talks: (t) => (t >= from ? owner(t, rand, 0.22) : null),
     });
     expect(fired).toHaveLength(1);
   });
@@ -129,7 +129,7 @@ describe("barge-in at real playback levels", () => {
     const rand = jitter(17);
     const { fired } = play({
       leak: (t) => (t < 1000 ? 0.6 : 0.08), ms: 6000,
-      talks: (t) => (t >= 4000 ? miro(t, rand) : null),
+      talks: (t) => (t >= 4000 ? owner(t, rand) : null),
     });
     expect(fired).toHaveLength(1);
     expect(fired[0]!).toBeGreaterThanOrEqual(4000 + BARGE_IN_HOLD_MS);
@@ -140,7 +140,7 @@ describe("barge-in at real playback levels", () => {
     // (the safe failure). A pause lets the bar come back down.
     const rand = jitter(19);
     const talks = (t: number): number | null =>
-      t < 1400 || t >= 3600 ? miro(t, rand) : null;
+      t < 1400 || t >= 3600 ? owner(t, rand) : null;
     const { fired } = play({ leak: 0.08, ms: 5500, talks });
     expect(fired).toHaveLength(1);
     expect(fired[0]!).toBeGreaterThanOrEqual(3600);

@@ -250,7 +250,7 @@ async def _inbox() -> list[str]:
 
 
 async def _circumstances() -> list[str]:
-    """What Miro told ATLAS about his schedule, still in force."""
+    """What the owner told ATLAS about his schedule, still in force."""
     from .rhythm import active_notes, circumstance_line
     notes = await active_notes()
     return [circumstance_line(n) for n in notes]

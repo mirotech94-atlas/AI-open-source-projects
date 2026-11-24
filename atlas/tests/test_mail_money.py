@@ -24,7 +24,7 @@ RECEIPT = """Thanks for your payment.
 Spotify Premium Individual
 Total: €10.99 per month
 Date: 12 September 2026"""
-SENDER = "Spotify <no-reply@receipts.spotify.com>"
+SENDER = "Spotify <contact15@example.com>"
 MSG = {"id": "gmail:r1", "account": "me@example.com", "subject": "Your receipt",
        "sender": SENDER, "at": datetime(2026, 9, 12, tzinfo=UTC), "body": RECEIPT}
 TEXT = f"From: {SENDER}\nSubject: Your receipt\n\n{RECEIPT}"
@@ -70,7 +70,7 @@ def test_an_invented_amount_is_unknown_never_a_number():
 
 def test_sender_domain_is_the_registrable_part():
     assert money.sender_domain(SENDER) == "spotify.com"
-    assert money.sender_domain("MEA <x@mail.mea.com.lb>") == "mea.com.lb"
+    assert money.sender_domain("MEA <contact16@example.com>") == "mea.com.lb"
     assert money.sender_domain("nobody") is None
 
 
@@ -274,7 +274,7 @@ async def test_sweep_stores_grounded_charges(monkeypatch):
                                "kind": "receipt"}, TEXT, SENDER)
     monkeypatch.setattr(money, "extract", extract)
 
-    me = Account(name="myron", kind="google", email="me@example.com",
+    me = Account(name="owner", kind="google", email="me@example.com",
                  refresh_token="t")
     result = await money.sweep([me])
 

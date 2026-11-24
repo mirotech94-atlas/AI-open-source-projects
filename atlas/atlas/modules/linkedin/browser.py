@@ -1,6 +1,6 @@
-"""A browser Miro signed into, driven from the server.
+"""A browser the owner signed into, driven from the server.
 
-There is no LinkedIn API and no stored credential. Miro signs in once on his
+There is no LinkedIn API and no stored credential. the owner signs in once on his
 Mac through `bootstrap/linkedin-login.sh`; the saved session (cookies and
 local storage, no password) is synced here and every LinkedIn read and the
 one LinkedIn write run through it. If the session is gone, LinkedIn answers
@@ -83,11 +83,13 @@ def lock() -> asyncio.Lock:
 async def browser():
     """Returns (playwright, browser, context) with the saved session. Hold
     `lock()` around the whole use; see above."""
-    from playwright.async_api import async_playwright
+    # The session first: "never signed in" is the actionable reason, and
+    # playwright is an optional extra whose missing import would mask it.
     if not SESSION.exists():
         raise NoSession(
             f"no saved LinkedIn session at {SESSION}. Sign in once on the Mac: "
             f"./bootstrap/linkedin-login.sh")
+    from playwright.async_api import async_playwright
     pw = await async_playwright().start()
     b = await pw.chromium.launch(
         headless=True, args=["--disable-blink-features=AutomationControlled"])

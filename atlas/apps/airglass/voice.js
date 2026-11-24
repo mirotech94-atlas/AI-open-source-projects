@@ -1,6 +1,6 @@
 // ATLAS's lines in the standalone Air Glass: captions only.
 //
-// Miro wants ATLAS to speak only in his chosen Fish Audio voice. This page
+// the owner wants ATLAS to speak only in his chosen Fish Audio voice. This page
 // runs on 127.0.0.1 with no ATLAS session, so it can reach neither Fish
 // Audio nor ATLAS's offline pack of Fish clips. It does not use the
 // browser's own voices (the Mac's system voices) either: every line ATLAS

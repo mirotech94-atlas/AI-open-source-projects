@@ -13,16 +13,19 @@ from __future__ import annotations
 import copy
 import json
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from html import unescape
 from html.parser import HTMLParser
+from pathlib import Path
 
 import pytest
 
+from atlas.modules import store_origin
 from atlas.modules.academy import catalog as cat_mod
 from atlas.modules.academy import site
 
 NOW = datetime(2026, 9, 30, 12, 0, 0, tzinfo=UTC)
+LANDING = Path(__file__).resolve().parents[1] / "atlas/modules/agency/landing"
 
 
 def _raw() -> dict:
@@ -30,7 +33,7 @@ def _raw() -> dict:
 
 
 def _render(raw: dict | None = None) -> dict[str, bytes]:
-    return site.render(cat_mod.parse(raw or _raw()), NOW)
+    return site.render_root(cat_mod.parse(raw or _raw()), NOW)
 
 
 def _off(raw: dict | None = None) -> dict:
@@ -112,10 +115,11 @@ def test_every_product_gets_its_own_page_and_the_legal_pages_exist():
         assert p["title"] in page
         assert "Contents" in page and "What's inside" in page
         assert "Pairs well with" in page
-    for path in ("index.html", "all-four/index.html", "terms/index.html",
+    for path in ("academy/index.html", "all-four/index.html", "terms/index.html",
                  "privacy/index.html", "refunds/index.html", "contact/index.html",
                  "404.html", "catalog.json"):
         assert path in files
+    assert "index.html" not in files      # the root belongs to the agency landing
     assert raw["store"]["contact_email"] in files["contact/index.html"].decode()
 
 
@@ -146,7 +150,7 @@ def test_the_arabic_edition_is_not_sold():
 # ------------------------------------------------------------------ honesty
 
 BANNED = [
-    r"\btestimonials?\b", r"\breviewed by\b", r"\bratings?\b", r"\brated\b",
+    r"\btestimonials?\b", r"\breviewed by\b(?! me\b)", r"\bratings?\b", r"\brated\b",
     r"\bstars?\b", r"[★☆]", r"\d(?:\.\d)?\s*/\s*5\b", r"\bbest[- ]?sell",
     r"\blimited time\b", r"\bcountdown\b", r"\bhurry\b", r"\bonly \d+ left\b",
     r"\bends (?:soon|tonight|today)\b",
@@ -166,7 +170,8 @@ def test_no_page_carries_reviews_ratings_counts_of_buyers_or_urgency():
 
 def test_every_page_runs_app_js_and_nothing_else():
     """One <script src=assets/app.js> per page; the home page alone adds one
-    inline script, and it does nothing but assign the finder's data."""
+    inline script, and it does nothing but assign the finder's data. The
+    contact and Help pages and the blog each add their own first-party script file."""
     for path, html in _pages(_render()).items():
         root = "/" if path == "404.html" else "../" * (path.count("/"))
         scripts = _text(html).scripts
@@ -180,17 +185,30 @@ def test_every_page_runs_app_js_and_nothing_else():
                 assert json.loads(text)["@context"] == "https://schema.org", path
                 continue
             inline.append((src, body))
-        if path != "index.html":
+        if path.startswith("blog/"):
+            # the blog's own first-party script (blog_pages.py), nothing inline
+            assert inline == [(f"{root}assets/blog.js", "")], path
+            continue
+        if path in ("contact/index.html", "help/index.html"):
+            # the contact forms' own first-party script (assets/contact.js)
+            assert inline == [(f"{root}assets/contact.js", "")], path
+            continue
+        if path != "academy/index.html":
             assert inline == [], path
             continue
+        # the home page's video gallery has its own first-party script file
+        # (assets/gallery.js, tests/test_academy_videos_api.py)
+        assert (f"{root}assets/gallery.js", "") in inline or \
+            ("assets/gallery.js", "") in inline
+        inline = [i for i in inline if not i[0].endswith("assets/gallery.js")]
         assert len(inline) == 1 and inline[0][0] == ""
         body = inline[0][1].strip()
         assert body.startswith("window.FINDER = ") and body.endswith(";")
         data = json.loads(body[len("window.FINDER = "):-1])
-        assert set(data) == {k for k, _line, _tag in site.FINDER}
-        for recs in data.values():
-            for r in recs:
-                assert set(r) == {"cover", "title", "why", "price", "buy", "href"}
+        assert set(data) == {"products", "lessons", "routes", "paths"}
+        for r in data["products"]:
+            assert set(r) == {"slug", "title", "why", "needs", "level", "price", "href",
+                              "cover", "paths", "fits", "install"}
 
 
 def test_app_js_makes_no_request_and_stores_nothing():
@@ -202,42 +220,175 @@ def test_app_js_makes_no_request_and_stores_nothing():
 
 
 def test_the_finder_recommends_only_catalog_titles_with_their_own_summaries():
+    """Goal and level (both optional, no email) narrow the catalog's own
+    titles; every goal and every level has at least one title, and the
+    finder carries no payment link: it points at the product page."""
     cat = cat_mod.load()
     data = site._finder_data(cat)
-    summaries = {unescape(p.summary) for p in cat.products} | {cat.bundle.summary}
-    for recs in data.values():
-        assert recs, "a finder choice with nothing to recommend"
-        for r in recs:
-            assert unescape(r["why"]) in summaries
-            assert r["href"].endswith("/") and not r["href"].startswith("http")
-            assert r["buy"] == "" or r["buy"].startswith("https://buy.stripe.com/")
-    assert data["all"][0]["title"] == cat.bundle.title
-    # No live link, no Buy: the finder then points at the product's buy box.
-    off = site._finder_data(cat_mod.parse(_off()))
-    assert all(r["buy"] == "" for recs in off.values() for r in recs)
+    summaries = {unescape(p.summary) for p in cat.products}
+    recs = data["products"]
+    assert len(recs) == len(cat.products)
+    for r in recs:
+        assert unescape(r["why"]) in summaries
+        assert r["href"].endswith("/") and not r["href"].startswith("http")
+        assert r["paths"] and r["fits"]
+    for key, *_ in site.PATHS:
+        assert any(key in r["paths"] for r in recs), key
+    for key, _line in site.LEVELS:
+        assert any(key in r["fits"] for r in recs), key
+    assert "buy.stripe.com" not in json.dumps(data)
+    assert data["lessons"] == {}
+
+
+def test_the_finder_rules_out_before_it_ranks_and_says_why():
+    """Plan F04 acceptance: business + new + no installations never leads
+    with the Python course or the Docker pack; one best start, at most two
+    alternatives; what the answers rule out is listed (with its own
+    requirement text on the page); no eligible title gives the free route."""
+    cat = cat_mod.load()
+    for setup in ("", "no"):
+        r = site.finder_route(cat, "work", "new", setup)
+        assert r["best"] not in ("safe-ai-operator", "local-business-automation-pack")
+        assert {"safe-ai-operator", "local-business-automation-pack"} <= set(r["out"])
+        assert len(r["alts"]) <= site.FINDER_ALTERNATIVES
+        assert r["best"] not in r["alts"] and not set(r["alts"]) & set(r["out"])
+    no_install = site.finder_route(cat, "work", "", "no")
+    assert "claude-obsidian-vault-kit" in no_install["out"]       # needs the app
+    assert "30-business-lessons" not in no_install["out"]          # "No software to install"
+    nothing = site.finder_route(cat, "build", "new", "no")
+    assert nothing == {"best": "", "alts": [], "out": nothing["out"]} and nothing["out"]
+    assert site.finder_route(cat, "build", "code", "yes")["best"]
+    routes = site.finder_routes(cat)
+    assert len(routes) == 4 * 4 * 3 - 1
+    slugs = {p.slug for p in cat.products}
+    for key, r in routes.items():
+        goal = key.split("|")[0]
+        for s in [*([r["best"]] if r["best"] else []), *r["alts"], *r["out"]]:
+            assert s in slugs, key
+            assert not goal or goal in site.product_paths(cat.product(s)), key
+    js = (site.ASSETS / "app.js").read_text()
+    assert "Set aside for now" in js and "Watch the free lessons" in js
+
+
+def test_the_catalog_search_reads_the_catalog_and_shares_by_address():
+    """Plan F02/F37: search and filters are hidden until the script runs
+    (the whole catalog shows without it); every card carries its own catalog
+    words to search; the state goes into the address, never into storage."""
+    home = _render()["academy/index.html"].decode()
+    tools = home.split("<form class=\"cat-tools pv-tools\"", 1)[1].split("</form>", 1)[0]
+    assert "data-cat-tools" in tools and " hidden>" in tools
+    assert 'type="search" name="q"' in tools and "Clear all" in tools
+    cat = cat_mod.load()
+    for p in cat.products:
+        card = home.split(f'data-slug="{p.slug}"', 1)[1].split(">", 1)[0]
+        words = unescape(card.split('data-search="', 1)[1].split('"', 1)[0])
+        assert p.title.lower() in words and p.summary.lower() in words
+        for f in site.formats(p.offers):
+            assert site._format_key(f) in card.split('data-formats="', 1)[1].split('"')[0]
+    assert "data-cat-empty hidden" in home and 'href="../videos/">Browse the free lessons' in home
+    js = (site.ASSETS / "app.js").read_text()
+    assert "history.replaceState" in js and "URLSearchParams" in js
+
+
+def test_the_comparison_adds_only_fields_the_catalog_states():
+    """Plan F03: when each title was last checked (its newest "Tested with"
+    date, or "Not stated") and its refund terms; a narrowed table is shared
+    as ?compare=slug,slug."""
+    home = _render()["academy/index.html"].decode()
+    table = home.split('<table class="compare">', 1)[1].split("</table>", 1)[0]
+    cat = cat_mod.load()
+    for p in cat.products:
+        row = table.split(f'data-compare="{p.slug}"', 1)[1].split("</tr>", 1)[0]
+        cell = row.split('data-label="Last checked">', 1)[1].split("<", 1)[0]
+        if p.tested:
+            newest = max(c.checked_on for c in p.tested)
+            d = date.fromisoformat(newest)
+            assert cell == f"{d.day} {d:%b %Y}", p.slug
+        else:
+            assert cell == "Not stated", p.slug
+        assert 'data-label="Refunds">' in row
+    raw = _raw()
+    raw["products"][0]["tested"] = []
+    home = _render(raw)["academy/index.html"].decode()
+    row = home.split(f'data-compare="{raw["products"][0]["slug"]}"', 1)[1].split("</tr>")[0]
+    assert 'data-label="Last checked">Not stated<' in row
+    js = (site.ASSETS / "app.js").read_text()
+    assert "params.set('compare'" in js
 
 
 def test_every_number_on_every_page_is_catalog_text():
-    """A figure the catalog doesn't state can't reach a page."""
+    """A figure the catalog doesn't state can't reach a page, except the
+    arithmetic done on catalog values at build time: the bundle's separate
+    total and difference, and the count of an offer's video files."""
     raw_text = cat_mod.CATALOG_PATH.read_text()
     allowed = set(re.findall(r"\d+(?:\.\d+)?", raw_text))
+    cat = cat_mod.load()
+    _parts, total, _price, diff = site.bundle_math(cat)
+    allowed |= {f"{total:g}", f"{diff:g}"}
+    # The storefront's "01 / 07" ordinals: positions in the catalog and the
+    # path list, zero-padded, never a claim about a title.
+    allowed |= {site._idx(i, len(cat.products)) for i in range(1, len(cat.products) + 1)}
+    allowed |= {site._idx(i, len(site.PATHS)) for i in range(1, len(site.PATHS) + 1)}
+    allowed |= {str(sum(f.label.endswith("(video)") for f in o.files))
+                for o in cat.offers()}
+    # The sneak peeks' figures are measured from the delivered files by
+    # tools/academy_previews.py (page numbers and totals, file sizes, a
+    # README's lines and the numbers in its opening): previews.json, and the
+    # sizes and counts the page derives from it.
+    peeks = site._previews()
+    allowed |= set(re.findall(r"\d+(?:\.\d+)?", json.dumps(peeks)))
+    # The contact phone is the owner's number, not a claim about a title.
+    allowed |= set(re.findall(r"\d+", store_origin.CONTACT_PHONE_DISPLAY))
+    for entry in peeks.values():
+        if k := entry.get("kit"):
+            allowed |= {str(len(k["tree"])), str(len(k["excerpt"]))}
+            for f in k["tree"]:
+                allowed |= set(re.findall(r"\d+(?:\.\d+)?", site._size(int(f["bytes"]))))
     for path, html in _pages(_render()).items():
+        if path.startswith("blog/"):
+            # A blog post's own prose (the <article class="post-body">) is
+            # the owner's writing, not a product claim: "a chess program from
+            # 1997" is no figure about a title. Everything around it on a
+            # blog page (titles, dates, the list, the kit line) still obeys
+            # the rule, and the prose may only carry the post's own text.
+            html, prose = _split_post_body(html)
+            assert prose is None or _prose_is_the_posts_own(path, prose), path
         text = " ".join(_text(html).parts)
         for number in re.findall(r"\d+(?:\.\d+)?", text.replace(",", "")):
             assert number in allowed, (path, number)
 
 
+def _split_post_body(html: bytes) -> tuple[bytes, bytes | None]:
+    """A blog page without its post body, and the body (None when absent)."""
+    start, end = b'<article class="post-body">', b"</article>"
+    if start not in html:
+        return html, None
+    head, rest = html.split(start, 1)
+    prose, tail = rest.split(end, 1)
+    return head + tail, prose
+
+
+def _prose_is_the_posts_own(path: str, prose: bytes) -> bool:
+    from atlas.modules.academy import blog_pages, mdlite
+    slug = path.split("/")[1]
+    post = next(p for p in blog_pages.load() if p.slug == slug)
+    return prose.decode().strip() == mdlite.to_html(post.body, "../../")
+
+
 def test_a_bundle_total_is_shown_only_when_every_price_is_set():
-    # Miro, 2026-10-01: every title priced (20 + 9 + 19 + 39), bundle $79.
-    assert "Bought one by one today: $87." in _render()["all-four/index.html"].decode()
+    # the owner, 2026-10-01: every title priced (20 + 9 + 19 + 39), bundle $79.
+    page = _render()["all-four/index.html"].decode()
+    assert "$20 + $9 + $19 + $39 = <b>$87</b> bought separately." in page
+    assert "The bundle is $79, $8 less than buying them one by one." in page
     raw = _raw()
     course = raw["products"][0]["offers"][0]
     course.update(price_usd=None, payment_link="", stripe_price_id="")
-    assert "Bought one by one" not in _render(raw)["all-four/index.html"].decode()
+    assert "bought separately" not in _render(raw)["all-four/index.html"].decode()
     course["price_usd"] = 49
     page = _render(raw)["all-four/index.html"].decode()
-    # 49 + 9 + 19 + 39
-    assert "Bought one by one today: $116." in page
+    # 49 + 9 + 19 + 39 = 116, against 79: the page says so, never a saving.
+    assert "$49 + $9 + $19 + $39 = <b>$116</b> bought separately." in page
+    assert "The bundle is $79, $37 less" in page
 
 
 # ------------------------------------------------------------------ buy buttons
@@ -317,12 +468,12 @@ def test_the_public_catalog_has_the_agreed_shape():
         "sell-with-ai-video", "sell-with-ai-both", "all-four"}
     for e in entries:
         assert set(e) == ENTRY_KEYS
-        assert e["url"].startswith("https://shop.mapfront.io/")
-        assert e["cover"].startswith("https://shop.mapfront.io/assets/")
+        assert e["url"].startswith("https://agency.example.com/")
+        assert e["cover"].startswith("https://agency.example.com/assets/")
         assert e["currency"] == "USD"
         assert e["price_usd"] is None or isinstance(e["price_usd"], float | int)
     by = {e["slug"]: e for e in entries}
-    assert by["safe-ai-operator"]["price_usd"] == 20       # Miro, 2026-10-01
+    assert by["safe-ai-operator"]["price_usd"] == 20       # the owner, 2026-10-01
     assert by["30-business-lessons"]["price_usd"] == 9
     assert by["all-four"]["kind"] == "bundle"
 
@@ -357,8 +508,9 @@ def test_the_public_catalog_leaks_no_link_path_or_stripe_id():
 def test_build_writes_the_site_into_an_empty_directory(tmp_path):
     out = tmp_path / "shop"
     written = site.build(out, now=NOW)
-    assert (out / "index.html").is_file() and (out / "assets/style.css").is_file()
-    assert len(written) == len(site.render(cat_mod.load(), NOW))
+    assert (out / "academy/index.html").is_file() and (out / "academy/assets/style.css").is_file()
+    assert not (out / "index.html").exists()      # the root is the agency landing's
+    assert len(written) == len(site.render_root(cat_mod.load(), NOW))
     with pytest.raises(ValueError):
         site.build(out, now=NOW)
 
@@ -376,21 +528,26 @@ def test_the_checked_in_catalog_sells_every_offer_and_the_bundle():
 
 
 def test_search_engines_and_ai_assistants_can_read_the_store():
-    """Miro, 2026-10-06: robots names the AI crawlers and the sitemap; the
+    """the owner, 2026-10-06: robots names the AI crawlers and the sitemap; the
     sitemap lists every page; llms.txt carries only catalog facts; a
     product's record offers only what is on sale and carries no rating."""
     files = _render()
-    robots = files["robots.txt"].decode()
+    # One robots.txt for the whole host: the landing's (Caddyfile.public). The
+    # store build writes none, and its sitemap is named in the landing's file.
+    assert "robots.txt" not in files and "sitemap.xml" not in files and "llms.txt" not in files
+    robots = (LANDING / "robots.txt").read_text()
     for bot in ("GPTBot", "ClaudeBot", "PerplexityBot"):
         assert f"User-agent: {bot}\nAllow: /" in robots
-    assert "Sitemap: https://shop.mapfront.io/sitemap.xml" in robots
-    sitemap = files["sitemap.xml"].decode()
+    assert "Sitemap: https://agency.example.com/sitemap.xml" in robots
+    assert "Sitemap: https://agency.example.com/sitemap-academy.xml" in robots
+    sitemap = files["sitemap-academy.xml"].decode()
     for path in _pages(files):
-        if path.endswith("index.html") and not path.startswith("contact/sent"):
-            loc = "https://shop.mapfront.io/" + path.removesuffix("index.html")
+        # a "sent" confirmation is not a page to find in search
+        if path.endswith("index.html") and not path.startswith(("contact/sent", "help/sent", "updates/thanks")):
+            loc = "https://agency.example.com/" + path.removesuffix("index.html")
             assert f"<loc>{loc}</loc>" in sitemap, path
-    llms = files["llms.txt"].decode()
-    assert llms.startswith("# ATLAS Academy") and "miro@mapfront.io" in llms
+    llms = files["academy/llms.txt"].decode()
+    assert llms.startswith("# ATLAS Academy") and "owner@example.com" in llms
     page = files["safe-ai-operator/index.html"].decode()
     body = page.split('<script type="application/ld+json">', 1)[1].split("</script>")[0]
     ld = json.loads(body)
@@ -398,3 +555,153 @@ def test_search_engines_and_ai_assistants_can_read_the_store():
     assert "aggregateRating" not in body and "review" not in body.lower()
     off = _render(_off())["safe-ai-operator/index.html"].decode()
     assert '"offers"' not in off
+
+
+# the owner, 2026-10-12 (the growth plan): /start/ and the worksheet, off until
+# he has read the copy.
+
+def test_the_start_page_and_worksheet_are_off_until_switched_on(monkeypatch):
+    monkeypatch.delenv(site.START_ENV, raising=False)
+    files = _render()
+    assert "start/index.html" not in files
+    monkeypatch.setenv(site.START_ENV, "on")
+    files = _render()
+    start = files["start/index.html"].decode()
+    sheet = files["before-you-automate/index.html"].decode()
+    assert "Before You Automate" in start and "local-business-automation-pack/" in start
+    for name, ask, _example in site.WORKSHEET_FIELDS:
+        assert name in sheet and site._e(ask) in sheet
+    assert "no email, no sign-up" in sheet
+
+
+def test_every_sneak_peek_points_at_files_the_store_publishes():
+    """the owner, 2026-10-12: a preview on every course page. Each one is cut from
+    the delivered files (tools/academy_previews.py); every file it names is
+    published with the store, and every product in the catalog has one."""
+    files = _render()
+    pages = _pages(files)
+    peeks = site._previews()
+    cat = cat_mod.load()
+    assert {p.slug for p in cat.products} <= set(peeks)
+    for slug, entry in peeks.items():
+        page = pages[f"{slug}/index.html"]
+        page = page.decode() if isinstance(page, bytes) else page
+        assert 'id="peek"' in page and 'href="#peek"' in page, slug
+        names = [v[k] for v in entry.get("videos", []) for k in ("src", "poster")]
+        names += [pg["src"] for b in entry.get("books", []) for pg in b["pages"]]
+        for name in names:
+            assert f"assets/previews/{slug}/{name}" in files, (slug, name)
+            assert f"../assets/previews/{slug}/{name}" in page, (slug, name)
+        assert "<iframe" not in page and "youtube.com/embed" not in page
+
+
+def test_every_sitemap_page_names_itself_canonical_and_is_indexable():
+    """Search Console, 2026-10-29: the home page was not indexed. Every page
+    the sitemap lists carries one <title>, a description, exactly one
+    canonical that is its own sitemap address, and no noindex; robots.txt
+    names the sitemap at the same origin."""
+    files = _render()
+    base = "https://agency.example.com/"
+    assert f"Sitemap: {base}sitemap-academy.xml" in (LANDING / "robots.txt").read_text()
+    sitemap = files["sitemap-academy.xml"].decode()
+    assert sitemap.startswith('<?xml version="1.0" encoding="UTF-8"?>')
+    locs = re.findall(r"<loc>([^<]+)</loc>", sitemap)
+    assert locs and len(locs) == len(set(locs))
+    assert all(loc.startswith(base) for loc in locs)
+    assert len(re.findall(r"<lastmod>\d{4}-\d{2}-\d{2}</lastmod>", sitemap)) == len(locs)
+    for loc in locs:
+        path = loc.removeprefix(base) + "index.html"
+        html = files[path].decode()
+        assert html.count("<title>") == 1, path
+        desc = re.search(r'<meta name="description" content="([^"]+)">', html)
+        assert desc and desc.group(1).strip(), path
+        assert re.findall(r'<link rel="canonical" href="([^"]+)">', html) == [loc], path
+        assert "noindex" not in html.lower(), path
+    for path in ("404.html", "contact/sent/index.html", "help/sent/index.html"):
+        if path in files:
+            assert 'rel="canonical"' not in files[path].decode(), path
+
+
+def test_every_public_page_carries_the_contact_address_and_phone():
+    # the owner 2026-11-13 reversed 2026-10-29: the public contact is the Gmail
+    # address plus a phone number; the old mapfront address is not shown.
+    files = _no_ownertech_files()
+    assert any("owner@example.com" in b for b in files.values())
+    assert any("tel:+1 555 010 0100" in b for b in files.values())
+    for name, body in files.items():
+        assert "owner@mapfront" + ".io" not in body, name
+
+
+def _no_ownertech_files() -> dict[str, str]:
+    files = dict(site.render_root(cat_mod.load()))
+    return {k: v.decode("utf-8", "replace") if isinstance(v, bytes) else str(v)
+            for k, v in files.items()}
+
+
+# ------------------------------------------- one host: the store lives under /academy/
+
+class _Refs(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.refs: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        for k, v in attrs:
+            if k in ("href", "src") and v:
+                self.refs.append(v)
+
+
+def _resolve(page: str, ref: str) -> str | None:
+    """A page's href/src as a host path, or None for off-site, mailto, tel and
+    in-page references."""
+    from urllib.parse import urljoin, urlsplit
+    if ref.startswith(("#", "mailto:", "tel:", "javascript:", "data:")):
+        return None
+    full = urlsplit(urljoin("https://agency.example.com/" + page, ref))
+    if full.netloc != "agency.example.com":
+        return None
+    return full.path
+
+
+def test_the_store_home_is_at_academy_and_the_root_is_the_landings():
+    files = _render()
+    assert "academy/index.html" in files and "index.html" not in files
+    home = files["academy/index.html"].decode()
+    assert '<link rel="canonical" href="https://agency.example.com/academy/">' in home
+    sitemap = files["sitemap-academy.xml"].decode()
+    assert "<loc>https://agency.example.com/academy/</loc>" in sitemap
+    assert "<loc>https://agency.example.com/</loc>" not in sitemap   # the landing's own
+    assert "/academy/" in files["academy/llms.txt"].decode()
+
+
+def test_every_internal_link_on_every_page_reaches_a_file_and_only_the_header_hits_the_landing():
+    """Served from one host, the store's links must land on store files. The
+    one exception is the exact root `/` (the shared header's brand and Agency
+    link, the way back to the agency landing); `index.html` or `../` forms of
+    it are still refused."""
+    files = _render()
+    served = set(files)
+    landing = {"thanks", "thanks/index.html", "robots.txt", "sitemap.xml", "llms.txt",
+               "mapfront-icon.png"}
+    bad = []
+    for page, body in _pages(files).items():
+        parser = _Refs()
+        parser.feed(body.decode())
+        for ref in parser.refs:
+            path = _resolve(page, ref)
+            if path is None:
+                continue
+            rel = path.lstrip("/")
+            if ref in ("/", "/agency/"):
+                continue                          # the brand (store home) and the Agency page
+            if rel in ("", "index.html"):
+                bad.append((page, ref, "points at the landing"))
+                continue
+            if rel.startswith("fonts/") or rel in landing:
+                continue
+            if rel.startswith(("preview/", "public/", "webhooks/", "media/")):
+                continue                                         # other handles on the host
+            target = rel + "index.html" if rel.endswith("/") else rel
+            if target not in served:
+                bad.append((page, ref, f"no file {target}"))
+    assert not bad, bad[:12]

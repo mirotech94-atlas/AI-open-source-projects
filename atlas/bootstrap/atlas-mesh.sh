@@ -12,7 +12,7 @@
 # changed host key.
 set -euo pipefail
 
-MESH_IP="${ATLAS_MESH_IP:-100.114.123.14}"
+MESH_IP="${ATLAS_MESH_IP:-100.64.0.14}"
 NAME="${ATLAS_NAME:-atlas.example.com}"
 HOSTS=/etc/hosts
 

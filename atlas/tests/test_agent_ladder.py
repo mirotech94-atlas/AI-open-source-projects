@@ -1,5 +1,5 @@
 """`agents.ladder` -- each agent's rung on the autonomy ladder, counted from
-the tiers set in code (Miro, 2026-09-28, from the "37 AI agent company"
+the tiers set in code (the owner, 2026-09-28, from the "37 AI agent company"
 reel: human-led, human-assisted, fully autonomous).
 
 It only reads what the registry already decided; it never decides a tier.

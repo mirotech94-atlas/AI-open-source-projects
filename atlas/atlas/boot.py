@@ -16,7 +16,7 @@ CHANNEL_MODULES = ("slack", "matrix", "twilio")
 def load_channels() -> None:
     """Import every channel so `register()` fills the routing table.
 
-    Split out of `boot()` because anything that asks "can ATLAS reach Miro"
+    Split out of `boot()` because anything that asks "can ATLAS reach the owner"
     needs this to have happened first. `atlas.cli connect comms` did not call
     it, so the reachability check answered "no channels are registered at
     all" -- which reads as a broken reporting path when the real answer was
@@ -68,7 +68,7 @@ async def boot() -> None:
     from .skills import load_all as load_skills
     load_skills()
 
-    # The agents' own playbooks count as knowledge too (Task 60, Miro:
+    # The agents' own playbooks count as knowledge too (Task 60, the owner:
     # "there should also be some stuff on there based on his previous
     # skills from agents that he has as well.") -- idempotent, so this runs
     # at every boot rather than once.

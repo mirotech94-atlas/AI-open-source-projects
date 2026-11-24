@@ -18,14 +18,14 @@ Every `CLIPS_LINKS_MIN` minutes (default 60), from the scheduler
   * a row is filled in only when the Postiz post with its `post_ref` as id
     is `PUBLISHED`, not deleted, on the row's platform, and its `releaseURL`
     is that platform's post URL: for TikTok `https://(www.)tiktok.com/
-    @atlasclips12/video/<n>` (`posting.POST_URL`, on the clips account);
+    @example_handle/video/<n>` (`posting.POST_URL`, on the clips account);
     for YouTube a `youtube.com` / `youtu.be` URL for the id Postiz names,
     recorded as its `shorts/` link (`postiz.clip_youtube_url`). Anything
     else is left alone. Never a URL built from an id: it feeds a payout
     claim (invariant 6). A short link (`vm.tiktok.com`) is not taken either:
     it proves neither the account nor the video;
   * the write is guarded (`post_url IS NULL`, same `post_ref`, still
-    `posted`), so a link Miro recorded, or a row that changed, is never
+    `posted`), so a link the owner recorded, or a row that changed, is never
     overwritten. `post_url_source` is the platform's (`tiktok` /
     `youtube`, both in `whop.TRUSTED_SOURCES`): the URL is Postiz relaying
     the platform's own answer, as at publish time.
@@ -41,7 +41,7 @@ Seen live 2026-09-30: Postiz lists TikTok posts with the PROFILE URL as
 reports the video itself -- `clips.record_link` stays the way for those.
 
 **A TikTok link handed in** (`record_tiktok_link`, behind `POST
-/clips/links/{clip_id}` in `atlas/api/clips.py`): a task on Miro's Mac reads
+/clips/links/{clip_id}` in `atlas/api/clips.py`): a task on the owner's Mac reads
 the public profile in a browser and hands ATLAS candidate video URLs. Its
 word is not the platform's, so nothing is written on it alone: the URL must
 be exactly `https://www.tiktok.com/@<clips handle>/video/<id>`, and ATLAS
@@ -182,7 +182,7 @@ async def reconcile(now: datetime | None = None) -> list[str]:
 
 async def _fill(cid: int, post_ref: str, url: str, platform: str) -> bool:
     """The one write: the link, guarded so a row that changed, or a link
-    already recorded (Miro's included), is never overwritten, and so one
+    already recorded (the owner's included), is never overwritten, and so one
     URL is never two clips'. True when this call wrote it."""
     done = await fetch_one(
         """UPDATE clip_outputs SET post_url = $3, post_url_source = $4

@@ -1,4 +1,4 @@
-"""Webild as an alternative builder for a client site (Miro, 2026-09-29).
+"""Webild as an alternative builder for a client site (the owner, 2026-09-29).
 
 What these pin down:
   * the brief says only what the lead row and client.json say: no reviews
@@ -288,7 +288,7 @@ async def test_the_card_carries_the_brief_and_binds_that_brief(store):
     assert signal.params == {"lead_id": 7, "brief_id": 1}
     assert store.rows[1]["brief"] in signal.body
     assert "never a domain, a plan or a payment" in signal.body
-    # The brief is the one Miro read: another lead's id is refused.
+    # The brief is the one the owner read: another lead's id is refused.
     assert not (await webild.build_with_webild_dry(8, 1)).ok
     assert (await webild.build_with_webild_dry(7, 1)).ok
     got = await webild.build_with_webild(7, 1)
@@ -318,8 +318,8 @@ async def test_a_stale_draft_is_not_queued(store):
     ("https://app.webild.io/project/1", False),
     ("https://webild.io.evil.com/", False),
     ("https://evilwebild.io/", False),
-    ("https://x@joes.webild.io/", False),
-    ("https://joes.webild.io@evil.com/", False),
+    ("https://contact38@example.com/", False),
+    ("https://contact39@example.com/", False),
     ("https://joes.webild.io:8443/", False),
     ("https://127.0.0.1/", False),
     ("javascript:alert(1)", False),
@@ -720,8 +720,8 @@ def test_the_agent_can_stop_and_say_why(api, store, told):
                  json={"status": "paid", "summary": "x"})
     assert r.status_code == 400
     r = api.post("/webild/7/report", headers=_auth(),
-                 json={"status": "needs_miro", "summary": "Webild asked for a card"})
-    assert r.status_code == 200 and store.rows[1]["status"] == "needs_miro"
+                 json={"status": "needs_owner", "summary": "Webild asked for a card"})
+    assert r.status_code == 200 and store.rows[1]["status"] == "needs_owner"
     assert "has not verified it" in told[0].body
     r = api.post("/webild/7/report", headers=_auth(),
                  json={"status": "failed", "summary": "again"})

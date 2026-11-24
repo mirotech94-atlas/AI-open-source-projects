@@ -1,5 +1,6 @@
 import { useState, type JSX } from "react";
 import { api } from "../api";
+import { Wordmark } from "./Wordmark";
 
 export function Login({
   configured,
@@ -28,7 +29,10 @@ export function Login({
 
   return (
     <div className="login">
-      <h1>ATLAS</h1>
+      <h1 className="login-brand">
+        <img src="/favicon.svg" width={44} height={44} alt="" />
+        <Wordmark />
+      </h1>
       <p>
         Being on the mesh gets you to this page. It does not get you the ability
         to approve anything.

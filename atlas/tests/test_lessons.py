@@ -1,6 +1,6 @@
 """The lessons ledger and the never-repeat guard.
 
-Miro's rule: "mistakes are okay, permanent mistakes unacceptable." Two things
+the owner's rule: "mistakes are okay, permanent mistakes unacceptable." Two things
 have to be true for that to mean anything, and both are tested here:
 
   * a mistake is remembered once and reinforced, not re-filed;
@@ -195,19 +195,19 @@ def test_different_parameters_are_a_different_question():
 # ---------------------------------------------------------------- record
 
 async def test_a_new_lesson_is_written_once_and_remembered(ledger):
-    lid = await lessons.record("failed_action", "vpsie.restart failed: HTTP 500",
-                               action="vpsie.restart", params={"id": 7})
+    lid = await lessons.record("failed_action", "cloudco.restart failed: HTTP 500",
+                               action="cloudco.restart", params={"id": 7})
     assert lid == 1
     assert len(ledger.rows) == 1
     assert ledger.rows[0]["times"] == 1
     assert ledger.memories == [
-        (Kind.PROCEDURAL, "lessons", "vpsie.restart failed: HTTP 500")]
+        (Kind.PROCEDURAL, "lessons", "cloudco.restart failed: HTTP 500")]
 
 
 async def test_the_same_mistake_is_reinforced_not_re_filed(ledger):
     for _ in range(3):
-        await lessons.record("failed_action", "vpsie.restart failed: HTTP 500",
-                             action="vpsie.restart", params={"id": 7})
+        await lessons.record("failed_action", "cloudco.restart failed: HTTP 500",
+                             action="cloudco.restart", params={"id": 7})
     assert len(ledger.rows) == 1, "three failures, one lesson"
     assert ledger.rows[0]["times"] == 3
     assert len(ledger.memories) == 1, "memory is written once, not per repeat"
@@ -365,7 +365,7 @@ async def test_for_task_is_capped_and_deduplicated(ledger, monkeypatch):
 
 
 async def test_a_clearance_is_never_injected_as_guidance(ledger):
-    """A `told` row is bookkeeping for `clear()`. "He said vpsie.restart is
+    """A `told` row is bookkeeping for `clear()`. "He said cloudco.restart is
     different now" in a system prompt reads as permission, and a lesson must
     never be the thing that permits something."""
     await lessons.record("failed_action", "it 500ed", action="a.b", agent="ops")
@@ -466,9 +466,9 @@ async def test_the_system_prompt_carries_the_lessons_after_the_skills(
     monkeypatch.setattr(harness, "remember", fake_remember)
     monkeypatch.setattr(lessons, "for_task", fake_for_task)
 
-    agent = Agent(name="ops", title="Ops", brief="b", system="s", tools=set(),
-                  memory_scope=("ops",))
-    # "down" triggers the Incident triage skill for the ops agent, so this
+    agent = Agent(name="qa", title="QA", brief="b", system="s", tools=set(),
+                  memory_scope=("qa",))
+    # "down" triggers the Incident triage skill for the qa agent, so this
     # run really does have a skills block for the lessons to come after.
     await harness.run_agent(agent, "the box is down")
 
@@ -655,7 +655,7 @@ if not decision.allowed:
     return ActionResult(False, f'refused: {decision.reason}', failure_class=FailureClass.POLICY, dispatched=False)
 if getattr(action, 'principal_only', False) and (req.approved_by or '').split(':', 1)[0] not in PRINCIPAL_ORIGINS:
     await audit('execute.refused', req.action, {'why': 'principal only'})
-    return ActionResult(False, 'refused: only Miro, asking directly, can run this', failure_class=FailureClass.POLICY, dispatched=False)
+    return ActionResult(False, 'refused: only the owner, asking directly, can run this', failure_class=FailureClass.POLICY, dispatched=False)
 if decision.tier is Tier.ASK and (req.approved_by or '').split(':', 1)[0] == 'voice':
     await audit('execute.refused', req.action, {'why': 'tier 2 by voice door'})
     return ActionResult(False, 'refused: a Tier 2 action needs its card approved', failure_class=FailureClass.POLICY, dispatched=False)
@@ -696,10 +696,19 @@ except _pause.PauseUnreadable as exc:
 if stopped is not None:
     await audit('execute.paused', req.action, {'scope': stopped.scope, 'reason': req.reason})
     return ActionResult(False, f'not run: {stopped.says()}', evidence={HOLD: 'paused'}, failure_class=FailureClass.DISABLED, dispatched=False)
-for key, ceiling, detail in ((req.action, action.max_per_hour, f'{req.action} has already run {action.max_per_hour} times this hour; escalating instead of repeating'), (f'module:{module}', MODULE_MAX_PER_HOUR, f'the {module} module has already run {MODULE_MAX_PER_HOUR} actions this hour; escalating instead of repeating'), ('global:', GLOBAL_MAX_PER_HOUR, f'ATLAS has run {GLOBAL_MAX_PER_HOUR} actions across everything this hour; escalating instead of repeating')):
+for key, ceiling, detail in ((req.action, action.max_per_hour, f'{req.action} has already run {action.max_per_hour} times this hour; escalating instead of repeating'), (f'module:{module}', MODULE_CEILINGS.get(module, MODULE_MAX_PER_HOUR), f'the {module} module has already run {MODULE_CEILINGS.get(module, MODULE_MAX_PER_HOUR)} actions this hour; escalating instead of repeating'), ('global:', GLOBAL_MAX_PER_HOUR, f'ATLAS has run {GLOBAL_MAX_PER_HOUR} actions across everything this hour; escalating instead of repeating')):
+    if key == 'global:' and module in MODULE_CEILINGS:
+        continue
     if _over_limit(key, ceiling):
         await audit('execute.rate_limited', req.action, {'reason': req.reason, 'ceiling': key})
         return ActionResult(False, detail, failure_class=FailureClass.BUDGET, dispatched=False)
+from . import qa_gate
+if qa_gate.gated(req.action):
+    try:
+        await qa_gate.require(req.action, req.params)
+    except Exception as exc:
+        await audit('execute.qa_held', req.action, {'why': str(exc)[:300]})
+        return ActionResult(False, f'QA: {exc}', failure_class=FailureClass.QUALITY, dispatched=False)
 if action.dry_run is not None:
     preview = await action.dry_run(**req.params)
     await audit('execute.dry_run', req.action, {'ok': preview.ok, 'detail': preview.detail})
@@ -813,7 +822,13 @@ def test_execute_is_the_same_function_apart_from_the_one_call():
     YouTube account) stops that account and not its siblings. `account_of`
     is pure and never raises; a plain module or global pause stops exactly
     what it did. Same refusal, audit row and HOLD marker. Regenerated
-    deliberately."""
+    deliberately.
+
+    QA hard gate (2026-10-27, six agents phase 4): one block immediately
+    before the dry run, every tier. A gated action (kernel/qa_gate.py) with no
+    standing QA pass for its exact content, or a gate that cannot run, is
+    refused with class QUALITY, `dispatched=False` and an `execute.qa_held`
+    audit row. Nothing else moved. Regenerated deliberately."""
     tree = ast.parse((KERNEL / "executor.py").read_text())
     fn = next(n for n in tree.body
               if isinstance(n, ast.AsyncFunctionDef) and n.name == "execute")
@@ -865,7 +880,7 @@ def test_the_ledger_has_no_path_to_the_executor(path: pathlib.Path):
 # --------------------------------------------------------------- the module
 
 def test_clear_is_tier_two_with_a_dry_run_and_a_rollback():
-    """The block is Miro's to lift. As Tier 1 it sat in the catalog the
+    """The block is the owner's to lift. As Tier 1 it sat in the catalog the
     unattended `diagnose` picks from, and the model could clear its own
     guard with a "why" it wrote itself."""
     action, = LESSONS_MODULE.actions()

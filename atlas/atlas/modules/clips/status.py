@@ -5,7 +5,7 @@ actually known -- every figure read now, and said with that time.
 Read-only. UNKNOWN -- never OK -- when the counts cannot be read, when no
 campaign is on file, when a campaign's footage folder cannot be read, when
 an active campaign's budget left is not known (ATLAS cannot read the Whop
-dashboard, so a budget is only as good as Miro's last reading of it,
+dashboard, so a budget is only as good as the owner's last reading of it,
 quoted with its date, and past `BUDGET_FRESH` it is unknown, not assumed),
 or when the unattended intake (`kernel.clip_intake`) has not run lately,
 last failed, or gave up on a source -- each said with its reason.
@@ -121,7 +121,7 @@ def _count(rows: list[Any], key: str) -> dict[str, dict[str, int]]:
 async def check_legs() -> Observation:
     """Which of the lane's posting accounts ATLAS can post to, from
     configuration alone. One it cannot reach is UNKNOWN, never OK: its
-    clips still go to Miro, as hand-off cards (file and exact caption).
+    clips still go to the owner, as hand-off cards (file and exact caption).
     The Postiz route to the clips YouTube channel is its own line, as the
     TikTok one is: unset, the check is UNKNOWN and says which env to set,
     even while the Data API could reach the channel."""

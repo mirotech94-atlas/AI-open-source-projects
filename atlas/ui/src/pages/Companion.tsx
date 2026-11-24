@@ -10,13 +10,14 @@ import { AnswerExtras, MuteButton, StopButton, VoiceHints } from "../voice/Voice
 import { tapLabel } from "../voice/interrupt";
 import { AgentMap, cardName } from "./AgentMap";
 import { companionTiles, ladderWords } from "./companionModel";
+import { outcomeLine } from "./outcomeText";
 
 const Bust = lazy(() =>
   import("../core/Bust").then((m) => ({ default: m.Bust })));
 
 /**
  * The companion: ATLAS in its own window (/Applications/ATLAS.app opens
- * this page as a Chrome app). Miro, 2026-09-28: "a downloadable application
+ * this page as a Chrome app). the owner, 2026-09-28: "a downloadable application
  * that shows the humanoid talking to me and a few data and agent modes on
  * the side".
  *
@@ -65,7 +66,7 @@ function AgentRow({ agent, on, onPick }: {
           )}
           <p className="stamp">
             {agent.last_run_at
-              ? `last ran ${new Date(agent.last_run_at).toLocaleString()} · ${agent.last_outcome ?? "no outcome"}`
+              ? `last ran ${new Date(agent.last_run_at).toLocaleString()} · ${outcomeLine(agent.last_outcome) ?? "no outcome"}`
               : "has not run yet"}
             {agent.next_shift_at
               && ` · next shift ${new Date(agent.next_shift_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}

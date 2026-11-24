@@ -1,0 +1,528 @@
+/* Command Center sections (pages/CommandSections.tsx). Dark only, royal
+   blue headings from command.css; UNKNOWN keeps the grey dashed word. */
+.cs-grid {
+  display: grid; gap: 12px; align-items: stretch;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr));
+}
+/* 1200 px and up: three even columns, Today | Money | Health on the first
+   row, Search & Sites (two wide) and Coming up on the second. */
+@media (min-width: 1200px) {
+  .cs-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .cs-grid > .cmd-s-search, .cs-grid > .cs-span2 { grid-column: span 2; }
+}
+/* The Command Center's "more", on the Agency tab (2026-10-29). */
+.cs-more { margin: 12px 0; }
+.cs-grid > * { min-width: 0; }
+.cs-grid > .cmd-panel, .cs-grid > section > .cmd-panel { height: 100%; box-sizing: border-box; }
+.cs-grid .cmd-panel h2 { font-size: 12.5px; letter-spacing: .16em; }
+.cs-sub {
+  margin: 10px 0 6px; font: 700 10.5px/1.2 var(--mono); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.cs-sub span { margin-left: 8px; font-weight: 400; letter-spacing: .04em; color: var(--text-faint); }
+.cs-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cs-list > li {
+  display: grid; grid-template-columns: 7px minmax(80px, 9.5em) minmax(0, 1fr) auto;
+  gap: 8px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--line-soft);
+  font-size: 13px;
+}
+.cs-list > li:last-child { border-bottom: 0; }
+/* Health on every compact row (invariant 7): FAILING red with a solid rule,
+   degraded amber, UNKNOWN grey with a dashed rule and no glow. Never shared. */
+.cs-list > li[data-health="failing"] { box-shadow: inset 2px 0 0 var(--red); padding-left: 8px; }
+.cs-list > li[data-health="failing"] > .cs-v,
+.cs-list > li[data-health="failing"] > .cs-v b { color: var(--red); }
+.cs-list > li[data-health="degraded"] > .cs-v { color: var(--amber); }
+.cs-list > li[data-health="unknown"] {
+  border-left: 1px dashed var(--grey); padding-left: 8px; box-shadow: none;
+}
+.cs-list > li[data-health="unknown"] > .cs-k,
+.cs-list > li[data-health="unknown"] > .cs-v { color: var(--grey); text-shadow: none; }
+.cs-counts-t { margin: -4px 0 8px; color: var(--text-faint); font-size: 10.5px; }
+.cs-list > li > .cmd-sq { align-self: center; }
+.cs-cards > li { grid-template-columns: minmax(80px, 9.5em) minmax(0, 1fr) auto; }
+.cs-cards > li[data-expired] { opacity: .6; }
+.cs-search > li { grid-template-columns: minmax(80px, 11em) minmax(0, 1fr) auto; }
+.cs-k { color: var(--text-hot); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Every row one line: the value is cut with an ellipsis, never wrapped
+   into a paragraph (the owner 2026-10-29). */
+.cs-v {
+  color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-v small { color: var(--text-faint); font-size: 11.5px; }
+.cs-v b { color: var(--text-hot); }
+.cs-t { color: var(--text-faint); font-size: 10.5px; white-space: nowrap; }
+.cs-word { text-transform: capitalize; color: var(--state, var(--text)); }
+.cs-counts { margin: 0 0 8px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.cs-counts div { border-left: 2px solid var(--state); padding: 1px 0 1px 8px; }
+.cs-counts div[data-health="unknown"] { border-left-style: dashed; }
+.cs-counts dt { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+.cs-counts dd { margin: 0; font: 800 20px/1.1 var(--font-display); color: var(--text-hot); }
+.cs-counts div[data-health="unknown"] dd { color: var(--grey); }
+@media (max-width: 520px) {
+  .cs-list > li { grid-template-columns: 7px minmax(0, 1fr) auto; }
+  .cs-list > li > .cs-v { grid-column: 2 / -1; order: 1; white-space: normal; }
+  .cs-search > li, .cs-cards > li { grid-template-columns: minmax(0, 1fr) auto; }
+  .cs-search > li > .cs-v, .cs-cards > li > .cs-v { grid-column: 1 / -1; order: 1; }
+}
+
+/* ---------------------------------------------- ops floor (the owner 2026-10-29)
+   Black ground, royal blue #5b8cff for chrome only. Health keeps its own:
+   FAILING red, UNKNOWN grey dashed with the word and no glow, OK green.
+   Three columns from 1280 px (ring in the middle), two columns on tablets,
+   one on phones: see the flank block at the end. */
+.cmd-floor { display: grid; gap: 12px; min-width: 0; }
+.cmd-strip {
+  margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px;
+}
+.cmd-strip > div {
+  background: #000; border: 1px solid rgba(91, 140, 255, 0.35);
+  border-top: 2px solid #5b8cff; padding: 10px 14px; border-radius: 6px;
+}
+.cmd-strip dt {
+  font: 700 10.5px/1.2 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--text-dim);
+}
+.cmd-strip dd { margin: 4px 0 2px; font: 800 28px/1.1 var(--font-display); color: var(--text-hot); }
+.cmd-strip small { color: var(--text-faint); font-size: 11px; }
+.cmd-strip > div.cmd-unknown {
+  border: 1px dashed var(--grey); border-top: 2px dashed var(--grey); box-shadow: none;
+}
+.cmd-floor .cmd-strip > div { padding: 8px 14px; }
+.cmd-floor .cmd-strip dd { font-size: 24px; margin: 2px 0 1px; }
+.cmd-strip dd a { color: inherit; text-decoration: underline dotted rgba(91, 140, 255, 0.6); }
+/* Coming up, one short line under the strip. */
+.cmd-next {
+  margin: 0; display: flex; gap: 14px; align-items: baseline; flex-wrap: nowrap;
+  overflow: hidden; white-space: nowrap; font-size: 12.5px; color: var(--text);
+}
+.cmd-next > span { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cmd-next time { color: var(--text-hot); font-family: var(--mono); }
+.cmd-next-k {
+  color: #5b8cff; font: 700 10.5px/1.2 var(--mono); letter-spacing: .14em;
+  text-transform: uppercase; text-decoration: none;
+}
+.cmd-next > .cmd-dim { margin-left: auto; }
+/* Health & money: checks left, money right, one line per row. */
+.cs-vitals { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 18px; }
+.cs-vitals > * { min-width: 0; }
+.cs-vitals-top { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 6px; }
+.cs-vitals-top .cs-counts-3 { flex: 1; margin: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cs-vitals-top .cs-counts-t { margin: 0; white-space: nowrap; }
+/* Roster: one line per agent; the last shift is cut, never spills over. */
+.cmd-floor .cmd-roster-t { table-layout: fixed; }
+.cmd-floor .cmd-roster-t th:nth-child(1) { width: 11%; }
+.cmd-floor .cmd-roster-t th:nth-child(2) { width: 16%; }
+.cmd-floor .cmd-roster-t th:nth-child(3) { width: 8%; }
+.cmd-floor .cmd-roster-t th:nth-child(5) { width: 9%; }
+.cmd-floor .cmd-roster-t th:nth-child(6), .cmd-floor .cmd-roster-t th:nth-child(7) { width: 6%; }
+.cmd-floor .cmd-roster-t th:nth-child(8) { width: 10%; }
+.cmd-floor .cmd-roster-t td { overflow: hidden; text-overflow: ellipsis; }
+.cs-chip-unknown {
+  display: inline-block; margin-right: 6px; padding: 0 7px; border-radius: 2px;
+  border: 1px dashed var(--grey); color: var(--grey); box-shadow: none; text-shadow: none;
+  font: 700 10.5px/1.7 var(--mono); letter-spacing: .1em; text-transform: uppercase;
+}
+.cmd-floor .cmd-panel { background: #000; }
+.cmd-floor .cmd-panel h2 { color: #5b8cff; }
+
+.cmd-roster-t { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cmd-roster-t th {
+  text-align: left; padding: 4px 8px; font: 700 10px/1.2 var(--mono); letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid rgba(91, 140, 255, 0.35);
+}
+.cmd-roster-t td {
+  padding: 4px 8px; border-bottom: 1px solid var(--line-soft); vertical-align: baseline;
+  white-space: nowrap;
+}
+.cmd-roster-t td small { color: var(--text-faint); font-size: 11.5px; }
+.cmd-roster-name { color: var(--text-hot); font-weight: 700; text-transform: capitalize; }
+.cmd-roster-t tr[data-state="failing"] td:first-child { box-shadow: inset 3px 0 0 var(--red); }
+.cmd-roster-t tr[data-state="unknown"] td:first-child { box-shadow: inset 3px 0 0 transparent; }
+
+/* The three states never share a treatment. */
+.cmd-state {
+  display: inline-block; padding: 0 7px; border-radius: 2px;
+  font: 700 10.5px/1.7 var(--mono); letter-spacing: .12em;
+}
+.cmd-ok { color: var(--cyan); border: 1px solid var(--cyan-dim); }
+.cmd-idle { color: var(--text-dim); border: 1px solid var(--line); }
+.cmd-failing { color: var(--red) !important; border: 1px solid var(--red); }
+.cmd-unknown {
+  color: var(--grey) !important; border: 1px dashed var(--grey);
+  box-shadow: none !important; text-shadow: none !important;
+}
+li.cmd-failing, li.cmd-unknown { border-width: 0 0 0 2px; padding-left: 8px; }
+.cmd-dim { color: var(--text-faint); font-size: 11.5px; white-space: nowrap; }
+.cmd-bad { color: var(--red); }
+
+.cmd-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.cmd-rows > li {
+  display: grid; grid-template-columns: minmax(120px, 13em) minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  gap: 10px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--line-soft);
+  font-size: 13px;
+}
+.cmd-costs .cmd-rows > li, .cmd-alerts .cmd-rows > li {
+  grid-template-columns: minmax(110px, 12em) minmax(0, 1fr) auto;
+}
+.cmd-rows > li:last-child { border-bottom: 0; }
+.cmd-rows-k { color: var(--text-hot); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmd-rows-k small, .cmd-rows small { color: var(--text-faint); font-size: 11.5px; }
+.cmd-rows b { color: var(--text-hot); }
+
+.cmd-decide { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 4px; }
+.cmd-decide-btn {
+  font: 700 12px/1 var(--font-body); padding: 7px 12px; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--text-hot); border: 1px solid rgba(91, 140, 255, 0.5);
+}
+.cmd-decide-btn[data-verdict="approve"] { background: #5b8cff; color: #070a12; border-color: #5b8cff; }
+.cmd-decide-btn:hover:not(:disabled) { border-color: #7a9fff; }
+.cmd-decide-btn:disabled { opacity: .5; cursor: not-allowed; }
+.cmd-verdict {
+  grid-column: 1 / -1; font: 12px/1.4 var(--mono); color: var(--text);
+  overflow-wrap: anywhere;
+}
+/* Last shift: one line (<= 60 chars from the server), the whole text behind
+   the expand (the owner 2026-10-29). */
+.cmd-roster-t td.cmd-shift { max-width: 30ch; }
+.cmd-roster-t td small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmd-outcome { display: inline; }
+.cmd-outcome > summary { display: inline; cursor: pointer; list-style: none; }
+.cmd-outcome > summary::-webkit-details-marker { display: none; }
+.cmd-outcome > summary small { text-decoration: underline dotted; }
+.cmd-outcome[open] > p {
+  margin: 4px 0 0; font-size: 12px; color: var(--text); white-space: normal;
+  max-width: 60ch;
+}
+/* The answer to the last click stays after its card leaves the list. */
+.cmd-verdict-last { margin: 0 0 8px; padding: 6px 8px; border-radius: 6px;
+  border: 1px solid var(--line); }
+.cmd-verdict-last[data-tone="ok"] { border-color: var(--ok); }
+.cmd-verdict-last[data-tone="warn"] { border-color: var(--warn); }
+.cmd-verdict-last[data-tone="bad"] { border-color: var(--no); color: var(--no); }
+.cs-list > li.cmd-more-n { display: block; white-space: nowrap; }
+
+/* ------------------------------------------- 3D charts + lead grid (2026-10-30)
+   Fills the band under Roster/Health (latest leads) and the right column
+   under Needs you (two isometric bar charts). Inline SVG, no library. */
+.cmd-chart .cmd-note { margin: 2px 0 0; }
+.cmd-iso { display: block; width: 100%; height: auto; max-height: 190px; }
+.cmd-iso .iso-grid line { stroke: rgba(91, 140, 255, 0.22); stroke-width: 1; }
+.cmd-iso .iso-front { fill: #3a63d6; }
+.cmd-iso .iso-side { fill: #25449b; }
+.cmd-iso .iso-top { fill: #8fb0ff; }
+.cmd-iso .iso-val { fill: var(--text-hot); font: 700 11px var(--mono); }
+.cmd-iso .iso-lab { fill: var(--text-dim); font: 600 9.5px var(--mono); text-transform: capitalize; }
+.cmd-iso .iso-unknown rect { fill: none; stroke: var(--grey); stroke-dasharray: 4 3; stroke-width: 1.2; }
+.cmd-iso .iso-unknown text { fill: var(--grey); font: 700 7px var(--mono); }
+.cmd-iso .iso-unknown .iso-lab { font: 600 9.5px var(--mono); }
+.cmd-chart-unknown {
+  display: grid; place-items: center; height: 120px; border: 1px dashed var(--grey);
+  border-radius: 6px; color: var(--grey);
+}
+.cmd-leads-t td, .cmd-leads-t th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cmd-leads-t td.cmd-roster-name a { color: inherit; text-decoration: none; }
+.cmd-leads-t td.cmd-roster-name a:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: no-preference) {
+  .cmd-iso .iso-bar { animation: iso-fade .5s ease-out both; }
+  .cmd-iso .iso-rise { transform-box: fill-box; transform-origin: 50% 100%;
+    animation: iso-rise .6s cubic-bezier(.2, .8, .2, 1) both; }
+}
+@keyframes iso-rise { from { transform: scaleY(.02); } to { transform: scaleY(1); } }
+@keyframes iso-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ------------------------------------------- flanks (the owner 2026-11-12)
+   "Every section on the left and right of the ATLAS animation, so he is in
+   between of everything." The ring is the middle column; the sections are
+   split left/right by flankLayout.ts. DOM order is ring, left, right, so
+   keyboard and phone order follow it. 1280 px and 640 px tall and up: one
+   screen, the page never scrolls; a panel that holds more scrolls inside
+   itself. Tablet: ring on top, two columns. Phone: ring on top, one column. */
+.cmd-pbody { min-width: 0; }
+.cmd-triad { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.cmd-triad > * { min-width: 0; }
+.cmd-ring-col { grid-column: 1 / -1; display: grid; place-items: center; position: relative; }
+.cmd-ring-col .br-wrap { width: min(100%, 420px); margin: 0 auto; }
+.cmd-ring-col .br { max-width: none; }
+.cmd-flank { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.cmd-flank > .cmd-strip { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+.cmd-flank-unit { display: grid; gap: 10px; min-width: 0; }
+.cmd-flank .cmd-next { flex-wrap: wrap; white-space: normal; }
+.cmd-flank .cmd-roster-t { table-layout: fixed; min-width: 520px; }
+.cmd-flank .cmd-leads-t { min-width: 440px; }
+.cmd-flank .cmd-pbody { overflow-x: auto; }
+@media (max-width: 859px) {
+  .cmd-triad { grid-template-columns: minmax(0, 1fr); }
+}
+@media (min-width: 1280px) {
+  /* Thin connectors from the ring rim to each side column, in the ring's blue.
+     Unread health goes grey and dashed, like the ring itself. */
+  .cmd-ring-col .br-wrap { position: relative; }
+  .cmd-ring-col .br-wrap::before, .cmd-ring-col .br-wrap::after {
+    content: ""; position: absolute; top: calc(50% - 10px); width: 56px; height: 1px;
+    pointer-events: none;
+  }
+  .cmd-ring-col .br-wrap::before {
+    right: 100%; background: linear-gradient(to left, rgba(91, 140, 255, 0.6), transparent);
+  }
+  .cmd-ring-col .br-wrap::after {
+    left: 100%; background: linear-gradient(to right, rgba(91, 140, 255, 0.6), transparent);
+  }
+  .cmd-ring-col .br-wrap[data-health="unknown"]::before,
+  .cmd-ring-col .br-wrap[data-health="unknown"]::after {
+    background: repeating-linear-gradient(to right, var(--grey, #8a8f99) 0 4px, transparent 4px 9px);
+  }
+}
+@media (min-width: 1280px) and (min-height: 640px) {
+  .cmd-shell:has(.cmd-floor) { height: 100vh; height: 100dvh; min-height: 0; }
+  .cmd-shell:has(.cmd-floor) .cmd-main {
+    flex: 1 1 0; min-height: 0; overflow: hidden; padding-top: 10px; padding-bottom: 10px;
+    display: flex; flex-direction: column;
+  }
+  .cmd-page:has(.cmd-floor) { flex: 1 1 0; min-height: 0; width: 100%; grid-template-rows: minmax(0, 1fr); }
+  .cmd-floor { height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+  .cmd-triad {
+    flex: 1 1 0; min-height: 0; gap: 28px; align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 30vw, 620px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .cmd-ring-col { grid-column: 2; grid-row: 1; min-height: 0; }
+  .cmd-ring-col .br-wrap { width: min(100%, calc(100dvh - 120px)); }
+  .cmd-flank { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .cmd-flank[data-side="left"] { grid-column: 1; grid-row: 1; }
+  .cmd-flank[data-side="right"] { grid-column: 3; grid-row: 1; }
+  .cmd-flank > .cmd-strip { flex: none; }
+  .cmd-flank-unit { display: flex; flex-direction: column; min-height: 0; flex: 1 1 0; }
+  .cmd-flank-unit[data-weight="1"] { flex: none; }
+  .cmd-flank-unit[data-weight="3"] { flex-grow: 3; }
+  .cmd-flank-unit[data-weight="4"] { flex-grow: 4; }
+  .cmd-flank-unit[data-weight="6"] { flex-grow: 6; }
+  .cmd-flank-unit > *, .cmd-floor-needs > section { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .cmd-flank-unit[data-unit="vitals"] { flex: none; }
+  .cmd-flank-unit[data-unit="vitals"] > * { flex: none; }
+  .cmd-flank-unit[data-unit="next"] > * { flex: none; }
+  .cmd-floor .cmd-panel {
+    display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 9px 12px 10px;
+  }
+  .cmd-flank-unit > .cmd-panel, .cmd-flank-unit > div > .cmd-panel,
+  .cmd-floor-needs > section > .cmd-panel { flex: 1 1 0; }
+  .cmd-floor .cmd-panel > header { flex: none; margin-bottom: 6px; padding-bottom: 5px; }
+  .cmd-floor .cmd-panel > .cmd-pbody { flex: 1 1 auto; min-height: 0; overflow: auto; }
+  .cmd-floor .cmd-roster-t td, .cmd-floor .cmd-roster-t th { padding-top: 3px; padding-bottom: 3px; }
+  .cmd-floor .cmd-roster-t thead th { position: sticky; top: 0; background: #000; z-index: 1; }
+  .cmd-floor .cs-list > li { padding: 3px 0; }
+  .cmd-floor .cs-counts { margin-bottom: 4px; }
+  .cmd-floor .cmd-strip > div { padding: 6px 12px; }
+  .cmd-floor .cmd-strip dd { font-size: 22px; margin: 1px 0 0; }
+  .cmd-flank .cs-vitals { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  /* The charts fill the cell they have. */
+  .cmd-flank-chart .cmd-chart > .cmd-pbody { display: flex; flex-direction: column; }
+  .cmd-flank-chart .cmd-iso { flex: 1 1 0; min-height: 0; max-height: none; height: 100%; }
+  .cmd-flank-chart .cmd-chart-unknown { flex: 1 1 auto; height: auto; min-height: 80px; }
+  .cmd-flank-chart .cmd-note { flex: none; }
+  .cmd-floor-leads .cmd-roster-t td, .cmd-floor-leads .cmd-roster-t th { padding: 2px 8px; }
+  .cmd-floor-leads .cmd-leads-t { table-layout: fixed; }
+  .cmd-floor-leads .cmd-leads-t th:nth-child(1) { width: 34%; }
+  .cmd-floor-leads .cmd-leads-t th:nth-child(2) { width: 15%; }
+  .cmd-floor-leads .cmd-leads-t th:nth-child(3) { width: 17%; }
+  .cmd-floor-leads .cmd-leads-t th:nth-child(4) { width: 10%; }
+  .cmd-floor-leads .cmd-leads-t th:nth-child(5) { width: 24%; }
+  .cmd-floor-leads .cmd-roster-t thead th { position: sticky; top: 0; background: #000; z-index: 1; }
+}
+@media (min-width: 860px) and (max-width: 1279px) {
+  .cmd-flank[data-side="left"] { grid-column: 1; }
+  .cmd-flank[data-side="right"] { grid-column: 2; }
+}
+
+/* ==========================================================================
+   Command Center, look v2 (look-fable sec 5). Everything is under
+   `.cmd-shell.v2`; no pinned health token is declared here. The hero, the
+   snapshot wells, the health bar, the roster, Needs you and the lower row.
+   ========================================================================== */
+
+/* --- page: hero on top, the two flank columns under it ------------------- */
+.cmd-shell.v2 .cmd-floor { gap: var(--s-4); }
+.cmd-shell.v2 .cmd-triad { gap: var(--s-4); grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+.cmd-shell.v2 .cmd-ring-col { grid-column: 1 / -1; grid-row: 1; display: block; }
+.cmd-shell.v2 .cmd-flank { gap: var(--s-4); }
+.cmd-shell.v2 .cmd-flank[data-side="left"] { grid-column: 1; grid-row: 2; }
+.cmd-shell.v2 .cmd-flank[data-side="right"] { grid-column: 2; grid-row: 2; }
+.cmd-shell.v2 .cmd-flank-unit { gap: var(--s-3); }
+.cmd-shell.v2 .cmd-flank-unit[data-weight] { flex: none; }
+.cmd-shell.v2 .cmd-ring-col .br-wrap::before, .cmd-shell.v2 .cmd-ring-col .br-wrap::after { content: none; }
+@media (max-width: 859px) {
+  .cmd-shell.v2 .cmd-triad { grid-template-columns: minmax(0, 1fr); }
+  .cmd-shell.v2 .cmd-flank[data-side] { grid-column: 1; grid-row: auto; }
+}
+
+/* --- 1. hero: the ring column is the e2 surface --------------------------- */
+.cmd-shell.v2 .cmd-ring-col .br-wrap {
+  width: 100%; margin: 0; max-width: none; text-align: left; min-height: 300px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
+  grid-template-areas: "text ring" "cap ring"; align-items: center; column-gap: var(--s-8);
+  padding: var(--s-6) var(--s-8); background: var(--e2-fill); border: 1px solid var(--edge);
+  border-radius: var(--r-hero); box-shadow: var(--e2-shadow);
+}
+.cmd-shell.v2 .br-hero { grid-area: text; align-self: end; display: grid; gap: var(--s-3); }
+.cmd-shell.v2 .br-wrap .br { grid-area: ring; width: 100%; max-width: 280px; justify-self: end; }
+.cmd-shell.v2 .br-wrap .br-cap { grid-area: cap; align-self: start; justify-content: flex-start; gap: var(--s-4); }
+.cmd-shell.v2 .br-eyebrow {
+  margin: 0; font: 700 var(--t-meta)/1.3 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.cmd-shell.v2 .br-state {
+  margin: 0; display: flex; align-items: center; gap: var(--s-3); color: var(--ink);
+  font: 800 var(--t-fig-lg)/1 var(--font-display);
+}
+.cmd-shell.v2 .br-sq { width: 10px; height: 10px; border-radius: 2px; background: var(--state, currentColor); flex: none; }
+.cmd-shell.v2 .br-state[data-health="ok"] .br-sq { background: var(--cyan); }
+.cmd-shell.v2 .br-state[data-health="degraded"] .br-sq { background: var(--amber); }
+.cmd-shell.v2 .br-state[data-health="failing"] .br-sq { background: var(--red); }
+.cmd-shell.v2 .br-state .cmd-word-unknown { font-size: 14px; }
+.cmd-shell.v2 .br-why { font-size: var(--t-body); font-weight: 400; color: var(--muted); font-family: var(--font-body); }
+.cmd-shell.v2 .br-stats { margin: 0; display: flex; gap: var(--s-6); }
+.cmd-shell.v2 .br-stat { padding: 0 var(--s-6) 0 0; border-right: 1px solid var(--edge); }
+.cmd-shell.v2 .br-stat:last-child { border-right: 0; }
+.cmd-shell.v2 .br-stat dt {
+  font: 700 var(--t-meta)/1.3 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.cmd-shell.v2 .br-stat dd { margin: var(--s-1) 0 0; font: 800 22px/1.05 var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); }
+.cmd-shell.v2 .br-stat[data-health="unknown"] dd { color: var(--grey); }
+.cmd-shell.v2 .br-read { margin: 0; font: var(--t-meta)/1.4 var(--mono); color: var(--muted); }
+.cmd-shell.v2 .br-wrap .br:not(.br-s-unknown) { filter: drop-shadow(0 0 24px rgba(91, 140, 255, .10)); }
+/* UNKNOWN hero: grey, dashed, still. */
+.cmd-shell.v2 .br-wrap[data-health="unknown"] {
+  background: transparent; border: 1px dashed var(--grey); box-shadow: none;
+}
+.cmd-shell.v2 .br-s-unknown .br-r, .cmd-shell.v2 .br-s-unknown .br-halo { animation: none; }
+.cmd-shell.v2 .br-s-unknown .br-line, .cmd-shell.v2 .br-s-unknown .br-arc,
+.cmd-shell.v2 .br-s-unknown .br-thin, .cmd-shell.v2 .br-s-unknown .br-dots { stroke-dasharray: 4 6; }
+.cmd-shell.v2 .br-s-unknown { filter: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .cmd-shell.v2 .br-spin .br-r3 { animation-duration: 48s; }
+  .cmd-shell.v2 .br-spin .br-r4 { animation-duration: 36s; }
+}
+@media (max-width: 859px) {
+  .cmd-shell.v2 .cmd-ring-col .br-wrap {
+    grid-template-columns: minmax(0, 1fr); grid-template-areas: "ring" "text" "cap";
+    padding: var(--s-5); justify-items: start;
+  }
+  .cmd-shell.v2 .br-wrap .br { justify-self: center; max-width: 240px; }
+  .cmd-shell.v2 .br-stats { flex-wrap: wrap; gap: var(--s-4); }
+}
+
+/* --- 2. snapshot tiles: 2 x 2 wells --------------------------------------- */
+.cmd-shell.v2 .cmd-flank > .cmd-strip, .cmd-shell.v2 .cmd-strip {
+  grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3);
+}
+.cmd-shell.v2 .cmd-strip > div, .cmd-shell.v2 .cmd-floor .cmd-strip > div {
+  background: var(--e0-fill); border: 1px solid var(--edge); border-top: 1px solid var(--edge);
+  border-radius: var(--r-well); padding: var(--s-3) var(--s-4); display: grid; gap: var(--s-1);
+}
+.cmd-shell.v2 .cmd-strip dd, .cmd-shell.v2 .cmd-floor .cmd-strip dd { margin: 0; font-size: var(--t-fig); }
+.cmd-shell.v2 .cmd-strip small { margin-top: 0; }
+.cmd-shell.v2 .cmd-strip > div.cmd-unknown {
+  background: transparent; border: 1px dashed var(--grey); border-top: 1px dashed var(--grey); box-shadow: none;
+}
+.cmd-shell.v2 .cmd-strip > div.cmd-unknown dd { font: 700 var(--t-meta)/1.3 var(--mono); }
+
+/* --- 3. health bar ---------------------------------------------------------- */
+.cmd-shell.v2 .cmd-healthbar { display: grid; gap: var(--s-2); }
+.cmd-shell.v2 .cmd-hb-bar { display: flex; gap: 2px; height: 8px; border-radius: 4px; overflow: hidden; }
+.cmd-shell.v2 .cmd-hb-seg { flex: 1 1 0; min-width: 10px; border-radius: 2px; background: var(--state); }
+.cmd-shell.v2 .cmd-hb-seg[data-health="ok"] { background: var(--cyan); }
+.cmd-shell.v2 .cmd-hb-seg[data-health="degraded"] { background: var(--amber); }
+.cmd-shell.v2 .cmd-hb-seg[data-health="failing"] { background: var(--red); }
+.cmd-shell.v2 .cmd-hb-seg[data-health="unknown"] {
+  background-color: transparent; outline: 1px dashed var(--grey); outline-offset: -1px;
+}
+.cmd-shell.v2 .cmd-healthbar[data-health="unknown"] .cmd-hb-seg { flex: 1 1 100%; }
+.cmd-shell.v2 .cmd-hb-legend {
+  list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--s-4);
+  font: var(--t-meta)/1.4 var(--mono); color: var(--ink-2);
+}
+.cmd-shell.v2 .cmd-hb-legend li { display: inline-flex; align-items: center; gap: var(--s-1); }
+.cmd-shell.v2 .cmd-hb-legend .cmd-hb-at { margin-left: auto; color: var(--muted); }
+.cmd-shell.v2 .cmd-hb-legend li[data-health="unknown"] { color: var(--grey); }
+
+/* --- 4. roster table -------------------------------------------------------- */
+.cmd-shell.v2 .cmd-floor .cmd-roster-t th { padding: 0 var(--s-3) var(--s-2); border-bottom: 1px solid var(--edge); }
+.cmd-shell.v2 .cmd-floor .cmd-roster-t td {
+  padding: 10px var(--s-3); border-bottom: 1px solid var(--edge); color: var(--ink-2);
+}
+.cmd-shell.v2 .cmd-floor .cmd-roster-t tbody tr:last-child td { border-bottom: 0; }
+.cmd-shell.v2 .cmd-floor .cmd-roster-t tbody tr:hover { background: rgba(143, 176, 255, .04); }
+.cmd-shell.v2 .cmd-roster-name { font: 600 13px/1.3 var(--font-body); color: var(--ink); }
+.cmd-shell.v2 .cmd-roster-t td:nth-child(2) { color: var(--muted); font-size: var(--t-small); }
+.cmd-shell.v2 .cmd-roster-t .cmd-state {
+  border: 0; padding: 0; font: var(--t-body)/1.4 var(--font-body); letter-spacing: 0; color: var(--ink-2);
+  display: inline-flex; align-items: center; gap: var(--s-2);
+}
+.cmd-shell.v2 .cmd-roster-t .cmd-state::before {
+  content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--cyan); flex: none;
+}
+.cmd-shell.v2 .cmd-roster-t .cmd-state.cmd-idle { color: var(--muted); }
+.cmd-shell.v2 .cmd-roster-t .cmd-state.cmd-idle::before { background: var(--muted); }
+.cmd-shell.v2 .cmd-roster-t .cmd-state.cmd-failing { color: var(--red) !important; border: 0; }
+.cmd-shell.v2 .cmd-roster-t .cmd-state.cmd-failing::before { background: var(--red); }
+.cmd-shell.v2 .cmd-roster-t .cmd-state.cmd-unknown { color: var(--grey) !important; border: 0; }
+.cmd-shell.v2 .cmd-roster-t .cmd-state.cmd-unknown::before {
+  background: transparent; border: 1px dashed var(--grey);
+}
+.cmd-shell.v2 .cmd-roster-t tr[data-state="failing"] td:first-child { box-shadow: inset 2px 0 0 var(--red); }
+.cmd-shell.v2 .cmd-roster-t tr[data-state="unknown"] td:first-child {
+  box-shadow: none; border-left: 2px dashed var(--grey);
+}
+.cmd-shell.v2 .cmd-roster-t td.cmd-dim, .cmd-shell.v2 .cmd-roster-t td:nth-child(n+5) {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+}
+.cmd-shell.v2 .cmd-roster-t td:nth-child(n+6) { text-align: right; }
+
+/* --- 5. Needs you ----------------------------------------------------------- */
+.cmd-shell.v2 .cmd-floor-needs .cmd-panel:has(.cs-cards) { border-color: rgba(245, 165, 36, .45); }
+.cmd-shell.v2 .cmd-floor-needs .cs-cards > li {
+  background: var(--e0-fill); border: 1px solid var(--edge); border-radius: var(--r-well);
+  padding: var(--s-3) var(--s-4);
+}
+.cmd-shell.v2 .cmd-floor-needs .cs-cards { gap: var(--s-2); }
+.cmd-shell.v2 .cmd-floor-needs .cs-k { font-weight: 600; color: var(--ink); }
+.cmd-shell.v2 .cmd-decide { justify-content: flex-end; gap: var(--s-2); }
+
+/* --- 6. lower row ------------------------------------------------------------ */
+.cmd-shell.v2 .cmd-stagebar { display: grid; gap: var(--s-2); margin-bottom: var(--s-3); }
+.cmd-shell.v2 .cmd-sb-fig { margin: 0; }
+.cmd-shell.v2 .cmd-sb-read { margin: 0; font: var(--t-meta)/1.4 var(--mono); color: var(--muted); }
+.cmd-shell.v2 .cmd-sb-bar { display: flex; gap: 2px; height: 6px; border-radius: 3px; overflow: hidden; }
+.cmd-shell.v2 .cmd-sb-seg { flex: 1 1 0; min-width: 6px; border-radius: 2px; background: var(--brand); }
+.cmd-shell.v2 .cmd-sb-seg[data-step="1"], .cmd-shell.v2 .cmd-sb-sw[data-step="1"] { opacity: .78; }
+.cmd-shell.v2 .cmd-sb-seg[data-step="2"], .cmd-shell.v2 .cmd-sb-sw[data-step="2"] { opacity: .60; }
+.cmd-shell.v2 .cmd-sb-seg[data-step="3"], .cmd-shell.v2 .cmd-sb-sw[data-step="3"] { opacity: .45; }
+.cmd-shell.v2 .cmd-sb-seg[data-step="4"], .cmd-shell.v2 .cmd-sb-sw[data-step="4"] { opacity: .32; }
+.cmd-shell.v2 .cmd-sb-seg[data-step="5"], .cmd-shell.v2 .cmd-sb-sw[data-step="5"] { opacity: .22; }
+.cmd-shell.v2 .cmd-sb-seg.cmd-sb-none, .cmd-shell.v2 .cmd-sb-sw.cmd-sb-none {
+  background: rgba(201, 210, 227, .22); opacity: 1;
+}
+.cmd-shell.v2 .cmd-sb-legend {
+  list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-1) var(--s-4); font-size: var(--t-small); color: var(--ink-2);
+}
+.cmd-shell.v2 .cmd-sb-legend li { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.cmd-shell.v2 .cmd-sb-legend li span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmd-shell.v2 .cmd-sb-legend b { font: 600 var(--t-small)/1 var(--mono); font-variant-numeric: tabular-nums; }
+.cmd-shell.v2 .cmd-sb-sw { width: 8px; height: 8px; border-radius: 2px; background: var(--brand); flex: none; }
+.cmd-shell.v2 .cmd-stagebar[data-health="unknown"] .cmd-sb-seg {
+  background-color: transparent; outline: 1px dashed var(--grey); outline-offset: -1px; opacity: 1;
+}
+.cmd-shell.v2 .cmd-sb-unknown { margin: 0; display: flex; gap: var(--s-2); color: var(--muted); font-size: var(--t-small); }
+.cmd-shell.v2 .cmd-iso .iso-grid line { stroke: rgba(143, 176, 255, .10); }
+.cmd-shell.v2 .cmd-chart-unknown { min-height: 120px; border-radius: var(--r-well); }
+.cmd-shell.v2 .cmd-flank .cmd-chart-unknown { height: auto; }
+.cmd-shell.v2 .cmd-next time { color: var(--muted); display: inline-block; min-width: 64px; text-align: right; }
+.cmd-shell.v2 .cmd-next > span { color: var(--ink-2); }
+.cmd-shell.v2 .cmd-next-k { color: var(--muted); }
+
+/* --- states (sec 7) ------------------------------------------------------------ */
+.cmd-shell.v2 .cmd-floor .cmd-empty { padding: var(--s-5) 0; text-align: center; color: var(--muted); font-size: var(--t-body); }
+.cmd-shell.v2 .cmd-floor .cmd-empty.v2-loading { display: flex; gap: var(--s-2); justify-content: center; }
+.cmd-shell.v2 .cs-chip-unknown { border-radius: var(--r-chip); }

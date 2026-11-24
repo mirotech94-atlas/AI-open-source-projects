@@ -14,10 +14,10 @@ register(Skill(
     name="The reels plan",
     triggers=("reel", "reels", "series", "episode", "part ", "veo", "tiktok",
               "instagram", "stories account", "the end", "captions"),
-    agents=("reels", "growth", "marketing", "concierge"),
+    agents=("content",),
     priority=88,
     body="""
-What gets made, in this order (Miro, 2026-09-27/28):
+What gets made, in this order (the owner, 2026-09-27/28):
 
 - The series being made, one part at a time. A series is planned whole --
   3 to 8 parts with a real ending -- with a fixed character sheet. A part is
@@ -27,7 +27,7 @@ What gets made, in this order (Miro, 2026-09-27/28):
   Never leave a series on "Part 2". Emergency Room: Code Chaos was rendered
   by hand Sep 28 - Oct 2 and is recorded as made; The Parking Spot (original
   car designs) is next.
-- The two packages Miro supplied: 30 Egyptian-Arabic stories and 30
+- The two packages the owner supplied: 30 Egyptian-Arabic stories and 30
   business lessons. They are a plan, not a timetable -- made now, as fast
   as Veo allows, two stories then one lesson; a RETURN sequel waits for its
   episode to post.
@@ -58,7 +58,7 @@ alternating. Say that plainly; never pad a reel to look busier.
 Posting: a reel posts itself to Instagram, the Facebook Page and TikTok only
 past the checks in code -- the switch, at most two a day, the AI label, the
 brand guard, a 1080x1920 render with sound that is not silent. A reel that
-fails one becomes a card for Miro with the reason first. A TikTok post cannot
+fails one becomes a card for the owner with the reason first. A TikTok post cannot
 be taken back once Postiz publishes it. Nothing here ever costs money beyond
 the Veo cap he set, and nothing sells: the business lessons' $29 and $99
 offers stay drafts.
@@ -66,5 +66,5 @@ offers stay drafts.
 What an agent does: read the state (module_status, the digest in
 #instagram-reels), explain it with the time each figure was read, and say
 what is waiting and why. An agent never posts, never edits a posted caption,
-and never raises the Veo cap -- those are the pipeline's or Miro's.
+and never raises the Veo cap -- those are the pipeline's or the owner's.
 """))

@@ -1,6 +1,6 @@
-"""ATLAS's knowledge as Markdown, for the Obsidian vault on Miro's Mac.
+"""ATLAS's knowledge as Markdown, for the Obsidian vault on the owner's Mac.
 
-Miro, 2026-09-28: "combine Claude and Obsidian". The Mac agent pulls this
+the owner, 2026-09-28: "combine Claude and Obsidian". The Mac agent pulls this
 every 10 minutes (GET /mac/vault, the agent's bearer token) and writes it
 under ATLAS/ in ~/Documents/ATLAS Vault, where Obsidian shows it as notes
 and a graph and Claude Code reads it as files. Read-only: nothing here

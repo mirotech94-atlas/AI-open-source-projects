@@ -25,7 +25,7 @@ Anything outside that list needs browser automation, which for Instagram is a
 reliable way to lose the account. This module does not do it.
 
 **Accounts.** `ACCOUNTS` maps a short name to its env prefix: `main` is
-Miro's own account, `stories` is the AI-stories account added in Phase 18 —
+the owner's own account, `stories` is the AI-stories account added in Phase 18 —
 labelled AI-made short stories, under a monthly render-credit cap enforced
 in `content.render_video`, nothing else. It is not a content farm of fake
 people: every caption it posts says "Made with AI" (Meta's own disclosure
@@ -37,7 +37,7 @@ Adding a third account is a new prefix in `ACCOUNTS`, not new code; every
 check and action below takes `account` and resolves its own env rather than
 assuming which one.
 
-**The clips account** (2026-09-28): `clips` is @atlas.clipsdrop, where the
+**The clips account** (2026-09-28): `clips` is @example_handle, where the
 clips lane posts brand campaign clips cut from the brand's own footage
 (`INSTAGRAM_CLIPS_ACCOUNT_ID`, `INSTAGRAM_CLIPS_TOKEN`). It takes one kind,
 `campaign_clip`, and its caption rule is the FTC one the campaigns set, not
@@ -50,7 +50,7 @@ And it posts only a Reel from a `clip.` link on ATLAS's own host, which only
 lane's registration, sha256 and content checks. Every clip post is Tier
 ASK, one card per clip.
 
-**What each account may post** (Miro, 2026-09-24, Task 55): `main`
+**What each account may post** (the owner, 2026-09-24, Task 55): `main`
 (@flycheaphp) posts only FlyCheap / travel / cheap-flight content and never
 an AI story reel; AI story reels go only to `stories` (@atlasstories3).
 `ACCOUNT_KINDS` is that ruling as data, and `instagram.publish` carries a
@@ -100,13 +100,13 @@ GRAPH = "https://graph.facebook.com/v21.0"
 ACCOUNTS: dict[str, str] = {"main": "INSTAGRAM_", "stories": "INSTAGRAM_STORIES_",
                             "clips": "INSTAGRAM_CLIPS_"}
 
-# What each account may post, by content kind (Miro's ruling, Task 55). An
+# What each account may post, by content kind (the owner's ruling, Task 55). An
 # account missing here takes nothing -- a new account is refused until its
 # kinds are written down, never waved through.
 ACCOUNT_KINDS: dict[str, set[str]] = {
     "main": {"flycheap", "travel"},
     "stories": {"ai_story"},
-    # Miro, 2026-10-05 ("post on clips too"): the clips account also takes
+    # the owner, 2026-10-05 ("post on clips too"): the clips account also takes
     # the Academy store's own promo reels, through clips.publish_promo only.
     "clips": {"campaign_clip", "store_promo"},
 }
@@ -188,7 +188,21 @@ def _why(exc: BaseException) -> str:
     return explain(exc)
 
 
+def switched_off() -> bool:
+    """the owner, 2026-10-11: "delete everything containing Instagram, only keep
+    YouTube and TikTok". Instagram is off when the module is named in
+    ATLAS_DISABLED_MODULES. Every reader and poster in ATLAS gets its token
+    through `_cfg` (and the DM reader through `messages.instagram_dm`, which
+    asks this too), so off here is off everywhere: each caller already
+    treats NoAccount as "not configured" and skips the leg, never fails the
+    whole reel."""
+    return "instagram" in {m.strip().lower() for m in
+                           os.getenv("ATLAS_DISABLED_MODULES", "").split(",")}
+
+
 def _cfg(account: str = "main") -> tuple[str, str]:
+    if switched_off():
+        raise NoAccount("Instagram is switched off (ATLAS_DISABLED_MODULES)")
     prefix = ACCOUNTS.get(account)
     if prefix is None:
         raise NoAccount(
@@ -646,7 +660,7 @@ def _label_refusal(account: str, caption: str,
                    content_kind: str = "") -> ActionResult | None:
     """Meta requires AI-made content to say so. `stories` posts nothing
     without that label already on the caption — enforced here, in code,
-    rather than trusted to whoever wrote it, so the card Miro approves
+    rather than trusted to whoever wrote it, so the card the owner approves
     visibly carries the label rather than a promise that it will.
 
     `clips` posts a brand's own footage, so its rule is the campaigns' FTC
@@ -669,7 +683,7 @@ def _label_refusal(account: str, caption: str,
 
 
 def _kind_refusal(account: str, content_kind: str) -> str | None:
-    """Miro's ruling: `main` posts only FlyCheap / travel content, `stories`
+    """the owner's ruling: `main` posts only FlyCheap / travel content, `stories`
     only AI story reels. A reason when this account does not take this
     kind, None when it does."""
     allowed = ACCOUNT_KINDS.get(account, set())
@@ -967,7 +981,7 @@ class InstagramModule:
                 name=funnel.SET,
                 tier=Tier.ASK,      # the texts a stranger will read; once
                 summary="Set a comment-keyword → DM funnel (the exact public "
-                        "reply and DM text on the card); Miro approves once",
+                        "reply and DM text on the card); the owner approves once",
                 run=funnel.funnel_set, dry_run=funnel.funnel_set_dry,
                 rollback=funnel.funnel_set_rollback,
                 params=dict(funnel.PARAMS_SET), max_per_hour=6,

@@ -74,7 +74,7 @@ async def test_tier2_with_approval_runs():
     ran: list = []
     install(build(tier=Tier.ASK, ran=ran))
     result = await execute(
-        ExecutionRequest("mod.act", {}, "because", approved_by="miro"))
+        ExecutionRequest("mod.act", {}, "because", approved_by="owner"))
     assert result.ok
     assert [step for step, _ in ran] == ["dry", "run"]
 
@@ -92,7 +92,7 @@ async def test_denied_action_is_refused():
     action = build(name="mod.delete_everything", tier=Tier.ASK, ran=ran)
     install(action)
     result = await execute(
-        ExecutionRequest("mod.delete_everything", {}, "x", approved_by="miro"))
+        ExecutionRequest("mod.delete_everything", {}, "x", approved_by="owner"))
     assert not result.ok
     assert ran == []
 
@@ -117,7 +117,7 @@ async def test_a_failing_dry_run_stops_the_action():
     ran: list = []
     install(build(ran=ran, dry_ok=False))
     result = await execute(
-        ExecutionRequest("mod.act", {}, "x", approved_by="miro"))
+        ExecutionRequest("mod.act", {}, "x", approved_by="owner"))
     assert not result.ok
     assert "dry run refused" in result.detail
     assert [step for step, _ in ran] == ["dry"]
@@ -158,7 +158,7 @@ async def test_undeclared_parameters_are_refused():
     install(build(tier=Tier.ASK, ran=ran, params={"limit": "how many"}))
     result = await execute(ExecutionRequest(
         "mod.act", {"limit": 5, "delete_older_than": "0 days"}, "x",
-        approved_by="miro"))
+        approved_by="owner"))
     assert not result.ok
     assert "delete_older_than" in result.detail
     assert ran == []
@@ -168,7 +168,7 @@ async def test_declared_parameters_are_passed_through():
     ran: list = []
     install(build(tier=Tier.ASK, ran=ran, params={"limit": "how many"}))
     result = await execute(
-        ExecutionRequest("mod.act", {"limit": 5}, "x", approved_by="miro"))
+        ExecutionRequest("mod.act", {"limit": 5}, "x", approved_by="owner"))
     assert result.ok
     assert ("run", {"limit": 5}) in ran
 
@@ -212,7 +212,7 @@ async def test_finish_evidence_survives_into_the_audit_row(memory_backend):
         return ActionResult(True, "done", evidence={"diff": "a vs b"})
 
     install(Action(name="mod.act", tier=Tier.ASK, summary="s", run=run))
-    await execute(ExecutionRequest("mod.act", {}, "x", approved_by="miro"))
+    await execute(ExecutionRequest("mod.act", {}, "x", approved_by="owner"))
 
     finish = next(r for r in memory_backend.audit_rows if r.event == "execute.finish")
     assert _payload_data(finish)["evidence"] == {"diff": "a vs b"}
@@ -232,7 +232,7 @@ async def test_a_10kb_evidence_is_capped(memory_backend):
                             evidence={"readback": ('"\\' + "é") * 3_000})
 
     install(Action(name="mod.act", tier=Tier.ASK, summary="s", run=run, dry_run=dry))
-    await execute(ExecutionRequest("mod.act", {}, "x", approved_by="miro"))
+    await execute(ExecutionRequest("mod.act", {}, "x", approved_by="owner"))
 
     finish = next(r for r in memory_backend.audit_rows if r.event == "execute.finish")
     evidence = _payload_data(finish)["evidence"]
@@ -288,7 +288,7 @@ async def test_watch_only_refuses_an_approved_tier2_action(monkeypatch):
     ran: list = []
     install(build(tier=Tier.ASK, ran=ran))
     result = await execute(
-        ExecutionRequest("mod.act", {}, "x", approved_by="miro"))
+        ExecutionRequest("mod.act", {}, "x", approved_by="owner"))
     assert not result.ok and ran == []
 
 
@@ -346,7 +346,7 @@ async def test_always_does_not_create_a_runtime_tier_override(monkeypatch):
 # -------------------------------------------------------------- preview
 
 async def test_preview_runs_only_the_dry_run(monkeypatch):
-    """The approvals page needs the dry-run output before Miro decides.
+    """The approvals page needs the dry-run output before the owner decides.
     preview() must be incapable of reaching run()."""
     from atlas.kernel.executor import preview
 

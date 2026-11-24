@@ -1,11 +1,11 @@
 """Real estate -- a deal checker that does the analysis part honestly.
 
-Miro, 2026-09-29, after a reel on wholesaling: find a house, paste it into
+the owner, 2026-09-29, after a reel on wholesaling: find a house, paste it into
 an "AI deal analyzer", get ARV, repairs, a Max Allowable Offer and the
 assignment fee, text the agent an offer, generate a contract, assign it for
 a fee ("$25k/month", unverified). ATLAS does only the analysis:
 
-* **Input is what Miro gives** -- an address, and optionally a list price and
+* **Input is what the owner gives** -- an address, and optionally a list price and
   a pasted listing blurb (`/atlas deal <address> | <list price> | <notes>`,
   or POST /api/realestate/deals from the signed-in dashboard). Zillow has no
   public API and its terms forbid scraping: a zillow.com link is read only
@@ -24,7 +24,7 @@ a fee ("$25k/month", unverified). ATLAS does only the analysis:
 ATLAS never contacts agents, never messages a third party, never signs or
 generates a binding contract. Its one action, `realestate.check_deal`, is
 Tier 1: it reads RentCast, writes ATLAS's own `realestate_deals` row and
-sends Miro the card -- nothing else. It is `principal_only`: only Miro
+sends the owner the card -- nothing else. It is `principal_only`: only the owner
 asking directly runs it (Slack /atlas, the dashboard), never the autonomous
 reasoner, which protects the month's RentCast calls.
 
@@ -101,9 +101,9 @@ class RealEstateModule:
         return (
             Action(
                 name=ACTION, tier=Tier.AUTO,
-                summary="Check a real estate deal Miro gives (address, list "
+                summary="Check a real estate deal the owner gives (address, list "
                         "price, notes): ARV, repairs, MAO, spread, rent, "
-                        "verdict. Sends only Miro the card; contacts no one",
+                        "verdict. Sends only the owner the card; contacts no one",
                 run=check_deal, dry_run=check_deal_dry, rollback=withdraw,
                 params=dict(PARAMS), max_per_hour=10, principal_only=True),
         )

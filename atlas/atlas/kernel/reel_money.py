@@ -1,6 +1,6 @@
 """Money per reel: the Analyst and the Improver.
 
-Stages 6 and 7 of Miro's plan (vault: Plans/Money per reel.md, 2026-09-28).
+Stages 6 and 7 of the owner's plan (vault: Plans/Money per reel.md, 2026-09-28).
 They pass work through ATLAS's own records -- `reel_mix_log` holds the
 Analyst's table and the Improver's decision -- never through free text.
 

@@ -11,7 +11,7 @@
 #
 # Why the SHA-256 is printed rather than checked: there is no published
 # checksum from Google to verify against, so printing it is the honest thing
-# to do -- it lets Miro record and later compare a value, rather than this
+# to do -- it lets the owner record and later compare a value, rather than this
 # script pretending to have verified something it cannot.
 set -euo pipefail
 

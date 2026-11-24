@@ -1,5 +1,5 @@
 """Slack. The best of the channels for approvals: real buttons, threads,
-and Miro is already in it during the workday."""
+and the owner is already in it during the workday."""
 from __future__ import annotations
 
 import os
@@ -8,7 +8,7 @@ from typing import Any
 
 import httpx
 
-from ..kernel.comms import Button, Outbound, register
+from ..kernel.comms import CARD_RULE, Button, Outbound, register
 from ..kernel.contracts import Severity
 
 COLOR = {
@@ -23,7 +23,7 @@ COLOR = {
 # one purpose. #reels (renamed from #instagram-reels on 2026-09-27; the id
 # did not change, so neither did the variable) holds every short-video
 # card: the AI-stories account's (`instagram_stories`) and TikTok's
-# (`tiktok`). Miro: "both the instagram reels and tiktok one both go to a
+# (`tiktok`). the owner: "both the instagram reels and tiktok one both go to a
 # reels channel". Before this, TikTok's upload card had no home and fell to
 # the default channel. The main Instagram account (`instagram`) is not a
 # reels account and stays where it was. The id is in CONFIGURE.md, not here.
@@ -32,23 +32,44 @@ REELS_ENV = "SLACK_INSTAGRAM_REELS_CHANNEL"
 # message an approver types there is a question for the assistant. Unset,
 # the topic has no home and the assistant answers only to `ask <question>`.
 ASSISTANT_ENV = "SLACK_ASSISTANT_CHANNEL"
+# ATLAS Academy's YouTube tutorials (the owner, 2026-10-10): every rendered
+# video is a draft card in #atlas-academy-videos, watched there before it
+# is approved for YouTube (`academy.tutorials.review_tutorial`).
+ACADEMY_VIDEOS_ENV = "ACADEMY_TUTORIALS_SLACK_CHANNEL"
+# The six agency agents (2026-10-27): approve/decline cards land in
+# #agency-decisions; only trouble (and the one 08:00 digest) in #agency-alerts.
+AGENCY_DECISIONS_ENV = "SLACK_AGENCY_DECISIONS_CHANNEL"
+AGENCY_ALERTS_ENV = "SLACK_AGENCY_ALERTS_CHANNEL"
 TOPIC_CHANNEL_ENV: dict[str, str] = {
+    "agency_decisions": AGENCY_DECISIONS_ENV,
+    "agency_alerts": AGENCY_ALERTS_ENV,
     "instagram_stories": REELS_ENV,
     "tiktok": REELS_ENV,
     "assistant": ASSISTANT_ENV,
+    "academy_videos": ACADEMY_VIDEOS_ENV,
+}
+# Where a topic goes when its variable is unset. #atlas-academy-videos is
+# ATLAS's own workspace's channel (the bot created it, so it is a member);
+# the id, not the name, because conversations.info and file uploads take
+# only ids. CONFIGURE.md says the same.
+TOPIC_CHANNEL_DEFAULT: dict[str, str] = {
+    "academy_videos": "C0SLACKCH03",
+    "agency_decisions": "C0SLACKCH00",
+    "agency_alerts": "C0SLACKCH01",
 }
 
 
 # The project a message is about, from its topic, for the "[Project] TYPE:"
 # header. An unknown topic is title-cased; no topic is ATLAS itself.
 PROJECT: dict[str, str] = {
-    "vpsie": "VPSie", "guardian": "Guardian", "flycheap": "FlyCheap",
+    "cloudco": "CloudCo", "guardian": "Guardian", "flycheap": "FlyCheap",
     "inroots": "K9", "instagram_stories": "Reels", "tiktok": "Reels",
     "content": "Reels", "instagram": "Instagram", "linkedin": "LinkedIn",
-    "mirotech": "Mirotech", "gitlab": "GitLab", "netbird": "NetBird",
+    "exampleco": "ExampleCo", "gitlab": "GitLab", "netbird": "NetBird",
     "mail": "Mail", "calendar": "Calendar", "decisions": "Atlas",
     "brief": "Atlas", "comms": "Atlas", "assistant": "Atlas", "fiverr": "Fiverr",
-    "stripe": "Stripe", "youtube": "YouTube",
+    "stripe": "Stripe", "youtube": "YouTube", "academy_videos": "Academy",
+    "agency_decisions": "Agency", "agency_alerts": "Agency",
 }
 TYPES = ("INFO", "REVIEW", "ACTION", "INCIDENT", "RESOLVED")
 SECTION_LIMIT = 2900        # Slack's per-section text limit is 3000
@@ -69,7 +90,7 @@ _SALUTATION = re.compile(r"^(hi|hey|hello|morning|good (morning|afternoon|"
 
 
 def _first_line(text: str) -> str:
-    """The first line worth a notification: "Hey Miro," says nothing."""
+    """The first line worth a notification: "Hey the owner," says nothing."""
     lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
     for line in lines:
         if not _SALUTATION.match(line):
@@ -105,7 +126,7 @@ _HEADING = re.compile(r"(?m)^#{1,6}\s+(.+?)\s*#*\s*$")
 def slack_text(text: str) -> str:
     """Markdown as models and humans write it, made into Slack mrkdwn, and
     made unable to ping everyone. `**bold**` renders as literal asterisks in
-    Slack (2026-09-27, the #vpsie server-count answer); `<!channel>` in text
+    Slack (2026-09-27, the #cloudco server-count answer); `<!channel>` in text
     from a buyer, a web page or a model would notify the whole channel."""
     text = _BROADCAST.sub(lambda m: "@" + m.group(1).lower(), text or "")
     text = _GROUP.sub(lambda m: (m.group(1) or "@group").strip() or "@group", text)
@@ -183,7 +204,7 @@ class SlackChannel:
 
         SLACK_CHANNELS maps a module to a channel:
 
-            SLACK_CHANNELS=vpsie:C01,flycheap:C02,guardian:C03,mail:C04,calendar:C04
+            SLACK_CHANNELS=cloudco:C01,flycheap:C02,guardian:C03,mail:C04,calendar:C04
 
         Two modules can share a channel by naming the same id, which is how
         "everything day-to-day in one place" is expressed -- mail and
@@ -221,7 +242,29 @@ class SlackChannel:
         env = TOPIC_CHANNEL_ENV.get(topic.strip().lower())
         if env and (found := os.getenv(env, "").strip()):
             return found
-        return None
+        return TOPIC_CHANNEL_DEFAULT.get(topic.strip().lower())
+
+    async def post_blocks(self, *, channel: str, text: str,
+                          blocks: list[dict[str, Any]]) -> tuple[str | None, str | None]:
+        """Post a ready-made Block Kit message (an image block, say, which
+        `send` has no shape for). (ts, None), or (None, Slack's own error
+        code -- `not_in_channel`, `channel_not_found`, `invalid_blocks` --
+        or the transport failure). Never raises."""
+        if not self.token:
+            return None, "SLACK_BOT_TOKEN unset"
+        try:
+            async with httpx.AsyncClient(timeout=20) as c:
+                r = await c.post("https://slack.com/api/chat.postMessage",
+                                 headers={"Authorization": f"Bearer {self.token}"},
+                                 json={"channel": channel, "text": text, "blocks": blocks,
+                                       "unfurl_links": False, "unfurl_media": False})
+                data = r.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            from ..modules._http import explain
+            return None, f"Slack post failed: {explain(exc)}"
+        if not data.get("ok"):
+            return None, str(data.get("error") or "unknown error")
+        return str(data.get("ts") or ""), None
 
     async def available(self) -> bool:
         return bool(self.token and self.channel)
@@ -268,14 +311,18 @@ class SlackChannel:
     def _title_repeats_body(msg: Outbound) -> bool:
         """The title is just the start of the body -- the typed-reply case,
         whose title is `body[:150]`. A header then showed every reply twice
-        (2026-09-27, #vpsie)."""
+        (2026-09-27, #cloudco)."""
         title = " ".join(msg.title.split()).rstrip("…. ")
         return bool(title) and " ".join(msg.body.split()).startswith(title)
 
     @classmethod
     def headline(cls, msg: Outbound) -> str:
         """`[Project] TYPE: what happened` -- the header and the
-        notification text. A reply in a thread leads with its own words."""
+        notification text. A reply in a thread leads with its own words; a
+        message that names its own header (a proposal card's
+        "[Area] #357 · …") has that."""
+        if (getattr(msg, "header", "") or "").strip():
+            return clip(slack_text(msg.header))
         if cls._title_repeats_body(msg):
             return clip(_first_line(slack_text(msg.body)))
         if msg.kind == "receipt" and not getattr(msg, "presentation", ""):
@@ -298,7 +345,14 @@ class SlackChannel:
         else:
             blocks.append({"type": "header", "text": {
                 "type": "plain_text", "text": self.headline(msg)}})
-        blocks += _sections(body)
+        above, rule, below = body.partition(f"\n{CARD_RULE}\n")
+        if rule:
+            # The decision above, the reason and evidence below a divider.
+            blocks += _sections(above)
+            blocks.append({"type": "divider"})
+            blocks += _sections(below)
+        else:
+            blocks += _sections(body)
         if msg.buttons:
             blocks.append({"type": "actions",
                            "elements": [_button(b) for b in msg.buttons]})
@@ -337,6 +391,42 @@ class SlackChannel:
         if not data.get("ok"):
             raise RuntimeError(f"slack: {data.get('error')}")
         return data.get("ts")
+
+
+def escape(text: str) -> str:
+    """Outside text (a visitor's, a camera's) made literal in Slack mrkdwn: `&`, `<`
+    and `>` are the only characters Slack parses, so a pasted `<@U123>`, `<!channel>`
+    or `<https://x|click>` shows as typed and notifies nobody."""
+    return (text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def notice_problem(topic: str) -> str | None:
+    """Why a notice for `topic` cannot be posted, or None. Static configuration only,
+    so a health check built on it reads UNKNOWN, never OK, when Slack is not set up."""
+    ch = SlackChannel()
+    if not ch.token:
+        return "SLACK_BOT_TOKEN is not set"
+    if not ch.channel_for(topic):
+        return f"no Slack channel for {topic!r} (SLACK_CHANNELS or SLACK_CHANNEL)"
+    return None
+
+
+async def post_notice(*, topic: str, title: str, body: str,
+                      severity: Severity = Severity.NORMAL) -> tuple[str | None, str | None]:
+    """Post one notice straight to the topic's Slack channel: (ts, None) when Slack
+    accepted it (`ok: true` is Slack's own confirmation), else (None, a reason).
+    Never raises and never puts the token in the reason. The caller is an executor
+    action; this is the channel's own writer, not a second path."""
+    why = notice_problem(topic)
+    if why:
+        return None, why
+    try:
+        ts = await SlackChannel().send(Outbound(
+            title=title, body=body, severity=severity, topic=topic, kind="alert"))
+    except Exception as exc:                            # noqa: BLE001
+        from ..modules._http import explain
+        return None, explain(exc)[:200]
+    return str(ts or "sent"), None
 
 
 register(SlackChannel())

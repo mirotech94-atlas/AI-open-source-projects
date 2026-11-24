@@ -8,7 +8,7 @@
      model hosts and (if the ATLAS STATUS toggle is on) ATLAS's public /healthz.
      No code here sends a frame, landmark or image anywhere. The importmap's
      sha256 is listed in script-src: recompute it if you edit the importmap. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval' 'sha256-H/BkOGkQUzryT1VDVL5mOf+nkOIet+Vcqgj15cnhrQU='; connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com https://atlas.example.com blob: data:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: mediastream:; worker-src 'self' blob:; form-action 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval' 'sha256-H/BkOGkQUzryT1VDVL5mOf+nkOIet+Vcqgj15cnhrQU='; connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com http://127.0.0.1:8080 blob: data:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; media-src 'self' blob: mediastream:; worker-src 'self' blob:; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Air Glass</title>
 <link rel="icon" href="data:,">

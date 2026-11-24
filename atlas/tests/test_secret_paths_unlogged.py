@@ -53,7 +53,7 @@ def _access_record(path: str) -> logging.LogRecord:
     # uvicorn's own access-log call shape.
     return logging.LogRecord(
         "uvicorn.access", logging.INFO, __file__, 1,
-        '%s - "%s %s HTTP/%s" %d', ("100.84.1.7:5000", "GET", path, "1.1", 200),
+        '%s - "%s %s HTTP/%s" %d', ("100.64.0.7:5000", "GET", path, "1.1", 200),
         None)
 
 

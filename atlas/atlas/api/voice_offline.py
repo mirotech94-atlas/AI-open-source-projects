@@ -1,6 +1,9 @@
-"""The offline pack: ATLAS's few fixed offline lines, in its own Fish voice.
+"""The offline pack: ATLAS's few fixed offline lines, in its own voice.
 
-Miro wants ATLAS to speak only in his chosen Fish Audio voice, including when
+Since 2026-10-29 that is the local clone of the NotebookLM host
+(voice_clone.py), with the Fish clip of a line when the clone is down.
+
+the owner wants ATLAS to speak only in his chosen Fish Audio voice, including when
 the network or this server is out of reach. ATLAS Menu and Air Glass cannot
 ask Fish anything then, so they keep a small pack of lines rendered here
 ahead of time and play those. A line with no kept clip is shown as text and
@@ -64,19 +67,22 @@ def phrases() -> dict[str, str]:
 def voice_fingerprint() -> str:
     """Names the voice the pack is in without echoing its id: a client that
     sees it change throws its old clips away."""
-    vid = os.getenv("FISH_AUDIO_VOICE_ID", "").strip()
+    from . import voice_clone
+    vid = (voice_cache.clone_voice() if voice_clone.configured()
+           else os.getenv("FISH_AUDIO_VOICE_ID", "").strip())
     return hashlib.sha256(f"atlas-voice\n{vid}".encode()).hexdigest()[:16]
 
 
-async def _render(text: str) -> bytes:
+async def _render(text: str) -> tuple[bytes, str]:
     # Looked up at call time, so a test's patch of voice._fish_tts applies.
     from . import voice
-    return await voice._fish_tts(text)
+    return await voice._render_own(text)
 
 
 async def build_pack() -> dict:
     """The manifest, rendering any line not yet kept. Raises PackUnavailable."""
-    if not os.getenv("FISH_AUDIO_VOICE_ID", "").strip():
+    from . import voice, voice_clone
+    if not voice_clone.configured() and not os.getenv("FISH_AUDIO_VOICE_ID", "").strip():
         raise PackUnavailable(
             "ATLAS's Fish voice is not set (FISH_AUDIO_VOICE_ID), so no offline "
             "lines can be made in it; nothing else is offered in its place.")
@@ -84,12 +90,12 @@ async def build_pack() -> dict:
         for name, text in phrases().items():
             if voice_cache.cached(text) is not None:
                 continue
-            if not os.getenv("FISH_AUDIO_API_KEY"):
+            if not (voice_clone.configured() or os.getenv("FISH_AUDIO_API_KEY")):
                 raise PackUnavailable(
                     f"Fish Audio is not configured (FISH_AUDIO_API_KEY), and the "
                     f"{name!r} line has not been rendered yet.")
             try:
-                audio = await _render(text)
+                audio, source = await _render(text)
                 if not audio:
                     raise RuntimeError("Fish Audio returned no audio")
             except Exception as exc:                    # noqa: BLE001
@@ -98,11 +104,12 @@ async def build_pack() -> dict:
                 log.warning("offline pack: could not render %s: %s", name, reason)
                 raise PackUnavailable(
                     f"Fish Audio could not render the {name!r} line: {reason}") from None
-            voice_cache.store(text, audio)
-            log.info("offline pack: rendered %s in Fish Audio", name)
+            voice_cache.store(text, audio, voice._cache_voice(source))
+            log.info("offline pack: rendered %s (%s)", name, source)
     out: dict[str, dict[str, object]] = {}
     for name, text in phrases().items():
-        audio = voice_cache.cached(text)
+        # In ATLAS's own voice, or the Fish clip when the clone was down.
+        audio = voice_cache.fallback_for(text)
         if audio is None:                       # kept a moment ago, then lost
             raise PackUnavailable(f"The {name!r} clip could not be read from disk.")
         out[name] = {

@@ -1,0 +1,213 @@
+{
+  "_about": "Concept Shorts from the growth plan's idea bank (the owner, 2026-10-12). Every line with an `evidence` says only what that exact phrase in the product's catalog entry says; a test checks each phrase is there. Lines with no evidence are questions or plain statements of what the viewer sees. Narrated in ATLAS's voice: no first-person experience. Since 2026-10-12 the lines carry Fish S2 delivery cues in [brackets] (the owner: \"feelings and laughter ... not a robot\"); the voice reads them, captions never show them.",
+  "concepts": [
+    {
+      "id": "reply-ready",
+      "plan": "01",
+      "product": "local-business-automation-pack",
+      "title": "This reply is ready. It hasn't been sent.",
+      "motion": "draft",
+      "beats": [
+        {
+          "say": "[curious] See this reply? [break] It's ready. [chuckling] It just hasn't been sent.",
+          "kind": "hook"
+        },
+        {
+          "say": "A customer fills in your contact form, and the workflow drafts a reply, in your words, not a robot's.",
+          "label": "Lead form to drafted reply",
+          "evidence": "Catch every contact-form lead the moment it arrives, with a reply already drafted in your words."
+        },
+        {
+          "say": "It writes that draft to a file, and then it answers, quite proudly: [emphasis] sent, false.",
+          "label": "Lead form to drafted reply",
+          "evidence": "Every workflow writes a draft to a file and answers sent: false."
+        },
+        {
+          "say": "[relaxed] There's no sending node in the file. At all. You read it, and you hit send yourself.",
+          "label": "What it never does",
+          "evidence": "There is no sending node in any file."
+        }
+      ],
+      "close": "[happy] That's one of four workflows in the Local Business Automation Pack, at agency dot one eight d n dot com."
+    },
+    {
+      "id": "missed-call",
+      "plan": "02",
+      "product": "local-business-automation-pack",
+      "title": "What should happen after a missed call?",
+      "motion": "draft",
+      "beats": [
+        {
+          "say": "[curious] You missed a call. [break] Now what?",
+          "kind": "hook"
+        },
+        {
+          "say": "Your phone system reports the number, and the workflow drafts a text back, opt-out line included, because manners.",
+          "label": "Missed call to text-back draft",
+          "evidence": "Draft a text back to every missed call, with an opt-out line, from the number your phone system reports."
+        },
+        {
+          "say": "[confident] It drafts. That's it. Sending is a step you add later, on purpose.",
+          "label": "What it never does",
+          "evidence": "This pack drafts; sending is a step you add later, deliberately"
+        }
+      ],
+      "close": "[happy] The missed-call workflow is in the Local Business Automation Pack, at agency dot one eight d n dot com."
+    },
+    {
+      "id": "no-send-step",
+      "plan": "06",
+      "product": "local-business-automation-pack",
+      "title": "Why there is no send button in this workflow",
+      "motion": "gate",
+      "beats": [
+        {
+          "say": "[chuckling] Why is there no send button in this workflow? [break] And no, it's not a bug.",
+          "kind": "hook"
+        },
+        {
+          "say": "Every workflow in the pack writes a draft, and answers: sent, false.",
+          "label": "Draft, never send",
+          "evidence": "Every workflow writes a draft to a file and answers sent: false."
+        },
+        {
+          "say": "The guide shows you how to add a sending step later, and why it goes in last.",
+          "label": "Draft, never send",
+          "evidence": "Chapter 9 explains how to add one later, and why to add it last."
+        },
+        {
+          "say": "[relaxed] Test it with made-up data first, and keep the owner in the loop.",
+          "label": "Before it goes live",
+          "evidence": "test them with made-up data, and keep the owner in the loop."
+        }
+      ],
+      "close": "[happy] That's the Local Business Automation Pack, at agency dot one eight d n dot com."
+    },
+    {
+      "id": "setup-tour",
+      "plan": "13",
+      "product": "local-business-automation-pack",
+      "title": "What's inside, before you buy",
+      "motion": "files",
+      "files": [
+        "1-site-health-check.json",
+        "2-lead-form-drafted-reply.json",
+        "3-missed-call-text-back.json",
+        "4-review-request-after-job.json",
+        "README.md",
+        "docker-compose.yml"
+      ],
+      "beats": [
+        {
+          "say": "[curious] What's actually in the box? [break] Let's open it before you buy.",
+          "kind": "hook"
+        },
+        {
+          "say": "One zip: a PDF guide, four n8n workflow files, a README, and a Docker compose file.",
+          "label": "What's in the zip",
+          "evidence": "One zip: a PDF guide plus four n8n workflow files, a README and a Docker compose file"
+        },
+        {
+          "say": "You need a computer that runs Docker, and about an hour. [happy] No programming.",
+          "label": "What you need",
+          "evidence": "A computer that can run Docker, about an hour, no programming"
+        },
+        {
+          "say": "[sighing] And if you want a tool that texts customers by itself on day one, honestly, this isn't it.",
+          "label": "Who it isn't for",
+          "evidence": "Anyone who wants a tool that texts or emails customers by itself from day one."
+        }
+      ],
+      "close": "[happy] The Local Business Automation Pack is at agency dot one eight d n dot com."
+    },
+    {
+      "id": "five-habits",
+      "plan": "18",
+      "product": "local-business-automation-pack",
+      "title": "Five habits that make a workflow safe to adapt",
+      "motion": "checklist",
+      "files": [
+        "Untrusted input",
+        "400 on bad data",
+        "Draft, never send",
+        "No secrets in the files",
+        "A fenced machine"
+      ],
+      "beats": [
+        {
+          "say": "[confident] Five habits make these workflows safe to adapt. [break] Ready?",
+          "kind": "hook"
+        },
+        {
+          "say": "Untrusted input. A four hundred on bad data. Draft, never send. No secrets in the files. [break] And a fenced machine.",
+          "label": "The five habits",
+          "evidence": "untrusted input, 400 on bad data, draft never send, no secrets in the files, a fenced machine"
+        },
+        {
+          "say": "[chuckling] They even tested it with a deliberately malicious lead. It got escaped, correctly.",
+          "label": "What was tested",
+          "evidence": "including a deliberately malicious lead that was escaped correctly"
+        }
+      ],
+      "close": "[happy] The guide covers all five, in the Local Business Automation Pack, at agency dot one eight d n dot com."
+    },
+    {
+      "id": "boundary",
+      "plan": "09",
+      "product": "safe-ai-operator",
+      "title": "Your AI needs a boundary, not just a prompt",
+      "motion": "gate",
+      "beats": [
+        {
+          "say": "[emphasis] Your AI needs a boundary. [break] Not just a nicer prompt.",
+          "kind": "hook"
+        },
+        {
+          "say": "Give the model a closed list of actions, so it picks a name from your list, instead of writing code or commands.",
+          "label": "A closed list",
+          "evidence": "so it picks a name from your list instead of writing code or commands"
+        },
+        {
+          "say": "Anything you haven't cleared to run alone [break] waits for your approval.",
+          "label": "It waits for you",
+          "evidence": "waits for your approval on anything you haven't cleared to run alone"
+        },
+        {
+          "say": "[confident] And five kinds of action are refused in code: moving money, DNS, deleting, revoking keys, and changing itself.",
+          "label": "Refused in code",
+          "evidence": "moving money, DNS, deleting, revoking keys and changing itself"
+        }
+      ],
+      "close": "[happy] That's Build a Safe AI Operator. It builds in Python, and it's at agency dot one eight d n dot com."
+    },
+    {
+      "id": "nobody-approves",
+      "plan": "10",
+      "product": "safe-ai-operator",
+      "title": "What happens when nobody approves?",
+      "motion": "gate",
+      "beats": [
+        {
+          "say": "[curious] So what happens when nobody approves?",
+          "kind": "hook"
+        },
+        {
+          "say": "[relaxed] Nothing. [break] [chuckling] Silence never counts as a yes.",
+          "label": "Silence is not a yes",
+          "evidence": "Silence never counts as a yes."
+        },
+        {
+          "say": "Tiers are set in code: runs by itself, asks you first, or never.",
+          "label": "Tiers in code",
+          "evidence": "Set tiers in code: runs by itself, asks you first, or never."
+        },
+        {
+          "say": "And a check that can't see reports unknown. [emphasis] Never fine.",
+          "label": "Unknown, not fine",
+          "evidence": "report UNKNOWN when they can't see"
+        }
+      ],
+      "close": "[happy] That's Build a Safe AI Operator. It builds in Python, and it's at agency dot one eight d n dot com."
+    }
+  ]
+}

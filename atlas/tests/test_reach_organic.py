@@ -1,4 +1,4 @@
-"""Reach without paid promotion (Miro, 2026-09-29).
+"""Reach without paid promotion (the owner, 2026-09-29).
 
 * Promote candidates: a stories reel that clearly outperforms raises ONE
   information-only card; never a clip, never a football or course reel;
@@ -246,7 +246,6 @@ _ADS = re.compile(r"boost|promot|\bads?\b|advert|spark|ad_?spend|campaign_budget
 
 
 def test_no_promote_or_ads_action_exists(monkeypatch):
-    monkeypatch.setenv("GUARDIAN_WRITE_TOKEN", "test-write-token-not-real")
     import atlas.modules as modules_pkg
     names = []
     for info in pkgutil.iter_modules(modules_pkg.__path__):
@@ -357,7 +356,7 @@ def test_tiktok_adds_stories_tags_only_to_a_stories_reel():
 
 @pytest.mark.parametrize("source, fsource, lane, series", [
     ("reel_format:3", "perplexity", "stories", False),
-    ("reel_format:3", "miro", "stories", False),
+    ("reel_format:3", "owner", "stories", False),
     ("reel_format:9", "football", "football", False),
     ("reel_format:4", "course", "course", False),
     ("series:2:3", None, "stories", True),

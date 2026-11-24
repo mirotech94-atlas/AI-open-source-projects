@@ -2,8 +2,8 @@
 
 On 2026-10-05 every cloud provider failed at once (one out of credit, two
 capped, one rate-limited). Each agent that needed a model failed on its own
-and said so in its own corner, or fell back silently; nothing told Miro the
-one fact that explained all of it. Miro's operations brief asks for a single
+and said so in its own corner, or fell back silently; nothing told the owner the
+one fact that explained all of it. the owner's operations brief asks for a single
 "chain open" incident instead of per-agent chatter.
 
 `think()` calls `report()` when a whole chain is exhausted. It posts one
@@ -11,7 +11,7 @@ HIGH message to the comms topic, at most once an hour, naming each open
 deployment and the reason in plain words, and what to do when the reason is
 money. When a model next answers, `cleared()` posts one line saying so.
 Nothing here retries, switches provider, or spends: topping up a balance is
-Miro's, and ATLAS only reports it.
+the owner's, and ATLAS only reports it.
 
 In memory, like the breakers it reads. Posting is fire-and-forget: a failed
 Slack post must never turn a model outage into a second failure.

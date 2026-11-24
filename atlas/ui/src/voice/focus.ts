@@ -19,6 +19,7 @@
  * path.
  */
 import { SCREEN_ROUTES, type SystemCheck, type VoiceFocus } from "../api";
+import { FRONT_DOOR_AGENT } from "../pages/roster";
 
 export interface FocusPlan {
   /** Navigate here as soon as the answer arrives. */
@@ -90,12 +91,12 @@ export function checklistDelayMs(check: SystemCheck | null | undefined): number 
   return Math.min(CHECKLIST_MAX_WAIT_MS, rows * CHECKLIST_STAGGER_MS + 250);
 }
 
-/** Positions for the node graph: the concierge at the centre, every other
+/** Positions for the node graph: the front-door agent (inbox) at the centre, every other
  *  agent evenly around it. Pure, so the layout is testable. */
 export function graphLayout(
   names: string[], size: number,
 ): { centre: string | null; nodes: Array<{ name: string; x: number; y: number }> } {
-  const centre = names.includes("concierge") ? "concierge" : null;
+  const centre = names.includes(FRONT_DOOR_AGENT) ? FRONT_DOOR_AGENT : null;
   const around = names.filter((n) => n !== centre);
   const mid = size / 2;
   const radius = size / 2 - 18;

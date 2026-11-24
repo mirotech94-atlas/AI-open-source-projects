@@ -1,7 +1,7 @@
 """Acknowledge from Slack: stop telling him until it changes.
 
-Miro, 2026-09-24: "there should be an acknowledge button in Slack when they
-send messages so they don't send the same one again." A known VPSie balance
+the owner, 2026-09-24: "there should be an acknowledge button in Slack when they
+send messages so they don't send the same one again." A known CloudCo balance
 paged him daily and re-filed a tracking-issue card every time the last expired.
 """
 from __future__ import annotations
@@ -42,10 +42,10 @@ def db(monkeypatch):
 
 
 async def test_an_acknowledged_check_is_muted(db):
-    db["acks"] = [{"key": "vpsie.balance", "health": "failing",
+    db["acks"] = [{"key": "cloudco.balance", "health": "failing",
                    "until": datetime.now(UTC) + timedelta(days=3)}]
-    db["health"]["vpsie.balance"] = "failing"
-    kept = await acks.filter_acked([_finding("vpsie.balance", Health.FAILING),
+    db["health"]["cloudco.balance"] = "failing"
+    kept = await acks.filter_acked([_finding("cloudco.balance", Health.FAILING),
                                     _finding("guardian.site", Health.DEGRADED)])
     assert [f.check for f in kept] == ["guardian.site"]
 
@@ -60,18 +60,18 @@ async def test_getting_worse_is_news_and_speaks_again(db):
 
 
 async def test_recovery_retires_the_ack(db):
-    db["acks"] = [{"key": "vpsie.balance", "health": "failing",
+    db["acks"] = [{"key": "cloudco.balance", "health": "failing",
                    "until": datetime.now(UTC) + timedelta(days=3)}]
-    db["health"]["vpsie.balance"] = "ok"
+    db["health"]["cloudco.balance"] = "ok"
     await acks.filter_acked([])
-    assert db["deleted"] == ["vpsie.balance"]
+    assert db["deleted"] == ["cloudco.balance"]
 
 
 async def test_an_expired_ack_speaks_again(db):
-    db["acks"] = [{"key": "vpsie.balance", "health": "failing",
+    db["acks"] = [{"key": "cloudco.balance", "health": "failing",
                    "until": datetime.now(UTC) - timedelta(minutes=1)}]
-    db["health"]["vpsie.balance"] = "failing"
-    kept = await acks.filter_acked([_finding("vpsie.balance", Health.FAILING)])
+    db["health"]["cloudco.balance"] = "failing"
+    kept = await acks.filter_acked([_finding("cloudco.balance", Health.FAILING)])
     assert len(kept) == 1
 
 
@@ -79,7 +79,7 @@ async def test_unreadable_acks_never_swallow_an_alert(monkeypatch):
     async def broken(*a, **k):
         raise ConnectionError("db down")
     monkeypatch.setattr(acks, "fetch_all", broken)
-    f = [_finding("vpsie.balance", Health.FAILING)]
+    f = [_finding("cloudco.balance", Health.FAILING)]
     assert await acks.filter_acked(f) == f
 
 

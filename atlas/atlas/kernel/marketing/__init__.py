@@ -11,7 +11,7 @@ Read against CLAUDE.md, that is four concrete things and no more:
   with the reason — is written as a lesson into the memory namespace
   `playbook`, and the next proposal reads it back. That is the whole loop.
 * **The neural network of the whole system** is what already exists: the
-  judgment layer's read of what Miro approves (`kernel.judgment.policy`), the
+  judgment layer's read of what the owner approves (`kernel.judgment.policy`), the
   memory graph, and the detector's baseline discipline. This package *reads*
   the judgment layer; it never writes to it and never imports anything that
   assigns a tier.
@@ -21,7 +21,7 @@ Read against CLAUDE.md, that is four concrete things and no more:
   three Tier AUTO, all three writing only to Postgres and memory. Publishing
   stays where Task 29 and the social modules put it: Tier ASK, every time.
   At p >= 0.95 the judgment layer *drafts* a standing rule; `cycle.weekly()`
-  carries that text to Miro and says in the same breath that only he can
+  carries that text to the owner and says in the same breath that only he can
   enact it. There is no runtime override and none may be added.
 * **Money in, never money out.** `monetize.ideas()` composes only from facts
   something actually measured, each carrying the time it was read (invariant

@@ -1,5 +1,5 @@
 """`agents.readiness` -- whether a roster agent can actually run, decided in
-code from what is already loaded, never guessed at runtime (Miro, 2026-09-27:
+code from what is already loaded, never guessed at runtime (the owner, 2026-09-27:
 "every agent that is READY ... runs on its schedule, always; each gets a
 readiness preflight before it runs").
 
@@ -257,7 +257,7 @@ def test_no_route_resolves_names_the_need(clean_registry, roster, monkeypatch):
 
 def test_private_agent_needs_the_local_model_named_plainly(
         clean_registry, roster, monkeypatch):
-    """A PRIVATE agent is never satisfied by `ROUTES[PRIVATE]` alone: Miro can
+    """A PRIVATE agent is never satisfied by `ROUTES[PRIVATE]` alone: the owner can
     opt a cloud model into that route (`ATLAS_PRIVATE_ALLOW_CLOUD`), and that
     is exactly the case this check exists to catch."""
     class FakeCloud:

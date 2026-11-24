@@ -1,4 +1,4 @@
-"""Which questions are about Miro's own private life, and so stay on the
+"""Which questions are about the owner's own private life, and so stay on the
 local model with no outside tool.
 
 The rule `kernel/private_data.py` already keeps for the agents -- mail,
@@ -52,6 +52,17 @@ _MODULE = re.compile(
     re.IGNORECASE)
 
 
+# The home cameras, named without a possessive: "how many camera events".
+_CAMERAS = re.compile(
+    r"\b(?:camera|cctv|nvr)\s+(?:events?|footage|alerts?|clips?|motion|"
+    r"detections?|snapshots?|recordings?)\b|"
+    r"\b(?:events?|motion|people|persons?|vehicles?|visitors?)\s+(?:on|at|from|"
+    r"detected\s+by)\s+(?:the|my|our)\s+(?:\w+\s+)?cameras?\b|"
+    r"\bcameras?\s+(?:\w+\s+){0,2}?(?:online|offline|up|down)\b|"
+    r"\b(?:online|offline)\s+cameras?\b|\bhow\s+many\s+(?:\w+\s+)?cameras?\b",
+    re.IGNORECASE)
+
+
 def private_reason(question: str) -> str | None:
     """Why this question is PRIVATE, in a few words, or None when it is an
     ordinary question. Pure."""
@@ -60,7 +71,8 @@ def private_reason(question: str) -> str | None:
         return None
     for pattern, why in ((_MINE, "it asks about your own private content"),
                          (_ABOUT_ME, "it asks about you personally"),
-                         (_MODULE, "it names one of your private modules")):
+                         (_MODULE, "it names one of your private modules"),
+                         (_CAMERAS, "it asks about the cameras at your home")):
         if pattern.search(text):
             return why
     return None

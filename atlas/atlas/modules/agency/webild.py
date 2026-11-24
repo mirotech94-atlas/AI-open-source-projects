@@ -1,9 +1,9 @@
 """Webild -- an alternative builder for a client site, beside `build_site`.
 
-Miro, 2026-09-29. Webild (webild.io) is a hosted AI site builder with no
-public API. Miro's own Webild account is signed in in his own Chrome, so the
+the owner, 2026-09-29. Webild (webild.io) is a hosted AI site builder with no
+public API. the owner's own Webild account is signed in in his own Chrome, so the
 build happens there, by the agent on his Mac, never by ATLAS. ATLAS writes
-the brief, Miro approves it, the agent pastes and publishes, ATLAS checks the
+the brief, the owner approves it, the agent pastes and publishes, ATLAS checks the
 live result. Three actions:
 
 * `agency.webild_brief(lead_id)` -- Tier 1. Drafts the prompt Webild is given
@@ -21,7 +21,7 @@ live result. Three actions:
   time its facts were read; its rollback deletes it while still a draft.
 * `agency.build_with_webild(lead_id, brief_id)` -- Tier 2, `card_only`, the
   same shape as `delegate.claude_code`: the brief IS the capability, so the
-  only brief that can be queued is the one ATLAS wrote and Miro read on the
+  only brief that can be queued is the one ATLAS wrote and the owner read on the
   card. The card is raised by `signals()` with the brief as its text.
   Approving moves the row drafted -> queued with an expiry; the agent
   claims it at `POST /webild/claim` (`atlas/api/webild.py`, mesh-only,
@@ -36,7 +36,7 @@ live result. Three actions:
   20-item launch check against the live site (`livecheck`). The site is
   "ready" only with no ISSUE; NEEDS_CLIENT items are listed. Rollback puts
   the task back to queued in ATLAS's own records (the Webild site itself is
-  Miro's to take down: deleting it is not ATLAS's to do).
+  the owner's to take down: deleting it is not ATLAS's to do).
 
 Which hosts Webild publishes on could not be verified from here (no public
 docs, 2026-09-29), so `WEBILD_HOSTS` is a comma list of domains -- default
@@ -69,7 +69,7 @@ DRAFT_TTL = timedelta(days=2)      # a brief older than this is not the world an
 CLAIM_TTL = timedelta(days=2)      # an approved task nobody published by then expires
 MAX_URL = 500
 MAX_REPORT = 4000
-REPORT_STATUSES = ("failed", "needs_miro")
+REPORT_STATUSES = ("failed", "needs_owner")
 DEFAULT_HOSTS = "webild.io,webild.site"
 # Webild's own app, not a published client site.
 BUILDER_LABELS = frozenset({"www", "app", "api", "admin", "dashboard", "auth",
@@ -84,7 +84,7 @@ AGENT_RULES = (
     ("Never pay, enter card details, upgrade a plan, buy or connect a domain, "
     "accept new terms, sign in to anything, or delete a site."),
     ("If Webild asks for any of those, or anything else unexpected, stop and "
-    "report needs_miro with what it asked."),
+    "report needs_owner with what it asked."),
 )
 
 
@@ -454,7 +454,7 @@ async def build_with_webild_dry(lead_id: int, brief_id: int) -> ActionResult:
     if row is None:
         return ActionResult(False, why or "refused")
     return ActionResult(True, (
-        f"would queue Webild brief #{row['id']} for the agent on Miro's Mac; it "
+        f"would queue Webild brief #{row['id']} for the agent on the owner's Mac; it "
         f"expires unpublished in {CLAIM_TTL.days} days"))
 
 
@@ -469,7 +469,7 @@ async def build_with_webild(lead_id: int, brief_id: int) -> ActionResult:
                                    f"draft (or another build is waiting); nothing "
                                    f"was queued")
     return ActionResult(
-        True, f"queued Webild brief #{row['id']} for the agent on Miro's Mac; the "
+        True, f"queued Webild brief #{row['id']} for the agent on the owner's Mac; the "
               f"published URL comes back with its launch check",
         evidence={"brief_id": int(row["id"]), "lead_id": int(row["lead_id"]),
                   "expires_at": str(queued.get("expires_at"))},
@@ -629,6 +629,6 @@ async def record_webild_site_rollback(token: str) -> ActionResult:
         return ActionResult(False, f"not a record token: {token!r}")
     if await _store.unpublish_webild(bid, url):
         return ActionResult(True, f"brief #{bid} back to waiting in ATLAS's records "
-                                  f"(the site on Webild is Miro's to take down)")
+                                  f"(the site on Webild is the owner's to take down)")
     return ActionResult(False, f"brief #{bid} is not recorded as published at {url}; "
                                f"nothing changed")

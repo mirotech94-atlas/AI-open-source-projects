@@ -1,4 +1,4 @@
-"""Phase 1 of Miro's Atlas Implementation Plan (Ask + Search): the free-tier
+"""Phase 1 of the owner's Atlas Implementation Plan (Ask + Search): the free-tier
 prompt budget, the two modes, the feature flag, honest snippets, units
 through calculation, and the run record with its cancel signal."""
 from __future__ import annotations
@@ -286,9 +286,9 @@ async def test_off_every_door_is_closed(monkeypatch):
     monkeypatch.delenv(assistant.ENABLED_ENV, raising=False)
     monkeypatch.setenv("SLACK_ASSISTANT_CHANNEL", "C0ASK")
     assert await assistant.MODULE.command("ask what is the capital of Peru?",
-                                          channel="slack", who="UMIRO") is None
+                                          channel="slack", who="UOWNER") is None
     assert await assistant.MODULE.command("atlas, what is a hash map?",
-                                          channel="slack", who="UMIRO") is None
+                                          channel="slack", who="UOWNER") is None
     assert slack_events._assistant_channel("C0ASK") is False
     assert "off" in (await TOOLS[assistant.VOICE_TOOL].read(question="x"))["error"]
 
@@ -321,7 +321,7 @@ def test_off_an_ask_in_slack_takes_the_old_path(monkeypatch):
     monkeypatch.setattr(slack_events, "_is_conversation", lambda t: False)
     monkeypatch.setattr(slack_events, "_is_knowledge_question", lambda t: True)
 
-    asyncio.run(slack_events._request("ask what is the capital of Peru?", "UMIRO",
+    asyncio.run(slack_events._request("ask what is the capital of Peru?", "UOWNER",
                                       "CRANDOM", "7.9"))
 
     assert old and replied[0].body == "Lima, from knowledge."
@@ -470,7 +470,7 @@ async def test_cancel_stops_the_run_before_its_next_tool_call(monkeypatch,
         "calculate", "c", TOOLS["calculate"].schema, read=counted))
 
     async def cancel_then_call():
-        await assistant.cancel(runs.live()[0].run_id, by="UMIRO")
+        await assistant.cancel(runs.live()[0].run_id, by="UOWNER")
         return _completion(calls=[_call("calculate", expression="1 + 1")])
 
     script = Script(cancel_then_call, _completion("never"))
@@ -511,11 +511,11 @@ async def test_cancel_names_what_it_did():
 
 
 async def test_stop_in_the_channel_stops_only_his_own_runs(memory_backend):
-    mine = await runs.start("q", mode="ask", skill="answer", who="UMIRO", channel="slack")
+    mine = await runs.start("q", mode="ask", skill="answer", who="UOWNER", channel="slack")
     theirs = await runs.start("q", mode="ask", skill="answer", who="UOTHER",
                               channel="slack")
     try:
-        said = await runs.cancel_mine("UMIRO", channel="slack")
+        said = await runs.cancel_mine("UOWNER", channel="slack")
         assert mine.run_id in said and mine.cancelled and not theirs.cancelled
         assert "Nothing of yours" in await runs.cancel_mine("UNOBODY")
     finally:
@@ -555,10 +555,10 @@ def test_ask_cancel_and_stop_reach_the_runs_from_slack(monkeypatch):
     monkeypatch.setattr(runs, "cancel_mine", fake_cancel_mine)
     monkeypatch.setattr("atlas.kernel.comms.notify", fake_notify)
 
-    asyncio.run(slack_events._request("ask cancel ab12cd34", "UMIRO", "CRANDOM", "1.1"))
-    asyncio.run(slack_events._request("stop", "UMIRO", "C0ASK", "1.2"))
+    asyncio.run(slack_events._request("ask cancel ab12cd34", "UOWNER", "CRANDOM", "1.1"))
+    asyncio.run(slack_events._request("stop", "UOWNER", "C0ASK", "1.2"))
 
-    assert cancelled == [("one", "ab12cd34", "UMIRO"), ("mine", "UMIRO", "slack")]
+    assert cancelled == [("one", "ab12cd34", "UOWNER"), ("mine", "UOWNER", "slack")]
     assert said == ["Stopping run ab12cd34", "Stopping yours"]
 
 
@@ -586,6 +586,6 @@ def test_search_never_steals_an_agency_job_in_slack(monkeypatch):
 
     asyncio.run(slack_events._request(
         "search up the 50 local businesses that have a very poor website or no "
-        "website at all and make them one", "UMIRO", "CRANDOM", "1.3"))
+        "website at all and make them one", "UOWNER", "CRANDOM", "1.3"))
 
     assert missions_saw

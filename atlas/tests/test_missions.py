@@ -1,7 +1,7 @@
 """Missions (kernel/missions.py): an order bigger than one action goes to the
 agent that owns it.
 
-Miro, 2026-09-29, by voice: "Hey Atlas, search up the 50 local businesses
+the owner, 2026-09-29, by voice: "Hey Atlas, search up the 50 local businesses
 that have a very poor website or no website at all and make them one." It
 was answered as small talk. These pin that it is recognised as an order on
 every surface, that it reaches the agency, that the agency's recipe only
@@ -24,20 +24,20 @@ from atlas.kernel import intent, missions
 from atlas.kernel.contracts import ActionResult, FailureClass, Tier
 from atlas.kernel.registry import REGISTRY
 
-MIRO = ("Hey Atlas, search up the 50 local businesses that have a very poor "
+OWNER = ("Hey Atlas, search up the 50 local businesses that have a very poor "
         "website or no website at all and make them one.")
 
 
 # ------------------------------------------------------------ recognition
 
 @pytest.mark.parametrize("said", [
-    MIRO,
+    OWNER,
     "find me 20 plumbers in Astoria with no website",
-    "get Nora to post the course",
-    "have Ivan check TSLA",
+    "get Mark to post the course",
+    "have Sam find leads in Queens",
     "can you look up local businesses with bad websites in Queens",
     "go and find 10 bakeries with no website",
-    "ask Hazel to find leads in Queens",
+    "ask Felix to find leads in Queens",
 ])
 def test_the_orders_are_recognised(said):
     assert voice.ACTION_INTENT.search(said), said
@@ -56,11 +56,11 @@ def test_a_question_or_a_lookup_nobody_owns_is_not_an_order(said):
     assert not voice.is_order(said), said
 
 
-def test_miros_sentence_goes_to_the_agency_and_its_recipe():
-    owner = missions.owner_for(MIRO)
-    assert owner is not None and owner.agent == "agency"
+def test_the_owners_sentence_goes_to_the_agency_and_its_recipe():
+    owner = missions.owner_for(OWNER)
+    assert owner is not None and owner.agent == "sites"
     assert owner.recipe == missions.AGENCY_SITES
-    assert missions.is_agency_job(MIRO)
+    assert missions.is_agency_job(OWNER)
     assert missions.is_agency_job("find me 20 plumbers in Astoria with no website")
     # One site for a client already in the conversation is one card, not a
     # search: the reels' sentence stays with the ordinary picker.
@@ -69,10 +69,10 @@ def test_miros_sentence_goes_to_the_agency_and_its_recipe():
 
 
 @pytest.mark.parametrize("said,agent,job", [
-    ("get Nora to post the course", "marketing", "post the course"),
-    ("have Ivan check TSLA", "markets", "check TSLA"),
-    ("Hey Atlas, ask Hazel to find leads in Queens", "agency", "find leads in Queens"),
-    ("tell the reels agent to plan a new series", "reels", "plan a new series"),
+    ("get Mark to post the course", "content", "post the course"),
+    ("have Sam find leads in Queens", "sales", "find leads in Queens"),
+    ("Hey Atlas, ask Felix to find leads in Queens", "sites", "find leads in Queens"),
+    ("tell the seo agent to audit joes", "seo", "audit joes"),
 ])
 def test_an_agent_named_is_the_agent_asked(said, agent, job):
     owner, rest = missions.addressed(said)
@@ -127,7 +127,7 @@ def catalog(monkeypatch):
     return REGISTRY
 
 
-AGENCY_OWNER = missions.BY_AGENT["agency"]
+AGENCY_OWNER = missions.BY_AGENT["sites"]
 
 
 def test_the_owner_catalog_is_its_own_modules_and_never_tier_3(catalog):
@@ -148,7 +148,7 @@ def test_a_tier_3_step_is_refused(catalog):
 
 
 def test_another_agents_step_is_refused(catalog):
-    assert "not the agency agent's" in missions.vet_step(
+    assert "not the sites agent's" in missions.vet_step(
         AGENCY_OWNER, "markets.alert", {"key": "k"})
 
 
@@ -199,7 +199,7 @@ def spy(monkeypatch):
 
 def _mission(**over) -> dict[str, Any]:
     m = {"id": 9, "agent": "agency", "recipe": missions.AGENCY_SITES,
-         "request": MIRO, "channel": "voice", "who": "dashboard", "thread": "",
+         "request": OWNER, "channel": "voice", "who": "dashboard", "thread": "",
          "slots": {"n": 2, "business": None, "area": "Astoria"},
          "status": "running", "phase": "", "state": {}, "steps": [],
          "report": None, "deadline": datetime.now(UTC) + timedelta(days=1)}
@@ -258,10 +258,10 @@ def _no_model(monkeypatch, answer: dict | None = None):
 
 async def test_the_count_comes_from_his_digits_and_is_capped(monkeypatch):
     _no_model(monkeypatch)
-    slots = await missions.fill_slots(MIRO)
+    slots = await missions.fill_slots(OWNER)
     assert slots["n"] == 50 and slots["n_said"] and not slots["n_capped"]
     monkeypatch.setenv("AGENCY_MISSION_MAX_N", "20")
-    slots = await missions.fill_slots(MIRO)
+    slots = await missions.fill_slots(OWNER)
     assert slots["n"] == 20 and slots["n_capped"]
 
 
@@ -333,10 +333,10 @@ async def test_no_area_and_no_home_asks_one_question(store, spy):
 
 async def test_no_area_uses_the_home_area_and_says_so(store, monkeypatch):
     monkeypatch.setenv("AGENCY_HOME_AREA", "40.7644,-73.9235,4000,Astoria, Queens")
-    got = await missions.take(MIRO, channel="voice", who_="dashboard")
+    got = await missions.take(OWNER, channel="voice", who_="dashboard")
     assert got.started and store[got.mission_id]["status"] == "running"
     # Said: who has it, what and where, and that updates go to Slack.
-    assert "Astoria, Queens" in got.spoken and "Hazel" in got.spoken
+    assert "Astoria, Queens" in got.spoken and "Felix" in got.spoken
     assert "Slack" in got.spoken
     assert "AGENCY_HOME_AREA" not in got.spoken
     # The full account -- the switch, the channel, the approvals -- is detail.
@@ -388,14 +388,14 @@ def test_the_surfaces_only_offer_his_answer_what_is_nothing_else():
     import inspect
 
     from atlas.api import slack_events
-    ask = inspect.getsource(voice.ask)
+    ask = inspect.getsource(voice._ask)   # `ask` wraps it with the HUD's task row
     assert "not wants_action and view_target(transcript) is None" in ask
     assert "None if ordered else await missions.answer" in inspect.getsource(
         slack_events._mission)
 
 
 async def test_a_phone_line_never_starts_one(store, spy):
-    got = await missions.take(MIRO, channel="phone", who_="phone", principal=False)
+    got = await missions.take(OWNER, channel="phone", who_="phone", principal=False)
     assert not got.started and got.mission_id is None and store == {}
     assert "Slack or the dashboard" in got.spoken
     assert "Slack or on the dashboard" in got.detail
@@ -405,14 +405,14 @@ async def test_no_perplexity_key_says_so_up_front(store, monkeypatch):
     """Only verified businesses are worked on; without Perplexity nothing
     can be verified, so no Places request is spent finding leads."""
     monkeypatch.delenv("PERPLEXITY_API_KEY")
-    got = await missions.take(MIRO, channel="voice", who_="dashboard")
+    got = await missions.take(OWNER, channel="voice", who_="dashboard")
     assert not got.started and "PERPLEXITY_API_KEY" in got.spoken
     assert store[got.mission_id]["status"] == "stopped"
 
 
 async def test_no_places_key_says_so_up_front(store, monkeypatch):
     monkeypatch.delenv("GOOGLE_PLACES_API_KEY")
-    got = await missions.take(MIRO, channel="voice", who_="dashboard")
+    got = await missions.take(OWNER, channel="voice", who_="dashboard")
     assert not got.started and "search isn't set up" in got.spoken
     assert "GOOGLE_PLACES_API_KEY" not in got.spoken
     assert "GOOGLE_PLACES_API_KEY" in got.detail
@@ -667,11 +667,11 @@ async def test_an_agent_named_takes_it_from_its_own_catalog(catalog, monkeypatch
 
     monkeypatch.setattr(intent, "choose", choose)
     monkeypatch.setattr(missions, "_insert_mission", insert)
-    got = await missions.delegate("have Hazel deploy joes", channel="slack", who_="U1")
+    got = await missions.delegate("have Felix deploy joes", channel="slack", who_="U1")
     assert seen["request"] == "deploy joes"
     assert seen["only"] == missions.owner_catalog(AGENCY_OWNER)
     assert got.proposal_id == 77 and "card #77" in got.detail
-    assert got.spoken.startswith("Hazel's on it") and "#77" not in got.spoken
+    assert got.spoken.startswith("Felix's on it") and "#77" not in got.spoken
     assert spy["execute"] == []                       # a card, never a run
 
 
@@ -682,7 +682,7 @@ async def test_nobody_owns_it_so_nobody_is_handed_it(catalog):
 
 # ----------------------------------------------------------- the surfaces
 
-async def test_slack_hands_miros_sentence_to_the_mission(monkeypatch):
+async def test_slack_hands_the_owners_sentence_to_the_mission(monkeypatch):
     from atlas.api import slack_events
 
     taken = {}
@@ -700,7 +700,7 @@ async def test_slack_hands_miros_sentence_to_the_mission(monkeypatch):
     monkeypatch.setattr(missions, "take", take)
     monkeypatch.setattr(missions, "answer", no_answer)
     monkeypatch.setattr("atlas.kernel.intent.act", must_not)
-    said = await slack_events._mission(f"atlas, {MIRO}", "U1", "1.2")
+    said = await slack_events._mission(f"atlas, {OWNER}", "U1", "1.2")
     assert said.startswith("Hazel (Agency) has it")
     assert taken["kw"]["channel"] == "slack" and taken["kw"]["thread"] == "1.2"
 
@@ -708,8 +708,8 @@ async def test_slack_hands_miros_sentence_to_the_mission(monkeypatch):
 @pytest.mark.parametrize("said,knowledge", [
     ("look up the capital of Peru", True),
     # His own estate: to the specialists who measure, never a web answer.
-    ("find out why flycheap is slow", False),
-    ("get me the flycheap numbers", False),
+    ("find out why cloudco is slow", False),
+    ("get me the cloudco numbers", False),
 ])
 def test_slack_answers_a_lookup_from_knowledge_only_when_it_is_not_his(said, knowledge):
     from atlas.api import slack_events
@@ -749,7 +749,7 @@ def client(monkeypatch, memory_backend):
         yield c
 
 
-def test_the_dashboard_hands_miros_sentence_to_the_agency(client, monkeypatch):
+def test_the_dashboard_hands_the_owners_sentence_to_the_agency(client, monkeypatch):
     seen = {}
 
     async def take(words, **kw):
@@ -766,7 +766,7 @@ def test_the_dashboard_hands_miros_sentence_to_the_agency(client, monkeypatch):
     monkeypatch.setattr(missions, "answer", no_answer)
     monkeypatch.setattr("atlas.kernel.agents.route", must_not)
     monkeypatch.setattr("atlas.kernel.intent.choose", must_not)
-    body = client.post("/api/voice/ask", json={"transcript": MIRO}).json()
+    body = client.post("/api/voice/ask", json={"transcript": OWNER}).json()
     assert body["kind"] == "mission" and body["action_request"] is True
     assert body["answer"].startswith("Hazel (Agency) has it")
     assert seen["channel"] == "voice" and seen["principal"] is True
@@ -784,7 +784,7 @@ async def test_the_phone_line_recognises_it_but_never_starts_it(monkeypatch):
 
     monkeypatch.setattr(missions, "take", take)
     monkeypatch.setattr("atlas.kernel.improve.handle", not_improve)
-    text, cards = await voice.spoken_turn(MIRO, source="phone")
+    text, cards = await voice.spoken_turn(OWNER, source="phone")
     assert text == "not from a phone" and cards == []
     assert seen["principal"] is False
 
@@ -792,7 +792,7 @@ async def test_the_phone_line_recognises_it_but_never_starts_it(monkeypatch):
 def test_the_agency_room_lists_the_missions(client, monkeypatch):
     async def recent(limit):
         return [{"id": 4, "agent": "agency", "recipe": missions.AGENCY_SITES,
-                 "request": MIRO, "status": "running", "phase": "search",
+                 "request": OWNER, "status": "running", "phase": "search",
                  "slots": {"n": 50}, "state": {"area": {"label": "Astoria"}},
                  "steps": [{"action": "agency.deploy_site", "proposal_id": 12}],
                  "report": None, "created_at": datetime(2026, 9, 29, tzinfo=UTC),
@@ -801,7 +801,8 @@ def test_the_agency_room_lists_the_missions(client, monkeypatch):
     monkeypatch.setattr(missions, "recent", recent)
     body = client.get("/api/agency/missions").json()
     got = body["missions"][0]
-    assert got["persona"] == "Hazel" and got["cards"] == [12]
+    # A row stored under the retired `agency` agent reads as Felix (sites).
+    assert got["persona"] == "Felix" and got["cards"] == [12]
     assert got["area"] == {"label": "Astoria"} and body["read_at"]
 
 
@@ -815,7 +816,7 @@ def test_an_unreadable_missions_table_is_a_503_not_an_empty_list(client, monkeyp
 
 # ------------------------------------------------------------- said briefly
 #
-# Miro, 2026-09-29: "Not too chatty -- simple and straight to the point." The
+# the owner, 2026-09-29: "Not too chatty -- simple and straight to the point." The
 # acknowledgement was five sentences with two env var names and a file path.
 # Every reply a mission speaks is at most two short sentences; the pacing,
 # the approvals and the switches go to Slack (`Reply.detail`).
@@ -840,7 +841,7 @@ async def test_the_mission_acknowledgement_is_one_breath(store, monkeypatch,
                               channel="voice", who_="dashboard")
     assert got.started
     assert_brief(got.spoken)
-    assert got.spoken.startswith("On it — Hazel's finding 50")
+    assert got.spoken.startswith("On it — Felix's finding 50")
     assert "New York" in got.spoken and "Slack" in got.spoken
     # A blocker is one clause, never dropped: watch-only is the default and
     # a job that cannot run must not sound started.
@@ -854,7 +855,7 @@ async def test_the_mission_acknowledgement_is_one_breath(store, monkeypatch,
 async def test_every_refusal_is_short_and_keeps_its_reason(store, monkeypatch):
     replies = [missions.NOT_HERE_SAID.format(name="Hazel"), missions.QUESTION]
     monkeypatch.delenv("GOOGLE_PLACES_API_KEY")
-    replies.append((await missions.take(MIRO, channel="voice", who_="d")).spoken)
+    replies.append((await missions.take(OWNER, channel="voice", who_="d")).spoken)
     monkeypatch.setenv("GOOGLE_PLACES_API_KEY", "k")
 
     async def spent():
@@ -862,7 +863,7 @@ async def test_every_refusal_is_short_and_keeps_its_reason(store, monkeypatch):
 
     monkeypatch.setattr("atlas.modules.agency.prospect.spend_this_month", spent)
     monkeypatch.setattr("atlas.modules.agency.prospect.cap", lambda: 500)
-    budget = await missions.take(MIRO, channel="voice", who_="d")
+    budget = await missions.take(OWNER, channel="voice", who_="d")
     assert "budget" in budget.spoken and "500/500" in budget.detail
     assert "read " in budget.detail                 # the figure carries its time
     replies.append(budget.spoken)
@@ -884,7 +885,7 @@ def test_a_vetting_reason_is_said_without_action_names(why, said):
 
 async def test_a_delegated_answer_is_introduced_by_name(monkeypatch, catalog):
     class Agent:
-        title = "Marketing"
+        title = "Content & YouTube"
 
         async def run(self, task, context=None):
             assert "at most two short sentences" in task
@@ -899,8 +900,8 @@ async def test_a_delegated_answer_is_introduced_by_name(monkeypatch, catalog):
     monkeypatch.setattr(intent, "choose", nothing)
     monkeypatch.setattr(missions, "_insert_mission", insert)
     monkeypatch.setitem(__import__("atlas.kernel.agents", fromlist=["ROSTER"]).ROSTER,
-                        "marketing", Agent())
-    got = await missions.delegate("have Nora summarise her day", channel="voice",
+                        "content", Agent())
+    got = await missions.delegate("have Mark summarise his day", channel="voice",
                                   who_="dashboard")
-    assert got.spoken == "Here's Nora: Three posts went out, as of 7:52."
-    assert got.detail.startswith("Nora (")
+    assert got.spoken == "Here's Mark: Three posts went out, as of 7:52."
+    assert got.detail.startswith("Mark (")

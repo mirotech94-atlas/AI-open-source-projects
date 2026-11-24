@@ -17,8 +17,8 @@ default, and the digest says so):
      drafted today): `content.draft_reel`, then `content.render_video`,
      then a dry run of `content.publish_reel` for its per-platform status,
      then ONE Tier 2 card for that reel. Nothing is posted: the card waits
-     for Miro, and silence lets it expire.
-  3. The preview, so he can WATCH it in Slack before he decides (Miro,
+     for the owner, and silence lets it expire.
+  3. The preview, so he can WATCH it in Slack before he decides (the owner,
      2026-09-25): the MP4 is uploaded into the card's own thread in
      #instagram-reels (`SlackChannel.upload`, the external-upload flow,
      which needs `files:write`). On `missing_scope` or any other upload
@@ -140,7 +140,7 @@ DIGEST_ENV = "REELS_DIGEST"
 
 
 def digest_cadence() -> str:
-    """Miro, 2026-10-06 ("yes" to content running with no card, reported in
+    """the owner, 2026-10-06 ("yes" to content running with no card, reported in
     the weekly): the day's content digest is stored every day but said in
     Slack only in the weekly summary. REELS_DIGEST=daily brings the daily
     #reels message back."""
@@ -280,7 +280,7 @@ async def preview_under_card(pid: int, media_id: int) -> str:
             why = "the rendered file is no longer on disk"
         else:
             try:
-                # Into the channel itself, not the card's thread: Miro
+                # Into the channel itself, not the card's thread: the owner
                 # (2026-09-27) wants #instagram-reels to show the video, and a
                 # file in a thread is invisible from the channel.
                 why = await slack.upload(
@@ -310,7 +310,7 @@ async def preview_under_card(pid: int, media_id: int) -> str:
 CALENDAR_ROLLBACK = ("deletes the Instagram and Facebook posts, and the TikTok "
                      "post while Postiz still has it queued; a published TikTok "
                      "post gets a MANUAL note")
-# Only Miro's explicit no holds the story. An expired card (nobody answered)
+# Only the owner's explicit no holds the story. An expired card (nobody answered)
 # or a failed one (a platform hiccup) goes back to 'rendered' and is offered
 # again the next New York day -- never the same day, so a failing platform
 # cannot turn into a card every half hour.
@@ -332,8 +332,8 @@ async def post_or_card(params: dict, reason: str, *, dedup: str, media_id: int,
                        seconds: tuple[float, float] | None = None,
                        best_hour: bool = False
                        ) -> tuple[str, int | None, str]:
-    """Miro, 2026-09-27: fully automated. The reel posts itself through
-    `content.autopublish_reel` (Tier AUTO, its checks in code). Miro,
+    """the owner, 2026-09-27: fully automated. The reel posts itself through
+    `content.autopublish_reel` (Tier AUTO, its checks in code). the owner,
     2026-09-28: "no need for me to meddle" -- so a reel held only by the
     day's cap WAITS for tomorrow (no card), and a reel that failed a quality
     check is handed back to the caller (`on_fail`): 'redo' to be made again
@@ -350,7 +350,7 @@ async def post_or_card(params: dict, reason: str, *, dedup: str, media_id: int,
     without automatic posting: made again once ('redo'), dropped ('skip'),
     or a card whose first line is the exception.
 
-    Reach (Miro, 2026-09-29): the caption gets its lane's niche hashtags
+    Reach (the owner, 2026-09-29): the caption gets its lane's niche hashtags
     (`content.hashtags`, closed lists), and with `best_hour` -- only for a
     caller that retries within the day, the calendar tick and the series --
     a reel ready now may WAIT for a better posting hour today
@@ -526,7 +526,7 @@ async def _leg_sync() -> list[str]:
 
 
 async def leg_sync() -> list[str]:
-    """Miro, 2026-09-29: an AI reel is on every configured platform. Each
+    """the owner, 2026-09-29: an AI reel is on every configured platform. Each
     missing leg `content.legsync.due()` names -- a retryable refusal of a
     reel posted in the last 96 h, oldest first, one per platform a tick --
     goes through the executor as `content.post_missing_leg` (Tier 1, its
@@ -580,7 +580,7 @@ async def _calendar_tick(now: datetime | None = None) -> list[str]:
         lines += await course_waiting_lines()
     except Exception:
         log.exception("reels: posting a waiting course reel failed")
-    # The series being made goes first (Miro: the hospital comedy is next);
+    # The series being made goes first (the owner: the hospital comedy is next);
     # while its part waits for a whole day's clips, the packages hold off.
     try:
         said, hold = await series_step()
@@ -677,7 +677,7 @@ async def series_step() -> tuple[list[str], bool]:
     if current is None:
         formats = [f for f in await playbook.top_formats(200)
                    if playbook.bucket_of(f["format"]) == "serial"]
-        # Miro's priority first; within a rank, the format whose earlier
+        # the owner's priority first; within a rank, the format whose earlier
         # series earned more (series.format_bonus). Unreadable results rank
         # as before -- never a penalty.
         try:
@@ -792,7 +792,7 @@ async def _sync_series_cards() -> None:
 
 
 def _render_order(cal, state: dict[str, dict]) -> list[dict]:
-    """Which packaged reel gets today's clips first. Miro, 2026-09-28:
+    """Which packaged reel gets today's clips first. the owner, 2026-09-28:
     "continue with other days, don't wait for day 1". A reel whose sequel
     rule is not met yet (its episode has not posted) waits; among the rest,
     the one closest to finished goes first -- so a short reel is not held
@@ -846,7 +846,7 @@ async def no_platform_line() -> str | None:
 
 
 async def calendar_covers_today(now: datetime | None = None) -> tuple[bool, str]:
-    """Whether a packaged reel is waiting for Miro right now (a card up, or a
+    """Whether a packaged reel is waiting for the owner right now (a card up, or a
     finished render about to get one) -- and, when not, why, in words."""
     from ..modules.content import calendar as cal
     try:
@@ -888,7 +888,7 @@ async def calendar_lines() -> list[str]:
             if r["status"] in ("blocked", "declined") or (
                     r["status"] == "rendered" and r.get("note")):
                 lines.append(f"  day {r['day']} {r['status']}: "
-                             f"{r.get('note') or 'declined by Miro; its sequels wait'}")
+                             f"{r.get('note') or 'declined by the owner; its sequels wait'}")
     return lines
 
 
@@ -904,7 +904,7 @@ async def reel_lines() -> list[str]:
         if covered:
             return [("Reels rotation paused: today's post is the calendar's "
                      "(REELS_CALENDAR=off resumes the rotation)")]
-        # Miro, 2026-09-27: a post every day, and never a slideshow. The
+        # the owner, 2026-09-27: a post every day, and never a slideshow. The
         # calendar has nothing ready for today, so ONE backup reel is drafted
         # on Veo -- but only from clips left over today, so the calendar's
         # own days never fall behind for it.
@@ -916,7 +916,7 @@ async def reel_lines() -> list[str]:
                      f"clips are left (a backup needs {need}). A higher Veo tier "
                      f"would cover days like this.")]
         backup = f"backup reel, the calendar has none today ({why})"
-    # Miro, 2026-09-27: a post every day -- unless no platform can take one.
+    # the owner, 2026-09-27: a post every day -- unless no platform can take one.
     # Then nothing is drafted or rendered, and the line says which accounts
     # need fixing, rather than raising cards nothing could post.
     if (stopped := await no_platform_line()) is not None:
@@ -1071,7 +1071,7 @@ async def course_waiting_lines() -> list[str]:
 
 
 async def course_lines(now: datetime | None = None) -> list[str]:
-    """The course-promo lane (Miro, 2026-09-29): `COURSE_REELS_PER_WEEK`
+    """The course-promo lane (the owner, 2026-09-29): `COURSE_REELS_PER_WEEK`
     (default 2, Tuesday and Friday New York) reels for his course, on the
     AI-stories accounts. Runs before the football step, so a course day's
     reel takes the day's third automatic post; when the cap is already
@@ -1140,7 +1140,7 @@ async def course_lines(now: datetime | None = None) -> list[str]:
 
 
 async def shorts_lines(now: datetime | None = None) -> list[str]:
-    """YouTube Shorts (Miro, 2026-09-29): `SHORTS_PER_WEEK` (default 3,
+    """YouTube Shorts (the owner, 2026-09-29): `SHORTS_PER_WEEK` (default 3,
     Monday/Wednesday/Friday New York) a week, each the best AI reel of the
     last seven days not on YouTube yet (`content.shorts`), posted through
     the executor as `content.publish_short`. A slot with nothing eligible
@@ -1184,7 +1184,7 @@ FOOTBALL_ROLLBACK = CALENDAR_ROLLBACK
 
 
 async def football_lines() -> list[str]:
-    """The football (soccer) lane (Miro, 2026-09-29): at most
+    """The football (soccer) lane (the owner, 2026-09-29): at most
     `FOOTBALL_REELS_PER_DAY` stat reels a day, after the day's stories and
     only from Veo clips left over, drafted from API-Football's numbers,
     rendered with every number verified, and posted on the AI reels path
@@ -1349,7 +1349,7 @@ async def nudge(now: datetime | None = None) -> bool:
                  f"keep today's post")
     else:
         title = "No reel is waiting and none was approved today"
-    # Miro, 2026-09-27: at least every other day. Two days with nothing out
+    # the owner, 2026-09-27: at least every other day. Two days with nothing out
     # is said first, in the title -- still a message, never a post.
     try:
         posted = await fetch_one(
@@ -1395,7 +1395,7 @@ async def daily(now: datetime | None = None) -> None:
         return
     lines = await overnight_lines()
     # The course step before football: on a course day it takes the day's
-    # third automatic post (Miro's 2+1 split gives way twice a week).
+    # third automatic post (the owner's 2+1 split gives way twice a week).
     for part in (tiktok_lines, research_lines, calendar_lines, reel_lines,
                  course_lines, football_lines, shorts_lines, promote_lines):
         try:

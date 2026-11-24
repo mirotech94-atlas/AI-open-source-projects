@@ -1,4 +1,4 @@
-"""Delegate — hand a piece of work to the coding agent on Miro's Mac.
+"""Delegate — hand a piece of work to the coding agent on the owner's Mac.
 
 What it watches: the handoff queue itself. A task approved but never claimed
 means the agent's scheduled run is not running, and that is worth saying
@@ -95,7 +95,7 @@ async def queue_dry(handoff_id: str = "", topic: str = "") -> ActionResult:
                                    f"ago; ask again so it is written from today")
     return ActionResult(
         True, f"would queue handoff #{hid} ({row['target']}) for the coding agent "
-              f"on Miro's Mac; it is claimed on the agent's next scheduled run or "
+              f"on the owner's Mac; it is claimed on the agent's next scheduled run or "
               f"expires unclaimed in {int(CLAIM_TTL.total_seconds() // 3600)}h")
 
 
@@ -198,7 +198,7 @@ class DelegateModule:
             Action(
                 name="delegate.claude_code",
                 tier=Tier.ASK,
-                summary="Hand this to the coding agent on Miro's Mac",
+                summary="Hand this to the coding agent on the owner's Mac",
                 run=queue, dry_run=queue_dry, rollback=cancel,
                 params={"handoff_id": "the id of the brief ATLAS drafted",
                         "topic": "the estate it concerns; where the card lands"},

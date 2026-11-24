@@ -24,7 +24,7 @@ never runs a window twice and a missed one is 'skipped' with its reason.
 The breaker (−$2,000 from the book's peak) pauses the `futures` module
 through `kernel/pause.py` and sends one line. While paused, ticks still
 read data and let open paper positions exit by their rules, but book
-nothing new. Only Miro resumes it.
+nothing new. Only the owner resumes it.
 """
 from __future__ import annotations
 

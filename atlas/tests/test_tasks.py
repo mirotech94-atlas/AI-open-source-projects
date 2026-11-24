@@ -1,5 +1,5 @@
-"""kernel/tasks.py: every request Miro makes is on the record, and a status
-question is answered from it (Miro, 2026-10-06: "just check on him")."""
+"""kernel/tasks.py: every request the owner makes is on the record, and a status
+question is answered from it (the owner, 2026-10-06: "just check on him")."""
 from __future__ import annotations
 
 import json
@@ -107,3 +107,74 @@ def test_cards_json_round_trips():
     now = datetime.now(UTC)
     r = {**_rows(now)[0], "cards": json.loads("[12, 13]")}
     assert "(cards #12, #13)" in tasks.line(r, now, quote=False)
+
+
+# ---- a PRIVATE run's words and reply are never kept where a cloud prompt reads
+
+async def test_a_private_run_stores_a_placeholder_not_the_question_or_reply(monkeypatch):
+    written = []
+
+    async def fetch_one(sql, *args):
+        return {"id": 5}
+
+    async def execute_sql(sql, *args):
+        written.append((sql, args))
+    monkeypatch.setattr(tasks, "fetch_one", fetch_one)
+    monkeypatch.setattr(tasks, "execute_sql", execute_sql)
+    tid = await tasks.open("summarize my unread email", source="slack", who="U1")
+    await tasks.note_private()                # what the assistant loop does
+    await tasks.close(tid, route="answer", ok=None,
+                      outcome="Your landlord wrote: the rent is 4200", cards=())
+    assert "private = true" in written[0][0] and "unread" not in str(written[0][1])
+    sql, args = written[-1]
+    flat = " ".join(str(a) for a in args)
+    assert "landlord" not in flat and "4200" not in flat and "unread email" not in flat
+    assert "private" in sql.lower() and tasks.PRIVATE_OUTCOME in args
+
+
+async def test_note_private_reaches_a_copied_context(monkeypatch):
+    """ask.answer may run converse in a child task; the mark must still land."""
+    import asyncio
+    written = []
+
+    async def fetch_one(sql, *args):
+        return {"id": 6}
+
+    async def execute_sql(sql, *args):
+        written.append(args)
+    monkeypatch.setattr(tasks, "fetch_one", fetch_one)
+    monkeypatch.setattr(tasks, "execute_sql", execute_sql)
+    tid = await tasks.open("what is on my calendar", source="slack")
+    await asyncio.create_task(tasks.note_private())
+    await tasks.close(tid, route="answer", ok=None, outcome="dentist at 3pm")
+    assert "dentist" not in " ".join(str(a) for a in written[-1])
+
+
+async def test_a_plain_run_is_stored_as_before(monkeypatch):
+    written = []
+
+    async def fetch_one(sql, *args):
+        return {"id": 8}
+
+    async def execute_sql(sql, *args):
+        written.append(args)
+    monkeypatch.setattr(tasks, "fetch_one", fetch_one)
+    monkeypatch.setattr(tasks, "execute_sql", execute_sql)
+    tid = await tasks.open("restart the poller", source="slack")
+    await tasks.close(tid, route="action", ok=True, outcome="restarted")
+    assert "restarted" in written[-1]
+
+
+async def test_private_rows_are_excluded_from_context_and_status(monkeypatch):
+    now = datetime.now(UTC)
+    seen = []
+
+    async def fetch_all(sql, *args):
+        seen.append(sql)
+        rows = [{**_rows(now)[0], "private": True, "outcome": "SECRET-MAIL"},
+                {**_rows(now)[1], "private": False}]
+        return [r for r in rows if "NOT private" not in sql or not r["private"]]
+    monkeypatch.setattr(tasks, "fetch_all", fetch_all)
+    assert "SECRET-MAIL" not in await tasks.context_text()
+    assert "SECRET-MAIL" not in await tasks.status_text("anything")
+    assert all("NOT private" in s for s in seen)

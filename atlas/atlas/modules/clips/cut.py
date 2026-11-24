@@ -81,11 +81,21 @@ log = logging.getLogger("atlas.clips.cut")
 
 MIN_WINDOW, MAX_WINDOW = 20.0, 60.0
 MAX_CLIPS = 3
-# The platforms the lane has an account on: Instagram @atlas.clipsdrop, the
-# TikTok @atlasclips12 (through Postiz) and the YouTube `clips` channel. A
+# The platforms the lane has an account on: Instagram @example_handle, the
+# TikTok @example_handle (through Postiz) and the YouTube `clips` channel. A
 # clip gets a row only for a platform that is also in its campaign's
 # `platforms`, never one for a platform that does not pay.
 LANE_PLATFORMS = ("instagram", "tiktok", "youtube")
+
+
+def lane_platforms() -> tuple[str, ...]:
+    """LANE_PLATFORMS less YouTube unless CLIPS_YOUTUBE is on. the owner,
+    2026-10-11: the YouTube channel is ATLAS Academy's now (education, AI,
+    money), so campaign clips stop going there; Instagram and TikTok
+    carry on. The Academy's own promo Shorts are not campaign clips and
+    are unaffected."""
+    on = os.getenv("CLIPS_YOUTUBE", "off").strip().lower() in ("1", "on", "true", "yes")
+    return LANE_PLATFORMS if on else tuple(p for p in LANE_PLATFORMS if p != "youtube")
 # Groq's Whisper upload ceiling is 25 MB; 64 kbps mono is ~0.5 MB a minute,
 # so twenty-minute pieces stay far under it whatever the source's length.
 AUDIO_CHUNK_S = 1200.0
@@ -155,7 +165,7 @@ def leg_captions(campaign: campaigns.Campaign, key: str, tags: list[str],
     permits free wording (`captions.with_hook`)."""
     out: dict[str, str] = {}
     skipped: list[str] = []
-    for platform in LANE_PLATFORMS:
+    for platform in lane_platforms():
         if platform not in campaign.platforms:
             continue
         try:
@@ -219,7 +229,7 @@ def choose_platform(campaign: campaigns.Campaign, platforms: list[str] | tuple[s
     is broken by `seed` (the source id plus the clip's number), in lane
     order, so tied accounts take turns. Pure and deterministic: never on
     which account happens to be configured."""
-    ordered = [p for p in LANE_PLATFORMS if p in platforms]
+    ordered = [p for p in lane_platforms() if p in platforms]
     if not ordered:
         raise ValueError("no platform to choose from")
     rates = campaign.rates or {}
@@ -243,7 +253,7 @@ def one_platform_note(campaign: campaigns.Campaign, legs: list[str]) -> str:
         return ""
     rates = campaign.rates or {}
     top = max(float(rates.get(p, 0.0)) for p in legs)
-    tied = [p for p in LANE_PLATFORMS if p in legs
+    tied = [p for p in lane_platforms() if p in legs
             and float(rates.get(p, 0.0)) == top]
     return one_platform_why(campaign, tied, top)
 
@@ -302,7 +312,7 @@ def size_refusal(campaign: campaigns.Campaign, name: str, size: int) -> str | No
 
 def brand_assets(campaign: campaigns.Campaign) -> tuple[dict[str, Path], str | None]:
     """The campaign's required brand assets, each a plain PNG inside its
-    own brand/ folder (`sources.brand_dir`; placed by Miro, never fetched
+    own brand/ folder (`sources.brand_dir`; placed by the owner, never fetched
     -- the lane downloads nothing from a brand's site), or why not:
     `BRAND_MISSING: put logo.png in <folder>`. A campaign that requires
     none gets {}. Blocking: it reads the filesystem."""

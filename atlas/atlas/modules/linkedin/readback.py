@@ -1,6 +1,6 @@
 """Read-back for `linkedin.publish_post` (RA-D1), and the reconciler for its
 unfinished starts (three in prod with no finish, FINDINGS F §7.2). Also
-`linkedin.reshare_post` (Miro's recent activity) and
+`linkedin.reshare_post` (the owner's recent activity) and
 `linkedin.update_page_identity` (the page's public name; the logo cannot be
 compared, so a logo change reads unknown).
 `linkedin.approve_draft` reads only the post-bank entry in the state file:
@@ -33,7 +33,7 @@ from ...kernel.verify import (
     verified,
     verifier,
 )
-from . import PAGES
+from . import KNOWN_PAGES
 
 
 class Unreadable(Exception):
@@ -47,13 +47,13 @@ class Unreadable(Exception):
 async def published_text(page: str) -> str:
     """The page's published list, as text. Read only: the browser context is
     closed without saving the session back."""
-    spec = PAGES[page]
+    spec = KNOWN_PAGES[page]
     return await _read(f"https://www.linkedin.com/company/{spec['id']}"
                        f"/admin/page-posts/published/")
 
 
 async def activity_text() -> str:
-    """Miro's recent activity, as text: where a reshare shows. Read only."""
+    """the owner's recent activity, as text: where a reshare shows. Read only."""
     from .publish import PROFILE_ACTIVITY
     return await _read(PROFILE_ACTIVITY)
 
@@ -61,7 +61,7 @@ async def activity_text() -> str:
 async def page_name(page: str) -> str:
     """The page's public name: its heading on the public company page, or
     the tab title without the " | LinkedIn" suffix. Read only."""
-    spec = PAGES[page]
+    spec = KNOWN_PAGES[page]
     return await _read(f"https://www.linkedin.com/company/{spec['id']}/",
                        script=_NAME_JS)
 
@@ -130,15 +130,16 @@ async def _on_page(page: str, entry: dict[str, Any]) -> Verification:
         return unknown(str(exc), exc.failure_class, **evidence)
     if needle in (listed or "").lower():
         return verified(on_published_list=True, **evidence)
-    return contradicted(f"{entry.get('id')} is not on the {PAGES[page]['name']} "
+    return contradicted(f"{entry.get('id')} is not on the {KNOWN_PAGES[page]['name']} "
                         "page's published list", **evidence)
 
 
+@verifier("linkedin.autopublish_post")     # the same post, posted on its own
 @verifier("linkedin.publish_post")
 async def verify_publish(params: dict[str, Any], result: ActionResult) -> Verification:
     page = str(params.get("page") or (result.evidence or {}).get("page") or "")
     entry_id = str((result.evidence or {}).get("entry") or params.get("entry_id") or "")
-    if page not in PAGES or not entry_id:
+    if page not in KNOWN_PAGES or not entry_id:
         return unknown("the run recorded no page and entry")
     try:
         entry = _entry(page, entry_id)
@@ -162,13 +163,14 @@ def _stamped_after(entry: dict[str, Any], started: datetime) -> bool:
     return False
 
 
+@reconciler("linkedin.autopublish_post")
 @reconciler("linkedin.publish_post")
 async def reconcile_publish(params: dict[str, Any], started: datetime) -> Verification:
     """`execute.start` with no finish. The crash window is the Post click
     (`publish.py`) before the entry is marked, so an entry still `approved`
     may be live: only the page's list says. Nothing is posted again."""
     page = str(params.get("page") or "")
-    if page not in PAGES:
+    if page not in KNOWN_PAGES:
         return unknown("the start row names no page", FailureClass.VALIDATION)
     try:
         from .store import bank, load
@@ -193,11 +195,11 @@ async def reconcile_publish(params: dict[str, Any], started: datetime) -> Verifi
 @verifier("linkedin.reshare_post")
 async def verify_reshare(params: dict[str, Any], result: ActionResult) -> Verification:
     """The bank must record the reshare as verified, and the post's first
-    40 characters must be on Miro's recent activity. One read, not the
+    40 characters must be on the owner's recent activity. One read, not the
     run's three looks: the run only returns ok after it saw it there."""
     page = str(params.get("page") or (result.evidence or {}).get("page") or "")
     entry_id = str(params.get("entry_id") or (result.evidence or {}).get("entry") or "")
-    if page not in PAGES or not entry_id:
+    if page not in KNOWN_PAGES or not entry_id:
         return unknown("the run names no page and entry", FailureClass.VALIDATION)
     try:
         entry = _entry(page, entry_id)
@@ -220,8 +222,8 @@ async def verify_reshare(params: dict[str, Any], result: ActionResult) -> Verifi
     except Unreadable as exc:
         return unknown(str(exc), exc.failure_class, **evidence)
     if needle in (listed or "").lower():
-        return verified(on_miros_activity=True, **evidence)
-    return contradicted(f"{entry_id} is not on Miro's recent activity", **evidence)
+        return verified(on_the_owners_activity=True, **evidence)
+    return contradicted(f"{entry_id} is not on the owner's recent activity", **evidence)
 
 
 # --------------------------------------------------------------- identity
@@ -247,7 +249,7 @@ async def verify_identity(params: dict[str, Any], result: ActionResult) -> Verif
     page = str(params.get("page") or (result.evidence or {}).get("page") or "")
     name = str(params.get("name") or "").strip()
     logo = str(params.get("logo") or "").strip()
-    if page not in PAGES:
+    if page not in KNOWN_PAGES:
         return unknown("the run names no page", FailureClass.VALIDATION)
     legs: dict[str, Verification] = {}
     if name:
@@ -314,7 +316,7 @@ async def verify_approve(params: dict[str, Any], result: ActionResult) -> Verifi
     tok_page, _, tok_entry = str(result.rollback_token or "").partition(":")
     page = str(params.get("page") or tok_page or "")
     entry_id = str(params.get("entry_id") or tok_entry or "")
-    if page not in PAGES or not entry_id:
+    if page not in KNOWN_PAGES or not entry_id:
         return unknown("the run names no page and entry", FailureClass.VALIDATION)
     return await _approved(page, entry_id, str(params.get("text_sha256") or ""))
 
@@ -324,6 +326,6 @@ async def reconcile_approve(params: dict[str, Any], started: datetime) -> Verifi
     """Approved with the hash he saw, or not. Nothing is approved again."""
     page = str(params.get("page") or "")
     entry_id = str(params.get("entry_id") or "")
-    if page not in PAGES or not entry_id:
+    if page not in KNOWN_PAGES or not entry_id:
         return unknown("the start row names no page and entry", FailureClass.VALIDATION)
     return await _approved(page, entry_id, str(params.get("text_sha256") or ""))

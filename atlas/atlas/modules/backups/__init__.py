@@ -1,6 +1,6 @@
 """Backups and disk: is ATLAS's memory safe, and is there room to keep working?
 
-Miro, 2026-09-28: automate what can be. Everything ATLAS knows is one
+the owner, 2026-09-28: automate what can be. Everything ATLAS knows is one
 Postgres database on one host, and until today nothing copied it anywhere.
 The host now dumps it nightly and copies each dump to the GitLab VM
 (`bootstrap/backup/atlas-backup.sh`), and a weekly job keeps the disk from
@@ -18,7 +18,6 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import shutil
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -26,7 +25,13 @@ from ...kernel.contracts import Check, Health, Observation, Severity
 
 DATA = os.getenv("ATLAS_DATA_DIR", "data")
 STATUS = os.path.join(DATA, "backups", "status.json")
-HOUSEKEEPING = os.path.join(DATA, "backups", "housekeeping.json")
+# Written by the Mac's launchd job ops/watchdog/host/disk_status.sh: the real
+# data volume's free space and its largest folders. ATLAS runs in a container
+# whose own disk_usage reads the VM, not the Mac, so it never measures itself.
+DISK_STATUS = os.path.join(DATA, "backups", "disk.json")
+# Written by the Mac's launchd job ops/watchdog/host/pull_watchdog_seen.sh: a
+# copy of the independent watchdog's own seen.json, plus the Mac's pulled_at.
+WATCHDOG_SEEN = os.path.join(DATA, "backups", "watchdog_seen.json")
 # Written by ops/restore_drill.sh (weekly, atlas-restore-drill.timer) on
 # every drill that ran: the latest drill's verdict only.
 DRILL = os.path.join(DATA, "backups", "restore_drill.json")
@@ -34,8 +39,20 @@ DRILL = os.path.join(DATA, "backups", "restore_drill.json")
 # the backup is not proven restorable: DEGRADED, never OK (plan S05).
 DRILL_STALE = timedelta(days=8)
 BACKUP_STALE = timedelta(hours=30)          # a nightly job, with slack
-HOUSEKEEPING_STALE = timedelta(days=8)       # a weekly job, with slack
-DISK_DEGRADED, DISK_FAILING = 0.15, 0.05     # free fraction
+DISK_DEGRADED, DISK_FAILING = 0.15, 0.05     # free fraction (secondary, warn only)
+# Absolute GiB floors decide (the owner, 2026-11-15): a big disk that is "96 % full"
+# can still hold 17 GiB, which is room for a dump, so the fraction alone must
+# not fail it. Under the fail floor it FAILS; under the warn floor it WARNS.
+# The old fractions stay as a secondary rule that can only raise OK to WARN
+# (a 1 TB disk at 4 % free is worth a look), never to FAILING. Set per host with
+# ATLAS_DISK_FLOOR_GIB / ATLAS_DISK_WARN_GIB; not tuned to one reading.
+DEFAULT_DISK_FLOOR_GIB, DEFAULT_DISK_WARN_GIB = 4.0, 10.0
+DISK_FLOOR_GIB = float(os.getenv("ATLAS_DISK_FLOOR_GIB", str(DEFAULT_DISK_FLOOR_GIB)))
+DISK_WARN_GIB = float(os.getenv("ATLAS_DISK_WARN_GIB", str(DEFAULT_DISK_WARN_GIB)))
+DISK_STATUS_STALE = timedelta(hours=1)       # the host job runs every 15 min
+WATCHDOG_STALE = timedelta(seconds=900)      # the watchdog's own heartbeat limit
+CLOCK_SKEW = timedelta(minutes=2)            # a time further ahead than this is wrong
+GIB = 1024 ** 3
 
 
 def _read(path: str) -> tuple[dict[str, Any] | None, str | None]:
@@ -49,15 +66,29 @@ def _read(path: str) -> tuple[dict[str, Any] | None, str | None]:
     return (data, None) if isinstance(data, dict) else (None, "not a JSON object")
 
 
-def _age(data: dict[str, Any]) -> timedelta | None:
+def _now() -> datetime:
+    return datetime.now(UTC)
+
+
+def _age(data: dict[str, Any], key: str = "at") -> timedelta | None:
+    """Age of the ISO time under `key`; None when absent, unparseable or naive
+    (a time with no zone is not readable as UTC)."""
     try:
-        at = datetime.fromisoformat(str(data["at"]))
+        at = datetime.fromisoformat(str(data[key]))
     except (KeyError, ValueError):
         return None
     try:
-        return datetime.now(UTC) - at
-    except TypeError:                   # a naive time: not readable as UTC
+        return _now() - at
+    except TypeError:
         return None
+
+
+def _stamp(data: dict[str, Any], key: str = "at") -> str:
+    try:
+        return datetime.fromisoformat(str(data[key])).astimezone(UTC).strftime(
+            "%Y-%m-%d %H:%M UTC")
+    except (KeyError, ValueError):
+        return "an unreadable time"
 
 
 async def check_backup() -> Observation:
@@ -128,24 +159,123 @@ async def check_backup() -> Observation:
 
 
 async def check_disk() -> Observation:
-    try:
-        usage = await asyncio.to_thread(shutil.disk_usage, DATA)
-    except OSError as exc:
-        return Observation("disk", Health.UNKNOWN, detail=f"disk unreadable: {exc}")
-    free = usage.free / usage.total
-    house, _ = await asyncio.to_thread(_read, HOUSEKEEPING)
-    age = _age(house) if house else None
-    note = ("housekeeping never ran" if house is None else
-            f"housekeeping {age.days} d ago freed "
-            f"{int(house.get('freed_bytes') or 0) / 1e9:.1f} GB" if age else
-            "housekeeping time unreadable")
-    detail = f"{usage.free / 1e9:.1f} GB free of {usage.total / 1e9:.0f} GB; {note}"
-    health = (Health.FAILING if free < DISK_FAILING else
-              Health.DEGRADED if free < DISK_DEGRADED else Health.OK)
-    if health is Health.OK and (house is None or age is None or age > HOUSEKEEPING_STALE):
+    """Free space on the Mac's real data volume, from the host job's disk.json.
+
+    ATLAS never measures its own disk (inside the container that is the VM)
+    and never deletes anything: it names the largest folders so the owner can.
+    The old housekeeping-DEGRADED rule is gone: nothing runs housekeeping on
+    the Mac, so it would have pinned this check at DEGRADED for good."""
+    data, why = await asyncio.to_thread(_read, DISK_STATUS)
+    if data is None:
+        return Observation("disk", Health.UNKNOWN,
+                           detail=f"no disk status: {why} -- is the host job "
+                                  f"ops/watchdog/host/disk_status.sh installed?")
+    age = _age(data)
+    if age is None:
+        return Observation("disk", Health.UNKNOWN, detail="disk.json has no readable time")
+    if age > DISK_STATUS_STALE:
+        return Observation("disk", Health.UNKNOWN,
+                           detail=f"disk.json is stale: read {_stamp(data)} "
+                                  f"({age.total_seconds() / 3600:.1f} h ago); the host "
+                                  f"job has stopped, so there is no current number")
+    free, total = data.get("free_bytes"), data.get("total_bytes")
+    if (isinstance(free, bool) or isinstance(total, bool)
+            or not isinstance(free, int | float) or not isinstance(total, int | float)
+            or free < 0 or total <= 0 or free > total):
+        return Observation("disk", Health.UNKNOWN,
+                           detail="disk.json has no readable free/total bytes")
+    frac = free / total
+    top = _top(data)
+    detail = (f"{_gib(free)} free of {_gib(total)} ({frac * 100:.0f}% free) on "
+              f"{data.get('mount', 'the data volume')}, read {_stamp(data)}")
+    free_gib = free / GIB
+    if free_gib <= DISK_FLOOR_GIB:
+        health = Health.FAILING
+    elif free_gib <= DISK_WARN_GIB or frac < DISK_DEGRADED:
         health = Health.DEGRADED
-    return Observation("disk", health, value=round(free * 100, 1), unit="% free",
-                       detail=detail, evidence={"free_bytes": usage.free})
+    else:
+        health = Health.OK
+    if health is not Health.OK:
+        detail += (f"; largest: {top}" if top else "; no folder sizes in the status file")
+        detail += f"; floor {DISK_FLOOR_GIB:g} GiB. ATLAS deletes nothing: free space by hand"
+    elif top:
+        detail += f"; largest: {top}"
+    return Observation("disk", health, value=round(free_gib, 1), unit="GiB free",
+                       detail=detail,
+                       evidence={"free_bytes": int(free), "total_bytes": int(total),
+                                 "floor_gib": DISK_FLOOR_GIB, "warn_gib": DISK_WARN_GIB,
+                                 "read_at": data.get("at")})
+
+
+def _gib(n: float) -> str:
+    return f"{n / GIB:.1f} GiB"
+
+
+def _top(data: dict[str, Any]) -> str:
+    rows = []
+    for row in data.get("top") or []:
+        size = row.get("bytes") if isinstance(row, dict) else None
+        if isinstance(size, int | float) and not isinstance(size, bool):
+            rows.append((str(row.get("path", "?")), float(size)))
+    rows.sort(key=lambda r: -r[1])
+    return ", ".join(f"{p} {_gib(b)}" for p, b in rows[:5])
+
+
+async def check_watchdog_seen() -> Observation:
+    """Is the independent watchdog still reading /healthz?
+
+    The watchdog (ops/watchdog/, on the Spark) writes seen.json on every run;
+    the Mac host job copies it here with its own key. Nothing is shared with
+    the watchdog and nothing here can speak for it. This check is OK or
+    UNKNOWN only: "I cannot see the watchdog" is not "ATLAS is down", but it
+    is never "fine" either (invariant 7)."""
+    data, why = await asyncio.to_thread(_read, WATCHDOG_SEEN)
+    if data is None:
+        return Observation("watchdog_seen", Health.UNKNOWN,
+                           detail=f"no watchdog record: {why} -- is the host job "
+                                  f"pull_watchdog_seen.sh installed, and the watchdog "
+                                  f"running on the Spark?")
+    pulled = _age(data, "pulled_at")
+    seen = _age(data, "at")
+    last = _age(data, "last_healthz_ok_at")
+    if pulled is None or seen is None:
+        return Observation("watchdog_seen", Health.UNKNOWN,
+                           detail="watchdog_seen.json has no readable pull or run time")
+    if any(a < -CLOCK_SKEW for a in (pulled, seen, last) if a is not None):
+        return Observation("watchdog_seen", Health.UNKNOWN,
+                           detail="watchdog_seen.json carries a time in the future "
+                                  "(clock skew between the Mac and the Spark)")
+    if pulled > WATCHDOG_STALE:
+        return Observation("watchdog_seen", Health.UNKNOWN,
+                           detail=f"the host pull job last copied the record "
+                                  f"{int(pulled.total_seconds() // 60)} min ago; the "
+                                  f"watchdog may be fine but ATLAS cannot see it")
+    if seen > WATCHDOG_STALE:
+        return Observation("watchdog_seen", Health.UNKNOWN,
+                           detail=f"the watchdog last ran {_stamp(data)} "
+                                  f"({int(seen.total_seconds() // 60)} min ago): it "
+                                  f"has stopped, so nothing is watching ATLAS")
+    if data.get("route_configured") is not True:
+        return Observation("watchdog_seen", Health.UNKNOWN,
+                           detail="the watchdog runs but has no alert route "
+                                  "(webhook not configured): it could not tell the owner")
+    if last is None:
+        return Observation("watchdog_seen", Health.UNKNOWN,
+                           detail="the watchdog has never read /healthz successfully "
+                                  "(no readable last_healthz_ok_at)")
+    if last > WATCHDOG_STALE:
+        return Observation(
+            "watchdog_seen", Health.UNKNOWN,
+            detail=f"the watchdog last read /healthz at "
+                   f"{_stamp(data, 'last_healthz_ok_at')} "
+                   f"({int(last.total_seconds() // 60)} min ago); since then its reads "
+                   f"were {data.get('healthz_state', 'unknown')}")
+    return Observation("watchdog_seen", Health.OK, value=round(last.total_seconds()),
+                       unit="s since last read",
+                       detail=f"the watchdog read /healthz at "
+                              f"{_stamp(data, 'last_healthz_ok_at')} "
+                              f"({int(last.total_seconds())} s ago)",
+                       evidence={"last_healthz_ok_at": data.get("last_healthz_ok_at")})
 
 
 class BackupsModule:
@@ -163,7 +293,11 @@ class BackupsModule:
                   "last night's database backup, copied off the box",
                   baseline_sigma=None),
             Check("disk", check_disk, timedelta(minutes=30), Severity.HIGH,
-                  "room left on the host's disk", baseline_sigma=None),
+                  "room left on the Mac's data volume (the host job's reading)",
+                  baseline_sigma=None),
+            Check("watchdog_seen", check_watchdog_seen, timedelta(minutes=5),
+                  Severity.HIGH, "the independent watchdog is still reading /healthz",
+                  baseline_sigma=None),
         )
 
     def actions(self):
@@ -173,7 +307,7 @@ class BackupsModule:
         return ()
 
     def brief(self) -> str:
-        return "Backups: last night's dump and its off-box copy; disk space"
+        return "Backups: last night's dump and its off-box copy; disk space; watchdog"
 
 
 MODULE = BackupsModule()

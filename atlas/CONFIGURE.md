@@ -13,7 +13,7 @@ A value typed into a conversation is in that conversation permanently, and the
 only remedy afterwards is to rotate it. That has already happened twice here.
 
 ```bash
-bootstrap/set-secret.sh GUARDIAN_API_TOKEN
+bootstrap/set-secret.sh INROOTS_TOKEN
 ```
 
 It prompts with `read -rs` so nothing echoes, writes straight into the
@@ -30,7 +30,7 @@ no error anywhere.
 
 ```bash
 python -m atlas.cli connect            # the whole table
-python -m atlas.cli connect guardian   # one module, with its checks run
+python -m atlas.cli connect inroots    # one module, with its checks run
 ```
 
 `connect` is the source of truth, not this file. It distinguishes:
@@ -39,6 +39,201 @@ python -m atlas.cli connect guardian   # one module, with its checks run
 - **partial** — it is loaded and reporting, but some checks are UNKNOWN
   without these
 - **no credentials needed**
+
+## The roster: eight agents (2026-10-28)
+
+The roster keeps eight agents: `inbox` (personal ops, and the front door for
+any message no other agent owns), `sites` (website clients: preview approvals
+and owner emails), `content`, `sales`, `bizops`, `seo`, `research` and `qa`.
+Eighteen retired: agency, analyst, commerce, concierge, fiverr, flycheap,
+growth, guardian, inroots, marketing, markets, exampleco, ops, reels,
+scheduler, school, sentinel, cloudco. Their module code, collectors, tools,
+tables and data stay; only the roster agent, its department seat and its map
+node went. A pending card a retired agent raised expires at the next sweep and
+can never be claimed, so it never runs (silence is never consent).
+
+There is no env var or runtime switch for this. Rollback is code only:
+`git revert` the commits from `feat(agents): the roster keeps eight agents`
+through the UI commit that follows it, then deploy through CD. Cards that
+expired meanwhile stay expired; nothing re-raises them.
+
+## Six agents: Sales, Content, BizOps, SEO, Research, QA (2026-10-27)
+
+Every agent ships and loads without these; whatever needs one reads UNKNOWN
+(grey, dashed, with the word) until it is set. Nothing in the build waits on
+them. Set values with `set-secret.sh`, never in chat or in a file in the repo.
+
+1. **Brave Search** free plan key -> `BRAVE_API_KEY`. Without it the shared
+   scraper's search returns "no free search provider" (it never falls back
+   to Perplexity).
+2. **Google PageSpeed** key (free) -> `GOOGLE_PAGESPEED_API_KEY`; **YouTube
+   Data API** key (free, public reads) -> `YOUTUBE_API_KEY`. Optional: Google
+   CSE (`GOOGLE_CSE_KEY`, `GOOGLE_CSE_CX`), Bing Webmaster
+   (`BING_WEBMASTER_KEY`).
+3. **Search Console**: the Google consent now asks for `webmasters.readonly`
+   (read only) beside `gmail.modify`, `calendar.events` and `userinfo.email`
+   (`ATLAS_GOOGLE_SEARCH_CONSOLE=0` leaves it out). A refresh token granted
+   before 2026-10-29 lacks it, and `search_console` says so. To fix it:
+   3a. In the Cloud project of `GOOGLE_CLIENT_ID`, enable the **Google Search
+   Console API** (APIs & Services -> Library). Without it Google answers 403
+   and the check says the API is not enabled.
+   3a. To let ATLAS register a real site itself (add the property, verify it by
+   the META tag, submit the sitemap, each a Tier 2 card, never DNS), run 3b as
+   `ATLAS_GOOGLE_SEARCH_CONSOLE_WRITE=1 ./bootstrap/google-login.sh --reconsent`
+   and also enable the **Site Verification API**. Off by default; Vercel client
+   previews are noindex and are never registered or counted.
+   3b. On the Mac, from the checkout: `./bootstrap/google-login.sh --reconsent`
+   (reuses the client in `.env`, no file). Sign in as the account that owns
+   the Search Console properties and approve all four. It replaces
+   `GOOGLE_REFRESH_TOKEN` with one that still carries Gmail and Calendar,
+   restarts the api and runs `connect mail`, `connect calendar` and
+   `connect seo`. If Google returns no refresh token, revoke ATLAS at
+   https://myaccount.google.com/permissions and run it again.
+   3c. In Search Console, add and verify each client domain and the store,
+   agency.example.com (a Domain property `sc-domain:` is preferred; a URL
+   prefix property also works). UNKNOWN per site until then.
+4. **Stripe test mode**: a restricted key with Customers write, Invoices
+   write, Invoice Items write and nothing else -> `MAPFRONT_STRIPE_INVOICE_KEY`.
+   Only `sk_test_`/`rk_test_` keys are accepted; a live key is refused in
+   code. The live key is a later decision.
+5. **Reddit**: create the API app and accept the developer terms ->
+   `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_REFRESH_TOKEN`,
+   `REDDIT_USER_AGENT`; list the subreddits allowed ->
+   `REDDIT_SUBREDDIT_ALLOWLIST`. Every post, comment and profile edit is a
+   card; `reddit.account` reads UNKNOWN until these are set.
+6. **Playwright** (screenshots, PDFs). It ships disabled (no
+   `--profile qa-browser`, `QA_BROWSER_URL` unset: every screenshot reads
+   UNKNOWN). The egress deny is in `docker-compose.local.yml`: the browser
+   sits on `qa_egress`, an `internal` network with no route off the host,
+   and its only exit is `qa-proxy`, which forwards CONNECT to the allowlisted
+   public hosts on 443 and refuses private, loopback, link-local and CGNAT
+   addresses. The browser launches with that proxy always set (a dead
+   address when `QA_PROXY` is missing) and WebRTC UDP off; the in-page rules
+   (route allowlist, no WebSocket, no popups) are extra, not the control.
+   6a. Check it before turning it on (this build could not run Docker):
+   `docker compose -f docker-compose.yml -f docker-compose.local.yml --profile qa-browser run --rm qa-browser python3 -c "import socket; socket.create_connection(('1.1.1.1', 443), 3)"`
+   must fail (no route), and
+   `curl -x http://qa-proxy:3128 https://agency.example.com/` from a container on
+   `qa_egress` must answer while `curl -x http://qa-proxy:3128 https://10.0.0.1/`
+   is refused 403. If the first command connects, keep the browser off.
+   6b. Then
+   `docker compose -f docker-compose.yml -f docker-compose.local.yml --profile qa-browser pull`
+   then the same with `up -d qa-browser`, and set
+   `QA_BROWSER_URL=unix:/run/qa/qa-browser.sock`, then recreate the api so it
+   mounts the socket volume. Without it screenshots read
+   UNKNOWN and proposals read "PDF not rendered". The QA gate does not need
+   it: only the file launch check counts as a site's pass.
+   `qa.security_scan` looks only at Mapfront's own hosts and sites Mapfront
+   built; a site someone else built needs its owner's consent recorded in
+   `agency_sites.security_consent_at` first. `QA_VERIFY_RUNS_MIN` (default 60)
+   sets how often QA compares the scheduled windows with `schedule_runs`.
+7. **Slack topics** (optional; code defaults to the same IDs):
+   `SLACK_CHANNELS` += `agency_decisions:C0SLACKCH00,agency_alerts:C0SLACKCH01`.
+8. **Research seed lists**: Mapfront and client competitors. The Academy list
+   is seeded with `python -m atlas.cli research-seed --file .claude/competitors-2026-10-10.json`
+   (reads the file, never writes it).
+9. Optional: one live Stripe **test** invoice with your test key to see the
+   flow end to end.
+10. **Sales** (none required): drop lead CSV files (`name,category,website,
+   email,phone,address,city,country`; `name` and `category` required) in
+   `data/sales/inbox/`; the 09:00 New York shift (`SALES_SHIFT_HOUR`) imports
+   each file once. `SALES_DAILY_CARDS` (default 10) caps outreach cards a
+   day. For proposal PDFs, serve `data/sales/proposals/` at an https URL on
+   the qa-proxy allowlist and set `SALES_PROPOSAL_BASE_URL` (plus
+   `QA_BROWSER_URL`, step 6); until then each proposal is HTML and says "PDF
+   not rendered". New York leads come from Places with
+   `GOOGLE_PLACES_API_KEY`, else from OpenStreetMap (no key, ODbL).
+11. **Content** (the `content` agent replaced the `church` roster entry; the
+   church job and its cards are unchanged). Reddit needs step 5; until then
+   drafts land in `reddit_drafts` as `needs_rules` and raise no card.
+   `REDDIT_POSTS_PER_WEEK` (default 2) caps posts; one in ten may be
+   promotional. `ACADEMY_PLAN_PER_WEEK` (default 3) sets topics planned a
+   week. The Monday 08:00 New York `content_weekly` job writes the growth
+   report, plans topics and steps title tests; store clicks read "not
+   measured" until `POSTHOG_PERSONAL_KEY` is set. Title tests and comment
+   replies need the clips channel token with the `youtube.force-ssl` scope
+   (already used by `academy.refresh_video_metadata`). Run the read-only
+   channel study once per channel and read the report:
+   `python -m atlas.cli channel-study --channel clips` and
+   `python -m atlas.cli channel-study --channel ecc` (analytics needs the
+   `yt-analytics.readonly` scope; without it each video reads UNKNOWN).
+12. **BizOps** (the `bizops` agent, Sales department). Without step 4 the
+   invoice checks read UNKNOWN and `bizops.send_invoice` is refused; a live
+   key reads FAILING and is refused before any call. At 08:00 New York
+   `bizops_digest` onboards each new won/paid deal once (a project with five
+   tasks and a welcome-email card), drafts reminder cards for overdue test
+   invoices (one per invoice per 7 days) and posts the digest to
+   #agency-alerts; at 07:00 `bizops_find_repeats` cards work seen 3+ times in
+   14 days. The welcome email proposes kickoff times read from the calendar;
+   the invitation itself is still the agency's `agency.send_invite` card once
+   you hold a slot. Invoices are drafted by asking for `bizops.draft_invoice`
+   on a won lead (amount: the won deal's, else the lead's price; only $500 or
+   $300).
+13. **SEO** (the `seo` agent, Sales department). What the owner still has to do:
+   - **Search Console consent**: steps 3a-3c above. Enable the Google
+     Search Console API on the OAuth client's project, run
+     `./bootstrap/google-login.sh --reconsent` on the Mac (adds
+     `webmasters.readonly`, keeps Gmail and Calendar), and verify every
+     client domain and agency.example.com in Search Console
+     (a `sc-domain:` property is preferred). Until then `seo.search_console`
+     reads UNKNOWN and its detail names that exact command; a site not
+     verified is UNKNOWN by name.
+   - **PageSpeed key**: `./bootstrap/set-secret.sh GOOGLE_PAGESPEED_API_KEY`
+     (a Google Cloud API key restricted to the PageSpeed Insights API, free).
+     Without it `seo.core_web_vitals` uses the keyless quota and reads
+     UNKNOWN on a 429.
+   - **Schema**: the new `seo_reports` table is in `db/schema.sql`; the next
+     deploy applies it (locally: `docker compose exec -T postgres sh -c
+     'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < db/schema.sql`,
+     idempotent).
+   - Nothing else: `BRAVE_API_KEY` (step 1) already feeds ranks and the
+     Academy gaps.
+
+   What it does. `seo.search_console` (every 6 h, read only) per site: 28-day
+   clicks, impressions, CTR and position; top queries and pages;
+   striking-distance queries (position 8-20, 20+ impressions, CTR under 3%);
+   pages losing clicks week over week; sitemaps; URL inspection of the home
+   page and top pages. Windows end 3 days back (Google's lag). Issues (no
+   sitemap, sitemap errors, pages not indexed) are DEGRADED.
+   `seo.core_web_vitals` (daily, read only): PageSpeed mobile and desktop
+   score, LCP, CLS, TBT and the CrUX field figures when Google has them;
+   a clear drop against the last reading is a regression (DEGRADED). Both
+   carry their read times and show in the Agency tab's SEO panel and, for
+   Search Console, the Command Center's services.
+   At 07:00 New York `seo_rank` snapshots ranks for every site with a
+   domain plus both stores; on Mondays it also audits them, builds each
+   client's weekly report (`seo.weekly_report`: rank moves, vitals, fixes
+   done, next 3 actions, each figure with its read time) and the Academy
+   keyword gaps (`seo.keyword_gaps`: up to 8 searches a week, where the
+   store ranks and which keywords have YouTube results our channel titles
+   do not cover, with a title idea). `seo.draft_report_email` saves a report
+   as a client email draft (`content_drafts` kind `seo_report_email`) for
+   the sites and sales agents to attach; nothing sends it, sending stays
+   with the approved agency send cards. While `ATLAS_WATCH_ONLY` is on these
+   Tier 1 actions store nothing; the panel still shows the check readings.
+   Keywords come from `seo.keyword_research` (volume "not measured"). Blog
+   posts (2 per client a month) and on-page changes (title, meta
+   description, h1, alt only) are cards behind the QA gate; they edit our
+   build copy, and shipping is still `qa.check_site` then
+   `agency.deploy_site`. `SEO_PAID_CHECKS=on` adds the paid Perplexity AI
+   visibility card (one call per keyword, up to 3); leave it off.
+14. **Research** (the `research` agent, Knowledge department). Works with no
+   key. Seed the Academy competitors once (the file is read, never written):
+   `python -m atlas.cli research seed --file .claude/competitors-2026-10-10.json`.
+   Add Mapfront or client competitors by asking for `research.add_competitor`
+   (its homepage becomes a watch). At 06:00 New York `research_scan` reads
+   every watched page through the scraper (robots.txt, deny list,
+   `SCRAPE_DAILY_CAP`); a date-only edit is not a change, and three failed
+   reads in a row make one remediation task. Sunday 18:00 `research_weekly`
+   refreshes up to 10 profiles and files the weekly report. Upload cadence
+   needs `YOUTUBE_API_KEY` (step 3's YouTube key) and the competitor's channel
+   id; without them cadence reads "not measured". Client reports and adopted
+   opportunities are cards (the report send is behind the QA gate; adopting
+   only adds a build task). `RESEARCH_PAID_CHECKS=on` adds the paid deep-dive
+   card (1 Perplexity call each); leave it off.
+
+Paid switches stay `off`: `SEO_PAID_CHECKS`, `RESEARCH_PAID_CHECKS`,
+`SALES_PAID_VERIFY` (ATLAS_FREE_ONLY). `AGENCY_FIRST_SALE_PRICE` is ignored.
 
 ## The order worth doing them in
 
@@ -51,11 +246,24 @@ CRITICAL and reach nobody today.
 |---|---|
 | `SLACK_BOT_TOKEN` | api.slack.com → your app → OAuth & Permissions → Bot User OAuth Token (`xoxb-`). Scopes: `chat:write`, `chat:write.public`, and `files:write` for the reel previews: each AI-stories reel card in #instagram-reels gets its MP4 uploaded into the card's thread (`files.getUploadURLExternal` → the bytes → `files.completeUploadExternal`) so the video can be watched in Slack before approving. **The production app lacks `files:write` today** (Slack answers `missing_scope`): until it is added (api.slack.com → your app → OAuth & Permissions → Bot Token Scopes → `files:write`, then reinstall the app), the thread gets the render's public `/media/{token}` link instead, with "preview upload needs the files:write scope; link below" — the card itself never fails. This repo carries no Slack app manifest; the scope is added in the app's settings | **The bot must be a member of every channel it posts to.** `chat:write.public` lets it post into a channel it never joined, but Slack sends no message events from such a channel, so a reply typed there never reaches ATLAS. `comms.slack_channels` reads DEGRADED and names each such channel; the fix is `/invite @Atlas` typed in it (or add the `channels:join` scope and reinstall).
 | `SLACK_CHANNEL` | the channel id (right-click the channel → Copy link; it is the `C…` part) |
-| `SLACK_INSTAGRAM_REELS_CHANNEL` | optional; the #reels channel (renamed from #instagram-reels on 2026-09-27; same id, so the variable kept its name). Every short-video card lands here: the AI-stories account (@atlasstories3), its `instagram.publish` / `content.publish_reel` cards and its once-a-day digest (overnight line, format research, the day's drafts), topic `instagram_stories`; and TikTok's, topic `tiktok`. The main Instagram account (topic `instagram`) is not a reels account and keeps its own route. On production this is **`C0C3XH0F6S3`** (#reels) — the default in `.env.example`, deliberately not a code default. Unset (and not named in `SLACK_CHANNELS`), `content.reels_channel` reads DEGRADED "SLACK_INSTAGRAM_REELS_CHANNEL unset — cards fall to the default route", so it is never silent. An explicit `instagram_stories:<id>` entry in `SLACK_CHANNELS` wins over it; with neither, these fall back to `SLACK_CHANNEL`. Because this topic has a channel named for it, its messages are delivered there first; the same holds for any topic named in `SLACK_CHANNELS` |
+| `SLACK_INSTAGRAM_REELS_CHANNEL` | optional; the #reels channel (renamed from #instagram-reels on 2026-09-27; same id, so the variable kept its name). Every short-video card lands here: the AI-stories account (@atlasstories3), its `instagram.publish` / `content.publish_reel` cards and its once-a-day digest (overnight line, format research, the day's drafts), topic `instagram_stories`; and TikTok's, topic `tiktok`. The main Instagram account (topic `instagram`) is not a reels account and keeps its own route. On production this is **`C0SLACKCH02`** (#reels) — the default in `.env.example`, deliberately not a code default. Unset (and not named in `SLACK_CHANNELS`), `content.reels_channel` reads DEGRADED "SLACK_INSTAGRAM_REELS_CHANNEL unset — cards fall to the default route", so it is never silent. An explicit `instagram_stories:<id>` entry in `SLACK_CHANNELS` wins over it; with neither, these fall back to `SLACK_CHANNEL`. Because this topic has a channel named for it, its messages are delivered there first; the same holds for any topic named in `SLACK_CHANNELS` |
 | `ASSISTANT_ENABLED`, `SLACK_ASSISTANT_CHANNEL` | optional; `ASSISTANT_ENABLED` (1/true/yes/on) switches on the read-only "ask ATLAS anything" assistant -- **off by default**, and off everything below behaves as before the module. `SLACK_ASSISTANT_CHANNEL` is its channel (`atlas/modules/assistant`, topic `assistant`); `stop` there stops your runs, and `ask cancel <id>` works anywhere. Questions are answered in two modes: Ask (calculator, units, clock) or Search (the web and the outside APIs), the router choosing unless you say `search <q>` / `ask! <q>`. Every plain message an approver types there is a question for the general-purpose assistant: answered from read-only tools (web search through Perplexity/Brave, one page, Wikipedia, a dictionary, Open-Meteo weather, ECB exchange rates, a calculator, the clock, unit conversion, and ATLAS's own status and catalog), with a Sources list carrying the time each was read. It never runs an action. Unset (and not named in `SLACK_CHANNELS`), that door is closed and the assistant answers only to `ask <question>` on any channel, or `atlas, <question>` when it is plainly a question. Caps: `ASSISTANT_SEARCH_PER_DAY` (default 40), `ASSISTANT_FETCH_PER_DAY` (default 80), `ASSISTANT_MAX_TOOL_CALLS` (6 a question), `ASSISTANT_MAX_TOKENS` (12,000 a question); `assistant.budget` reads them against the audit log. `ASSISTANT_FX_URL` overrides the rate source (default Frankfurter). See `atlas/modules/assistant/ASSISTANT.md` |
+| `SLACK_APPROVALS_CHANNEL`, `APPROVALS_BOARD`, `APPROVALS_BOARD_REFRESH_MIN` | optional; the approvals board (`atlas/kernel/board.py`). Every card still lands in its topic channel; #approvals also holds ONE pinned "Waiting for you" message, edited in place (never a new post), listing every pending card by area (ATLAS Academy, LinkedIn, Clips, Agency/Mapfront, School, System): the number linked to the card, what approving does, its risk (money / public / irreversible / reversible) and its expiry, with counts and the New York time it was read. It lists only -- no buttons; approving stays on the card. `SLACK_APPROVALS_CHANNEL` as a channel id uses that channel; a name, or unset, has `approvals_board.create_channel` (Tier 1, archive rollback) create or find `#approvals` once and invite `SLACK_APPROVER_IDS`. Redrawn when the pending cards change and every `APPROVALS_BOARD_REFRESH_MIN` (default 5); `APPROVALS_BOARD=off` turns it off. The 9:00 New York digest of waiting cards (only when one has waited over a day) goes there too. Needs the bot scopes `channels:manage` (create), `channels:read` (find an existing #approvals), `channels:history` (link cards raised before this), `pins:write` |
 | `SLACK_SIGNING_SECRET` | same app → Basic Information → Signing Secret. Required for the approve/decline buttons to work |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | console.twilio.com dashboard |
 | `TWILIO_FROM`, `TWILIO_TO` | your Twilio number, and your mobile, both `+1…` |
+| `MMT_OWNER_WHATSAPP` | optional; your own number in E.164 (`+…`). MMT posts a templated WhatsApp note here for post decisions, urgent client items, portal fixes and prospect replies (`mmt.notify_owner`). Notify only: a reply approves nothing. Unset or malformed: `mmt_owner_whatsapp` reads UNKNOWN |
+| `MMT_WHATSAPP_FROM` | optional; the Twilio WhatsApp-enabled sender for the above; default `TWILIO_FROM`. `MMT_NOTIFY_PER_HOUR` caps messages per hour (default 6) |
+| `MMT_OWNER_WHATSAPP`, `TWILIO_WHATSAPP_URL` (optional) | your mobile `+1…`; the URL Twilio signs, default `https://agency.example.com/webhooks/twilio/whatsapp` | WhatsApp sandbox: set the sandbox "When a message comes in" to that URL (POST). Only that number is answered, read-only; replays of a MessageSid are ignored |
+| `WHATSAPP_DAILY`, `WHATSAPP_DAILY_HOUR` (optional) | `off` (default) or `on`; hour 0-23 New York time, default `20` | One WhatsApp a day to `MMT_OWNER_WHATSAPP`, written as a short human note: a header with the time ("Last 24 hours, as of 8:00 PM ET"), one line per agent (Mark, Bea, Sage, Sam, Rex, Felix) with a light, then "Reply with an agent's name for details." Lights: red = a check is failing, amber = something failed or is slow, grey = something could not be read (never green), green = all good. Replying with a name (or "details", "why", "what failed") gets a short plain explanation from a fresh read. Sent once per New York date through the Tier 1 action `mmt.notify_daily` (same hourly cap as other owner messages; split into several messages past 1500 characters). While `ATLAS_WATCH_ONLY` is on nothing is sent (the log says "would send"). If WhatsApp fails one Slack note says so and carries the report |
+| `WHATSAPP_CARDS`, `WHATSAPP_CARDS_PER_HOUR` (optional) | `off` (default) or `on`; messages per hour, default `5` | The kill switch for the card catch-up: every pending Tier 2 approval card that never reached WhatsApp gets one short message (what it is, what approving does, the card number, Approve / Decline buttons, "or decide on the portal") through the Tier 1 action `mmt.notify_card`, once per card. Every action whose tier is Tier 2 in the code registry (read live, so a new Tier 2 action is allowed on its own; the owner, 2026-11-11) gets buttons and a one-time code, and can be approved or declined from WhatsApp. Still portal-only, whatever a message says: Tier 3 / permanent-deny kinds (money out, DNS, deletion, credential revocation, self-modification), Tier 1 and unregistered actions, `atlas.dev_request` and the other self-changing kinds in `wa_approvals.NEVER_FROM_WHATSAPP`, any card whose text is cut in the message (over 220 characters), and any card whose parameters are missing, undeclared or not shown. The first real send pass looks at the newest 40 pending cards, sends the newest 5 and skips the rest silently; nothing is lost or marked while WhatsApp is unconfigured, the cap is 0, or the 24 h window is closed or unreadable. Quiet hours (`QUIET_HOURS`) wait until morning; a closed 24 h WhatsApp window leaves a portal banner (Slack note only with `APPROVALS_SLACK=on`); nothing is sent while `ATLAS_WATCH_ONLY` is on. Needs the same Twilio and `MMT_OWNER_WHATSAPP` settings as the alerts |
+| `WHATSAPP_CONTENT_SID_CARD` (optional) | `HX` + 32 hex, empty by default | The Twilio Content API quick-reply template with the Approve / Decline buttons (payload `approve:<card>:<code>` / `decline:<card>:<code>`). Create it once with `python tools/wa_card_template.py` (idempotent: it reuses a template named `atlas_card_buttons_v1`; needs `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`) and paste the printed line. Empty, or if Twilio refuses the template, cards fall back to plain text "Reply YES <code> or NO <code>". A bare yes/no never decides anything: ATLAS lists the waiting cards and says to tap a button or send YES / NO with the code. A late tap on an expired card answers "that card expired, nothing was done" |
+| `APPROVALS_SLACK` (optional) | `off` (default) or `on` | Slack is no longer part of approvals. `on` brings back the Slack card with its Approve buttons at proposal time and the optional notices (failed WhatsApp send, lockout, closed window). A failed WhatsApp send is retried once a few minutes later and shows as a banner on the portal approvals page either way. Other Slack uses are unchanged |
+| `WHATSAPP_ALERTS`, `WHATSAPP_ALERTS_PER_HOUR` (optional) | `off` (default) or `on`; messages per hour, default `3` | The kill switch for the bad-news ping: when a health check goes from OK to failing (never for UNKNOWN or degraded) Atlas sends one short WhatsApp line to `MMT_OWNER_WHATSAPP` through the Tier 1 action `mmt.notify_alert`, once per failing reading, at most `WHATSAPP_ALERTS_PER_HOUR` an hour. A new Tier 2 approval card already pings you the same way (`mmt.notify_card`). Free-form WhatsApp text only works inside 24 hours of your last message to Atlas (the WhatsApp window); in quiet hours (`QUIET_HOURS`), when that window is closed, or when WhatsApp certainly refuses it, the ping goes to one Slack note instead. Nothing is sent while `ATLAS_WATCH_ONLY` is on |
+| `WHATSAPP_CLIP_VIDEO`, `WHATSAPP_CLIP_VIDEO_HOST` (optional) | `off` (default) or `on`; the public host Twilio fetches from, default `agency.example.com` | Sends the camera clip itself on WhatsApp instead of "open the portal" (The owner, 2026-11-12). When a person alert's clip is saved, `cameras.notify_clip` (Tier 1) re-encodes it (H.264, 720p, no audio, at most 16 MB; one smaller retry) into a private folder, mints a 256-bit random token and attaches `https://<host>/media/clipv.<token>` to the usual tagged message. The link works for 5 minutes and ends at the first full download; the file is deleted then, on expiry, on a refused send, or on rollback; the token is never logged or stored (only its hash names the file). Only that exact path is forwarded by `Caddyfile.public` (**yours to approve and apply**: reload the `shop-public` service); the portal stays loopback-only. If ffmpeg fails, the clip is still over 16 MB, or Twilio refuses the media, the message says the video could not be attached and the clip is on the portal, and the result reads `video_status: UNKNOWN` -- a video is never claimed. Twilio accepting the message is not delivery: the result says "delivery not confirmed". Off, nothing changes. Nothing is sent while `ATLAS_WATCH_ONLY` is on |
+| `OWNER_CALLS`, `CALL_MAX_PER_DAY`, `CALL_ESCALATE_MINUTES`, `OWNER_CALL_FROM` (optional) | `off` (default) or `on`; calls per New York day, default `3`; minutes, default `15`; a voice-enabled caller id, default `TWILIO_FROM` | The kill switch for the owner phone call: Atlas rings `MMT_OWNER_WHATSAPP` (that number only, from the environment, never from chat text) with a short fixed message (TwiML `<Say>` only, built in code, nothing from the event) through the Tier 1 action `mmt.call_owner`. Two triggers: (1) escalation, when a WhatsApp alert (a check that went OK to failing and is still failing) or a pending Tier 2 card marked urgent (`evidence.urgent` true) was sent `CALL_ESCALATE_MINUTES` ago and you have not written since, it calls once; quiet hours (`QUIET_HOURS`) hold it; (2) you write "call me" in the verified chat: one strict regex, no model, the same executor call, quiet hours do not apply. One call per event, ever; `CALL_MAX_PER_DAY` caps all calls including requested ones; nothing is placed while `ATLAS_WATCH_ONLY` is on; a call that could not be placed leaves one Slack note. Needs `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and a Voice-enabled caller id. **Open question: `TWILIO_FROM` may be the WhatsApp sandbox sender, which cannot place voice calls (a `whatsapp:` sender is refused, not guessed). Confirm that `TWILIO_FROM` is a Voice-capable number, or set `OWNER_CALL_FROM` to one.** The older CRITICAL phone route in `comms` (to `TWILIO_TO`) is separate and unchanged |
+| `DEV_REQUESTS_PER_DAY` (optional) | default `5` | A "fix X", "change Y" or "make him do Z" in the verified chat raises one pending Tier 2 `atlas.dev_request` card (deduped per text hash, at most this many a New York day, text up to 500 characters, never with a secret). Approving it in Slack only stores a task note for a developer session to pick up through git review; Atlas applies nothing and never edits his own code, config or prompts |
+| WhatsApp chat (no setting) | | The reply path talks like a person: general questions come from the model's own knowledge with no Atlas data; questions about Atlas, the Academy (@example_handle), agency.example.com and the six agents add the curated fact sheet `atlas/kernel/about_atlas.md` (no numbers, no secrets); live figures come only from a fresh read stamped with its read time, else "I can't read that right now". The last six exchanges are kept for 24 hours in the Postgres table `whatsapp_chat_memory` (plain text, trimmed; the owner's words are always wrapped as untrusted; a reply built from a live read is kept only as a marker, never its figures). It still cannot act: it says it will send an approval card instead |
 
 Twilio is the only channel that rings a phone, and CRITICAL is the only
 severity that breaks quiet hours. Without `ATLAS_HOST` the voice channel
@@ -145,11 +353,11 @@ by key value:
 
 With `ATLAS_FREE_ONLY=true` every cloud chain is the free bench, and each free
 account has a daily cap. On 2026-10-06 every one of them was spent within three
-hours and ATLAS had nothing to answer Miro's voice with. Two things now help:
+hours and ATLAS had nothing to answer the owner's voice with. Two things now help:
 more free accounts, each a separate daily allowance, and a reserve. When a
 model's remaining allowance for the day (as the provider reports it) drops
 under `ATLAS_FREE_RESERVE_TOKENS` (default 40,000 tokens) or
-`ATLAS_FREE_RESERVE_FRACTION` (default 0.2 of the day), only Miro's own turns
+`ATLAS_FREE_RESERVE_FRACTION` (default 0.2 of the day), only the owner's own turns
 may use it: voice, Slack messages he types, and the assistant. Background work
 skips it and waits for the reset (`atlas/kernel/quota.py`).
 
@@ -178,7 +386,7 @@ other models with it.
 
 ### 2b. Each business agent's own model
 
-Every business agent (flycheap, guardian, inroots, vpsie, mirotech, fiverr,
+Every business agent (inroots, cloudco, exampleco, fiverr,
 agency — everything in `kernel/businesses.py` except school) reasons on
 **Hermes 4 405B, served through OpenRouter** (`nousresearch/hermes-4-405b`,
 needs `OPENROUTER_API_KEY`) unless told otherwise. It is a good default
@@ -189,8 +397,8 @@ about invariant 1 or 2 changes because the model choosing a tool name
 changed.
 
 Override one agent with `ATLAS_AGENT_MODEL_<NAME>` (the business name,
-upper-cased — `ATLAS_AGENT_MODEL_FLYCHEAP`, `ATLAS_AGENT_MODEL_MIROTECH`, …),
-set to `"provider:model"`, e.g. `ATLAS_AGENT_MODEL_MIROTECH=anthropic:claude-sonnet-4-5`
+upper-cased — `ATLAS_AGENT_MODEL_CLOUDCO`, `ATLAS_AGENT_MODEL_EXAMPLECO`, …),
+set to `"provider:model"`, e.g. `ATLAS_AGENT_MODEL_EXAMPLECO=anthropic:claude-sonnet-4-5`
 or `ATLAS_AGENT_MODEL_AGENCY=mistral:codestral`. Recognised provider
 prefixes: `anthropic`, `openai`, `openrouter`, `groq`, `gemini`, `cerebras`,
 `mistral`, `cohere`. If the pin cannot be reached (unset key, provider down),
@@ -207,20 +415,19 @@ agent.
 
 | Variable | Where | Scope |
 |---|---|---|
-| `GUARDIAN_API_TOKEN` | Guardian → Settings → API tokens | **read**, see MODULE_AUDIT.md |
 | `INROOTS_TOKEN` | Roots → API tokens (a `k9_…` value) | **read** |
-| `NETBIRD_TOKEN` | mironetbird.example.com → Settings → Users → your user → Access tokens | read is enough |
-| `VPSIE_CLIENT_ID`, `VPSIE_CLIENT_SECRET` | VPSie control panel → API → Create App, then open the app and pick a Role | the most read-only role offered |
+| `NETBIRD_TOKEN` | mesh.example.com → Settings → Users → your user → Access tokens | read is enough |
+| `CAMERA_NVR_HOST`, `CAMERA_NVR_USER`, `CAMERA_NVR_PASS` | The home Reolink NVR (LAN address, a read-only user and its password); host without a scheme means http | read-only; the cameras module has no write path |
+| `CLOUDCO_CLIENT_ID`, `CLOUDCO_CLIENT_SECRET` | CloudCo control panel → API → Create App, then open the app and pick a Role | the most read-only role offered |
 
 ### 4. The modules that will not load at all
 
 | Variable(s) | Where |
 |---|---|
 | `GITLAB_TOKEN` | aicode.example.com → Preferences → Access tokens. Scope `api` — `gitlab.open_issue` writes, and `read_api` gets a 403 on every issue it tries to file |
-| `GITLAB_WORK_TOKEN` | code.example.org, same. Optional |
-| `MATRIX_TOKEN` | `./bootstrap/matrix-login.sh` — signs in as **your own** `@miro:example.org` (your decision: ATLAS is private to you, replies go out under your name). Read-only plus drafts: it reads rooms and DMs, uses your read receipts for "not seen by me", and a reply is a Tier 2 draft in Slack that only sends when you approve. Password goes to chat.example.org once and is never stored. |
+| `GITLAB_WORK_TOKEN` | git.internal.example, same. Optional |
+| `MATRIX_TOKEN` | `./bootstrap/matrix-login.sh` — signs in as **your own** `@owner:internal.example` (your decision: ATLAS is private to you, replies go out under your name). Read-only plus drafts: it reads rooms and DMs, uses your read receipts for "not seen by me", and a reply is a Tier 2 draft in Slack that only sends when you approve. Password goes to chat.internal.example once and is never stored. |
 | `GOOGLE_*` (id, secret, refresh token) | `./bootstrap/google-login.sh <client_secret.json>` — one OAuth app covers both `mail` and `calendar`. Run it with no arguments for the console steps. |
-| `STRIPE_GUARDIAN_KEY`, `STRIPE_FLYCHEAP_KEY` | **restricted, read-only** keys. Money out is Tier 3 with no override |
 | `INSTAGRAM_ACCOUNT_ID`, `INSTAGRAM_TOKEN` | Meta app → Instagram Graph |
 | `TIKTOK_*`, `EBAY_*` | their developer consoles |
 
@@ -263,10 +470,12 @@ Four checks are UNKNOWN until this is done.
 
 ### 6. College — Brightspace, through its two open doors
 
-CUNY's Brightspace is behind SSO with MFA and gives students no API key, and
+the university's Brightspace is behind SSO with MFA and gives students no API key, and
 ATLAS never logs in. It reads the two things D2L hands every student instead.
-ATLAS drafts the work; you write it, type it and submit it — nothing is ever
-submitted to Brightspace.
+ATLAS is your study partner, never your ghostwriter: the university's Academic
+Integrity Policy forbids submitting work you didn't write, so ATLAS plans,
+explains, quizzes and gives hints and scaffolds, and you write, type and
+submit the work yourself. Nothing is ever submitted to Brightspace.
 
 **Door 1 — the calendar feed** (every course's due dates):
 
@@ -293,12 +502,41 @@ scrubs it from every reason it prints.
 | Variable | Value |
 |---|---|
 | `BRIGHTSPACE_ICS_URL` | the Subscribe URL above (a secret) |
-| `SCHOOL_TERM` | `2026FA` |
-| `BRIGHTSPACE_APP_ID`, `BRIGHTSPACE_APP_KEY`, `BRIGHTSPACE_USER_ID`, `BRIGHTSPACE_USER_KEY` | only if CUNY ever grants Valence API access; until then the module says "Valence not granted" and uses the two doors |
+| `SCHOOL_TERM` | `2026FA` (also the window the exact Fall 2026 title rules apply in) |
+| `SCHOOL_TERM_START` | optional, `YYYY-MM-DD`: the Monday of week 1, for "quiz me on <course> week N". Unset, it is the Monday of the week of the earliest item due in the term |
+| `SCHOOL_DIGEST_HOUR` | optional, default `8`: the hour (in `ATLAS_TZ`, New York) of the daily school digest |
+| `SLACK_CHANNELS` | add `school:<channel id>` so the daily digest lands in its own channel; unset, it goes to the default channel |
+| `BRIGHTSPACE_APP_ID`, `BRIGHTSPACE_APP_KEY`, `BRIGHTSPACE_USER_ID`, `BRIGHTSPACE_USER_KEY` | only if the university ever grants Valence API access; until then the module says "Valence not granted" and uses the two doors |
 
-How each course's work is drafted is yours to confirm: PHY 120 handwritten,
-MAT on WebWork, CSC 221 as files, PHY 121 as a typed lab report. Change any of
-them by asking for `school.set_course`. Then `python -m atlas.cli connect school`.
+Which course an item belongs to is read from the feed: the orgUnit in each
+event's links (CSC 221 = 1304197, CSC 326 = 1304214, MTH 311 = 1305121,
+PHY 120 = 1305424, PHY 121 = 1305427), then the offering name in LOCATION,
+then the exact Fall 2026 dropbox names. Anything else stays "unknown
+course"; a startup backfill re-labels stored rows that still say so.
+
+How each course's work is handed in is yours to confirm: PHY 120 handwritten,
+MTH 311 on WebWork (the old "MAT" row stays), CSC 221 and CSC 326 as files,
+PHY 121 as a typed lab report. Change any of them by asking for
+`school.set_course`. Then `python -m atlas.cli connect school`.
+
+**The college agent.** Every morning at 8:00 New York, one Slack message in
+the `school` topic: what is due in the next 7 days (read fresh from the feed,
+with the read time), when to start each item (hours are estimates), and one
+study prompt. On demand, in Slack or the menu — start with "school", or Slack
+answers a bare "explain ..." from general knowledge instead:
+
+| Say | What happens |
+|---|---|
+| `school plan` (or `school plan for CSC 326`) | the week's due items and when to start each |
+| `school explain linked lists for CSC 326` | plain-words explanation and worked examples on different problems |
+| `school quiz me on CSC 326 week 3` / `... on CSC 326 pointers` | five practice questions; the answers are held back |
+| `school answers` | the last quiz's answers |
+| `school check my Assignment 2` | feedback and hints on YOUR attempt: put it in `data/school/attempts/` with the item's name in the file name, or paste it under the command. Slack file uploads are not read yet |
+
+Each answer is saved under `data/school/study/`. `school.draft_work` writes a
+study guide plus a scaffold (lab report headings and blank data tables, a
+handwritten page layout, a WebWork checklist, a design and test plan for
+code) — never the finished work. Everything runs on the local model.
 
 ### 7. Optional extras (Phase 18)
 
@@ -316,36 +554,36 @@ thing that module can already do without it. `research`, `content` and
 | `GEMINI_IMAGE_MODEL` (default `gemini-3.1-flash-image`) | not a secret | The free local render's stills (six at 9:16). A 404 refuses the stills with the model name and the reel is made from typographic cards instead, saying so |
 | `GROQ_API_KEY` (already set for the model router) | console.groq.com → API Keys | Word-timed captions on a Veo reel (`whisper-large-v3`, word + segment timestamps → ASS, three-word chunks, the spoken word in yellow, burned in with libass). Unset, the reel still carries the burned "Made with AI" tag and the render says the captions were not burned |
 | `REELS_FISH_VOICE_ID` | Fish Audio → open the voice you chose (the British man) → the id at the end of its `fish.audio/m/<id>` URL | The reels voice, on every backend. On Veo the chosen voice narrates over the clips (Veo is asked for no speech, its own sound stays under the voice as ambience, the last frame holds if the voice runs longer, captions are timed from the voice); on the free local render it narrates the stills. Unset, Veo's own narrator speaks and the local render uses Fish's default voice — the card says which, no voice id is ever guessed |
-| `PRESENCE_LAN_LABELS` | not a secret — the label you gave your phone in the Vault/Guardian hub (e.g. `Miro iPhone`) | Home is read from the home Wi-Fi first: your labelled phone online on the hub's network is home; gone from it for 15 minutes while the sensor is reporting is away. Matched by label because iOS rotates private Wi-Fi addresses. Unset, or no device carries the label, presence falls back to the NetBird mesh — and a phone that is simply off the mesh is unknown, never away |
 | `REELS_FONT_FILE` | not a secret — a path on the box | The font `drawtext` burns "Made with AI" and the typographic cards with. Unset, the first DejaVu Sans Bold found is used (the production image has DejaVu only); the ASS captions name `DejaVu Sans` for the same reason |
 | `REELS_PER_DAY` (default 2) | not a secret | How many AI-story reels the daily step drafts, renders and puts on a card in #instagram-reels, once a day after `BRIEF_HOUR` (`kernel.reels.daily`, off the scheduler loop). Each day also spends one `perplexity_research` call from the shared `PERPLEXITY_MONTHLY_CAP` (about 30 a month) and, on Veo, up to `REELS_PER_DAY` × `VEO_MAX_BEATS` × 8 s of `VEO_MONTHLY_SECONDS`. `ATLAS_WATCH_ONLY` (the default) refuses the research, the drafts and the renders alike, so no cards appear until ATLAS is armed; the digest says so |
 | `FINNHUB_API_KEY` (optional) | finnhub.io → Dashboard → API key (the free plan covers these three). Put it in with `bootstrap/set-secret.sh FINNHUB_API_KEY` | The trade-idea scan's extra inputs (`atlas/modules/markets/ideas.py`, via `finnhub.py`): earnings dates (`/calendar/earnings` — no single-stock idea within 3 trading days of earnings), the last few headlines (`/company-news`, wrapped as outside data before a model sees them) and analyst recommendation counts (`/stock/recommendation`). GETs only, the key in the `X-Finnhub-Token` header — never in a URL, a log line, an audit row or a prompt. Unset: those inputs are skipped and said so in the weekly — without an earnings date single stocks are skipped and only ETF ideas are raised |
 | `PASSPORT_EXPIRY` (YYYY-MM-DD, optional) | not a secret — the expiry date printed in your passport | The travel organiser (`atlas/modules/mail/travel.py`) flags any trip ending less than six months before it, in the trip's vault note and as one signal per trip. Unset or malformed, nothing is flagged and each trip note says the expiry was not given — it is never assumed |
-| `REELS_CALENDAR` (default on), `VEO_DAILY_CLIPS` (default 10) | not secrets | The two reels packages Miro supplied (`atlas/modules/content/calendars/`), made **now, not by date** (Miro, 2026-09-27: "don't take the 30-day calendar literally -- do everything now"). Every 30 minutes `kernel.reels.calendar_tick` spends what is left of the day's `VEO_DAILY_CLIPS` (counted from midnight Pacific) on the next unfinished reel -- two stories, then one business lesson, each package in its own order -- smooths each clip to 60 fps, assembles it (Arabic voice, English captions; only characters speak, on camera, to each other; full 3D motion), and raises its Tier 2 `content.publish_reel` card the moment it is ready. A RETURN sequel's card waits until the episode before it published. While packaged reels remain, the `REELS_PER_DAY` rotation stands aside; a short backup reel runs only from Veo clips left over. `REELS_CALENDAR=off` stops the packages |
-| `HIGGSFIELD_KEY_ID`, `HIGGSFIELD_KEY_SECRET`, `HIGGSFIELD_MONTHLY_USD` (default 20), `HIGGSFIELD_USD_PER_SECOND_MAX` (default 0.375), `HIGGSFIELD_RESOLUTION` (default: `VEO_RESOLUTION`) | console.higgsfield.ai → API keys (a key ID and a secret) | The reels' **overflow** generator (Miro, 2026-09-29), for the calendar and the daily reel (`content.render_video`) alike. Veo stays first; once Veo's daily allowance is used up (`VEO_DAILY_CLIPS` from Pacific midnight, the `VEO_RESERVED_CLIPS` reserve included, or Veo's own daily-quota 429) the clips the day still needs are made on Higgsfield — `bytedance/seedance-2.0/text-to-video`, 8 s, 9:16, native audio — through the same IP guard as Veo, normalised to 1080x1920 and marked as Higgsfield's beside the clip. In the calendar, Veo's monthly seconds cap or a plain 429 is not an overflow. In the daily reel, Veo makes the beats its month and day allow and the rest of the story goes to Higgsfield (backend `veo+higgsfield`); a daily-quota 429 mid-story moves the remaining beats there; every overflow clip of a story is reserved before the next clip, or the story fails whole. Without Higgsfield keys neither path changes. **Costs money.** `HIGGSFIELD_MONTHLY_USD` is a hard cap and the standing approval: each clip's price is Higgsfield's own `/estimate` for the exact request; when it names none the price is **not read** and a worst case is booked instead (`HIGGSFIELD_USD_PER_SECOND_MAX` x the seconds, x4 at 4k, never less than 1080p's; an assumption, labelled "price not read" on the row, the clip and the check), reserved in `higgsfield_usage` before the request, and a clip that would cross the cap is never started. Refunded only when Higgsfield cannot have charged (refused on submit, never reached, or ended failed / nsfw / canceled). `HIGGSFIELD_URL` must be https; the finished clip is downloaded without the key, every redirect hop https and public. `content.higgsfield_budget` shows booked / cap with its read time, and is OK only when the key is confirmed (the nil request's status answers the documented 404), the ledger is read and Higgsfield named a price: UNKNOWN when the keys are unset, the key is not confirmed, the API is unreachable or the price was not read; FAILING on a 401 (key rejected) or 403 (no credits) |
+| `REELS_CALENDAR` (default on), `VEO_DAILY_CLIPS` (default 10) | not secrets | The two reels packages the owner supplied (`atlas/modules/content/calendars/`), made **now, not by date** (The owner, 2026-09-27: "don't take the 30-day calendar literally -- do everything now"). Every 30 minutes `kernel.reels.calendar_tick` spends what is left of the day's `VEO_DAILY_CLIPS` (counted from midnight Pacific) on the next unfinished reel -- two stories, then one business lesson, each package in its own order -- smooths each clip to 60 fps, assembles it (Arabic voice, English captions; only characters speak, on camera, to each other; full 3D motion), and raises its Tier 2 `content.publish_reel` card the moment it is ready. A RETURN sequel's card waits until the episode before it published. While packaged reels remain, the `REELS_PER_DAY` rotation stands aside; a short backup reel runs only from Veo clips left over. `REELS_CALENDAR=off` stops the packages |
+| `HIGGSFIELD_KEY_ID`, `HIGGSFIELD_KEY_SECRET`, `HIGGSFIELD_MONTHLY_USD` (default 20), `HIGGSFIELD_USD_PER_SECOND_MAX` (default 0.375), `HIGGSFIELD_RESOLUTION` (default: `VEO_RESOLUTION`) | console.higgsfield.ai → API keys (a key ID and a secret) | The reels' **overflow** generator (The owner, 2026-09-29), for the calendar and the daily reel (`content.render_video`) alike. Veo stays first; once Veo's daily allowance is used up (`VEO_DAILY_CLIPS` from Pacific midnight, the `VEO_RESERVED_CLIPS` reserve included, or Veo's own daily-quota 429) the clips the day still needs are made on Higgsfield — `bytedance/seedance-2.0/text-to-video`, 8 s, 9:16, native audio — through the same IP guard as Veo, normalised to 1080x1920 and marked as Higgsfield's beside the clip. In the calendar, Veo's monthly seconds cap or a plain 429 is not an overflow. In the daily reel, Veo makes the beats its month and day allow and the rest of the story goes to Higgsfield (backend `veo+higgsfield`); a daily-quota 429 mid-story moves the remaining beats there; every overflow clip of a story is reserved before the next clip, or the story fails whole. Without Higgsfield keys neither path changes. **Costs money.** `HIGGSFIELD_MONTHLY_USD` is a hard cap and the standing approval: each clip's price is Higgsfield's own `/estimate` for the exact request; when it names none the price is **not read** and a worst case is booked instead (`HIGGSFIELD_USD_PER_SECOND_MAX` x the seconds, x4 at 4k, never less than 1080p's; an assumption, labelled "price not read" on the row, the clip and the check), reserved in `higgsfield_usage` before the request, and a clip that would cross the cap is never started. Refunded only when Higgsfield cannot have charged (refused on submit, never reached, or ended failed / nsfw / canceled). `HIGGSFIELD_URL` must be https; the finished clip is downloaded without the key, every redirect hop https and public. `content.higgsfield_budget` shows booked / cap with its read time, and is OK only when the key is confirmed (the nil request's status answers the documented 404), the ledger is read and Higgsfield named a price: UNKNOWN when the keys are unset, the key is not confirmed, the API is unreachable or the price was not read; FAILING on a 401 (key rejected) or 403 (no credits) |
 | `REELS_EXPORT_4K` (default on) | not a secret | Every Veo reel is motion-interpolated from 24 to 60 fps (one pass, up to an hour of CPU, falling back to native motion on failure). Beside its 1080x1920 delivery file, a 2160x3840 archive master at `data/content/<media id>-2160.mp4`, upscaled from Veo's native resolution and labelled so. The master is never posted: the Instagram Graph API refuses a Reel wider than 1920 px or above 60 fps. `0` turns it off |
-| `RECEPTION_ENABLED` (default off) | not a secret | The business line (`atlas/api/reception.py`): a call to `TWILIO_FROM` from any number but `TWILIO_TO` is answered "Hi, this is Mapfront, Miro's AI assistant speaking", says it is an AI whenever asked, explains the Website Package and its published list price, gives the lead's preview link, never agrees another figure, a date or a payment, cannot act, and files the transcript in `reception_calls` and Slack. While on, outreach emails carry "Questions? Call or text Mapfront at `TWILIO_FROM`" and replies "For more information, call or text Mapfront at ...". Off: strangers hear "This is a private line" |
-| `API_FOOTBALL_KEY` | [dashboard.api-football.com](https://dashboard.api-football.com/register) → sign up (the free plan is enough: 100 requests a day) → the key on the dashboard's Account page. Use the API-SPORTS dashboard key, not a RapidAPI one: the two are separate accounts with separate hosts. Put it in with `bootstrap/set-secret.sh API_FOOTBALL_KEY` | The football (soccer) stats reels (Miro, 2026-09-29; `atlas/modules/football`, `content.football`). ATLAS only reads `https://v3.football.api-sports.io` with the key in the `x-apisports-key` header: `players/topscorers`, `players/topassists`, `players` (a player's season statistics), `players/profiles` (to check a configured player id against its name) and `fixtures` (a club's last results). Every read is kept with its read time in `football_api_reads` and reused while fresh; every request is counted in `football_api_quota` before it is sent. The `api_football` check reads `/status` (free of quota) every 6 h: requests used against the plan's limit, with the read time. Unset, the lane is idle and the check says UNKNOWN "API_FOOTBALL_KEY not set"; a refused key is FAILING with the API's reason, never the key |
+| `RECEPTION_ENABLED` (default off) | not a secret | The business line (`atlas/api/reception.py`): a call to `TWILIO_FROM` from any number but `TWILIO_TO` is answered "Hi, this is Mapfront, the owner's AI assistant speaking", says it is an AI whenever asked, explains the Website Package and its published list price, gives the lead's preview link, never agrees another figure, a date or a payment, cannot act, and files the transcript in `reception_calls` and Slack. While on, outreach emails carry "Questions? Call or text Mapfront at `TWILIO_FROM`" and replies "For more information, call or text Mapfront at ...". Off: strangers hear "This is a private line" |
+| `API_FOOTBALL_KEY` | [dashboard.api-football.com](https://dashboard.api-football.com/register) → sign up (the free plan is enough: 100 requests a day) → the key on the dashboard's Account page. Use the API-SPORTS dashboard key, not a RapidAPI one: the two are separate accounts with separate hosts. Put it in with `bootstrap/set-secret.sh API_FOOTBALL_KEY` | The football (soccer) stats reels (The owner, 2026-09-29; `atlas/modules/football`, `content.football`). ATLAS only reads `https://v3.football.api-sports.io` with the key in the `x-apisports-key` header: `players/topscorers`, `players/topassists`, `players` (a player's season statistics), `players/profiles` (to check a configured player id against its name) and `fixtures` (a club's last results). Every read is kept with its read time in `football_api_reads` and reused while fresh; every request is counted in `football_api_quota` before it is sent. The `api_football` check reads `/status` (free of quota) every 6 h: requests used against the plan's limit, with the read time. Unset, the lane is idle and the check says UNKNOWN "API_FOOTBALL_KEY not set"; a refused key is FAILING with the API's reason, never the key |
 | `API_FOOTBALL_DAILY_LIMIT` (default 100), `FOOTBALL_REELS_PER_DAY` (default 1), `FOOTBALL_SEASON` (default: the current season) | not secrets | The lane's own request ceiling (the free plan's 100); how many football reels a day (0 is off) -- drafted after the day's story reels, only from Veo clips left over, posted on the AI reels path with the same automatic checks; and the season to read, as its start year (API-Football's naming). When the plan refuses a season, the API's own message names the ones it allows and the newest is read instead. No match footage, no AI likeness of a real player, no crest: every shot is from a closed catalog of stylised stadium, ball and silhouette scenes; names and numbers are captions, each number bound to a fetched fact and re-verified before a clip is made |
-| `COURSE_REELS_PER_WEEK` (default 2) | not a secret | The course-promo lane (Miro, 2026-09-29; `content.course`): reels for his course "Build a Safe AI Operator" ($49) on the AI-stories accounts only -- the stories Instagram, the Atlas Stories Facebook Page and TikTok @atlasstories7 through Postiz; never the clips accounts. Due on fixed New York weekdays (Tuesday and Friday for 2); a slot missed because `REELS_AUTOPUBLISH_PER_DAY` is already spent, or no Veo clip is left, moves to the next day of the same week. The step runs before the football step, so on a course day it takes the day's third automatic post. One lesson per reel, rotating through `calendars/course-promo.json`; the script is composed in code, never by a model. No income claims (refused in code), no screens in any video prompt (refused at both clip doors), "my course" said and shown, and the caption carries "link in bio" and the product URL. The profile's bio link cannot be set by ATLAS: neither the Instagram Graph API (the IG User node has no update operation), TikTok's APIs nor Postiz edit a profile -- set it by hand |
-| `COURSE_POSTS_PER_WEEK` (default 7) | not a secret | The course's organic posts (Miro, 2026-09-29; `atlas/modules/course`), for every product in the code-defined catalog (`catalog.py`: Build a Safe AI Operator, Everyday AI for Adults, Safe and Simple AI 60+, the AI for Every Age bundle and the free Family Scam-Safety Kit, the lead magnet; nothing else is ever marketed). Rotation gives each product its fair share of the cap (a product is proposed only while its count this week is the catalog's lowest); each has its own channels and languages (only the Operator is posted in Spanish, Portuguese or Arabic), its own `price_<product>` check (price and availability read live from `<product>.json` and `.js`; unreadable is UNKNOWN and nothing is drafted), and one Shopify blog draft (title <= 60, meta <= 155, 700-1,200 words of its own lesson excerpts, word for word). The 60+ guide and the kit also refuse fear words and any number not copied from their lesson files; every product refuses grades, accuracy and accreditation claims and "Claude for kids", and carries "Sold to adults 18+." when its live page does. Nora chooses from `course_catalog`, which carries `playbook.md` as quoted data. The marketing agent proposes one post at a time as a measured experiment (`course.propose`, Tier 1: a `marketing_experiments` row and a drafted `course_posts` row), and every post reaches Miro on its own Tier 2 card -- `course.publish_post` for a Postiz text channel (X, Bluesky, Threads, Mastodon, LinkedIn, Facebook, Telegram; never a clips account, never TikTok/Instagram/YouTube), `course.hand_off` for his LinkedIn profile and the Shopify blog (ATLAS has no Shopify Admin API credential, so the article comes to him whole to paste as a hidden draft). At most this many posts a New York week across every channel and language (a Spanish, Portuguese and Arabic variant are three posts), and one per channel a day. The price is read live from `<product>.json` with its read time on every draft and again on approval (a changed price refuses the card); English is composed in code from the lesson hooks, translations are the model's and the card says so. No income claims, reviews or urgency, in any of the four languages (refused in code). Links carry `utm_source=<platform>&utm_medium=organic&utm_campaign=<experiment id>`; after seven days the experiment is read from PostHog (`POSTHOG_PERSONAL_KEY`) as store pageviews for that campaign, or UNKNOWN -- sales are always UNKNOWN to ATLAS (no Shopify order read path); Shopify's own UTM report shows them. Cards land in the `course` Slack topic (map it in `SLACK_CHANNELS`) |
+| `COURSE_REELS_PER_WEEK` (default 2) | not a secret | The course-promo lane (The owner, 2026-09-29; `content.course`): reels for his course "Build a Safe AI Operator" ($49) on the AI-stories accounts only -- the stories Instagram, the Atlas Stories Facebook Page and TikTok @atlasstories7 through Postiz; never the clips accounts. Due on fixed New York weekdays (Tuesday and Friday for 2); a slot missed because `REELS_AUTOPUBLISH_PER_DAY` is already spent, or no Veo clip is left, moves to the next day of the same week. The step runs before the football step, so on a course day it takes the day's third automatic post. One lesson per reel, rotating through `calendars/course-promo.json`; the script is composed in code, never by a model. No income claims (refused in code), no screens in any video prompt (refused at both clip doors), "my course" said and shown, and the caption carries "link in bio" and the product URL. The profile's bio link cannot be set by ATLAS: neither the Instagram Graph API (the IG User node has no update operation), TikTok's APIs nor Postiz edit a profile -- set it by hand |
+| `COURSE_POSTS_PER_WEEK` (default 7) | not a secret | The course's organic posts (The owner, 2026-09-29; `atlas/modules/course`), for every product in the code-defined catalog (`catalog.py`: Build a Safe AI Operator, Everyday AI for Adults, Safe and Simple AI 60+, the AI for Every Age bundle and the free Family Scam-Safety Kit, the lead magnet; nothing else is ever marketed). Rotation gives each product its fair share of the cap (a product is proposed only while its count this week is the catalog's lowest); each has its own channels and languages (only the Operator is posted in Spanish, Portuguese or Arabic), its own `price_<product>` check (price and availability read live from `<product>.json` and `.js`; unreadable is UNKNOWN and nothing is drafted), and one Shopify blog draft (title <= 60, meta <= 155, 700-1,200 words of its own lesson excerpts, word for word). The 60+ guide and the kit also refuse fear words and any number not copied from their lesson files; every product refuses grades, accuracy and accreditation claims and "Claude for kids", and carries "Sold to adults 18+." when its live page does. Nora chooses from `course_catalog`, which carries `playbook.md` as quoted data. The marketing agent proposes one post at a time as a measured experiment (`course.propose`, Tier 1: a `marketing_experiments` row and a drafted `course_posts` row), and every post reaches the owner on its own Tier 2 card -- `course.publish_post` for a Postiz text channel (X, Bluesky, Threads, Mastodon, LinkedIn, Facebook, Telegram; never a clips account, never TikTok/Instagram/YouTube), `course.hand_off` for his LinkedIn profile and the Shopify blog (ATLAS has no Shopify Admin API credential, so the article comes to him whole to paste as a hidden draft). At most this many posts a New York week across every channel and language (a Spanish, Portuguese and Arabic variant are three posts), and one per channel a day. The price is read live from `<product>.json` with its read time on every draft and again on approval (a changed price refuses the card); English is composed in code from the lesson hooks, translations are the model's and the card says so. No income claims, reviews or urgency, in any of the four languages (refused in code). Links carry `utm_source=<platform>&utm_medium=organic&utm_campaign=<experiment id>`; after seven days the experiment is read from PostHog (`POSTHOG_PERSONAL_KEY`) as store pageviews for that campaign, or UNKNOWN -- sales are always UNKNOWN to ATLAS (no Shopify order read path); Shopify's own UTM report shows them. Cards land in the `course` Slack topic (map it in `SLACK_CHANNELS`) |
 | `REELS_NUDGE_HOUR` (default 17) | not a secret — an hour, local time | The cadence goal is at least one post a day on the stories account and TikTok, and `REELS_PER_DAY` is 2 so there is always a spare. At this hour, if no `content.publish_reel` card was approved today, one message goes to #instagram-reels ("2 reels waiting — approve one to keep today's post"), once a day. Nothing is ever posted on silence: an unanswered card expires |
 | `FACEBOOK_STORIES_PAGE_ID`, `FACEBOOK_STORIES_PAGE_TOKEN` | Meta app → the "Atlas Stories" Facebook Page → a non-expiring Page access token with `pages_manage_posts` (set on production, verified) | The Facebook leg of `content.publish_reel` (`POST /{page-id}/videos`, the render's public link as `file_url`). Unset, that leg reads "not configured" on the card and `content.reel_legs` is UNKNOWN for it |
-| `POSTIZ_API_KEY`, `POSTIZ_API_URL` (default `https://api.postiz.com/public/v1`) | Postiz → Settings → Public API | The TikTok leg of `content.publish_reel`, through Postiz with TikTok connected there (Miro's choice; ATLAS's own `TIKTOK_*` app is not used for it). The render is uploaded to Postiz, the TikTok integration's settings are read and honoured first, and the post goes out public by `DIRECT_POST` (never `UPLOAD`, which only drops it in the TikTok inbox). TikTok often returns no id: the card then says "posted, id pending". The rollback deletes the Postiz post only while it is still queued; a published one gets a MANUAL note (deleting it is Tier 3). Unset, the leg reads "not configured" and `content.reel_legs` is UNKNOWN |
-| `POSTIZ_TIKTOK_CLIPS_INTEGRATION` | Postiz → connect the clips TikTok **@atlasclips12** as a second TikTok channel → its Postiz integration id, or simply its name `atlasclips12` | The clips lane's TikTok leg (`clips.publish_clip_tiktok`, Tier 2, one card per clip), through the same Postiz key. Only the integration this names is ever used for clips, and only for a clip the lane cut (a plain `.mp4` in `data/clips/<campaign>/out/`); settings: public, DIRECT_POST, not AI-made, no library music, TikTok's branded-content toggle ON (a paid campaign). The reels lane never picks this integration (nor one named `atlasclips12`) and, with several TikTok integrations left, takes the one named `atlasstories7` or refuses. Unset (or `POSTIZ_API_KEY` unset), each TikTok clip is a hand-off card (file and exact caption) and `clips.legs` is UNKNOWN |
-| `POSTIZ_YOUTUBE_CLIPS_INTEGRATION` | Postiz → connect the clips YouTube channel **AtlasClips (@miroatlas)** → its Postiz integration id (or its name, `AtlasClips`) | The clips lane's YouTube Shorts leg through Postiz (`clips.publish_clip_youtube_postiz`, Tier 2, one card per clip), through the same Postiz key. Only for a campaign whose rules pay on YouTube (`youtube` in its `platforms`: ATLUS and Irubyana, not COD), and only for a Short: 9:16 and at most 60 s (the cut window, then ffprobe before posting); a longer window is never carded for YouTube and the note says why. Only the integration this names is used, it must be a YouTube one (identifier `youtube`) and never either TikTok account, and only for a clip the lane cut. Title: the approved text whole + `#Ad` + the campaign's YouTube handle (refused past 100 characters, never cut); description: the full caption; tags: the campaign hashtags; `type: public`, `selfDeclaredMadeForKids: no` (Postiz declares no paid-promotion flag for YouTube, so the disclosure is `#Ad` in title and description). Recorded at `post_account` `youtube:clips` (the same channel as the Data API's `clips`), so the one-platform-per-clip rule and `max_accounts` hold across both routes. With it set, it is used before the Data API (`YOUTUBE_CLIPS_*`), except for a Short that route already uploaded. Unset (or `POSTIZ_API_KEY` unset), `clips.legs` is UNKNOWN saying "set POSTIZ_YOUTUBE_CLIPS_INTEGRATION" and, with the Data API unset too, each YouTube clip is a hand-off card |
-| `POSTIZ_YOUTUBE_INTEGRATION` | Postiz → the connected YouTube channel → its integration id (`cmun6w6hm0fcfno0yqjqptqmo`, the channel "AtlasClips", @miroatlas, seen 2026-09-29), or its name | YouTube Shorts for the AI reels (Miro, 2026-09-29; `content.shorts`), through Postiz only -- ATLAS holds no Google token for it. Only the YouTube integration this names is used (never guessed, never a TikTok one). The clips lane shares that channel under its own `POSTIZ_YOUTUBE_CLIPS_INTEGRATION`, which the Shorts step never reads; a Short is only ever a `content_media` render whose file (symlinks resolved) is outside the clips data dir. Unset, the Shorts step says "not configured" and the `shorts_lane` check is UNKNOWN |
+| `POSTIZ_API_KEY`, `POSTIZ_API_URL` (default `https://api.postiz.com/public/v1`) | Postiz → Settings → Public API | The TikTok leg of `content.publish_reel`, through Postiz with TikTok connected there (The owner's choice; ATLAS's own `TIKTOK_*` app is not used for it). The render is uploaded to Postiz, the TikTok integration's settings are read and honoured first, and the post goes out public by `DIRECT_POST` (never `UPLOAD`, which only drops it in the TikTok inbox). TikTok often returns no id: the card then says "posted, id pending". The rollback deletes the Postiz post only while it is still queued; a published one gets a MANUAL note (deleting it is Tier 3). Unset, the leg reads "not configured" and `content.reel_legs` is UNKNOWN |
+| `POSTIZ_TIKTOK_CLIPS_INTEGRATION` | Postiz → connect the clips TikTok **@example_handle** as a second TikTok channel → its Postiz integration id, or simply its name `atlasclips12` | The clips lane's TikTok leg (`clips.publish_clip_tiktok`, Tier 2, one card per clip), through the same Postiz key. Only the integration this names is ever used for clips, and only for a clip the lane cut (a plain `.mp4` in `data/clips/<campaign>/out/`); settings: public, DIRECT_POST, not AI-made, no library music, TikTok's branded-content toggle ON (a paid campaign). The reels lane never picks this integration (nor one named `atlasclips12`) and, with several TikTok integrations left, takes the one named `atlasstories7` or refuses. Unset (or `POSTIZ_API_KEY` unset), each TikTok clip is a hand-off card (file and exact caption) and `clips.legs` is UNKNOWN |
+| `POSTIZ_YOUTUBE_CLIPS_INTEGRATION` | Postiz → connect the clips YouTube channel **AtlasClips (@example_handle)** → its Postiz integration id (or its name, `AtlasClips`) | The clips lane's YouTube Shorts leg through Postiz (`clips.publish_clip_youtube_postiz`, Tier 2, one card per clip), through the same Postiz key. Only for a campaign whose rules pay on YouTube (`youtube` in its `platforms`: ATLUS and Irubyana, not COD), and only for a Short: 9:16 and at most 60 s (the cut window, then ffprobe before posting); a longer window is never carded for YouTube and the note says why. Only the integration this names is used, it must be a YouTube one (identifier `youtube`) and never either TikTok account, and only for a clip the lane cut. Title: the approved text whole + `#Ad` + the campaign's YouTube handle (refused past 100 characters, never cut); description: the full caption; tags: the campaign hashtags; `type: public`, `selfDeclaredMadeForKids: no` (Postiz declares no paid-promotion flag for YouTube, so the disclosure is `#Ad` in title and description). Recorded at `post_account` `youtube:clips` (the same channel as the Data API's `clips`), so the one-platform-per-clip rule and `max_accounts` hold across both routes. With it set, it is used before the Data API (`YOUTUBE_CLIPS_*`), except for a Short that route already uploaded. Unset (or `POSTIZ_API_KEY` unset), `clips.legs` is UNKNOWN saying "set POSTIZ_YOUTUBE_CLIPS_INTEGRATION" and, with the Data API unset too, each YouTube clip is a hand-off card |
+| `POSTIZ_YOUTUBE_INTEGRATION` | Postiz → the connected YouTube channel → its integration id (`postiz_example_id_00`, the channel "AtlasClips", @example_handle, seen 2026-09-29), or its name | YouTube Shorts for the AI reels (The owner, 2026-09-29; `content.shorts`), through Postiz only -- ATLAS holds no Google token for it. Only the YouTube integration this names is used (never guessed, never a TikTok one). The clips lane shares that channel under its own `POSTIZ_YOUTUBE_CLIPS_INTEGRATION`, which the Shorts step never reads; a Short is only ever a `content_media` render whose file (symlinks resolved) is outside the clips data dir. Unset, the Shorts step says "not configured" and the `shorts_lane` check is UNKNOWN |
 | `SHORTS_PER_WEEK` (default 3) | not a secret | How many YouTube Shorts a New York week (Monday, Wednesday and Friday for 3; `0` turns them off). Each is `content.publish_short` (Tier 1): the best AI-stories-lane reel (stories, series, football, course -- never a campaign clip) that posted in the last 7 days and is not on YouTube yet, ranked by read views (newest when none is read, said so), only if its render is 1080x1920 with sound and at most 60 s, its caption passes the reels' guards, and the part before it (a series) is already on YouTube. Title: the reel's own title or hook (<= 100); description: its caption plus an AI-disclosure line (Postiz has no AI-content field for YouTube; toggle "altered or synthetic content" in YouTube Studio by hand if wanted); public, not made for kids. A published Short is never deleted by ATLAS (Tier 3): its rollback is a MANUAL note |
-| `INSTAGRAM_CLIPS_ACCOUNT_ID`, `INSTAGRAM_CLIPS_TOKEN`; `YOUTUBE_CLIPS_CLIENT_ID`, `YOUTUBE_CLIPS_CLIENT_SECRET`, `YOUTUBE_CLIPS_REFRESH_TOKEN` | Meta app (Instagram @atlas.clipsdrop); Google Cloud OAuth client for the clips YouTube channel | The clips lane's other two accounts. Each unset leg turns its clips into hand-off cards; `clips.legs` reads UNKNOWN until all three (with TikTok) are set |
-| `CLIPS_DAILY_CAP` (default 6), `CLIPS_INTAKE_MIN` (default 30), `CLIPS_INTAKE` (default on), `CLIPS_AUTOPUBLISH` (default on), `CLIPS_DATA_DIR` (default `data/clips`) | not secrets | The clips intake (`kernel.clip_intake`): every `CLIPS_INTAKE_MIN` minutes, for each active campaign with a permission source, new official files in `data/clips/<campaign>/source/` (on the server `./data/app/clips/<campaign>/source/`) are registered by sha256 and the oldest uncut source is cut (one cut per tick; Tier 1, through the executor), at most `CLIPS_DAILY_CAP` clips per campaign per UTC day. A campaign whose rules require its brand on every clip (Irubyana: logo and Twitch banner) is cut only with `./data/app/clips/<campaign>/brand/logo.png` and `banner.png` in place -- files Miro puts there, never fetched -- composited under the captions; while one is missing nothing is cut and a Tier 2 `clips.cut` card names the file and the folder. Then (Miro, 2026-09-30: clips post themselves, the reels lane's way) one waiting clip per platform is posted through the executor -- `clips.publish_clip`, `clips.publish_clip_tiktok`, `clips.publish_clip_youtube_postiz`, each Tier 1 and gated in code: the campaign active with its permission named and reviewed rules, the caption in the campaign's layout with its `#Ad` line, the file a 1080x1920 lane cut with sound inside the campaign's length band (ffprobe, read before every post), the account configured and within the campaign's account and one-platform rules, at most `CLIPS_DAILY_CAP` posts per platform per UTC day. `CLIPS_AUTOPUBLISH=off` holds every clip; a held clip, or one that fails a check, is never skipped in silence -- it is the ordinary Tier 2 post card with the reason first, and approving it answers the hold and runs every check again. Every automatic post is the executor's audit line plus one receipt in the clips channel (platform, clip id, the caption's first line). The hand-off (unconfigured account) and Whop cards follow on their own. Both live campaigns forbid the same video on several accounts, so each clip is cut for ONE platform, the highest-paying (ties taken in turn). `CLIPS_INTAKE=off` stops the intake; under `ATLAS_WATCH_ONLY` it executes nothing and `clips.status` says what waits |
-| `CLIPS_LINKS_MIN` (default 60), `CLIPS_LINKS` (default on) | not secrets | The clip link pass (`modules.clips.links`): every `CLIPS_LINKS_MIN` minutes, a clip posted through Postiz (TikTok, or a Short) in the last 14 days with no post URL is looked up in Postiz's post listing (read only). Its URL is written, with the platform as its source so the Whop agent is offered it, only when Postiz reports the platform's own post URL: for TikTok `tiktok.com/@atlasclips12/video/<n>`, for YouTube the id's `shorts/` link. Never a URL built from an id. Postiz unreachable: logged, rows untouched. Seen live 2026-09-30: Postiz lists TikTok posts with the profile URL only, so TikTok clips still need `clips.record_link`. `CLIPS_LINKS=off` stops it |
+| `INSTAGRAM_CLIPS_ACCOUNT_ID`, `INSTAGRAM_CLIPS_TOKEN`; `YOUTUBE_CLIPS_CLIENT_ID`, `YOUTUBE_CLIPS_CLIENT_SECRET`, `YOUTUBE_CLIPS_REFRESH_TOKEN` | Meta app (Instagram @example_handle); Google Cloud OAuth client for the clips YouTube channel | The clips lane's other two accounts. Each unset leg turns its clips into hand-off cards; `clips.legs` reads UNKNOWN until all three (with TikTok) are set |
+| `ACADEMY_TUTORIALS_SLACK_CHANNEL` (default `C0SLACKCH03`, #atlas-academy-videos in ATLAS's own workspace), `ACADEMY_TUTORIALS_AUTOPUBLISH` (default on since 2026-10-15), `ACADEMY_TUTORIALS_HOUR_UTC` (default 17), `ACADEMY_TUTORIALS_PER_SERIES_DAILY` (default 1), `ACADEMY_TUTORIALS_VOICE_SPEED` (default 0.9, Fish prosody speed 0.5-2.0, tutorials only), `ACADEMY_TUTORIALS_PER_DAY` (default 7, one per series, the automatic-post cap only), `ACADEMY_TUTORIALS` (default on) | not secrets | The ATLAS Academy YouTube tutorials (`academy/tutorials.py`, the owner 2026-10-10). Once a day from `ACADEMY_TUTORIALS_HOUR_UTC`, for every series, its next episode in its own level ladder (strict order, the owner 2026-10-11: one video per series per day, `ACADEMY_TUTORIALS_PER_SERIES_DAILY`) is rendered, one after another, and each becomes a Tier 2 `academy.publish_tutorial` draft card in the channel this names, with a message under it carrying the thumbnail, the title, the description, the tags, the length, "Intro ✓ / Ending ✓" and a link to watch the whole MP4 (`/media/tut.<token>`, 7 days; the app has no `files:write`, so nothing is uploaded to Slack). Approving publishes at once: upload private, thumbnail, playlist, public. A series whose next episode has no script is skipped for the day and the channel is told "script not written for <series> #<n>" once a day. The narration is slowed with `ACADEMY_TUTORIALS_VOICE_SPEED`; changing it re-renders the cached intro/ending and any unpublished episode, never a public one. If Slack answers `not_in_channel`, the result says so with "/invite @Atlas". Since 2026-10-15 (The owner) each episode instead posts itself through the Tier 1 `academy.autopublish_tutorial` once every gate passes, and a failed gate is that card; `ACADEMY_TUTORIALS_AUTOPUBLISH=off` brings back the draft card for every episode; the older `ACADEMY_TUTORIALS_AUTOPOST` can only switch it off |
+| `CLIPS_DAILY_CAP` (default 6), `CLIPS_INTAKE_MIN` (default 30), `CLIPS_INTAKE` (default on), `CLIPS_AUTOPUBLISH` (default on), `CLIPS_DATA_DIR` (default `data/clips`) | not secrets | The clips intake (`kernel.clip_intake`): every `CLIPS_INTAKE_MIN` minutes, for each active campaign with a permission source, new official files in `data/clips/<campaign>/source/` (on the server `./data/app/clips/<campaign>/source/`) are registered by sha256 and the oldest uncut source is cut (one cut per tick; Tier 1, through the executor), at most `CLIPS_DAILY_CAP` clips per campaign per UTC day. A campaign whose rules require its brand on every clip (Irubyana: logo and Twitch banner) is cut only with `./data/app/clips/<campaign>/brand/logo.png` and `banner.png` in place -- files the owner puts there, never fetched -- composited under the captions; while one is missing nothing is cut and a Tier 2 `clips.cut` card names the file and the folder. Then (The owner, 2026-09-30: clips post themselves, the reels lane's way) one waiting clip per platform is posted through the executor -- `clips.publish_clip`, `clips.publish_clip_tiktok`, `clips.publish_clip_youtube_postiz`, each Tier 1 and gated in code: the campaign active with its permission named and reviewed rules, the caption in the campaign's layout with its `#Ad` line, the file a 1080x1920 lane cut with sound inside the campaign's length band (ffprobe, read before every post), the account configured and within the campaign's account and one-platform rules, at most `CLIPS_DAILY_CAP` posts per platform per UTC day. `CLIPS_AUTOPUBLISH=off` holds every clip; a held clip, or one that fails a check, is never skipped in silence -- it is the ordinary Tier 2 post card with the reason first, and approving it answers the hold and runs every check again. Every automatic post is the executor's audit line plus one receipt in the clips channel (platform, clip id, the caption's first line). The hand-off (unconfigured account) and Whop cards follow on their own. Both live campaigns forbid the same video on several accounts, so each clip is cut for ONE platform, the highest-paying (ties taken in turn). `CLIPS_INTAKE=off` stops the intake; under `ATLAS_WATCH_ONLY` it executes nothing and `clips.status` says what waits |
+| `CLIPS_LINKS_MIN` (default 60), `CLIPS_LINKS` (default on) | not secrets | The clip link pass (`modules.clips.links`): every `CLIPS_LINKS_MIN` minutes, a clip posted through Postiz (TikTok, or a Short) in the last 14 days with no post URL is looked up in Postiz's post listing (read only). Its URL is written, with the platform as its source so the Whop agent is offered it, only when Postiz reports the platform's own post URL: for TikTok `tiktok.com/@example_handle/video/<n>`, for YouTube the id's `shorts/` link. Never a URL built from an id. Postiz unreachable: logged, rows untouched. Seen live 2026-09-30: Postiz lists TikTok posts with the profile URL only, so TikTok clips still need `clips.record_link`. `CLIPS_LINKS=off` stops it |
 | `INSTAGRAM_STORIES_ACCOUNT_ID`, `INSTAGRAM_STORIES_TOKEN` | Meta app → Instagram Graph, same as `INSTAGRAM_ACCOUNT_ID`/`INSTAGRAM_TOKEN` | The separate AI-stories account (`instagram.ACCOUNTS["stories"]`), already wired in this tree. It posts only AI-labelled short stories under `RENDER_MONTHLY_CAP`, always through the Tier 2 `instagram.publish` gate — never auto-posted, same as the main account |
 | `NIGHTSHIFT_REPOS` | not a secret — comma-separated `host/owner/name` | The only repositories `nightshift.run` may clone and push to (with `NIGHTSHIFT_GIT_TOKEN`). Anything else is refused before the token is used; unset refuses every run. See `bootstrap/nightshift/README.md` |
-| `PRESENCE_PEERS` | not a secret — a comma-separated list of your own NetBird peer names (the same ones `netbird` already reports on). List only a device that actually travels with you — a MacBook left on all day at home would read "home" whether or not you are | "Is Miro home" (`kernel/rhythm.presence()`): true only when a listed peer is connected AND its `connection_ip` (the address it is connecting from) falls inside `HOME_IPS` below — being on the mesh from a cafe or on mobile data is not being home. `None` — never guessed — when the mesh is unreachable, a listed peer is unrecognised, or `HOME_IPS` is unset. It drives brevity (texts trimmed when you are out, CRITICAL never), the short one-decision call when you are out, and the re-ring that becomes a text once you are home. With `PRESENCE_PEERS` set and `HOME_IPS` unset, `self_status` still lists each listed peer's current address — read one off there to fill in `HOME_IPS` |
+| `PRESENCE_PEERS` | not a secret — a comma-separated list of your own NetBird peer names (the same ones `netbird` already reports on). List only a device that actually travels with you — a MacBook left on all day at home would read "home" whether or not you are | "Is the owner home" (`kernel/rhythm.presence()`): true only when a listed peer is connected AND its `connection_ip` (the address it is connecting from) falls inside `HOME_IPS` below — being on the mesh from a cafe or on mobile data is not being home. `None` — never guessed — when the mesh is unreachable, a listed peer is unrecognised, or `HOME_IPS` is unset. It drives brevity (texts trimmed when you are out, CRITICAL never), the short one-decision call when you are out, and the re-ring that becomes a text once you are home. With `PRESENCE_PEERS` set and `HOME_IPS` unset, `self_status` still lists each listed peer's current address — read one off there to fill in `HOME_IPS` |
 | `HOME_IPS` | not a secret — a comma-separated list of your own public IPs and/or CIDRs (e.g. `203.0.113.7` or `203.0.113.0/24`; both a bare IP and a CIDR parse). Get it from the `self_status` "Peer IPs for HOME_IPS" line (ask "how are you"), or from your router's WAN address page. If the address there is IPv6, list a CIDR (your ISP's prefix, not the bare address) — a phone commonly gets a fresh IPv6 address from the same prefix on every reconnect, so a bare address would drift out of `HOME_IPS` on its own. One entry that is not an IP or a CIDR refuses the whole list (presence reads `None` and names the bad entry) rather than silently dropping just that entry. Never learned from history — a residential IP can be reassigned by your ISP, and guessing the new one from what a peer usually connects from is exactly the guess invariant 6 forbids | Which addresses count as "home" for `PRESENCE_PEERS` above. Unset, presence is always `None` ("HOME_IPS is not set"). If your ISP renumbers you, every listed peer reads as connected-from-outside until you update this — `rhythm`'s `home_ip_change` check notices a listed peer sitting on one new address for 12 hours straight and raises one INFO notice (at most once a week per address) suggesting you update it; it never rewrites `HOME_IPS` itself |
-| `RENTCAST_API_KEY` (optional) | [app.rentcast.io](https://app.rentcast.io) → sign up (the free Developer plan is about 50 API calls a month) → API dashboard → create an API key. Put it in with `bootstrap/set-secret.sh RENTCAST_API_KEY` | The real estate deal checker's estimates (Miro, 2026-09-29; `atlas/modules/realestate`, `/atlas deal <address> \| <list price> \| <notes>`): RentCast's value estimate with its comparables (`GET https://api.rentcast.io/v1/avm/value`) as the ARV, and its long-term rent estimate (`/v1/avm/rent/long-term`), with the key only in the `X-Api-Key` header — never in a URL, a log line, an audit row, a card or a prompt. Every read is kept in `realestate_rentcast_reads` and reused for `REALESTATE_CACHE_DAYS` with its original read time; every call is counted in `realestate_rentcast_quota` before it is sent and shown on the card. Unset: the ARV reads "unknown — add RENTCAST_API_KEY or enter an ARV" (never 0), no request is made, and the `realestate.rentcast` check is UNKNOWN. Zillow is never read (no public API; its terms forbid scraping) |
+| `RENTCAST_API_KEY` (optional) | [app.rentcast.io](https://app.rentcast.io) → sign up (the free Developer plan is about 50 API calls a month) → API dashboard → create an API key. Put it in with `bootstrap/set-secret.sh RENTCAST_API_KEY` | The real estate deal checker's estimates (The owner, 2026-09-29; `atlas/modules/realestate`, `/atlas deal <address> \| <list price> \| <notes>`): RentCast's value estimate with its comparables (`GET https://api.rentcast.io/v1/avm/value`) as the ARV, and its long-term rent estimate (`/v1/avm/rent/long-term`), with the key only in the `X-Api-Key` header — never in a URL, a log line, an audit row, a card or a prompt. Every read is kept in `realestate_rentcast_reads` and reused for `REALESTATE_CACHE_DAYS` with its original read time; every call is counted in `realestate_rentcast_quota` before it is sent and shown on the card. Unset: the ARV reads "unknown — add RENTCAST_API_KEY or enter an ARV" (never 0), no request is made, and the `realestate.rentcast` check is UNKNOWN. Zillow is never read (no public API; its terms forbid scraping) |
 | `RENTCAST_MONTHLY_LIMIT` (default 50), `REALESTATE_CACHE_DAYS` (default 30), `REALESTATE_ARV_FACTOR` (default 0.70), `REALESTATE_ASSIGNMENT_FEE` (default 10000), `REALESTATE_REPAIR_BANDS` (default `turnkey:0,light:15,medium:35,heavy:60`, $/sqft) | not secrets | The deal checker's call ceiling (the free plan's ~50; RentCast reports no remaining count, so ATLAS counts, over-counting a failed call rather than under-counting), how long a read is reused, and the stated assumptions on every card: MAO = factor × ARV − repairs − assignment fee, and the $/sqft for each repair level. The dashboard form is `/api/realestate/form` once the router is mounted (see the module's `api.py`) |
-| `FUTURES_SYMBOL` (optional, default `MNQ=F`; `NQ=F` is the other value) | not a secret | The paper futures engine (`atlas/modules/futures`, Miro 2026-09-29): which contract's bars it reads from Yahoo's public chart endpoint (no key; unofficial, holes happen and are counted) and books on paper. Nothing here can trade — no broker, no order path; money out is Tier 3. Contract specs (tick, point value, slippage, commission) are in the module's `contracts.json`, the illustrative prop-firm rules in `propfirm.json`. The module runs its own 15-minute clock inside CME hours; pause it like any module (`/atlas pause futures`), and the −$2,000 paper breaker pauses it by itself |
+| `FUTURES_SYMBOL` (optional, default `MNQ=F`; `NQ=F` is the other value) | not a secret | The paper futures engine (`atlas/modules/futures`, the owner 2026-09-29): which contract's bars it reads from Yahoo's public chart endpoint (no key; unofficial, holes happen and are counted) and books on paper. Nothing here can trade — no broker, no order path; money out is Tier 3. Contract specs (tick, point value, slippage, commission) are in the module's `contracts.json`, the illustrative prop-firm rules in `propfirm.json`. The module runs its own 15-minute clock inside CME hours; pause it like any module (`/atlas pause futures`), and the −$2,000 paper breaker pauses it by itself |
 
 ### 8. The Phase 12–20 modules
 
@@ -377,22 +615,25 @@ bulk extraction of the library by automation, which is why `agency.mockup`
 and `agency.build_site` stay rate-limited (`max_per_hour=10` each, enforced
 by the executor) — do not raise those limits to batch-generate.
 | `AGENCY_SMTP_HOST`, `AGENCY_SMTP_PORT`, `AGENCY_SMTP_USER`, `AGENCY_SMTP_PASSWORD`, `AGENCY_SEND_FROM`, `AGENCY_SEND_DOMAIN` | a separate sending domain's SMTP (never `example.com`, which is refused) | `agency.send_outreach` (Tier 2, irreversible). The From address must sit on `AGENCY_SEND_DOMAIN` |
-| `AGENCY_POSTAL_ADDRESS` | your business postal address | the CAN-SPAM footer; without it every send refuses. Also the footer of https://mapfront.io (Caddy renders it, HTML-escaped; recreate caddy after changing it); unset leaves a TODO comment there, never an invented address |
+| `AGENCY_POSTAL_ADDRESS` | your business postal address | the CAN-SPAM footer; without it every send refuses. Also the footer of https://agency.example.com (Caddy renders it, HTML-escaped; recreate caddy after changing it); unset leaves a TODO comment there, never an invented address |
 | `AGENCY_DAILY_CAP` | default 10 | outreach sends per day |
-| `AGENCY_DEPLOY_HOST=local` | not a credential: `local` (or unset) publishes on this box for Caddy to serve at `https://<slug>.mapfront.io`; a `user@host` instead rsyncs to `AGENCY_DEPLOY_ROOT` on that host | `agency.deploy_site` (Tier 2). Local: one release per deploy under `AGENCY_PUBLISH_DIR`, live by an atomic symlink swap; rollback restores the previous release or unpublishes (`atlas/modules/agency/hosting.py`) |
+| `AGENCY_DEPLOY_HOST=local` | not a credential: `local` (or unset) publishes on this box for Caddy to serve at `https://agency.example.com/preview/<slug>/`; a `user@host` instead rsyncs to `AGENCY_DEPLOY_ROOT` on that host | `agency.deploy_site` (Tier AUTO). Local: one release per deploy under `AGENCY_PUBLISH_DIR`, live by an atomic symlink swap; rollback restores the previous release or unpublishes (`atlas/modules/agency/hosting.py`) |
 | `AGENCY_DEPLOY_ROOT` | the directory on a remote `AGENCY_DEPLOY_HOST` | rsync target only; unused when local |
-| `AGENCY_SITES_DOMAIN=mapfront.io` | not a credential: the domain client sites are published under. Must match the names hardcoded in the Caddyfile | public URLs, the deploy read-back, and the TLS ask (`/internal/tls-ask`) |
-| `AGENCY_PUBLISH_DIR` | default `data/sites` (= host `./data/app/sites`, mounted read-only into Caddy at `/srv/sites`) | where local deploys publish; refused if it overlaps `AGENCY_SITES_DIR`. The host directory must be owned by uid 10001 (`bootstrap/mapfront-dns.md`) |
+| `AGENCY_PREVIEW_ORIGIN` | not a credential: default `https://agency.example.com` (https, scheme and host only) | the origin that serves client previews at `/preview/<slug>/` (no wildcard DNS, no on-demand TLS); used for public URLs and the deploy read-back (`atlas/modules/agency/hosting.py`) |
+| `AGENCY_PUBLISH_DIR` | default `data/sites` (= host `./data/app/sites`, mounted read-only into Caddy at `/srv/sites`) | where local deploys publish; refused if it overlaps `AGENCY_SITES_DIR`. The host directory must be owned by uid 10001 |
+| `AGENCY_DEMO_PUBLISH_DIR` | default `data/demos` (= host `./data/app/demos`, mounted read-only into Caddy at `/srv/demos`) | where `agency.deploy_demo` (Tier ASK) publishes client demos, one release per deploy, live by an atomic symlink swap; refused if it overlaps the intake dir, `AGENCY_SITES_DIR` or `AGENCY_PUBLISH_DIR`. Served only by an explicit Caddy block per hostname (`import demo_site <slug>`). Host dir owned by uid 10001 (`docs/client-sites.md`) |
+| `AGENCY_DEMO_INTAKE_DIR` | default `data/demos-intake` (= host `./data/app/demos-intake`, never mounted into Caddy) | where an operator drops a demo's static build as `<slug>/` before the `agency.deploy_demo` card; the audit (noindex, the demo banner, no live keys, no external form posts or scripts, size caps, no symlinks) runs on it and again on the release copy |
+| `agency_skills` table (no env var) | rows written only by an approved `agency.add_skill` card (Tier ASK, card only) | guidance TEXT for the `sites` agent: at most 1500 characters, no `<`, no `{{`/`{%`, https links only, 1-8 lowercase triggers, never a built-in skill's name; loaded at agency setup under a fixed header. The card's rollback retires the row (nothing is deleted). `agency.request_template` (Tier ASK, card only) hands a new template family to the coding agent; ATLAS writes no HTML/JS: templates arrive only through the repo and CD |
 | `"package": "500"` / `"300"` / `"100"` in `AGENCY_UPLOADS_DIR/<lead_id>/client.json` | not an env var: **you** write what the client bought. Optional `"domain"` (the client's own address for the site) and `"area"` (where they work) | the AI chat assistant on the site for `500` and `300` only; `100`, missing or anything else builds no chat. Never a build argument, so no model can pick a tier |
 | `SITE_CHAT` | default on; `off` is the kill switch | every client site's chat rests at once ("Chat is resting — call/email us"); the `site_chat` check reads UNKNOWN |
 | `SITE_CHAT_MONTHLY_CAP_USD` | default `5` | total chat spend per calendar month across all sites, booked in `site_chat_usage` (worst case reserved before each question). At the cap every chat rests; at 80% `site_chat` reads DEGRADED |
 | `SITE_CHAT_USD_PER_MTOK_IN`, `SITE_CHAT_USD_PER_MTOK_OUT` | default `1` / `5` (Claude Haiku 4.5's list price) | what each answer is booked at, whichever TRIVIAL provider wrote it — a free tier is over-counted, never under |
 | `SITE_CHAT_PER_IP_PER_MIN`, `SITE_CHAT_PER_SITE_PER_DAY` | default `10` / `300` | rate limits: questions per visitor address a minute (in memory), per site a day (from the table) |
 | `SITE_CHAT_API_BASE` | default `https://atlas.example.com` (https only) | the endpoint baked into each site's `mapfront-chat.js` at build time; a change needs a rebuild. The "Have Mapfront call me" form's `mapfront-callme.js` posts to `<this>/public/call-me/<slug>` |
-| `AGENCY_ESCALATION_PHONE` | default: `TWILIO_TO` | Miro's own number: every drafted reply to a lead ends "To speak to Miro directly, call ...", and the business line gives it when a caller or texter asks for him, a person or a manager. Never in a first cold email |
+| `AGENCY_ESCALATION_PHONE` | default: `TWILIO_TO` | the owner's own number: every drafted reply to a lead ends "To speak to the owner directly, call ...", and the business line gives it when a caller or texter asks for him, a person or a manager. Never in a first cold email |
 | `AGENCY_CALLME_IP_KEY` | default: `SESSION_SECRET` | HMAC key for the visitor IP stored with a "Have Mapfront call me" consent (`agency_lead_consent.evidence`) |
 | `RECEPTION_SMS_AI` | default on (needs `RECEPTION_ENABLED` and `AGENCY_SMS_ENABLED`) | a lead's text to the business line is answered in the webhook's TwiML by Mapfront's AI assistant (package, list price, preview link; never a deal). `off` stops only the text replies |
-| `AGENCY_SITES_DOMAIN` | default `mapfront.io` | the chat answers CORS for `https://<slug>.<this>` and the client's `domain`, nothing else |
+| `AGENCY_PREVIEW_ORIGIN` | default `https://agency.example.com` | the chat answers CORS for this origin and the client's `domain`, nothing else |
 
 **browser** — a server-side headless browser that never signs in.
 Needs `pip install 'atlas[browser]' && playwright install chromium`;
@@ -410,8 +651,8 @@ rule on the box, not only the in-process check — that is your call.
 existing `SLACK_BOT_TOKEN`).
 
 (iMessage/BlueBubbles, Telegram and WhatsApp were removed on 2026-09-28.
-Any `BLUEBUBBLES_*`, `TELEGRAM_*`, `WHATSAPP_*`, `MIRO_TELEGRAM_CHAT_ID` or
-`MIRO_WHATSAPP_NUMBER` left in `.env` is ignored and can be deleted, and the
+Any `BLUEBUBBLES_*`, `TELEGRAM_*`, `WHATSAPP_*`, `OWNER_TELEGRAM_CHAT_ID` or
+`OWNER_WHATSAPP_NUMBER` left in `.env` is ignored and can be deleted, and the
 `/webhooks/whatsapp` callback set in Meta's app settings no longer exists.)
 
 **screening** — the line ATLAS answers. A second Twilio number whose voice
@@ -444,10 +685,9 @@ holds), the `nightshift` Docker network and the
 `NIGHTSHIFT_PREVIEW_BASE` for preview links. Merging stays Tier 2.
 
 **purchasing** — prepares, never pays. `EBAY_*` unlocks
-`purchasing.prepare_cart`; `prepare_flight` has no fare source until
-flycheap exposes one. Paying is Tier 3, permanently denied.
+`purchasing.prepare_cart`; `prepare_flight` has no fare source. Paying is Tier 3, permanently denied.
 
-**youtube** — per channel, `YOUTUBE_FLYCHEAP_*` and `YOUTUBE_GUARDIAN_*`:
+**youtube** — per channel, `YOUTUBE_CLIPS_*` and `YOUTUBE_ECC_*`:
 `CLIENT_ID`, `CLIENT_SECRET`, `REFRESH_TOKEN`, `CHANNEL_ID` (Google Cloud →
 YouTube Data API v3 + YouTube Analytics API, an OAuth client, a refresh
 token from the channel's own account). Uploads land private; going public
@@ -458,25 +698,12 @@ is Tier 2 every time.
 `REVIEW_HOUR` (default 21) the nightly review. Rhythm learns his hours from
 28 days of his own activity before it says anything about them.
 
-**guardian** (extended) — `GUARDIAN_WRITE_TOKEN`, a **separate**
-write-scope token from `GUARDIAN_API_TOKEN`. Only with it set do four Tier 2
-actions exist at all: `guardian.alert_op` (ack/snooze/resolve/reopen one
-alert, all reversible), `guardian.mark_untrusted` (mark one device untrusted;
-releasable) and `guardian.rescan` (ask the sensor to scan now; irreversible —
-a scan cannot be un-run). `guardian.contain` also stays, but Guardian's v1 API
-has no containment route at all (verified against the hub source): it always
-answers "Guardian has no containment API (block/isolate not exposed)",
-whatever the kind. Blocking an IP, isolating a host and disabling an account
-are all MANUAL — the incident playbook lists them for you to do yourself, on
-the router or in the Guardian console; disabling an account is further still,
-credential revocation, Tier 3 for ATLAS.
-
 **Weather on the bottom bar** — `ATLAS_LAT`, `ATLAS_LON` (and an optional
 `ATLAS_LOCATION_LABEL`); without them the bar says why there is no weather.
 
 ## Clips: the Mac agent hands Whop the posted links
 
-Miro, 2026-09-29, in writing: an agent on his Mac submits each posted clip
+The owner, 2026-09-29, in writing: an agent on his Mac submits each posted clip
 to its campaign on Whop, in his own Chrome. ATLAS never submits there. It
 lists what to submit and records what the agent says it submitted.
 
@@ -511,11 +738,11 @@ printf 'header = "Authorization: Bearer %s"\nheader = "Content-Type: application
 
 - it is posted and not yet submitted;
 - its post URL came from the platform's own publish response or from
-  Miro's word through `clips.record_link`, never from a model
+  the owner's word through `clips.record_link`, never from a model
   (`clip_outputs.post_url_source`);
 - its campaign has both a `permission_source` and a `whop_url` on file.
 
-Until Miro gives a campaign's Whop link, the list stays empty for that
+Until the owner gives a campaign's Whop link, the list stays empty for that
 campaign.
 
 **Recording.** The POST runs `clips.record_whop_submission` through
@@ -525,14 +752,14 @@ rollback that touches only the agent's own record. The responses:
 | Response | When |
 |---|---|
 | 409 with the reason | The URL is not the clip's own, or the clip is not offered. |
-| 409 | The clip was already recorded as submitted any other way (for example on Miro's card). A second submission is refused. |
+| 409 | The clip was already recorded as submitted any other way (for example on the owner's card). A second submission is refused. |
 | 200 `"already": true` | The agent repeats its own identical record. Nothing is re-recorded or changed. |
 | 409 | Watch-only mode, or a pause. |
 | 400 | No `post_url`. |
 | 401 | The token is missing or wrong. |
 | 404 | The caller is off the mesh. |
 
-Miro's Tier 2 `clips.submit_to_whop` card comes up at once, as before, for
+The owner's Tier 2 `clips.submit_to_whop` card comes up at once, as before, for
 a posted clip the agent will never see: its campaign has no `whop_url` or
 no valid `permission_source`, or its post URL has no recorded source. For a
 clip the list does offer, the card comes up only as the fallback, when the
@@ -543,7 +770,7 @@ Whop.
 
 ## Agency: Webild as an alternative builder
 
-Miro, 2026-09-29: a client site can be built on Webild (webild.io) instead of
+The owner, 2026-09-29: a client site can be built on Webild (webild.io) instead of
 by `agency.build_site`, by an agent in his own Chrome where his Webild account
 is signed in. ATLAS drafts the prompt (`agency.webild_brief`, from the lead
 row and `AGENCY_UPLOADS_DIR/<lead_id>/client.json` only, which may now also
@@ -553,7 +780,7 @@ runs the 20-item launch check against the live site.
 
 **Access.** The same as the Whop agent above: mesh-only, bearer
 `HANDOFF_TOKEN`. `GET /webild/pending`, `POST /webild/{lead_id}/submitted`
-`{"url": ...}`, `POST /webild/{lead_id}/report` `{"status": "needs_miro" |
+`{"url": ...}`, `POST /webild/{lead_id}/report` `{"status": "needs_owner" |
 "failed", "summary": ...}`. The Mac side is `bootstrap/mac/webild.py`
 (install to `~/.config/atlas/webild.py`) and its instructions are
 `bootstrap/mac/webild-agent.md`.
@@ -563,7 +790,54 @@ runs the 20-item launch check against the live site.
 it from the first real published URL). A recorded URL must be https on a
 subdomain of one of them, never the builder's own `www`/`app`/`api` hosts.
 
+## ATLAS Academy support
+
+The owner, 2026-10-11: a Help page with a form, a support address, an AI help
+chat on the store, a community; replies within two business days;
+"everything auto unless unsure". Code: `atlas/modules/academy/support*.py`,
+`atlas/kernel/academy_support.py`, `atlas/api/academy_support.py`.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `ACADEMY_SUPPORT_ADDRESS` | `owner@example.com` | The address replies come from and the mailbox swept for tickets. Must be on `AGENCY_SEND_DOMAIN` (default `gmail.com`). |
+| `ACADEMY_SUPPORT_MAILBOX` | `clips` | The `MAIL_ACCOUNTS` Gmail account that holds the support mail (connect it with `ATLAS_GOOGLE_MAILBOX=CLIPS bootstrap/google-login.sh`). Not configured means the SLA check is UNKNOWN. |
+| `ACADEMY_SUPPORT_AUTOSEND` | on | `off` holds every reply for a Tier 2 card. |
+| `ACADEMY_SUPPORT_DAILY_CAP` | 30 | Replies a day that send themselves (three a day to one address, always). |
+| `ACADEMY_SUPPORT_TICK_MIN` | 5 | How often tickets are answered and the mailbox read. |
+| `ACADEMY_SUPPORT_MIN_COVERAGE`, `ACADEMY_SUPPORT_MIN_SCORE` | 0.5, 4.0 | Below these the retrieval is "unsure" and the reply is a card. |
+| `ACADEMY_SUPPORT_KB` | `data/academy/support_kb.json` | The product-file knowledge base, built on the Mac by `bootstrap/academy-files.sh` (never in git). |
+| `ACADEMY_SUPPORT_SLACK_CREATE`, `ACADEMY_SUPPORT_SLACK_NAME` | off, `academy-support` | `on`: the next tick creates the channel with the bot (`academy.create_support_channel`) and routes support cards there. Or set `SLACK_CHANNELS=...,academy_support:<channel id>` yourself. |
+| `ACADEMY_CHAT`, `ACADEMY_CHAT_DAILY_CAP` | on, 300 | The store's help chat, and its model calls a day. |
+| `ACADEMY_SLACK_COMMUNITY_URL`, `ACADEMY_TEAMS_COMMUNITY_URL` | unset | Join links shown on the Help page only when set (https). |
+
+What the owner sets up (ATLAS cannot):
+
+1. **The support address.** All public, reply and support mail is
+   owner@example.com (single-sourced in `atlas/modules/agency/outreach.py`).
+   Sending goes through Gmail SMTP with the existing `GMAIL_APP_PASSWORD`;
+   no forward, Resend or registrar setup is needed.
+2. **The Slack channel for cards.** Either set `ACADEMY_SUPPORT_SLACK_CREATE=on`
+   (the bot makes #academy-support and is a member; join it yourself), or
+   make it and set `SLACK_CHANNELS` with its id. Unset, the cards go to the
+   default channel.
+3. **The community.** Buyers invited into ATLAS's own workspace would see
+   its operations channels and cards, so use a separate Slack workspace (or
+   single-channel guests): create the workspace, then Invite people, then
+   copy an invite link and set `ACADEMY_SLACK_COMMUNITY_URL`. For Microsoft
+   Teams, create a community in the free Teams app with your own Microsoft
+   account, copy its invite link and set `ACADEMY_TEAMS_COMMUNITY_URL`.
+   Then republish the store.
+
 ## Agency: the AI chat assistant on client sites
+
+> **Off since 2026-10-29.** ATLAS runs on the owner's Mac at `127.0.0.1` only, so
+> nothing outside the Mac can reach `/public/*`. `PUBLIC_DOOR = False` in
+> `atlas/modules/agency/client.py` keeps the chat widget and the "Have Mapfront
+> call me" form off every build (sites already deployed keep their old copy
+> until rebuilt). The storefront, landing and help pages use `mailto:` forms to
+> owner@example.com instead (`store_origin.CONTACT_MAIL`). Turning the widgets
+> back on is a reviewed code change plus a public door that is not ATLAS itself;
+> the section below describes how they work behind one.
 
 The $500 and $300 Mapfront packages include an AI chat assistant on the
 client's site; the $100 one does not. `agency.build_site` adds it when the
@@ -591,7 +865,7 @@ The `agency.site_chat` check asks a fixture site's phone number through the
 same pipeline once a day. It reads OK only when a real answer contains it,
 DEGRADED at 80% of `SITE_CHAT_MONTHLY_CAP_USD`, FAILING at the cap or on a
 wrong answer, and UNKNOWN when switched off, with no model, or with an
-unreadable ledger. Questions about the chat itself: miro@mapfront.io.
+unreadable ledger. Questions about the chat itself: owner@example.com.
 
 **Turning on `AGENCY_AI_CHAT_BUILT=true`** (the lead-follow-up drafts may then
 promise a chat; until it is set they must not). Set it only after all of
@@ -607,9 +881,9 @@ these hold on the server:
    prints `404`.
 3. Build a real $500 or $300 client (`"package"` in its `client.json`). Its
    `<slug>.LAUNCH_CHECK.md` shows item 21 OK, and after deploy
-   `curl -s -H 'Origin: https://<slug>.mapfront.io' https://atlas.example.com/public/site-chat/<slug>`
+   `curl -s -H 'Origin: https://agency.example.com' https://atlas.example.com/public/site-chat/<slug>`
    answers `{"status": "ready"}`.
-4. Open `https://<slug>.mapfront.io` on a phone, ask for the opening hours and
+4. Open `https://agency.example.com/preview/<slug>/` on a phone, ask for the opening hours and
    something the client never said (a price). The first answer matches
    `client.json`; the second offers the phone/email.
 5. The dashboard shows `agency.site_chat` OK after its first run.
@@ -619,9 +893,76 @@ restart the API. To stop every chat at once, set `SITE_CHAT=off`. The widgets
 show "Chat is resting — call/email us" and nothing needs rebuilding. Turn
 `AGENCY_AI_CHAT_BUILT` back off if the chat will stay off.
 
-## Needs no configuration
+## Agency: client-site documents are Claude Docs artifacts
 
-`flycheap` (its `/api/health` is public by design).
+The owner's rule, 2026-10-29: every document made for a client site (brief,
+handoff, report, proposal, client guide) is a Claude Docs artifact. ATLAS
+cannot create one (only the executor acts, and a Docs artifact is made from
+The owner's Mac), so it goes through the handoff runner:
+
+1. The `sites` agent drafts it with `sites_draft_doc` (`agency.draft_doc`,
+   Tier AUTO: one row in `agency_site_docs`, nothing leaves ATLAS) and raises
+   an `agency.publish_doc` card (Tier ASK, card only). Client words go in
+   `client_text` and reach the brief through `wrap_untrusted`. By hand:
+   `python -m atlas.cli sites-doc <slug> <kind> "<title>" body.md [client.txt]`.
+2. Approving the card queues a handoff. The runner on the Mac claims it,
+   creates the artifact with the docs skill or connector, adds one README line
+   to the site's repo when the brief allows, and reports with
+   `handoff.py report <id> done <summary-file> --artifact-url <claude.ai link>`
+   (runner prompt: `~/.claude/scheduled-tasks/atlas-handoff-runner/SKILL.md`,
+   "DOCS TASKS").
+3. `/handoffs/{id}/report` records the link on the document (only a
+   `https://claude.ai/artifact/…` or `…/code/artifact/…` link, only with
+   `done`) and the Slack receipt carries it, labelled as the agent's word.
+   The Client Sites tab links it; a document without a link shows UNKNOWN.
+
+Needs `HANDOFF_TOKEN` (24+ characters) on both sides, like every handoff.
+Rollback: the draft card's rollback withdraws the draft; the publish card's
+cancels the handoff before it is claimed. Nothing is deleted.
+
+## ECC Channel: the church bookstore's YouTube and Facebook
+
+The Example Community Church bookstore (ECC
+Library & Bookstore): YouTube `@example_handle`, Facebook Page
+`0000000000000`, two posts a day at 9 AM and 6 PM New York time. Code:
+`atlas/modules/church/`, `atlas/api/church.py`, the `church` agent and job.
+Design: `docs/church-agent.md`. The Mac side is `atlas_sync.py` and the
+`ecc-channel` skill in the ECC Bookstore project.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `CHURCH_PROGRESS_TOKEN` | unset | Bearer token (24+ characters) for `POST /api/church/progress`, the Mac's calendar sync. Unset or short: every sync is refused (401) and the church checks stay UNKNOWN ("no calendar synced yet"). Generate with `openssl rand -hex 24`; put the same value in the Mac's environment for `atlas_sync.py`. |
+| `YOUTUBE_ECC_CLIENT_ID`, `YOUTUBE_ECC_CLIENT_SECRET`, `YOUTUBE_ECC_REFRESH_TOKEN`, `YOUTUBE_ECC_CHANNEL_ID` | unset | The bookstore's channel for the YouTube Data API (`youtube` module channel `ecc`; channel id `UCexamplechannel00000000`). Needs an OAuth client in Google Cloud with the `youtube.upload` and `youtube` scopes, consented as the account that owns @example_handle. Only `church.schedule_youtube_shorts` uploads there (the generic `youtube.upload` refuses the channel). Unset: no YouTube card is raised; uploads stay by hand in Studio. |
+| `FACEBOOK_ECC_PAGE_ID`, `FACEBOOK_ECC_PAGE_TOKEN` | unset | The church Page (`0000000000000`) and a non-expiring Page access token with `pages_manage_posts`, `pages_read_engagement` and `publish_video`. Only `church.schedule_facebook_reels` uses them. Unset: no Facebook card; reels stay scheduled by hand in Meta Business Suite. |
+| `CHURCH_MEDIA_DIR` | `data/church` | Where the rendered videos must be on the ATLAS host for the API path (`./data/app/church/` on the server). Only a post's file NAME is looked up here; the Mac's path is never followed. A render that is not here is refused ("not on this host"), never skipped in silence. |
+| `CHURCH_YT_DAILY_BUDGET` | 10 | YouTube uploads a New York day, counted from `church_posts.scheduled_at`. An unverified channel takes about 10 a day; the Data API's own quota (videos.insert is expensive, check the cost in Cloud Console) may be lower. |
+| `CHURCH_CAPTION_MODEL` | `openrouter:nousresearch/hermes-4-405b` | The model that drafts captions (`church.draft_captions`, tool-free). Needs `OPENROUTER_API_KEY`; when the pin is unavailable the DRAFT route answers and the draft records which model did. |
+| `CHURCH_SHIFT`, `CHURCH_SHIFT_HOUR` | on, 8 | The daily shift (scheduler job `church`), once a New York day from this hour. `off` stops it. |
+| `CHURCH_SYNC_STALE_HOURS` | 48 | A calendar synced longer ago than this reads UNKNOWN. |
+| `CHURCH_LAUNCH_START` | `2026-10-12` | Day 1 of the 30-day launch calendar shown on the tab. |
+
+What the owner must do (ATLAS cannot):
+
+1. **Sync.** Set `CHURCH_PROGRESS_TOKEN` on the server and on the Mac, and
+   run `python3 atlas_sync.py` in the ECC Bookstore folder after each
+   upload session (`--dry-run` prints the payload). `ATLAS_URL` is the
+   **mesh** address of ATLAS: `/api/church/progress` is not public.
+2. **Reviews.** Every video is watched before it posts. Mark what was
+   watched with `atlas_sync.py --reviewed youtube:10-19,facebook:47`;
+   the posting actions refuse anything else.
+3. **YouTube API (optional).** Create the OAuth client, consent as the
+   channel's owner, set `YOUTUBE_ECC_*`. **Uploads from an API project that
+   has not passed Google's API audit are locked private**, so a scheduled
+   `publishAt` would never go public: request the audit (YouTube API
+   Services compliance) before relying on this path, or keep uploading in
+   Studio.
+4. **Facebook API (optional).** In a Meta app with the church Page, issue
+   the Page token and set `FACEBOOK_ECC_*`.
+5. **Hands.** `ATLAS_WATCH_ONLY` (the default) refuses every church action,
+   the drafts included: the cards still appear, their runs do not happen.
+   It is one switch for all of ATLAS; there is no per-action override.
+6. **Files.** For the API path, copy the reviewed renders (`music/output/*.mp4`)
+   into the server's `./data/app/church/`.
 
 ## LinkedIn
 
@@ -636,6 +977,27 @@ session (cookies, no password) is synced to the server and the checks run
 from it. Re-run it whenever `linkedin.sweep` says the session is signed out.
 The sweep runs twice a day; the daily post for each page arrives as an
 approval card, and drafts arrive as cards too.
+
+### Sage and the TutorSite page (`SAGE_MMT_LINKEDIN`)
+
+Off by default. `SAGE_MMT_LINKEDIN=on` (with `mmt` in `LINKEDIN_PAGES_ACTIVE`)
+makes Sage, the SEO agent, owner of the page calendar; the MMT agent keeps the
+product facts. Every Monday 10:00 New York, job `sage_mmt_weekly`:
+
+- reads the page's followers and top post from the sweep's state file (each with
+  its read time; UNKNOWN when the sweep could not read them, never a guess);
+- drafts at most `SAGE_MMT_MAX_POSTS_PER_WEEK` posts (default 3, max 7) into the
+  page's post bank as drafts. Each passes the claim check (built features only,
+  no planned or group-class features, no invented stats or testimonials) and
+  becomes the usual `linkedin.approve_draft` card, then the Tier 2
+  `linkedin.publish_post` card. Nothing posts without you; an unanswered card
+  expires;
+- stores one SEO note of three suggested edits (page text is fetched read-only
+  and wrapped as untrusted) and raises a card-only `sagemmt.accept_seo_note`
+  that records your decision. ATLAS changes no page.
+
+While on, the old series refill for `mmt` stands down. `ATLAS_WATCH_ONLY`
+holds the job like any other.
 
 ## Hands-free wake
 
@@ -700,9 +1062,9 @@ git checkout on the box.
    `ui/node_modules/@mediapipe/tasks-vision/wasm`, which the server does not
    have outside Docker; `./ui/scripts/fetch-whisper-model.sh` downloads
    whisper-tiny.en. Both write under `ui/public/wake/`, which is git-ignored
-   but **not** Docker-ignored, so copy that directory to
-   `/opt/atlas/ui/public/wake/` and the Dockerfile's `COPY ui/ ./` carries it
-   into the build.
+   but **not** Docker-ignored, so run them in `~/atlas-agency` (the checkout
+   the local stack builds from) and the Dockerfile's `COPY ui/ ./` carries
+   `ui/public/wake/` into the build.
 2. **Then** `docker compose up -d --build api`. The UI stage runs `npm ci`
    against `ui/package-lock.json`, which must list every dependency in
    `ui/package.json` (it does as of Task 17; `npm ci` refuses otherwise), and
@@ -738,6 +1100,11 @@ handle /media/* {
     reverse_proxy api:8080
 }
 ```
+
+ATLAS Academy's tutorial drafts use the same route with a `tut.` token
+(`academy_tutorial_reviews`, 7 days): the episode's `video.mp4`, or with
+`.jpg` on the end its `thumb.jpg`, so the owner can watch a draft from the
+Slack card before approving it. Same 404 for every miss.
 
 That is a widening of the public surface — until now 443 served only
 `/webhooks/*` and `/healthz` — so it is **yours to approve** before the new
@@ -821,11 +1188,11 @@ update the message in every alert.
 
 **4. Optional: only TradingView's addresses.** TradingView publishes the
 addresses it sends webhooks from (their "About webhooks" help page, read
-2026-09-29): 52.89.214.238, 34.212.75.30, 54.218.53.128, 52.32.178.7.
+2026-09-29): 203.0.113.238, 203.0.113.30, 203.0.113.128, 203.0.113.7.
 
 ```bash
 bootstrap/set-secret.sh TRADINGVIEW_ALLOWED_IPS
-# 52.89.214.238,34.212.75.30,54.218.53.128,52.32.178.7
+# 203.0.113.238,203.0.113.30,203.0.113.128,203.0.113.7
 ```
 
 When this is set, any other address gets a 403. If TradingView changes its
@@ -947,7 +1314,7 @@ What it is and is not: Perplexity is a **source, never an oracle**. Every
 answer is quoted as untrusted data with its citations and the time it was
 read, and nothing it says is ever reported as a figure ATLAS measured. A
 question that names one of your own modules, businesses, agents or checks
-("how is FlyCheap doing") is refused before the call — that is answered from
+("how is CloudCo doing") is refused before the call — that is answered from
 the estate. Only a topic or a question leaves the box: email addresses and
 phone numbers are stripped first, and a document, message or coursework text
 is never sent. `perplexity.budget` on the board shows this month's count

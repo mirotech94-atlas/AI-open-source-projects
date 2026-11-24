@@ -1,0 +1,66 @@
+{
+ "_doc": "One short outcome line (<= 60 chars) per raw agent outcome. Read by tests/test_agent_shifts.py AND ui/src/pages/outcomeText.test.ts so atlas.kernel.agents.outcome_line and outcomeLine never drift (the owner 2026-10-29).",
+ "limit": 60,
+ "cases": [
+  {
+   "raw": "I now have a full picture. The QA sweep read three sites and found two failing checks on fiverr.",
+   "line": "The QA sweep read three sites and found two failing checks…"
+  },
+  {
+   "raw": "Let me check the sites. Now I have everything I need. content: ten drafts waiting.",
+   "line": "content: ten drafts waiting."
+  },
+  {
+   "raw": "Okay. Here's the summary: 3 proposals drafted for Kess.",
+   "line": "3 proposals drafted for Kess."
+  },
+  {
+   "raw": "I now have a full picture of the situation.",
+   "line": "Completed (see details)"
+  },
+  {
+   "raw": "Perfect! I have gathered all the information I need.\n\n**Sites:** all eight client sites answered 200.",
+   "line": "Sites: all eight client sites answered 200."
+  },
+  {
+   "raw": "## Shift report\n\nSales sent two follow-ups.",
+   "line": "Sales sent two follow-ups."
+  },
+  {
+   "raw": "content: ten drafts waiting.",
+   "line": "content: ten drafts waiting."
+  },
+  {
+   "raw": "shift deferred: quota",
+   "line": "Deferred: free quota kept for the owner"
+  },
+  {
+   "raw": "shift failed: all providers failed: x",
+   "line": "Failed: no model answered"
+  },
+  {
+   "raw": "shift failed: TimeoutError: read",
+   "line": "Failed: TimeoutError"
+  },
+  {
+   "raw": "No answer: the model ended without one.",
+   "line": "No answer: the model ended without one"
+  },
+  {
+   "raw": "**Summary of untrusted data:**",
+   "line": "Completed (no summary text)"
+  },
+  {
+   "raw": "Alright, now let me summarize. Two leads replied; one wants a call on Friday afternoon about the site.",
+   "line": "Two leads replied; one wants a call on Friday afternoon…"
+  },
+  {
+   "raw": "Done: 3 posts went out and the store answered 200.",
+   "line": "3 posts went out and the store answered 200."
+  },
+  {
+   "raw": "Good news: the store answered 200.",
+   "line": "Good news: the store answered 200."
+  }
+ ]
+}

@@ -1,37 +1,27 @@
 import {
-  Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type JSX,
+  Suspense, lazy, useCallback, useEffect, useRef, useState, type JSX,
 } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { api, normaliseHealth } from "./api";
+import { api } from "./api";
+import { ACTIVITY_REFRESH_MS } from "./pages/agentActivityModel";
 import { useFresh } from "./hooks/useFresh";
+import { useLiveRead } from "./hooks/useLiveRead";
+import { WhyContext, WhyPanel } from "./components/WhyPanel";
 import { useStream } from "./hooks/useStream";
 import { useHand, toggleHandTracking, type HandState } from "./hooks/useHand";
 import { HandCursor } from "./components/HandCursor";
 import { Login } from "./components/Login";
-import { Activity } from "./pages/Activity";
-import { Agency } from "./pages/Agency";
-import { Calendar } from "./pages/Calendar";
+import { Wordmark } from "./components/Wordmark";
 import { Companion } from "./pages/Companion";
-import { Conversations } from "./pages/Conversations";
-import { Core } from "./pages/Core";
-import { Knowledge } from "./pages/Knowledge";
-import { Leads } from "./pages/Leads";
-import { Marketing } from "./pages/Marketing";
-import { Memory } from "./pages/Memory";
-import { Mission } from "./pages/Mission";
 import { Pocket } from "./pages/Pocket";
-import { Reports } from "./pages/Reports";
-import { Status } from "./pages/Status";
-import { Tasks } from "./pages/Tasks";
-import { Tools } from "./pages/Tools";
-import { Workflows } from "./pages/Workflows";
 import { useVoice } from "./voice/useVoice";
 import { MicBadge } from "./voice/VoiceOverlay";
 import { handBadgeTitle } from "./voice/detectorCore";
 import { owedAfter, planFocus } from "./voice/focus";
 import type { GestureEvent } from "./voice/gestures";
-import { Mark } from "./components/Mark";
-import { AcademyFooter, AcademyHeader } from "./components/Shell";
+import { AgencyTab } from "./pages/AgencyTab";
+import { REDIRECTS, nextTab } from "./nav";
+import { waitingCount } from "./pages/alertsModel";
 import { CommandCenter, CommandFooter, CommandHeader } from "./pages/CommandCenter";
 import { runningAgents } from "./pages/commandModel";
 
@@ -43,50 +33,11 @@ const VoiceOverlay = lazy(() =>
 const AirGlass = lazy(() =>
   import("./pages/AirGlass").then((m) => ({ default: m.AirGlass })));
 
-// Every screen, in the order they are used rather than the order they were
-// built. The nav shows Home and puts the rest under "More" (2026-10-06:
-// Home at / and /agency is the one page; the Command Center moved to
-// /command and the Agency room to /agency/room). Swipe still walks this
-// list in order. The agents map lives on Home; the old Agents tab paths
-// (/fleet, /agents) still land on it.
-const NAV = [
-  { to: "/", label: "Home", icon: "◈", end: true },
-  { to: "/command", label: "Command Center", icon: "◈" },
-  { to: "/core", label: "AI Core", icon: "◎" },
-  { to: "/agency/room", label: "Agency room", icon: "⌘" },
-  { to: "/tasks", label: "Tasks", icon: "☑" },
-  { to: "/calendar", label: "Calendar", icon: "▦" },
-  { to: "/memory", label: "Memory", icon: "⊚" },
-  { to: "/conversations", label: "Conversations", icon: "💬" },
-  { to: "/knowledge", label: "Knowledge Base", icon: "▤" },
-  { to: "/tools", label: "Tools & Skills", icon: "⚙" },
-  // Air Glass sits with the tools, but out of the hand-swipe ring (SWIPE
-  // below): it takes the camera, so a swipe into it could not swipe out.
-  { to: "/airglass", label: "Air Glass", icon: "✋" },
-  { to: "/workflows", label: "Workflows", icon: "▷" },
-  { to: "/marketing", label: "Marketing", icon: "◭" },
-] as const;
-
-// The three older screens. Still reachable, still whole — moved out of the
-// first eleven so the sidebar reads as the work rather than as the archive.
-const MORE = [
-  { to: "/status", label: "Status", icon: "◉" },
-  { to: "/activity", label: "Activity", icon: "≡" },
-  { to: "/reports", label: "Reports", icon: "▥" },
-  { to: "/leads", label: "Leads", icon: "⚑" },
-] as const;
-
-const SWIPE = NAV.filter((item) => item.to !== "/airglass");
+const Hud = lazy(() => import("./pages/Hud").then((m) => ({ default: m.Hud })));
+const Cameras = lazy(() =>
+  import("./pages/Cameras").then((m) => ({ default: m.Cameras })));
 
 const STALE_FEED_MS = 60_000;
-
-/** Open-Meteo stamps a reading `2026-09-24T11:00`. The bar has room for the
- *  time, and the full stamp stays in the title — but the time is the part
- *  that answers "is this current?", so it is the part shown. */
-function observedClock(stamp: string): string {
-  const [, clock] = stamp.split("T");
-  return clock ? clock.slice(0, 5) : stamp;
-}
 
 /** off / watching / cursor / grab, read from the device -- the same rule the
  * mic badge follows. `watching` is also the camera-on indicator Task 16's
@@ -139,19 +90,12 @@ export function App(): JSX.Element {
   } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
-  const [search, setSearch] = useState("");
   // Not a clock: this exists only so the network cell stops saying
   // "Excellent" on its own once the last event ages past a minute. Five
   // seconds is well inside that boundary and a twelfth of the re-renders.
   const [now, setNow] = useState(() => new Date());
   const location = useLocation();
   const navigate = useNavigate();
-  // Only the Command Center reads `search`. A box that accepts typing and
-  // changes nothing is worse than no box, and Tools already has its own.
-  const onMission = location.pathname === "/command";
-  // Home is drawn at both paths; it is the stage for the figure there.
-  const onHome = location.pathname === "/" || location.pathname === "/agency";
-
   const refresh = useCallback(() => {
     setReloadKey((n) => n + 1);
     setLastFetch(new Date());
@@ -227,11 +171,6 @@ export function App(): JSX.Element {
     return (): void => window.clearInterval(timer);
   }, []);
 
-  const navIndex = useMemo(
-    () => Math.max(0, SWIPE.findIndex((item) => item.to === location.pathname)),
-    [location.pathname],
-  );
-
   // Swipe moves through the sidebar in NAV order; two-held dismisses whatever
   // the voice overlay is doing. Both come from the SAME hand as pinch-wake
   // above -- `useHand` shares one camera and one landmarker across every
@@ -245,14 +184,12 @@ export function App(): JSX.Element {
   // (delta +1), the same sense as swiping through a photo strip.
   const onHandEvent = useCallback((event: GestureEvent): void => {
     if (event.kind === "swipe") {
-      const delta = event.dir === "left" ? 1 : -1;
-      const next = SWIPE[(navIndex + delta + SWIPE.length) % SWIPE.length];
-      if (next) navigate(next.to);
+      navigate(nextTab(location.pathname, event.dir));
     } else if (event.kind === "dismiss") {
       voice.dismiss();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navIndex, navigate]);
+  }, [location.pathname, navigate]);
 
   // The pocket (menu-bar popover) has no screens to swipe through and no
   // room for a hand cursor: it never asks for the camera. Air Glass has the
@@ -274,23 +211,40 @@ export function App(): JSX.Element {
   useEffect(loadSession, [loadSession]);
 
   // A slow poll behind the stream. If SSE drops the screen still refreshes,
-  // and the indicator still says so rather than quietly looking fine.
+  // and the indicator still says so rather than quietly looking fine. It
+  // re-reads the session too: there is no sign-out button (the owner, 2026-10-28),
+  // so an expired session is how the login gate comes back.
   useEffect(() => {
     if (!session?.authenticated) return;
-    const timer = window.setInterval(refresh, 30_000);
+    // Only a read that SAYS the session is gone shows the gate; a failed read
+    // (the box restarting, a dropped network) leaves the page as it is.
+    const recheck = (): void => {
+      void api.session()
+        .then((s) => { if (!s.authenticated) setSession({ authenticated: false, configured: s.configured }); })
+        .catch(() => undefined);
+    };
+    const timer = window.setInterval(() => { refresh(); recheck(); }, ACTIVITY_REFRESH_MS);
     return (): void => window.clearInterval(timer);
   }, [session?.authenticated, refresh]);
 
-  const overview = useFresh(
-    () => (session?.authenticated ? api.overview() : Promise.resolve(null)),
-    [reloadKey, session?.authenticated],
+  // The pill, the ring and the "Why" list read this: every ~10 s on its own,
+  // paused while the tab is hidden, at once on focus, and a failed read shows
+  // UNKNOWN "checks unreachable" (never the last good count).
+  const overview = useLiveRead(
+    () => api.overview(),
+    session?.authenticated === true,
+    reloadKey,
+    "overview",
   );
+  const [whyOpen, setWhyOpen] = useState(false);
+  const openWhy = useCallback(() => setWhyOpen(true), []);
+  const closeWhy = useCallback(() => setWhyOpen(false), []);
   const counters = useFresh(
     () => (session?.authenticated ? api.status() : Promise.resolve(null)),
     [reloadKey, session?.authenticated],
   );
-  const ambient = useFresh(
-    () => (session?.authenticated ? api.ambient() : Promise.resolve(null)),
+  const approvals = useFresh(
+    () => (session?.authenticated ? api.approvals() : Promise.resolve(null)),
     [reloadKey, session?.authenticated],
   );
   // The running build (ATLAS_DEPLOY_SHA, set by ops/deploy/deploy.sh) and
@@ -316,8 +270,10 @@ export function App(): JSX.Element {
   if (session === null) {
     return gate(
       <div className="login">
-        <Mark size={44} />
-        <span className="brand">ATLAS</span>
+        <p className="login-brand">
+          <img src="/favicon.svg" width={44} height={44} alt="" />
+          <Wordmark />
+        </p>
         <p>Connecting…</p>
       </div>,
     );
@@ -326,38 +282,10 @@ export function App(): JSX.Element {
     return gate(<Login configured={session.configured} onSignedIn={loadSession} />);
   }
 
-  // A failed refresh leaves the old read in `overview.data`; the pill must
-  // not keep saying "All clear" from it.
-  const watched = (overview.error ? [] : overview.data?.modules ?? [])
-    .filter((m) => m.enabled && !m.setup);
-  const rank: Record<string, number> = { ok: 0, unknown: 1, degraded: 2, failing: 3 };
-  const worst = watched.reduce<string>((acc, m) => {
-    const h = normaliseHealth(m.health);
-    return (rank[h] ?? 1) > (rank[acc] ?? 0) ? h : acc;
-  }, watched.length ? "ok" : "unknown");
-
-  // "System failing" was read as "ATLAS is broken" -- it never meant that.
-  // ATLAS was working perfectly; two of the things it watches were failing,
-  // which is the pill doing its job. The word "system" was the problem: this
-  // pill describes the estate, not the software drawing it. Name what is
-  // wrong and how many, so it cannot be mistaken for a self-report.
-  const hurt = watched.filter((m) => {
-    const h = normaliseHealth(m.health);
-    return h === "failing" || h === "degraded";
-  });
-  const blind = watched.filter((m) => normaliseHealth(m.health) === "unknown");
-  const pill =
-    worst === "ok" ? "All clear"
-      : watched.length === 0 ? "Health unknown"
-      : worst === "unknown"
-        ? `${blind.length} unmeasured`
-        : `${hurt.length} need${hurt.length === 1 ? "s" : ""} attention`;
-  const pillWhy =
-    worst === "ok" ? "Everything ATLAS watches is healthy"
-      : worst === "unknown"
-        ? "Nothing could be measured, so nothing is known"
-        : `${hurt.map((m) => m.title || m.module).join(", ")} — ATLAS itself is fine`;
-  const waiting = counters.error ? null : counters.data?.waiting_on_you ?? null;
+  // The same cards the Decisions panel lists (retired lanes dropped), so the
+  // header and the panel agree; the server's total counts every lane.
+  const waiting = approvals.error ? null
+    : waitingCount(approvals.data?.proposals ?? null, now.getTime());
 
   // The feed is only "Excellent" while it is both connected and recent. A
   // socket that is open and silent for a minute is a dead feed wearing a live
@@ -368,20 +296,6 @@ export function App(): JSX.Element {
   const netWord = feedFresh ? "Excellent"
     : stream.state === "connecting" ? "Connecting" : "Disconnected";
 
-  const weather = ambient.data?.weather ?? null;
-  // The one reason the server gave, shortened only where it is the literal
-  // "no coordinates" case — everything else is passed through as written,
-  // because an unreachable service is a different problem from an unset
-  // variable and the bar is the only place either one surfaces.
-  const reason = ambient.data?.reason ?? null;
-  const weatherWhy = reason === null
-    ? "unavailable"
-    : reason === "ATLAS_LAT/ATLAS_LON unset"
-      ? "not configured"
-      : `unreachable — ${reason}`;
-
-  // The "More" menu: every screen but Home, in NAV order, then the archive.
-  const more = [...NAV.slice(1), ...MORE];
   const gaze = hand.state === "cursor" || hand.state === "grab" ? hand.cursor : null;
 
   // The companion window (/Applications/ATLAS.app) is the figure and the
@@ -407,132 +321,60 @@ export function App(): JSX.Element {
     );
   }
 
-  // Home is ATLAS · Command Center (Miro, 2026-10-06): its own dark chrome,
-  // header to talk bar. The other pages keep the Academy shell.
-  if (onHome) {
-    const handToggle = voice.capabilities?.gestures === true
-      ? <HandBadge state={hand.state}
-                   pinch={voice.detector !== "pinch" ? "none" : voice.handsFree ? "live" : "muted"} />
-      : null;
-    return (
-      <div className="cmd-shell">
-        <CommandHeader items={more} overview={overview} waiting={waiting}
-                       feed={stream.state} voice={voice}
-                       onSignOut={() => void api.logout().then(loadSession)} />
-        <main className="cmd-main">
-          <CommandCenter reloadKey={reloadKey} voice={voice} overview={overview}
-                         counters={counters} gaze={gaze}
-                         agentsRunning={stream.state === "live"
-                           ? runningAgents(agentEvents, now.getTime()) : null} />
-        </main>
-        <CommandFooter
-          voice={voice}
-          version={version}
-          // No check reads the weather (/api/ambient asks Open-Meteo per
-          // request), and it is not something to watch: left off this bar.
-          weather={null}
-          network={netWord} networkOk={feedFresh}
-          toggles={<><MicBadge voice={voice} />{handToggle}</>} />
-        <Suspense fallback={null}>
-          <VoiceOverlay voice={voice} onStage={false} />
-        </Suspense>
-        <HandCursor state={hand.state} cursor={hand.cursor} />
-      </div>
-    );
-  }
-
+  // The dashboard is four tabs inside one dark shell: Command Center, Agency, HUD and Cameras.
+  const handToggle = voice.capabilities?.gestures === true
+    ? <HandBadge state={hand.state} lent={airglass}
+                 pinch={voice.detector !== "pinch" ? "none" : voice.handsFree ? "live" : "muted"} />
+    : null;
   return (
-    <div className="ac-shell">
-      <AcademyHeader
-        items={more} health={worst} pill={pill} pillWhy={pillWhy}
-        feed={stream.state} updated={lastEvent} waiting={waiting}
-        onSignOut={() => void api.logout().then(loadSession)}
-        search={onMission ? (
-          <input className="ac-search" value={search} placeholder="Search the feed"
-                 aria-label="Filter the live intelligence feed"
-                 onChange={(e) => setSearch(e.target.value)} />
-        ) : undefined}
-        badges={<>
-          {/* Home has its own, larger talk button beside the figure. */}
-          {!onHome && (
-            <button type="button" className="ac-btn ac-btn-accent ac-btn-sm"
-                    onClick={voice.tap} title="Talk to ATLAS">
-              Talk
-            </button>
-          )}
-          <MicBadge voice={voice} />
-          {voice.capabilities?.gestures === true
-            && <HandBadge state={hand.state} lent={airglass}
-                          pinch={voice.detector !== "pinch" ? "none"
-                            : voice.handsFree ? "live" : "muted"} />}
-        </>} />
-
-      <main className={onHome ? "ac-main" : "cc-main hud-zone"}>
+    <WhyContext.Provider value={openWhy}>
+    <div className="cmd-shell v2">
+      {whyOpen && <WhyPanel overview={overview} onClose={closeWhy} />}
+      <CommandHeader overview={overview} waiting={waiting} feed={stream.state} />
+      {(approvals.data?.whatsapp_undelivered ?? 0) > 0 && (
+        <p className="bn-note" role="status">
+          {approvals.data?.whatsapp_undelivered} approval card(s) did not reach your
+          WhatsApp. Decide them here.
+        </p>
+      )}
+      <main className="cmd-main">
         <Routes>
           <Route path="/" element={
-            <CommandCenter reloadKey={reloadKey} voice={voice} overview={overview} agentsRunning={null}
-                  counters={counters} gaze={gaze} />} />
-          <Route path="/command" element={
-            <Mission reloadKey={reloadKey} voice={voice} search={search} />} />
-          <Route path="/core" element={
-            <Core reloadKey={reloadKey} voice={voice}
-                  // The same cursor `HandCursor` draws, and on the same
-                  // condition -- only once a hand is actually steering it,
-                  // never merely while the camera is watching.
-                  gaze={gaze} />} />
-          <Route path="/tasks" element={<Tasks reloadKey={reloadKey} />} />
-          <Route path="/calendar" element={<Calendar reloadKey={reloadKey} />} />
-          <Route path="/conversations" element={<Conversations reloadKey={reloadKey} />} />
-          <Route path="/knowledge" element={<Knowledge reloadKey={reloadKey} />} />
-          <Route path="/tools" element={<Tools reloadKey={reloadKey} />} />
-          <Route path="/workflows" element={<Workflows reloadKey={reloadKey} />} />
-          <Route path="/marketing" element={<Marketing reloadKey={reloadKey} />} />
-          <Route path="/status" element={<Status reloadKey={reloadKey} />} />
-          <Route path="/activity" element={<Activity reloadKey={reloadKey} />} />
-          <Route path="/reports" element={<Reports reloadKey={reloadKey} />} />
-          {/* The agents map is on Home now; old links and a spoken "open the
-              fleet" (voice focus /fleet) still land on it. */}
-          <Route path="/fleet" element={<Navigate to="/agency" replace />} />
-          <Route path="/agents" element={<Navigate to="/agency" replace />} />
-          <Route path="/agency" element={
-            <CommandCenter reloadKey={reloadKey} voice={voice} overview={overview} agentsRunning={null}
-                  counters={counters} gaze={gaze} />} />
-          <Route path="/agency/room" element={<Agency reloadKey={reloadKey} />} />
-          <Route path="/memory" element={<Memory reloadKey={reloadKey} />} />
+            <CommandCenter reloadKey={reloadKey} voice={voice} overview={overview}
+                           counters={counters} gaze={gaze}
+                           agentsRunning={stream.state === "live"
+                             ? runningAgents(agentEvents, now.getTime()) : null} />} />
+          <Route path="/agency" element={<AgencyTab reloadKey={reloadKey} overview={overview} />} />
+          {Object.entries(REDIRECTS).map(([from, to]) => (
+            <Route key={from} path={from} element={<Navigate to={to} replace />} />
+          ))}
+          <Route path="/hud" element={
+            <Suspense fallback={<p className="stamp">Loading HUD…</p>}>
+              <Hud reloadKey={reloadKey} stream={stream.state} />
+            </Suspense>} />
+          <Route path="/cameras" element={
+            <Suspense fallback={<p className="stamp">Loading Cameras…</p>}>
+              <Cameras />
+            </Suspense>} />
           <Route path="/airglass" element={
             <Suspense fallback={<p className="stamp">Loading Air Glass…</p>}>
               <AirGlass pinchWake={pinchWake} />
             </Suspense>} />
-          <Route path="/leads" element={<Leads reloadKey={reloadKey} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-
-      <AcademyFooter
-        location={ambient.data?.location ?? "not set"}
-        networkOk={feedFresh} network={netWord}
-        weather={
-          /* Never a plausible temperature, and never one vague word for every
-             way of not having one. "Not configured" and "the service returned
-             503" are different facts, and the second one is actionable. */
-          weather ? (
-            <>
-              {`${Math.round(weather.temperature_c)}°C ${weather.description}`}
-              {weather.observed_at && (
-                <span className="t" title={`Open-Meteo reading taken ${weather.observed_at}`}>
-                  {" "}· read {observedClock(weather.observed_at)}
-                </span>
-              )}
-            </>
-          ) : <span data-health="unknown">{ambient.data ? weatherWhy : "not read yet"}</span>
-        } />
-
-      {/* Above the screens, never instead of them: they stay mounted so the
-          live stream and scroll position survive a conversation. */}
+      <CommandFooter
+        voice={voice}
+        version={version}
+        // No check reads the weather and it is not something to watch.
+        weather={null}
+        network={netWord} networkOk={feedFresh}
+        toggles={<><MicBadge voice={voice} />{handToggle}</>} />
       <Suspense fallback={null}>
-        <VoiceOverlay voice={voice} onStage={location.pathname === "/core"} />
+        <VoiceOverlay voice={voice} onStage={false} />
       </Suspense>
       <HandCursor state={hand.state} cursor={hand.cursor} />
     </div>
+    </WhyContext.Provider>
   );
 }

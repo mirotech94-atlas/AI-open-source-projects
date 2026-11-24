@@ -6,14 +6,15 @@ reply_channel`); when the lead's own words pick one of the offered calendar
 slots or accept an allowed price -- read in code, never by a model -- it
 queues a booking or an agreement too. The agency module never imports the
 executor (tests/test_agency.py holds it to that), so every send is driven
-from here, the way `kernel.missions` drives agency work. Every action below
-is Tier 1 under Miro's standing rule (2026-09-30, restated 2026-10-06:
-"make the lead replies send themselves too -- approve invoices too and
-schedule meetings with them via email as well and call them as well"):
-anything not urgent runs without a card, with the rules in code; a refusal
-is the Tier 2 card with "Held for you: <reason>" first, and approving it
-runs every check again. Nothing is ever sent from a card raised here; the
-card is the executor's own path.
+from here, the way `kernel.missions` drives agency work. Drafting, holding
+a calendar slot, replying and calling are Tier 1 under the owner's standing rule
+(2026-09-30, restated 2026-10-06); a refusal is the Tier 2 card with "Held
+for you: <reason>" first. The three sends to a client -- the outreach email,
+the calendar invite and the agreement -- are Tier 2 cards since 2026-10-27
+(six agents): drafted through the executor, dry-run here
+(`executor.preview`, which can never reach `run`), then ONE card each
+(`_send_card`, a dedup key, `automatic=True`). Nothing here executes them;
+approving the card runs every check again through the executor.
 
 Each pass claims its row once (an atomic UPDATE). A **hold** -- watch-only,
 a pause, an hourly ceiling, anything refused before it dispatched other
@@ -22,7 +23,7 @@ pass, so the row is tried again on a later tick. A **refusal** (a dry run
 that said no) is an answer: the claim stays, the card carries the reason,
 and the same row is not retried every five minutes. A **success** posts a
 Slack receipt through `kernel.comms.notify`. A queued row more than a day
-old is no longer picked up (Miro has the alert and can answer it himself).
+old is no longer picked up (the owner has the alert and can answer it himself).
 
 The passes, in the order `tick()` runs them:
 
@@ -33,36 +34,35 @@ The passes, in the order `tick()` runs them:
     again at send time, CAN-SPAM, suppression, texting consent, and the
     `AGENCY_REPLY_AUTOSEND` hold). Receipt: "Replied to <lead> by email".
   * **Bookings** (`bookings`). A lead who answered an offered time gets
-    `agency.hold_meeting` (a hold on Miro's own calendar, re-checked free by
-    its dry run) and then `agency.send_invite` (Google emails the
-    invitation, past `meetings._invite_guard`). A hold after the calendar
-    hold releases the claim; the next tick finds the hold already there
-    (`_store.meeting_at`) and only sends the invite.
+    `agency.hold_meeting` (a hold on the owner's own calendar, re-checked free by
+    its dry run) and then the `agency.send_invite` card (Google emails the
+    invitation once the owner approves, past `meetings._invite_guard`).
   * **Agreements** (`agreements`). A lead who accepted an allowed price gets
-    `agency.send_agreement` by email: the agreement text written by code
-    and Miro's own Stripe payment link for exactly that price (money IN).
+    the `agency.send_agreement` card: the agreement text written by code
+    and the owner's own Stripe payment link for exactly that price (money IN).
   * **After a deploy** (`after_deploys`). A site `agency.deploy_site`
     published in the last day is claimed once (`agency_sites.
     followed_up_at`), and its lead gets, through the executor:
     `agency.find_email` (reads their own site); then, with a published
-    address, `agency.draft_outreach(email)` and `agency.send_outreach` --
-    the email carries the live preview, the "Have us call you" link and
+    address, `agency.draft_outreach(email)` and the `agency.send_outreach`
+    card -- the email carries the live preview, the "Have us call you" link and
     Mapfront's line; with none, `agency.call_brief` and the brief posted to
     Slack. A lead that already has outreach is left alone (a redeploy is
     not a new pitch).
   * **Asked to be called** (`calls_due`). A live call consent from the
     "Have Mapfront call me" form (`web_form`), from ringing the business
-    line (`call`), or recorded by Miro after the lead said yes on HIS call
+    line (`call`), or recorded by the owner after the lead said yes on HIS call
     (`principal`, `agency.record_consent`) gets `agency.call_lead` placed
     through the executor -- only while `consent.contact_guard` passes: the
     consent is the gate, and nothing cold-calls. Outside calling hours the
     consent is left unclaimed until the first tick inside them; blocked for
     any other reason, it is marked with why and nobody is called. The call
     opens with who is calling, the preview, and the offer to put them
-    through to Miro. Receipt: "Calling <lead> at <phone> (they asked on
+    through to the owner. Receipt: "Calling <lead> at <phone> (they asked on
     <how>)".
   * **The one timed follow-up** (`followups`): a first outreach email still
-    unanswered after `AGENCY_FOLLOWUP_DAYS` gets its single follow-up.
+    unanswered after `AGENCY_FOLLOWUP_DAYS` gets its single follow-up, as a
+    card.
 """
 from __future__ import annotations
 
@@ -105,13 +105,13 @@ async def tick() -> int:
 
 def _held(result: Any) -> bool:
     """Watch-only, a pause, an hourly ceiling: not this lead's fault; try
-    again on a later tick. A validation refusal (a dry run that said no) is
-    an answer, not a hold."""
+    again on a later tick. A validation refusal (a dry run that said no) or
+    a QA refusal (kernel/qa_gate.py) is an answer, not a hold."""
     from .contracts import FailureClass
     from .executor import HOLD
     return bool((result.evidence or {}).get(HOLD)) or (
         result.dispatched is False
-        and result.failure_class is not FailureClass.VALIDATION)
+        and result.failure_class not in (FailureClass.VALIDATION, FailureClass.QUALITY))
 
 
 def _hold_reason(detail: str) -> str:
@@ -143,9 +143,48 @@ async def _card(action: str, params: dict[str, Any], detail: str, reason: str,
         return False
 
 
+async def _send_card(action: str, params: dict[str, Any], reason: str,
+                     evidence: dict[str, Any], dedup_key: str) -> bool:
+    """One Tier 2 card for a send to a client; the send never runs here.
+
+    The dry run is read first (`executor.preview` cannot reach `run`): what
+    it would send goes on the card, and a guard that refused puts "Held for
+    you: <reason>" first. The autosend holds (`HELD`) are what the card
+    itself answers, so they are not a refusal. True when a card exists."""
+    from ..modules.agency.outreach import HELD
+    from .approvals import Unrunnable, propose
+    from .executor import preview
+    try:
+        dry = await preview(action, params)
+        detail = str(dry.detail)
+        for prefix in ("dry run refused: ", "refused: "):
+            detail = detail.removeprefix(prefix)
+        held = (None if dry.ok or detail.lower().startswith(HELD)
+                else _hold_reason(detail))
+        would = (dry.evidence or {}) if dry.ok else {}
+    except Exception as exc:                            # noqa: BLE001
+        held, would = f"the dry run could not run ({type(exc).__name__})", {}
+    text = (f"Held for you: {held}. Approving runs every check again and sends "
+            f"it only if it passes then.\n{reason}" if held else
+            f"{reason}\nApproving sends it, after every check runs again.")
+    try:
+        await propose(action, params, text,
+                      evidence={**evidence, "held": held,
+                                "dry_run": {k: would[k] for k in
+                                            ("to", "subject", "text", "body", "price")
+                                            if k in would}},
+                      dedup_key=dedup_key, automatic=True)
+        return True
+    except (Unrunnable, ValueError) as exc:
+        log.info("%s card not raised: %s", action, exc)
+        return False
+
+
 async def _receipt(title: str, body: str) -> None:
     from .comms import Outbound, notify
     await notify(Outbound(title=title, body=body, topic="agency", kind="receipt"))
+    from ..modules.agency import owner_wa
+    await owner_wa.notify_owner("portal_digest", title)   # low value: folded into a digest
 
 
 async def _lead_name(lead_id: int) -> str:
@@ -241,36 +280,38 @@ async def bookings() -> int:
             continue
         else:
             meeting_id = meeting["id"]
-        invited = await execute(ExecutionRequest(
+        raised += await _send_card(
             "agency.send_invite", {"meeting_id": int(meeting_id)},
-            reason=f"invite {name} to the call they picked: {when}"))
-        if _held(invited):
-            # The hold is on the calendar already; the next tick finds it and
-            # sends only the invite.
-            await _store.release_booking(message_id)
-            log.info("bookings held at the invite: %s", invited.detail)
-            break
-        if invited.ok:
-            to = (invited.evidence or {}).get("to")
-            await _receipt(
-                f"Booked {name}: {when}",
-                f"Held on your calendar and the invite sent to {to}. They picked it "
-                "by email. A reminder comes an hour before.")
-            continue
-        raised += await _card(
-            "agency.send_invite", {"meeting_id": int(meeting_id)}, invited.detail,
-            f"invite {name} to the call they picked: {when}",
+            f"invite {name} to the call they picked by email: {when} (held on "
+            "your calendar)",
             {"start": slot.isoformat()}, f"agency.send_invite:{meeting_id}")
     return raised
 
 
 # ------------------------------------------------------------- agreements
 
-async def agreements() -> int:
-    """Send the agreement to each lead whose words accepted an allowed
-    price, once. Returns cards raised."""
-    from ..modules.agency import _store
+async def _proposal_for(lead_id: int, name: str) -> dict | None:
+    """The written proposal at the lead's own price, drafted through the
+    executor (sales.draft_proposal, Tier 1) for the agreement card. A hold or
+    a failure leaves the card without one; it never blocks the card."""
     from .executor import ExecutionRequest, execute
+    try:
+        got = await execute(ExecutionRequest(
+            "sales.draft_proposal", {"lead_id": lead_id},
+            reason=f"the proposal for {name}'s agreement card"))
+    except Exception:
+        log.warning("proposal for lead %s failed", lead_id, exc_info=True)
+        return None
+    if _held(got) or not got.ok:
+        return None
+    ev = got.evidence or {}
+    return {k: ev.get(k) for k in ("proposal_id", "price", "html_path", "pdf_path")}
+
+
+async def agreements() -> int:
+    """One agreement card for each lead whose words accepted an allowed
+    price. Returns cards raised."""
+    from ..modules.agency import _store
     raised = 0
     for row in await _store.agreements_awaiting(BATCH):
         message_id, lead_id = int(row["id"]), int(row["lead_id"])
@@ -280,21 +321,13 @@ async def agreements() -> int:
         name = await _lead_name(lead_id)
         params = {"lead_id": lead_id, "price": price, "channel": "email"}
         reason = f"{name} accepted ${price} by email (message {message_id})"
-        sent = await execute(ExecutionRequest("agency.send_agreement", params,
-                                              reason=reason))
-        if _held(sent):
-            await _store.release_agreement(message_id)
-            log.info("agreements held: %s", sent.detail)
-            break
-        if sent.ok:
-            await _receipt(
-                f"Sent {name} the agreement (${price})",
-                f"{sent.detail}: your payment link for ${price}. A payment posts to "
-                "Slack from Stripe; nothing else goes to them unless they write back.")
-            continue
-        raised += await _card(
-            "agency.send_agreement", params, sent.detail, reason,
-            {"price": price, "to": (sent.evidence or {}).get("to")},
+        evidence: dict = {"price": price}
+        attached = await _proposal_for(lead_id, name)
+        if attached:
+            evidence["proposal"] = attached
+            reason += f"; proposal #{attached.get('proposal_id')} attached"
+        raised += await _send_card(
+            "agency.send_agreement", params, reason, evidence,
             f"agency.send_agreement:{message_id}")
     return raised
 
@@ -312,7 +345,7 @@ def followup_after() -> timedelta:
 
 
 async def followups() -> int:
-    """Miro, 2026-10-05 (from a reel: an email agent that "schedules smart
+    """the owner, 2026-10-05 (from a reel: an email agent that "schedules smart
     follow-ups, tracks replies, and automatically stops the sequence once
     someone responds"). The tracking and the stop already exist: a reply
     swept from Gmail marks the message `replied` (modules/agency/leads.
@@ -320,13 +353,11 @@ async def followups() -> int:
     This is the scheduling: a first email that is still `sent` after
     `followup_after()` gets its one follow-up, through the executor like
     everything else -- `agency.draft_outreach` chains it onto the first
-    message (`followup_of`), `agency.send_outreach` runs every guard
-    (suppression, CAN-SPAM, one follow-up per lead) and the autosend hold.
-    A hold releases the claim for a later tick; a refusal is an answer and
-    the claim stays, so the same message is not retried every five minutes.
+    message (`followup_of`), and the `agency.send_outreach` card carries it
+    (approving runs every guard: suppression, CAN-SPAM, one follow-up per
+    lead). A hold on the draft releases the claim for a later tick.
     Returns cards raised."""
     from ..modules.agency import _store
-    from .approvals import Unrunnable, propose
     from .executor import ExecutionRequest, execute
     after = followup_after()
     if after <= timedelta(0):
@@ -354,38 +385,77 @@ async def followups() -> int:
                 log.info("no follow-up drafted for lead %s: %s", lead_id, draft.detail)
                 continue
             new_id = int(evidence["outreach_id"])
-            sent = await execute(ExecutionRequest(
-                "agency.send_outreach", {"outreach_id": new_id},
-                reason=f"follow-up to {name} ({evidence.get('to')}): {why}"))
-            if _held(sent):
-                for rest in due[index:]:
-                    await _store.release_followup(int(rest["id"]))
-                break
-            if sent.ok:
-                from .comms import Outbound, notify
-                await notify(Outbound(
-                    title=f"Followed up with {name}",
-                    body=(f"{sent.detail}; their first email went unanswered for "
-                          f"{after.days} days. This was the one follow-up: nothing "
-                          "more goes to them unless they write back."),
-                    topic="agency", kind="receipt"))
-                continue
-            hold = _hold_reason(sent.detail)
-            try:
-                await propose(
-                    "agency.send_outreach", {"outreach_id": new_id},
-                    f"Held for you: {hold}. Approving runs every check again and "
-                    f"sends it if it passes now.\nFollow-up to {name}: {why}",
-                    evidence={"to": evidence.get("to"), "text": evidence.get("text"),
-                              "held": hold, "followup_of": outreach_id},
-                    dedup_key=f"agency.send_outreach:{new_id}", automatic=True)
-                raised += 1
-            except (Unrunnable, ValueError) as exc:
-                log.info("follow-up card for lead %s not raised: %s", lead_id, exc)
+            raised += await raise_preview_card(
+                outreach_id=new_id, name=str(name), why=why, draft=evidence,
+                extra={"followup_of": outreach_id})
         except Exception:
             log.warning("follow-up for outreach %s failed", outreach_id, exc_info=True)
             await _store.release_followup(outreach_id)
     return raised
+
+
+# ------------------------------------------- the Websites lane's preview card
+
+async def raise_preview_card(*, outreach_id: int, name: str, why: str,
+                             draft: dict[str, Any], found_on: Any = None,
+                             extra: dict[str, Any] | None = None) -> bool:
+    """The Websites lane's one card for one drafted email, in the words of
+    `modules/agency/preview_card.py` (dedup on the outreach id)."""
+    from ..modules.agency.preview_card import ACTION, card_text
+    reason = card_text(name=name, to=str(draft.get("to") or ""),
+                       subject=draft.get("subject"), body=str(draft.get("text") or ""),
+                       preview_url=draft.get("preview_url"), why=why,
+                       followup=bool((extra or {}).get("followup_of")))
+    evidence = {"to": draft.get("to"), "subject": draft.get("subject"),
+                "text": draft.get("text"), "preview_url": draft.get("preview_url"),
+                "owner": name, "client": name, "found_on": found_on, **(extra or {})}
+    return await _send_card(ACTION, {"outreach_id": int(outreach_id)}, reason, evidence,
+                            f"{ACTION}:{outreach_id}")
+
+
+async def pitch_preview(lead: dict[str, Any], why: str, *, find: bool) -> str:
+    """Find the owner's published address, draft the email, have QA check
+    it, raise the one card. Every step through the executor; a hold
+    (watch-only, a pause) returns HELD and leaves the lead for a later tick.
+    `find`: look on the lead's own site first (`agency.find_email`)."""
+    from ..modules.agency import contacts
+    from ..modules.agency import preview_card as pc
+    from .executor import ExecutionRequest, execute
+    lead_id = int(lead["id"])
+    name = str(lead.get("name") or f"lead {lead_id}")
+    found = None
+    if find:
+        found = await execute(ExecutionRequest(
+            "agency.find_email", {"lead_id": lead_id}, reason=f"{name}'s published email"))
+        if _held(found):
+            return pc.HELD
+    email = (found.evidence or {}).get("email") if found and found.ok else None
+    if not email:
+        email = ((await contacts.published_email(lead_id)) or {}).get("address")
+    if not email:
+        return pc.NO_EMAIL
+    draft = await execute(ExecutionRequest(
+        "agency.draft_outreach", {"lead_id": lead_id, "kind": "email"}, reason=why))
+    if _held(draft):
+        return pc.HELD
+    ev = draft.evidence or {}
+    if not draft.ok or ev.get("outreach_id") is None or not ev.get("to"):
+        detail = str(draft.detail).lower()
+        log.info("no outreach drafted for lead %s: %s", lead_id, draft.detail)
+        demo = "deploy" in detail or "preview" in detail
+        return pc.NEEDS_DEMO if demo else pc.NOT_RAISED
+    oid = int(ev["outreach_id"])
+    qa = await execute(ExecutionRequest(
+        "qa.check_draft", {"kind": "email", "ref": f"agency_outreach:{oid}"},
+        reason=f"QA the email to {name}"))
+    if _held(qa):
+        return pc.HELD
+    if not qa.ok or not (qa.evidence or {}).get("passed"):
+        return pc.QA_FAILED                 # QA raised the remediation itself
+    ok = await raise_preview_card(
+        outreach_id=oid, name=name, why=why, draft=ev,
+        found_on=(found.evidence or {}).get("found") if found else None)
+    return pc.CARD if ok else pc.NOT_RAISED
 
 
 # ------------------------------------------------------------ after a deploy
@@ -414,14 +484,13 @@ async def after_deploys() -> int:
 
 
 async def follow_site(site: dict[str, Any]) -> str:
-    """sent | card | brief | skipped | held. Every step through the executor.
+    """card | brief | skipped | held. Every step through the executor.
 
-    The outreach email is Tier 1 (Miro, 2026-10-01) and sends here, past
-    `outreach.auto_hold`; a hold or a refusal becomes the Tier 2 card with
-    "Held for you: <reason>" first, and approving it runs every check again
-    (the holds pass under a card, the guards do not)."""
-    from ..modules.agency import _store, contacts
-    from .approvals import Unrunnable, propose
+    The outreach email is the Websites lane's Tier 2 card (`pitch_preview`,
+    2026-10-28): drafted and QA'd here, one card raised, never sent from
+    this pass; approving it runs every check again. Returns "card" whenever
+    the card exists, else falls back to the call brief, which says why."""
+    from ..modules.agency import _store, preview_card
     from .executor import ExecutionRequest, execute
     lead_id, slug = int(site["lead_id"]), str(site["slug"])
     if await _store.has_outreach(lead_id):
@@ -430,64 +499,25 @@ async def follow_site(site: dict[str, Any]) -> str:
     lead = await _store.get_lead(lead_id) or {}
     name = lead.get("name") or f"lead {lead_id}"
     why = f"{name}'s site ({slug}) was just published"
-    found = None
-    if lead.get("website"):
-        found = await execute(ExecutionRequest(
-            "agency.find_email", {"lead_id": lead_id}, reason=why))
-        if _held(found):
-            return "held"
-    email = (found.evidence or {}).get("email") if found and found.ok else None
-    if not email:
-        email = ((await contacts.published_email(lead_id)) or {}).get("address")
-    if email:
-        draft = await execute(ExecutionRequest(
-            "agency.draft_outreach", {"lead_id": lead_id, "kind": "email"}, reason=why))
-        if _held(draft):
-            return "held"
-        evidence = draft.evidence or {}
-        outreach_id = evidence.get("outreach_id") if draft.ok else None
-        if outreach_id is not None and evidence.get("to"):
-            reason = (f"email {name} ({evidence.get('to')}) about the site just "
-                      f"published at {evidence.get('preview_url') or slug}")
-            sent = await execute(ExecutionRequest(
-                "agency.send_outreach", {"outreach_id": int(outreach_id)},
-                reason=reason))
-            if _held(sent):
-                return "held"
-            if sent.ok:
-                from .comms import Outbound, notify
-                await notify(Outbound(
-                    title=f"Emailed {name}",
-                    body=(f"{sent.detail}: {evidence.get('preview_url') or slug}, "
-                          f"to {evidence.get('to')} (found on their own site). "
-                          "Sent without a card (your rule); a reply comes to Slack."),
-                    topic="agency", kind="receipt"))
-                return "sent"
-            hold = _hold_reason(sent.detail)
-            try:
-                await propose(
-                    "agency.send_outreach", {"outreach_id": int(outreach_id)},
-                    f"Held for you: {hold}. Approving runs every check again and "
-                    f"sends it if it passes now.\n{reason}",
-                    evidence={"to": evidence.get("to"), "text": evidence.get("text"),
-                              "held": hold,
-                              "found_on": ((found.evidence or {}).get("found")
-                                           if found else None)},
-                    dedup_key=f"agency.send_outreach:{outreach_id}", automatic=True)
-                return "card"
-            except (Unrunnable, ValueError) as exc:
-                log.info("outreach card for lead %s not raised: %s", lead_id, exc)
-        else:
-            log.info("no outreach drafted for lead %s: %s", lead_id, draft.detail)
+    # The Websites lane's one card (modules/agency/preview_card.py, 2026-10-28).
+    got = await pitch_preview({**lead, "id": lead_id, "name": name}, why,
+                              find=bool(lead.get("website")))
+    if got in (preview_card.CARD, preview_card.HELD):
+        return got
+    without = {preview_card.NO_EMAIL: "no published email",
+               preview_card.QA_FAILED: "the email failed QA",
+               preview_card.NEEDS_DEMO: "no live preview for the email"}.get(
+                   got, "the email card was not raised")
+    if got != preview_card.NO_EMAIL:
+        log.info("site %s: no card for lead %s (%s)", slug, lead_id, got)
     brief = await execute(ExecutionRequest(
-        "agency.call_brief", {"lead_id": lead_id},
-        reason=f"{why}; no published email to write to"))
+        "agency.call_brief", {"lead_id": lead_id}, reason=f"{why}; {without}"))
     if _held(brief):
         return "held"
     if brief.ok:
         from .comms import Outbound, notify
         await notify(Outbound(
-            title=f"Call brief: {name} (site live, no published email)",
+            title=f"Call brief: {name} (site live, {without})",
             body=str((brief.evidence or {}).get("text") or brief.detail),
             topic="agency", kind="alert"))
     return "brief"
@@ -495,7 +525,7 @@ async def follow_site(site: dict[str, Any]) -> str:
 
 # ---------------------------------------------------------- asked to be called
 
-# A consent from the form, from ringing the line, or recorded by Miro after
+# A consent from the form, from ringing the line, or recorded by the owner after
 # the lead said yes on HIS call (`agency.record_consent`, 2026-10-01).
 CALL_SOURCES = ("web_form", "call", "principal")
 CALL_WITHIN = timedelta(days=3)
@@ -578,7 +608,7 @@ async def call_due(consent_id: int, *, now: datetime | None = None) -> str:
         await _store.note_call_card(int(consent_id), f"no card: {hold}")
         return f"no call ({hold}) and no card could be raised"
     await _store.note_call_card(int(consent_id), f"held for you: {hold}")
-    return f"held for you ({hold}): the call card is waiting for Miro (Tier 2)"
+    return f"held for you ({hold}): the call card is waiting for the owner (Tier 2)"
 
 
 async def calls_due() -> int:

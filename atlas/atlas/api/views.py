@@ -38,7 +38,7 @@ def page(request: Request, template: str, context: dict | None = None,
 
     `generated_at` is added here rather than at each call site: the masthead
     shows it on every page, and a handler that forgets it produces a 500 in
-    front of Miro on his phone.
+    front of the owner on his phone.
     """
     return TEMPLATES.TemplateResponse(
         request, template,

@@ -32,7 +32,7 @@ SECRET_PATTERNS = (
     r"xox[baprs]-",                       # slack tokens
     r"sk-[A-Za-z0-9]{12,}",               # provider keys
     r"\bcalvin\b",                        # the idrac factory password
-    r"VPSie@\w+",                         # node/service passwords
+    r"CloudCo@\w+",                         # node/service passwords
     r"\b\d{1,3}(\.\d{1,3}){3}\b",         # bare IPv4
     r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",   # emails / matrix ids
     r"password\s*[:=]\s*\S+",
@@ -55,7 +55,7 @@ def _pack_skills():
 def test_packs_registered() -> None:
     # Every pack in atlas/skills/ registered something, and the loader saw it.
     assert len(_pack_skills()) >= 13
-    assert "Reading the VPSie account" in {s.name for s in _pack_skills()}
+    assert "Reading the CloudCo account" in {s.name for s in _pack_skills()}
 
 
 @pytest.mark.parametrize("pattern", SECRET_PATTERNS)
@@ -102,22 +102,22 @@ def test_agents_exist_or_skill_never_fires() -> None:
 
 def test_accuracy_skills_still_win_their_ground() -> None:
     """The kernel's correctness skills must survive the three-slot window."""
-    top = [s.name for s in skills_for("how much revenue today", "analyst")]
+    top = [s.name for s in skills_for("how much revenue today", "research")]
     assert top[0] == "Never guess a number"
 
-    triage = [s.name for s in skills_for("the api is down with 5xx", "ops")]
+    triage = [s.name for s in skills_for("the api is down with 5xx", "qa")]
     assert "Incident triage" in triage
 
 
 def test_domain_skills_fire_on_their_own_ground() -> None:
     expected = {
-        ("corosync ring1 is dead and quorum dropped", "ops"):
+        ("corosync ring1 is dead and quorum dropped", "qa"):
             "Proxmox cluster state",
-        ("power event, every service is crashlooping", "ops"):
+        ("power event, every service is crashlooping", "qa"):
             "Pod power event",
-        ("the lld and installation guide disagree", "ops"):
+        ("the lld and installation guide disagree", "qa"):
             "Deployment documents",
-        ("cannot reach the pod, the tunnel is down", "sentinel"):
+        ("cannot reach the pod, the tunnel is down", "qa"):
             "Unreachable is not faulty",
     }
     for (task, agent), name in expected.items():
@@ -137,7 +137,7 @@ def test_bodies_do_not_instruct_actions() -> None:
 
 # --------------------------------------------- library seeding (Task 60)
 #
-# Miro: "there should also be some stuff on there [the knowledge base] based
+# the owner: "there should also be some stuff on there [the knowledge base] based
 # on his previous skills from agents that he has as well." `_playbook_title_
 # and_text` parses a pack's source statically (ast, no import -- it never
 # depends on `load_all()` having already run and never risks a module's

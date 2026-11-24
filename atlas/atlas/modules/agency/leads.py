@@ -1,19 +1,18 @@
-"""agency.leads -- a lead wrote back: take it in, read it, tell Miro.
+"""agency.leads -- a lead wrote back: take it in, read it, tell the owner.
 
 Before this, nothing recorded a reply at all: `agency_outreach.status` had a
 'replied' value and no writer, and `AGENCY_IMAP_*` only read the Sent folder
 for `send_outreach`'s read-back. The three doors a lead can reply through:
 
   * **Email** -- `sweep_inbox()` reads replies to the outreach address
-    (miro@mapfront.io, and hello@ for anything sent before, forwarded
-    into Miro's Gmail, the mail account "myron")
+    (owner@example.com, read as AGENCY_REPLY_ACCOUNT)
     through the mail module's Gmail client, read-only, and keeps only a
     message that answers our outreach: its In-Reply-To / References carry
     a Message-ID `send_outreach` stamped, or it comes from the address an
     outreach went to. Consent from an email needs Gmail's DKIM/DMARC pass.
     Run from `agency.signals()`.
   * **Text** -- the business line's `/webhooks/twilio/sms` hands a text from
-    anyone but Miro to `intake_sms()` before the reception gate, so a lead's
+    anyone but the owner to `intake_sms()` before the reception gate, so a lead's
     reply (and a STOP) is taken in whether or not the voice line is on.
   * **Call** -- a call a lead made to the business line is filed by
     `reception.finish`, which hands it to `intake_call()`.
@@ -32,12 +31,12 @@ Each message, once, keyed by its provider id:
   4. its intent is classified by the cheap model into the closed set
      `INTENTS` -- anything else it says is `other`; an unreachable model
      leaves it unclassified and the alert says so, never a guess;
-  5. an emergency (`escalate.emergency_kind`) rings Miro; everything else is
+  5. an emergency (`escalate.emergency_kind`) rings the owner; everything else is
      a Slack alert in the agency channel: business, what we built, their
      words quoted, intent, consent, and a suggested next step;
   6. for an EMAIL reading as interested, a question or about price, what
      their words ask for is read IN CODE, never by a model (`_requests`,
-     2026-10-06; Miro: "approve invoices too and schedule meetings with them
+     2026-10-06; the owner: "approve invoices too and schedule meetings with them
      via email"), and only against what our last SENT reply put to them: if
      it offered calendar slots and their words pick exactly one with no
      "can't"/"doesn't work" (`meetings.match_slot`: "Tuesday at 2", "the
@@ -91,13 +90,13 @@ CLASSIFY_SYSTEM = (
 
 NEXT_STEP = {
     "interested": "Answer with one clear next step: two or three real times for a "
-                  "short call with Miro, or the site link. A reply is drafted and "
+                  "short call with the owner, or the site link. A reply is drafted and "
                   "sent (your rule); a refusal becomes a card.",
     "question": "Answer from their audit and the site we built. A reply is drafted "
                 "and sent (your rule); a refusal becomes a card.",
-    "price": "Anchor at the list price with the value from their own audit; "
-             "concessions only from the ladder. A reply is drafted and sent (your "
-             "rule); a refusal becomes a card.",
+    "price": "$500 for a new client, $300 for a returning client, a free demo "
+             "first; the value from their own audit. A reply is drafted and sent "
+             "(your rule); a refusal becomes a card.",
     "not_now": "Acknowledge and ask when to check back. Nothing more until then.",
     "no": "Thank them and close the lead. No further outreach.",
     "unsubscribe": "Done: consent revoked, number and address suppressed. Nothing "
@@ -164,7 +163,7 @@ async def _consent_line(lead_id: int) -> str:
             parts.append(f"{'texts' if scope == 'sms' else 'calls'} on {row['phone']}")
     if not parts:
         return ("none: ATLAS will not text or call them (agency.call_brief gives "
-                "Miro a brief to dial himself)")
+                "the owner a brief to dial himself)")
     return "yes, " + " and ".join(parts)
 
 
@@ -203,6 +202,10 @@ async def _alert(lead: dict[str, Any], message_id: int, channel: str, sender: st
         body=text,
         severity=Severity.HIGH if intent in DRAFT_INTENTS else Severity.NORMAL,
         topic="agency", kind="alert"))
+    from . import owner_wa
+    await owner_wa.notify_owner(
+        "portal" if intent in DRAFT_INTENTS else "portal_digest",
+        f"Lead replied: {lead.get('name')} ({intent or 'unclassified'}). Card is in Slack.")
     await _store.mark_message_alerted(message_id)
 
 
@@ -251,10 +254,11 @@ async def take_in(lead: dict[str, Any] | None, channel: str, source_id: str,
 
     kind = escalate.emergency_kind(body)
     if kind is None:
-        terms = await pricing.terms()
-        floor = terms.floor_now(objection=True)
+        # The lowest price there is: a returning client's. An offer below
+        # it is never a deal the code can make.
+        lowest = pricing.floor_price()
         offered = pricing.counter_offer(body)
-        if floor is not None and any(p < floor for p in offered):
+        if lowest is not None and any(p < lowest for p in offered):
             kind = "a price below the floor"
     if kind is not None:
         slack = await alert_body(lead, channel, sender, body, intent)
@@ -270,7 +274,8 @@ async def take_in(lead: dict[str, Any] | None, channel: str, source_id: str,
         # By email only (2026-10-06: "schedule meetings with them via email";
         # "agreement by email"): a call transcript or a text is never read
         # as a pick or a yes here.
-        asked = await _requests(lead_id, message_id, body, intent, terms)
+        asked = await _requests(lead_id, message_id, body, intent,
+                                 await pricing.terms(lead_id))
         done.update(asked)
     if alert:
         await _alert(lead, message_id, channel, sender, body, intent,
@@ -279,9 +284,9 @@ async def take_in(lead: dict[str, Any] | None, channel: str, source_id: str,
     # something ("Tuesday at 2 works. Is hosting included?"): then the
     # drafted reply answers the question too.
     if draft and intent in DRAFT_INTENTS and (not asked or "?" in body):
-        # Texting leads is off unless AGENCY_SMS_ENABLED (Miro, 2026-09-30):
+        # Texting leads is off unless AGENCY_SMS_ENABLED (the owner, 2026-09-30):
         # a text or a call is answered by email when there is an address,
-        # and left to Miro when there is not.
+        # and left to the owner when there is not.
         # `answered`: the business line's AI already texted them back in the
         # webhook (`api.reception.text_reply`), so no second text is drafted.
         texts = consent.sms_enabled() and not answered and bool(
@@ -327,10 +332,9 @@ async def _requests(lead_id: int, message_id: int, body: str, intent: str | None
             await _store.queue_booking(message_id, slot)
             out["booking"] = slot.isoformat()
     if intent in AGREE_INTENTS and await _store.lead_email(lead_id):
-        objection = pricing.objected(*(await _store.lead_message_bodies(lead_id)))
         quoted = [int(p) for p in _store.parse_json(last.get("quoted_prices"), []) or []
                   if str(p).isdigit()]
-        price = pricing.accepted_price(body, terms, objection=objection, quoted=quoted)
+        price = pricing.accepted_price(body, terms, quoted=quoted)
         if price is not None:
             await _store.queue_agreement(message_id, price)
             out["agreement"] = price
@@ -353,7 +357,7 @@ def _asked_step(asked: dict[str, Any]) -> str:
 
 async def intake_sms(frm: str, body: str, *, sid: str,
                      opt_out_type: str = "", answered: bool = False) -> bool:
-    """A text to the business line from anyone but Miro. True when it was a
+    """A text to the business line from anyone but the owner. True when it was a
     lead's (or an opt-out, which is honoured from anyone); False hands it to
     the reception relay as before. Never raises."""
     try:
@@ -381,7 +385,7 @@ async def intake_call(sid: str, frm: str, lead: dict[str, Any] | None,
                       caller_words: list[str]) -> dict[str, Any]:
     """A call a lead made to the business line, after `reception` filed it
     and posted the transcript. Records consent to be called back, honours a
-    "don't call me", and rings Miro only for an emergency. No second Slack
+    "don't call me", and rings the owner only for an emergency. No second Slack
     post: reception's is the alert."""
     try:
         phone = consent.normalize(frm) or frm
@@ -402,27 +406,24 @@ async def intake_call(sid: str, frm: str, lead: dict[str, Any] | None,
 
 # ------------------------------------------------------------- email
 
-# Miro, 2026-09-30: outreach goes out from miro@mapfront.io through
-# Resend; replies to it are forwarded (Porkbun) into his Gmail, which ATLAS
-# already reads as the mail account "myron". So the replies are read there,
-# through the mail module's own Gmail client -- no separate mailbox login.
+# the owner, 2026-10-30: outreach goes out from owner@example.com through
+# Gmail SMTP (ATLAS Agency). Replies land in that mailbox.
+# The reader uses AGENCY_REPLY_ACCOUNT, which must be able to read it.
 
 def reply_addresses() -> list[str]:
-    """The addresses leads reply to: AGENCY_REPLY_ADDRESS, else the From the
-    outreach is sent as (miro@mapfront.io by default) -- plus hello@, the
-    address the first messages went out from, so those replies still land."""
-    from .outreach import LEGACY_ADDRESSES, _send_from_address
+    """The addresses leads reply to: AGENCY_REPLY_ADDRESS, else the agency
+    sender (owner@example.com)."""
+    from .outreach import agency_sender
     first = (os.getenv("AGENCY_REPLY_ADDRESS", "").strip()
-             or _send_from_address()).lower()
-    out = [a for a in (first, *LEGACY_ADDRESSES) if a]
-    return list(dict.fromkeys(out))
+             or agency_sender()).lower()
+    return [first] if first else []
 
 
 def reply_account():
     """The mail account the replies are forwarded into (AGENCY_REPLY_ACCOUNT,
-    default "myron"), when it is a configured Gmail account; else None."""
+    default "owner"), when it is a configured Gmail account; else None."""
     from ..mail.accounts import all_accounts
-    name = os.getenv("AGENCY_REPLY_ACCOUNT", "myron").strip().lower()
+    name = os.getenv("AGENCY_REPLY_ACCOUNT", "owner").strip().lower()
     for account in all_accounts():
         if account.name == name and account.kind == "google" and account.configured:
             return account
@@ -442,7 +443,7 @@ def their_words(text: str) -> str:
 
 def authenticated(auth_results: str) -> bool:
     """Gmail's own verdict on the sender (Authentication-Results): DKIM or
-    DMARC passed. A forged From can still be taken in and shown to Miro,
+    DMARC passed. A forged From can still be taken in and shown to the owner,
     but it never grants consent to ring or text a number -- a spoofed
     "call me at <someone else's mobile>" must not make ATLAS dial it."""
     low = (auth_results or "").lower()
@@ -450,7 +451,7 @@ def authenticated(auth_results: str) -> bool:
 
 
 # Gmail ids already looked at that answer nothing of ours (spam, a vendor
-# writing to miro@). Process memory: a restart looks at them once more.
+# writing to owner@). Process memory: a restart looks at them once more.
 _NOT_OURS: set[str] = set()
 
 
@@ -514,7 +515,6 @@ async def board_text() -> str:
             return f"*{label}:* none"
         return f"*{label}:* " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items()))
 
-    deals = ("unreadable" if terms.deals is None else str(terms.deals))
     return "\n".join((
         row("Leads by stage", board["leads"]),
         f"*Sites built:* {board['sites']}",
@@ -523,9 +523,8 @@ async def board_text() -> str:
         f"*Leads with live consent to text/call:* {board['consented_leads']}",
         row("Texts/calls ATLAS made, last 24h", board["contacts_24h"]),
         row("Deals", board["deals"]),
-        (f"*Pricing now:* list ${terms.list_price}, floor ${terms.floor}; "
-         f"first-sale ${terms.first_sale} is "
-         f"{'open' if terms.first_sale_open else 'closed'} (won/paid deals: {deals})"),
+        (f"*Pricing now:* ${terms.list_price} for a new client, ${terms.floor} for "
+         f"a returning client, {pricing.DEMO}"),
         f"_read {read_at}_"))
 
 

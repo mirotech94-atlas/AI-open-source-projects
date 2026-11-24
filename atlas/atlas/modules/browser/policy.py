@@ -11,7 +11,7 @@ Matching is on the host, like the extension:
   * an entry with a dot (`chase.com`) matches that host and every subdomain;
   * a bare category word (`bank`, `health`) matches when any host label
     contains it — the extension's rule, false positives included
-    (`stmaryshealth.org` is denied);
+    (`example-health.org` is denied);
   * the auth/payment words (`login`, `signin`, `checkout`, `cart`) match a
     whole host label only (`login.example.com`), so Carter Plumbing is not a
     shopping cart;
@@ -24,7 +24,7 @@ password field, refuses a form that holds one, and refuses a URL that carries
 a credential in its query (a magic link, a reset token, an OAuth code), since
 opening one IS signing in.
 
-Fixed rules, not Miro's to edit: Google's own results page (it blocks
+Fixed rules, not the owner's to edit: Google's own results page (it blocks
 headless browsers, so search goes through Brave or DuckDuckGo), and anything
 that is not the public web — non-http(s) schemes, localhost, and literal
 private, loopback, link-local or mesh addresses. Names are resolved and

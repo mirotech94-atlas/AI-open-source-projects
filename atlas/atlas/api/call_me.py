@@ -10,8 +10,9 @@ guard (`main.PUBLIC_PATTERNS`). In order, each refusal saying nothing about
 the next:
 
     404  not a label, or no deployed site (with a lead) by that label
-    403  an Origin other than https://<slug>.mapfront.io (or the site's own
-         domain); a POST needs one
+    403  an Origin other than https://agency.example.com (or the site's own
+         domain), or `null` for a site that is not deployed (see below); a POST
+         needs one
     429  this address past 3 in ten minutes, or this site past 20 today
     413  a body over 4 KB
     415  not application/json
@@ -29,6 +30,15 @@ the consent guard passes -- inside calling hours, the number not
 suppressed, the lead verified; a refusal is the Tier 2 card) and a Slack
 alert. Nothing here reaches the executor itself; the kernel does.
 
+`Origin: null` (weakened check, the owner 2026-11-14): previews are served at
+`agency.example.com/preview/<slug>/` under a CSP `sandbox` WITHOUT
+`allow-same-origin`, so the browser sends `Origin: null` from them. It is
+accepted only for a slug in the URL path that is a deployed site with a lead
+(`_site`); any sandboxed page can send it, so it no longer proves which page
+called. The rate limits, the honeypot, the explicit consent and the stricter
+`page` check stay: `page` must be `/preview/<this slug>/...` on the preview
+origin, or a page on the site's own domain.
+
 The client address is the one Caddy forwards, believed only from Caddy
 itself (`peers.effective_client`), and it is stored only as an HMAC.
 """
@@ -41,7 +51,7 @@ from urllib.parse import urlsplit
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, Response
 
-from ..modules.agency import callme
+from ..modules.agency import callme, hosting
 from .peers import PerAddressLimiter, effective_client
 
 router = APIRouter()
@@ -85,6 +95,8 @@ def _origin(request: Request, site: dict) -> tuple[str | None, bool]:
     if given is None:
         return None, True
     given = given.strip().lower().rstrip("/")
+    if given == "null":                      # a sandboxed preview; `site` is deployed
+        return given, True
     return (given, True) if given in callme.origins(site) else (None, False)
 
 
@@ -113,7 +125,11 @@ def _no_constants(name: str) -> float:
 def _page_ok(page: str, site: dict) -> bool:
     parts = urlsplit(page)
     origin = f"{parts.scheme}://{(parts.hostname or '').lower()}"
-    return parts.scheme == "https" and origin in callme.origins(site)
+    if parts.scheme != "https" or origin not in callme.origins(site):
+        return False
+    if origin == hosting.preview_origin():       # shared host: the path names the site
+        return hosting.slug_of_preview_path(parts.path) == site.get("slug")
+    return True
 
 
 @router.options(PATH)

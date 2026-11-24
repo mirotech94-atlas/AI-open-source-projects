@@ -1,4 +1,4 @@
-"""Rename a LinkedIn page and change its logo. Miro, 2026-09-27/28: "change
+"""Rename a LinkedIn page and change its logo. the owner, 2026-09-27/28: "change
 the LinkedIn pages' name from Guardian to Vault and the logo" (the Vault mark,
 docs/brand/vault-logo-400.png in the Guardian repo, 400x400).
 
@@ -21,7 +21,7 @@ import struct
 from pathlib import Path
 
 from ...kernel.contracts import ActionResult
-from . import PAGES
+from . import KNOWN_PAGES, PAGES
 
 BRAND_DIR = Path(os.getenv("LINKEDIN_BRAND_DIR", "/app/data/linkedin-agent/brand"))
 MIN_LOGO_PX = 300
@@ -80,7 +80,7 @@ async def update_identity_dry(page: str = "", name: str = "",
         return ActionResult(False, why)
     parts = []
     if name:
-        parts.append(f"rename the {PAGES[page]['id']} page to {name.strip()!r}")
+        parts.append(f"rename the {KNOWN_PAGES[page]['id']} page to {name.strip()!r}")
     if logo:
         w, _ = png_size(BRAND_DIR / logo) or (0, 0)
         parts.append(f"replace its logo with {logo} ({w}x{w})")
@@ -103,7 +103,7 @@ LOGO_FIELD = "#organization-logo-field"
 
 
 def _admin(page: str) -> str:
-    return f"https://www.linkedin.com/company/{PAGES[page]['id']}/admin/dashboard/"
+    return f"https://www.linkedin.com/company/{KNOWN_PAGES[page]['id']}/admin/dashboard/"
 
 
 # After a saved edit LinkedIn offers "Share your page edits -- share your new
@@ -308,7 +308,7 @@ async def update_identity(page: str = "", name: str = "",
     name = name.strip()
     done, old_name, old_logo = await _run(page, name, logo_path, keep_old=True)
     if not done.ok:
-        return ActionResult(False, f"the {PAGES[page]['id']} page was not changed "
+        return ActionResult(False, f"the {KNOWN_PAGES[page]['id']} page was not changed "
                                    f"as asked: {done.detail}")
     said = []
     if name:
@@ -318,8 +318,8 @@ async def update_identity(page: str = "", name: str = "",
                     + ("" if old_logo else "; the previous logo could not be "
                        "saved, so a rollback restores the name only"))
     from .store import log_run
-    log_run([f"page {PAGES[page]['id']}: " + "; ".join(said)], label="identity")
-    return ActionResult(True, f"LinkedIn page {PAGES[page]['id']}: " + "; ".join(said),
+    log_run([f"page {KNOWN_PAGES[page]['id']}: " + "; ".join(said)], label="identity")
+    return ActionResult(True, f"LinkedIn page {KNOWN_PAGES[page]['id']}: " + "; ".join(said),
                         evidence={"page": page, "old_name": old_name,
                                   "old_logo": old_logo, "name": name, "logo": logo},
                         rollback_token=rollback_token(page, old_name, old_logo))
@@ -332,7 +332,8 @@ async def restore_identity(token: str) -> ActionResult:
         page, name, logo = str(t["page"]), str(t.get("name") or ""), str(t.get("logo") or "")
     except (ValueError, KeyError, TypeError):
         return ActionResult(False, "unreadable rollback token")
-    if page not in PAGES:
+    # A rollback still restores a page retired after the change was made.
+    if page not in KNOWN_PAGES:
         return ActionResult(False, f"no such page {page!r}")
     logo_path = BRAND_DIR / logo if logo and "/" not in logo else None
     if logo_path is not None and not logo_path.is_file():
@@ -340,5 +341,5 @@ async def restore_identity(token: str) -> ActionResult:
     done, _, _ = await _run(page, name, logo_path, keep_old=False)
     if not done.ok:
         return ActionResult(False, f"the rollback did not complete: {done.detail}")
-    return ActionResult(True, f"LinkedIn page {PAGES[page]['id']} set back to {name!r}"
+    return ActionResult(True, f"LinkedIn page {KNOWN_PAGES[page]['id']} set back to {name!r}"
                               + (" with its previous logo" if logo_path else ""))

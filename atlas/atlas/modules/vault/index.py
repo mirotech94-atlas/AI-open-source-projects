@@ -12,10 +12,10 @@ changed since the last pass is skipped, so re-running `vault.reindex` on a
 schedule does not duplicate the same facts into memory every cycle.
 
 Recall by meaning needs an embedding on every memory, and one stored before
-`OLLAMA_URL` was set has none — a vault chunk, or a `threads`/`people` fact.
+an embedder was set has none — a vault chunk, or a `threads`/`people` fact.
 `index_all` (and the scheduler's hourly maintenance step) backfills them, in
 every namespace, once the embedding model answers; `check_index` is DEGRADED
-— naming the count — while any are missing or `OLLAMA_URL` is unset, because
+— naming the count — while any are missing or no embedder is set, because
 recall is then keyword-only or blind to them and should not read as healthy.
 
 File I/O and hashing are blocking, so every touch of the filesystem runs
@@ -35,6 +35,7 @@ from ...kernel.memory import (
     Kind,
     backfill_embeddings,
     degraded_note,
+    embed_unset,
     remember,
 )
 from ...kernel.state import execute_sql, fetch_one
@@ -223,11 +224,11 @@ async def _index() -> tuple[int, list[str], int, list[dict[str, str]]]:
         if len(docs) < DOCS_IN_EVIDENCE:
             docs.append({"path": str(path), "sha": sha[:12]})
 
-    # Memories stored without an embedding (before OLLAMA_URL, or while the
+    # Memories stored without an embedding (before an embedder was set, or while the
     # model was down) are invisible to semantic search until one is added —
     # in every namespace, not only this module's.
     filled = 0
-    if os.getenv("OLLAMA_URL"):
+    if not embed_unset():
         filled, stopped = await backfill_embeddings(None)
         if filled:
             log.info("vault: backfilled %d embedding(s)", filled)
@@ -267,9 +268,9 @@ async def check_index() -> Observation:
                            detail=f"{docs}; could not count chunks without an "
                                   f"embedding: {exc}")
     chunks = f"{missing} memories have no embedding"
-    if not os.getenv("OLLAMA_URL"):
+    if unset := embed_unset():
         return Observation("index", Health.DEGRADED, float(n), "documents",
-                           f"{docs}; {degraded_note('OLLAMA_URL unset')}; "
+                           f"{docs}; {degraded_note(unset)}; "
                            f"{chunks}")
     if missing:
         return Observation("index", Health.DEGRADED, float(n), "documents",
@@ -291,9 +292,9 @@ async def reindex() -> ActionResult:
 
 
 async def _to_embed() -> int | None:
-    """What a real pass would backfill: the missing count when OLLAMA_URL is
+    """What a real pass would backfill: the missing count when an embedder is
     set, 0 when it is not (nothing would run), None when it cannot be read."""
-    if not os.getenv("OLLAMA_URL"):
+    if embed_unset():
         return 0
     try:
         return await _unembedded()

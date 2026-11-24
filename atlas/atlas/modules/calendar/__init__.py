@@ -312,7 +312,7 @@ class CalendarModule:
             Action(
                 name="calendar.create_block",
                 tier=Tier.AUTO,     # his own calendar, no other attendees
-                summary="Block time on Miro's own calendar",
+                summary="Block time on the owner's own calendar",
                 run=create_block, dry_run=create_dry, rollback=delete_block,
                 params={"summary": "what the block is for",
                         "start": "ISO datetime",
@@ -356,7 +356,7 @@ class CalendarModule:
     async def signals(self):
         # `check_focus_invites` (below) already reports pending invites at
         # Severity.NORMAL on its own interval -- a signal here too would
-        # repeat the same finding every SIGNAL_INTERVAL_S until Miro RSVPs,
+        # repeat the same finding every SIGNAL_INTERVAL_S until the owner RSVPs,
         # which is exactly the double notification that gets a check muted.
         out = list(await _prep_signals())
 

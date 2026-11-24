@@ -106,8 +106,8 @@ async def test_R02_button_and_typed_approval_together_run_the_card_once(pg):
     wid = await content_flow.carded(params, dedup="day:R02", media_id=21, pid=pid)
     assert (await durable.get(wid))["state"] == "WAITING_APPROVAL"
     verdicts = await asyncio.gather(
-        approvals.decide(pid, "approve", "slack:button:UMIRO"),
-        approvals.decide(pid, "approve", "slack:UMIRO"))
+        approvals.decide(pid, "approve", "slack:button:UOWNER"),
+        approvals.decide(pid, "approve", "slack:UOWNER"))
     assert sorted(v.outcome for v in verdicts).count("executed") == 1
     assert world.posted.get("card") == ["card-21"]          # one effect
     assert [n for n, _ in world.runs].count(CARD) == 1

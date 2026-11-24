@@ -1,6 +1,6 @@
 """Fiverr, read from Fiverr's emails -- because the pages are behind a bot wall.
 
-The fixtures follow the real notification templates seen in Miro's inbox on
+The fixtures follow the real notification templates seen in the owner's inbox on
 2026-09-28 (sender, subject wording, the body's lead-in and footer), with
 synthetic buyers. What email cannot prove -- that he replied -- is never
 claimed, and a Gmail that cannot be read is UNKNOWN, never "0, OK".
@@ -16,10 +16,10 @@ from atlas.kernel.contracts import Health, Severity
 from atlas.modules.fiverr import mailview
 from atlas.modules.mail.accounts import Account
 
-SENDER = "Fiverr <noreply@e.fiverr.com>"
+SENDER = "Fiverr <contact41@example.com>"
 FOOTER = (" Go to your inbox twitter facebook pinterest linkedin instagram "
           "This email was intended for sellerx, because you signed up for "
-          "Fiverr | Fiverr International Ltd., contact support@fiverr.com")
+          "Fiverr | Fiverr International Ltd., contact contact42@example.com")
 
 
 def _message_body(buyer: str, text: str, n: int = 1) -> str:
@@ -57,7 +57,7 @@ INBOX = [
           "You just received an order from kim_ops Please review the "
           "requirements below: Order #FO1234ABCD56 is due Oct 1", 20),
     _mail("aaaa000000000005", "Great news: Your order is ready",
-          "Your order is here Hi Miro, We're excited to let you know that "
+          "Your order is here Hi the owner, We're excited to let you know that "
           "Someone has completed your order.", 10),
     _mail("aaaa000000000006", "Great news! A custom offer, just for you",
           "someone sent you a custom offer", 11),
@@ -70,7 +70,7 @@ def gmail(monkeypatch):
     monkeypatch.setenv("GOOGLE_CLIENT_ID", "id")
     monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
     monkeypatch.delenv("FIVERR_MAIL_ACCOUNT", raising=False)
-    acct = Account(name="myron", kind="google", email="seller@example.com",
+    acct = Account(name="owner", kind="google", email="seller@example.com",
                    refresh_token="rt")
     monkeypatch.setattr("atlas.modules.mail.accounts.all_accounts",
                         lambda: [acct])
@@ -105,7 +105,7 @@ def gmail(monkeypatch):
      mailview.DUE_SOON),
     ("kim_ops opened a dispute regarding your order", mailview.DISPUTE),
     ("Great news: Your order is ready", mailview.BUYER_SIDE),
-    ("myronx, your order has started!", mailview.BUYER_SIDE),
+    ("ownerx, your order has started!", mailview.BUYER_SIDE),
     ("Great news! A custom offer, just for you", mailview.BUYER_SIDE),
     ("Here's your invoice for Dec 4, 2024", mailview.BUYER_SIDE),
     ("Privately rate your recent order", mailview.BUYER_SIDE),
@@ -116,9 +116,9 @@ def test_real_subject_templates_classify(subject, kind):
 
 
 def test_marketing_and_strangers_are_not_fiverr_notifications():
-    for sender in ("Team@announce.fiverr.com", "affiliates@affiliates.fiverr.com",
+    for sender in ("contact43@example.com", "contact44@example.com",
                    "someone@evil-fiverr.com.example",
-                   '"noreply@e.fiverr.com" <attacker@evil.example>',
+                   '"contact41@example.com" <attacker@evil.example>',
                    "noreply@e.fiverr.com.evil.example"):
         assert mailview.classify(sender, "You've received an order from x") \
             == mailview.OTHER
@@ -145,7 +145,7 @@ def test_the_buyer_is_read_from_the_subject():
 @pytest.mark.parametrize("text, expect", [
     ("Let's continue on WhatsApp please", "whatsapp"),
     ("add me on telegram @someone", "telegram"),
-    ("write to me at partner.deal@gmail.com", "email"),
+    ("write to me at contact45@example.com", "email"),
     ("call me on +44 7700 900123", "phone"),
     ("we can work outside Fiverr and save the fees", "outside"),
 ])

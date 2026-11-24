@@ -17,6 +17,7 @@ secrets/
 *.pem
 .env
 tests/
+!tests/fixtures/outcome_lines.json
 tools/
 # Standalone local apps (apps/airglass runs on the Mac, never in the image).
 apps/

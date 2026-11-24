@@ -1,0 +1,4 @@
+# Test-only tooling. spark-run.sh installs every requirements*.txt next to
+# pyproject.toml, with constraints.txt deciding the versions. The image's
+# pip install does not read this file.
+pytest-xdist

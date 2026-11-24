@@ -66,9 +66,9 @@ def test_engagement_needs_every_count():
 async def test_results_lift_a_format_in_the_ranking(memory_backend, monkeypatch):
     memory_backend.responses["GROUP BY lower(f.format)"] = [
         {"id": 1, "format": "love story", "weight": 2.0, "max_scenes": 4,
-         "source": "miro"},
+         "source": "owner"},
         {"id": 2, "format": "mystery hook", "weight": 2.0, "max_scenes": 3,
-         "source": "miro"},
+         "source": "owner"},
     ]
     memory_backend.responses["GROUP BY source"] = []
 
@@ -84,7 +84,7 @@ async def test_results_lift_a_format_in_the_ranking(memory_backend, monkeypatch)
 async def test_unreadable_results_rank_without_them(memory_backend):
     memory_backend.responses["GROUP BY lower(f.format)"] = [
         {"id": 1, "format": "love story", "weight": 2.0, "max_scenes": 4,
-         "source": "miro"}]
+         "source": "owner"}]
     memory_backend.responses["GROUP BY source"] = []
     top = await playbook.top_formats(1)            # reel_metrics un-canned
     assert top[0]["weight"] == 2.0 and top[0]["results"] == 0.0

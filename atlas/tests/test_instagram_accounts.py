@@ -1,4 +1,4 @@
-"""Instagram, multi-account: `main` (Miro's own) and `stories` (the
+"""Instagram, multi-account: `main` (the owner's own) and `stories` (the
 AI-stories account, Phase 18).
 
 What is load-bearing here:
@@ -353,7 +353,7 @@ async def test_publish_refuses_stories_without_the_ai_label(monkeypatch):
 
 
 async def test_publish_the_main_account_needs_no_label(monkeypatch):
-    """The rule is `stories`-only -- Miro's own posts are never refused for
+    """The rule is `stories`-only -- the owner's own posts are never refused for
     a label they were never asked to carry."""
     monkeypatch.setenv("INSTAGRAM_ACCOUNT_ID", "id")
     monkeypatch.setenv("INSTAGRAM_TOKEN", "tok")

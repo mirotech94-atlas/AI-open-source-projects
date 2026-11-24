@@ -23,19 +23,33 @@ May do:
   (`agency.record_webild_site`, reached only through the unattended door
   from `/webild/{lead_id}/submitted`), which runs the same 20-item check
   against the live URL (`webild.py`, `livecheck.py`).
-* Tier ASK, `card_only`: hand a Webild brief to the agent on Miro's Mac
+* Tier ASK, `card_only`: hand a Webild brief to the agent on the owner's Mac
   (`agency.build_with_webild`), raised by `signals()` with the brief as
   the card's text -- the brief is the capability, so only the one ATLAS
-  wrote and Miro read can be queued.
-* Tier AUTO since 2026-10-01, by Miro's ruling that anything not urgent
-  runs without a card: send the outreach email `draft_outreach` wrote about
-  a lead's live preview (`agency.send_outreach`), gated in code
-  (`outreach.auto_hold`: the draft's SHA-256, CAN-SPAM, a published address,
-  suppression, the daily cap, one email per lead unless they replied, the
-  preview deployed); a hold is the Tier 2 card with the reason. Its rollback
+  wrote and the owner read can be queued.
+* Tier ASK, card only, since 2026-10-27 (six agents: every send to a client
+  is a card): send the outreach email `draft_outreach` wrote about a lead's
+  live preview (`agency.send_outreach`), still gated in code (the draft's
+  SHA-256, CAN-SPAM, a published address, suppression, the daily cap, one
+  email per lead unless they replied, the preview deployed). Its rollback
   cannot unsend a delivered email and says so: it suppresses the address and
   records the fact on the lead. Deploying a built site to its production
   host (`agency.deploy_site`) is Tier AUTO on the same ruling.
+* Tier ASK, card only, since 2026-10-27: `agency.send_agreement` (the
+  agreement and the owner's own Stripe payment link for an allowed price -- money
+  IN, not out) and `agency.send_invite` (the invitation to a held slot).
+  `kernel.lead_followup` drafts and dry-runs them and raises one card each.
+* Tier ASK (2026-10-27): `agency.deploy_demo` publishes a client demo built
+  outside ATLAS from the intake directory (`demo_host`, docs/client-sites.md).
+  A person approves every one; the owner's phone rings on the outcome.
+* Tier ASK, card only (2026-10-27): `agency.add_skill` stores approved
+  guidance text for the `sites` agent; `agency.request_template` hands a new
+  template family to the coding agent (`skillbook`). No HTML/JS from ATLAS.
+* Client-site documents (2026-10-29, `sitedocs`): `agency.draft_doc` (Tier
+  AUTO, ATLAS's own row) stores a brief, handoff, report, proposal or client
+  guide and raises `agency.publish_doc` (Tier ASK, card only), which hands it
+  to the coding agent to create as a Claude Docs artifact. ATLAS never
+  publishes a document itself.
 * Never: buying a domain or paying for anything. That is money out, Tier
   NEVER, and nothing in this module attempts it (AGENCY.md §3).
 
@@ -44,24 +58,22 @@ classified and alerted (`leads.py`); replies are drafted with the sales
 playbook under code-enforced price rules (`replies.py`, `pricing.py`,
 `playbook.py`); a lead is texted or called ONLY with their prior express
 consent on record, after the AI disclosure, 08:00-21:00 their time, under a
-contact cap (`consent.py`, `sms.py`, `calls.py`, `api/lead_call.py`); Miro
+contact cap (`consent.py`, `sms.py`, `calls.py`, `api/lead_call.py`); the owner
 is phoned only for an emergency (`escalate.py`).
 
 * Tier AUTO: `agency.draft_reply` (a draft row), `agency.call_brief` (a
-  file for Miro to dial from), `agency.record_deal` (principal_only: Miro's
+  file for the owner to dial from), `agency.record_deal` (principal_only: the owner's
   own word that a deal is won, paid or lost), `agency.record_consent`
   (principal_only: a lead told him on his own call that the assistant may
   call them back -- the consent `agency.call_lead` needs, 2026-10-01).
-* Tier AUTO since 2026-10-06 (Miro: "make the lead replies send themselves
+* Tier AUTO since 2026-10-06 (the owner: "make the lead replies send themselves
   too -- approve invoices too and schedule meetings with them via email as
   well and call them as well", under his rule that anything not urgent runs
   without a card), each with every rule in code and a refusal becoming the
   Tier 2 card with the reason (`kernel.lead_followup`): `agency.send_reply`
   (email, or text with consent; prices, promises, honesty, offered times,
-  CAN-SPAM, suppression, the `AGENCY_REPLY_AUTOSEND` hold),
-  `agency.send_agreement` (the agreement and Miro's own Stripe payment link
-  for an allowed price -- money IN, not out), `agency.send_invite` (the
-  invitation to a held slot) and `agency.call_lead` (an AI call, only with
+  CAN-SPAM, suppression, the `AGENCY_REPLY_AUTOSEND` hold) and
+  `agency.call_lead` (an AI call, only with
   the lead's prior consent: `consent.contact_guard` is the gate, and nothing
   cold-calls). None of these can be undone once delivered, so their
   rollbacks are honest: suppress where it went and record the fact
@@ -86,11 +98,11 @@ endpoint" is implemented here instead: `setup()` reads every row out of
 no database — the same fallback tests use) and `checks()` yields one
 `Check` per site, watching HTTPS reachability and TLS certificate days
 remaining. ATLAS watches its own client sites directly; Guardian keeps
-watching Miro's network the way it already does.
+watching the owner's network the way it already does.
 
 `agency_sites.domain` has no writer yet — `build_site` doesn't know a
 client's eventual domain, so a site's check reports `Health.UNKNOWN` until
-Miro sets `domain` on the row by hand once the client picks one.
+the owner sets `domain` on the row by hand once the client picks one.
 
 For whoever builds outreach on top of this (Task 3 did): an `Audit`'s
 findings can carry text read off the audited business's own site (see
@@ -109,6 +121,7 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 
+from ...kernel import skills as kernel_skills
 from ...kernel.contracts import (
     Action,
     Check,
@@ -125,13 +138,20 @@ from . import (
     _store,
     calls,
     consent,
+    contact,
     contacts,
+    demo_host,
     escalate,
     leads,
     meetings,
+    owner_wa,
     replies,
     sitechat,
+    sitedocs,
+    sites_view,
+    skillbook,
     sms,
+    vercel,
     verify,
 )
 from .audit import (
@@ -229,7 +249,7 @@ async def check_getlayers() -> Observation:
     module shipped with was configured and could never work: GetLayers has
     no API keys). Nothing configured is UNKNOWN, naming the fix. GetLayers
     refusing the refresh or access token is FAILING: it will not heal on
-    its own, Miro has to reconnect. Anything else (unreachable, a protocol
+    its own, the owner has to reconnect. Anything else (unreachable, a protocol
     error) is UNKNOWN -- the question could not be asked.
 
     A handshake is a read. In OAuth mode it may also trade the refresh
@@ -319,6 +339,20 @@ def _make_site_check(slug: str, domain: str | None) -> Check:
                 "client site up + cert", baseline_sigma=None)
 
 
+async def _load_skill_book() -> None:
+    """Load the approved `agency_skills` rows; unload any no longer active.
+    A read failure leaves the skills as they were and is logged."""
+    try:
+        rows = await _store.active_skills()
+    except Exception as exc:                            # noqa: BLE001
+        log.warning("agency: could not read agency_skills at setup: %s", exc)
+        return
+    active = {str(r.get("name") or "") for r in rows}
+    for name in kernel_skills.dynamic_names() - active:
+        kernel_skills.unload_dynamic(name)
+    kernel_skills.load_dynamic(rows, problem=skillbook.row_problem)
+
+
 def _parse_sites_env(raw: str) -> list[tuple[str, str | None]]:
     """`slug:domain` comma list — the sync fallback `checks()` needs when
     there is no database to read `agency_sites` from (tests, `selftest`)."""
@@ -332,11 +366,22 @@ def _parse_sites_env(raw: str) -> list[tuple[str, str | None]]:
     return sites
 
 
+def _vercel_card_detail(params: dict) -> str:
+    slug = str(params.get("slug") or "")
+    try:
+        url = f"https://{vercel.public_host(slug)}/"
+    except ValueError:
+        url = "(no valid host: the slug is malformed)"
+    return (f"Publish the preview of site {slug} on Vercel: approving uploads the "
+            f"audited files and makes {url} live (noindex).")
+
+
 class AgencyModule:
     name = "agency"
     title = "Agency"
     requires_env = ()
-    optional_env = ("GOOGLE_PLACES_API_KEY", "GOOGLE_PAGESPEED_API_KEY")
+    optional_env = ("GOOGLE_PLACES_API_KEY", "GOOGLE_PAGESPEED_API_KEY",
+                    "VERCEL_TOKEN", "VERCEL_TEAM_ID", "GMAIL_APP_PASSWORD")
     setup_note = ("needs GOOGLE_PLACES_API_KEY to prospect; "
                   "GOOGLE_PAGESPEED_API_KEY unlocks a real Lighthouse score "
                   "for the 'slow' audit check, otherwise a size/time "
@@ -344,15 +389,16 @@ class AgencyModule:
                   "(bootstrap/getlayers-connect.py sets "
                   "GETLAYERS_OAUTH_CLIENT_ID/_REFRESH_TOKEN) and "
                   "AGENCY_GETLAYERS_LICENCE_OK=true unlock mockups; "
-                  "AGENCY_SMTP_* and AGENCY_SEND_DOMAIN unlock outreach; "
-                  "deploys publish on this box at <slug>.mapfront.io unless "
-                  "AGENCY_DEPLOY_HOST names a remote host (then with "
-                  "AGENCY_DEPLOY_ROOT)")
+                  "GMAIL_APP_PASSWORD unlocks outreach (from "
+                  "owner@example.com via Gmail SMTP); previews and demos "
+                  "publish on Vercel only, with VERCEL_TOKEN and "
+                  "VERCEL_TEAM_ID, through a card (agency.publish_vercel)")
 
     def __init__(self) -> None:
         self._sites: list[tuple[str, str | None]] = []
 
     async def setup(self) -> None:
+        await _load_skill_book()
         env_sites = os.getenv("AGENCY_SITES", "").strip()
         if env_sites:
             self._sites = _parse_sites_env(env_sites)
@@ -371,9 +417,16 @@ class AgencyModule:
             Check("prospect_budget", check_prospect_budget, timedelta(days=1),
                   Severity.NORMAL, "Places API spend against the monthly cap",
                   baseline_sigma=None),
+            Check("contact_delivery", contact.check_contact_delivery,
+                  timedelta(minutes=10), Severity.NORMAL, "website contact messages "
+                  "reached the owner by email and WhatsApp (UNKNOWN when a channel "
+                  "cannot be configured)", baseline_sigma=None),
             Check("leads_waiting", check_leads_waiting, timedelta(days=1),
                   Severity.INFO, "leads with no decision made on them yet",
                   baseline_sigma=None),
+            Check("vercel", vercel.check, timedelta(minutes=30),
+                  Severity.NORMAL, "ATLAS can authenticate to Vercel (preview "
+                  "publishing)", baseline_sigma=None),
             Check("getlayers_auth", check_getlayers, timedelta(days=1),
                   Severity.NORMAL, "ATLAS can authenticate to GetLayers' MCP "
                   "server (mockups, site builds)", baseline_sigma=None),
@@ -388,7 +441,7 @@ class AgencyModule:
         return base + site_checks
 
     def actions(self):
-        return (
+        return contact.actions() + owner_wa.actions() + (
             Action(
                 name="agency.prospect",
                 tier=Tier.AUTO,          # read-only Places call, writes leads
@@ -487,8 +540,8 @@ class AgencyModule:
             ),
             Action(
                 name="agency.build_with_webild",
-                tier=Tier.ASK,           # hands a brief to an agent in Miro's Chrome
-                summary="Queue a drafted Webild brief for the agent on Miro's Mac to "
+                tier=Tier.ASK,           # hands a brief to an agent in the owner's Chrome
+                summary="Queue a drafted Webild brief for the agent on the owner's Mac to "
                         "build and publish on Webild's free subdomain",
                 run=build_with_webild, dry_run=build_with_webild_dry,
                 rollback=build_with_webild_rollback,
@@ -513,16 +566,19 @@ class AgencyModule:
             ),
             Action(
                 name="agency.send_outreach",
-                # Tier AUTO since 2026-10-01 (Miro: email the clients about
-                # their previews; anything not urgent runs without a card).
-                # Gated in code (outreach.auto_hold): the draft is the one
-                # draft_outreach wrote (SHA-256), CAN-SPAM, a published
-                # address never a guessed one, not suppressed, the daily cap,
-                # one email per lead unless they replied, the preview live.
-                # A failed hold is the Tier 2 card with the reason. The
-                # rollback is honest: a delivered email is not unsent; the
-                # address is suppressed and the lead carries the record.
-                tier=Tier.AUTO,
+                # Tier ASK since 2026-10-27 (six agents: every send to a
+                # client is a card). Still gated in code (outreach's guards:
+                # the draft is the one draft_outreach wrote (SHA-256),
+                # CAN-SPAM, a published address never a guessed one, not
+                # suppressed, the daily cap, one email per lead unless they
+                # replied, the preview live). The rollback is honest: a
+                # delivered email is not unsent; the address is suppressed
+                # and the lead carries the record.
+                tier=Tier.ASK, card_only=True, verbose_card=True,
+                card_detail=lambda p: (f"Outreach email #{p.get('outreach_id')}: "
+                                       "approving sends this one draft to this one "
+                                       "owner, after every guard runs again."),
+                topic_for=lambda _p: "agency_decisions",
                 summary="Send the outreach email draft_outreach wrote about a "
                         "lead's live preview",
                 run=send_outreach, dry_run=send_dry, rollback=send_outreach_rollback,
@@ -543,7 +599,7 @@ class AgencyModule:
             Action(
                 name="agency.call_brief",
                 tier=Tier.AUTO,          # one local file
-                summary="Write a call brief for Miro to phone a lead himself "
+                summary="Write a call brief for the owner to phone a lead himself "
                         "(who, their site's problems, talking points, objections, "
                         "price anchors)",
                 run=calls.call_brief, dry_run=calls.call_brief_dry,
@@ -554,8 +610,8 @@ class AgencyModule:
             Action(
                 name="agency.record_consent",
                 tier=Tier.AUTO,          # a row on ATLAS's own table
-                summary="Record that a lead told Miro, on his own call, that the "
-                        "assistant may call them back (Miro's word only; the "
+                summary="Record that a lead told the owner, on his own call, that the "
+                        "assistant may call them back (the owner's word only; the "
                         "number is the lead's listed one)",
                 run=consent.record_consent, dry_run=consent.record_consent_dry,
                 rollback=consent.record_consent_rollback,
@@ -568,7 +624,7 @@ class AgencyModule:
             Action(
                 name="agency.record_deal",
                 tier=Tier.AUTO,          # a row on ATLAS's own table
-                summary="Record a lead's deal as won, paid or lost (Miro's word only)",
+                summary="Record a lead's deal as won, paid or lost (the owner's word only)",
                 run=replies.record_deal, dry_run=replies.record_deal_dry,
                 rollback=replies.record_deal_rollback,
                 params={"lead_id": "the agency_leads.id",
@@ -579,7 +635,7 @@ class AgencyModule:
             ),
             Action(
                 name="agency.send_reply",
-                # Tier AUTO since 2026-10-06 (Miro: "make the lead replies
+                # Tier AUTO since 2026-10-06 (the owner: "make the lead replies
                 # send themselves too"; anything not urgent runs without a
                 # card). Gated in code (replies._guard_reply): the draft
                 # draft_reply wrote, every price against the rules read now,
@@ -614,17 +670,17 @@ class AgencyModule:
             ),
             Action(
                 name="agency.call_lead",
-                # Tier AUTO since 2026-10-06 (Miro: "call them as well").
+                # Tier AUTO since 2026-10-06 (the owner: "call them as well").
                 # Never a cold call: consent.contact_guard is the gate in the
                 # dry run and the run -- a live call consent the lead gave
-                # on the form, by ringing the line, or to Miro on his own
+                # on the form, by ringing the line, or to the owner on his own
                 # call (recorded by him); not suppressed; AGENCY_CALLS_ENABLED;
                 # Twilio configured; 08:00-21:00 lead time; the contact cap.
                 # The call opens with the disclosure, written in code. A
                 # refusal is the Tier 2 card. The rollback is honest: a call
                 # is not un-rung; the number is suppressed and recorded.
                 tier=Tier.AUTO,
-                summary="Call a lead who asked to be called, as Miro's AI "
+                summary="Call a lead who asked to be called, as the owner's AI "
                         "assistant (disclosed first), within calling hours",
                 run=calls.call_lead, dry_run=calls.call_lead_dry,
                 rollback=calls.call_lead_rollback,
@@ -639,32 +695,38 @@ class AgencyModule:
                         "disqualify it otherwise",
                 run=verify.verify_lead, dry_run=verify.verify_dry,
                 rollback=verify.verify_rollback,
-                params={"lead_id": "the agency_leads.id to verify"},
+                params={"lead_id": "the agency_leads.id to verify",
+                        "profile": "local_nyc | remote_us (optional; the lead's "
+                                   "segment otherwise)"},
                 max_per_hour=30,
             ),
             Action(
                 name="agency.hold_meeting",
-                tier=Tier.AUTO,          # Miro's own calendar, no attendee
-                summary="Hold a free business-hours slot on Miro's calendar for a "
+                tier=Tier.AUTO,          # the owner's own calendar, no attendee
+                summary="Hold a free business-hours slot on the owner's calendar for a "
                         "call with a lead (nobody is invited)",
                 run=meetings.hold_meeting, dry_run=meetings.hold_meeting_dry,
                 rollback=meetings.release_hold,
                 params={"lead_id": "the agency_leads.id",
                         "start": "the slot's start, ISO with offset, one offered "
-                                 "from Miro's calendar",
+                                 "from the owner's calendar",
                         "call_sid": "optional: the call it was booked on"},
                 max_per_hour=10,
             ),
             Action(
                 name="agency.send_invite",
-                # Tier AUTO since 2026-10-06 (Miro: "schedule meetings with
-                # them via email as well"). Gated in code
+                # Tier ASK since 2026-10-27 (six agents: every send to a
+                # client is a card). Still gated in code
                 # (meetings._invite_guard): a meeting still held, an email
                 # on record and not suppressed, a verified lead, a time
                 # still ahead. The rollback deletes the event and Google
                 # tells the attendee.
-                tier=Tier.AUTO,
-                summary="Invite a lead to the call held on Miro's calendar, with "
+                tier=Tier.ASK, card_only=True,
+                card_detail=lambda p: (f"Calendar invite for meeting "
+                                       f"#{p.get('meeting_id')}: the recipient, "
+                                       "time and agenda are the dry run below."),
+                topic_for=lambda _p: "agency_decisions",
+                summary="Invite a lead to the call held on the owner's calendar, with "
                         "a short agenda",
                 run=meetings.send_invite, dry_run=meetings.send_invite_dry,
                 rollback=meetings.release_hold,
@@ -674,16 +736,21 @@ class AgencyModule:
             ),
             Action(
                 name="agency.send_agreement",
-                # Tier AUTO since 2026-10-06 (Miro: "approve invoices too").
-                # Money IN -- Miro's own Stripe payment link, created by him
+                # Tier ASK since 2026-10-27 (six agents: every send to a
+                # client is a card). Money IN -- the owner's own Stripe payment link, created by him
                 # for exactly this price -- never money out, so not Tier 3.
                 # Gated in code (replies._guard_agreement): a verified lead,
                 # a price allowed by the rules read now, a link in
                 # AGENCY_PAYMENT_LINKS for exactly that price, not
                 # suppressed, CAN-SPAM. The text is written by code. The
                 # rollback is honest: a delivered agreement is not unsent.
-                tier=Tier.AUTO,
-                summary="Send a lead the agreement and Miro's payment link at an "
+                tier=Tier.ASK, card_only=True,
+                card_detail=lambda p: (f"Agreement for lead #{p.get('lead_id')} at "
+                                       f"${p.get('price')} by {p.get('channel')}: "
+                                       "the text and payment link are the dry run "
+                                       "below."),
+                topic_for=lambda _p: "agency_decisions",
+                summary="Send a lead the agreement and the owner's payment link at an "
                         "allowed price",
                 run=replies.send_agreement, dry_run=replies.send_agreement_dry,
                 rollback=replies.send_agreement_rollback,
@@ -695,25 +762,127 @@ class AgencyModule:
             ),
             Action(
                 name="agency.deploy_site",
-                # Tier AUTO since 2026-09-30 (Miro: "anything that is not
-                # urgent, you approve it"): a preview on a mapfront.io
-                # subdomain, the launch check gates it, and the previous
-                # release is kept for the rollback.
+                # Tier AUTO since 2026-09-30 (the owner: "anything that is not
+                # urgent, you approve it"). Since 2026-10-30 it refuses: demos
+                # and previews go live on Vercel only (agency.publish_vercel);
+                # kept registered so an earlier release can still roll back.
                 tier=Tier.AUTO,
                 summary="Deploy a built client site to its production host",
                 run=deploy_site, dry_run=deploy_dry, rollback=deploy_rollback,
                 params={"slug": "the agency_sites.slug to deploy"},
                 max_per_hour=6,
             ),
+            Action(
+                name="agency.deploy_demo",
+                # Tier ASK (2026-10-27): a demo is built outside ATLAS, so a
+                # person approves every publish. Audited on the intake and
+                # again on the release copy; the previous release is kept
+                # for the rollback; deletion stays the owner's, by hand. Refuses
+                # since 2026-10-30 (Vercel only, agency.publish_vercel).
+                tier=Tier.ASK,
+                summary="Publish a client demo from the intake directory at its "
+                        "hostname",
+                run=demo_host.deploy_demo, dry_run=demo_host.deploy_demo_dry,
+                rollback=demo_host.deploy_demo_rollback,
+                params={"slug": "the agency_sites.slug of a kind='demo' row"},
+                verbose_card=True,
+                max_per_hour=6,
+            ),
+            Action(
+                name="agency.publish_vercel",
+                # Tier ASK (2026-10-30): a preview goes on the public internet
+                # only after the owner's click. Audited before any upload, read back
+                # after; the rollback promotes the previous deployment and
+                # never deletes (a first publish stays up, the owner's by hand).
+                tier=Tier.ASK,
+                summary="Publish a built preview (or a demo) on Vercel at "
+                        "atlas-agency-<slug>.vercel.app",
+                run=vercel.publish_vercel, dry_run=vercel.publish_vercel_dry,
+                rollback=vercel.publish_vercel_rollback,
+                params={"slug": "the agency_sites.slug to publish"},
+                verbose_card=True,
+                topic_for=lambda _p: "agency_decisions",
+                card_detail=_vercel_card_detail,
+                # Uploads, up to 180 s of polling and a read-back: never inside
+                # Slack's 3 s window, never cancelled half-recorded.
+                runs_in_background=True,
+                max_per_hour=6,
+            ),
+            Action(
+                name="agency.add_skill",
+                # Tier ASK, card only (2026-10-27): guidance TEXT for the sites
+                # agent. No markup, no templating, https links only, never a
+                # built-in name; it can add no tool, action or tier.
+                tier=Tier.ASK,
+                summary="Add a text skill (approved guidance) for the client-sites agent",
+                run=skillbook.add_skill, dry_run=skillbook.add_skill_dry,
+                rollback=skillbook.add_skill_rollback,
+                params={"name": "the skill's title, 3-60 characters",
+                        "triggers": "comma-separated lowercase trigger words",
+                        "body": "plain text, at most 1500 characters"},
+                verbose_card=True, card_only=True,
+                max_per_hour=4,
+            ),
+            Action(
+                name="agency.request_template",
+                # Tier ASK, card only (2026-10-27): a handoff to the coding
+                # agent. ATLAS writes no template; it arrives through the repo
+                # and CD.
+                tier=Tier.ASK,
+                summary="Ask the coding agent for a new client-site template family",
+                run=skillbook.request_template, dry_run=skillbook.request_template_dry,
+                rollback=skillbook.request_template_rollback,
+                params={"family": "lowercase template family name, e.g. salon-booking",
+                        "notes": "what the template is for, at most 500 characters"},
+                verbose_card=True, card_only=True,
+                max_per_hour=2,
+            ),
+            Action(
+                name="agency.draft_doc",
+                # Tier AUTO (2026-10-29): one row in ATLAS's own database
+                # and the publish card. Nothing leaves ATLAS; the rollback
+                # withdraws the draft and deletes nothing.
+                tier=Tier.AUTO,
+                summary="Draft a client-site document (brief, handoff, report, "
+                        "proposal, client guide) for publishing as a Claude Docs "
+                        "artifact",
+                run=sitedocs.draft_doc, dry_run=sitedocs.draft_doc_dry,
+                rollback=sitedocs.draft_doc_rollback,
+                params={"slug": "the agency_sites.slug the document is for",
+                        "kind": "one of: " + ", ".join(sitedocs.KINDS),
+                        "title": "one line, 3-120 characters",
+                        "body": f"the document text, at most {sitedocs.MAX_BODY} "
+                                f"characters",
+                        "client_text": "optional: the client's own words to quote, "
+                                       f"at most {sitedocs.MAX_CLIENT} characters"},
+                max_per_hour=6,
+            ),
+            Action(
+                name="agency.publish_doc",
+                # Tier ASK, card only (2026-10-29): a handoff to the coding
+                # agent, which creates the Docs artifact and reports its link.
+                # ATLAS cannot create one (invariant 1).
+                tier=Tier.ASK,
+                summary="Have the coding agent publish a client-site document as a "
+                        "Claude Docs artifact",
+                run=sitedocs.publish_doc, dry_run=sitedocs.publish_doc_dry,
+                rollback=sitedocs.publish_doc_rollback,
+                params={"doc_id": "the agency_site_docs id the draft card names"},
+                verbose_card=True, card_only=True,
+                max_per_hour=6,
+            ),
         )
 
     def brief(self) -> str:
-        return "Agency: prospecting, audits, mockups, outreach drafts, sites"
+        """The lane, then one line per managed client site from the last
+        registry read (`sites_view`), each with the time it was read."""
+        return "\n".join(["Agency: prospecting, audits, mockups, outreach drafts, sites",
+                          *sites_view.brief_lines()])
 
     async def signals(self):
         """A card per fresh Webild brief (`agency.build_with_webild`). Also
-        takes in lead replies forwarded into Miro's Gmail (`leads.sweep_inbox`,
-        which posts its own alerts) and rings Miro for an emergency held
+        takes in lead replies forwarded into the owner's Gmail (`leads.sweep_inbox`,
+        which posts its own alerts) and rings the owner for an emergency held
         back by the call gap (`escalate.flush`). A mailbox that cannot be
         read is logged, never read as "no replies"."""
         try:
@@ -721,10 +890,16 @@ class AgencyModule:
         except Exception as exc:                        # noqa: BLE001
             log.warning("agency: lead inbox unreadable: %s", explain(exc))
         await escalate.flush()
-        return await webild_signals()
+        demos: list = []
+        try:
+            demos = await demo_host.signals()
+        except Exception as exc:                        # noqa: BLE001
+            log.warning("agency: demo intake not read: %s", explain(exc))
+        await sites_view.refresh()
+        return [*await webild_signals(), *demos]
 
     async def inbox(self, limit: int = 10):
-        """Replied and bounced outreach — the two states that need Miro,
+        """Replied and bounced outreach — the two states that need the owner,
         not a scheduler, to look at them. A reply means a lead answered; a
         bounce means the address was bad and the row (or a suppression)
         needs fixing before anything else goes to it."""

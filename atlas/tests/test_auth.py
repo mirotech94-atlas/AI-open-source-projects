@@ -25,12 +25,12 @@ def test_a_weak_or_missing_secret_fails_closed(monkeypatch):
 
 
 def test_a_round_tripped_session_is_readable():
-    session = auth.read(auth.issue("miro"))
-    assert session is not None and session.user == "miro"
+    session = auth.read(auth.issue("owner"))
+    assert session is not None and session.user == "owner"
 
 
 def test_a_tampered_cookie_is_rejected():
-    token = auth.issue("miro")
+    token = auth.issue("owner")
     # Flip a character in the payload, leaving the structure intact.
     body, _, sig = token.rpartition(".")
     tampered = (body[:-1] + ("A" if body[-1] != "A" else "B")) + "." + sig
@@ -38,7 +38,7 @@ def test_a_tampered_cookie_is_rejected():
 
 
 def test_a_cookie_signed_with_another_secret_is_rejected(monkeypatch):
-    token = auth.issue("miro")
+    token = auth.issue("owner")
     monkeypatch.setenv("SESSION_SECRET", "y" * 40)
     assert auth.read(token) is None
 
@@ -50,7 +50,7 @@ def test_no_cookie_is_no_session():
 
 
 def test_an_expired_cookie_is_rejected(monkeypatch):
-    token = auth.issue("miro")
+    token = auth.issue("owner")
     monkeypatch.setattr(auth, "MAX_AGE", -1)
     assert auth.read(token) is None
 

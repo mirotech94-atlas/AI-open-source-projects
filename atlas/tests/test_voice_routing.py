@@ -1,10 +1,12 @@
-"""Voice routes to the agent that owns it (Miro, 2026-09-29: "When I ask
+"""Voice routes to the agent that owns it (the owner, 2026-09-29: "When I ask
 something, ATLAS should coordinate and redirect to the appropriate agent").
 
-"How's my trading" is Ivan's, "post a reel" is Isla's, "what did Nora do
-today" is Nora's, "check FlyCheap" is Sofia's. A question is answered in
-that agent's name ("Here's Ivan: ..."), an order's card line says who has it
-("Isla's on it — ..."). Pinned too: bare first names that are ordinary words
+Since 2026-10-28 the roster is eight agents: "what did Mark do today" is
+Mark's (content), "any new leads?" is Felix's (sites), "how is Quinn doing"
+is Quinn's (qa). A question is answered in that agent's name ("Here's Mark:
+..."), an order's card line says who has it ("Felix's on it — ..."). A
+question about a retired lane (trading, FlyCheap, reels) stays with ATLAS.
+Pinned too: bare first names that are ordinary words
 never route, Slack's `owner_for` is not widened by any of this, and nothing
 Tier 3 is ever handed to anyone.
 """
@@ -29,18 +31,16 @@ def roster():
 
 
 @pytest.mark.parametrize("said,agent", [
-    ("how's my trading", "markets"),
-    ("hey atlas, how are my stocks", "markets"),
-    ("post a reel", "reels"),
-    ("what did Nora do today", "marketing"),
-    ("check FlyCheap", "flycheap"),
-    ("how is flycheap doing", "flycheap"),
-    ("how is vipsy looking", "vpsie"),
-    ("how's Ivan doing", "markets"),
-    ("what's Hazel up to", "agency"),
-    ("any new leads?", "agency"),
-    ("any new fiverr orders?", "fiverr"),
-    ("ask Owen to price the switch", "commerce"),
+    ("what did Mark do today", "content"),
+    ("how's Felix doing", "sites"),
+    ("what's Sam up to", "sales"),
+    ("any new leads?", "sites"),
+    ("build them a website", "sites"),
+    ("ask Sage to audit joes", "seo"),
+    ("have Rex check the competitors", "research"),
+    ("how is Quinn doing", "qa"),
+    ("what's Clara up to", "inbox"),
+    ("how is Bea doing", "bizops"),
 ])
 def test_it_goes_to_the_agent_that_owns_it(said, agent):
     assert missions.voice_agent(said) == agent
@@ -55,6 +55,11 @@ def test_it_goes_to_the_agent_that_owns_it(said, agent):
     "what time is it",
     # His notes vault, not Vault the watchdog.
     "what's in my vault about taxes",
+    # Retired lanes (2026-10-28): nobody on the roster owns them.
+    "how's my trading",
+    "check FlyCheap",
+    "post a reel",
+    "how is vipsy looking",
 ])
 def test_ordinary_words_and_general_questions_stay_with_atlas(said):
     assert missions.voice_agent(said) is None
@@ -72,7 +77,7 @@ def test_nothing_tier_3_is_handed_to_anyone(said):
 
 
 @pytest.mark.parametrize("said", ["how's my trading", "check FlyCheap",
-                                  "what did Nora do today"])
+                                  "what did Mark do today"])
 def test_slack_and_the_missions_are_not_widened(said):
     # `owner_for` decides what Slack and the missions START; the voice
     # resolver only decides who answers.
@@ -91,23 +96,23 @@ async def test_the_owner_answers_in_its_own_name_from_its_own_readings(monkeypat
 
     async def board(modules=None):
         seen["modules"] = modules
-        return "LIVE STATUS: markets.alinea: ok — basket +1.2% (read 07:52)"
+        return "LIVE STATUS: youtube.uploads: ok — 2 today (read 07:52)"
 
     async def work(agent, hours=24):
         seen["agent"] = agent
-        return "YOUR RECENT WORK: 07:40 ran: shift -> watched the basket"
+        return "YOUR RECENT WORK: 07:40 ran: shift -> queued two Shorts"
 
     async def think(need, system, messages, **_kw):
         seen["system"], seen["messages"] = system, messages
-        return _Completion("The basket's up 1.2%, as of 7:52.")
+        return _Completion("Two Shorts went up, as of 7:52.")
 
     monkeypatch.setattr(voice, "live_context", board)
     monkeypatch.setattr(missions, "agent_activity", work)
     monkeypatch.setattr("atlas.kernel.llm.think", think)
-    said = await voice.consult("markets", "how's my trading")
-    assert said == "Here's Ivan: The basket's up 1.2%, as of 7:52."
-    assert seen["agent"] == "markets" and "markets" in seen["modules"]
-    assert "You are Ivan" in seen["system"] and voice.VOICE_STYLE in seen["system"]
+    said = await voice.consult("content", "what did Mark do today")
+    assert said == "Here's Mark: Two Shorts went up, as of 7:52."
+    assert seen["agent"] == "content" and "youtube" in seen["modules"]
+    assert "You are Mark" in seen["system"] and voice.VOICE_STYLE in seen["system"]
     assert "never estimate" in seen["system"]
     # His words reach the model wrapped, as every voice turn's are (invariant 4).
     assert "<request source='voice'>" in seen["messages"][0].content
@@ -126,7 +131,7 @@ async def test_an_owner_that_cannot_answer_hands_back_to_atlas(monkeypatch):
     monkeypatch.setattr(voice, "live_context", board)
     monkeypatch.setattr(missions, "agent_activity", work)
     monkeypatch.setattr("atlas.kernel.llm.think", broken)
-    assert await voice.consult("markets", "how's my trading") is None
+    assert await voice.consult("content", "what did Mark do today") is None
 
 
 async def test_recent_work_carries_its_times_and_is_quoted(monkeypatch):
@@ -173,12 +178,11 @@ def client(monkeypatch, memory_backend):
 
 
 @pytest.mark.parametrize("said,agent,name", [
-    ("how's my trading", "markets", "Ivan"),
-    ("what did Nora do today", "marketing", "Nora"),
-    ("check FlyCheap", "flycheap", "Sofia"),
+    ("what did Mark do today", "content", "Mark"),
+    ("any new leads?", "sites", "Felix"),
     # Asked about by name, past every earlier branch (self, knowledge, ...).
-    ("how's Ivan doing", "markets", "Ivan"),
-    ("what's Hazel up to", "agency", "Hazel"),
+    ("how's Felix doing", "sites", "Felix"),
+    ("how is Quinn doing", "qa", "Quinn"),
 ])
 def test_the_dashboard_hands_the_question_to_its_agent(client, monkeypatch,
                                                        said, agent, name):
@@ -199,13 +203,17 @@ def test_the_dashboard_hands_the_question_to_its_agent(client, monkeypatch,
     assert body["agent"] == agent and body["kind"] == "question"
 
 
-def test_a_business_question_still_brings_its_tile_up(client, monkeypatch):
-    async def consult(owner, transcript):
-        return "Here's Sofia: signups are unknown right now."
+def test_a_retired_lane_question_is_atlas_s_and_brings_no_agent(client, monkeypatch):
+    async def must_not(*_a, **_kw):
+        raise AssertionError("no roster agent owns FlyCheap since 2026-10-28")
 
-    monkeypatch.setattr(voice, "consult", consult)
+    async def fake_route(question, *_a, **_k):
+        return "Signups are unknown right now."
+
+    monkeypatch.setattr(voice, "consult", must_not)
+    monkeypatch.setattr("atlas.kernel.agents.route", fake_route)
     body = client.post("/api/voice/ask", json={"transcript": "check FlyCheap"}).json()
-    assert body["focus"] == {"screen": "/status", "module": "flycheap"}
+    assert body["agent"] != "flycheap"
 
 
 def test_a_general_question_is_still_atlas(client, monkeypatch):
@@ -219,24 +227,24 @@ def test_a_general_question_is_still_atlas(client, monkeypatch):
     monkeypatch.setattr("atlas.kernel.agents.route", fake_route)
     body = client.post("/api/voice/ask",
                        json={"transcript": "what should I cook tonight"}).json()
-    assert body["agent"] == "concierge"
+    assert body["agent"] == agents.DEFAULT_AGENT
 
 
 async def test_an_owned_order_says_who_has_the_card(monkeypatch):
     async def pick(step, *, principal=False):
-        return ("content.post_reel", {})
+        return ("agency.build_site", {})
 
     async def propose(name, params, **_kw):
         return 41
 
     monkeypatch.setattr(voice, "_pick_action", pick)
     monkeypatch.setattr("atlas.kernel.approvals.propose", propose)
-    pids, said = await voice._queue_steps("post a reel", source="voice",
+    pids, said = await voice._queue_steps("build them a website", source="voice",
                                           principal=True)
     assert pids == [41]
-    assert said == "Isla's on it — queued; approve it in Slack."
+    assert said == "Felix's on it — queued; approve it in Slack."
     # On the phone the line stays the phone's own.
-    pids, said = await voice._queue_steps("post a reel", source="phone",
+    pids, said = await voice._queue_steps("build them a website", source="phone",
                                           principal=False)
     assert said == voice.ASK_PHONE
 
@@ -250,7 +258,7 @@ async def test_a_card_from_someone_elses_module_gets_the_plain_line(monkeypatch)
 
     monkeypatch.setattr(voice, "_pick_action", pick)
     monkeypatch.setattr("atlas.kernel.approvals.propose", propose)
-    pids, said = await voice._queue_steps("post a reel", source="voice",
+    pids, said = await voice._queue_steps("build them a website", source="voice",
                                           principal=True)
     assert pids == [42] and said == voice.ASK
 
@@ -258,7 +266,7 @@ async def test_a_card_from_someone_elses_module_gets_the_plain_line(monkeypatch)
 # ------------------------------------------------- the work board in the prompt
 
 async def test_an_owner_sees_its_seat_on_the_work_board(monkeypatch):
-    """"How is Hazel doing on the 50 websites?" (Miro, 2026-09-30) had no
+    """"How is Hazel doing on the 50 websites?" (the owner, 2026-09-30) had no
     source: the checks say what is up, not what anyone is doing. The seat's
     work-board detail now rides in the owner's system prompt."""
     from atlas.kernel import workboard
@@ -272,7 +280,7 @@ async def test_an_owner_sees_its_seat_on_the_work_board(monkeypatch):
 
     async def seat(question, *, max_chars=6000, days=7):
         seen["question"] = question
-        return ("AGENTS' WORK, read at 07:52\n== Hazel (agency) ==\n"
+        return ("AGENTS' WORK, read at 07:52\n== Felix (sites) ==\n"
                 "  mission #1 agency.sites running, 12/50 sites built")
 
     async def think(need, system, messages, **_kw):
@@ -283,11 +291,11 @@ async def test_an_owner_sees_its_seat_on_the_work_board(monkeypatch):
     monkeypatch.setattr(missions, "agent_activity", work)
     monkeypatch.setattr(workboard, "context_text", seat)
     monkeypatch.setattr("atlas.kernel.llm.think", think)
-    said = await voice.consult("agency", "how is Hazel doing on the 50 websites?")
+    said = await voice.consult("sites", "how is Felix doing on the 50 websites?")
     assert said and "12 of the 50" in said
     assert "12/50 sites built" in seen["system"]
     # The seat's own name leads the question, so the board picks it out.
-    assert seen["question"].startswith("Hazel:")
+    assert seen["question"].startswith("Felix:")
 
 
 async def test_a_board_that_cannot_be_read_does_not_break_the_owner(monkeypatch):
@@ -310,4 +318,4 @@ async def test_a_board_that_cannot_be_read_does_not_break_the_owner(monkeypatch)
     monkeypatch.setattr(missions, "agent_activity", work)
     monkeypatch.setattr(workboard, "context_text", unreadable)
     monkeypatch.setattr("atlas.kernel.llm.think", think)
-    assert await voice.consult("agency", "how is Hazel doing?") is not None
+    assert await voice.consult("sites", "how is Felix doing?") is not None

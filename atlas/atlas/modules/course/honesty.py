@@ -32,7 +32,7 @@ text and on every translation:
     its language (`label_for`), written here, not by a model.
 
 A hit is a refusal naming the phrase. False positives cost one redraft; a
-false negative is a public post under Miro's name making a claim he never
+false negative is a public post under the owner's name making a claim he never
 made.
 """
 from __future__ import annotations
@@ -50,9 +50,9 @@ LANGUAGES: dict[str, str] = {"en": "English", "es": "Spanish",
 # any translation. The Spanish, Portuguese and Arabic lines were written for
 # this file and reviewed with it; they are not model output.
 LABELS: dict[str, str] = {
-    "en": "This is my own course. -- Miro",
-    "es": "Es mi propio curso. -- Miro",
-    "pt": "É o meu próprio curso. -- Miro",
+    "en": "This is my own course. -- the owner",
+    "es": "Es mi propio curso. -- the owner",
+    "pt": "É o meu próprio curso. -- the owner",
     "ar": "هذه دورتي الخاصة. -- ميرو",
 }
 
@@ -290,5 +290,5 @@ def refusal(text: str, language: str, price_words: str | None,
         return (f"the product page carries the age notice, and the post does not "
                 f"({catalog.AGE_NOTICE!r})")
     if label_for(product, language) not in text:
-        return f"it is not labelled as Miro's own {found.noun}"
+        return f"it is not labelled as the owner's own {found.noun}"
     return None

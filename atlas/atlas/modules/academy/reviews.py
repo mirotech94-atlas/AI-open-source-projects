@@ -1,4 +1,4 @@
-"""Verified-buyer reviews for the store. Miro, 2026-10-01: "add reviews for
+"""Verified-buyer reviews for the store. the owner, 2026-10-01: "add reviews for
 my courses". The store carries no invented review, rating or count (the
 site tests forbid them), so the only review that can appear is one a real
 buyer wrote:
@@ -8,7 +8,7 @@ buyer wrote:
      post carries that session id and is checked against Stripe again
      before anything is stored. One review per checkout per offer; a
      second post replaces the first and goes back to "pending".
-  2. The row waits in `academy_reviews` and Miro gets one Tier 2 card,
+  2. The row waits in `academy_reviews` and the owner gets one Tier 2 card,
      `academy.approve_review`. The text on the card is wrapped as
      untrusted: a review is a buyer's words, never an instruction.
   3. Only an approved review reaches the product page, at the next
@@ -29,7 +29,7 @@ from ...kernel.contracts import ActionResult
 from .catalog import CatalogError, load
 from .stripe_read import read_session, valid_session_id
 
-log = logging.getLogger("atlas.academy.reviews")
+log = logging.getLogger("academy.example.reviews")
 
 ACTION = "academy.approve_review"
 TEXT_MIN, TEXT_MAX, NAME_MAX = 10, 600, 40
@@ -65,7 +65,7 @@ def problems(stars: int, text: str, name: str) -> list[str]:
 
 async def submit(session_id: str, offer_id: str, stars: int, text: str, name: str,
                  client: str) -> tuple[bool, str]:
-    """Store a buyer's review as pending and raise Miro's card. (ok, why)."""
+    """Store a buyer's review as pending and raise the owner's card. (ok, why)."""
     if not valid_session_id(session_id):
         return False, "This page's link is incomplete. Open your access page again."
     try:
@@ -94,7 +94,7 @@ async def submit(session_id: str, offer_id: str, stars: int, text: str, name: st
     review_id = int((row or {}).get("id") or 0)
     if review_id:
         if clean_refusal(stars, text, name) is None and auto_enabled():
-            # Miro, 2026-10-06: a clean verified-buyer review shows itself.
+            # the owner, 2026-10-06: a clean verified-buyer review shows itself.
             await _auto(review_id)
         else:
             await _card(review_id, offer.name, stars, text, name)
@@ -116,7 +116,7 @@ MIN_WORDS, MAX_CHARS = 6, 1200
 
 
 def clean_refusal(stars: int, text: str, name: str) -> str | None:
-    """Why this review needs Miro's eyes, or None when it may show itself:
+    """Why this review needs the owner's eyes, or None when it may show itself:
     a plain opinion of the product, no link, no contact, no other product
     or person named, between six words and 1,200 characters. The vet is
     deliberately narrow; anything it cannot read as plain is a card."""
@@ -133,7 +133,7 @@ def clean_refusal(stars: int, text: str, name: str) -> str | None:
         return "carries a link or a handle"
     low = body.lower()
     if any(w in low for w in _UNFIT):
-        return "names something Miro should read first"
+        return "names something the owner should read first"
     if sum(c.isupper() for c in body) > len(body) * 0.5:
         return "shouting"
     if clean_name(name) != (name or "").strip():
@@ -192,7 +192,7 @@ async def _card(review_id: int, product: str, stars: int, text: str, name: str) 
                     + wrap_untrusted(text, "store review form")),
             dedup_key=f"academy.review.{review_id}", automatic=True)
     except Exception as exc:                            # noqa: BLE001
-        # The row is stored; the pending list is Miro's to read either way.
+        # The row is stored; the pending list is the owner's to read either way.
         log.warning("review card not posted: %s", type(exc).__name__)
 
 

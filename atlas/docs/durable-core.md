@@ -47,7 +47,7 @@ read-back. A redelivered event returns the same workflow with
 | Plan field | Where |
 |---|---|
 | workflow_id, workflow_type, workflow_version, correlation_id | `workflows.id`, `workflow_type`, `workflow_version`, `correlation_id` |
-| workspace_or_tenant_id | `tenant` (default `miro`) |
+| workspace_or_tenant_id | `tenant` (default `owner`) |
 | originating_actor / channel, thread_id | `originating_actor`, `originating_channel`, `thread_id` |
 | desired_outcome, data_classification, policy_version | columns of the same names |
 | input_refs, input_hash | `input_refs` (JSON list of references such as `slack:event:Ev1`), `input_hash` (sha256 of canonical JSON). **The payload itself is never stored.** |
@@ -169,7 +169,7 @@ is stopped by every account-scoped pause of its module (fail closed); an
 empty or absent one is the module's own default (`main`), as the module
 reads it (the reel's Instagram leg asks
 for `stories` the same way, `legs.gate(..., account=)`). Held rows wait
-without spending attempts. Miro gets one line ("Paused instagram:clips:
+without spending attempts. The owner gets one line ("Paused instagram:clips:
 instagram.publish's login was refused. Reconnect it, then `/atlas resume
 instagram:clips`."), and every active pause is listed in the brief's
 "Waiting on you" and the weekly's "Paused until you resume" until he lifts
@@ -417,7 +417,7 @@ outbox treats that as uncertain and reconciles, as before.
   a catalog action, and the outbox dispatches only through
   `executor.execute`, so `reap_abandoned_runs`' message, approval receipts
   and `comms.undelivered` retries cannot be outbox rows yet. Doing it needs
-  a Miro-bound notice action in the catalog, with a tier decided in code.
+  a the owner-bound notice action in the catalog, with a tier decided in code.
   **That is an owner decision.** R07 is proven with test-registered actions.
 - **Producers are wired only behind `ATLAS_DURABLE_FLOWS`** (docs/acceptance.md:
   Slack intake, the fixes sweep, the reel post). With it off, Slack intake

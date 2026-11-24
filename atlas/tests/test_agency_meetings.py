@@ -1,4 +1,4 @@
-"""Meetings booked on a lead call (Miro, 2026-09-30): real free slots read
+"""Meetings booked on a lead call (the owner, 2026-09-30): real free slots read
 from his calendar, a Tier 1 hold, a Tier 2 invite card, and a reminder."""
 from __future__ import annotations
 
@@ -182,7 +182,7 @@ async def test_the_invite_carries_the_agenda(monkeypatch):
     assert kw["json"]["attendees"] == [{"email": "joe@example.com"}]
     assert "https://joes.example" in kw["json"]["description"]
     assert "What we'll cover" in kw["json"]["description"]
-    assert "Questions before the call: miro@mapfront.io" in kw["json"]["description"]
+    assert "Questions before the call: owner@example.com" in kw["json"]["description"]
 
 
 async def test_reminders_go_to_slack_once(monkeypatch):
@@ -205,11 +205,11 @@ def test_the_actions_are_tiered():
     assert classify(acts["agency.hold_meeting"]).tier is Tier.AUTO
     assert acts["agency.hold_meeting"].rollback is meetings.release_hold
     assert not acts["agency.hold_meeting"].card_only
-    # 2026-10-06 (Miro: "schedule meetings with them via email as well"):
-    # the invite is Tier 1 too; its rollback deletes the event, which tells
-    # the attendee.
+    # Six agents, 2026-10-27: the invite is a card (Tier 2); its rollback
+    # deletes the event, which tells the attendee.
     invite = acts["agency.send_invite"]
-    assert classify(invite).tier is Tier.AUTO and not invite.irreversible
+    assert classify(invite).tier is Tier.ASK and invite.card_only
+    assert not invite.irreversible
     assert invite.rollback is meetings.release_hold
 
 
@@ -237,49 +237,58 @@ async def test_an_unreadable_calendar_is_said_not_invented(monkeypatch):
     assert call.offered == []
 
 
-async def test_picking_holds_and_invites_through_the_executor(monkeypatch):
-    """2026-10-06: the invite is Tier 1 and goes through the same unattended
-    door as the hold, off the turn; no card when it sends."""
+def _preview(monkeypatch, answer: ActionResult) -> list:
+    seen: list = []
+
+    async def preview(action, params):
+        seen.append((action, params))
+        return answer
+    monkeypatch.setattr("atlas.kernel.executor.preview", preview)
+    return seen
+
+
+async def test_picking_holds_then_raises_the_invite_card(monkeypatch):
+    """The hold is Tier 1 off the turn; the invite is a card (six agents,
+    2026-10-27), dry-run first, never run by the call."""
     lead_call, call = _call(monkeypatch)
     call.offered = meetings.choose(meetings.open_slots([], MONDAY_8, days=7))
     ran, proposed = [], []
 
     async def run_tier1(action, params, reason):
         ran.append((action, params, None))
-        if action == "agency.hold_meeting":
-            return ActionResult(True, "held", evidence={"meeting_id": 4,
-                                                        "email": "joe@example.com"})
-        return ActionResult(True, "invited joe@example.com to the call with Miro")
+        assert action == "agency.hold_meeting", "the invite is never run"
+        return ActionResult(True, "held", evidence={"meeting_id": 4,
+                                                    "email": "joe@example.com"})
     monkeypatch.setattr("atlas.kernel.unattended.run_tier1", run_tier1)
+    seen = _preview(monkeypatch, ActionResult(True, "would invite joe@example.com"))
 
     async def propose(action, params, reason, **kw):
-        proposed.append((action, params))
+        proposed.append((action, params, reason, kw))
         return 12
     monkeypatch.setattr("atlas.kernel.approvals.propose", propose)
     line = await lead_call._book(call, "CA1", 2)
     assert ran[0][0] == "agency.hold_meeting" and ran[0][2] is None
     assert "invite" in line and call.meeting
-    # The invite goes off the turn, so the lead is never kept waiting on it.
     import asyncio
     for _ in range(3):
         await asyncio.sleep(0)
-    assert ran[1] == ("agency.send_invite", {"meeting_id": 4}, None)
-    assert proposed == [] and any("invite went to joe@example.com" in n
-                                  for n in call.notes)
+    assert len(ran) == 1 and seen == [("agency.send_invite", {"meeting_id": 4})]
+    [(action, params, reason, kw)] = proposed
+    assert action == "agency.send_invite" and params == {"meeting_id": 4}
+    assert not reason.startswith("Held for you") and kw["dedup_key"] == "lead-call:CA1:invite"
+    assert call.cards == ["#12 agency.send_invite"]
+    assert any("waits for your approval" in n for n in call.notes)
 
 
-async def test_a_refused_invite_falls_back_to_the_card(monkeypatch):
+async def test_a_refused_invite_dry_run_is_held_for_you_on_the_card(monkeypatch):
     lead_call, call = _call(monkeypatch)
     call.offered = meetings.choose(meetings.open_slots([], MONDAY_8, days=7))
     proposed = []
-
-    async def run_tier1(action, params, reason):
-        if action == "agency.hold_meeting":
-            return ActionResult(True, "held", evidence={"meeting_id": 4,
-                                                        "email": "joe@example.com"})
-        return ActionResult(False, "dry run refused: joe@example.com is on the "
-                                   "suppression list")
-    monkeypatch.setattr("atlas.kernel.unattended.run_tier1", run_tier1)
+    monkeypatch.setattr("atlas.kernel.unattended.run_tier1", _returns(
+        ActionResult(True, "held", evidence={"meeting_id": 4,
+                                             "email": "joe@example.com"})))
+    _preview(monkeypatch, ActionResult(False, "dry run refused: joe@example.com is on "
+                                              "the suppression list"))
 
     async def propose(action, params, reason, **kw):
         proposed.append((action, params, reason))
@@ -291,7 +300,7 @@ async def test_a_refused_invite_falls_back_to_the_card(monkeypatch):
         await asyncio.sleep(0)
     [(action, params, reason)] = proposed
     assert action == "agency.send_invite" and params == {"meeting_id": 4}
-    assert reason.startswith("Held for you: ") and "suppression" in reason
+    assert reason.startswith("Held for you: joe@example.com is on the suppression")
     assert call.cards == ["#12 agency.send_invite"]
 
 
@@ -318,7 +327,7 @@ async def test_a_choice_outside_the_offer_holds_nothing(monkeypatch):
 
 async def test_texting_the_link_is_off(monkeypatch):
     lead_call, call = _call(monkeypatch)
-    monkeypatch.setattr(_store, "count_closed_deals", _returns(0))
+    monkeypatch.setattr(_store, "lead_returning", _returns(False))
     monkeypatch.setattr(_store, "lead_links", _returns({}))
     from atlas.kernel import llm
     from atlas.kernel.llm import Completion

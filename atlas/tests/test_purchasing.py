@@ -116,7 +116,7 @@ def test_good_time_with_no_history():
 
 
 def test_checkout_link_is_unchanged():
-    option = {"url": "https://flycheap.live/checkout?id=abc123&pre=filled"}
+    option = {"url": "https://flycheap.example/checkout?id=abc123&pre=filled"}
     assert flights.checkout_link(option) == option["url"]
 
 
@@ -246,9 +246,9 @@ async def test_prepare_flight_stamps_every_option_with_seen_at_and_source(
     async def fake_search_fares(origin, destination, date):
         return [
             {"title": "Cheap Air 100", "price": 210.0, "currency": "USD",
-             "url": "https://flycheap.live/go/1"},
+             "url": "https://flycheap.example/go/1"},
             {"title": "Cheap Air 200", "price": 250.0, "currency": "USD",
-             "url": "https://flycheap.live/go/2"},
+             "url": "https://flycheap.example/go/2"},
         ], None
 
     monkeypatch.setattr(flights, "search_fares", fake_search_fares)
@@ -266,8 +266,8 @@ async def test_prepare_flight_stamps_every_option_with_seen_at_and_source(
         assert option["source"] == "flycheap"
     assert result.rollback_token == "11"
     # The checkout link is the cheapest option's own url, unchanged.
-    assert args[2] == "https://flycheap.live/go/1"
-    assert result.evidence["checkout_url"] == "https://flycheap.live/go/1"
+    assert args[2] == "https://flycheap.example/go/1"
+    assert result.evidence["checkout_url"] == "https://flycheap.example/go/1"
     # good_time runs on every call; with no history source yet it always
     # says so, honestly, rather than being computed and discarded.
     assert result.evidence["good_time"] == "no history"

@@ -1,0 +1,216 @@
+{
+ "anthropic_free_stack": {
+  "critical": [
+   "anthropic:claude-opus-4-1",
+   "gemini:gemini-flash-latest",
+   "openai:gpt-4o"
+  ],
+  "draft": [
+   "groq:openai/gpt-oss-120b",
+   "gemini:gemini-flash-lite-latest",
+   "groq:qwen/qwen3.8-27b",
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-haiku-4-5"
+  ],
+  "hard": [
+   "anthropic:claude-opus-4-1",
+   "anthropic:claude-sonnet-4-5",
+   "gemini:gemini-flash-latest",
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b"
+  ],
+  "reason": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-opus-4-1",
+   "gemini:gemini-flash-latest",
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b"
+  ],
+  "trivial": [
+   "gemini:gemini-flash-lite-latest",
+   "groq:openai/gpt-oss-20b",
+   "groq:qwen/qwen3.8-27b",
+   "anthropic:claude-haiku-4-5"
+  ]
+ },
+ "anthropic_local": {
+  "critical": [
+   "anthropic:claude-opus-4-1"
+  ],
+  "draft": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-haiku-4-5"
+  ],
+  "hard": [
+   "anthropic:claude-opus-4-1",
+   "anthropic:claude-sonnet-4-5"
+  ],
+  "private": [
+   "local:qwen3.8:27b"
+  ],
+  "reason": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-opus-4-1"
+  ],
+  "trivial": [
+   "anthropic:claude-haiku-4-5"
+  ]
+ },
+ "anthropic_local_cloud_ok": {
+  "critical": [
+   "anthropic:claude-opus-4-1"
+  ],
+  "draft": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-haiku-4-5"
+  ],
+  "hard": [
+   "anthropic:claude-opus-4-1",
+   "anthropic:claude-sonnet-4-5"
+  ],
+  "private": [
+   "local:qwen3.8:27b",
+   "anthropic:claude-haiku-4-5"
+  ],
+  "reason": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-opus-4-1"
+  ],
+  "trivial": [
+   "anthropic:claude-haiku-4-5"
+  ]
+ },
+ "anthropic_only": {
+  "critical": [
+   "anthropic:claude-opus-4-1"
+  ],
+  "draft": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-haiku-4-5"
+  ],
+  "hard": [
+   "anthropic:claude-opus-4-1",
+   "anthropic:claude-sonnet-4-5"
+  ],
+  "reason": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-opus-4-1"
+  ],
+  "trivial": [
+   "anthropic:claude-haiku-4-5"
+  ]
+ },
+ "free_only_stack": {
+  "critical": [
+   "gemini:gemini-flash-latest",
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b"
+  ],
+  "draft": [
+   "groq:openai/gpt-oss-120b",
+   "gemini:gemini-flash-lite-latest",
+   "groq:qwen/qwen3.8-27b",
+   "local:qwen3.8:27b"
+  ],
+  "hard": [
+   "gemini:gemini-flash-latest",
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b"
+  ],
+  "private": [
+   "local:qwen3.8:27b"
+  ],
+  "reason": [
+   "gemini:gemini-flash-latest",
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b"
+  ],
+  "trivial": [
+   "gemini:gemini-flash-lite-latest",
+   "groq:openai/gpt-oss-20b",
+   "groq:qwen/qwen3.8-27b"
+  ]
+ },
+ "mac_groq_openrouter_local_free_only": {
+  "critical": [
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b",
+   "openrouter:nvidia/nemotron-3.5-lightning:free",
+   "openrouter:inclusionai/ling-3.0-flash-sante:free",
+   "openrouter:apodex/apodex-1.1-mini:free",
+   "openrouter:dots-studio/dots-3-note-preview:free"
+  ],
+  "draft": [
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "openrouter:nvidia/nemotron-3.5-lightning:free",
+   "openrouter:inclusionai/ling-3.0-flash-sante:free",
+   "openrouter:apodex/apodex-1.1-mini:free",
+   "openrouter:dots-studio/dots-3-note-preview:free",
+   "local:qwen3.8:27b"
+  ],
+  "hard": [
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b",
+   "openrouter:nvidia/nemotron-3.5-lightning:free",
+   "openrouter:inclusionai/ling-3.0-flash-sante:free",
+   "openrouter:apodex/apodex-1.1-mini:free",
+   "openrouter:dots-studio/dots-3-note-preview:free"
+  ],
+  "private": [
+   "local:qwen3.8:27b"
+  ],
+  "reason": [
+   "groq:openai/gpt-oss-120b",
+   "groq:qwen/qwen3.8-27b",
+   "groq:openai/gpt-oss-20b",
+   "openrouter:nvidia/nemotron-3.5-lightning:free",
+   "openrouter:inclusionai/ling-3.0-flash-sante:free",
+   "openrouter:apodex/apodex-1.1-mini:free",
+   "openrouter:dots-studio/dots-3-note-preview:free"
+  ],
+  "trivial": [
+   "groq:openai/gpt-oss-20b",
+   "groq:qwen/qwen3.8-27b",
+   "openrouter:nvidia/nemotron-3.5-lightning:free",
+   "openrouter:inclusionai/ling-3.0-flash-sante:free",
+   "openrouter:apodex/apodex-1.1-mini:free",
+   "openrouter:dots-studio/dots-3-note-preview:free"
+  ]
+ },
+ "non_local_url": {
+  "critical": [
+   "anthropic:claude-opus-4-1"
+  ],
+  "draft": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-haiku-4-5"
+  ],
+  "hard": [
+   "anthropic:claude-opus-4-1",
+   "anthropic:claude-sonnet-4-5"
+  ],
+  "reason": [
+   "anthropic:claude-sonnet-4-5",
+   "anthropic:claude-opus-4-1"
+  ],
+  "trivial": [
+   "anthropic:claude-haiku-4-5"
+  ]
+ },
+ "ollama_only": {
+  "private": [
+   "ollama:llama3.2:3b"
+  ],
+  "trivial": [
+   "ollama:llama3.2:3b"
+  ]
+ }
+}

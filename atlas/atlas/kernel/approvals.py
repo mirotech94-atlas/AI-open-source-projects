@@ -12,8 +12,8 @@ from typing import Any
 
 from . import idempotency, lessons
 from .audit import audit
-from .comms import Button, Outbound, notify
-from .contracts import ActionResult, Severity
+from .comms import CARD_RULE, Button, Outbound, notify
+from .contracts import ActionResult, FailureClass, Severity, Tier
 from .events import publish
 from .executor import (  # noqa: F401 -- re-exported: propose() and its callers
     ExecutionRequest,
@@ -28,7 +28,7 @@ from .state import execute_sql, fetch_all, fetch_one
 
 log = logging.getLogger("atlas.approvals")
 
-# Miro, 2026-10-06: "cards should never expire". They still do -- silence
+# the owner, 2026-10-06: "cards should never expire". They still do -- silence
 # is never consent (invariant 5) and a tap never runs stale (the dry run is
 # re-run on approval) -- but a routine card now waits two weeks and is
 # listed to him once a day (`_open_cards_notice`) until he decides. Urgent
@@ -119,8 +119,14 @@ async def propose(
     incident_id: int | None = None,
     dedup_key: str | None = None,
     automatic: bool = False,
+    urgent: bool = False,
 ) -> int:
-    """Raise a decision for Miro. Returns the proposal id.
+    """Raise a decision for the owner. Returns the proposal id.
+
+    `urgent` is the only way a card becomes urgent (`evidence.urgent`, read by
+    `owner_calls`): a keyword set in code by a proposer. Any `urgent` key already
+    inside `evidence` is dropped, because evidence carries collector and ingested
+    text (invariant 4) and must never be able to ring the owner's phone.
 
     `dedup_key` names the CAUSE. While a proposal with that key is still
     pending, the same cause raises nothing new: it returns the existing id
@@ -137,6 +143,9 @@ async def propose(
     decision = REGISTRY.decisions.get(action)
     if decision is None or not decision.allowed:
         raise ValueError(f"cannot propose {action}: {decision.reason if decision else 'unknown'}")
+    evidence = {k: v for k, v in (evidence or {}).items() if k != "urgent"}
+    if urgent is True and decision.tier is Tier.ASK:
+        evidence["urgent"] = True
 
     # The missing half of invariant 2. The executor refuses a parameter the
     # action did not declare; nothing refused one it NEEDS, so a spoken
@@ -165,6 +174,20 @@ async def propose(
         if why:
             await audit("proposal.vetoed", action, {"why": why})
             raise Unrunnable(action, f"I can't queue that: {why}")
+
+    # The QA hard gate (kernel/qa_gate.py): no card for content QA has not
+    # passed. Fail closed: anything that stops the gate is a refusal.
+    from . import qa_gate
+    if qa_gate.gated(action):
+        try:
+            await qa_gate.require(action, dict(params or {}))
+        except qa_gate.QaRequired as exc:
+            await audit("proposal.qa_held", action, {"why": exc.spoken[:300]})
+            raise
+        except Exception as exc:
+            await audit("proposal.qa_held", action, {"why": str(exc)[:300]})
+            raise qa_gate.QaRequired(action, f"QA could not run, so it is held: "
+                                             f"{type(exc).__name__}") from exc
 
     if dedup_key:
         existing = await fetch_one(
@@ -230,18 +253,46 @@ async def propose(
     from .registry import payload_hash
     version = REGISTRY.action_version(action)
     phash = payload_hash(params)
+
+    # BUILD_ORDER 10.1 asks for the dry-run output IN the message, and it was
+    # the one clause still unmet: the output was stored and rendered on the web
+    # view, so the card said "requires approval" and the evidence for that
+    # decision was a click away on a mesh-only page. Deciding on a phone
+    # meant approving without it.
+    #
+    # `executor.preview` exists for exactly this and is the only safe way to
+    # get it: it calls `dry_run` and can never reach `run`, so this is sound
+    # even in watch-only — seeing what WOULD happen is the point of that phase.
+    #
+    # It never blocks the card. A dry run that raises, refuses or takes too
+    # long yields a card that says so, because a decision with no preview is
+    # still better than no decision reaching him at all.
+    #
+    # Only for the tier that actually asks him something. A Tier 1 action runs
+    # unattended and dry-runs inside `execute` anyway, so previewing it here
+    # would do the work twice to decorate a card nobody decides on — measured
+    # at roughly ten times the runtime across the approval tests, because every
+    # proposal was paying for a dry run whether or not a human would ever read
+    # the result.
+    dry_text: str | None = None
+    dry_ok: bool | None = None
+    if decision.tier >= Tier.ASK:
+        dry_text, dry_ok = await _preview_for_card(action, params)
+
     row = await fetch_one(
         """INSERT INTO proposals
              (incident_id, expires_at, action, params, tier, reason,
               evidence, rollback_plan, confidence, dedup_key, status, predicted,
-              catalog_version, approved_payload_hash)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+              catalog_version, approved_payload_hash, dry_run, dry_run_ok,
+              dry_run_at)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
            RETURNING id, params""",
         incident_id, datetime.now(UTC) + TTL[severity], action,
         json.dumps(params, default=str), int(decision.tier), reason,
         json.dumps(evidence or {}, default=str), rollback_plan, confidence,
         dedup_key, "suppressed" if suppressed else "pending", pred.p,
-        version, phash,
+        version, phash, dry_text, dry_ok,
+        datetime.now(UTC) if dry_text else None,
     )
     pid = row["id"]
     await _rehash_stored(pid, row, phash)
@@ -267,12 +318,25 @@ async def propose(
     spec = REGISTRY.actions[action]
     topic = _topic(spec, action, params)
     verbose = bool(getattr(spec, "verbose_card", False))
-    body = "\n".join(filter(None, [
+    # the owner, 2026-10-11: "I don't know which one is which." The header says
+    # the area and what approving does; the first line says what each
+    # button does; the reason and evidence follow below a divider. Built
+    # from the action and params only (kernel/board.py), never the reason.
+    from . import board
+    detail = "\n".join(filter(None, [
         reason.strip()[:1500] if verbose else _headline(reason),
         # The exact recipient and words, when those are the decision.
         _card_detail(spec, params),
         f"`{action}` · Tier {int(decision.tier)}"
         + (f" · rollback: {_headline(rollback_plan, 60)}" if rollback_plan else ""),
+        # 10.1: what the dry run actually said, on the card. A refusal leads
+        # with the word, because that is the line that changes his answer —
+        # approving something whose dry run already refused is the mistake this
+        # prevents. `ok is None` means the preview could not be reached, which
+        # is stated as not knowing rather than as a refusal.
+        (f"⚠ dry run REFUSED: {_headline(dry_text, 110)}" if dry_ok is False
+         else f"dry run: {_headline(dry_text, 120)}" if dry_ok
+         else f"dry run {_headline(dry_text, 110)}") if dry_text else "",
         # Never a number without its reasons. Empty when abstaining, which
         # is what happens for the first forty decisions and for anything new.
         pred.card_line(),
@@ -283,23 +347,92 @@ async def propose(
          f"'Approve + suggest always' records it."
          if pred.advice is Advice.STANDING_RULE else ""),
     ]))
-    await notify(Outbound(
-        title=f"#{pid} — {REGISTRY.actions[action].summary}",
-        body=body, severity=severity,
-        # The namespace IS the topic: "vpsie.restart_instance" is vpsie's
-        # business, and an approval should land where that estate is
-        # discussed rather than in a single channel everything shares.
-        # An action may name a parameter that says which estate instead.
-        topic=topic,
-        presentation="REVIEW" if verbose else "ACTION",
-        buttons=(
-            Button("Approve", f"approve:{pid}"),
-            Button("Approve + suggest always", f"always:{pid}"),
-            Button("Decline", f"decline:{pid}"),
-            Button("Details", f"detail:{pid}"),
-        ),
-    ))
+    body = f"{board.card_lead(action, params, spec)}\n{CARD_RULE}\n{detail}"
+    # Slack is NOT where approvals live (WhatsApp buttons and the portal are):
+    # the Slack card, with its Approve buttons, exists only with APPROVALS_SLACK=on.
+    from . import wa_approvals as _wa
+    if _wa.slack_on():
+        await notify(Outbound(
+            title=f"#{pid} — {REGISTRY.actions[action].summary}",
+            header=board.card_header(pid, action, params, spec, evidence),
+            body=body, severity=severity,
+            # The namespace IS the topic: "cloudco.restart_instance" is cloudco's
+            # business, and an approval should land where that estate is
+            # discussed rather than in a single channel everything shares.
+            # An action may name a parameter that says which estate instead.
+            topic=topic,
+            presentation="REVIEW" if verbose else "ACTION",
+            buttons=(
+                Button("Approve", f"approve:{pid}"),
+                Button("Approve + suggest always", f"always:{pid}"),
+                Button("Decline", f"decline:{pid}"),
+                Button("Details", f"detail:{pid}"),
+            ),
+        ))
+        # Where the card landed, for the board's link; then redraw the board.
+        await board.record_card(pid, topic)
+    board.mark_dirty()
+    # The same card on the owner's WhatsApp, with Approve / Decline buttons. Off
+    # unless WhatsApp is configured; never blocks or fails the card.
+    if decision.tier >= Tier.ASK:
+        from . import background, wa_approvals
+        if wa_approvals.enabled():
+            background.spawn(_whatsapp_card(pid), f"whatsapp card #{pid}")
     return pid
+
+
+WA_RETRY_AFTER_S = 300.0     # the one second WhatsApp attempt, this long after the first
+
+
+async def _send_whatsapp_card(pid: int, reason: str) -> ActionResult:
+    try:
+        return await execute(ExecutionRequest(
+            action="mmt.notify_card", params={"proposal_id": pid}, reason=reason))
+    except Exception as exc:                                # noqa: BLE001
+        return ActionResult(False, type(exc).__name__)
+
+
+async def _whatsapp_card(pid: int) -> None:
+    """Send the owner's WhatsApp copy of card #pid through the executor
+    (`mmt.notify_card`, Tier 1). WhatsApp is where he decides cards. If the send
+    fails, ONE second attempt follows a few minutes later (bounded), and a card
+    still unsent shows as a banner on the portal. Slack hears of it only with
+    APPROVALS_SLACK=on. Watch-only sends nothing here (the executor refuses;
+    nothing could be decided from the message anyway) and says nothing."""
+    from . import background, wa_approvals
+    if watch_only():
+        return
+    result = await _send_whatsapp_card(pid, f"card #{pid} was raised")
+    if result.ok or result.detail.startswith("already notified"):
+        return
+    if wa_approvals.slack_on():
+        await wa_approvals.tell_slack(
+            f"#{pid} — WhatsApp not delivered",
+            f"The WhatsApp copy of card #{pid} did not go out "
+            f"({result.detail[:200]}). It is on the portal.")
+    if result.failure_class is FailureClass.VALIDATION:
+        # A refusal that waiting cannot cure (no owner number, sender not set,
+        # card no longer pending): one more attempt would fail the same way.
+        return
+    background.spawn(_whatsapp_card_retry(pid), f"whatsapp card retry #{pid}")
+
+
+async def _whatsapp_card_retry(pid: int) -> None:
+    """The second and last attempt, only if the card is still pending."""
+    await asyncio.sleep(WA_RETRY_AFTER_S)
+    if watch_only():
+        return
+    try:
+        row = await fetch_one("SELECT status FROM proposals WHERE id=$1", pid)
+    except Exception as exc:                                # noqa: BLE001
+        log.warning("card #%s: retry not read (%s)", pid, type(exc).__name__)
+        return
+    if row is None or row["status"] != "pending":
+        return
+    result = await _send_whatsapp_card(pid, f"card #{pid}: second WhatsApp attempt")
+    if not result.ok and not result.detail.startswith("already notified"):
+        log.warning("card #%s: second WhatsApp attempt failed: %s", pid,
+                    result.detail[:120])
 
 
 def _card_detail(spec: object, params: dict | None) -> str:
@@ -355,6 +488,37 @@ def topic_for_action(action: str, params: dict | None) -> str:
     spec = REGISTRY.actions.get(action)
     return _topic(spec, action, params) if spec is not None else (
         action.split(".", 1)[0] if action else "")
+
+
+# A preview is worth waiting a moment for and not worth delaying a CRITICAL
+# card over. Most dry runs are a formatted string and a bounded query.
+PREVIEW_TIMEOUT_S = 8.0
+
+
+async def _preview_for_card(action: str, params: dict) -> tuple[str | None, bool | None]:
+    """The dry-run output for the card, or a readable reason there is none.
+
+    Returns (text, ok). `ok` is None when the dry run could not be reached at
+    all, which must not render as a refusal — "this would be refused" and "I
+    could not find out" are opposite facts, and the second one is the card
+    saying it does not know.
+    """
+    import asyncio
+
+    from .executor import preview
+
+    try:
+        result = await asyncio.wait_for(preview(action, params),
+                                        timeout=PREVIEW_TIMEOUT_S)
+    except TimeoutError:
+        log.warning("dry-run preview for %s timed out after %.0fs",
+                    action, PREVIEW_TIMEOUT_S)
+        return ((f"could not be previewed: the dry run was still running "
+                 f"after {PREVIEW_TIMEOUT_S:.0f}s"), None)
+    except Exception as exc:                            # noqa: BLE001
+        log.warning("dry-run preview for %s raised: %s", action, exc)
+        return f"could not be previewed: {type(exc).__name__}: {exc}", None
+    return (result.detail or "").strip() or "(the dry run returned no output)", result.ok
 
 
 def _headline(text: str, limit: int = 140) -> str:
@@ -420,6 +584,53 @@ class Verdict:
 
 
 async def decide(pid: int, verdict: str, via: str) -> Verdict:
+    """Answer a proposal (`_decide`), then mark the approvals board for a
+    redraw: whatever the outcome, the card may have left the queue. Marking
+    is in memory; the board is drawn by its scheduler step, never here --
+    this runs inside Slack's three-second window."""
+    result: Verdict | None = None
+    try:
+        result = await _decide(pid, verdict, via)
+        return result
+    finally:
+        from . import board
+        board.mark_dirty()
+        # Deciding in one channel retires the WhatsApp code (no double decision).
+        # A refused attempt (watch-only) decided nothing, so its code stays.
+        # Best effort: a failure here must not turn a decided card into an error.
+        if result is not None and result.outcome != "refused":
+            try:
+                from . import wa_approvals
+                if wa_approvals.enabled():
+                    await wa_approvals.retire(pid)
+            except Exception as exc:                        # noqa: BLE001
+                log.warning("card #%s: code not retired (%s)", pid,
+                            type(exc).__name__)
+
+
+def retired_agent_keys() -> list[str]:
+    """the owner, 2026-10-28: the eighteen retired agents' pending cards expire
+    and never execute. Read from the code constant `agents.RETIRED_AGENTS`
+    (imported here, not at load, to keep the import graph acyclic), matched
+    on the dedup key an agent's tool call writes; there is no switch."""
+    from .agents import RETIRED_AGENTS
+    return [f"%@agent:{name}" for name in sorted(RETIRED_AGENTS)]
+
+
+# the owner, 2026-10-29: the Reddit posting lane is dropped (Reddit no longer
+# grants new API access; his Reddit posts are manual). Its cards carry the
+# key `reddit.submit_post:<draft>` with no agent suffix, so they are matched
+# on the action itself. A code constant; there is no switch.
+RETIRED_ACTIONS: tuple[str, ...] = ("reddit.",)
+
+
+def retired_action_patterns() -> list[str]:
+    """LIKE patterns for the actions of a dropped lane: a pending card for
+    one expires and is never claimed."""
+    return [f"{prefix}%" for prefix in RETIRED_ACTIONS]
+
+
+async def _decide(pid: int, verdict: str, via: str) -> Verdict:
     """Answer a proposal. verdict: approve | always | decline.
 
     The claim is a single conditional UPDATE. The previous version did
@@ -471,7 +682,7 @@ async def decide(pid: int, verdict: str, via: str) -> Verdict:
 
     # Approving while watch-only must not consume the proposal. Claiming it and
     # then having the executor refuse would mark a perfectly good proposal
-    # 'failed' and remove Miro's chance to answer it once ATLAS is armed.
+    # 'failed' and remove the owner's chance to answer it once ATLAS is armed.
     if watch_only():
         await audit("proposal.watch_only", str(pid), {"id": pid, "via": via})
         return Verdict(
@@ -495,12 +706,19 @@ async def decide(pid: int, verdict: str, via: str) -> Verdict:
                        f"#{pid} was not run: I couldn't confirm the "
                        f"database wasn't just restored from a backup.", pid)
 
+    # A card a retired agent raised (its dedup key ends `@agent:<name>`,
+    # kernel/tools.py) or a dropped lane's card (RETIRED_ACTIONS) never
+    # matches: it falls to _why_not_claimed, which
+    # marks it expired. Same UPDATE, so nothing can run it in between.
     row = await fetch_one(
         """UPDATE proposals SET status='approved', decided_at=now(),
                                 decided_via=$2, always=$3
            WHERE id=$1 AND status='pending' AND expires_at > now()
+             AND NOT (COALESCE(dedup_key, '') LIKE ANY($4::text[]))
+             AND NOT (action LIKE ANY($5::text[]))
            RETURNING action, params, reason, incident_id""",
-        pid, via, verdict == "always")
+        pid, via, verdict == "always", retired_agent_keys(),
+        retired_action_patterns())
     if row is None:
         return await _why_not_claimed(pid, "approve")
 
@@ -562,7 +780,7 @@ async def decide(pid: int, verdict: str, via: str) -> Verdict:
         # should: tiers are assigned in code, and a stored flag that silently
         # downgraded Tier 2 to Tier 1 would be exactly the runtime override the
         # design forbids. The honest version is that this marks the action for
-        # review, and Miro changes the tier in code if he agrees.
+        # review, and the owner changes the tier in code if he agrees.
         await audit("proposal.promotion_requested", action, {"id": pid})
         return Verdict(
             True, "executed",
@@ -753,7 +971,7 @@ async def reap_abandoned_runs() -> list[str]:
     """Runs a killed process left between execute.start and its finish
     (RA-B2). Called once, by the API server at startup, like
     `reap_orphans`. Each gets an `execute.abandoned` audit row, so it stops
-    reading as in flight (the deploy guard waits on open runs), and Miro
+    reading as in flight (the deploy guard waits on open runs), and the owner
     gets ONE message naming them: their outcome is unknown -- the effect
     may or may not have happened -- so he checks by hand. Nothing is re-run
     or rolled back on a guess. Only the last 7 days are looked at."""
@@ -815,7 +1033,7 @@ async def reconcile_abandoned(rows: list[Any]) -> list[tuple[str, str]]:
     `reconcile.needs_human`. It only reads: nothing is re-run, retried or
     rolled back, whatever the answer. Never raises (bar a cancellation);
     one run's error leaves that run abandoned and unreconciled, which the
-    first message already told Miro to check by hand."""
+    first message already told the owner to check by hand."""
     from . import verify
     from .executor import _capped_evidence
     found: list[tuple[str, str]] = []
@@ -915,7 +1133,11 @@ async def _why_not_claimed(pid: int, attempted: str) -> Verdict:
 async def expire_stale() -> int:
     rows = await fetch_all(
         """UPDATE proposals SET status='expired'
-           WHERE status='pending' AND expires_at < now() RETURNING id, action""")
+           WHERE status='pending'
+             AND (expires_at < now()
+                  OR COALESCE(dedup_key, '') LIKE ANY($1::text[])
+                  OR action LIKE ANY($2::text[]))
+           RETURNING id, action""", retired_agent_keys(), retired_action_patterns())
     from .judgment import record_outcome
     for row in rows:
         await audit("proposal.expired", row["action"], {"id": row["id"]})
@@ -925,6 +1147,9 @@ async def expire_stale() -> int:
         # Silence is never consent: the card expired and nothing ran. An
         # open dashboard drops it without waiting for its next poll.
         publish("decision", id=int(row["id"]), action=row["action"], outcome="expired")
+    if rows:
+        from . import board
+        board.mark_dirty()
     await _expiry_notice()
     await _open_cards_notice()
     return len(rows)
@@ -936,7 +1161,7 @@ async def expire_stale() -> int:
 # #atlas-decisions inside 23 minutes (2026-09-28). The expiry itself is
 # immediate and unconditional -- silence is never consent -- only the
 # telling is batched.
-# Miro, 2026-10-06 ("don't make each channel too chatty, summarize
+# the owner, 2026-10-06 ("don't make each channel too chatty, summarize
 # better"): once a day, with the open-cards line, not once an hour. 11 of
 # #atlas-decisions' 21 messages in a week were expiry notices.
 EXPIRY_NOTICE_EVERY = timedelta(hours=24)
@@ -965,39 +1190,50 @@ async def _expiry_notice() -> None:
         severity=Severity.INFO, kind="digest", topic="decisions"))
 
 
-# Once a day, every card still waiting for him, oldest first: with a
-# two-week clock a card must not go quiet in Slack's scrollback. Only
-# cards older than OPEN_CARD_AGE are listed -- a card raised an hour ago
-# is still on his screen.
-OPEN_CARDS_NOTICE_EVERY = timedelta(hours=24)
+# Once a day at 9:00 New York time, every card still waiting -- the
+# approvals board's own text, grouped by area, each number linked to its
+# card -- but only when at least one has waited longer than OPEN_CARD_AGE:
+# with a two-week clock a card must not go quiet in Slack's scrollback, and
+# a digest that only repeats the pinned board is chatter (the owner,
+# 2026-10-06). It goes to #approvals when the board has a channel, else to
+# `decisions` as before. Skip-stale: a box down at 9:00 sends it until
+# DIGEST_UNTIL_HOUR, never in the evening; once per New York date.
 OPEN_CARD_AGE = timedelta(hours=24)
+DIGEST_HOUR = 9
+DIGEST_UNTIL_HOUR = 12
 
 
-async def _open_cards_notice() -> None:
+async def _open_cards_notice(now: datetime | None = None) -> None:
+    from . import board
+    now = now or datetime.now(UTC)
+    local = now.astimezone(board.NY)
+    if not DIGEST_HOUR <= local.hour < DIGEST_UNTIL_HOUR:
+        return
     last = await fetch_one(
         """SELECT max(at) AS at FROM actions_log
             WHERE event = 'proposal.open_notice' AND subject = 'proposals'""")
     last_at = last["at"] if last else None
-    now = datetime.now(UTC)
-    if last_at and now - last_at < OPEN_CARDS_NOTICE_EVERY:
+    if last_at and last_at.astimezone(board.NY).date() == local.date():
         return
-    rows = await fetch_all(
-        """SELECT id, action, created_at, expires_at FROM proposals
-            WHERE status = 'pending' AND created_at < $1 AND expires_at > $2
-            ORDER BY created_at""", now - OPEN_CARD_AGE, now)
-    rows = [r for r in rows if r.get("created_at") and r.get("expires_at")]
-    if not rows:
+    rows = [dict(r) for r in await fetch_all(
+        """SELECT id, action, params, created_at, expires_at, slack_permalink
+             FROM proposals
+            WHERE status = 'pending' AND expires_at > $1
+            ORDER BY expires_at, id""", now)]
+    old = [r for r in rows if r.get("created_at") and r.get("expires_at")
+           and r["created_at"] < now - OPEN_CARD_AGE]
+    if not old:
         return
     await audit("proposal.open_notice", "proposals",
-                {"ids": [int(r["id"]) for r in rows]})
-    lines = []
-    for r in rows:
-        waited = max(0, int((now - r["created_at"]).total_seconds() // 86400))
-        left = max(0, int((r["expires_at"] - now).total_seconds() // 86400))
-        lines.append(f"#{r['id']} {r['action']} -- waiting {waited} d, "
-                     f"{left} d left")
+                {"ids": [int(r["id"]) for r in rows],
+                 "waited": [int(r["id"]) for r in old]})
+    try:
+        where = await board.channel()
+    except Exception:                                   # noqa: BLE001
+        where = None
     await notify(Outbound(
-        title=f"{len(rows)} card(s) still waiting for you",
-        body="\n".join(lines),
-        severity=Severity.INFO, kind="digest", topic="decisions"))
+        title=f"{len(rows)} card(s) waiting for you, {len(old)} for over a day",
+        body="\n\n".join(board.render(rows, now)),
+        severity=Severity.INFO, kind="digest",
+        topic="approvals" if where else "decisions", channel=where or ""))
 

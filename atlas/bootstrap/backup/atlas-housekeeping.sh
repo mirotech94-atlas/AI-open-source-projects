@@ -1,4 +1,5 @@
 #!/bin/bash
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 # Weekly: keep the disk from filling. Runs from atlas-housekeeping.timer.
 #
 #   * Docker build cache beyond the newest 3 GB, and dangling images -- every
@@ -14,7 +15,7 @@ set -uo pipefail
 cd /opt/atlas || exit 1
 DIR=/opt/atlas/data/app/backups
 MEDIA=/opt/atlas/data/app/content
-OFFSITE="${ATLAS_BACKUP_OFFSITE:-atlasbak@203.0.113.10}"
+OFFSITE="${ATLAS_BACKUP_OFFSITE:-atlasbak@203.0.113.147}"
 KEY=/root/.ssh/atlas_backup_ed25519
 mkdir -p "$DIR"
 before=$(df --output=avail -B1 / | tail -1)

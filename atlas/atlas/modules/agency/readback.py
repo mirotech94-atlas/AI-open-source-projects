@@ -231,13 +231,14 @@ async def _domain(slug: str) -> tuple[str | None, str | None]:
     """(domain, built path) from agency_sites, else AGENCY_SITES."""
     site = await _store.get_site(slug)
     if site:
-        return deploy.published_domain(site), site.get("path")
+        return deploy.published_url(site), site.get("path")
     for s, domain in _parse_sites_env(os.getenv("AGENCY_SITES", "")):
         if s == slug:
             return domain, None
     return None, None
 
 
+@verifier("agency.publish_vercel")     # the row's domain is the Vercel host
 @verifier("agency.deploy_site")
 async def verify_deploy(params: dict[str, Any], result: ActionResult) -> Verification:
     slug = str(params.get("slug") or (result.evidence or {}).get("slug") or "")

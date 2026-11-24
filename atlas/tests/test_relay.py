@@ -103,12 +103,12 @@ def test_a_token_is_for_one_call_once_and_for_two_minutes(monkeypatch):
 
 def test_the_twiml_connects_with_the_opening_as_the_greeting(monkeypatch):
     monkeypatch.setenv("SESSION_SECRET", SECRET)
-    xml = relay.twiml("atlas.test", SID, "Hey Miro, it's ATLAS. <Disk> & more. Yes or no?")
+    xml = relay.twiml("atlas.test", SID, "Hey the owner, it's ATLAS. <Disk> & more. Yes or no?")
     assert xml.startswith(f'<Response><Connect action="{relay.AFTER_PATH}" method="POST">')
     assert 'url="wss://atlas.test/webhooks/twilio/relay?t=' in xml
     assert "&lt;Disk&gt; &amp; more" in xml and "<Disk>" not in xml
     assert 'interruptible="any"' in xml and 'dtmfDetection="true"' in xml
-    assert "ttsProvider" not in xml, "provider and voice only when Miro sets them"
+    assert "ttsProvider" not in xml, "provider and voice only when the owner sets them"
     monkeypatch.setenv("PHONE_RELAY_VOICE", "abc")
     assert 'voice="abc"' in relay.twiml("atlas.test", SID, "x")
 
@@ -153,7 +153,7 @@ def test_a_forged_token_or_a_call_atlas_did_not_place_is_closed(on):
         ws.receive_text()
 
 
-def test_key_1_decides_through_the_same_gate_as_miro(on, monkeypatch):
+def test_key_1_decides_through_the_same_gate_as_owner(on, monkeypatch):
     decided = _deciding(monkeypatch)
     with _open(on) as ws:
         _setup(ws)
@@ -204,7 +204,7 @@ def test_a_yes_after_cutting_in_before_the_question_is_not_an_answer(on, monkeyp
     with _open(on) as ws:
         _setup(ws)
         ws.send_text(json.dumps({"type": "interrupt", "durationUntilInterruptMs": 900,
-                                 "utteranceUntilInterrupt": "Hey Miro, it's ATLAS. FlyCheap's"}))
+                                 "utteranceUntilInterrupt": "Hey the owner, it's ATLAS. FlyCheap's"}))
         ws.send_text(json.dumps({"type": "prompt", "voicePrompt": "yeah yeah", "last": True}))
         reply = _text(ws)["token"]
         assert reply.startswith("Let me finish the question. Want me to restart the worker")
@@ -217,8 +217,8 @@ def test_a_yes_after_cutting_in_before_the_question_is_not_an_answer(on, monkeyp
 
 def test_cutting_in_after_the_whole_question_keeps_his_answer():
     q = "Want me to restart the worker, yes or no?"
-    assert relay.heard_question(f"Hey Miro. The poller is stuck. {q} Press 1", q)
-    assert not relay.heard_question("Hey Miro. The poller is stuck. Want me to", q)
+    assert relay.heard_question(f"Hey the owner. The poller is stuck. {q} Press 1", q)
+    assert not relay.heard_question("Hey the owner. The poller is stuck. Want me to", q)
     assert relay.heard_question("anything", ""), "no question pending: nothing to have missed"
 
 
@@ -235,7 +235,7 @@ def test_partials_are_never_acted_on_and_star_ends_the_call(on, monkeypatch):
 
 
 def test_key_0_repeats_the_last_line(on):
-    phone.remember(SID, "ATLAS", "Hey Miro. Want me to restart the worker, yes or no?")
+    phone.remember(SID, "ATLAS", "Hey the owner. Want me to restart the worker, yes or no?")
     with _open(on) as ws:
         _setup(ws)
         ws.send_text(json.dumps({"type": "dtmf", "digit": "0"}))

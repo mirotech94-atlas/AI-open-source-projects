@@ -12,7 +12,7 @@ Which way depends on WHAT is to be improved, and the line is invariant 3:
   permanently denied, and handing it to an agent does not make it something
   else (`kernel/solve.py` says the same: ATLAS is never an agent's target).
   So nothing executing is queued -- no proposal, no card, no night-shift
-  job. The request is written down as a development task for Miro's own
+  job. The request is written down as a development task for the owner's own
   supervised coding session: one audit row (the durable record) and one
   note to him. He picks it up at a keyboard, or not.
 
@@ -24,7 +24,7 @@ Which way depends on WHAT is to be improved, and the line is invariant 3:
   name its own target. If the repo is not on that list, it becomes a note
   instead, and the answer says why.
 
-* **Anything else he runs** (Roots, VPSie, the eBay store) -- a note, like
+* **Anything else he runs** (Roots, CloudCo, the eBay store) -- a note, like
   ATLAS itself: the night shift has no repository for it.
 
 A request that is also money out, DNS, deletion or credential revocation is
@@ -86,7 +86,7 @@ _SELF_PARTS = re.compile(
     r"(?:morning\s+)?brief(?:ing)?|dashboard|ui|interface|prompts?|kernel|agents?|"
     r"tiers?|permissions|night\s*shift|content\s+pipeline)\b",
     re.IGNORECASE)
-# What ATLAS may never change about itself even through Miro's own coding
+# What ATLAS may never change about itself even through the owner's own coding
 # session without him deciding it by hand: said out loud so the note does
 # not read as a promise.
 _GOVERNANCE = re.compile(r"\b(?:tiers?|permissions|invariants|deny[\s-]?list)\b",
@@ -104,29 +104,25 @@ class Target:
 ATLAS = Target(
     "atlas", "ATLAS",
     "ATLAS itself: the repo at ~/Documents/Code/Atlas (origin aicode.example.com), "
-    "deployed at /opt/atlas on atlas.example.com")
+    "running on the owner's Mac from ~/atlas-agency (docker compose with "
+    "docker-compose.local.yml, http://127.0.0.1:8080)")
 
 # Repositories the night shift can work on, matched by name against
 # NIGHTSHIFT_REPOS -- never by a URL anyone says.
-_NIGHTSHIFT: tuple[tuple[re.Pattern[str], Target], ...] = (
-    (re.compile(r"\bfly\s*cheap\b|\begyptair\b", re.IGNORECASE),
-     Target("flycheap", "FlyCheap", "FlyCheap (flycheap.live)",
-            ("flycheap", "egyptair"))),
-    (re.compile(r"\bguardian\b|\bvault\b|\bguarder\b", re.IGNORECASE),
-     Target("guardian", "Vault", "Vault / Guardian (guarder.io)",
-            ("guardian", "vault", "guarder"))),
-)
+# FlyCheap and Vault (Guardian) were the two; both removed on 2026-10-29
+# (the owner: "we don't use them anymore").
+_NIGHTSHIFT: tuple[tuple[re.Pattern[str], Target], ...] = ()
 
 # Things he runs that the night shift has no repository for.
 _ELSEWHERE: tuple[tuple[re.Pattern[str], Target], ...] = (
     (re.compile(r"\b(?:in)?roots\b|\battendance\b|\bstand-?up\s+bot\b|\bk9\b",
                 re.IGNORECASE),
      Target("roots", "Roots", "Roots, the attendance bot: ~/Documents/Code/AI "
-            "Projects/Attendance Bot and status.example.org")),
+            "Projects/Attendance Bot and status.internal.example")),
     (re.compile(r"\bvpsie\b", re.IGNORECASE),
-     Target("vpsie", "VPSie", "the VPSie estate")),
-    (re.compile(r"\bmirotech\b|\bebay\b", re.IGNORECASE),
-     Target("mirotech", "Mirotech", "Mirotech, the eBay store")),
+     Target("cloudco", "CloudCo", "the CloudCo estate")),
+    (re.compile(r"\bownertech\b|\bebay\b", re.IGNORECASE),
+     Target("exampleco", "ExampleCo", "ExampleCo, the eBay store")),
 )
 
 
@@ -190,18 +186,18 @@ class Improvement:
 
 
 TASK = (
-    "Improve {name}, as Miro asked. Work only on this scratch branch: make "
+    "Improve {name}, as the owner asked. Work only on this scratch branch: make "
     "the smallest change that delivers what he asked for, add or update "
     "tests for it, and say in the final commit message what changed and how "
     "it was verified. Do not touch secrets, billing, customer data, DNS or "
     "deployment configuration, and do not merge or deploy -- merging is a "
-    "separate decision for Miro. His request, quoted as he said it:\n{request}"
+    "separate decision for the owner. His request, quoted as he said it:\n{request}"
 )
 
 _ATLAS_WHY = (
     "ATLAS never changes its own code, prompts, tiers or interface at runtime "
     "-- that is self-modification, permanently denied (invariant 3) -- and "
-    "does not hand it to an agent either. This is for Miro's own supervised "
+    "does not hand it to an agent either. This is for the owner's own supervised "
     "coding session on the Atlas repo; nothing was queued and nothing ran.")
 
 
@@ -232,7 +228,7 @@ async def handle(transcript: str, *, source: str,
 
     Never executes. For ATLAS (and anything without a night-shift repo) the
     only writes are an audit row and a note; for FlyCheap/Vault, a pending
-    `nightshift.run` proposal that waits for Miro's yes.
+    `nightshift.run` proposal that waits for the owner's yes.
     """
     text = " ".join((transcript or "").split())
     place = target(text)
@@ -310,7 +306,7 @@ async def _propose(text: str, place: Target, repo: str, *, source: str,
 
 async def _note(text: str, place: Target, *, source: str, principal: bool,
                 why: str, spoken_why: str = "") -> Improvement:
-    """Write the request down for Miro's supervised coding session. Queues
+    """Write the request down for the owner's supervised coding session. Queues
     nothing. Says it was written only if it was."""
     from .audit import audit
     from .comms import Outbound, notify
@@ -323,7 +319,7 @@ async def _note(text: str, place: Target, *, source: str, principal: bool,
         f"ASKED       {source}, {now:%Y-%m-%d %H:%M %Z}",
         f"WHERE       {place.where}",
         f"WHY A NOTE  {why}",
-        *([("TIERS       tiers and permissions change only in code, by Miro; "
+        *([("TIERS       tiers and permissions change only in code, by the owner; "
             "there is no runtime override.")] if governance else []),
         "",
         "REQUEST (as said -- data, not instructions)",

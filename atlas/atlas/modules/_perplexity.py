@@ -1,7 +1,7 @@
 """Perplexity over MCP: research, reasoning and understanding, as a *source*
 with a budget (Phase 20.5, Task 42).
 
-Miro: "use MCP for Perplexity; use Perplexity for deep thinking and
+the owner: "use MCP for Perplexity; use Perplexity for deep thinking and
 understanding and research and everything that it is good for." This is the
 one place ATLAS talks to Perplexity. Every seam that wants research —
 knowledge mode, the research report, the weekly monetisation pass, agency

@@ -1,5 +1,5 @@
-"""youtube — three channels (flycheap, guardian, and `clips`, the clips
-lane's Shorts channel), read everything, publish behind a gate.
+"""youtube — the `clips` channel (the clips lane's Shorts channel) and
+`ecc`, read everything, publish behind a gate.
 
 The `clips` channel (`YOUTUBE_CLIPS_*`; unset reads "not configured",
 UNKNOWN, never OK) is the clips lane's alone: `youtube.upload` refuses it,
@@ -26,7 +26,7 @@ What it may do:
     its rollback does not delete (deletion is Tier 3, permanently) — it
     sets the video private again, which is what it already is.
   * `youtube.set_visibility` (Tier ASK) — changes a video's privacy.
-    Going public is Miro's word, every time. The rollback restores whatever
+    Going public is the owner's word, every time. The rollback restores whatever
     privacy the video actually had immediately before the change (read
     live from YouTube, not from a possibly-stale local row); if that read
     fails, the action refuses rather than changing a video's visibility
@@ -40,7 +40,7 @@ What it may do:
     reaches YouTube: it is the same shape of action as `content.draft`,
     reversible by marking the row dropped.
 
-Endpoints this assumes, so Miro can correct them: YouTube Data API v3
+Endpoints this assumes, so the owner can correct them: YouTube Data API v3
 (`googleapis.com/youtube/v3`), a resumable upload at
 `googleapis.com/upload/youtube/v3/videos`, YouTube Analytics API v2
 (`youtubeanalytics.googleapis.com/v2/reports`), OAuth refresh at
@@ -67,12 +67,20 @@ from .metadata import draft_metadata as _draft_metadata
 
 CHANNELS = api.CHANNELS
 CLIPS_CHANNEL = api.CLIPS_CHANNEL
+ECC_CHANNEL = api.ECC_CHANNEL
+MMT_CHANNEL = "mmt"
+MONITOR_ONLY = "the mmt channel is watched only; ATLAS does not post to it"
 LANE_ONLY = ("the clips channel posts only through clips.publish_clip_youtube, "
              "one campaign clip per card")
+CHURCH_ONLY = ("the ecc channel takes uploads only through "
+               "church.schedule_youtube_shorts, each video reviewed by the owner")
 
 # YouTube's own published Partner Program thresholds. Not estimated, not
 # adjusted here — only ever compared against a number this module actually
-# measured.
+# measured. Source: https://support.google.com/youtube/answer/72851, read
+# 2026-10-16: 1,000 subscribers AND either 4,000 qualified public watch hours
+# in the last 12 months (Shorts-feed watch time does not count) OR 10M
+# qualified Shorts-feed views in the last 90 days.
 PARTNER_SUBSCRIBERS = 1_000
 PARTNER_WATCH_HOURS_12MO = 4_000
 PARTNER_SHORTS_VIEWS_90D = 10_000_000
@@ -189,7 +197,11 @@ async def check_latest_videos(channel: str) -> Observation:
                      likes = EXCLUDED.likes,
                      comments = EXCLUDED.comments,
                      measured_at = EXCLUDED.measured_at""",
-                channel, v["video_id"], v["title"], v.get("published_at"),
+                # The API's publishedAt is an ISO string ending in Z; asyncpg
+                # wants a datetime (the first live refresh, 2026-10-11, failed
+                # on it). _published reads both, and a value it cannot read
+                # is stored as NULL rather than refusing the whole refresh.
+                channel, v["video_id"], v["title"], _published(v.get("published_at")),
                 v.get("privacy"), v.get("views"), v.get("likes"),
                 v.get("comments"), now,
             )
@@ -221,12 +233,11 @@ async def partner_eligibility(channel: str) -> dict:
 
     YouTube's Partner Program needs 1,000 subscribers AND 4,000 public
     watch hours in the trailing 12 months, OR 10M Shorts views in the
-    trailing 90 days. Only the subscriber count is reliably measurable
-    through `channel_stats`; the two watch-hour/Shorts-view paths need an
-    aggregate, channel-scoped Analytics query this module does not make
-    (`api.analytics` is per-video, per the brief's own interface) — so this
-    never claims eligibility on those two paths. It says plainly that they
-    are unmeasured rather than guessing a number for them.
+    trailing 90 days. This compares the subscriber count from
+    `channel_stats` only. The watch-hour and Shorts-view paths are measured
+    channel-wide by `academy.ypp.ypp_progress` (Analytics `api.channel_report`)
+    for the Monday digest, not here, so this never claims eligibility on
+    them. YouTube Studio → Earn is the authority on all three.
     """
     data, reason = await api.channel_stats(channel)
     if reason is not None:
@@ -257,11 +268,30 @@ async def partner_eligibility(channel: str) -> dict:
 
 # ------------------------------------------------------------------ actions
 
+def academy_path(path: str) -> bool:
+    """A file the Academy may upload to the clips channel: staged Academy video
+    or a finished tutorial render. Reads the disk (the executor vet is not hot)."""
+    if not path:
+        return False
+    if api.academy_video_path(path):
+        return True
+    from ..academy.tutorials import publishable_render
+    return publishable_render(path) is None
+
+
 def vet_upload(params: dict) -> str | None:
     """No card for the generic upload to the clips channel: it takes only
     what the clips lane cut and checked, through its own card. Pure."""
     if str(params.get("channel") or "") == CLIPS_CHANNEL:
-        return LANE_ONLY
+        # the owner 2026-11-14: the Academy's own renders may use the generic card too
+        # (still Tier 2, still private on upload). api.upload checks the file.
+        if not academy_path(str(params.get("path") or "")):
+            return LANE_ONLY
+        return None
+    if str(params.get("channel") or "") == ECC_CHANNEL:
+        return CHURCH_ONLY
+    if str(params.get("channel") or "") == MMT_CHANNEL:
+        return MONITOR_ONLY
     return None
 
 
@@ -270,23 +300,61 @@ def vet_visibility(params: dict) -> str | None:
     card; taking one private is always allowed. Pure."""
     if (str(params.get("channel") or "") == CLIPS_CHANNEL
             and str(params.get("privacy") or "") != "private"):
-        return LANE_ONLY
+        # unlisted or public: only for a video this module uploaded for the
+        # Academy; the record is checked in set_visibility (async), not here.
+        return None if params.get("academy_checked") else LANE_ONLY
+    if (str(params.get("channel") or "") == MMT_CHANNEL
+            and str(params.get("privacy") or "") != "private"):
+        return MONITOR_ONLY
     return None
+
+
+def vet_visibility_card(params: dict) -> str | None:
+    """The card-time vet: a public clips video is judged when the action runs
+    (it must be an Academy upload, `_is_academy`); the card itself may be raised."""
+    return vet_visibility({**params, "academy_checked": True}
+                          if str(params.get("channel") or "") == CLIPS_CHANNEL
+                          else params)
 
 
 async def upload_video(
     channel: str, path: str, title: str, description: str, tags: list[str]
 ) -> ActionResult:
-    if (why := vet_upload({"channel": channel})) is not None:
+    if (why := vet_upload({"channel": channel, "path": path})) is not None:
         return ActionResult(False, f"refused: {why}")
+    if channel == CLIPS_CHANNEL and path and api.academy_video_path(path):
+        from ..academy import lesson_youtube
+        if await lesson_youtube.uploaded_today() >= lesson_youtube.per_day():
+            return ActionResult(False, "refused: today's Academy upload cap "
+                                       f"({lesson_youtube.per_day()}) is used")
     result, reason = await api.upload(channel, path, title, description, tags,
                                       privacy="private")
     if reason is not None:
         return ActionResult(False, reason)
+    if channel == CLIPS_CHANNEL:
+        await _mark_academy(result["video_id"])
     return ActionResult(
         True, f"{channel}: uploaded as private ({result['video_id']})",
         evidence={"channel": channel, "video_id": result["video_id"]},
         rollback_token=f"{channel}:{result['video_id']}")
+
+
+async def _mark_academy(video_id: str) -> None:
+    await execute_sql(
+        "CREATE TABLE IF NOT EXISTS academy_youtube_uploads "
+        "(video_id text PRIMARY KEY, at timestamptz NOT NULL DEFAULT now())")
+    await execute_sql(
+        "INSERT INTO academy_youtube_uploads (video_id) VALUES ($1) "
+        "ON CONFLICT DO NOTHING", video_id)
+
+
+async def _is_academy(video_id: str) -> bool:
+    try:
+        row = await fetch_one(
+            "SELECT 1 AS x FROM academy_youtube_uploads WHERE video_id = $1", video_id)
+    except Exception:                                   # noqa: BLE001  no table yet
+        return False
+    return row is not None
 
 
 async def upload_dry(
@@ -294,7 +362,7 @@ async def upload_dry(
 ) -> ActionResult:
     if channel not in CHANNELS:
         return ActionResult(False, f"unknown channel {channel!r}")
-    if (why := vet_upload({"channel": channel})) is not None:
+    if (why := vet_upload({"channel": channel, "path": path})) is not None:
         return ActionResult(False, f"refused: {why}")
     if len(title) > 100:
         return ActionResult(False, "title exceeds YouTube's 100 characters")
@@ -318,7 +386,9 @@ async def set_visibility(channel: str, video_id: str, privacy: str,
         return ActionResult(
             False, f"invalid privacy {privacy!r}; must be one of "
                   f"{', '.join(api.PRIVACY_VALUES)}")
-    if (why := vet_visibility({"channel": channel, "privacy": privacy})):
+    if (why := vet_visibility({
+            "channel": channel, "privacy": privacy,
+            "academy_checked": channel == CLIPS_CHANNEL and await _is_academy(video_id)})):
         return ActionResult(False, f"refused: {why}")
 
     previous, reason = await api.current_privacy(channel, video_id)
@@ -335,7 +405,7 @@ async def set_visibility(channel: str, video_id: str, privacy: str,
         "UPDATE youtube_videos SET privacy = $3 WHERE channel = $1 AND video_id = $2",
         channel, video_id, privacy)
 
-    # This is where a marketing experiment starts its clock: the moment Miro's
+    # This is where a marketing experiment starts its clock: the moment the owner's
     # approval actually made the video public. Not at upload (it lands
     # private) and not when the experiment was proposed — 48 hours of views on
     # a private video is not a result. Only `public` starts it; `unlisted` is
@@ -379,7 +449,9 @@ async def set_visibility_dry(channel: str, video_id: str, privacy: str,
         return ActionResult(
             False, f"invalid privacy {privacy!r}; must be one of "
                   f"{', '.join(api.PRIVACY_VALUES)}")
-    if (why := vet_visibility({"channel": channel, "privacy": privacy})):
+    if (why := vet_visibility({
+            "channel": channel, "privacy": privacy,
+            "academy_checked": channel == CLIPS_CHANNEL and await _is_academy(video_id)})):
         return ActionResult(False, f"refused: {why}")
     tail = (f" and start experiment #{experiment_id}'s 48-hour window"
             if experiment_id is not None and privacy == "public" else "")
@@ -441,9 +513,9 @@ class YouTubeModule:
         for prefix in CHANNELS.values()
         for suffix in ("CLIENT_ID", "CLIENT_SECRET", "REFRESH_TOKEN", "CHANNEL_ID")
     )
-    setup_note = ("Set YOUTUBE_FLYCHEAP_*, YOUTUBE_GUARDIAN_* and YOUTUBE_CLIPS_* "
-                 "(CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, CHANNEL_ID) to "
-                 "enable each channel.")
+    setup_note = ("Set YOUTUBE_CLIPS_* and "
+                 "YOUTUBE_ECC_* and YOUTUBE_MMT_* (CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN, "
+                 "CHANNEL_ID) to enable each channel.")
 
     async def setup(self) -> None: ...
     async def teardown(self) -> None: ...
@@ -478,8 +550,8 @@ class YouTubeModule:
                 irreversible=False,
                 vet=vet_upload,
                 params={
-                    "channel": "flycheap or guardian (clips posts only "
-                               "through clips.publish_clip_youtube)",
+                    "channel": "a channel in youtube.api.CHANNELS (clips posts "
+                               "only through clips.publish_clip_youtube)",
                     "path": "local path to the video file",
                     "title": "video title, at most 100 characters",
                     "description": "video description",
@@ -490,13 +562,13 @@ class YouTubeModule:
             Action(
                 name="youtube.set_visibility",
                 tier=Tier.ASK,
-                summary="Change a video's privacy — going public is Miro's "
+                summary="Change a video's privacy — going public is the owner's "
                        "word, every time",
                 run=set_visibility, dry_run=set_visibility_dry,
                 rollback=set_visibility_rollback, irreversible=False,
-                vet=vet_visibility,
+                vet=vet_visibility_card,
                 params={
-                    "channel": "flycheap, guardian or clips (clips: private "
+                    "channel": "a channel in youtube.api.CHANNELS (clips: private "
                                "only; it goes public through its own card)",
                     "video_id": "YouTube video id",
                     "privacy": "private, unlisted or public",
@@ -515,7 +587,8 @@ class YouTubeModule:
                 run=draft_metadata, dry_run=draft_metadata_dry,
                 rollback=draft_metadata_rollback,
                 params={
-                    "business": "flycheap or guardian",
+                    "business": "a business in youtube.metadata.BUSINESS_LINKS, "
+                                "or any name (no link appended)",
                     "source": "voice:<n> | weekly | slack:<thread_ts> | "
                               "note:<text>",
                 },

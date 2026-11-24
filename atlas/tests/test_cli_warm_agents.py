@@ -1,7 +1,7 @@
 """`python -m atlas.cli warm-agents` -- runs `agents.warmup` over the whole
 roster, sequentially, and prints what actually happened for each one. This is
 the operator's way to fill in the Agents map's LAST RUN and MODEL without
-waiting for Miro to happen to ask each specialist something.
+waiting for the owner to happen to ask each specialist something.
 """
 from __future__ import annotations
 

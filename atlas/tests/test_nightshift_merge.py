@@ -224,7 +224,7 @@ def test_merge_keeps_its_tier():
     "aicode.example.com/root/atlas",
     "aicode.example.com/root/ATLAS.git",
     "aicode.example.com/root/flycheap-tracker, aicode.example.com/root/atlas",
-    "code.example.org/miro/atlas-tools",
+    "git.internal.example/owner/atlas-tools",
 ])
 def test_nightshift_repos_never_includes_atlas(monkeypatch, repos):
     monkeypatch.setenv("NIGHTSHIFT_REPOS", repos)

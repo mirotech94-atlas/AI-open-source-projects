@@ -12,7 +12,7 @@ container and deletes the pushed branch, or fails and says it could not.
 It runs only against a repository listed in `NIGHTSHIFT_REPOS`
 (comma-separated `host/owner/name`); anything else is refused before the
 git token is used, and the URL cloned is rebuilt from the list. `nightshift.merge`
-accepts a GitLab merge request for that branch once Miro has looked at the
+accepts a GitLab merge request for that branch once the owner has looked at the
 diff; merging cannot be undone by anything this module offers, so it is
 Tier ASK and `irreversible=True`. ATLAS's own repository is never on the
 list: an entry naming atlas is dropped from `allowed_repos`, whatever
@@ -29,7 +29,7 @@ that would race the container's own cleanup.
 
 Assumes: docker is installed on the host running ATLAS; a `nightshift`
 docker network with an egress allow-list already exists (a host action for
-Miro — see `bootstrap/nightshift/README.md`, this module never creates
+the owner — see `bootstrap/nightshift/README.md`, this module never creates
 infrastructure); the `atlas-nightshift` image is built from
 `bootstrap/nightshift/Dockerfile`; and, for `nightshift.merge`, a GitLab
 token (GITLAB_TOKEN / GITLAB_WORK_TOKEN, by the repo's host) that may open
@@ -368,7 +368,7 @@ async def merge(job_id: int) -> ActionResult:
 
 
 async def merge_dry(job_id: int) -> ActionResult:
-    """Reads Postgres only. Names the pinned commit, so the card Miro
+    """Reads Postgres only. Names the pinned commit, so the card the owner
     approves says exactly what will be merged."""
     job, why = await _mergeable(int(job_id))
     if job is None:
@@ -382,7 +382,7 @@ async def merge_dry(job_id: int) -> ActionResult:
 # How long after a job finished its pin may still be read, when the read at
 # finish time failed (a GitLab blip, a token missing Repository: Read). Kept
 # short: a later read could capture a push made after the job finished. The
-# card names whatever was pinned, so Miro approves exactly that commit.
+# card names whatever was pinned, so the owner approves exactly that commit.
 PIN_RETRY_WINDOW = timedelta(hours=2)
 
 
@@ -510,7 +510,7 @@ async def _refresh_recent_lines(now: datetime) -> None:
         else:
             # Never dressed up. A failed overnight run says FAILED, plainly,
             # with nowhere the reasoner could soften it before it reaches
-            # Miro.
+            # the owner.
             lines.append(f"Night shift: {row['task']} FAILED — see log")
     _recent_lines[:] = lines
     _recent_at = now

@@ -3,8 +3,8 @@ import { sentencesOf } from "./loop";
 
 describe("sentencesOf: a reply voiced one sentence at a time", () => {
   it("splits on sentence ends so the first is heard first", () => {
-    expect(sentencesOf("VPSie's fine, as of 7:52. Billing is the one to watch this week."))
-      .toEqual(["VPSie's fine, as of 7:52.", "Billing is the one to watch this week."]);
+    expect(sentencesOf("CloudCo's fine, as of 7:52. Billing is the one to watch this week."))
+      .toEqual(["CloudCo's fine, as of 7:52.", "Billing is the one to watch this week."]);
   });
 
   it("joins a short sentence to the next, so Fish is never asked for one word", () => {

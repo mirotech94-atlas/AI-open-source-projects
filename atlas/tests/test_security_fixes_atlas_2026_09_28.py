@@ -1,7 +1,7 @@
 """ATLAS audit 2026-09-28.
 
 1. The old mesh-only `/ask` and `/agents` routes had no sign-in and nothing
-   called them: they are gone, so no page Miro visits can drive the agents.
+   called them: they are gone, so no page the owner visits can drive the agents.
 2. The agent tool `http_probe` and the agency site audit never fetch a private,
    loopback or metadata address, including via a redirect.
 """

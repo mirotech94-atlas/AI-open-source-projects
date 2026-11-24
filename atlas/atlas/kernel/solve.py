@@ -1,4 +1,4 @@
-"""When nothing in the catalog does what Miro asked: find a way.
+"""When nothing in the catalog does what the owner asked: find a way.
 
 Until 2026-09-28 the answer to "can you optimize my cpu for the attendance
 bot server" was a chat reply asking him for his own `top` output -- ATLAS had
@@ -42,8 +42,13 @@ INVESTIGATE_TIMEOUT_S = 120
 
 # ATLAS's own code and host. Handing a change to itself through an agent is
 # self-modification, whoever holds the shell (invariant 3).
+# ATLAS runs only on the owner's Mac since 2026-10-28, from ~/atlas-agency
+# (docker compose -f docker-compose.yml -f docker-compose.local.yml).
 ATLAS_PATHS = ("~/Documents/Code/Atlas and every worktree of it",
-               "/opt/atlas and anything else on atlas.example.com, ATLAS's own server")
+               ("~/atlas-agency, the checkout ATLAS runs from, its data/ and its "
+                "docker compose stack (docker-compose.yml + docker-compose.local.yml)"),
+               ("atlas.example.com (the old server, retired) and any host that serves "
+                "ATLAS again"))
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,7 +69,7 @@ class Estate:
 # The approved card is his yes for what the brief asks -- a live fix
 # included, when the request was for one -- and for nothing else. The
 # agent runs unattended, so anything past the brief comes back as
-# "needs_miro" rather than waiting for a yes nobody is there to give.
+# "needs_owner" rather than waiting for a yes nobody is there to give.
 _NO_PROD = ("any production change the request did not ask for; a live change it "
             "did ask for only per that project's own deploy rules, reversibly, "
             "and verified afterwards")
@@ -74,44 +79,30 @@ ESTATES: tuple[Estate, ...] = (
                                r"|\bk9\b|\bpto\b", re.IGNORECASE),
            "inroots",
            "Roots, the attendance/standup bot: the repo at ~/Documents/Code/AI "
-           "Projects/Attendance Bot and its server behind status.example.org",
+           "Projects/Attendance Bot and its server behind status.internal.example",
            ("the Attendance Bot repo, on a branch",
             ("the Roots server over SSH from this Mac: read anything; change it only "
-             "as Miro's request asks, through the project's own deploy rules")),
+             "as the owner's request asks, through the project's own deploy rules")),
            ("the attendance data in its database",
-            "any message to Miro's colleagues", _NO_PROD), "inroots"),
-    Estate("guardian", re.compile(r"\bguardian\b|\bvault\b|\bguarder\b", re.IGNORECASE),
-           "guardian",
-           "Guardian (public name; Vault inside ATLAS): the repo at "
-           "~/Documents/Code/AI Projects/Guardian and guarder.io",
-           ("the Guardian repo, on a branch",
-            "its live deploy, only as Miro's request asks, per the project's rules"),
-           ("customer data", "billing", _NO_PROD), "guardian"),
-    Estate("flycheap", re.compile(r"\bfly\s*cheap\b|\begyptair\b", re.IGNORECASE),
-           "flycheap",
-           "FlyCheap: the repo at ~/Documents/Code/AI Projects/Egyptair Cheap "
-           "Flights Project and flycheap.live",
-           ("the FlyCheap repo, on a branch",
-            "its live deploy, only as Miro's request asks, per the project's rules"),
-           ("subscriber data", "billing", _NO_PROD), "flycheap"),
-    # Miro, 2026-09-28: "atals should be able to access my vpsie account and
+            "any message to the owner's colleagues", _NO_PROD), "inroots"),
+    # the owner, 2026-09-28: "atals should be able to access my cloudco account and
     # exectue commands based on waht i tell him". His servers, over SSH from
-    # the Mac the runner sits on -- never ATLAS's own host (ATLAS_PATHS),
+    # the Mac the runner sits on -- never ATLAS's own stack (ATLAS_PATHS),
     # never anything that bills, and deletion stays Tier 3 (`denied`).
-    Estate("vpsie", re.compile(
+    Estate("cloudco", re.compile(
         r"\bvpsie\b|\bvps\b|\bmy servers?\b|\bthe servers?\b|\bssh\b"
         r"|\bdroplet\b|\bvm\b", re.IGNORECASE),
-           "vpsie",
-           "Miro's servers in his VPSie account (for example the Roots VPS at "
-           "203.0.113.10), over SSH from this Mac with the keys already on it",
+           "cloudco",
+           "the owner's servers in his CloudCo account (for example the Roots VPS at "
+           "203.0.113.125), over SSH from this Mac with the keys already on it",
            (("the servers his request names, over SSH: run the commands he asked "
              "for, and read whatever is needed to run them safely"),),
            (("creating, resizing, deleting or snapshotting servers, volumes or IPs, "
              "or anything else that is billed"),
-            "the VPSie account's billing, payment methods and API credentials",
+            "the CloudCo account's billing, payment methods and API credentials",
             "firewall or SSH settings that could lock this Mac out", _NO_PROD),
-           "vpsie"),
-    # Miro, 2026-09-28: "give it access to open apps and things like that".
+           "cloudco"),
+    # the owner, 2026-09-28: "give it access to open apps and things like that".
     # His laptop, through the handoff runner on it -- the same card, the
     # same brief, the same limits. Last, so a named project wins.
     Estate("mac", re.compile(
@@ -120,14 +111,14 @@ ESTATES: tuple[Estate, ...] = (
         r"(?:[A-Z][\w.]*(?:\s+[A-Z][\w.]*)?|\w+\s+app)\b"
         r"|\breminders?\b|\bremind me\b|\bshortcuts?\b|\bnotes app\b"
         r"|\bcalendar app\b|\bfinder\b|\bsafari\b|\byoutube music\b"
-        # Music is YouTube Music, the Chrome app on his Mac (Miro,
+        # Music is YouTube Music, the Chrome app on his Mac (the owner,
         # 2026-09-28: "connect youtube music instead of spotify").
         r"|\bplay\b.{0,40}\b(?:music|songs?|playlist|album|radio|mix)\b"
         r"|\bmusic app\b|\bmy desktop\b|\bmy downloads\b"),
            "decisions",
-           "this Mac (Miro's laptop): its apps, Reminders, Notes, the Calendar "
+           "this Mac (the owner's laptop): its apps, Reminders, Notes, the Calendar "
            "app, Shortcuts, and files he names -- through the handoff runner "
-           "on it, as Miro, with macOS asking him before any app it has not "
+           "on it, as the owner, with macOS asking him before any app it has not "
            "used before",
            ("open, switch to or quit the apps he named",
             "YouTube Music (his music player): search and press play, pause or skip",
@@ -138,16 +129,16 @@ ESTATES: tuple[Estate, ...] = (
             "deleting, moving or overwriting files",
             "sending a message, email or post, or accepting an invite",
             "any purchase or payment",
-            "~/Documents/Code/Atlas and anything of ATLAS's own")),
-    Estate("mirotech", re.compile(r"\bmirotech\b|\bebay\b", re.IGNORECASE),
-           "mirotech", "Mirotech, the eBay store",
+            "~/Documents/Code/Atlas, ~/atlas-agency and anything of ATLAS's own")),
+    Estate("exampleco", re.compile(r"\bownertech\b|\bebay\b", re.IGNORECASE),
+           "exampleco", "ExampleCo, the eBay store",
            ("read-only inspection of the store",),
-           ("listings, prices and orders", "any message to a buyer"), "mirotech"),
+           ("listings, prices and orders", "any message to a buyer"), "exampleco"),
 )
 
 UNNAMED = Estate(
     "unnamed", re.compile(r"(?!)"), "decisions",
-    "not named in the request: establish which system he means and ask Miro "
+    "not named in the request: establish which system he means and ask the owner "
     "before touching anything",
     ("read-only inspection until the system is confirmed",))
 
@@ -182,7 +173,7 @@ _TIER3 = (
 )
 
 INVESTIGATE = (
-    "Miro asked for the request below, and no action in ATLAS's catalog does "
+    "the owner asked for the request below, and no action in ATLAS's catalog does "
     "it. You cannot change anything. Investigate with your read-only tools: "
     "take the live readings that bear on it, each with the time it was read; "
     "name the likely cause; say plainly what you could not measure and why. "
@@ -193,7 +184,7 @@ INVESTIGATE = (
 )
 
 _DONE = re.compile(r"^\s*\**DONE WHEN\**\s*:\s*(.+?)\s*$", re.IGNORECASE | re.MULTILINE)
-DEFAULT_DONE = ("the change Miro asked for is in place and verified on the live "
+DEFAULT_DONE = ("the change the owner asked for is in place and verified on the live "
                 "system, or the report says exactly why it could not be done")
 
 
@@ -205,7 +196,7 @@ def denied(request: str) -> str | None:
     return None
 
 
-# "open Safari and go to flycheap.live" is a job for the laptop, not the
+# "open Safari and go to flycheap.example" is a job for the laptop, not the
 # FlyCheap repo: a request that STARTS with an app verb is the Mac's,
 # whatever project it then names.
 _APP_OBJECT = (r"(?:up\s+)?(?:the\s+)?(?:[A-Z][\w.]*(?:\s+[A-Z][\w.]*)?"
@@ -283,7 +274,7 @@ async def solve(request: str, *, who: str, channel: str = "",
     if why:
         # Still says what it is, for him to do by hand -- a denial that does
         # not say what would fix it is indistinguishable from not looking.
-        surface(what_changed=f"Miro asked: {asked}", evidence=asked,
+        surface(what_changed=f"the owner asked: {asked}", evidence=asked,
                 source=f"slack:{who}", target=estate(asked).target, read_at=now)
         return (f"That falls in the permanently denied set ({why}), so I won't do "
                 f"it or hand it to an agent — that line has no runtime override. "
@@ -298,7 +289,7 @@ async def solve(request: str, *, who: str, channel: str = "",
     place = estate(asked)
     findings, source = await _investigate(asked, place.module)
     brief = delegate(
-        what_changed=f"Miro asked: {asked}",
+        what_changed=f"the owner asked: {asked}",
         evidence=findings,
         source=source,
         target=place.target,

@@ -1,4 +1,4 @@
-"""YouTube Shorts through Postiz (Miro, 2026-09-29): the best AI reel of the
+"""YouTube Shorts through Postiz (the owner, 2026-09-29): the best AI reel of the
 week, three a week, curated -- never a mirror.
 
 What is load-bearing:
@@ -36,7 +36,7 @@ from atlas.modules.content.drafts import AI_LABEL
 
 KEY = "pz-secret-key"
 _REAL = httpx.AsyncClient          # captured once: _fake may run twice a test
-YT_ID = "cmun6w6hm0fcfno0yqjqptqmo"
+YT_ID = "postiz_example_id_00"
 NOW = datetime.now(UTC)
 CAPTION = (f"He saved the wrong seat.\nA quiet bus, a louder secret. "
            f"#aistory #storytime\n\n{AI_LABEL}")
@@ -60,9 +60,9 @@ YT_SCHEMA = {"output": {
         "type": "object", "required": ["title", "type"]},
     "tools": []}}
 INTEGRATIONS = [
-    {"id": "cmumubciv07romt0yeqqo60ib", "name": "atlasclips",
+    {"id": "postiz_example_id_04", "name": "atlasclips",
      "identifier": "tiktok-business", "disabled": False},
-    {"id": "cmugfna3v00ucmr0yrk0svxnh", "name": "atlasstories7",
+    {"id": "postiz_example_id_07", "name": "atlasstories7",
      "identifier": "tiktok-business", "disabled": False},
     {"id": YT_ID, "name": "AtlasClips", "identifier": "youtube", "disabled": False},
 ]
@@ -126,7 +126,7 @@ def test_the_integration_is_only_the_one_the_env_names():
 
 
 def test_the_integration_may_be_named_by_its_name(monkeypatch):
-    monkeypatch.setenv("POSTIZ_YOUTUBE_INTEGRATION", "@atlasclips")
+    monkeypatch.setenv("POSTIZ_YOUTUBE_INTEGRATION", "@example_handle")
     # "atlasclips" is also a TikTok's name: only YouTube ones are considered.
     assert postiz.pick_youtube(INTEGRATIONS)[0] == YT_ID
 
@@ -144,7 +144,7 @@ def test_unset_is_never_guessed(monkeypatch):
 
 
 def test_a_tiktok_id_in_the_env_never_routes_a_short_there(monkeypatch):
-    monkeypatch.setenv("POSTIZ_YOUTUBE_INTEGRATION", "cmugfna3v00ucmr0yrk0svxnh")
+    monkeypatch.setenv("POSTIZ_YOUTUBE_INTEGRATION", "postiz_example_id_07")
     with pytest.raises(postiz.PostizError, match="no enabled YouTube"):
         postiz.pick_youtube(INTEGRATIONS)
 

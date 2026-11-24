@@ -1,8 +1,8 @@
 """The learning layer. See JUDGMENT.md — this package is built to it.
 
-ATLAS logs every proposal, what Miro answered, and the conditions around it.
+ATLAS logs every proposal, what the owner answered, and the conditions around it.
 Each night three model heads retrain and compete on held-out data; the
-winner serves a number the next day: P(Miro approves). The number RANKS,
+winner serves a number the next day: P(the owner approves). The number RANKS,
 ROUTES and tells ATLAS when to stay quiet. It never decides.
 
 What this package cannot do, enforced by tests in tests/test_judgment.py:

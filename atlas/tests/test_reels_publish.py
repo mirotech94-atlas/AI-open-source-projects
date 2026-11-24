@@ -36,6 +36,12 @@ CAPTION = f"The sea was gone.\n\n{AI_LABEL}"
 PAGE_TOKEN = "EAAG-page-secret"
 
 
+@pytest.fixture(autouse=True)
+def _slack_card_on(monkeypatch):
+    """These tests read the Slack card; it is opt-in now (APPROVALS_SLACK)."""
+    monkeypatch.setenv("APPROVALS_SLACK", "on")
+
+
 def _action():
     return {a.name: a for a in content.MODULE.actions()}["content.publish_reel"]
 

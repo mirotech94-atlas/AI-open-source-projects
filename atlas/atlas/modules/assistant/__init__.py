@@ -9,7 +9,8 @@ and page/weather/Wikipedia/dictionary/rate fetches) against the two daily
 caps in `budget.py`, with the time it was read. UNKNOWN when the audit log
 cannot be counted (invariant 7), DEGRADED when a cap is spent.
 
-What it may do: nothing. It has no actions. Every tool it hands a model is
+What it may do: one thing, tell the owner a short code-built note (`notices.py`, the
+Tier 1 action `assistant.update_owner`, a Slack DM, 1 an hour, 3 a day). Every tool it hands a model is
 a read (`tools.py`), the loop (`loop.py`) can reach no catalog action, and
 nothing in this package imports the executor. It answers questions -- about
 the world, with sources and the time each was read, and about ATLAS itself
@@ -24,7 +25,7 @@ How it is asked (ASSISTANT.md has the full account):
   * `atlas, <question>` when what follows is shaped like a question and is
     not an order, through `kernel.intent.act`'s module `command` hook (the
     same hook as `/atlas funnel ...`), so only after the channel has proved
-    it is Miro;
+    it is the owner;
   * every plain message in the channel `SLACK_ASSISTANT_CHANNEL` names
     (topic `assistant`), and `stop` there; unset, that door is closed;
   * `assistant_ask`, a kernel read tool, for the voice route to call later
@@ -40,9 +41,10 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ...kernel.contracts import Check, Health, Observation, Severity
-from ...kernel.quota import for_miro
+from ...kernel.quota import for_owner
 from ...kernel.tools import Tool, register
-from . import budget, modes, runs
+from . import budget, modes, notices, runs
+from .doors import door_enabled, propose_enabled
 from .loop import Answer, ask
 from .runs import cancel
 from .skills import listing as skills_listing
@@ -51,7 +53,8 @@ from .tools import ASSISTANT_TOOLS, register_tools
 log = logging.getLogger("atlas.assistant")
 
 __all__ = ["MODULE", "STOP", "Answer", "Request", "answer", "ask", "cancel",
-           "enabled", "handle", "parse_command", "parse_explicit", "runs"]
+           "converse", "door_enabled", "enabled", "handle", "parse_command",
+           "parse_explicit", "propose", "propose_enabled", "runs"]
 
 TOPIC = "assistant"
 VOICE_TOOL = "assistant_ask"
@@ -152,10 +155,90 @@ async def answer(question: str, *, channel: str = "slack", who: str = "",
                       mode=mode)).render()
 
 
-@for_miro
+# A go-ahead, parsed in code: nothing a model says can make a message one.
+GO_AHEAD = re.compile(
+    r"^\s*(?:atlas\s*[,:]?\s*)?(?:yes\s*[,.]?\s*)?(?:please\s+)?"
+    r"(?:do\s+it|go\s+ahead|go\s+for\s+it|make\s+it\s+so)(?:\s+please)?\s*[.!]*\s*$",
+    re.IGNORECASE)
+PRIVATE_NO_PROPOSE = ("That earlier message was private, so I won't turn it into "
+                      "an action from here. Say it again as a plain request.")
+NOTHING_TO_PROPOSE = "There is no earlier message of yours here to act on."
+
+
+async def propose(text: str, *, channel: str, who: str,
+                  conversation: str | None = None) -> str:
+    """`ASSISTANT_PROPOSE`: hand the owner's OWN previous message in this channel
+    (never ATLAS's words, never a private turn) to the action picker, which
+    raises a card at most -- `intent.queue` runs nothing and refuses Tier 3.
+    The reply is written here, from the outcome, not by a model."""
+    from ...kernel import chat_memory, intent
+    earlier, private = await chat_memory.last_user_turn(conversation or channel)
+    if not earlier:
+        return NOTHING_TO_PROPOSE
+    if private:
+        return PRIVATE_NO_PROPOSE
+    outcome = await intent.queue(earlier, channel=channel, who=who)
+    if outcome.ok and outcome.proposal_id is not None:
+        return (f"Queued {outcome.action}: a card is waiting in Slack for your "
+                f"approval. Nothing has run.")
+    return outcome.spoken
+
+
+# Tools whose result holds no free text from outside ATLAS (no mail, note,
+# camera label, web page, buyer words, a collector's detail or a last subject): only a reply that used these alone may
+# be stored as prose (figures masked). Any other tool: the placeholder only, so
+# untrusted text never becomes a trusted assistant turn.
+PROSE_SAFE_TOOLS: frozenset[str] = frozenset({
+    "calculate", "time_now", "convert_units", "atlas_capabilities"})
+
+
+async def converse(text: str, *, channel: str, who: str = "",
+                   history: list | None = None, tainted: bool = False,
+                   conversation: str | None = None, private_ok: bool = False) -> str:
+    """One chat turn for a door's general-chat step (Slack, WhatsApp, the
+    dashboard's typed lines): the loop with the extra ATLAS reads, this
+    channel's own memory replayed, and the exchange stored back under the same
+    channel. Returns a `chat_memory.Remembered`, so the door does not store it
+    again. A window that held private content makes this run PRIVATE (the
+    local model, local tools); the spoken voice path never comes here.
+
+    `conversation` keys the memory (default: the channel; Slack passes
+    `slack:<channel id>`). `private_ok` is set by a door only when the principal
+    is the owner AND the reply goes to a private sink (dashboard, his WhatsApp, his
+    Slack DM); without it private reads are never offered and a PRIVATE run is
+    refused rather than answered into a shared place."""
+    from ...kernel import chat_memory
+    key = conversation or channel
+    if propose_enabled() and GO_AHEAD.match(text or ""):
+        return chat_memory.Remembered(await propose(text, channel=channel, who=who,
+                                                       conversation=key))
+    if history is None:
+        history, from_memory = await chat_memory.recent_with_taint(channel=key)
+        tainted = tainted or from_memory
+    got = await ask(text, channel=channel, who=who, history=history,
+                    force_private=tainted, extended=True, private_ok=private_ok,
+                    refuse_private=not private_ok)
+    reply = got.render(run_line=False)
+    live = bool(got.tools_used)
+    if got.status == runs.COMPLETED:
+        outside = not set(got.tools_used) <= PROSE_SAFE_TOOLS
+        if not live:
+            stored = got.text
+        elif outside:                       # any tool that can return free text
+            stored = chat_memory.LiveReply(reply)
+        else:                               # ATLAS/local reads: prose kept, figures masked
+            stored = chat_memory.mask_figures(got.text)
+        await chat_memory.remember(text, stored, channel=key, private=got.private)
+    said = chat_memory.Remembered(reply)
+    said.live = live
+    said.private = got.private
+    return said
+
+
+@for_owner
 async def handle(request: Request, *, channel: str, who: str) -> str:
     """Carry out a parsed request: answer the question, or cancel the run.
-    Miro asked it, so it may spend the free allowance kept for him
+    the owner asked it, so it may spend the free allowance kept for him
     (kernel/quota.py)."""
     if request.kind == "cancel":
         return await cancel(request.run_id, by=who)
@@ -221,7 +304,8 @@ class AssistantModule:
     optional_env = (ENABLED_ENV, budget.SEARCH_ENV, budget.FETCH_ENV,
                     "ASSISTANT_MAX_TOOL_CALLS",
                     "ASSISTANT_MAX_TOKENS", "SLACK_ASSISTANT_CHANNEL",
-                    "ASSISTANT_FX_URL")
+                    "ASSISTANT_FX_URL", "ASSISTANT_DOORS", "ASSISTANT_PROPOSE",
+                    "ASSISTANT_PROFILE", "ASSISTANT_LOCAL_PROMPT_CHARS")
     setup_note = ("answers `ask <question>` in Slack; set SLACK_ASSISTANT_CHANNEL "
                   "for a channel where every message is a question")
 
@@ -244,7 +328,9 @@ class AssistantModule:
         )
 
     def actions(self):
-        return ()
+        # The one thing the assistant may do: tell the owner a short code-built note
+        # (Tier 1, `notices.py`). It reaches no other action.
+        return notices.actions()
 
     def brief(self) -> str:
         return ""

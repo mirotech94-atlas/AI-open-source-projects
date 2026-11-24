@@ -1,7 +1,7 @@
 """messages — Instagram DMs (Graph API).
 
 What has to hold: `messages.reply` is the only place this module can put
-words in front of anyone but Miro, so it is Tier 2, irreversible, and the
+words in front of anyone but the owner, so it is Tier 2, irreversible, and the
 one place in the package allowed to call `send(...)` on the bridge —
 enforced below by AST, not just by convention. `messages.draft` only ever
 touches ATLAS's own table (Tier 1). Both checks answer UNKNOWN, never a
@@ -302,7 +302,7 @@ async def test_check_unanswered_is_degraded_past_five(monkeypatch):
 
 
 async def test_check_unanswered_ignores_a_reply_made_from_the_phone(monkeypatch):
-    """Miro answering from his own phone shows up as `is_from_me=True` in the
+    """the owner answering from his own phone shows up as `is_from_me=True` in the
     same feed — that counts as answered, with no ATLAS action involved."""
     old = datetime.now(UTC) - timedelta(hours=6)
     newer = datetime.now(UTC) - timedelta(hours=1)
@@ -727,7 +727,7 @@ def test_optional_env_lists_the_instagram_variables():
 
 
 def test_imessage_is_gone():
-    """Removed at Miro's request, 2026-09-28: no bridge check, no env var,
+    """Removed at the owner's request, 2026-09-28: no bridge check, no env var,
     and no module file left to import."""
     assert "bridge" not in {c.name for c in messages.MODULE.checks()}
     assert not (PKG / "imessage.py").exists()
@@ -893,7 +893,7 @@ async def test_a_partial_draft_run_keeps_the_rollback_for_what_it_wrote(
 
 
 async def test_both_accounts_are_read_each_through_its_own_page(monkeypatch):
-    """Miro allowed message access on both accounts (2026-09-27)."""
+    """the owner allowed message access on both accounts (2026-09-27)."""
     _ig_env(monkeypatch)
     monkeypatch.setenv("INSTAGRAM_STORIES_ACCOUNT_ID", "IGSTORIES")
     monkeypatch.setenv("INSTAGRAM_STORIES_TOKEN", "stories-user-tok")

@@ -6,7 +6,7 @@ voice transcript, a weekly report and a Slack thread are all someone else's
 words captured earlier, and a draft written from them must never treat that
 text as an instruction.
 
-The one exception is `note:<text>`: Miro dictating a note straight into
+The one exception is `note:<text>`: the owner dictating a note straight into
 this module, on the dashboard behind the mesh — a channel that
 authenticates him. That is wrapped with `principal=True`, which is what
 lets the drafting model treat it as his request rather than a quote to be
@@ -50,7 +50,7 @@ async def _from_voice(count_text: str) -> tuple[str, str | None]:
 
     lines: list[str] = []
     for row in reversed(list(rows)):
-        lines.append(f"Miro: {row['transcript']}")
+        lines.append(f"the owner: {row['transcript']}")
         if row["answer"]:
             lines.append(f"ATLAS: {row['answer']}")
     return wrap_untrusted("\n".join(lines), "voice_turns"), None
@@ -82,7 +82,7 @@ async def _from_slack(thread_ts: str) -> tuple[str, str | None]:
 
 
 def _from_note(text: str) -> tuple[str, str | None]:
-    """Miro's own words, spoken straight into this module. The channel
+    """the owner's own words, spoken straight into this module. The channel
     authenticates him, so this is the one source wrapped as a request
     rather than data (invariant 4's stated exception)."""
     stripped = text.strip()

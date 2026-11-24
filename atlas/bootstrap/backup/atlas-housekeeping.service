@@ -1,3 +1,4 @@
+# Old server (/opt/atlas), retired 2026-10-28: ATLAS runs from ~/atlas-agency on the Mac.
 [Unit]
 Description=ATLAS weekly housekeeping (Docker cache, posted media off the box)
 After=docker.service

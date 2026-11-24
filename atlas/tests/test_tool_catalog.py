@@ -42,9 +42,6 @@ def _declared_actions() -> dict[str, Action]:
 
 @pytest.fixture
 def catalog(monkeypatch) -> dict[str, Action]:
-    # guardian.contain exists only while the separate write token is set,
-    # and guardian reads it when actions() is called.
-    monkeypatch.setenv("GUARDIAN_WRITE_TOKEN", "test-write-token-not-real")
     register_all()
     return _declared_actions()
 
@@ -107,3 +104,19 @@ def test_no_agent_holds_the_screening_booking_tool():
     build_roster()
     holders = [a.name for a in ROSTER.values() if "screening_book_slot" in a.tools]
     assert not holders
+
+
+def test_no_write_tool_wraps_a_card_only_action(catalog):
+    """A card-only send (six agents, 2026-10-27: the outreach, the invite,
+    the agreement) is raised by its pass and approved by the owner; an agent
+    holding a tool for it would be a second way to propose it."""
+    holders = {t.name: t.action for t in _write_tools()
+               if getattr(catalog[t.action], "card_only", False)}
+    assert not holders, f"write tools wrapping card-only actions: {holders}"
+    assert "agency_send_outreach" not in TOOLS
+
+
+def test_the_unattended_door_never_opens_on_a_tier_2_action(catalog):
+    from atlas.kernel.unattended import ALLOWED
+    asks = sorted(n for n in ALLOWED if n in catalog and catalog[n].tier is not Tier.AUTO)
+    assert not asks, f"Tier 2/3 actions in unattended.ALLOWED: {asks}"

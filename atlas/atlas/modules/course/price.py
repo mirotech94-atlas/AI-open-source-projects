@@ -141,10 +141,10 @@ def sellable_refusal(read: Price, product: str = OPERATOR) -> str | None:
                 f"free; a lead magnet is only promoted while it is free")
     if not p.lead_magnet and read.free:
         return (f"{p.short} reads 0.00 on the store; a priced product at 0 is "
-                f"not drafted until Miro looks")
+                f"not drafted until the owner looks")
     if read.compare_at is not None and not p.compare_at:
         return (f"the store shows a compare-at price of {money(read.compare_at)} "
-                f"for {p.short}, which has none by Miro's brief; not drafted until "
+                f"for {p.short}, which has none by the owner's brief; not drafted until "
                 f"he looks")
     return None
 

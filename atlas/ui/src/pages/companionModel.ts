@@ -2,7 +2,7 @@ import { normaliseHealth, type AgentLadder, type ModuleTile } from "../api";
 import type { TileState } from "../components/Tile";
 
 /**
- * The companion window's few figures: what Miro glances at while talking to
+ * The companion window's few figures: what the owner glances at while talking to
  * ATLAS. Each is one real check's own reading, with that reading's time --
  * never a figure the page works out for itself.
  */

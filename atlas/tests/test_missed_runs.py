@@ -106,7 +106,7 @@ def runs(monkeypatch) -> FakeRuns:
 
 
 async def test_the_daily_brief_is_off_unless_asked_for(monkeypatch):
-    """Miro, 2026-10-06: weekly only. With BRIEF_DAILY unset nothing is
+    """the owner, 2026-10-06: weekly only. With BRIEF_DAILY unset nothing is
     claimed or sent, whatever the hour."""
     monkeypatch.delenv("BRIEF_DAILY", raising=False)
 
@@ -477,13 +477,19 @@ def test_the_declared_policies_are_the_intended_ones():
     P, M = scheduler.POLICIES, Missed
     assert {k for k, p in P.items() if p.missed is M.SKIP_STALE} == {
         "brief", "review", "reels", "reels_nudge", "ideas", "agency_meeting",
-        "funnels", "agency_lead_board"}
+        "funnels", "agency_lead_board", "church", "sales_shift", "content_weekly",
+        "bizops_digest", "bizops_find_repeats", "seo_rank", "research_scan",
+        "research_weekly", "inbox_shift", "sites_shift", "mmt_shift",
+        "whatsapp_daily", "sage_mmt_weekly", "youtube_learn"}
     # No reminder or post is ever caught up: bounded catch-up is for
     # per-window work that sends nothing, and no loop job is that today.
     assert not [k for k, p in P.items() if p.missed is M.CATCH_UP]
     assert {k for k, p in P.items() if p.recorded} == {
         "brief", "review", "weekly", "marketing", "judgment", "playlist", "ideas",
-        "agency_meeting", "agency_lead_board"}
+        "agency_meeting", "agency_lead_board", "sales_shift", "content_weekly",
+        "bizops_digest", "bizops_find_repeats", "seo_rank", "research_scan",
+        "research_weekly", "inbox_shift", "sites_shift", "mmt_shift",
+        "whatsapp_daily", "sage_mmt_weekly", "youtube_learn"}
     for p in P.values():
         assert p.why and (p.recorded or p.guard != "schedule_runs")
 

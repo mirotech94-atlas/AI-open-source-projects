@@ -107,7 +107,11 @@ def test_the_chains_are_the_free_bench_when_free_only_is_on(signed_in, monkeypat
         assert chain, need
         assert [c["provider"] for c in chain] == [
             p.name for p in llm.ROUTES[Need(need)]]
-        assert all(c["provider"] in ("groq", "openrouter") for c in chain), need
+        # DRAFT alone may end on the free local model (the owner 2026-10-29);
+        # never a paid provider anywhere.
+        last_local = chain[-1]["provider"] in ("ollama", "local")
+        cloud = chain[:-1] if need == "draft" and last_local else chain
+        assert all(c["provider"] in ("groq", "openrouter") for c in cloud), need
         assert all(c["model"].endswith(":free") for c in chain
                    if c["provider"] == "openrouter")
     assert [c["model"] for c in needs["reason"]["chain"]][:3] == [
