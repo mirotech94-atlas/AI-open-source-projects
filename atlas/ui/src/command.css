@@ -560,7 +560,7 @@ html:has(.cmd-shell), html:has(.cmd-shell) body { background: #0a0d14; color-sch
 .act-lines li[data-health="degraded"] { color: var(--amber); }
 .act-lines li[data-health="unknown"] { color: var(--grey); }
 
-/* Seat cards, compact (the owner 2026-10-29): paragraphs cut to two lines, long
+/* Seat cards, compact (Miro 2026-10-29): paragraphs cut to two lines, long
    lists bounded, four across on a wide screen. */
 .cmd-seat .cmd-seat-brief, .cmd-seat .cmd-empty, .cmd-seat .cmd-note {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -754,7 +754,7 @@ html:has(.cmd-shell), html:has(.cmd-shell) body { background: #0a0d14; color-sch
   .cmd-shell.v2 .cmd-floor .cmd-panel { overflow: visible; min-height: 0; }
   .cmd-shell.v2 .cmd-flank-unit > .cmd-panel, .cmd-shell.v2 .cmd-flank-unit > div > .cmd-panel,
   .cmd-shell.v2 .cmd-floor-needs > section > .cmd-panel { flex: none; }
-  .cmd-shell.v2 .cmd-floor .cmd-panel > .cmd-pbody { flex: none; overflow: visible; }
+  .cmd-shell.v2 .cmd-floor .cmd-panel > .cmd-pbody { flex: none; overflow-x: auto; overflow-y: visible; }
 }
 
 /* --- responsive shell ---------------------------------------------------------- */

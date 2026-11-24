@@ -1,4 +1,4 @@
-"""The whole store is served under /academy/ (the owner, 2026-11-16).
+"""The whole store is served under /academy/ (Miro, 2026-11-16).
 
 Checks the shipped layout (`site.render`), not the content of any page:
 every internal link resolves to a file in the render, canonical and sitemap
@@ -21,7 +21,7 @@ from atlas.modules.academy import mount, site
 
 ROOT = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 9, 30, 12, 0, 0, tzinfo=UTC)
-HOST = "agency.example.com"
+HOST = "agency.storefront.test"
 VIDEOS = [site.Video("channel", 1, "uPzByskDRXw", datetime(2026, 10, 10, 18, 5, tzinfo=UTC)),
           site.Video("claude", 0, "M1a9Rd9mN6E", datetime(2026, 10, 11, 17, 20, tzinfo=UTC))]
 LESSONS = [{"series": "claude", "episode": 0, "video_id": "M1a9Rd9mN6E",
@@ -118,7 +118,7 @@ def test_canonical_urls_and_the_sitemap_use_academy():
     locs = re.findall(r"<loc>([^<]+)</loc>", sitemap)
     assert locs and all(u.startswith(f"https://{HOST}/academy/") for u in locs), locs
     assert set(locs) <= set(canon.values()), set(locs) - set(canon.values())
-    assert "https://agency.example.com/academy/" in locs
+    assert "https://agency.storefront.test/academy/" in locs
 
 
 def test_no_absolute_bare_store_url_is_left_in_the_render():
@@ -176,7 +176,7 @@ def test_the_redirect_runs_before_the_catch_all_store_handle():
 
 
 def test_public_store_urls_are_generated_under_academy(monkeypatch):
-    monkeypatch.setenv("ACADEMY_PUBLIC_ORIGIN", "https://agency.example.com")
-    assert store_origin.url() == "https://agency.example.com/academy/"
+    monkeypatch.setenv("ACADEMY_PUBLIC_ORIGIN", "https://agency.storefront.test")
+    assert store_origin.url() == "https://agency.storefront.test/academy/"
     assert store_origin.url("join/").endswith("/academy/join/")
     assert _cat().store_url.endswith("/academy")

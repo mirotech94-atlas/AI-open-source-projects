@@ -1,8 +1,8 @@
 """Answering ATLAS Academy support tickets, through the one path that acts.
 
-the owner, 2026-10-11: "everything auto unless unsure". The store's Help form,
+Miro, 2026-10-11: "everything auto unless unsure". The store's Help form,
 the support mailbox (`modules/academy/support_mail`, a collector) and the
-chat's "send this to the owner" put tickets in `academy_support_tickets`; this
+chat's "send this to Miro" put tickets in `academy_support_tickets`; this
 drives the answer the way `kernel.linkedin_replies` drives a page reply:
 
   claim the ticket (an atomic UPDATE) -> `academy.draft_support_reply`
@@ -10,14 +10,14 @@ drives the answer the way `kernel.linkedin_replies` drives a page reply:
   executor -> a Slack receipt in the support channel, or the Tier 2 card
   with "Held for you: <reason>" first and the draft whole.
 
-the owner, 2026-10-11 (memory approval-policy): a draft whose only hold is low
+Miro, 2026-10-11 (memory approval-policy): a draft whose only hold is low
 retrieval coverage sends when it is a direct quote of public product text
 (`support_guard.direct_quote`); that is decided in code at draft time and
 changes nothing here -- routes, holds, caps and the switch are the send's.
 
 A **hold** (watch-only, a pause, an hourly ceiling) releases the claim and
 stops the pass; the ticket is tried on a later tick. A **refusal** (a rule,
-a route to the owner, an ungrounded answer, the daily cap,
+a route to Miro, an ungrounded answer, the daily cap,
 `ACADEMY_SUPPORT_AUTOSEND=off`) is an answer: the ticket is marked held and
 the card carries the reason and the draft. A draft that could not be
 written at all is an alert with their words, so a ticket is never dropped.

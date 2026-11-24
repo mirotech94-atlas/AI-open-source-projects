@@ -11,13 +11,13 @@ from atlas.tools import builtin
 async def test_an_unknown_module_lists_the_real_ones(monkeypatch):
     async def fetch_all(sql, *args):
         if "DISTINCT p.name" in sql:
-            return [{"name": "fiverr"}, {"name": "inroots"}]
+            return [{"name": "fiverr"}, {"name": "attendance"}]
         return []
 
     monkeypatch.setattr(state, "fetch_all", fetch_all)
-    out = await builtin.module_status("the owner")
-    assert "no checks recorded for module 'the owner'" in out["error"]
-    assert "modules with checks: fiverr, inroots" in out["error"]
+    out = await builtin.module_status("Miro")
+    assert "no checks recorded for module 'Miro'" in out["error"]
+    assert "modules with checks: fiverr, attendance" in out["error"]
 
 
 def test_the_shift_prompt_is_matched_by_its_prefix():

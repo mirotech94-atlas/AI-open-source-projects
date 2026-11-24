@@ -35,7 +35,7 @@ class Registry:
         """Every module under `package`, except those named in
         `ATLAS_DISABLED_MODULES` (a comma list). A module switched off that
         way is recorded in `disabled` with that reason, so it reads "off by
-        choice", never UNKNOWN and never silently absent (the owner, 2026-09-27:
+        choice", never UNKNOWN and never silently absent (Miro, 2026-09-27:
         "we don't need YouTube")."""
         off = {m.strip().lower() for m in
                os.getenv("ATLAS_DISABLED_MODULES", "").split(",") if m.strip()}
@@ -134,7 +134,7 @@ class Registry:
         for name, instance in list(self.modules.items()):
             try:
                 await instance.teardown()
-            except Exception as exc:                   # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 log.warning("module %s failed teardown: %s", name, exc)
 
     def disable(self, name: str, why: str) -> None:

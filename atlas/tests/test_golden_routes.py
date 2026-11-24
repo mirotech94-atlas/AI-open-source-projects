@@ -1,6 +1,6 @@
 """Golden routes: `llm.ROUTES` for the key environment combinations, as
 (need -> [provider:model]). With every new assistant flag off this must stay
-identical; a change here is a routing change and needs the owner's say-so.
+identical; a change here is a routing change and needs Miro's say-so.
 
 Regenerate deliberately: `ATLAS_UPDATE_GOLDEN=1 pytest tests/test_golden_routes.py`.
 Keys are made-up markers, not credentials."""

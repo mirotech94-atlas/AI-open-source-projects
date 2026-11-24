@@ -1,6 +1,6 @@
 """agency.verify -- only real, active New York businesses that need help.
 
-the owner, 2026-09-30. Before a lead is audited, built for or contacted, ATLAS
+Miro, 2026-09-30. Before a lead is audited, built for or contacted, ATLAS
 confirms three things and keeps the evidence:
 
   1. **It is operating.** Google Places' own `businessStatus` first:
@@ -185,7 +185,7 @@ async def _budget_left() -> tuple[bool, str]:
     start = datetime.now(NY).replace(hour=0, minute=0, second=0, microsecond=0)
     try:
         used = await _store.verify_calls_since(start)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, f"the verification budget could not be read ({type(exc).__name__})"
     cap = daily_cap()
     if used >= cap:
@@ -346,7 +346,7 @@ async def contact_refusal(lead_id: int) -> str | None:
     verification that cannot be read is a refusal."""
     try:
         row = await _store.latest_verification(int(lead_id))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return f"its verification could not be read ({type(exc).__name__})"
     if row is None:
         return (f"lead {lead_id} has not been verified as a real, active NYC "
@@ -360,7 +360,7 @@ async def contact_refusal(lead_id: int) -> str | None:
     return None
 
 
-# the owner, 2026-10-28: outreach goes to US leads only. A two-letter state and a
+# Miro, 2026-10-28: outreach goes to US leads only. A two-letter state and a
 # ZIP at the end of the address ("Brooklyn, NY 11201"), or a country part
 # that says the US.
 _US_STATE_ZIP = re.compile(
@@ -388,7 +388,7 @@ async def us_refusal(lead_id: int) -> str | None:
     a refusal (fails closed)."""
     try:
         lead = await _store.get_lead(int(lead_id))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return f"lead {lead_id} could not be read ({type(exc).__name__})"
     if lead is None:
         return f"no such lead: {lead_id}"

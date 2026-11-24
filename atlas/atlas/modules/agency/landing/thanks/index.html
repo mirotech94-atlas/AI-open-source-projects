@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<title>Request received | ATLAS Agency</title>
+<meta name="theme-color" content="#0a0d14">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/mapfront-icon.png">
+<style>
+@font-face {
+  font-family: "Archivo"; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap;
+  src: url("/fonts/archivo-var.woff2") format("woff2-variations"), url("/fonts/archivo-var.woff2") format("woff2");
+}
+:root { color-scheme: dark; --field: #0a0d14; --ink: #eef2fa; --muted: #9aa5ba; --focus: #8fb0ff; --blue: #5b8cff; --on-accent: #070a12; }
+* { box-sizing: border-box; margin: 0; }
+body {
+  min-height: 100vh; display: grid; place-items: center; padding: 2rem 1rem;
+  background: var(--field); color: var(--ink);
+  font-family: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 1.125rem; line-height: 1.6;
+}
+main { max-width: 36rem; }
+nav.site { display: flex; flex-wrap: wrap; gap: 0 1.25rem; margin-bottom: 1.5rem; }
+nav.site a { font-size: 1rem; font-weight: 600; text-decoration: none; padding: .6rem 0; }
+nav.site a:hover { text-decoration: underline; }
+.word { font-weight: 900; letter-spacing: -0.035em; font-size: 1.5rem; text-transform: lowercase; }
+h1 { font-stretch: 76%; font-weight: 750; line-height: 1; font-size: clamp(2.75rem, 8vw, 4.5rem); margin: 1.5rem 0 1.25rem; }
+p { color: var(--muted); margin-bottom: 1rem; }
+a { color: var(--ink); text-decoration-color: #5b8cff; text-decoration-thickness: 2px; text-underline-offset: .2em; }
+a.btn {
+  display: inline-flex; align-items: center; min-height: 3rem; padding: .7rem 1.4rem; margin-top: .75rem;
+  border-radius: 6px; background: #5b8cff; color: #070a12; font-weight: 700; text-decoration: none;
+}
+form.more { margin: 1.25rem 0 1rem; }
+form.more label { display: block; font-size: .9375rem; font-weight: 600; margin-bottom: .75rem; }
+form.more input, form.more textarea { display: block; width: 100%; margin-top: .35rem; padding: .7rem .9rem; border: 2px solid rgba(143, 176, 255, 0.34); border-radius: 6px; background: #131a28; color: var(--ink); font: inherit; font-size: 1rem; }
+form.more button { min-height: 3rem; padding: .7rem 1.4rem; border: 0; border-radius: 6px; background: #5b8cff; color: #070a12; font: inherit; font-weight: 700; cursor: pointer; }
+form.more button[disabled] { opacity: .7; cursor: progress; }
+form.more .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+form.more .status { min-height: 1.4em; margin: .6rem 0 0; font-size: .9375rem; font-weight: 600; }
+form.more .status.bad { color: #8fb0ff; }
+a[href^="tel:"] { white-space: nowrap; }
+a:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <nav class="site" aria-label="Main">
+    <a href="/agency/">Agency</a>
+    <a href="/academy/#catalog">Courses</a>
+    <a href="/academy/#catalog">Ebooks</a>
+    <a href="/academy/blog/">Blog</a>
+    <a href="/academy/videos/">Free lessons</a>
+    <a href="/academy/help/">Help</a>
+  </nav>
+  <p class="word">ATLAS Agency</p>
+  <h1>Got it. Your preview is on the list.</h1>
+  <p>Miro will be in touch within a day. The preview is free, and nothing is charged unless you decide to launch it.</p>
+  <form class="more" method="post" action="/public/agency/contact" data-contact-form>
+    <input type="hidden" name="source" value="thanks">
+    <input type="hidden" name="topic" value="other">
+    <p class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></p>
+    <label>Your name <input type="text" name="name" required maxlength="80" autocomplete="name"></label>
+    <label>Your email <input type="email" name="email" required maxlength="254" autocomplete="email"></label>
+    <label>Anything to add? <textarea name="message" required minlength="10" maxlength="4000" rows="4"></textarea></label>
+    <button type="submit" data-contact-submit>Send</button>
+    <p class="status" role="status" aria-live="polite" data-contact-status></p>
+  </form>
+  <p>Or email <a href="mailto:owner@example.com">owner@example.com</a> or call <a href="tel:+1 555 010 0142">+1 555 010 0142</a>.</p>
+  <a class="btn" href="/">Back to agency.storefront.test</a>
+</main>
+<script src="/contact.js" defer></script>
+</body>
+</html>

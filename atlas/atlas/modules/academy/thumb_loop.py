@@ -57,7 +57,7 @@ def animate(src: str | Path, out_stem: str | Path) -> tuple[Path, Path]:
                 "-loop", "0", str(webp)],
     ]
     for argv in jobs:
-        done = subprocess.run(argv, capture_output=True, text=True, timeout=120)
+        done = subprocess.run(argv, capture_output=True, text=True, timeout=120)  # noqa: PLW1510
         if done.returncode != 0:
             raise RuntimeError(f"ffmpeg: {done.stderr.strip()[:200]}")
     return mp4, webp

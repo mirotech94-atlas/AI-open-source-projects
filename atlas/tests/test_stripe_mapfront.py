@@ -81,7 +81,7 @@ def db(monkeypatch):
 
     async def emergency(business, kind, body):
         rec["emergencies"].append((business, kind, body))
-        return "rang the owner"
+        return "rang Miro"
 
     monkeypatch.setattr(_store, "claim_stripe_event", claim)
     monkeypatch.setattr(_store, "release_stripe_event", release)
@@ -209,7 +209,7 @@ def test_other_event_types_are_acknowledged_and_ignored(client, db):  # noqa: F8
 
 # ------------------------------------------------------ refunds, disputes
 
-def test_a_full_refund_takes_the_deal_off_paid_and_rings_owner(client, db):  # noqa: F811
+def test_a_full_refund_takes_the_deal_off_paid_and_rings_miro(client, db):  # noqa: F811
     db["existing"] = {"id": 21, "deal_id": 11, "lead_name": "Joe's Plumbing"}
     _post(client, _event("charge.refunded", {
         "id": "ch_2", "payment_intent": "pi_2", "amount": 30000,

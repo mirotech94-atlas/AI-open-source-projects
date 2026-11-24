@@ -17,7 +17,7 @@ exactly what Stripe said, or why Stripe could not be asked:
     refunded       the charge was refunded in full
     disputed       the charge is disputed, and not every dispute on it is
                    won or closed (GET /v1/disputes?charge=; a won dispute
-                   restores access, the owner 2026-10-16)
+                   restores access, Miro 2026-10-16)
     expired        older than the catalog's access window (only when set)
     unknown_price  paid, but a line item's price is not in the catalog
     not_found      Stripe has no such session (for this key's account/mode)
@@ -42,7 +42,7 @@ import httpx
 
 from .catalog import Catalog, Offer
 
-log = logging.getLogger("academy.example.stripe")
+log = logging.getLogger("atlas.academy.stripe")
 
 API = "https://api.stripe.com/v1"
 KEY_ENV = "ACADEMY_STRIPE_READ_KEY"
@@ -152,7 +152,7 @@ async def read_session(session_id: str, cat: Catalog, *,
     return v
 
 
-# the owner, 2026-10-16: a won or prevented dispute restores access. Stripe
+# Miro, 2026-10-16: a won or prevented dispute restores access. Stripe
 # keeps a charge's `disputed` flag true after its dispute closes, so the
 # disputes themselves are read (GET /v1/disputes?charge=,
 # docs.stripe.com/api/disputes/list and /object, read 2026-10-16). Only these

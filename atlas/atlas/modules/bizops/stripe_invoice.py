@@ -36,7 +36,7 @@ LIVE_PREFIXES = ("sk_live_", "rk_live_")
 PRICES = frozenset({500, 300})
 DAYS_DUE = 14
 REMIND_EVERY = timedelta(days=7)
-SIGNATURE = "ATLAS, assistant to the owner at Mapfront"
+SIGNATURE = "ATLAS, assistant to Miro at Mapfront"
 SEND_ACTION = "bizops.send_invoice"
 
 
@@ -312,7 +312,7 @@ async def check_invoice_status() -> Observation:
         return Observation("invoice_status", Health.UNKNOWN, detail=str(why))
     try:
         rows = await store.open_invoices()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("invoice_status", Health.UNKNOWN,
                            detail=f"bizops_invoices unreadable: {type(exc).__name__}")
     now = datetime.now(UTC)

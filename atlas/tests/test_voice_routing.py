@@ -1,4 +1,4 @@
-"""Voice routes to the agent that owns it (the owner, 2026-09-29: "When I ask
+"""Voice routes to the agent that owns it (Miro, 2026-09-29: "When I ask
 something, ATLAS should coordinate and redirect to the appropriate agent").
 
 Since 2026-10-28 the roster is eight agents: "what did Mark do today" is
@@ -266,7 +266,7 @@ async def test_a_card_from_someone_elses_module_gets_the_plain_line(monkeypatch)
 # ------------------------------------------------- the work board in the prompt
 
 async def test_an_owner_sees_its_seat_on_the_work_board(monkeypatch):
-    """"How is Hazel doing on the 50 websites?" (the owner, 2026-09-30) had no
+    """"How is Hazel doing on the 50 websites?" (Miro, 2026-09-30) had no
     source: the checks say what is up, not what anyone is doing. The seat's
     work-board detail now rides in the owner's system prompt."""
     from atlas.kernel import workboard

@@ -29,13 +29,13 @@ log = logging.getLogger("atlas.agent_report")
 
 WINDOW = timedelta(hours=24)
 
-# Roster key -> the name it is said as, in the order the owner listed them.
+# Roster key -> the name it is said as, in the order Miro listed them.
 REPORT_AGENTS: tuple[tuple[str, str], ...] = (
     ("content", "Mark"), ("bizops", "Bea"), ("seo", "Sage"),
     ("sales", "Sam"), ("research", "Rex"), ("sites", "Felix"),
 )
-# Sage also watches the MMT LinkedIn work; its checks live on the `mmt` module.
-EXTRA_MODULES: dict[str, frozenset[str]] = {"seo": frozenset({"mmt", "sagemmt"})}
+# Sage also watches the TUTORCO LinkedIn work; its checks live on the `tutorco` module.
+EXTRA_MODULES: dict[str, frozenset[str]] = {"seo": frozenset({"tutorco", "tutorseo"})}
 
 # Status lights. Priority: red > amber > grey > green. Grey is "I can't read it"
 # and is never shown as green (invariant 7).
@@ -43,7 +43,7 @@ RED, AMBER, GREY, GREEN = "\U0001F534", "\U0001F7E1", "⚪", "\U0001F7E2"
 CLOSING = "Reply with an agent's name for details \U0001F642"
 NAME_TO_KEY = {name: key for key, name in REPORT_AGENTS}
 
-# What an unreadable source is called to the owner (never the internal name).
+# What an unreadable source is called to Miro (never the internal name).
 _SOURCES = {"agent_runs": "its run history", "actions_log": "its action log",
             "checks": "its health checks", "work board": "the work board"}
 
@@ -239,7 +239,7 @@ async def report(now: datetime | None = None, only: str | None = None,
     now = now or datetime.now(UTC)
     try:
         data = await read(now)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("agent report unreadable: %s", type(exc).__name__)
         return (f"I can't read the agents' records right now (as of {_clock(now)} ET), "
                 "so I won't guess what they did.")

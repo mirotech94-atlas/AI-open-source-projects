@@ -5,7 +5,7 @@
  * not only literals. A dropped row is counted, never silently lost.
  *
  * The channel key `clips` stays in requests; it is shown as "Atlas Academy".
- * The church lane came back on 2026-10-27, merged into the Content agent.
+ * The community lane came back on 2026-10-27, merged into the Content agent.
  */
 
 export const HIDDEN_MODULES = [

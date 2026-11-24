@@ -56,9 +56,9 @@ def test_the_payment_link_card_is_tier_2_card_only_with_an_off_switch():
 
 
 async def test_no_shop_key_means_no_card(monkeypatch):
-    monkeypatch.delenv("STRIPE_SHOP_OWNER_KEY", raising=False)
-    out = await shop.create_link_dry("business_guide", "owner", 1900)
-    assert not out.ok and "STRIPE_SHOP_OWNER_KEY" in out.detail
+    monkeypatch.delenv("STRIPE_SHOP_MIRO_KEY", raising=False)
+    out = await shop.create_link_dry("business_guide", "miro", 1900)
+    assert not out.ok and "STRIPE_SHOP_MIRO_KEY" in out.detail
 
 
 def _buyer(ip: str = "203.0.113.9"):

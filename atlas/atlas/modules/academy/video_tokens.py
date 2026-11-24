@@ -1,12 +1,12 @@
 """The Atlas Academy video system's tokens, as named constants.
 
-Source of truth: docs/academy-video-system/tokens.json (the owner's spec,
+Source of truth: docs/academy-video-system/tokens.json (Miro's spec,
 2026-10-17). This module mirrors it so the renderers never parse JSON at
 import; tests/test_academy_video_tokens.py asserts every token in the file
 has a constant here with the same value, and that the frame counts below
 are the ones the duration notes state.
 
-Scope (the owner, 2026-10-17): tutorial videos, their thumbnails and teaching
+Scope (Miro, 2026-10-17): tutorial videos, their thumbnails and teaching
 Shorts use this navy system and IBM Plex. The shop, store and API pages
 keep the 2026-10-12 black and royal blue; nothing here
 is for them.

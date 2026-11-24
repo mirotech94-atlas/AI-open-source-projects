@@ -262,7 +262,7 @@ async def build() -> dict[str, Any]:
         for row in await fetch_all(_LATEST):
             latest[(row["property"], row["check_name"])] = (
                 row["health"], row.get("detail") or "", row["observed_at"])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Every check is then unmeasured -- said as such, never as clear.
         from ..modules._http import explain
         unreadable = f"the record store is unreachable ({explain(exc)})"

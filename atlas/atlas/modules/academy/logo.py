@@ -1,4 +1,4 @@
-"""The ATLAS Academy logo: the owner picked "grid 0" on 2026-10-16 ("use grid 0
+"""The ATLAS Academy logo: Miro picked "grid 0" on 2026-10-16 ("use grid 0
 logo only"). A rounded tile, an "A" and a small "0" bottom-right, plus the
 lockup's wordmark and its "Start at Level 0" line.
 
@@ -25,7 +25,7 @@ EDGE = "#1B2334"                     # the third lift: the tile's edge on dark
 WORDS_LIGHT, WORDS_DARK = TILE, LETTER
 EDGE_PX = 1.25
 COLOURS = (TILE, LETTER, ZERO, EDGE)
-# In video (the owner, 2026-10-17: the navy video system, video_tokens.py) the
+# In video (Miro, 2026-10-17: the navy video system, video_tokens.py) the
 # mark takes navy for black and the video blue for royal blue; the store
 # and app-icon files above keep their colours.
 VIDEO_TILE = "#101b30"               # video_tokens.NAVY
@@ -279,7 +279,7 @@ def watermark_svg(video: bool = False) -> str:
     wy = WATERMARK_H - (WORD_Y1 - WORD_Y0) * ws - WORD_Y0 * ws
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{WATERMARK_W}" '
             f'height="{WATERMARK_H}" viewBox="0 0 {WATERMARK_W} {WATERMARK_H}">\n'
-            '  <!-- The ATLAS Academy watermark (Grid A0, the owner 2026-10-16), built by\n'
+            '  <!-- The ATLAS Academy watermark (Grid A0, Miro 2026-10-16), built by\n'
             '       tools/academy_logo.py from atlas/modules/academy/logo.py; do not\n'
             '       edit by hand. The opacity is baked in, so ffmpeg overlays it as\n'
             f'       is. {ground} -->\n'

@@ -1,6 +1,6 @@
 """Football (soccer) data for the reels lane -- a read-only collector.
 
-the owner, 2026-09-29: a football lane in the AI reels, made only from our own
+Miro, 2026-09-29: a football lane in the AI reels, made only from our own
 material -- animated stats, bold text, original stylised visuals -- and
 every number from API-Football (`api.py`, `facts.py`). This module reads;
 it never writes anywhere outside ATLAS. The drafting action lives with the
@@ -35,7 +35,7 @@ async def check_api_football() -> Observation:
             return Observation(NAME, Health.FAILING, detail=api.masked(str(exc)))
         return Observation(NAME, Health.UNKNOWN,
                            detail=f"not read: {api.masked(str(exc))}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(NAME, Health.UNKNOWN,
                            detail=f"not read: {type(exc).__name__}")
     requests = got.get("requests") or {}
@@ -50,7 +50,7 @@ async def check_api_football() -> Observation:
         await api.reconcile(current, limit)
         ours = await api.used_today()
         counted = f"; ATLAS counted {ours}"
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         counted = "; ATLAS's own count unreadable"
     detail = (f"{current}/{limit} requests used today, {plan} plan "
               f"(API-Football /status, read {read_at:%H:%M} UTC){counted}")

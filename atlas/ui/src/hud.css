@@ -1117,7 +1117,7 @@ button { font: inherit; }
 .nn-model[data-dot="dropped"] i,
 .nn-model[data-dot="unknown"] i { background: transparent; border: 1px dashed var(--grey); }
 .nn-model[data-dot="dropped"], .nn-model[data-dot="unknown"] { color: var(--grey); }
-/* A count under a node's name (Agency tab: previews waiting on the owner). A
+/* A count under a node's name (Agency tab: previews waiting on Miro). A
    count that could not be read is grey, dashed and unlit, with the word. */
 .nn-label .nn-badge {
   display: inline-block; margin-top: 2px; padding: 0 6px; font-size: 10px;

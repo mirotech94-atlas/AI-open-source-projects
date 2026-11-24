@@ -62,7 +62,7 @@ async def status() -> BridgeStatus:
     try:
         async with httpx.AsyncClient(timeout=8) as client:
             r = await client.get(f"{_base()}/status", headers=_headers())
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return BridgeStatus(True, False, False, False,
                             reason=f"the WhatsApp bridge is unreachable ({type(exc).__name__})")
     if r.status_code in (401, 403):
@@ -94,7 +94,7 @@ async def send(to: str, text: str) -> tuple[bool, str]:
         async with httpx.AsyncClient(timeout=TIMEOUT) as client:
             r = await client.post(f"{_base()}/send", headers=_headers(),
                                   json={"to": to, "text": text})
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, f"the WhatsApp bridge is unreachable ({type(exc).__name__})"
     try:
         data = r.json()
@@ -115,7 +115,7 @@ async def message_status(sid: str) -> str:
             r = await client.get(f"{_base()}/message/{sid[len(SID_PREFIX):]}",
                                  headers=_headers())
         return str(r.json().get("status") or "unknown") if r.status_code == 200 else "unknown"
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return "unknown"
 
 

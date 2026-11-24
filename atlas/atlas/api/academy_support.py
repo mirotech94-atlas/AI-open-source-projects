@@ -33,7 +33,7 @@ router = APIRouter()
 log = logging.getLogger("atlas.api.academy_support")
 
 CHAT_PATH = "/public/academy/chat"
-# The store's origin (ACADEMY_PUBLIC_ORIGIN, default https://agency.example.com):
+# The store's origin (ACADEMY_PUBLIC_ORIGIN, default https://agency.storefront.test):
 # the only origin the chat answers, exactly, never a wildcard.
 STORE_ORIGIN = store_origin.origin()
 CHAT_BODY_MAX = 4 * 1024

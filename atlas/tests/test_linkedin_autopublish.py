@@ -1,4 +1,4 @@
-"""The Vault LinkedIn page posts itself (the owner, 2026-10-11: post the Vault
+"""The Vault LinkedIn page posts itself (Miro, 2026-10-11: post the Vault
 page's approved posts automatically "the way reels already do").
 
 Promoted the only way that keeps invariant 3 (memory approval-policy): a new
@@ -10,7 +10,7 @@ What must hold: only the Vault (`guardian`) page, never FlyCheap even when it
 is active; only the bank's next approved entry with the payload approved; a
 posting day and hour from the bank; one post a day; a signed-in session and
 no restriction alert; LINKEDIN_AUTOPUBLISH (on by default) and the page's
-pause; the reshare to the owner's profile stays a Tier 2 card; the rollback
+pause; the reshare to Miro's profile stays a Tier 2 card; the rollback
 deletes nothing and pauses the page; a refusal is the Tier 2 publish card
 with "Held for you: <reason>"; a card raised before this change cannot post
 the same entry twice.
@@ -35,8 +35,8 @@ NY_NOON = _TODAY.replace(hour=16)           # 11:00-12:00 New York
 NY_NIGHT = _TODAY.replace(hour=7)           # 02:00-03:00 New York
 
 B13 = {"id": "B13", "status": "approved", "text": "Your vault, your keys.\n"
-                                                  "https://vault.example"}
-B14 = {"id": "B14", "status": "approved", "text": "Second post. https://vault.example"}
+                                                  "https://guarder.example.com"}
+B14 = {"id": "B14", "status": "approved", "text": "Second post. https://guarder.example.com"}
 
 
 @pytest.fixture
@@ -115,7 +115,7 @@ def test_the_switch_sends_it_back_to_a_card(world, monkeypatch):
 
 
 def test_only_an_approved_entry_and_only_the_next_one(world):
-    world.write({"id": "B12", "status": "draft", "text": "draft https://vault.example"})
+    world.write({"id": "B12", "status": "draft", "text": "draft https://guarder.example.com"})
     entry, why, kind = _refusal(NY_NOON)
     assert entry is None and kind == "none" and "no approved entry" in why
     world.write()
@@ -255,7 +255,7 @@ async def test_an_automatic_post_publishes_without_the_reshare(world, monkeypatc
         return None
 
     async def no_reshare(*_a, **_k):
-        raise AssertionError("an automatic post reshared to the owner's profile")
+        raise AssertionError("an automatic post reshared to Miro's profile")
 
     for name, fake in (("browser", fake_browser), ("goto", nothing), ("pause", nothing),
                        ("keep_session", nothing), ("_click_post", nothing),
@@ -266,7 +266,7 @@ async def test_an_automatic_post_publishes_without_the_reshare(world, monkeypatc
     assert made.rollback_token == "guardian:B13"
     # The post itself never reshares; since 2026-10-12 the tick's own
     # linkedin.autoreshare_post does, or the card if it cannot.
-    assert "reshare to the owner's profile follows on its own" in made.detail
+    assert "reshare to Miro's profile follows on its own" in made.detail
     entry = store.bank(store.load(), "guardian")[0][0]
     assert entry["status"] == "published" and entry["autopublished"] is True
     assert entry["reshared"] is False and entry["activity_url"]
@@ -390,7 +390,7 @@ async def test_a_held_post_becomes_the_publish_card_with_the_reason(kernel, worl
 
 async def test_nothing_to_post_or_outside_the_hours_is_silent(kernel, world, monkeypatch):
     from atlas.kernel import linkedin_autopost
-    world.write({"id": "B12", "status": "draft", "text": "d https://vault.example"})
+    world.write({"id": "B12", "status": "draft", "text": "d https://guarder.example.com"})
     assert await linkedin_autopost.tick() == 0
     hour = datetime.now(UTC).astimezone(publish.ZoneInfo(publish.HOURS_TZ)).hour
     world.write(posting={"hours": [(hour + 1) % 24, (hour + 1) % 24 + 1]}
@@ -439,7 +439,7 @@ async def test_a_pending_flycheap_card_is_refused_and_never_auto_posted(world):
 
 # ------------------------------------------- the reshare, on its own (10-12)
 #
-# the owner, 2026-10-12: "whatever you think should be done should be
+# Miro, 2026-10-12: "whatever you think should be done should be
 # automatically approved, but whatever is really urgent should only need
 # human approval" (memory approval-policy). linkedin.autoreshare_post
 # reshares only the Vault post ATLAS itself published today.
@@ -530,7 +530,7 @@ async def test_the_tick_reshares_with_a_receipt(kernel, world, monkeypatch):
 
     async def reshared(state, page, entry_id, entry, *, auto=False):
         assert auto is True
-        return ActionResult(True, f"reshared {entry_id} to the owner's profile, verified")
+        return ActionResult(True, f"reshared {entry_id} to Miro's profile, verified")
     monkeypatch.setattr(publish, "_reshare_entry", reshared)
     assert await linkedin_autopost.tick() == 0
     assert kernel.ran == [("linkedin.autoreshare_post",
@@ -566,7 +566,7 @@ async def test_an_unverified_reshare_is_an_alert_not_a_card(kernel, world, monke
 
 # ------------------------------------------- approving drafts on its own (10-12)
 
-DRAFT = {"id": "B20", "status": "draft", "text": "A draft. https://vault.example"}
+DRAFT = {"id": "B20", "status": "draft", "text": "A draft. https://guarder.example.com"}
 
 
 @pytest.fixture
@@ -596,7 +596,7 @@ async def test_a_draft_on_a_page_that_does_not_publish_itself_is_approved(other)
     assert entry["status"] == "draft" and "auto_approved" not in entry
 
 
-async def test_a_vault_draft_stays_the_owners_card_unless_he_approves_it(other):
+async def test_a_vault_draft_stays_miros_card_unless_he_approves_it(other):
     from atlas.kernel import idempotency
     got = await publish.approve_draft_dry("guardian", "B20")
     assert not got.ok and "yours to read and approve" in got.detail

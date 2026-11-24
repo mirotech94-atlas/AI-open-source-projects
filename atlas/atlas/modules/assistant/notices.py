@@ -1,13 +1,13 @@
-"""Proactive updates: the assistant tells the owner one short note, built by code.
+"""Proactive updates: the assistant tells Miro one short note, built by code.
 
-the owner, 2026-11-19. Tier 1 action `assistant.update_owner`: one Slack DM to his
+Miro, 2026-11-19. Tier 1 action `assistant.update_owner`: one Slack DM to his
 own id through `comms.notify`. It cannot say anything but what the code builds
 from fixed fields; no model writes it and no model can queue one.
 
 What is worth telling (each is a read of something ATLAS already holds):
   * a check that was OK and is now failing (`observations`);
   * a proposal that has waited over two hours (`proposals`);
-  * the cameras online count dropping (the NVR's own per-camera state);
+  * the sensors online count dropping (the NVR's own per-sensor state);
   * important unread mail: NOT built, there is no list of what "important"
     means (see the build notes); the kind is not defined, so it cannot fire.
 
@@ -54,7 +54,7 @@ _URLISH = re.compile(r"(?i)\b(?:https?|ftp)://\S*|<[^>]*>|\bwww\.\S*")
 WINDOWS: dict[str, timedelta] = {
     "check_failing": timedelta(hours=6),
     "proposal_waiting": timedelta(hours=12),
-    "camera_drop": timedelta(hours=3),
+    "sensor_drop": timedelta(hours=3),
     "test": timedelta(hours=1),
 }
 
@@ -94,9 +94,9 @@ def compose(kind: str, **f: Any) -> str:
         noun = "proposal is" if n == 1 else "proposals are"
         return (f"{n} {noun} waiting on your OK for over {h} hours "
                 f"(counted at {_when(f.get('at'))}).")
-    if kind == "camera_drop":
+    if kind == "sensor_drop":
         b, a, t = _num(f.get("before")), _num(f.get("after")), _num(f.get("total"))
-        return (f"Cameras online went from {b} (read {_when(f.get('before_at'))}) "
+        return (f"Sensors online went from {b} (read {_when(f.get('before_at'))}) "
                 f"to {a} of {t} (read {_when(f.get('at'))}).")
     if kind == "test":
         return "TEST notice from ATLAS: a delivery check. Nothing is wrong."
@@ -104,7 +104,7 @@ def compose(kind: str, **f: Any) -> str:
 
 
 def owner_id() -> str:
-    """the owner's own Slack id: `SLACK_OWNER_ID`, else the one approver id; with
+    """Miro's own Slack id: `SLACK_OWNER_ID`, else the one approver id; with
     several approvers and no explicit owner there is none (so nothing sends)."""
     explicit = os.getenv("SLACK_OWNER_ID", "").strip()
     if explicit:
@@ -208,7 +208,7 @@ async def queue(kind: str, ref: str = "", **fields: Any) -> int | None:
         text = compose(kind, **fields)
         ref = _word(ref) if ref else kind
         return await _store.insert(kind, ref, text, _key(kind, ref), _now(), WINDOWS[kind])
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("notice not queued (%s)", type(exc).__name__)
         return None
 
@@ -295,7 +295,7 @@ async def run(notice_id: int = 0) -> ActionResult:
             title="ATLAS update", body=taken["text"], severity=Severity.NORMAL,
             topic="assistant", kind="alert", channel=owner_id(),
             incident_key=f"assistant.notice.{taken['kind']}"))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         used, why = [], type(exc).__name__
     # Only the Slack DM is the owner: a Matrix room is not known to be his alone,
     # so a Matrix-only delivery is not counted as telling him.
@@ -331,7 +331,7 @@ def actions() -> tuple[Action, ...]:
                # The real cap (1 an hour, 3 a day) counts only notices that were
                # SENT (`_budget_problem`). The executor counts every attempt, so
                # this only bounds retries: a failed Slack DM must not use up
-               # the hour (the owner, 2026-11-20).
+               # the hour (Miro, 2026-11-20).
                max_per_hour=6),
     )
 
@@ -361,11 +361,11 @@ async def _proposals_waiting(older_than: datetime) -> int:
     return int(row["n"]) if row else 0
 
 
-async def _camera_online() -> tuple[int, int | None]:
+async def _sensor_online() -> tuple[int, int | None]:
     """(total, online) from the NVR; online None when it cannot be read or any
-    camera has no state (invariant 6: never a guessed count)."""
-    from .tools import read_camera_status
-    got = await read_camera_status()
+    sensor has no state (invariant 6: never a guessed count)."""
+    from .tools import read_sensor_status
+    got = await read_sensor_status()
     online = got.get("online")
     if got.get("error") or got.get("unknown") or not isinstance(online, int):
         return int(got.get("total") or 0), None
@@ -390,13 +390,13 @@ async def scan_proposals() -> int:
                             hours=int(PROPOSAL_WAIT.total_seconds() // 3600)) else 0
 
 
-async def scan_cameras() -> int:
-    total, online = await _camera_online()
+async def scan_sensors() -> int:
+    total, online = await _sensor_online()
     if online is None:
         return 0                     # unreadable: say nothing, keep the last good count
     now = _now()
-    last = await _store.state_get("camera_online")
-    await _store.state_set("camera_online", f"{online}|{now.isoformat()}", now)
+    last = await _store.state_get("sensor_online")
+    await _store.state_set("sensor_online", f"{online}|{now.isoformat()}", now)
     try:
         before_s, before_at_s = (last or "").split("|", 1)
         before, before_at = int(before_s), datetime.fromisoformat(before_at_s)
@@ -404,7 +404,7 @@ async def scan_cameras() -> int:
         return 0                     # no earlier reading to compare with
     if online >= before:
         return 0
-    return 1 if await queue("camera_drop", ref=f"{before}-{online}", before=before,
+    return 1 if await queue("sensor_drop", ref=f"{before}-{online}", before=before,
                             after=online, total=total, before_at=before_at,
                             at=now) else 0
 
@@ -419,9 +419,9 @@ async def step() -> None:
     """One scheduler pass: scan, then try to send what is waiting."""
     if not enabled():
         return
-    for scan in (scan_checks, scan_proposals, scan_cameras):
+    for scan in (scan_checks, scan_proposals, scan_sensors):
         try:
             await scan()
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("notice scan %s failed (%s)", scan.__name__, type(exc).__name__)
     await drain()

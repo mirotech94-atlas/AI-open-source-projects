@@ -81,15 +81,15 @@ log = logging.getLogger("atlas.clips.cut")
 
 MIN_WINDOW, MAX_WINDOW = 20.0, 60.0
 MAX_CLIPS = 3
-# The platforms the lane has an account on: Instagram @example_handle, the
-# TikTok @example_handle (through Postiz) and the YouTube `clips` channel. A
+# The platforms the lane has an account on: Instagram @atlas.clipsdrop, the
+# TikTok @atlasclips12 (through Postiz) and the YouTube `clips` channel. A
 # clip gets a row only for a platform that is also in its campaign's
 # `platforms`, never one for a platform that does not pay.
 LANE_PLATFORMS = ("instagram", "tiktok", "youtube")
 
 
 def lane_platforms() -> tuple[str, ...]:
-    """LANE_PLATFORMS less YouTube unless CLIPS_YOUTUBE is on. the owner,
+    """LANE_PLATFORMS less YouTube unless CLIPS_YOUTUBE is on. Miro,
     2026-10-11: the YouTube channel is ATLAS Academy's now (education, AI,
     money), so campaign clips stop going there; Instagram and TikTok
     carry on. The Academy's own promo Shorts are not campaign clips and
@@ -312,7 +312,7 @@ def size_refusal(campaign: campaigns.Campaign, name: str, size: int) -> str | No
 
 def brand_assets(campaign: campaigns.Campaign) -> tuple[dict[str, Path], str | None]:
     """The campaign's required brand assets, each a plain PNG inside its
-    own brand/ folder (`sources.brand_dir`; placed by the owner, never fetched
+    own brand/ folder (`sources.brand_dir`; placed by Miro, never fetched
     -- the lane downloads nothing from a brand's site), or why not:
     `BRAND_MISSING: put logo.png in <folder>`. A campaign that requires
     none gets {}. Blocking: it reads the filesystem."""
@@ -693,7 +693,7 @@ async def pick(campaign: campaigns.Campaign, words: list[reel_captions.Word],
     try:
         completion = await think(Need.DRAFT, system, [Message("user", user)],
                                  max_tokens=700)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         raise CutRefused(f"no model could pick the moments: {explain(exc)}") from None
     kept = admissible(parse_windows(completion.text), duration, campaign, limit,

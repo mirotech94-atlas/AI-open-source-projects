@@ -61,7 +61,7 @@ def _fish(monkeypatch, *outcomes):
 
 async def test_a_402_falls_back_to_say_and_raises_one_info_signal(monkeypatch):
     _fish(monkeypatch, _status_error(402))
-    assert await phone.clip("Hey the owner.") is None, "<Say> speaks it instead"
+    assert await phone.clip("Hey Miro.") is None, "<Say> speaks it instead"
     (signal,) = await voice.MODULE.signals()
     assert signal.severity is Severity.INFO
     assert signal.title == voice.CREDIT_EXHAUSTED

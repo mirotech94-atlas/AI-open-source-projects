@@ -1,6 +1,6 @@
 """HTML snippets for the competitor-report panels on a product page.
 
-the owner's report "Compete through useful results" (11 Oct 2026) asks each page
+Miro's report "Compete through useful results" (11 Oct 2026) asks each page
 to show what the buyer will finish, the free lesson that leads to it, what
 was tested and when, a troubleshooting preview, the approval step, real
 samples, exactly what is in the box, a learn-together route and a bounded
@@ -11,7 +11,7 @@ Rules every function keeps:
 
 * Empty data renders "" -- never a heading over nothing.
 * Nothing from `unverified`, a `*_note` key or a null store value is ever
-  printed: those are the owner's open questions (see `open_questions`).
+  printed: those are Miro's open questions (see `open_questions`).
 * A free lesson or a sample is linked only once it has a URL; a planned or
   proposed video is never announced as if it existed.
 * Every string is escaped. No script, no request, no storage; the 3D kit
@@ -168,7 +168,7 @@ def review_demo_panel(p: Product) -> str:
 # ------------------------------------------------------------- 07 evidence
 
 def evidence_panel(p: Product) -> str:
-    """Only samples that are published (have a URL). Until the owner publishes
+    """Only samples that are published (have a URL). Until Miro publishes
     one, this is empty; the vault paths are in the catalog for him."""
     items = [e for e in p.evidence if e.url]
     if not items:
@@ -264,7 +264,7 @@ def support_panel(cat: Catalog) -> str:
     for key, head in (("response_time", "When to expect a reply"),
                       ("updates", "Updates"),
                       ("implementation_services", "Want it set up for you?")):
-        if s.get(key):           # null until the owner decides: then nothing is said
+        if s.get(key):           # null until Miro decides: then nothing is said
             body += f"<h3>{_e(head)}</h3><p>{_e(s[key])}</p>"
     return _section("support", "Help", "What help is included", body)
 
@@ -292,7 +292,7 @@ def nav_links(cat: Catalog, p: Product) -> str:
 
 
 def open_questions(cat: Catalog) -> list[tuple[str, str]]:
-    """Everything the owner must answer or verify before it can be shown:
+    """Everything Miro must answer or verify before it can be shown:
     (where, question). Never rendered on the store."""
     out = [(p.slug, q) for p in cat.products for q in p.unverified]
     out += [(f"route {r.slug}", q) for r in cat.routes for q in r.unverified]

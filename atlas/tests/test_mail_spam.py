@@ -38,14 +38,14 @@ GMAIL_PASS = ("mx.google.com; dkim=pass header.i=@{d}; spf=pass "
 
 PHISHING = """\
 Authentication-Results: mx.google.com; dkim=fail header.i=@paypa1-secure.com; \
-spf=softfail smtp.mailfrom=contact19@example.com; dmarc=fail (p=NONE) \
+spf=softfail smtp.mailfrom=bounce@mailer.example.ru; dmarc=fail (p=NONE) \
 header.from=paypa1-secure.com
-From: "PayPal Support" <contact20@example.com>
-Reply-To: contact21@example.com
+From: "PayPal Support" <service@paypa1-secure.com>
+Reply-To: resolve-case-4471@gmail.com
 To: me@example.com
 Subject: URGENT: your account has been suspended
 Date: Mon, 28 Sep 2026 08:00:00 +0000
-Message-ID: <contact22@example.com>
+Message-ID: <phish-1@paypa1-secure.com>
 MIME-Version: 1.0
 Content-Type: text/html; charset=utf-8
 
@@ -59,12 +59,12 @@ closed permanently.</p>
 NEWSLETTER = """\
 Authentication-Results: mx.google.com; dkim=pass header.i=@substack.com; \
 spf=pass smtp.mailfrom=substack.com; dmarc=pass (p=NONE) header.from=substack.com
-From: Substack Weekly <contact23@example.com>
+From: Substack Weekly <hello@substack.com>
 To: me@example.com
 Subject: This week in AI: ten links worth your time
 Date: Mon, 28 Sep 2026 07:00:00 +0000
-Message-ID: <contact24@example.com>
-List-Unsubscribe: <https://substack.com/unsubscribe?x=1>, <mailto:contact25@example.com>
+Message-ID: <nl-1@substack.com>
+List-Unsubscribe: <https://substack.com/unsubscribe?x=1>, <mailto:u@substack.com>
 Precedence: bulk
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
@@ -84,16 +84,16 @@ Message-ID: <anna-1@client.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 
-Hi the owner, thanks, that works. Can you also send the revised quote today?
+Hi Miro, thanks, that works. Can you also send the revised quote today?
 Details are here: https://docs.client.com/quote-44
 """
 
 SPOOFED_NAME = """\
-From: "PayPal Service" <contact26@example.com>
+From: "PayPal Service" <support@account-notice-center.net>
 To: me@example.com
 Subject: Action needed on your account
 Date: Mon, 28 Sep 2026 06:00:00 +0000
-Message-ID: <contact27@example.com>
+Message-ID: <spoof-1@account-notice-center.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 
@@ -102,18 +102,18 @@ http://account-notice-center.net/restore
 """
 
 CONFIRM = """\
-Authentication-Results: mx.google.com; dkim=pass header.i=@academy.example; \
-spf=pass smtp.mailfrom=academy.example; dmarc=pass (p=NONE) header.from=academy.example
-From: ATLAS Academy <hello@academy.example>
+Authentication-Results: mx.google.com; dkim=pass header.i=@atlas.academy; \
+spf=pass smtp.mailfrom=atlas.academy; dmarc=pass (p=NONE) header.from=atlas.academy
+From: ATLAS Academy <hello@atlas.academy>
 To: me@example.com
 Subject: Confirm your subscription to ATLAS Academy
 Date: Mon, 28 Sep 2026 09:00:00 +0000
-Message-ID: <confirm-1@academy.example>
+Message-ID: <confirm-1@atlas.academy>
 MIME-Version: 1.0
 Content-Type: text/html; charset=utf-8
 
 <html><body><p>Thanks for subscribing. This link expires in 24 hours.</p>
-<p><a href="https://academy.example/confirm?t=abc123">Confirm subscription</a></p>
+<p><a href="https://atlas.academy/confirm?t=abc123">Confirm subscription</a></p>
 </body></html>
 """
 
@@ -121,12 +121,12 @@ CONFIRM_NO_AUTH = CONFIRM.split("\n", 1)[1].replace(
     "Authentication-Results: mx.google.com; ", "")      # an IMAP box with no stamp
 
 INJECTION = """\
-From: Recruiter <contact28@example.com>
-Reply-To: contact29@example.com
+From: Recruiter <jobs@talent-hub.biz>
+Reply-To: someone@elsewhere.org
 To: me@example.com
 Subject: Opportunity
 Date: Mon, 28 Sep 2026 06:00:00 +0000
-Message-ID: <contact30@example.com>
+Message-ID: <inj-1@talent-hub.biz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 
@@ -198,8 +198,8 @@ def test_spoofed_display_name_is_spam_with_credential_bait():
 
 def test_display_name_with_a_foreign_address_inside_is_flagged():
     raw = SPOOFED_NAME.replace(
-        '"PayPal Service" <contact26@example.com>',
-        '"contact31@example.com" <contact32@example.com>').replace(
+        '"PayPal Service" <support@account-notice-center.net>',
+        '"billing@paypal.com" <x@mailer-hub.biz>').replace(
         "Your account is limited. Please log in to restore access:\n"
         "http://account-notice-center.net/restore", "See attached.")
     r = verdict(raw)
@@ -234,7 +234,7 @@ def test_link_text_that_names_one_site_while_pointing_at_another():
 
 
 def test_the_unsure_band_exists_and_is_never_called_ok():
-    raw = KNOWN.replace("anna@client.com", "contact33@example.com").replace(
+    raw = KNOWN.replace("anna@client.com", "anna@mailer-hub.biz").replace(
         "Authentication-Results", "X-Old").replace(
         "Can you also send the revised quote today?",
         "This is your final notice, act now.")
@@ -293,8 +293,8 @@ def _stub_think(monkeypatch, answer, seen=None, raises=None):
     monkeypatch.setattr(spam, "local_model", lambda: "llama3.2:3b")
 
 
-UNSURE_RAW = (KNOWN.replace("anna@client.com", "contact33@example.com")
-              .replace("anna-1@client.com", "contact34@example.com")
+UNSURE_RAW = (KNOWN.replace("anna@client.com", "anna@mailer-hub.biz")
+              .replace("anna-1@client.com", "anna-2@mailer-hub.biz")
               .replace("Authentication-Results", "X-Old")
               .replace("Can you also send the revised quote today?",
                        "This is your final notice, act now."))
@@ -463,7 +463,7 @@ async def test_unknown_is_not_cached_so_it_is_tried_again(store, monkeypatch):
 # ---------------------------------------------------------------- reply today
 
 NOW = datetime(2026, 9, 28, 9, 0, tzinfo=UTC)
-ME = Account(name="owner", kind="google", email="me@example.com", refresh_token="t")
+ME = Account(name="myron", kind="google", email="me@example.com", refresh_token="t")
 
 
 @pytest.fixture
@@ -816,8 +816,8 @@ def test_reply_today_keys_an_unkeyed_imap_item_in_the_mid_namespace():
 
 
 def _big(extra: str = "") -> dict:
-    raw = ("From: Pat <contact35@example.com>\nTo: me@example.com\nSubject: Report\n"
-           "Date: Mon, 28 Sep 2026 09:00:00 +0000\nMessage-ID: <contact36@example.com>\n"
+    raw = ("From: Pat <pat@fresh-sender.org>\nTo: me@example.com\nSubject: Report\n"
+           "Date: Mon, 28 Sep 2026 09:00:00 +0000\nMessage-ID: <big@fresh-sender.org>\n"
            "Content-Type: text/plain; charset=utf-8\n\n"
            + "a" * (spam.MARKUP_MAX + 50) + extra)
     return spam.item_from_message(email.message_from_string(raw, policy=policy.default),
@@ -880,7 +880,7 @@ async def test_headers_reuse_checks_a_digest_of_the_snippet_and_headers(store):
         await spam.check(_headers_item("click http://evil.biz now"), ACCT,
                          ask_model=False)                             # new snippet
         assert len(seen) == 1
-        await spam.check(_headers_item("see attached", "contact37@example.com"), ACCT,
+        await spam.check(_headers_item("see attached", "x@evil.biz"), ACCT,
                          ask_model=False)                             # new Reply-To
         assert len(seen) == 2
 

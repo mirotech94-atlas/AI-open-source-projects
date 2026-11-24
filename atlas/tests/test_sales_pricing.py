@@ -1,7 +1,7 @@
-"""Pricing in code (six agents, phase 6; the owner 2026-10-27): a new client is
+"""Pricing in code (six agents, phase 6; Miro 2026-10-27): a new client is
 $500 only, a returning client $300 only, a free demo first. The old $100
 first-sale tier is gone. Returning means a won/paid `agency_deals` row on
-the same lead, or a lead the owner linked (`returning_of_lead_id`); never "same
+the same lead, or a lead Miro linked (`returning_of_lead_id`); never "same
 email domain". Unreadable deals: no figure at all, and a send is refused.
 """
 from __future__ import annotations

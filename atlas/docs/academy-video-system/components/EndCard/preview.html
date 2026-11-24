@@ -1,0 +1,32 @@
+<!-- @dsCard group="Ending" width=1920 height=1080 subtitle="Last 15 s: one next step, right side kept empty for the native element" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1920px;height:1080px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);overflow:hidden}
+.left{position:absolute;left:var(--safe-16-9);top:var(--safe-16-9);bottom:var(--safe-16-9);width:calc(1920px - var(--safe-16-9)*2 - var(--endscreen-reserve) - var(--step-8));display:flex;flex-direction:column;justify-content:space-between}
+.done{display:flex;gap:var(--step-2);align-items:center;color:var(--success)}
+.done svg{width:48px;height:48px}
+.next .k{display:block;color:var(--paper-muted);margin-bottom:var(--step-2)}
+.next .t{display:block;margin-bottom:var(--step-3)}
+.next .a{display:inline-flex;align-items:center;gap:var(--step-2);color:var(--blue-text)}
+.next .a i{display:block;width:48px;height:4px;background:var(--blue)}
+.shop{color:var(--paper-muted)}
+.shop b{color:var(--blue-text);font-weight:500}
+.reserve{position:absolute;right:var(--safe-16-9);top:var(--safe-16-9);bottom:var(--safe-16-9);width:var(--endscreen-reserve);border:2px dashed var(--navy-line);border-radius:var(--radius-card);display:grid;place-items:center;text-align:center;color:var(--paper-muted);padding:var(--step-4);box-sizing:border-box}
+.reserve span{display:block}
+</style></head><body>
+<div class="frame">
+  <div class="left">
+    <div class="done callout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 7"/></svg>You now have a draft ready for review.</div>
+    <div class="next">
+      <span class="k support">Next lesson</span>
+      <span class="t chapter">Add the human review step</span>
+      <span class="a callout"><i></i>Approve or edit before anything is sent</span>
+    </div>
+    <div class="shop support">Practice files for this lesson: <b>agency.storefront.test/academy/</b> (link in the description)</div>
+  </div>
+  <div class="reserve"><div><span class="callout">Native end-screen element</span><span class="support">Added in YouTube Studio · 640px reserved · nothing painted here</span></div></div>
+</div>
+</body></html>

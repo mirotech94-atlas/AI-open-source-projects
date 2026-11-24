@@ -1,7 +1,7 @@
 """The Vault LinkedIn page's daily post, published on its own, through the
 one path that acts.
 
-the owner, 2026-10-11: post the Vault page's approved posts automatically "the
+Miro, 2026-10-11: post the Vault page's approved posts automatically "the
 way reels already do" (memory approval-policy: the tier is set in code,
 never by approving cards at runtime). This drives it the way
 `kernel.reels.post_or_card` drives a reel:
@@ -20,8 +20,8 @@ the daily signal used to raise, so one card a day at most. A post that was
 clicked but not seen on the page (`posted_unverified`) is an alert, never a
 second card: the entry is out of the gate and a person has to look.
 
-Since 2026-10-12 (the owner: "whatever you think should be done should be
-automatically approved"), the same tick reshares that post to the owner's
+Since 2026-10-12 (Miro: "whatever you think should be done should be
+automatically approved"), the same tick reshares that post to Miro's
 profile through `linkedin.autoreshare_post` (`reshare_tick`), the same way:
 a hold waits, any other refusal is the Tier 2 `linkedin.reshare_post` card.
 """
@@ -61,7 +61,7 @@ async def tick() -> int:
             continue                    # off or inactive: the daily signal's card
         try:
             state = load()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.info("linkedin autopost: no state (%s)", type(exc).__name__)
             return raised
         gated, _why = publish.gate(state, page)
@@ -104,8 +104,8 @@ async def tick() -> int:
 
 
 async def reshare_tick() -> int:
-    """Reshare to the owner's profile the Vault post ATLAS published today
-    (the owner, 2026-10-12; memory approval-policy), through
+    """Reshare to Miro's profile the Vault post ATLAS published today
+    (Miro, 2026-10-12; memory approval-policy), through
     `linkedin.autoreshare_post`. Outside the posting hours, while the browser
     is busy, or on a hold, it waits for a later tick; any other refusal is
     the Tier 2 `linkedin.reshare_post` card under the title the signal uses,
@@ -122,7 +122,7 @@ async def reshare_tick() -> int:
             continue
         try:
             state = load()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.info("linkedin autoreshare: no state (%s)", type(exc).__name__)
             return raised
         entry = publish.autoreshare_candidate(state, page)
@@ -140,7 +140,7 @@ async def reshare_tick() -> int:
         made = await execute(ExecutionRequest(
             "linkedin.autoreshare_post", {"page": page, "entry_id": entry_id},
             reason=f"the {name} post ATLAS published today ({entry_id}), to "
-                   f"the owner's profile"))
+                   f"Miro's profile"))
         if _held(made):
             log.info("linkedin autoreshare held: %s", made.detail)
             continue

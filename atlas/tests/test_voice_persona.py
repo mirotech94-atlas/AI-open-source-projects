@@ -1,4 +1,4 @@
-"""The house voice (the owner, 2026-10-12: "yes wire the email prompt in").
+"""The house voice (Miro, 2026-10-12: "yes wire the email prompt in").
 
 The persona is stored once; its tone and banned list reach every prompt
 that drafts an outbound reply; its identity line and sign-off reach none of
@@ -20,8 +20,8 @@ from atlas.modules.linkedin import requests as lr
 
 
 def test_the_persona_is_stored_verbatim_once():
-    assert vp.EMAIL_PERSONA.startswith("You are the owner from ATLAS Academy / Mapfront")
-    assert '"Cheers, the owner"' in vp.EMAIL_PERSONA
+    assert vp.EMAIL_PERSONA.startswith("You are Myron from ATLAS Academy / Mapfront")
+    assert '"Cheers, Myron"' in vp.EMAIL_PERSONA
     assert "Never pretend to be someone else" in vp.EMAIL_PERSONA
     for phrase in vp.BANNED_PHRASES:
         assert f'"{phrase}"' in vp.EMAIL_PERSONA
@@ -32,7 +32,7 @@ def test_the_style_block_keeps_the_tone_and_drops_identity_and_sign_off():
     assert "friendly human who cares" in style
     assert "Answer the question first" in style
     assert "never guess" in style.lower()
-    assert "the owner" not in style and "Cheers" not in style and "Talk soon" not in style
+    assert "Myron" not in style and "Cheers" not in style and "Talk soon" not in style
     assert "60-150" not in style
     assert "those rules win" in style
     for phrase in vp.BANNED_PHRASES:
@@ -59,16 +59,16 @@ def test_the_style_is_in_every_wired_prompt(where):
     prompt = _formatted_prompts()[where]
     assert vp.EMAIL_STYLE in prompt
     # Never the persona's identity: each module's rules on who writes stand.
-    assert "You are the owner" not in prompt and "Cheers, the owner" not in prompt
+    assert "You are Myron" not in prompt and "Cheers, Myron" not in prompt
 
 
 def test_each_module_keeps_its_own_identity_rules():
     p = _formatted_prompts()
-    assert "never claim to be the owner or a person" in p["support"]
-    assert "Never claim to be the owner or a person" in p["agency"]
-    assert "never claim to be the owner or a person" in p["linkedin"]
+    assert "never claim to be Miro or a person" in p["support"]
+    assert "Never claim to be Miro or a person" in p["agency"]
+    assert "never claim to be Miro or a person" in p["linkedin"]
     assert "no sign-off (one is added)" in p["linkedin"]
-    assert lr.signoff("guardian").endswith("— Guardian's assistant (the owner sees this "
+    assert lr.signoff("guardian").endswith("— Guardian's assistant (Miro sees this "
                                            "thread)")
 
 
@@ -93,8 +93,8 @@ def test_banned_phrases_are_caught(text):
 
 @pytest.mark.parametrize("text", [
     ("Glad you wrote back. The preview is live, so have a look when you can.\n\n"
-     "Cheers, the owner"),
-    "Best regards,\nOwner",                         # a person signing, not "The Team"
+     "Cheers, Myron"),
+    "Best regards,\nMiro",                         # a person signing, not "The Team"
     "Our team will look at the deadlock this week.",
 ])
 def test_plain_text_passes(text):
@@ -117,7 +117,7 @@ def test_strip_banned_cuts_only_what_breaks_the_voice():
 def test_linkedin_refuses_a_banned_phrase_with_the_sign_off_intact():
     body = "Thanks for asking. Guardian can unlock your network." + lr.signoff("guardian")
     assert "banned phrase" in (lr.content_refusal(body, "guardian") or "")
-    clean = "Thanks for asking. the owner will answer here." + lr.signoff("guardian")
+    clean = "Thanks for asking. Miro will answer here." + lr.signoff("guardian")
     assert lr.content_refusal(clean, "guardian") is None
 
 

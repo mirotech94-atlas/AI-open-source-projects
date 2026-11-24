@@ -1,4 +1,4 @@
-"""The one "Hands-On Labs & Live Builds" playlist (the owner, 2026-10-22): every
+"""The one "Hands-On Labs & Live Builds" playlist (Miro, 2026-10-22): every
 lab / live build stays in its course playlist and is also added, in course
 order, to one playlist whose description says which lab is whose."""
 from __future__ import annotations

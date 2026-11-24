@@ -1,5 +1,5 @@
 """The 20 launch items every client site carries, and the check that reads
-them back (the owner, 2026-09-29, reel DdH5iyOzkZH).
+them back (Miro, 2026-09-29, reel DdH5iyOzkZH).
 
 Each item is tested present (OK), absent (ISSUE, or NEEDS_CLIENT when only
 the client can supply it) and, where it matters, dishonest (ISSUE). The
@@ -1069,7 +1069,7 @@ def test_23_no_media_at_all_is_not_applicable(tmp_path):
 def test_the_v4_trades_hero_still_passes_the_cta_alt_sticky_and_media_items(tmp_path):
     from atlas.modules.agency import sitetemplate
     lead = {"id": 40, "name": "Hitchingham Electric Company", "category": "electrician",
-            "phone": "(555) 010-0100", "address": "512 E 11th St, New York, NY 10009",
+            "phone": "(540) 729-4548", "address": "512 E 11th St, New York, NY 10009",
             "website": None, "status": "audited"}
     site = tmp_path / "sites" / "hitchingham-electric-company-40"
     site.mkdir(parents=True)

@@ -448,7 +448,7 @@ fi
 
 say ""
 say "This drill restored the LOCAL plain dump only. It does not prove the off-box"
-say "age-encrypted copy decrypts: that key lives on the owner's Mac, not on this host."
+say "age-encrypted copy decrypts: that key lives on Miro's Mac, not on this host."
 say ""
 if [ "$FAILS" -eq 0 ]; then
   say "RESULT: PASS ($DUMP)"

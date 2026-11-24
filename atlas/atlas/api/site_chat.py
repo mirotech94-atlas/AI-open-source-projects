@@ -12,7 +12,7 @@ order, each refusal saying nothing about the next:
 
     404  not a slug, or no chat facts for it (not built, not a $500/$300
          package, or its package changed)
-    403  an Origin other than https://agency.example.com (`AGENCY_PREVIEW_ORIGIN`),
+    403  an Origin other than https://agency.storefront.test (`AGENCY_PREVIEW_ORIGIN`),
          the client's own `domain` from client.json, or `null` (see below);
          POST needs one, GET may omit it
     429  one address past SITE_CHAT_PER_IP_PER_MIN (default 10) a minute;
@@ -29,8 +29,8 @@ order, each refusal saying nothing about the next:
          "..."} when the message carried a card or ID number (no model was
          asked, and the widget drops that turn from its history)
 
-`Origin: null` (weakened check, the owner 2026-11-14): previews are served at
-`agency.example.com/preview/<slug>/` under a CSP `sandbox` WITHOUT
+`Origin: null` (weakened check, Miro 2026-11-14): previews are served at
+`agency.storefront.test/preview/<slug>/` under a CSP `sandbox` WITHOUT
 `allow-same-origin`, so their opaque origin makes the browser send
 `Origin: null`. It is accepted only here, where the slug in the URL path has
 chat facts (a published, chat-enabled site), and every other limit stays. It
@@ -89,7 +89,7 @@ async def _facts(slug: str) -> sitechat.Facts | None:
     try:
         return await asyncio.wait_for(asyncio.to_thread(sitechat.load_facts, slug),
                                       FACTS_TIMEOUT_S)
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 

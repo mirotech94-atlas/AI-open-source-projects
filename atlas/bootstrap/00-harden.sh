@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Harden a fresh Debian 13 / Ubuntu 24.04 box before ATLAS is installed.
-# Verified against Debian 13 (trixie), which is what atlas.example.com runs.
-# Run once, as root, on atlas.example.com. Idempotent.
+# Verified against Debian 13 (trixie), which is what atlas.storefront.test runs.
+# Run once, as root, on atlas.storefront.test. Idempotent.
 set -euo pipefail
 
 SSH_PORT="${SSH_PORT:-2202}"
-ADMIN_USER="${ADMIN_USER:-owner}"
+ADMIN_USER="${ADMIN_USER:-miro}"
 
 log() { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
 

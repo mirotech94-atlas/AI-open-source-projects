@@ -1,4 +1,4 @@
-"""The series engine (the owner, 2026-09-27/28): planned whole, made in order,
+"""The series engine (Miro, 2026-09-27/28): planned whole, made in order,
 finished with THE END -- never left on 'Part 2' forever."""
 from __future__ import annotations
 
@@ -22,13 +22,13 @@ def test_the_hospital_series_is_registered_as_made_and_clean():
 
 
 def test_the_handed_over_series_are_all_in_clean_and_in_order():
-    """the owner chose ATLAS's pipeline (2026-09-28): the engine-setup session's
+    """Miro chose ATLAS's pipeline (2026-09-28): the engine-setup session's
     14 written series, 60 episodes, are the engine's queue, in their order."""
     pk = series.package()
     assert len(pk) == 16 and sum(len(s["parts"]) for s in pk) == 67
     assert pk[0]["title"] == "The Parking Spot"
     assert pk[1]["title"] == "Halo of Coins" and pk[1]["position"] == 10, \
-        "the owner's parody goes next, right after the active series"
+        "Miro's parody goes next, right after the active series"
     assert pk[2]["title"] == "The Sand Contract" and pk[2]["position"] == 10, \
         "ties with Halo of Coins, which was taken in first, so it follows it"
     assert pk[3]["title"] == "The Return"

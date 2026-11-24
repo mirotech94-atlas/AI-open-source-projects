@@ -83,7 +83,7 @@ async def acquire(name: str, ttl: timedelta, owner: str = OWNER) -> Fence | None
                 WHERE leases.expires_at IS NULL OR leases.expires_at <= now()
             RETURNING fencing_token, expires_at""",
             name, owner, ttl)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lease %s could not be claimed (%s); not acting",
                     name, type(exc).__name__)
         return None
@@ -103,7 +103,7 @@ async def renew(fence: Fence, ttl: timedelta) -> Fence | None:
                   AND expires_at > now()
             RETURNING fencing_token, expires_at""",
             fence.key, fence.owner, fence.token, ttl)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lease %s could not be renewed (%s)", fence.key,
                     type(exc).__name__)
         return None
@@ -123,7 +123,7 @@ async def holds(fence: Fence) -> bool:
                 WHERE name = $1 AND owner = $2 AND fencing_token = $3
                   AND expires_at > now()""",
             fence.key, fence.owner, fence.token)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lease %s could not be read (%s); treating it as lost",
                     fence.key, type(exc).__name__)
         return False
@@ -140,7 +140,7 @@ async def release(fence: Fence) -> bool:
                 WHERE name = $1 AND owner = $2 AND fencing_token = $3
             RETURNING name""",
             fence.key, fence.owner, fence.token)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lease %s could not be released (%s); it lapses on its own",
                     fence.key, type(exc).__name__)
         return False

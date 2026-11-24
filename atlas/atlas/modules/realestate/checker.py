@@ -1,11 +1,11 @@
 """realestate.check_deal -- run, dry run, rollback, and the weekly paragraph.
 
 The action reads RentCast (when keyed), works the numbers (`deal.py`),
-writes one `realestate_deals` row -- ATLAS's own table -- and sends the owner the
+writes one `realestate_deals` row -- ATLAS's own table -- and sends Miro the
 card on the `realestate` topic. That is all it does. It never contacts an
 agent or a seller, never sends anything to a third party, and never
 produces a binding contract; the offer draft and the checklist are text for
-the owner. The dry run never calls RentCast (the executor runs it before `run`,
+Miro. The dry run never calls RentCast (the executor runs it before `run`,
 and a dry run that fetched would spend the month's calls twice).
 """
 from __future__ import annotations
@@ -50,7 +50,7 @@ def inputs(line: str = "", address: str = "", list_price: Any = None,
     When `line` is given -- or an `address` holding '|', a model that put the
     whole command there -- the line IS the input, parsed in code, and every
     other parameter is dropped. The picker model fills parameters from
-    everything the owner typed, pasted listing blurb included, and a blurb's
+    everything Miro typed, pasted listing blurb included, and a blurb's
     "ARV 400k" must never become an "entered" ARV. Only the structured
     surface (the dashboard form, which never sends `line`) sets fields one by
     one."""
@@ -97,7 +97,7 @@ async def _arv(address: str, entered: Any) -> tuple[deal.Estimate, float | None]
         return deal.Estimate(None, why=f"{exc} — enter an ARV (arv=…)"), None
     except rentcast.ApiError as exc:
         return deal.Estimate(None, why=rentcast.masked(str(exc))), None
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return deal.Estimate(None, why=f"RentCast not read ({type(exc).__name__})"), None
     f = rentcast.value_fields(got.body)
     if f["price"] is None:
@@ -117,7 +117,7 @@ async def _rent(address: str, skip: bool) -> deal.Estimate:
         got = await rentcast.get(rentcast.RENT, {"address": address})
     except (rentcast.QuotaSpent, rentcast.ApiError) as exc:
         return deal.Estimate(None, why=rentcast.masked(str(exc)))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return deal.Estimate(None, why=f"RentCast not read ({type(exc).__name__})")
     f = rentcast.rent_fields(got.body)
     if f["rent"] is None:
@@ -182,7 +182,7 @@ async def check_deal_dry(**params: Any) -> ActionResult:
     arv_from = ("the ARV entered" if deal.money(got.get("arv")) else
                 "RentCast" if rentcast.configured() else "nothing (ARV unknown)")
     return ActionResult(True, f"would check {address}: ARV from {arv_from}; write one "
-                              f"realestate_deals row and send the owner the card. "
+                              f"realestate_deals row and send Miro the card. "
                               f"Sends nothing to anyone else.",
                         evidence={"address": address})
 
@@ -201,7 +201,7 @@ async def check_deal(**params: Any) -> ActionResult:
                                      body=text, severity=Severity.NORMAL,
                                      topic=TOPIC, kind="alert",
                                      presentation="INFO"))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("realestate: the card for deal #%s was not delivered", deal_id)
     where = ("queued for the morning brief" if used == ["queued"] else
              f"sent to {', '.join(used)}" if used else "NOT delivered — see the "

@@ -155,7 +155,7 @@ def test_a_refund_is_seen_once_the_memory_runs_out(served, monkeypatch):
     url = _url(SID)
     assert served.client.get(url).status_code == 200
     served.paid = False
-    # Inside the two minutes the paid verdict stands (the owner's choice).
+    # Inside the two minutes the paid verdict stands (Miro's choice).
     assert served.client.get(url).status_code == 200
     clock = {"t": time.monotonic() + api.PAID_MEMORY_SECONDS + 1}
     monkeypatch.setattr(api, "_now", lambda: clock["t"])

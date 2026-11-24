@@ -328,7 +328,7 @@ async def test_approval_runs_through_the_executor_at_fresh_closes(world):
     await playlist.propose_week(WEEK)
     start = await playlist.current()
     world.feed.bump = {"NVDA": 1.10, "AMZN": 0.95}          # prices moved since the card
-    verdict = await approvals.decide((await _card())["id"], "approve", "slack:UOWNER")
+    verdict = await approvals.decide((await _card())["id"], "approve", "slack:UMIRO")
     assert verdict.ok and verdict.outcome == "executed", verdict.detail
     now = await playlist.current()
     assert now.kind == "rebalance" and now.proposal_id == (await _proposal())["id"]
@@ -358,7 +358,7 @@ async def test_approval_runs_through_the_executor_at_fresh_closes(world):
 async def test_rollback_restores_the_previous_weights_at_fresh_closes(world):
     await playlist.propose_week(WEEK)
     start = await playlist.current()
-    await approvals.decide((await _card())["id"], "approve", "slack:UOWNER")
+    await approvals.decide((await _card())["id"], "approve", "slack:UMIRO")
     applied = await playlist.current()
     world.feed.bump = {"LLY": 1.2}
     result = await executor.rollback(playlist.ACTION, f"{start.id}:{applied.id}")
@@ -384,7 +384,7 @@ async def test_rollback_restores_the_previous_weights_at_fresh_closes(world):
 async def test_a_declined_card_changes_nothing(world):
     await playlist.propose_week(WEEK)
     before = await playlist.current()
-    verdict = await approvals.decide((await _card())["id"], "decline", "slack:UOWNER")
+    verdict = await approvals.decide((await _card())["id"], "decline", "slack:UMIRO")
     assert verdict.ok and verdict.outcome == "declined"
     assert (await playlist.current()) == before
     assert await _count("markets_playlist_holdings") == 1
@@ -395,7 +395,7 @@ async def test_a_declined_card_changes_nothing(world):
 @needs_pg
 async def test_no_card_when_the_proposal_matches_the_current_weights(world):
     await playlist.propose_week(WEEK)
-    await approvals.decide((await _card())["id"], "approve", "slack:UOWNER")
+    await approvals.decide((await _card())["id"], "approve", "slack:UMIRO")
     world.model.weights = {**TARGET, "AMZN": 14.6, "NVDA": 15.0, "MSFT": 10.4}
     assert await playlist.propose_week(WEEK + timedelta(days=7)) == "unchanged"
     assert await _count("proposals") == 1 and len(world.cards) == 1
@@ -443,7 +443,7 @@ async def test_an_unreadable_price_is_unknown_never_zero(world):
     assert await playlist.propose_week(WEEK + timedelta(days=7)) == "carded"
     # Approved while a held price can't be read: nothing moves.
     world.feed.dead = {"JPM"}
-    verdict = await approvals.decide((await _card())["id"], "approve", "slack:UOWNER")
+    verdict = await approvals.decide((await _card())["id"], "approve", "slack:UMIRO")
     assert not verdict.ok and "JPM" in verdict.detail and "never 0" in verdict.detail
     assert (await playlist.current()).kind == "start"
     text = await playlist.playlist_section(datetime(2026, 10, 12, 12, tzinfo=UTC))
@@ -579,7 +579,7 @@ def test_playlist_cards_route_to_the_trades_channel(monkeypatch):
     action's namespace, so it lands there and never falls back to #decisions."""
     from atlas.channels.slack import SlackChannel
     monkeypatch.setenv("SLACK_CHANNEL", "C_DECISIONS")
-    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:C_CLOUDCO,markets:C_TRADES")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudhost:C_CLOUDHOST,markets:C_TRADES")
     act = playlist.action()
     assert act.topic_param is None and act.topic_for is None
     topic = approvals._topic(act, act.name, {"proposal_id": 1})

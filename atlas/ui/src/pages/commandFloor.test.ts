@@ -1,5 +1,5 @@
 /**
- * The short Command Center (the owner 2026-10-29: "don't make the Command Center
+ * The short Command Center (Miro 2026-10-29: "don't make the Command Center
  * so long; keep the page short with only the most important sections").
  * One screen: the strip, Roster, Needs you and one compact Health+Money
  * panel. Everything else lives on the Agency tab. Static render, pure reads.

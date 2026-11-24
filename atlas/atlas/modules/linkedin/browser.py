@@ -1,6 +1,6 @@
-"""A browser the owner signed into, driven from the server.
+"""A browser Miro signed into, driven from the server.
 
-There is no LinkedIn API and no stored credential. the owner signs in once on his
+There is no LinkedIn API and no stored credential. Miro signs in once on his
 Mac through `bootstrap/linkedin-login.sh`; the saved session (cookies and
 local storage, no password) is synced here and every LinkedIn read and the
 one LinkedIn write run through it. If the session is gone, LinkedIn answers
@@ -102,7 +102,7 @@ async def keep_session(ctx) -> None:
     from the day of the sign-in goes stale while a live session would not."""
     try:
         await ctx.storage_state(path=str(SESSION))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log_warn(f"could not save the refreshed session: {exc}")
 
 
@@ -162,7 +162,7 @@ async def goto(page, url: str, *, expect: str = "") -> str:
 async def body_text(page) -> str:
     try:
         return await page.evaluate("document.body ? document.body.innerText : ''")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ""
 
 
@@ -175,5 +175,5 @@ async def snapshot(page, label: str) -> str | None:
         path = SHOTS / f"{datetime.now(UTC):%Y%m%d-%H%M%S}-{label}.png"
         await page.screenshot(path=str(path), full_page=False)
         return str(path)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None

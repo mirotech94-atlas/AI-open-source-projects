@@ -9,7 +9,7 @@ proposes it and nothing calls Perplexity; when on, its card names how many
 paid calls it makes.
 
 The `seo_rank` job (07:00 New York) takes a rank snapshot of every site with
-a domain, plus the Academy store (agency.example.com); on Mondays an audit,
+a domain, plus the Academy store (agency.storefront.test); on Mondays an audit,
 the weekly client report (`weekly_report`; `draft_report_email` turns it into
 a draft that is never sent from here) and the Academy `keyword_gaps`, each
 through the executor, so watch-only holds all of it."""
@@ -120,7 +120,7 @@ async def check_rank_freshness() -> Observation:
     now = datetime.now(UTC)
     try:
         at = await store.last_measured_rank_at()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("rank_freshness", Health.UNKNOWN,
                            detail=f"seo_ranks unreadable: {type(exc).__name__}")
     if at is None:
@@ -138,7 +138,7 @@ async def check_blog_cadence() -> Observation:
     now = datetime.now(UTC)
     try:
         counts = await store.blog_counts_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("blog_cadence", Health.UNKNOWN,
                            detail=f"content_drafts unreadable: {type(exc).__name__}")
     total = sum(counts.values())
@@ -163,7 +163,7 @@ async def run_daily(now: datetime | None = None) -> dict[str, str]:
     out: dict[str, str] = {}
     try:
         sites = await store.targets()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {"targets": f"unreadable: {type(exc).__name__}"}
     for s in sites:
         slug = str(s["slug"])
@@ -178,7 +178,7 @@ async def run_daily(now: datetime | None = None) -> dict[str, str]:
     try:
         for host, got in (await gsc_write.raise_cards(store.academy()["domain"])).items():
             out[f"gsc_card:{host}"] = got
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         out["gsc_cards"] = f"failed: {type(exc).__name__}"
     if local.weekday() == 0:
         out["gaps"] = await _run("seo.keyword_gaps", {},

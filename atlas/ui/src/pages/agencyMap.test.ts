@@ -1,7 +1,7 @@
 /**
- * The Agency tab is the agency map alone (the owner, 2026-10-28): every roster
+ * The Agency tab is the agency map alone (Miro, 2026-10-28): every roster
  * agent is a neuron, a failed roster read is UNKNOWN, the `sites` neuron
- * carries the preview cards waiting on the owner, and none of the desk sections
+ * carries the preview cards waiting on Miro, and none of the desk sections
  * that moved to the Command Center are drawn here.
  */
 import { createElement } from "react";
@@ -80,7 +80,7 @@ describe("Agency tab: the map alone", () => {
     expect(html).toContain("Unknown: the roster could not be read.");
   });
 
-  it("the sites neuron carries the preview cards waiting on the owner", () => {
+  it("the sites neuron carries the preview cards waiting on Miro", () => {
     const html = render(ok({ agents: [agent("sites"), agent("sales")] }), approvalsOf([
       card(1, "agency.send_outreach"), card(2, "agency.send_outreach"),
       card(3, "agency.deploy_demo"), card(4, "sales.qualify"),

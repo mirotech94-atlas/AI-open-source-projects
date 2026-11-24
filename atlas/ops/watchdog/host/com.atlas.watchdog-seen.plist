@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- TEMPLATE, not installed. __WT__ = the repo checkout the stack runs from,
+     __HOME__ = Miro's home. Install steps: ops/watchdog/INSTALL.md (part B).
+     Copies the watchdog's seen.json from the Spark with the Mac's own ssh key. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.atlas.watchdog-seen</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__WT__/ops/watchdog/host/pull_watchdog_seen.sh</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ATLAS_COMPOSE_DIR</key><string>__WT__</string>
+    </dict>
+    <key>StartInterval</key><integer>300</integer>
+    <key>RunAtLoad</key><true/>
+    <key>StandardOutPath</key><string>__HOME__/Library/Logs/atlas-watchdog-seen.log</string>
+    <key>StandardErrorPath</key><string>__HOME__/Library/Logs/atlas-watchdog-seen.log</string>
+</dict>
+</plist>

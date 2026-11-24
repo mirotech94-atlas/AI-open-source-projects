@@ -1,0 +1,44 @@
+{
+ "key": "mcp-inspector",
+ "seconds": 36.388,
+ "marks": [
+  [
+   0.0,
+   12.954
+  ],
+  [
+   13.037,
+   22.635
+  ],
+  [
+   22.774,
+   29.085
+  ],
+  [
+   29.18,
+   36.388
+  ]
+ ],
+ "urls": [
+  "localhost:6274/",
+  "localhost:6274/",
+  "localhost:6274/",
+  "localhost:6274/"
+ ],
+ "captions": [
+  "Add the server: uv --directory hello run server.py",
+  "Connect: the Inspector starts it over stdio",
+  "Tools: there's greet, with its docstring",
+  "Call it: name = Ana \u2192 \"Hello, Ana!\""
+ ],
+ "width": 1536,
+ "height": 864,
+ "fps": 30,
+ "bytes": 1510615,
+ "sha256": "3bfe7d7a9166f15ad24899fff90a45306a3c478f4ff0733f69b5022a11c82b96",
+ "versions": {
+  "chromium": "153.0.8010.12",
+  "inspector": "2.8.0"
+ },
+ "recorded_at": "2026-10-12T16:54:33+00:00"
+}

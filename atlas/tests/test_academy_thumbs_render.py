@@ -1,4 +1,4 @@
-"""Every catalog thumbnail, really drawn (batch 7, the owner 2026-10-17: "create
+"""Every catalog thumbnail, really drawn (batch 7, Miro 2026-10-17: "create
 thumbnails for each video and different as well").
 
 Chromium draws each scripted episode's thumbnail exactly as a render does

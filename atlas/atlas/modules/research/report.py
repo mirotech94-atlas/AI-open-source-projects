@@ -375,7 +375,7 @@ async def withdraw(token: str) -> ActionResult:
 
 async def due_signals() -> tuple[Signal, ...]:
     """One Signal per report finished in the last 24h, so a report filed
-    overnight surfaces without the owner having to go looking for it. The filed
+    overnight surfaces without Miro having to go looking for it. The filed
     time rides along in the title — every figure that reaches a signal
     carries the time it was read, and a summary quoting one is no different.
     """

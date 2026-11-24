@@ -1,4 +1,4 @@
-"""Matrix — the owner already runs a homeserver for internal.example, so this is free,
+"""Matrix — Miro already runs a homeserver for matrix.example.com, so this is free,
 self-hosted and private. Buttons are rendered as a numbered reply list.
 
 Two things here are deliberate rather than stylistic:
@@ -7,7 +7,7 @@ Two things here are deliberate rather than stylistic:
   `PUT .../send/{eventType}/{txnId}`; the txn id makes a retry idempotent.
   A CRITICAL page is exactly the message most likely to be retried, and
   exactly the one you least want duplicated in the room.
-* **The room id is percent-encoded.** Room ids look like `!abc:internal.example`, which
+* **The room id is percent-encoded.** Room ids look like `!abc:matrix.example.com`, which
   is a path segment carrying reserved characters.
 """
 from __future__ import annotations

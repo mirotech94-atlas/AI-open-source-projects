@@ -8,7 +8,7 @@ reviewed by hand on 2026-09-28; the doc itself is kept in `rules/` and in
 prompt only through `wrap_untrusted`, and nothing is ever parsed out of it
 at runtime.
 
-**The content rule** (the owner, 2026-09-28): gaming, trends, business and
+**The content rule** (Miro, 2026-09-28): gaming, trends, business and
 streamer clips only; no dating, nothing edgy. `refusal()` is that rule in
 code. It is asked when a campaign is seeded and again when one is
 activated, and `cut` asks it a third time, so a campaign that touches
@@ -18,7 +18,7 @@ category, caption samples, on-screen lines, hashtags, handles), never the
 raw doc: both live docs forbid "NSFW" and "sexual content", and a scan of
 the prohibitions would refuse the very campaigns that obey the rule.
 
-**Permission** (the owner, 2026-09-29): a campaign is clipped only with the
+**Permission** (Miro, 2026-09-29): a campaign is clipped only with the
 footage owner's say-so, named in `permission_source` -- `whop:<program or
 url>` for a paid clipping program, `written:<who, date>` for a written OK.
 A campaign without one is never seeded, activated, registered or cut. There
@@ -36,7 +36,7 @@ of their clips posts on one platform only -- the one that pays the most
 (`cut.choose_platform`).
 
 **Numbers** carry where they came from and when (invariant 6). The budgets
-seeded here are the owner's own reading of the Whop dashboard on 28 Sep, stored
+seeded here are Miro's own reading of the Whop dashboard on 28 Sep, stored
 with that date and that source; `status` stops quoting one once it is a
 week old, and says it is unknown instead.
 """
@@ -58,7 +58,7 @@ STATUSES = ("active", "paused", "ended")
 PLATFORMS = ("instagram", "tiktok", "youtube")
 PRESETS = ("blur", "crop", "split")          # db CHECK says the same
 # The brand assets a campaign's rules may require on every clip, a closed
-# set: `logo` (bottom-right) and `banner` (a top strip), each a PNG the owner
+# set: `logo` (bottom-right) and `banner` (a top strip), each a PNG Miro
 # placed in data/clips/<slug>/brand/ -- never fetched from a brand's site.
 BRAND_ASSETS = ("logo", "banner")
 # Whop's draft upload takes an MP4 of at most this many MB (Irubyana,
@@ -69,7 +69,7 @@ MAX_FILE_MB_CEILING = 1024
 # Who allowed ATLAS to clip the footage: a paid program, or a written OK.
 PERMISSION = re.compile(r"^(whop|written):\S.*$")
 
-# the owner's allowlist. A category not named here is refused, not waved through.
+# Miro's allowlist. A category not named here is refused, not waved through.
 ALLOWED_CATEGORIES = frozenset({"gaming", "trends", "business", "streamer"})
 
 # What the content rule refuses, as whole words: "update" is not "date",
@@ -169,12 +169,12 @@ class Campaign:
 def refusal(campaign: Campaign) -> str | None:
     """Why the content rule refuses this campaign, or None. Pure."""
     if campaign.category not in ALLOWED_CATEGORIES:
-        return (f"category {campaign.category!r} is outside the owner's rule "
+        return (f"category {campaign.category!r} is outside Miro's rule "
                 f"(only {', '.join(sorted(ALLOWED_CATEGORIES))})")
     for text in campaign.words():
         for pattern, why in _FORBIDDEN:
             if (hit := pattern.search(text or "")) is not None:
-                return (f"it touches {why} ({hit.group(0)!r}); the owner's rule: "
+                return (f"it touches {why} ({hit.group(0)!r}); Miro's rule: "
                         f"gaming, trends, business or streamer clips only")
     return None
 
@@ -235,7 +235,7 @@ def _rules(slug: str) -> str:
 
 REVIEWED_ON = date(2026, 9, 28)
 BUDGET_READ = datetime(2026, 9, 28, 12, 0, tzinfo=UTC)
-BUDGET_SOURCE = "the owner's reading of the Whop campaign page (Clipping lane plan)"
+BUDGET_SOURCE = "Miro's reading of the Whop campaign page (Clipping lane plan)"
 # All three are Clipping Culture campaigns on Whop (Content Rewards): the
 # brand pays for clips of its own footage. whop_url is the campaign's own
 # share link, copied from its Whop page (2026-09-29); the Mac agent submits
@@ -278,7 +278,7 @@ ATLUS = Campaign(
         "forbid": [],
         "hashtags": ["#ATLUS", "#Persona", "#Persona3Reload", "#Persona5Royal",
                      "#MetaphorReFantazio", "#SteamSale"],
-        # What a clip gets unless the owner picks otherwise: the line that is
+        # What a clip gets unless Miro picks otherwise: the line that is
         # true of any clip in the folder, and tags that fit every one.
         "default_sample": "general",
         "default_hashtags": ["#ATLUS", "#SteamSale"],
@@ -379,14 +379,14 @@ WARHAMMER = Campaign(
 )
 
 
-# A streamer's own Content Rewards program on Whop (the owner approved it
+# A streamer's own Content Rewards program on Whop (Miro approved it
 # 2026-09-29): she pays for clips of her own Twitch streams. There is no
-# separate rules doc -- the campaign page's brief and facts, as the owner read
+# separate rules doc -- the campaign page's brief and facts, as Miro read
 # them that day, ARE its rules, kept verbatim in rules/irubyana-twitch.txt;
 # rules_doc_id names that page. The permission is the campaign itself.
 IRUBYANA_URL = ("https://contentrewards.com/discover/"
                 "d8f10d9f-5207-4268-8069-b6da45a23b67")
-# Where the Mac submitter files each post: the Whop campaign the owner joined
+# Where the Mac submitter files each post: the Whop campaign Miro joined
 # (2026-10-01, "make sure the irubyana clips are coming and never paused").
 IRUBYANA_WHOP = "https://whop.com/rubyanaclips/exp_qOpYZgW2DMo0F9/app/"
 IRUBYANA = Campaign(
@@ -396,18 +396,18 @@ IRUBYANA = Campaign(
     category="streamer",
     status="active",
     rules_doc_id=IRUBYANA_URL,
-    # Her own VODs, which the owner downloads into source/; never scraped.
+    # Her own VODs, which Miro downloads into source/; never scraped.
     source_folder="https://www.twitch.tv/irubyana",
     # The page pays on TikTok, Instagram, YouTube and X; the lane posts no X.
     platforms=("instagram", "tiktok", "youtube"),
     rates={"instagram": 1.00, "tiktok": 1.00, "youtube": 1.00},
-    tag_handles={"instagram": "@example_handle", "tiktok": "@example_handle",
-                 "youtube": "@example_handle"},
+    tag_handles={"instagram": "@irubyana", "tiktok": "@irubyana",
+                 "youtube": "@irubyana"},
     caption_rules={
         # "make sure to tag @Irubyana": the post text tags her itself, and
         # the handle line tags her again on every platform.
-        "samples": {"general": "Best moments from @example_handle live on Twitch"},
-        "require": [r"@example_handle\b"],
+        "samples": {"general": "Best moments from @irubyana live on Twitch"},
+        "require": [r"@irubyana\b"],
         "forbid": [],
         # "use hashtags like irubyana, irubyanaclips, twitch, twitchlive":
         # all four, on every clip (re-read 2026-10-01), so her layout
@@ -432,7 +432,7 @@ IRUBYANA = Campaign(
     rules_reviewed_on=date(2026, 10, 1),
     budget_usd=1971.0,
     budget_read_at=datetime(2026, 9, 29, 12, 0, tzinfo=UTC),
-    budget_source=("the owner's reading of the Content Rewards campaign page "
+    budget_source=("Miro's reading of the Content Rewards campaign page "
                    "($1,971 of $2,000 left)"),
     permission_source=f"whop:{IRUBYANA_URL}",
     max_accounts=1,
@@ -442,10 +442,10 @@ IRUBYANA = Campaign(
     preset="blur",
     # "post on tiktok and instagram reels": her brief asks for both and
     # forbids nothing about the same clip on each (unlike ATLUS and COD),
-    # and the owner asks for both (2026-10-01) -- so each clip goes to both.
+    # and Miro asks for both (2026-10-01) -- so each clip goes to both.
     cross_post_allowed=True,
     # "include brand logo", "twitch banner in the background": her logo.png
-    # and banner.png, placed by the owner in data/clips/irubyana-twitch/brand/.
+    # and banner.png, placed by Miro in data/clips/irubyana-twitch/brand/.
     brand_assets=("logo", "banner"),
     # "Submit a draft for review; drafts need brand approval before you
     # post" (Whop, verified 2026-10-01): her clips are drafts first.
@@ -500,7 +500,7 @@ COLUMNS = ("slug, name, category, status, whop_url, rules_doc_id, source_folder,
            "approval_before_post, max_file_mb")
 # The fields read out of the rules doc, re-applied from the seed when the
 # doc on file is not the one reviewed (`seed`): never status, whop_url,
-# budget, permission or the format choices, which are the owner's.
+# budget, permission or the format choices, which are Miro's.
 DOC_FIELDS = ("platforms", "rates", "tag_handles", "disclosure", "caption_rules",
               "onscreen_rules", "music_allowed", "min_seconds", "max_seconds",
               "audience", "cross_post_allowed", "brand_assets", "rules_text",
@@ -584,7 +584,7 @@ async def seed(campaign: Campaign) -> str | None:
            WHERE slug = $1 AND permission_source IS NULL""",
         campaign.slug, campaign.permission_source)
     # A doc re-read and re-reviewed (a new sha256 in REVIEWED_SHA256): the
-    # fields read out of it follow, on the row already on file. the owner's own
+    # fields read out of it follow, on the row already on file. Miro's own
     # columns -- status, whop_url, budget, permission, format -- do not.
     await execute_sql(
         f"""UPDATE clip_campaigns
@@ -603,7 +603,7 @@ async def seed(campaign: Campaign) -> str | None:
     return None
 
 
-# the owner, 2026-10-01 and again 2026-10-05: "make sure the irubyana clips are
+# Miro, 2026-10-01 and again 2026-10-05: "make sure the irubyana clips are
 # coming and never paused". A pause card he tapped at 14:55 UTC on 2026-10-01
 # -- before he joined the campaign, when its clips met none of its rules --
 # was still holding it on 2026-10-05. `ended` is left alone: a campaign that
@@ -705,11 +705,11 @@ async def record_budget_dry(campaign: str, usd: float) -> ActionResult:
     if float(usd) < 0:
         return ActionResult(False, "a budget left cannot be negative")
     return ActionResult(True, f"would record ${float(usd):,.0f} left on {found.name}, "
-                              f"read now, as the owner said it")
+                              f"read now, as Miro said it")
 
 
 async def record_budget(campaign: str, usd: float) -> ActionResult:
-    """the owner read the Whop dashboard and says what is left. Stamped with now
+    """Miro read the Whop dashboard and says what is left. Stamped with now
     and his name; ATLAS never estimates one."""
     found = await load(campaign)
     if found is None:
@@ -720,7 +720,7 @@ async def record_budget(campaign: str, usd: float) -> ActionResult:
     await execute_sql(
         """UPDATE clip_campaigns SET budget_usd = $2, budget_read_at = $3,
                   budget_source = $4, updated_at = now() WHERE slug = $1""",
-        campaign, float(usd), now, "the owner, from the Whop dashboard")
+        campaign, float(usd), now, "Miro, from the Whop dashboard")
     prior = {"slug": campaign, "usd": found.budget_usd,
              "at": found.budget_read_at.isoformat() if found.budget_read_at else None,
              "source": found.budget_source}

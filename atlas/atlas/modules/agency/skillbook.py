@@ -107,7 +107,7 @@ async def add_skill_rollback(token: str) -> ActionResult:
 
 def _template_handoff(family: str, notes: str) -> handoff.Handoff:
     return handoff.delegate(
-        what_changed=f"the owner approved a request for a new client-site template "
+        what_changed=f"Miro approved a request for a new client-site template "
                      f"family '{family}'",
         evidence=notes or "(no notes)",
         source="agency.request_template card",

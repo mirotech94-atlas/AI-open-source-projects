@@ -72,7 +72,7 @@ def _draft(**overrides):
         "to_address": "owner@example.com",
         "subject": "About your website",
         "body": ("Hi, your site could use some work.\n\n123 Main St, Springfield\n\n"
-                "Reply STOP to unsubscribe.\n\n— sent by the owner's assistant"),
+                "Reply STOP to unsubscribe.\n\n— sent by Miro's assistant"),
         "status": "draft",
         "followup_of": None,
     }
@@ -81,7 +81,7 @@ def _draft(**overrides):
 
 
 def _env_ok(monkeypatch):
-    # the owner, 2026-10-30: the sender is fixed (ATLAS Agency's Gmail); only the
+    # Miro, 2026-10-30: the sender is fixed (ATLAS Agency's Gmail); only the
     # app password and the postal address come from env.
     monkeypatch.setenv("GMAIL_APP_PASSWORD", "app-pass-for-test")
     monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "123 Main St, Springfield")
@@ -197,26 +197,26 @@ async def test_send_dry_refuses_at_the_daily_cap(monkeypatch):
     assert "cap" in result.detail
 
 
-async def test_send_dry_refuses_18dn_com_as_the_sending_domain(monkeypatch):
+async def test_send_dry_refuses_storefront_com_as_the_sending_domain(monkeypatch):
     monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
     monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
     monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
     _env_ok(monkeypatch)
-    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@example.com")
+    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@storefront.test")
     result = await outreach.send_dry(1)
     assert not result.ok
-    assert "example.com" in result.detail
+    assert "storefront.test" in result.detail
 
 
-async def test_send_dry_refuses_a_subdomain_of_18dn_com(monkeypatch):
+async def test_send_dry_refuses_a_subdomain_of_storefront_com(monkeypatch):
     monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
     monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
     monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
     _env_ok(monkeypatch)
-    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@agency.example.com")
+    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@agency.storefront.test")
     result = await outreach.send_dry(1)
     assert not result.ok
-    assert "example.com" in result.detail
+    assert "storefront.test" in result.detail
 
 
 async def test_send_dry_without_the_gmail_app_password_is_refused(monkeypatch):
@@ -241,7 +241,7 @@ async def test_send_dry_ignores_the_old_from_env(monkeypatch):
     _no_lead_features(monkeypatch)
     result = await outreach.send_dry(1)
     assert result.ok, result.detail
-    assert outreach.agency_sender() == "owner@example.com"
+    assert outreach.agency_sender() == "agency.sender@gmail.com"
 
 
 async def test_send_dry_refuses_a_draft_missing_the_postal_address(monkeypatch):
@@ -320,7 +320,7 @@ async def test_send_dry_shows_exactly_what_approving_sends(monkeypatch):
     monkeypatch.setattr(_store, "is_suppressed", _async_returns(False))
     monkeypatch.setattr(_store, "count_sent_between", _async_returns(0))
     monkeypatch.setattr(_store, "lead_links", _async_returns(
-        {"domain": "demo-site.vercel.example", "slug": "joes-7", "deployed": True}))
+        {"domain": "atlas-agency-joes-7.vercel.app", "slug": "joes-7", "deployed": True}))
     _no_lead_features(monkeypatch)
     _env_ok(monkeypatch)
     result = await outreach.send_dry(1)
@@ -328,11 +328,11 @@ async def test_send_dry_shows_exactly_what_approving_sends(monkeypatch):
     ev = result.evidence
     assert ev["to"] == "owner@example.com" and ev["subject"] == "About your website"
     assert ev["text"] == _draft()["body"]
-    assert ev["preview_url"] == "https://demo-site.vercel.example/"
+    assert ev["preview_url"] == "https://atlas-agency-joes-7.vercel.app/"
 
 
 async def test_send_dry_and_send_refuse_a_lead_not_in_the_us(monkeypatch):
-    """the owner, 2026-10-28: US leads only, checked again when the card is approved."""
+    """Miro, 2026-10-28: US leads only, checked again when the card is approved."""
     from atlas.modules.agency import verify
     monkeypatch.setattr(verify, "us_refusal", REAL_US_REFUSAL)
     monkeypatch.setattr(_store, "get_outreach", _async_returns(_draft()))
@@ -384,7 +384,7 @@ async def test_send_outreach_sends_and_marks_the_row_sent(monkeypatch):
 
     result = await outreach.send_outreach(1)
     assert result.ok
-    assert sent["from"] == "owner@example.com"
+    assert sent["from"] == "agency.sender@gmail.com"
     assert sent["to"] == "owner@example.com"
     assert marked == [1]
 
@@ -475,7 +475,7 @@ async def test_send_outreach_refuses_the_same_guards_as_send_dry(monkeypatch):
 
 # ------------------------------------------------ the unattended send's holds
 #
-# the owner, 2026-10-01: the outreach email sends without a card. These are the
+# Miro, 2026-10-01: the outreach email sends without a card. These are the
 # gates decided in code before it does; each failing one is a hold, which
 # kernel.lead_followup turns into the Tier 2 card with the reason.
 
@@ -765,7 +765,7 @@ async def test_resend_key_alone_sends_through_resend_smtp(monkeypatch):
     _resend_only(monkeypatch)
     sent = _fake_aiosmtplib(monkeypatch)
     ok, reason = await outreach._smtp_send(
-        "owner@sender.example", "owner@example.com", "About your site", "Hi.")
+        "miro@sender.example", "owner@example.com", "About your site", "Hi.")
     assert ok and reason is None
     assert (sent["hostname"], sent["port"], sent["username"]) == (
         "smtp.resend.com", 587, "resend")
@@ -777,10 +777,10 @@ async def test_the_agency_gmail_sender_goes_through_gmail_not_resend(monkeypatch
     monkeypatch.setenv("GMAIL_APP_PASSWORD", "app-pass-for-test")
     sent = _fake_aiosmtplib(monkeypatch)
     ok, reason = await outreach._smtp_send(
-        "owner@example.com", "buyer@example.com", "Your access link", "Hi.")
+        "agency.sender@gmail.com", "buyer@example.com", "Your access link", "Hi.")
     assert ok and reason is None
     assert (sent["hostname"], sent["port"], sent["username"]) == (
-        "smtp.gmail.com", 587, "owner@example.com")
+        "smtp.gmail.com", 587, "agency.sender@gmail.com")
     assert sent["password"] == "app-pass-for-test" and RESEND_KEY not in str(sent)
 
 
@@ -804,7 +804,7 @@ async def test_a_resend_rejection_fails_closed_without_the_key(monkeypatch):
     _resend_only(monkeypatch)
     _fake_aiosmtplib(monkeypatch, fail="550 The sender.example domain is not verified")
     ok, reason = await outreach._smtp_send(
-        "owner@sender.example", "owner@example.com", "About your site", "Hi.")
+        "miro@sender.example", "owner@example.com", "About your site", "Hi.")
     assert not ok
     assert "Resend refused" in reason and "not verified" in reason
     assert RESEND_KEY not in reason
@@ -876,7 +876,7 @@ async def test_suppress_rollback_removes_the_address(monkeypatch):
 
 # ------------------------------------------------------------ draft_outreach
 
-LIVE_LINKS = {"domain": "demo-site.vercel.example",
+LIVE_LINKS = {"domain": "atlas-agency-joes-plumbing-1.vercel.app",
               "slug": "joes-plumbing-1", "deployed": True,
               "webild_url": None, "mockup": None}
 
@@ -948,8 +948,8 @@ def _email_world(monkeypatch, lead, *, parent=None):
     return inserted
 
 
-async def test_the_email_is_the_owners_framing_written_by_code(monkeypatch):
-    """the owner, 2026-10-01: "this is ATLAS Academy, we saw your website needed
+async def test_the_email_is_miros_framing_written_by_code(monkeypatch):
+    """Miro, 2026-10-01: "this is ATLAS Academy, we saw your website needed
     help ... we made you a free preview to look at". No model, no claim, a
     CAN-SPAM footer, and the sha of what was written stored with the row."""
     from atlas.modules.agency import contacts
@@ -961,13 +961,13 @@ async def test_the_email_is_the_owners_framing_written_by_code(monkeypatch):
     result = await outreach.draft_outreach(1, "email")
     assert result.ok, result.detail
     body = inserted["body"]
-    assert body.startswith("Hi,\n\nI'm the owner, I run an agency called ATLAS Agency.")
+    assert body.startswith("Hi,\n\nI'm Miro, I run an agency called ATLAS Agency.")
     assert ("the website for Joe's Plumbing and thought it could be doing more "
             "for you, so I put together a demo of a redesigned one. No charge, "
-            "have a look: https://demo-site.vercel.example/") in body
+            "have a look: https://atlas-agency-joes-plumbing-1.vercel.app/") in body
     assert "under a week" in body and "$300, everything included" in body
     assert "#call-me" not in body and "mapfront" not in body.lower()
-    assert "https://agency.example.com" in body
+    assert "https://agency.storefront.test" in body
     assert outreach.can_spam_ok(body, "123 Main St, Springfield") == []
     assert outreach.TRAILER not in body
     assert inserted["to"] == "office@joes.example"
@@ -975,7 +975,7 @@ async def test_the_email_is_the_owners_framing_written_by_code(monkeypatch):
     assert inserted["body_sha"] == outreach.body_sha(body)
     assert result.evidence["body_sha"] == inserted["body_sha"][:12]
     # No figure, no promise: nothing in it for the honesty rules to refuse.
-    from atlas.modules.agency import playbook, pricing
+    from atlas.modules.agency import pricing
     assert pricing.find_prices(body) == [300]
 
 
@@ -988,7 +988,7 @@ async def test_a_lead_with_no_website_is_not_told_we_looked_at_it(monkeypatch):
     assert "looked at" not in body
     assert ("I noticed Joe's Plumbing doesn't have a website yet, so I built a demo "
             "of one for you. No charge, have a look: "
-            "https://demo-site.vercel.example/") in body
+            "https://atlas-agency-joes-plumbing-1.vercel.app/") in body
     assert "call ATLAS Agency at" not in body
     assert "Just reply with what you'd want" in body
 
@@ -1117,7 +1117,7 @@ ECO_PARAGRAPH = (
 async def test_make_mockup_renders_the_template_and_never_calls_getlayers(
         monkeypatch, tmp_path):
     lead = {"id": 1, "name": "Joe's Plumbing", "category": "plumber",
-            "phone": "(555) 010-0100", "address": "885 6th Ave, New York, NY 10001",
+            "phone": "(718) 555-0199", "address": "100 Example Ave, New York, NY 10001",
             "website": None, "status": "audited"}
     copy = json.dumps({
         "headline": "Plumbing help across Manhattan",
@@ -1148,14 +1148,14 @@ async def test_make_mockup_never_publishes_the_eco_electrical_paragraph(
     """The model answering with a summary of its inputs is no longer a page:
     the answer is not JSON, so every field is the code-written default."""
     lead = {"id": 38, "name": "Eco Electrical Services, LLC", "category": "electrician",
-            "phone": "(555) 010-0100", "website": None, "status": "new"}
+            "phone": "(212) 555-0110", "website": None, "status": "new"}
     _mockup_env(monkeypatch, tmp_path, lead, ECO_PARAGRAPH)
     result = await mockup.make_mockup(38)
     assert result.ok, result.detail
     html = (tmp_path / "mockups" / "38.html").read_text()
     for word in ("data contains", "JSON object", "GetLayers", "validation", "error message"):
         assert word not in html
-    assert "Eco Electrical Services" in html and "tel:2129150610" in html
+    assert "Eco Electrical Services" in html and "tel:2125550110" in html
     assert result.evidence["copy_source"] == "defaults"
 
 
@@ -2333,8 +2333,8 @@ async def test_build_site_store_sends_no_style_when_getlayers_names_none(
 
 def test_a_vercel_preview_link_comes_from_the_domain_without_a_call_me_link():
     links = {"slug": "joes-7", "deployed": True,
-             "domain": "demo-site.vercel.example"}
-    assert outreach.preview_url(links) == "https://demo-site.vercel.example/"
+             "domain": "atlas-agency-joes-7.vercel.app"}
+    assert outreach.preview_url(links) == "https://atlas-agency-joes-7.vercel.app/"
     assert outreach.call_me_url(links) is None
     # No box fallback since 2026-10-30: no domain, no link of any kind.
     assert outreach.call_me_url({**links, "domain": None}) is None

@@ -1,0 +1,10 @@
+/* The Before You Automate worksheet (site._worksheet): prints to one sheet. */
+.sheet{width:100%;border-collapse:collapse;margin:1.2em 0}
+.sheet th,.sheet td{border:1px solid currentColor;padding:.7em;vertical-align:top;text-align:left}
+.sheet th small{display:block;font-weight:400;opacity:.75;margin-top:.3em}
+.sheet td.ex{opacity:.8;font-style:italic;width:32%}
+.sheet td.blank{width:36%}
+.routes{list-style:none;padding:0}
+.routes li{margin:0 0 1em}
+@media print{header,footer,.crumbs,.no-print{display:none!important}
+body{background:#fff!important;color:#000!important}}

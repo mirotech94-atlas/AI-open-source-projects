@@ -1,5 +1,5 @@
-"""Where @example_handle stands against the YouTube Partner Program bar,
-for the Monday digest. the owner, 2026-10-16: more subscribers, more viewers,
+"""Where @atlasacademyphp stands against the YouTube Partner Program bar,
+for the Monday digest. Miro, 2026-10-16: more subscribers, more viewers,
 earnings on the channel.
 
 Read-only, fresh reads only, nothing stored. Every figure carries the time
@@ -125,14 +125,14 @@ def _scope_gap(granted: set[str] | None) -> str | None:
         return None                   # unknown: try the read and let it answer
     if any(g == ANALYTICS_SCOPE or g.endswith("/" + ANALYTICS_SCOPE) for g in granted):
         return None
-    return (f"the token lacks {ANALYTICS_SCOPE}: the owner still owes the login "
+    return (f"the token lacks {ANALYTICS_SCOPE}: Miro still owes the login "
             f"re-consent")
 
 
 async def _guard(coro: Any, what: str) -> tuple[Any, str | None]:
     try:
         return await coro
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"{what} raised {type(exc).__name__}"
 
 
@@ -293,6 +293,6 @@ async def section(now: datetime | None = None) -> str:
     """The digest's section; never raises."""
     try:
         return render(await ypp_progress(now), now)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return (f"{TITLE}\nThe Partner Program figures could not be read "
                 f"({type(exc).__name__}), so they are UNKNOWN, not zero.\n{SHOPPING}")

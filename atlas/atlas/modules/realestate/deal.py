@@ -1,6 +1,6 @@
 """The deal arithmetic and the card -- pure, no I/O.
 
-Everything here is a function of what the owner typed and what RentCast returned
+Everything here is a function of what Miro typed and what RentCast returned
 (with the time it was read). A figure that is not known stays None and is
 printed as "unknown", never 0: a missing ARV, repair figure or rent makes
 every number that depends on it unknown too (invariant 6).
@@ -13,7 +13,7 @@ and the rental view beside it: rent estimate, a rough cap rate at an assumed
 expense ratio, and the 1% rule. Both use an all-in basis of list price plus
 repairs, and say so.
 
-The offer draft and the contract checklist are TEXT for the owner. ATLAS never
+The offer draft and the contract checklist are TEXT for Miro. ATLAS never
 contacts an agent, never sends a message to a third party, and never signs or
 generates a binding contract.
 """
@@ -114,7 +114,7 @@ class NotAnAddress(ValueError):
 
 
 def address_from(text: str) -> str:
-    """A street address from what the owner gave. A zillow.com link is read for
+    """A street address from what Miro gave. A zillow.com link is read for
     the address its PATH spells out ('/homedetails/12-Oak-St-Austin-TX-78701/
     123_zpid/') -- the page itself is never requested: Zillow has no public
     API and its terms forbid scraping. Any other link is refused."""
@@ -425,7 +425,7 @@ def offer_amount(a: Analysis) -> float | None:
 
 
 def offer_draft(a: Analysis) -> str | None:
-    """A message the owner may send himself. ATLAS sends nothing."""
+    """A message Miro may send himself. ATLAS sends nothing."""
     amount = offer_amount(a)
     if amount is None:
         return None
@@ -433,7 +433,7 @@ def offer_draft(a: Analysis) -> str | None:
             f"cash, closing in about 21–30 days, subject to an inspection "
             f"contingency and clear title. The contract will include an "
             f"assignment clause (\"and/or assigns\"), so I may assign it to "
-            f"another buyer before closing. Happy to talk it through. — the owner")
+            f"another buyer before closing. Happy to talk it through. — Miro")
 
 
 CHECKLIST = (
@@ -468,6 +468,6 @@ def full_text(a: Analysis) -> str:
 
 def notes_for_prompt(notes: str) -> str:
     """The pasted listing blurb, for any model that ever reads it: quoted
-    as outside data (invariant 4), never as the owner's instruction -- it is a
+    as outside data (invariant 4), never as Miro's instruction -- it is a
     listing agent's text he copied."""
     return wrap_untrusted(str(notes or "")[:NOTES_MAX], "listing", principal=False)

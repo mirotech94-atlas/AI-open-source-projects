@@ -80,8 +80,8 @@ def test_inside_block_checks_the_day():
     `Block` uses -- so this is portable across whatever timezone the test
     runs in (`astimezone()` treats a naive input as already local)."""
     blocks = guard.parse_blocks("Mon-Fri 08:00-11:00 work")
-    monday_9am = datetime(2026, 9, 21, 9, 0)     # a Monday, local  # noqa: DTZ001
-    saturday_9am = datetime(2026, 9, 26, 9, 0)   # a Saturday, local  # noqa: DTZ001
+    monday_9am = datetime(2026, 9, 21, 9, 0)     # a Monday, local
+    saturday_9am = datetime(2026, 9, 26, 9, 0)   # a Saturday, local
     assert guard.inside_block(monday_9am, blocks) is blocks[0]
     assert guard.inside_block(saturday_9am, blocks) is None
 
@@ -90,7 +90,7 @@ def test_inside_block_start_is_inclusive_end_is_exclusive():
     blocks = guard.parse_blocks("Mon-Fri 08:00-11:00 work")
 
     def monday(hour, minute=0):
-        return datetime(2026, 9, 21, hour, minute)   # local wall clock  # noqa: DTZ001
+        return datetime(2026, 9, 21, hour, minute)   # local wall clock
 
     assert guard.inside_block(monday(8, 0), blocks) is blocks[0]     # start
     assert guard.inside_block(monday(10, 59), blocks) is blocks[0]
@@ -128,7 +128,7 @@ def test_inside_block_uses_the_hosts_local_zone_not_utc():
 
 def test_alternatives_never_lands_inside_a_block():
     blocks = guard.parse_blocks("Mon-Fri 08:00-11:00 work")
-    start = datetime(2026, 9, 21, 8, 30)  # local, inside the block  # noqa: DTZ001
+    start = datetime(2026, 9, 21, 8, 30)  # local, inside the block
     slots = guard.alternatives(start, blocks, 30)
     assert len(slots) == 3
     for slot in slots:
@@ -142,7 +142,7 @@ def test_overlaps_any_catches_a_block_fully_inside_the_candidate():
     sits entirely inside a longer candidate slot. `guard.overlaps_any` does
     true interval overlap instead."""
     blocks = guard.parse_blocks("Mon-Fri 08:15-08:30 short block")
-    monday_8am = datetime(2026, 9, 21, 8, 0)     # a Monday, local  # noqa: DTZ001
+    monday_8am = datetime(2026, 9, 21, 8, 0)     # a Monday, local
     assert guard.overlaps_any(monday_8am, monday_8am + timedelta(hours=1), blocks)
 
 
@@ -170,13 +170,13 @@ def test_clear_rejects_a_block_fully_inside_the_candidate_slot():
     slot must make the slot unavailable, not merely the two point samples
     the old implementation checked."""
     blocks = guard.parse_blocks("Mon-Fri 08:15-08:30 short block")
-    slot_start = datetime(2026, 9, 21, 8, 0)     # a Monday, local  # noqa: DTZ001
+    slot_start = datetime(2026, 9, 21, 8, 0)     # a Monday, local
     slot_end = slot_start + timedelta(hours=1)   # 08:00-09:00 contains the block
     assert booking._clear(slot_start, slot_end, [], blocks) is False
 
 
 def test_clear_rejects_a_busy_interval_fully_inside_the_candidate_slot():
-    slot_start = datetime(2026, 9, 21, 8, 0)  # noqa: DTZ001
+    slot_start = datetime(2026, 9, 21, 8, 0)
     slot_end = slot_start + timedelta(hours=1)
     busy_start = slot_start + timedelta(minutes=15)
     busy = [(busy_start, busy_start + timedelta(minutes=10))]   # inside the slot
@@ -475,7 +475,7 @@ async def test_prep_card_says_the_local_model_is_down_and_keeps_the_facts(
 def test_company_domain_skips_our_own_domain_and_free_mail():
     event = {"attendees": [
         {"email": "me@mine.example", "self": True},
-        {"email": "contact48@example.com"},
+        {"email": "pat@gmail.com"},
         {"email": "ann@mine.example"},
         {"email": "lee@acme.example"},
     ]}
@@ -484,7 +484,7 @@ def test_company_domain_skips_our_own_domain_and_free_mail():
 
 def test_no_company_domain_when_everyone_is_on_free_mail():
     event = {"attendees": [{"email": "me@x.example", "self": True},
-                           {"email": "contact49@example.com"}]}
+                           {"email": "pat@outlook.com"}]}
     assert prep.company_domain(event) is None
 
 

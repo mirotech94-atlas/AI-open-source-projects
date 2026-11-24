@@ -36,7 +36,7 @@ from typing import Any
 from ...kernel.contracts import Action, ActionResult, Tier
 from .stripe_read import normalise_email
 
-log = logging.getLogger("academy.example.subscribers")
+log = logging.getLogger("atlas.academy.subscribers")
 
 SUBSCRIBE_PATH = "/public/academy/subscribe"
 CONFIRM_PATH = "/public/academy/subscribe/confirm"
@@ -398,7 +398,7 @@ async def send_confirmation(subscriber_id: int = 0) -> ActionResult:
     from ...kernel.audit import audit
     try:
         await audit("academy.signup_confirmation", str(sub_id), {"to": mask(claimed)})
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("academy signup: the audit row could not be written")
     return ActionResult(True, f"emailed {mask(claimed)} a confirmation link",
                         evidence={"to": mask(claimed)}, rollback_token=str(sub_id))

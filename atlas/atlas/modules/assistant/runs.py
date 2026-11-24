@@ -59,7 +59,7 @@ def question_sha(question: str) -> str:
 async def _write(sql: str, *args: object) -> bool:
     try:
         await execute_sql(sql, *args)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("assistant run record not written (%s)", type(exc).__name__)
         return False
     return True

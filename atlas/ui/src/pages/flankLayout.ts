@@ -1,5 +1,5 @@
 /**
- * Command Center flanks (the owner 2026-11-12: "every section ... on the left
+ * Command Center flanks (Miro 2026-11-12: "every section ... on the left
  * and right side of the ATLAS animation so that he is in between of
  * everything"). A pure, deterministic split of the page's sections into a
  * left and a right column around the ring, balanced by height weight.

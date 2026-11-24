@@ -1,0 +1,39 @@
+<!-- @dsCard height=320 -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.cover{position:relative;width:960px;height:320px;background:var(--navy);font-family:var(--font-sans);overflow:hidden}
+svg{position:absolute;left:0;top:0}
+.blue{fill:var(--blue)}.raised{fill:var(--navy-raised)}.paper{fill:var(--paper)}.ok{fill:var(--success)}.amber{fill:var(--amber)}
+.tile{rx:var(--radius-card)}.chip{rx:var(--radius-chip)}
+.rule{stroke:var(--navy-line);stroke-width:4}
+.rule.on{stroke:var(--blue)}
+.name{position:absolute;left:32px;bottom:56px;max-width:600px;color:var(--paper);font-size:64px;line-height:.95;font-weight:600;letter-spacing:-.02em;margin:0}
+.tag{position:absolute;left:32px;bottom:28px;color:var(--paper-muted);font-size:14px;line-height:20px;font-weight:500;margin:0}
+</style></head><body>
+<div class="cover">
+<!--
+blocks: blue 288×96 · navy-raised 192×96 · success 96×96 · amber 48×96 · navy-raised 240×96 — top band, sides at step-6/step-8 multiples, corners radius-card
+arrangement: a strip of unequal bands across the top (the brand composes in workflow lanes), ground showing between them at step-2
+pattern: a workflow trace — three connector rules at step-4 pitch crossing the bands, one lit blue, with chip nodes cut at radius-chip; chosen because the system's one motion is a token moving one connector and stopping at a node
+scales: step-2 16 gap · step-4 32 pitch · step-6 48 · step-8 64 · radius-card 16 · radius-chip 8
+-->
+<svg width="960" height="320" viewBox="0 0 960 320" aria-hidden="true">
+  <rect class="blue tile" x="16" y="16" width="288" height="96"/>
+  <rect class="raised tile" x="320" y="16" width="192" height="96"/>
+  <rect class="ok tile" x="528" y="16" width="96" height="96"/>
+  <rect class="amber tile" x="640" y="16" width="48" height="96"/>
+  <rect class="raised tile" x="704" y="16" width="240" height="96"/>
+  <line class="rule" x1="336" y1="48" x2="928" y2="48"/>
+  <line class="rule on" x1="336" y1="80" x2="928" y2="80"/>
+  <rect class="paper chip" x="368" y="68" width="56" height="24"/>
+  <rect class="paper chip" x="560" y="68" width="32" height="24"/>
+  <rect class="paper chip" x="736" y="68" width="72" height="24"/>
+  <rect class="paper chip" x="848" y="68" width="56" height="24"/>
+</svg>
+<h1 class="name">Atlas Academy<br>Video</h1>
+<p class="tag">Make the lesson move with the idea.</p>
+</div>
+</body></html>

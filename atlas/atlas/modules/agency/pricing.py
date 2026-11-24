@@ -1,19 +1,19 @@
 """agency.pricing -- the figures a lead may be quoted, decided in code.
 
-the owner, 2026-10-27 (six agents): "NEW customers $500 fixed; RETURNING
+Miro, 2026-10-27 (six agents): "NEW customers $500 fixed; RETURNING
 customers always $300; free demo as sales asset" (the old cheaper tier is
 dropped).
 
     AGENCY_PRICE_LIST   default 500   a new client, the only figure
     AGENCY_PRICE_FLOOR  default 300   a returning client, the only figure
 
-Unset means the owner's defaults above. Set to "" / "off" / "none" means no
+Unset means Miro's defaults above. Set to "" / "off" / "none" means no
 price is configured: a draft then says "[price]" and may name no figure at
 all (invariant 6: never guess a number). AGENCY_FIRST_SALE_PRICE is no
 longer read; when it is still set, one log line says it is ignored.
 
 **Returning** (`_store.lead_returning`, read fresh for each lead): a won or
-paid `agency_deals` row on the same lead, or a lead the owner linked to an
+paid `agency_deals` row on the same lead, or a lead Miro linked to an
 earlier client (`agency_leads.returning_of_lead_id`, principal-only). Never
 "the same email domain": that would make every gmail.com lead returning.
 A read that fails is `returning=None`: then no figure is allowed, the
@@ -148,7 +148,7 @@ async def terms(lead_id: int | None = None) -> Terms:
     if lead_id is not None:
         try:
             returning = bool(await _store.lead_returning(int(lead_id)))
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             returning = None
     return Terms(list_price(), floor_price(), returning, datetime.now(UTC))
 
@@ -253,7 +253,7 @@ def objected(*texts: str) -> bool:
 
 # ------------------------------------------------------ the lead says yes
 #
-# 2026-10-06 (the owner: "approve invoices too"): a lead's own words accepting
+# 2026-10-06 (Miro: "approve invoices too"): a lead's own words accepting
 # the price, read in code, never by a model. Plain assent -- with no
 # counter-offer, no objection, no open question and no "but" -- is an
 # acceptance of the one allowed figure they named, else of the one figure

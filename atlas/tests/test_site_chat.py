@@ -41,7 +41,7 @@ from atlas.modules.agency.launchcheck import (
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SLUG = "harbor-dental-7"
-ORIGIN = "https://agency.example.com"
+ORIGIN = "https://agency.storefront.test"
 CUSTOM = "https://www.harbordental.example"
 OUTSIDER = "203.0.113.9"
 PATH = f"/public/site-chat/{SLUG}"
@@ -197,7 +197,7 @@ def test_the_widget_is_on_every_page_of_a_chat_site(tmp_path):
         assert f'src="{sitekit.CHAT_WIDGET}"' in page.read_text() or \
             f'src="/{sitekit.CHAT_WIDGET}"' in page.read_text(), page.name
     widget = (site / sitekit.CHAT_WIDGET).read_text()
-    assert f'"endpoint": "https://agency.example.com/public/site-chat/{SLUG}"' in widget
+    assert f'"endpoint": "https://agency.storefront.test/public/site-chat/{SLUG}"' in widget
     assert "AI assistant" in widget and "credentials: \"omit\"" in widget
     assert "innerHTML" not in widget and "localStorage" not in widget
     assert "document.cookie" not in widget
@@ -319,7 +319,7 @@ async def test_stated_hours_in_12_hour_words_are_not_invented_figures(
         tmp_path, ledger, monkeypatch, hours):
     monkeypatch.setattr(sitechat, "think", Model(hours))
     raw = {**RAW, "hours": ["Mo-Fr 09:00-17:00"]}
-    lead = {**LEAD, "phone": "(555) 010-0100"}
+    lead = {**LEAD, "phone": "(207) 444-0136"}
     uploads = tmp_path / "uploads" / "7"
     uploads.mkdir(parents=True, exist_ok=True)
     site = tmp_path / "sites" / SLUG
@@ -523,8 +523,8 @@ def test_the_clients_own_domain_is_allowed_too(app, tmp_path, ledger, model):
 
 @pytest.mark.parametrize("origin", [
     "https://evil.example", "https://old-harbor-site.example",
-    "http://agency.example.com", "https://harbor-dental-7.agency.example.com",
-    "https://agency.example.com.evil.example", "https://evilagency.example.com", None])
+    "http://agency.storefront.test", "https://harbor-dental-7.agency.storefront.test",
+    "https://agency.storefront.test.evil.example", "https://evilagency.storefront.test", None])
 def test_any_other_origin_is_refused_without_cors(app, tmp_path, ledger, model, origin):
     _site(tmp_path)
     with _client(app) as c:

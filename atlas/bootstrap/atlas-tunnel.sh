@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Reach the ATLAS dashboard at https://atlas.example.com from this Mac, before
+# Reach the ATLAS dashboard at https://atlas.storefront.test from this Mac, before
 # NetBird is up — or any time the mesh is down.
 #
 #   sudo bash atlas-tunnel.sh
 #
-# It forwards 443 to the ATLAS box over SSH and points atlas.example.com at your
+# It forwards 443 to the ATLAS box over SSH and points atlas.storefront.test at your
 # own machine while the tunnel is open. Nothing is exposed: the only way in is
 # your SSH key, and the dashboard still refuses every source that is not the
 # mesh or this tunnel.
 set -euo pipefail
 
-HOST="${ATLAS_HOST:-203.0.113.191}"
-NAME="${ATLAS_NAME:-atlas.example.com}"
+HOST="${ATLAS_HOST:-162.220.52.191}"
+NAME="${ATLAS_NAME:-atlas.storefront.test}"
 KEY="${ATLAS_KEY:-$HOME/.ssh/id_rsa}"
 HOSTS=/etc/hosts
 MARK="# added by atlas-tunnel"

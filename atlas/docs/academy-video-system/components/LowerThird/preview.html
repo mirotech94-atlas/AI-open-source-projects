@@ -1,0 +1,25 @@
+<!-- @dsCard group="Teaching" width=1920 height=1080 subtitle="Tool or speaker introduced once, away from the task area" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1920px;height:1080px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);overflow:hidden}
+.task{position:absolute;inset:var(--safe-16-9);border:2px dashed var(--navy-line);border-radius:var(--radius-card);color:var(--paper-muted);display:grid;place-items:center}
+.lt{position:absolute;left:var(--safe-16-9);bottom:var(--safe-16-9);display:flex;align-items:stretch;background:var(--navy-raised);border:2px solid var(--navy-line);border-radius:var(--radius-card);overflow:hidden;opacity:0;transform:translateY(16px);animation:rise var(--title-rise) var(--settle) .3s forwards}
+.lt .bar{width:12px;background:var(--blue)}
+.lt .txt{padding:var(--step-3) var(--step-4)}
+.lt .r{display:block;color:var(--paper-muted)}
+.chap{position:absolute;left:var(--safe-16-9);top:var(--safe-16-9);display:flex;align-items:center;gap:var(--step-2);color:var(--blue-text)}
+.chap i{display:block;width:64px;height:4px;background:var(--blue)}
+.cap{position:absolute;left:50%;bottom:calc(var(--safe-16-9) + 140px);transform:translateX(-50%);background:rgba(16,27,48,.8);padding:var(--step-1) var(--step-3);border-radius:var(--radius-chip)}
+@keyframes rise{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.lt{animation:none;opacity:1;transform:none}}
+</style></head><body>
+<div class="frame">
+  <div class="task support">task area — the real app sits here</div>
+  <div class="chap support"><i></i>Chapter 2 · Build the draft step</div>
+  <div class="cap caption">Paste the key, then save the credential.</div>
+  <div class="lt"><div class="bar"></div><div class="txt"><span class="callout">n8n · Claude node</span><span class="r support">Sends the inquiry to Claude and returns a draft</span></div></div>
+</div>
+</body></html>

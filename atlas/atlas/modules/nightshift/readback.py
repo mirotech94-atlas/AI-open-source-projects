@@ -60,7 +60,7 @@ async def _read(params: dict[str, Any]) -> Verification:
         return unknown("the run names no job id", FailureClass.VALIDATION)
     try:
         job = await _job(job_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return unknown(f"nightshift_jobs could not be read: {explain(exc)}")
     if job is None:

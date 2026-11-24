@@ -13,9 +13,9 @@ What it says, and only that:
 * Scope (access and downloads, kit setup, broken workflows), the reply
   promise (two business days, New York business days), how to report a
   broken workflow, and that custom builds are a paid ATLAS Agency service with
-  no price on this page (the quote is the owner's).
-* How to ask: since 2026-11-14 "Ask the owner" posts to `/public/agency/contact` (same
-  origin): stored first, then emailed and sent to the owner's WhatsApp, with Reply-To set to
+  no price on this page (the quote is Miro's).
+* How to ask: since 2026-11-14 "Ask Miro" posts to `/public/agency/contact` (same
+  origin): stored first, then emailed and sent to Miro's WhatsApp, with Reply-To set to
   the visitor. The mailto address stays on the page as plain text.
 * The community links appear only when ACADEMY_SLACK_COMMUNITY_URL /
   ACADEMY_TEAMS_COMMUNITY_URL are set to https URLs.
@@ -46,9 +46,9 @@ def _faq(cat: Catalog) -> str:
 
 def _form(cat: Catalog) -> str:
     mail = _e(store_origin.CONTACT_MAIL)
-    return f"""<h2 id="ask">Ask the owner</h2>
+    return f"""<h2 id="ask">Ask Miro</h2>
 <p>Write below, or email <a href="mailto:{mail}">{mail}</a>. The support assistant answers
-what the product files cover; anything else goes to the owner. Either way you get a reply
+what the product files cover; anything else goes to Miro. Either way you get a reply
 within {REPLY_DAYS_WORD} business days.</p>
 <form class="contact" method="post" action="{_e(ACTION)}" data-contact-form>
 <input type="hidden" name="source" value="store-help">
@@ -60,7 +60,7 @@ within {REPLY_DAYS_WORD} business days.</p>
 <input name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email"></label>
 <label><span>Your question, and which product it is about</span>
 <textarea id="ask-message" name="message" required minlength="{MESSAGE_MIN}" maxlength="{MESSAGE_MAX}" rows="7"></textarea></label>
-<div><button class="btn btn-buy" type="submit" data-contact-submit>Send to the owner</button></div>
+<div><button class="btn btn-buy" type="submit" data-contact-submit>Send to Miro</button></div>
 <p class="status" role="status" aria-live="polite" data-contact-status></p>
 <p class="note">Writing about an order? Use the address you paid with. Never send
 passwords, API keys or tokens.</p>
@@ -79,7 +79,7 @@ describes.</li>
 </ul>
 <p><b>Custom builds are a paid service.</b> Building something new for you, changing a
 workflow to fit your business, or setting it up on your systems is done by ATLAS Agency,
-the owner's studio, and quoted separately. Ask by email and the owner replies with a
+Miro's studio, and quoted separately. Ask by email and Miro replies with a
 quote.</p>
 <h2 id="broken">Reporting a broken workflow</h2>
 <ul>
@@ -94,7 +94,7 @@ which app, and which Claude plan.</li>
 <p>Within {REPLY_DAYS_WORD} business days (Monday to Friday, New York time). The AI
 support assistant answers questions the product files cover, usually much sooner, and
 signs every reply as the assistant. Refunds, anything about money, and anything it is
-unsure of go to the owner himself. Refund terms are on the
+unsure of go to Miro himself. Refund terms are on the
 <a href="../refunds/">refunds page</a>.</p>"""
 
 

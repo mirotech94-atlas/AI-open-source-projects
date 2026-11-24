@@ -63,8 +63,8 @@ def test_every_business_read_and_write_is_registered(everything):
 
 
 def test_every_write_an_agent_holds_names_an_action_a_module_declares(everything):
-    """A write tool is only as real as its action. `inroots_nudge` names an
-    action the inroots module dropped; no agent may hold a tool like it."""
+    """A write tool is only as real as its action. `attendance_nudge` names an
+    action the attendance module dropped; no agent may hold a tool like it."""
     held = {(name, t) for name, agent in agents.ROSTER.items()
             for t in agent.tools if t in TOOLS and TOOLS[t].action}
     dead = sorted((name, t, TOOLS[t].action) for name, t in held

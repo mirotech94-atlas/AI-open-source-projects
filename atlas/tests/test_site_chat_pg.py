@@ -22,7 +22,7 @@ pytestmark = pytest.mark.skipif(
 
 FACTS = sitechat.Facts(
     slug="harbor-dental-7", name="Harbor Dental",
-    origins=("https://agency.example.com",), phone="(207) 555-0100",
+    origins=("https://agency.storefront.test",), phone="(207) 555-0100",
     lines=("Business name: Harbor Dental", "Phone: (207) 555-0100"))
 
 

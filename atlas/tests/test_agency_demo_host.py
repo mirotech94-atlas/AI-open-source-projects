@@ -24,9 +24,9 @@ def _box_deploy_path(monkeypatch):
     from atlas.modules.agency import deploy as _deploy
     monkeypatch.setattr(_deploy, "VERCEL_ONLY", False)
 
-BANNER = ("Preview made by ATLAS Agency for examplehair. Not the official "
-          "examplehair website. No real bookings or payments.")
-HOST = "client-site.example.com"
+BANNER = ("Preview made by ATLAS Agency for Royal HairStyles. Not the official "
+          "Royal HairStyles website. No real bookings or payments.")
+HOST = "examplesalon.storefront.test"
 
 
 def _page(body: str = "", *, noindex: bool = True, banner: bool = True) -> str:
@@ -36,10 +36,10 @@ def _page(body: str = "", *, noindex: bool = True, banner: bool = True) -> str:
             "</body></html>")
 
 
-def _intake(root: Path, slug: str = "examplehair", **files: str) -> Path:
+def _intake(root: Path, slug: str = "examplesalon", **files: str) -> Path:
     site = root / slug
     site.mkdir(parents=True, exist_ok=True)
-    pages = {"index.html": _page("<h1>examplehair</h1>"),
+    pages = {"index.html": _page("<h1>Royal HairStyles</h1>"),
              "book.html": _page("<form action=\"/api/book\" method=post></form>"),
              "assets/app.js": "fetch('/api/slots')",
              "assets/mock-api.js": "localStorage.setItem('b', '1')"}
@@ -60,8 +60,8 @@ def demo(monkeypatch, tmp_path):
     monkeypatch.setattr(demo_host, "PUBLISH_ROOT", publish)
     monkeypatch.setattr(hosting, "PUBLISH_ROOT", tmp_path / "sites")
     monkeypatch.setattr(build, "SITES_DIR", tmp_path / "builds")
-    rows = {"examplehair": {"slug": "examplehair", "kind": "demo",
-                                "domain": HOST, "path": str(intake / "examplehair"),
+    rows = {"examplesalon": {"slug": "examplesalon", "kind": "demo",
+                                "domain": HOST, "path": str(intake / "examplesalon"),
                                 "deployed_at": None},
             "joes-7": {"slug": "joes-7", "kind": "built", "domain": None,
                        "path": str(tmp_path / "builds" / "joes-7"), "deployed_at": None}}
@@ -82,7 +82,7 @@ def demo(monkeypatch, tmp_path):
 
     async def ring_owner(title, line):
         rings.append((title, line))
-        return "rang the owner"
+        return "rang Miro"
 
     monkeypatch.setattr(_store, "get_site", get_site)
     monkeypatch.setattr(_store, "set_site_deployed", deployed)
@@ -143,15 +143,15 @@ async def test_a_built_site_cannot_go_through_the_demo_path(demo):
 
 async def test_a_demo_row_cannot_go_through_deploy_site(demo, monkeypatch):
     monkeypatch.delenv("AGENCY_DEPLOY_HOST", raising=False)
-    result = await deploy.deploy_site("examplehair")
+    result = await deploy.deploy_site("examplesalon")
     assert not result.ok and "agency.deploy_demo" in result.detail
 
 
 @pytest.mark.parametrize("mode", ["local", "remote"])
 @pytest.mark.parametrize("row", [
-    {"slug": "examplehair", "kind": "demo", "path": "/srv/x"},
-    {"slug": "examplehair", "kind": "app", "path": "/srv/x"},
-    {"slug": "examplehair", "kind": "built", "path": ""},
+    {"slug": "examplesalon", "kind": "demo", "path": "/srv/x"},
+    {"slug": "examplesalon", "kind": "app", "path": "/srv/x"},
+    {"slug": "examplesalon", "kind": "built", "path": ""},
 ])
 async def test_deploy_site_refuses_non_built_rows_on_every_path(demo, monkeypatch,
                                                                  mode, row):
@@ -177,7 +177,7 @@ async def test_deploy_site_refuses_non_built_rows_on_every_path(demo, monkeypatc
         monkeypatch.setenv("AGENCY_DEPLOY_HOST", "deploy@example.invalid")
         monkeypatch.setenv("AGENCY_DEPLOY_ROOT", "/srv/sites")
     for call in (deploy.deploy_site, deploy.deploy_dry):
-        result = await call("examplehair")
+        result = await call("examplesalon")
         assert not result.ok
         assert ("deploy_demo" in result.detail if row["kind"] != "built"
                 else "no build path" in result.detail), result.detail
@@ -186,7 +186,7 @@ async def test_deploy_site_refuses_non_built_rows_on_every_path(demo, monkeypatc
 
 async def test_missing_intake_is_refused_and_nothing_is_staged(demo):
     _intake_root, publish, _rows, calls, rings = demo
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     assert not result.ok and "intake" in result.detail
     assert not publish.exists() or not any(publish.iterdir())
     assert "deploy_failed" in _events(calls) and len(rings) == 1
@@ -195,29 +195,29 @@ async def test_missing_intake_is_refused_and_nothing_is_staged(demo):
 async def test_a_symlink_in_the_intake_is_refused_and_the_live_link_stays(demo):
     intake, publish, *_ = demo
     _intake(intake)
-    first = await demo_host.deploy_demo("examplehair")
+    first = await demo_host.deploy_demo("examplesalon")
     assert first.ok, first.detail
-    live = os.readlink(publish / "examplehair")
-    (intake / "examplehair" / "keys.pem").symlink_to("/etc/hosts")
-    result = await demo_host.deploy_demo("examplehair")
+    live = os.readlink(publish / "examplesalon")
+    (intake / "examplesalon" / "keys.pem").symlink_to("/etc/hosts")
+    result = await demo_host.deploy_demo("examplesalon")
     assert not result.ok and "symlink" in result.detail
-    assert os.readlink(publish / "examplehair") == live
+    assert os.readlink(publish / "examplesalon") == live
 
 
 @pytest.mark.parametrize("name", [".env", "assets/.git-keep", ".well-known/x"])
 async def test_a_dotfile_is_refused(demo, name):
     intake, publish, *_ = demo
     _intake(intake, **{name: "x"})
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     assert not result.ok and "dotfile" in result.detail
-    assert not (publish / "examplehair").is_symlink()
+    assert not (publish / "examplesalon").is_symlink()
 
 
 async def test_a_file_over_the_cap_is_refused(demo, monkeypatch):
     intake, *_ = demo
     monkeypatch.setattr(demo_host, "MAX_FILE_BYTES", 100)
     _intake(intake, **{"assets/big.bin": "x" * 101})
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     assert not result.ok and "over" in result.detail
 
 
@@ -225,7 +225,7 @@ async def test_a_total_over_the_cap_is_refused(demo, monkeypatch):
     intake, *_ = demo
     monkeypatch.setattr(demo_host, "MAX_TOTAL_BYTES", 300)
     _intake(intake, **{f"assets/{n}.txt": "x" * 90 for n in range(5)})
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     assert not result.ok and "total" in result.detail
 
 
@@ -277,14 +277,14 @@ def test_own_origin_scripts_and_relative_ones_pass(tmp_path):
 async def test_a_good_intake_goes_live_as_a_relative_link(demo):
     intake, publish, _rows, calls, rings = demo
     _intake(intake)
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     assert result.ok, result.detail
-    link = publish / "examplehair"
+    link = publish / "examplesalon"
     assert link.is_symlink()
     target = os.readlink(link)
-    assert not os.path.isabs(target) and target.startswith(".releases/examplehair/")
-    assert "examplehair" in (link / "index.html").read_text()
-    assert ("deployed", "examplehair", None) in calls
+    assert not os.path.isabs(target) and target.startswith(".releases/examplesalon/")
+    assert "Royal HairStyles" in (link / "index.html").read_text()
+    assert ("deployed", "examplesalon", None) in calls
     assert "deployed" in _events(calls)
     assert len(rings) == 1 and HOST in rings[0][1]
     token = json.loads(result.rollback_token)
@@ -295,45 +295,45 @@ async def test_a_good_intake_goes_live_as_a_relative_link(demo):
 async def test_redeploy_swaps_and_rollback_restores(demo):
     intake, publish, _rows, calls, _rings = demo
     _intake(intake, **{"index.html": _page("<h1>First</h1>")})
-    first = await demo_host.deploy_demo("examplehair")
+    first = await demo_host.deploy_demo("examplesalon")
     _intake(intake, **{"index.html": _page("<h1>Second</h1>")})
-    second = await demo_host.deploy_demo("examplehair")
+    second = await demo_host.deploy_demo("examplesalon")
     assert second.ok, second.detail
-    assert "Second" in (publish / "examplehair" / "index.html").read_text()
+    assert "Second" in (publish / "examplesalon" / "index.html").read_text()
     assert json.loads(second.rollback_token)["previous"] == \
         json.loads(first.rollback_token)["release"]
     back = await demo_host.deploy_demo_rollback(second.rollback_token)
     assert back.ok, back.detail
-    assert "First" in (publish / "examplehair" / "index.html").read_text()
+    assert "First" in (publish / "examplesalon" / "index.html").read_text()
     assert "rolled_back" in _events(calls)
 
 
 async def test_rolling_back_the_first_deploy_unpublishes(demo):
     intake, publish, _rows, calls, _rings = demo
     _intake(intake)
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     back = await demo_host.deploy_demo_rollback(result.rollback_token)
     assert back.ok and "unpublished" in back.detail
-    assert not (publish / "examplehair").is_symlink()
-    assert ("undeployed", "examplehair") in calls
+    assert not (publish / "examplesalon").is_symlink()
+    assert ("undeployed", "examplesalon") in calls
 
 
 async def test_rollback_never_clobbers_a_newer_release(demo):
     intake, publish, *_ = demo
     _intake(intake, **{"index.html": _page("<h1>First</h1>")})
-    first = await demo_host.deploy_demo("examplehair")
+    first = await demo_host.deploy_demo("examplesalon")
     _intake(intake, **{"index.html": _page("<h1>Second</h1>")})
-    await demo_host.deploy_demo("examplehair")
+    await demo_host.deploy_demo("examplesalon")
     stale = await demo_host.deploy_demo_rollback(first.rollback_token)
     assert not stale.ok and "no longer live" in stale.detail
-    assert "Second" in (publish / "examplehair" / "index.html").read_text()
+    assert "Second" in (publish / "examplesalon" / "index.html").read_text()
 
 
 @pytest.mark.parametrize("token", [
     "", "not json",
     json.dumps({"mode": "demo", "slug": "../x", "release": "20261027T000000000000Z"}),
-    json.dumps({"mode": "demo", "slug": "examplehair", "release": "../../etc"}),
-    json.dumps({"mode": "demo", "slug": "examplehair",
+    json.dumps({"mode": "demo", "slug": "examplesalon", "release": "../../etc"}),
+    json.dumps({"mode": "demo", "slug": "examplesalon",
                 "release": "20261027T000000000000Z", "previous": "../x"}),
 ])
 async def test_rollback_revalidates_the_token(demo, token):
@@ -344,8 +344,8 @@ async def test_at_most_five_releases_are_kept(demo):
     intake, publish, *_ = demo
     for n in range(hosting.KEEP_RELEASES + 2):
         _intake(intake, **{"index.html": _page(f"<h1>Version {n}</h1>")})
-        assert (await demo_host.deploy_demo("examplehair")).ok
-    kept = [p for p in (publish / ".releases" / "examplehair").iterdir() if p.is_dir()]
+        assert (await demo_host.deploy_demo("examplesalon")).ok
+    kept = [p for p in (publish / ".releases" / "examplesalon").iterdir() if p.is_dir()]
     assert len(kept) == hosting.KEEP_RELEASES
 
 
@@ -359,10 +359,10 @@ async def test_the_audit_reruns_on_the_release_copy(demo, monkeypatch):
             return ["changed between check and publish"]
         return real(path, hostname)
     monkeypatch.setattr(demo_host, "demo_audit", fails_on_the_copy)
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     assert not result.ok and "changed between" in result.detail
-    assert not (publish / "examplehair").is_symlink()
-    assert not [p for p in (publish / ".releases" / "examplehair").iterdir()
+    assert not (publish / "examplesalon").is_symlink()
+    assert not [p for p in (publish / ".releases" / "examplesalon").iterdir()
                 if p.is_dir()]
     assert not [c for c in calls if c[0] == "deployed"]
 
@@ -373,15 +373,15 @@ async def test_a_publish_root_overlapping_another_tree_is_refused(demo, monkeypa
     intake, *_ = demo
     _intake(intake)
     monkeypatch.setattr(demo_host, "PUBLISH_ROOT", tmp_path / where)
-    result = await demo_host.deploy_demo("examplehair")
+    result = await demo_host.deploy_demo("examplesalon")
     assert not result.ok and "overlaps" in result.detail
-    assert not (await demo_host.deploy_demo_dry("examplehair")).ok
+    assert not (await demo_host.deploy_demo_dry("examplesalon")).ok
 
 
 async def test_the_dry_run_names_what_would_happen_and_touches_nothing(demo):
     intake, publish, _rows, calls, rings = demo
     _intake(intake)
-    preview = await demo_host.deploy_demo_dry("examplehair")
+    preview = await demo_host.deploy_demo_dry("examplesalon")
     assert preview.ok, preview.detail
     for words in (f"https://{HOST}/", "4 file(s)", "audit: passed", "first release"):
         assert words in preview.detail, words
@@ -392,7 +392,7 @@ async def test_the_dry_run_names_what_would_happen_and_touches_nothing(demo):
 async def test_the_dry_run_shows_the_audit_failure(demo):
     intake, *_ = demo
     _intake(intake, **{"index.html": _page(banner=False)})
-    preview = await demo_host.deploy_demo_dry("examplehair")
+    preview = await demo_host.deploy_demo_dry("examplesalon")
     assert not preview.ok and "Preview made by ATLAS Agency" in preview.detail
 
 
@@ -404,7 +404,7 @@ async def test_a_store_that_cannot_record_events_does_not_fail_the_deploy(demo,
     async def broken(*_a, **_k):
         raise ConnectionRefusedError("db down")
     monkeypatch.setattr(_store, "record_site_event", broken)
-    assert (await demo_host.deploy_demo("examplehair")).ok
+    assert (await demo_host.deploy_demo("examplesalon")).ok
 
 
 def test_ring_owner_takes_no_phone_number():
@@ -420,7 +420,7 @@ async def test_a_fresh_intake_raises_one_card(demo, monkeypatch):
     _intake(intake)
 
     async def rows():
-        return [{"slug": "examplehair", "kind": "demo", "domain": HOST},
+        return [{"slug": "examplesalon", "kind": "demo", "domain": HOST},
                 {"slug": "joes-7", "kind": "built", "domain": None}]
 
     async def events(_slug, _limit=20):
@@ -429,18 +429,18 @@ async def test_a_fresh_intake_raises_one_card(demo, monkeypatch):
     monkeypatch.setattr(_store, "site_events", events)
     signals = await demo_host.signals()
     assert [s.suggests for s in signals] == ["agency.deploy_demo"]
-    assert signals[0].params == {"slug": "examplehair"}
+    assert signals[0].params == {"slug": "examplesalon"}
     assert HOST in signals[0].title
 
 
 async def test_an_intake_already_live_raises_no_card(demo, monkeypatch):
     intake, *_ = demo
     _intake(intake)
-    assert (await demo_host.deploy_demo("examplehair")).ok
-    fp = await demo_host._fingerprint_async(intake / "examplehair")
+    assert (await demo_host.deploy_demo("examplesalon")).ok
+    fp = await demo_host._fingerprint_async(intake / "examplesalon")
 
     async def rows():
-        return [{"slug": "examplehair", "kind": "demo", "domain": HOST}]
+        return [{"slug": "examplesalon", "kind": "demo", "domain": HOST}]
 
     async def events(_slug, _limit=20):
         return [{"event": "deployed", "detail": f"intake {fp}", "release": "x"}]
@@ -466,7 +466,7 @@ async def test_watch_only_refuses_the_action(monkeypatch, memory_backend, demo):
     executor._recent.clear()
     try:
         result = await execute(ExecutionRequest(
-            "agency.deploy_demo", {"slug": "examplehair"}, "x", approved_by="owner"))
+            "agency.deploy_demo", {"slug": "examplesalon"}, "x", approved_by="miro"))
     finally:
         REGISTRY.actions.clear()
         REGISTRY.actions.update(saved[0])
@@ -518,10 +518,10 @@ def phone(monkeypatch):
 async def test_ring_owner_rings_with_its_own_title_and_posts(phone):
     escalate, placed, posted = phone
     out = await escalate.ring_owner("Demo live: x.example", "Agency: the x demo is live.")
-    assert out == "rang the owner"
+    assert out == "rang Miro"
     assert placed[0].title == "Demo live: x.example"
     assert "emergency" not in placed[0].title.lower()
-    assert posted and "Phone: rang the owner" in posted[0].body
+    assert posted and "Phone: rang Miro" in posted[0].body
 
 
 async def test_ring_owner_obeys_the_gap_and_does_not_hold(phone):
@@ -559,13 +559,13 @@ async def test_emergency_titles_are_unchanged(phone):
 # ------------------------------------------------------------ sites-add CLI
 
 @pytest.mark.parametrize("args", [
-    ["examplehair", "client-site.example.com", "built", "x@1"],
-    ["Royal", "client-site.example.com", "demo", "x@1"],
-    ["examplehair", "not a host", "demo", "x@1"],
-    ["examplehair", "localhost", "demo", "x@1"],
-    ["examplehair", "10.0.0.1", "demo", "x@1"],
-    ["examplehair", "a.example.com", "demo", "line\nbreak"],
-    ["examplehair", "a.example.com", "demo"],
+    ["examplesalon", "examplesalon.storefront.test", "built", "x@1"],
+    ["Royal", "examplesalon.example.com", "demo", "x@1"],
+    ["examplesalon", "not a host", "demo", "x@1"],
+    ["examplesalon", "localhost", "demo", "x@1"],
+    ["examplesalon", "10.0.0.1", "demo", "x@1"],
+    ["examplesalon", "a.example.com", "demo", "line\nbreak"],
+    ["examplesalon", "a.example.com", "demo"],
 ])
 def test_sites_add_refuses(args):
     from atlas.cli import parse_sites_add
@@ -575,32 +575,32 @@ def test_sites_add_refuses(args):
 
 def test_sites_add_parses():
     from atlas.cli import parse_sites_add
-    assert parse_sites_add(["examplehair", "examplehair.example.com.", "demo",
+    assert parse_sites_add(["examplesalon", "ExampleSalon.example.com.", "demo",
                             "royal-hairstyles-site-demo@176c272"]) == (
-        "examplehair", "client-site.example.com", "demo",
+        "examplesalon", "examplesalon.example.com", "demo",
         "royal-hairstyles-site-demo@176c272")
 
 
 async def test_add_site_row_writes_a_demo_row(memory_backend):
     memory_backend.responses["INSERT INTO agency_sites (slug, domain, path, kind"] = \
         {"id": 7}
-    got = await _store.add_site_row("examplehair", HOST, "demo", "x@1",
-                                    "data/demos-intake/examplehair")
+    got = await _store.add_site_row("examplesalon", HOST, "demo", "x@1",
+                                    "data/demos-intake/examplesalon")
     assert got == 7
     sql, args = memory_backend.sql_log[-1]
     assert "ON CONFLICT (slug) DO NOTHING" in sql
-    assert args == ("examplehair", HOST, "data/demos-intake/examplehair",
+    assert args == ("examplesalon", HOST, "data/demos-intake/examplesalon",
                     "demo", "x@1", True)
 
 
 async def test_site_events_are_recorded_and_read_newest_first(memory_backend):
     memory_backend.responses["FROM agency_site_events"] = []
-    await _store.record_site_event("examplehair", "deployed", "intake ab",
+    await _store.record_site_event("examplesalon", "deployed", "intake ab",
                                    release="20261027T000000000000Z")
-    assert await _store.site_events("examplehair", 5) == []
+    assert await _store.site_events("examplesalon", 5) == []
     insert, read = memory_backend.sql_log[-2], memory_backend.sql_log[-1]
     assert "INSERT INTO agency_site_events" in insert[0]
-    assert "ORDER BY at DESC" in read[0] and read[1] == ("examplehair", 5)
+    assert "ORDER BY at DESC" in read[0] and read[1] == ("examplesalon", 5)
 
 
 def test_the_schema_adds_kind_and_the_events_table():

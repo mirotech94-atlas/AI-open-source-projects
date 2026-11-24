@@ -243,7 +243,7 @@ class McpClient:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 return await client.post(self.url, headers=self._headers(token),
                                          json=body), None
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return None, explain(exc)
 
     async def _notify(self, method: str, params: dict[str, Any]) -> None:

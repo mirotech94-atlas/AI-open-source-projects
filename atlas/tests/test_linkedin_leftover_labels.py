@@ -9,7 +9,7 @@ from atlas.modules.linkedin import publish, sweep
 
 @pytest.fixture(autouse=True)
 def _guardian_as_fixture_page(monkeypatch):
-    """Guardian is the example page here. It is retired by default (the owner,
+    """Guardian is the example page here. It is retired by default (Miro,
     2026-10-29); that default is pinned in test_linkedin_retired.py."""
     from atlas.modules import linkedin as _li
     monkeypatch.setitem(_li.PAGES, "guardian", _li.KNOWN_PAGES["guardian"])

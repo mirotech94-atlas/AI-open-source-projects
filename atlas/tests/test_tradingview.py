@@ -1,4 +1,4 @@
-"""TradingView alerts: the owner's own chart alerts in, stored, read; never traded on.
+"""TradingView alerts: Miro's own chart alerts in, stored, read; never traded on.
 
 The route's gate (secret in the body, constant-time), its limits (size, JSON,
 the closed set of fields, per-address rate, the optional allowlist), the
@@ -23,7 +23,7 @@ from atlas.modules.markets import tradingview as tv
 
 SECRET = "s3cr3t-" + "x" * 40
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-TV_IP = "203.0.113.238"
+TV_IP = "52.89.214.238"
 OUTSIDER = "203.0.113.9"
 PROXY = "172.18.0.5"
 NOW = datetime(2026, 9, 29, 15, 0, tzinfo=UTC)
@@ -313,7 +313,7 @@ def test_a_store_that_fails_is_503_not_200(app, monkeypatch):
 
 # -------------------------------------------------- address: allowlist, rate
 
-TV_IPS = "203.0.113.238,203.0.113.30,203.0.113.128,203.0.113.7"
+TV_IPS = "52.89.214.238,34.212.75.30,54.218.53.128,52.32.178.7"
 
 
 def test_the_allowlist_admits_tradingview_only(app, stored, monkeypatch):
@@ -367,9 +367,9 @@ def test_refusals_from_one_address_are_rate_limited(app, stored):
         assert _post(other, _payload()).status_code == 200
 
 
-def test_the_owners_alerts_are_never_rate_limited(app, stored):
+def test_miros_alerts_are_never_rate_limited(app, stored):
     """TradingView sends every user's alerts from the same four addresses:
-    a burst of the owner's own, or someone else's wrong-secret spam from the
+    a burst of Miro's own, or someone else's wrong-secret spam from the
     same address, must never cost him a real alert (TradingView does not
     retry)."""
     with _client(app, TV_IP) as c:
@@ -434,7 +434,7 @@ def test_the_public_prefix_cannot_reach_a_mesh_route(app, stored, path):
 
 
 def test_the_configure_sample_is_accepted_as_tradingview_fills_it():
-    """The alert message CONFIGURE.md tells the owner to paste, with the
+    """The alert message CONFIGURE.md tells Miro to paste, with the
     placeholders filled the way TradingView fills them."""
     text = (ROOT / "CONFIGURE.md").read_text()
     section = text[text.index("## TradingView alerts to Ivan"):]
@@ -861,7 +861,7 @@ async def test_marking_nothing_touches_nothing(memory_backend):
 
 def test_tradingview_adds_no_action():
     from atlas.modules import markets
-    # markets.alert sends the owner a message; the two paper actions are
+    # markets.alert sends Miro a message; the two paper actions are
     # card-only and reach no broker. The TradingView intake adds none.
     assert [a.name for a in markets.MODULE.actions()] == [
         "markets.alert", "markets.paper_rebalance", "markets.paper_idea"]

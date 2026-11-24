@@ -154,7 +154,7 @@ async def _request(
                 method, url, headers=headers, params=params,
                 json=json_body, data=data)
             response.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc, detail)
 
     try:
@@ -228,7 +228,7 @@ async def post_body(
                 "POST", url, headers=headers, params=params,
                 content=content, json=json_body)
             response.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc, detail)
     try:
         return response.json(), None
@@ -254,7 +254,7 @@ async def send_body(
             response = await client.request(method.upper(), url, headers=headers,
                                             json=json_body)
             response.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc, True)
     try:
         return response.json(), None
@@ -290,7 +290,7 @@ async def get_bytes(
                 if size > max_bytes:
                     return None, f"file too large (over {max_bytes} bytes)"
                 chunks.append(chunk)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc)
     return b"".join(chunks), None
 
@@ -389,7 +389,7 @@ class RedactingFilter(logging.Filter):
                 record.stack_info = redact(record.stack_info)
         # Logging from inside a logging filter would recurse; a record that
         # could not be redacted is still better emitted than silently lost.
-        except Exception:                               # noqa: BLE001, S110
+        except Exception:  # noqa: BLE001, S110
             pass
         return True
 

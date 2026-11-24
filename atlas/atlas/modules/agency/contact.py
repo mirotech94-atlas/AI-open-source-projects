@@ -8,10 +8,10 @@ executor's, one channel at a time (`agency.deliver_contact`, Tier 1, driven by
 `kernel/agency_contact.py`):
 
   * `email`    -- to the owner, through the Gmail relay the agency already uses,
-                  with `Reply-To` set to the visitor so the owner answers by pressing
+                  with `Reply-To` set to the visitor so Miro answers by pressing
                   Reply in Gmail.
   * `whatsapp` -- to the owner's number (Twilio, the one WhatsApp writer in
-                  `modules/mmt/notify.py`), with the visitor's email and phone in
+                  `modules/tutorco/notify.py`), with the visitor's email and phone in
                   the text so he can answer from his phone. The Twilio call only
                   ACCEPTS the message; `poll_whatsapp` reads its real status later
                   and says `delivered` or `failed` (sandbox not joined, outside the
@@ -57,7 +57,7 @@ log = logging.getLogger("atlas.agency.contact")
 PATH = "/public/agency/contact"
 ACTION = "agency.deliver_contact"
 CHANNELS = ("email", "whatsapp", "slack", "ack")
-# the owner 2026-11-17: Slack is the owner's second channel; WhatsApp is not linked. The
+# Miro 2026-11-17: Slack is the owner's second channel; WhatsApp is not linked. The
 # whatsapp channel stays in the code but is switched OFF unless this is set, so nothing
 # waits on it and no check requires it.
 WA_ENABLE_ENV = "AGENCY_CONTACT_WHATSAPP_ENABLED"
@@ -177,23 +177,23 @@ def slack_problem() -> str | None:
 
 def owner_whatsapp() -> str:
     raw = (os.getenv(OWNER_WA_ENV) or DEFAULT_OWNER_WHATSAPP).strip()
-    return raw
+    return re.sub(r"[\s().-]", "", raw)
 
 
 TWILIO_JOINED_ENV = "WHATSAPP_TWILIO_JOINED"
 
 
 def twilio_ready() -> bool:
-    """Twilio is a fallback only when it is configured AND the owner said the sandbox is
+    """Twilio is a fallback only when it is configured AND Miro said the sandbox is
     joined (or the sender is approved): `WHATSAPP_TWILIO_JOINED=1`."""
-    from ..mmt import notify
+    from ..tutorco import notify
     return (os.getenv(TWILIO_JOINED_ENV, "").strip().lower() in ("1", "true", "yes")
             and notify.sender_problem() is None)
 
 
 def whatsapp_problem() -> str | None:
     """Static configuration only: the number is valid and some route exists."""
-    from ..mmt import notify
+    from ..tutorco import notify
     from . import wa_bridge
     if not re.fullmatch(r"\+[1-9]\d{7,14}", owner_whatsapp()):
         return f"{OWNER_WA_ENV} is not a valid E.164 number"
@@ -382,7 +382,7 @@ async def submit(sub: dict[str, str], ip_hash: str, *, now: datetime | None = No
 # ------------------------------------------------------------------ messages
 
 def _defang(text: str) -> str:
-    from ..mmt.notify import _defang as defang
+    from ..tutorco.notify import _defang as defang
     return defang(text)
 
 
@@ -428,7 +428,7 @@ def _slack_escape(text: str) -> str:
 def owner_slack_body(row: dict[str, Any]) -> str:
     """The Slack post: the visitor's words are escaped (Slack parses only `&`, `<`,
     `>`, so a pasted mention or link shows as text and notifies nobody) and links
-    are defanged. The email and phone are given so the owner can answer from the thread."""
+    are defanged. The email and phone are given so Miro can answer from the thread."""
     msg = _SPACES.sub(" ", row["message"]).strip()
     cut = msg if len(msg) <= SLACK_MESSAGE_CHARS else msg[:SLACK_MESSAGE_CHARS - 1] + "…"
     lines = [f"New website message #{row['id']}",
@@ -444,7 +444,7 @@ def owner_slack_body(row: dict[str, Any]) -> str:
 def ack_body(row: dict[str, Any]) -> str:
     first = _line(row["name"], 60).split(" ")[0]
     hello = f"Hi {first}," if _SAFE_FIRST.match(first) else "Hello,"
-    return (f"{hello}\n\nWe got your message and the owner will reply to this address soon, "
+    return (f"{hello}\n\nWe got your message and Miro will reply to this address soon, "
             "usually within a day. You do not need to send it again.\n\n"
             f"If it is urgent, call {store_origin.CONTACT_PHONE_DISPLAY}.\n\n"
             "This is an automatic confirmation. It repeats nothing you wrote.\n")
@@ -474,7 +474,7 @@ async def _send_mail(to: str, subject: str, body: str, reply_to: str | None,
 async def _send_wa(body: str) -> tuple[bool, str]:
     """(True, id) or (False, reason) through the route `wa_route` picks. The only
     WhatsApp write for the owner chat; reached from executor actions only."""
-    from ..mmt import notify
+    from ..tutorco import notify
     from . import wa_bridge
     route, why = await wa_route()
     if route is None:
@@ -562,7 +562,7 @@ async def deliver(contact_id: int = 0, channel: str = "") -> ActionResult:
         else:
             ok, got = await _send_wa(owner_whatsapp_body(taken))
             sid, reason = (got, None) if ok else (None, got)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         ok, reason = False, explain(exc)
     if not ok:
         await _store.failed(cid, channel, str(reason or "send failed"), _now())
@@ -583,7 +583,7 @@ async def deliver(contact_id: int = 0, channel: str = "") -> ActionResult:
 
 
 async def _alert_if_given_up(cid: int, channel: str) -> None:
-    """A channel that ran out of attempts is a delivery failure the owner should know
+    """A channel that ran out of attempts is a delivery failure Miro should know
     about: one [Alert] on the owner WhatsApp (never the visitor's text)."""
     try:
         row = await _store.peek(cid)
@@ -592,7 +592,7 @@ async def _alert_if_given_up(cid: int, channel: str) -> None:
             await owner_wa.notify_owner(
                 "alert", f"Website message #{cid}: the {channel} notice failed after "
                          f"{MAX_ATTEMPTS} tries. Check the Contact delivery health.")
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("agency contact #%s: failure alert not sent", cid)
 
 
@@ -603,7 +603,7 @@ async def wa_sent_in_last_hour(now: datetime) -> int:
     try:
         from . import owner_wa
         n += await owner_wa.sent_in_last_hour(now)
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("owner WhatsApp count unreadable; contact cap uses its own rows")
     return n
 
@@ -640,7 +640,7 @@ async def twilio_status(sid: str) -> tuple[str, str]:
         async with httpx.AsyncClient(timeout=15, auth=(account, token)) as client:
             r = await client.get(f"{TWILIO_API}/{account}/Messages/{sid}.json")
         data = r.json() if r.status_code < 500 else {}
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return "unknown", explain(exc)
     if r.status_code >= 400:
         return "unknown", f"HTTP {r.status_code} from api.twilio.com"
@@ -679,7 +679,7 @@ async def poll_whatsapp(limit: int = 20) -> int:
 # ------------------------------------------------------------------ health
 
 async def check_contact_delivery() -> Observation:
-    """`agency.contact_delivery`: do website messages reach the owner?
+    """`agency.contact_delivery`: do website messages reach Miro?
 
     Email and Slack are the owner channels; WhatsApp counts only when switched on
     (`AGENCY_CONTACT_WHATSAPP_ENABLED`). UNKNOWN when a channel cannot be configured
@@ -698,7 +698,7 @@ async def check_contact_delivery() -> Observation:
                            detail="cannot deliver website messages (" + "; ".join(missing) + ")")
     try:
         counts = await _store.health_counts(_now())
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN,
                            detail=f"agency_site_messages unreadable ({type(exc).__name__})")
     late = counts.get("email_late", 0) + counts.get("slack_late", 0)

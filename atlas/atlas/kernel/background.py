@@ -43,7 +43,7 @@ def track(task: asyncio.Task, name: str, *, log_errors: bool = True) -> asyncio.
 def spawn(coro: Coroutine[Any, Any, Any], name: str) -> asyncio.Task:
     """`asyncio.create_task`, tracked -- and always background for the free
     models' reserve (kernel/quota.py): a task copies the context it was
-    started in, so a job started during one of the owner's voice turns would
+    started in, so a job started during one of Miro's voice turns would
     otherwise spend the allowance kept for him. A handler that IS his turn
     (a Slack message) marks itself interactive inside."""
     from .quota import background_context

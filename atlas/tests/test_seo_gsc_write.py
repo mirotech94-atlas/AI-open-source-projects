@@ -14,7 +14,7 @@ from atlas.kernel.contracts import Tier
 from atlas.modules import _http
 from atlas.modules.seo import MODULE, gsc, gsc_write
 
-SITE = "https://tutoring.example/"
+SITE = "https://exampletutor.com/"
 TAG = '<meta name="google-site-verification" content="abc123" />'
 TOKEN_URL_PART = "siteVerification/v1/token"
 
@@ -33,7 +33,7 @@ class Google:
         if TOKEN_URL_PART in url:
             return {"method": "META", "token": TAG}, None
         self.sent.append(("POST", url))
-        return {"id": "https%3A%2F%2Fmeetmytutor.com%2F"}, None
+        return {"id": "https%3A%2F%2Fexampletutor.com%2F"}, None
 
     async def get(self, url, **kw):
         if url.endswith("/sites"):
@@ -91,14 +91,14 @@ async def test_a_read_only_consent_refuses_and_says_what_to_consent(google, fn):
 
 async def test_a_vercel_preview_is_never_registered(google):
     google(WRITE)
-    res = await gsc_write.add_site_dry("https://demo-site.vercel.example/")
+    res = await gsc_write.add_site_dry("https://atlas-agency-west-vibe-53.vercel.app/")
     assert not res.ok and "preview" in res.detail
 
 
 async def test_only_an_https_url_on_a_public_host_is_accepted(google):
     google(WRITE)
-    for bad in ("http://tutoring.example/", "https://localhost/", "https://10.0.0.1/",
-                "tutoring.example", "https://tutoring.example/a/b"):
+    for bad in ("http://exampletutor.com/", "https://localhost/", "https://10.0.0.1/",
+                "exampletutor.com", "https://exampletutor.com/a/b"):
         res = await gsc_write.add_site_dry(bad)
         assert not res.ok, bad
 
@@ -109,7 +109,7 @@ async def test_add_site_dry_run_writes_nothing_and_run_puts_then_rolls_back(goog
     assert dry.ok and "would add" in dry.detail and g.sent == []
     res = await gsc_write.add_site(SITE)
     assert res.ok and res.rollback_token == SITE
-    assert g.sent == [("PUT", f"{gsc.API}/sites/https%3A%2F%2Fmeetmytutor.com%2F")]
+    assert g.sent == [("PUT", f"{gsc.API}/sites/https%3A%2F%2Fexampletutor.com%2F")]
     back = await gsc_write.remove_site(res.rollback_token)
     assert back.ok and g.sent[-1][0] == "DELETE"
 
@@ -146,10 +146,10 @@ async def test_sitemap_must_sit_on_the_same_host(google):
 
 async def test_sitemap_submit_puts_and_rolls_back(google):
     g = google(WRITE, page='<?xml version="1.0"?><urlset></urlset>')
-    res = await gsc_write.submit_sitemap(SITE, "https://tutoring.example/sitemap.xml")
+    res = await gsc_write.submit_sitemap(SITE, "https://exampletutor.com/sitemap.xml")
     assert res.ok
     assert g.sent[0][0] == "PUT" and g.sent[0][1].endswith(
-        "/sitemaps/https%3A%2F%2Fmeetmytutor.com%2Fsitemap.xml")
+        "/sitemaps/https%3A%2F%2Fexampletutor.com%2Fsitemap.xml")
     back = await gsc_write.remove_sitemap(res.rollback_token)
     assert back.ok and g.sent[-1][0] == "DELETE"
 
@@ -181,12 +181,12 @@ def cards(monkeypatch):
 @pytest.mark.asyncio
 async def test_missing_properties_raise_add_cards_for_our_own_sites_only(google, cards):
     google()
-    out = await gsc_write.raise_cards("agency.example.com")
+    out = await gsc_write.raise_cards("agency.storefront.test")
     assert [(a, p["site_url"]) for a, p, _ in cards] == [
-        ("seo.gsc_add_site", "https://agency.example.com/"),
-        ("seo.gsc_add_site", "https://tutoring.example/")]
+        ("seo.gsc_add_site", "https://agency.storefront.test/"),
+        ("seo.gsc_add_site", "https://exampletutor.com/")]
     assert all(k.startswith("seo.gsc_add_site:") for _, _, k in cards)
-    assert set(out) == {"agency.example.com", "tutoring.example"}
+    assert set(out) == {"agency.storefront.test", "exampletutor.com"}
 
 
 @pytest.mark.asyncio
@@ -201,7 +201,7 @@ async def test_a_verified_property_without_a_sitemap_raises_the_sitemap_card(goo
     google(sites=[{"siteUrl": SITE, "permissionLevel": "siteOwner"}])
     await gsc_write.raise_cards("")
     assert cards[0][0] == "seo.gsc_submit_sitemap"
-    assert cards[0][1]["sitemap_url"] == "https://tutoring.example/sitemap.xml"
+    assert cards[0][1]["sitemap_url"] == "https://exampletutor.com/sitemap.xml"
 
 
 @pytest.mark.asyncio
@@ -209,9 +209,9 @@ async def test_unreadable_google_raises_nothing(monkeypatch, cards):
     monkeypatch.setattr(gsc, "_token", None)
     for key in gsc.ENV:
         monkeypatch.delenv(key, raising=False)
-    out = await gsc_write.raise_cards("agency.example.com")
+    out = await gsc_write.raise_cards("agency.storefront.test")
     assert cards == [] and "not raised" in out["cards"]
 
 
 def test_previews_and_client_domains_are_never_ours():
-    assert gsc_write.own_hosts("x.vercel.app") == ["tutoring.example"]
+    assert gsc_write.own_hosts("x.vercel.app") == ["exampletutor.com"]

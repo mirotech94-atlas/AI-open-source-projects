@@ -1,4 +1,4 @@
-"""The motion guide (the owner, 2026-10-15): the Atlas Academy Video Motion and
+"""The motion guide (Miro, 2026-10-15): the Atlas Academy Video Motion and
 Editing Guide's presets, its rules for when things move, the brand, and the
 render-cost budget on the one-CPU server. docs/academy-motion-guide.md."""
 from __future__ import annotations

@@ -1,6 +1,6 @@
-"""ytlearn -- ATLAS listens to YouTube videos and keeps the lessons for the owner.
+"""ytlearn -- ATLAS listens to YouTube videos and keeps the lessons for Miro.
 
-Two sources feed it (kernel/video_learn.py): videos the owner pastes ("learn <url>")
+Two sources feed it (kernel/video_learn.py): videos Miro pastes ("learn <url>")
 and the Atlas Academy channel's own public videos. `youtube.py` reads a
 transcript (a read-only collector), `drafter.py` turns it into a lessons draft
 with the transcript wrapped as untrusted, and the draft becomes one Tier 2 card.
@@ -9,7 +9,7 @@ with the transcript wrapped as untrusted, and the draft becomes one Tier 2 card.
     `video_lessons` as approved knowledge. That is all it does. It never edits a
     prompt, rule, code, config, memory, lesson ledger or any agent's skills
     (invariant 3: self-modification stays Tier 3, permanently denied). Nothing
-    in ATLAS reads an approved note back into a prompt; the owner reads it and
+    in ATLAS reads an approved note back into a prompt; Miro reads it and
     decides what to do with it himself.
 """
 from __future__ import annotations

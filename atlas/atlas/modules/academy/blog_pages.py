@@ -1,4 +1,4 @@
-"""The ATLAS Academy blog: agency.example.com/blog/ (the owner's site pack, 2026-10-18).
+"""The ATLAS Academy blog: agency.storefront.test/blog/ (Miro's site pack, 2026-10-18).
 
 `files(cat, videos, now)` returns {path: bytes} for `site.render`:
 
@@ -8,11 +8,11 @@
 * blog/<slug>/index.html for each live post;
 * blog/feed.xml (RSS 2.0) and assets/data/posts.json (the post index).
 
-The posts are the owner's own words, committed as Markdown in academy/blog/ with
+The posts are Miro's own words, committed as Markdown in academy/blog/ with
 front matter (title, slug, date, summary, tags, and optionally video, kit,
 kit_url, draft). They are rendered as written (mdlite.py); a post that
 conflicts with one of the store's rules is not rewritten to pass: it carries
-`draft: true` and is left out of every file the build writes, until the owner
+`draft: true` and is left out of every file the build writes, until Miro
 changes it. A post that names the guarantee is left out too while any
 product's refund terms don't say it (site._store_guarantee).
 
@@ -73,7 +73,7 @@ class Post:
     title: str
     day: date
     summary: str
-    body: str                                    # Markdown, as the owner wrote it
+    body: str                                    # Markdown, as Miro wrote it
     tags: tuple[str, ...] = ()
     video: str = ""
     kit: str = ""
@@ -272,7 +272,7 @@ def post_page(cat: Catalog, post: Post, shown: dict[str, site.Video],
 {mdlite.to_html(post.body, root)}
 </article>
 {_kit_line(kit, root) if kit is not None else ""}
-<div class="blog-author"><p><b>{author}</b> runs ATLAS Academy. <a href="{root}academy/#about">About the owner</a> &#183; <a href="mailto:{email}">{email}</a></p>
+<div class="blog-author"><p><b>{author}</b> runs ATLAS Academy. <a href="{root}academy/#about">About Miro</a> &#183; <a href="mailto:{email}">{email}</a></p>
 <p><a href="{root}{BLOG_SLUG}/">All posts</a> &#183; <a href="{root}{FEED_PATH}">RSS feed</a></p></div>
 </div></section>"""
     html = site._page(cat, title=post.title,
@@ -318,7 +318,7 @@ def index_page(cat: Catalog, posts: list[Post],
     body = f"""<section class="vhero blog-hero"><div class="wrap">
 <p class="eyebrow">Blog</p>
 <h1>Notes from the <em>workbench</em>.</h1>
-<p class="lede">Plain-language notes from the owner on AI, automation and keeping both under a person's control. The free video lessons are on YouTube; the written notes are here.</p>
+<p class="lede">Plain-language notes from Miro on AI, automation and keeping both under a person's control. The free video lessons are on YouTube; the written notes are here.</p>
 <p class="blog-feed"><a href="feed.xml">RSS feed</a></p>
 </div></section>
 <section class="blog-list"><div class="wrap">
@@ -341,7 +341,7 @@ def index_page(cat: Catalog, posts: list[Post],
 <p class="muted blog-note">The pictures here are served by this store. Nothing loads from YouTube until you open a lesson and press play.</p>
 </div></section>"""
     return site._page(cat, title="Blog",
-                      description=("Notes from the owner on practical AI and automation, and "
+                      description=("Notes from Miro on practical AI and automation, and "
                                    "the latest free lessons from the ATLAS Academy channel."),
                       body=body, depth=1, current="blog", head=_head(root))
 
@@ -382,7 +382,7 @@ def feed_xml(cat: Catalog, posts: list[Post]) -> str:
             f"<description>{xml_escape(p.summary)}</description></item>")
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>'
             f"<title>{FEED_TITLE}</title><link>{xml_escape(base)}/{BLOG_SLUG}/</link>"
-            "<description>Notes from the owner on practical AI and automation.</description>"
+            "<description>Notes from Miro on practical AI and automation.</description>"
             f"<language>en</language>{''.join(items)}</channel></rss>\n")
 
 

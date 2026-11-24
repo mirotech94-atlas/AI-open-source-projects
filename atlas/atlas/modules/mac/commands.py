@@ -1,6 +1,6 @@
 """Words said to the Mac, read in code: no model, nothing run here.
 
-the owner, 2026-10-06, from a reel of a voice assistant that opens apps
+Miro, 2026-10-06, from a reel of a voice assistant that opens apps
 mid-sentence: "open Notes, once you're there create a new note, make the
 title say hello"; "open the browser and google something"; "open x.com".
 `plan()` turns one utterance into an ordered list of catalog actions with
@@ -159,10 +159,10 @@ SITE_ALIASES = {
     "instagram": "www.instagram.com", "tiktok": "www.tiktok.com",
     "linkedin": "www.linkedin.com", "facebook": "www.facebook.com",
     "netflix": "www.netflix.com", "amazon": "www.amazon.com",
-    "atlas": "http://127.0.0.1:8080", "flycheap": "flycheap.example",
-    "fly cheap": "flycheap.example", "hacker news": "news.ycombinator.com",
+    "atlas": "http://127.0.0.1:8080", "flycheap": "flycheap.example.com",
+    "fly cheap": "flycheap.example.com", "hacker news": "news.ycombinator.com",
 }
-# ATLAS runs on this Mac (atlas.example.com was deleted 2026-10-27), so its alias
+# ATLAS runs on this Mac (atlas.storefront.test was deleted 2026-10-27), so its alias
 # carries its own scheme; every other alias is an https host.
 
 

@@ -1,4 +1,4 @@
-"""The three 2026-10-18 series (the owner, video system pack): AI Explained, AI
+"""The three 2026-10-18 series (Miro, video system pack): AI Explained, AI
 Security, Where AI Is Going -- their plans, holds and labels."""
 from __future__ import annotations
 
@@ -44,14 +44,14 @@ def test_the_specs_thumbnail_words_are_used_where_they_fit():
     assert len(ai.SPEC_THUMB_WORDS[("security", 1)].split()) == 6
 
 
-def test_episodes_that_need_a_recording_or_owner_are_held():
+def test_episodes_that_need_a_recording_or_miro_are_held():
     held = {(k, e.number) for k in NEW for e in ts.series(k).episodes
             if ts.held(k, e) is not None}
     every = {(k, e.number) for k in NEW for e in ts.series(k).episodes}
     assert every - held == WRITABLE
-    # every security lesson verifies its fix on camera; #6 and #8 need the owner
+    # every security lesson verifies its fix on camera; #6 and #8 need Miro
     assert {n for k, n in held if k == "security"} == set(range(1, 9))
-    assert ai.HOLDS[("security", 6)][0] == ai.OWNER
+    assert ai.HOLDS[("security", 6)][0] == ai.MIRO
     assert ("future", 5) in held and ("explained", 8) in held
     assert all(why.startswith("held: ") for why in
                (ts.held(k, ts.series(k).episode(n)) for k, n in held))
@@ -77,9 +77,9 @@ def test_a_recording_hold_lifts_only_with_a_recording_on_disk(monkeypatch, tmp_p
     assert ts.held("explained", ep) is not None
     (tmp_path / "x.mp4").write_bytes(b"v")
     assert ts.held("explained", ep) is None
-    # a OWNER hold never lifts from a file
-    owner = replace(ts.series("security").episode(6), scenes=ep.scenes)
-    assert ts.held("security", owner) is not None
+    # a MIRO hold never lifts from a file
+    miro = replace(ts.series("security").episode(6), scenes=ep.scenes)
+    assert ts.held("security", miro) is not None
 
 
 def test_the_lineup_skips_held_episodes_and_names_the_first_when_only_held_remain():

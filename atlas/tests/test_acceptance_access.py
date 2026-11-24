@@ -65,7 +65,7 @@ def guarded(monkeypatch):
 # -------------------------------------------------------------------- P06
 
 @pytest.mark.parametrize("value", ["approve:82", "always:82", "decline:82",
-                                   "detail:82", "ack:cloudco.balance"])
+                                   "detail:82", "ack:cloudhost.balance"])
 def test_P06_a_non_approvers_button_is_denied_without_the_cards_details(
         client, guarded, value):
     r = _signed_form(client, "/webhooks/slack", {"payload": json.dumps({
@@ -75,7 +75,7 @@ def test_P06_a_non_approvers_button_is_denied_without_the_cards_details(
     [(text, ephemeral)] = guarded
     assert text == "You are not an approver for ATLAS. Nothing was done."
     assert ephemeral is True             # only the clicker sees the refusal
-    assert "82" not in text and "cloudco" not in text
+    assert "82" not in text and "cloudhost" not in text
 
 
 def test_P06_a_non_approvers_slash_command_is_denied_and_decides_nothing(

@@ -2,7 +2,7 @@
 
 Groq's Whisper (`whisper-large-v3`, `GROQ_API_KEY`) is asked for
 `verbose_json` with word AND segment timestamps. The words become an ASS
-subtitle track in the style the owner chose on production: size 58 bold,
+subtitle track in the style Miro chose on production: size 58 bold,
 three-word chunks, the word being spoken in yellow, MarginV 330 -- plus a
 "Made with AI" tag on screen for the whole clip, and a PART 1 card over
 the last second and a half of a cliffhanger. ffmpeg's `ass` filter (libass,
@@ -57,7 +57,7 @@ async def word_timings(audio: bytes, filename: str = "reel.mp3"
                       "timestamp_granularities[]": ["word", "segment"]})
             r.raise_for_status()
             body = r.json()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return None, f"Groq transcription failed: {explain(exc)}".replace(key, "<redacted>")
     words = []
@@ -78,7 +78,7 @@ GROQ_TRANSLATE_URL = "https://api.groq.com/openai/v1/audio/translations"
 
 async def english_segments(audio: bytes, filename: str = "reel.mp3"
                            ) -> tuple[list[Cue] | None, str | None]:
-    """An Egyptian-Arabic reel's speech as English caption cues (the owner,
+    """An Egyptian-Arabic reel's speech as English caption cues (Miro,
     2026-09-27: Arabic voice, English captions): Whisper's translation
     endpoint, segment timings. `(cues, None)` or `(None, reason)`; never
     raises, and the key is never in a reason."""
@@ -93,7 +93,7 @@ async def english_segments(audio: bytes, filename: str = "reel.mp3"
                 data={"model": GROQ_MODEL, "response_format": "verbose_json"})
             r.raise_for_status()
             body = r.json()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return None, (f"Groq translation failed: {explain(exc)}"
                       .replace(key, "<redacted>"))
@@ -196,7 +196,7 @@ CONTEXT_STYLE = ("Style: Context,DejaVu Sans,44,&H00FFFFFF,&H00FFFFFF,"
                  "&H00000000,&H80000000,0,-1,0,0,100,100,0,0,3,2,0,8,80,80,170,1")
 
 
-# One colour per speaker, in order of first appearance (the owner, 2026-09-27:
+# One colour per speaker, in order of first appearance (Miro, 2026-09-27:
 # captions colour-coded per character, as in the talking-car skits). ASS
 # colours are &HBBGGRR&: yellow, cyan, pink, lime, orange.
 SPEAKER_COLORS = ("&H0000FFFF&", "&H00FFFF00&", "&H00C080FF&", "&H0000FF80&",
@@ -276,7 +276,7 @@ def build_scripted_ass(cues: list[Cue], total: float, *, arabic: bool = True,
 
 # ------------------------------------------------------------- stat reels
 #
-# The football lane (the owner, 2026-09-29): captions carry the stats, always on,
+# The football lane (Miro, 2026-09-29): captions carry the stats, always on,
 # big and bold, every number larger still and in yellow. The numbers were
 # verified against the fetched facts before this is ever called
 # (`content.football.verify`); this only draws them.
@@ -318,7 +318,7 @@ def build_stat_ass(beats: list[str], beat_seconds: float, total: float, *,
 
 # ------------------------------------------------------------- course reels
 #
-# The course lane (`content.course`, the owner 2026-09-29): bold captions of the
+# The course lane (`content.course`, Miro 2026-09-29): bold captions of the
 # spoken script, a "MY COURSE" label at the top for the whole reel, and an
 # end card with the price and "LINK IN BIO". The script's own words, never a
 # transcription: Groq's timings only place them.

@@ -347,31 +347,31 @@ def test_the_help_page_is_the_support_lane_s_and_in_the_sitemap():
     assert "help/index.html" in files and "assets/support-chat.js" not in files
     lane = support_site.files(cat_mod.load())["help/index.html"].decode()
     assert files["help/index.html"].decode() == site._with_canonical(
-        lane, "https://agency.example.com/help/")
-    assert "<loc>https://agency.example.com/help/</loc>" in files["sitemap-academy.xml"].decode()
+        lane, "https://agency.storefront.test/help/")
+    assert "<loc>https://agency.storefront.test/help/</loc>" in files["sitemap-academy.xml"].decode()
     assert "SUPPORT_SITE:" not in (site.Path(site.__file__)).read_text()
 
 
 def test_a_founder_photo_appears_only_when_supplied(tmp_path, monkeypatch):
     home = _pages(_files())["academy/index.html"]
-    assert 'class="portrait monogram"' in home and "Meet the owner" in home
+    assert 'class="portrait monogram"' in home and "Meet Miro" in home
     raw = copy.deepcopy(_raw())
     raw["store"]["founder_photo"] = "no-such-photo.jpg"
     assert 'class="portrait monogram"' in _pages(_files(raw))["academy/index.html"]
 
 
-def test_the_about_section_speaks_in_the_owners_first_person():
-    """the owner, 2026-10-18: the About is his own voice, with every fact kept."""
+def test_the_about_section_speaks_in_miros_first_person():
+    """Miro, 2026-10-18: the About is his own voice, with every fact kept."""
     home = _pages(_files())["academy/index.html"]
     about = home[home.index('id="about"'):home.index('class="inspect"')]
-    assert "I'm the owner (the author), and I write and run ATLAS Academy." in about
+    assert "I'm Miro (Myron Mekhael), and I write and run ATLAS Academy." in about
     assert "I run ATLAS, my own AI agent, on the rules I teach in" in about
     assert "picks from a closed list of actions" in about and "until I decide." in about
     assert "How I teach: every method is shown on a working example" in about
     assert "who it's for and who it isn't" in about and "before you buy" in about
     assert "I read the counts on these pages from the files on 14 Nov 2026." in about
     assert "Write to me at" in about and "I read every message myself." in about
-    for third in ("He runs", "his own", "written and run by", "reach the owner",
+    for third in ("He runs", "his own", "written and run by", "reach Miro",
                   "a person decides"):
         assert third not in about
 
@@ -379,7 +379,7 @@ def test_the_about_section_speaks_in_the_owners_first_person():
 # ------------------------------------------------------------ the logo
 
 def test_every_page_carries_the_grid_a0_favicon_and_mark(monkeypatch):
-    """the owner, 2026-10-16: the Grid A0 logo everywhere the store shows one. Every
+    """Miro, 2026-10-16: the Grid A0 logo everywhere the store shows one. Every
     page links the SVG favicon and the PNG app icons, and draws the edged mark
     in its header and footer; the files they name are in the build."""
     from atlas.modules.academy import logo

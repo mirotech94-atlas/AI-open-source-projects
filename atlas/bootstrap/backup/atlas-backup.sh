@@ -13,14 +13,14 @@
 # only write into /srv/atlas-backups (rrsync, `restrict`): this host can
 # drop a file there and do nothing else on that machine. It is ENCRYPTED
 # first (age, to data/backup-age.pub): the only key that decrypts it lives
-# on the owner's Mac (~/.config/atlas/backup-age.key), never on either server,
+# on Miro's Mac (~/.config/atlas/backup-age.key), never on either server,
 # so the GitLab VM holds nothing readable. To restore (docs/restore-drill.md,
 # "A real restore"), with the app STOPPED so nothing dispatches in between:
 #   age -d -i ~/.config/atlas/backup-age.key atlas-X.dump.age > atlas-X.dump
 #   docker compose stop api
 #   docker compose exec -T postgres pg_restore -U atlas -d atlas --clean < atlas-X.dump
 #   docker compose exec -T postgres psql -U atlas -d atlas -c \
-#     "INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'owner')"
+#     "INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'miro')"
 #   docker compose start api
 # The INSERT is the restore fence (R12, kernel/restore.py): until ATLAS has
 # applied it, nothing is dispatched and no card is decided; applying it
@@ -29,7 +29,7 @@ set -uo pipefail
 cd /opt/atlas || exit 1
 DIR=/opt/atlas/data/app/backups   # the API reads it as /app/data/backups
 KEEP=14
-OFFSITE="${ATLAS_BACKUP_OFFSITE:-atlasbak@203.0.113.147}"
+OFFSITE="${ATLAS_BACKUP_OFFSITE:-atlasbak@162.220.52.147}"
 KEY=/root/.ssh/atlas_backup_ed25519
 mkdir -p "$DIR"
 stamp=$(date -u +%Y%m%d-%H%M)

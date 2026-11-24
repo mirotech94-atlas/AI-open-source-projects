@@ -2,7 +2,7 @@
 """ATLAS independent watchdog (RA-F4). Standard library only.
 
 Runs every 5 minutes on a host that is NOT the ATLAS box (the Spark, host
-cloudco-spark; the FlyCheap VPS before it), so a dead ATLAS process, a stalled scheduler or a dead host is still reported:
+cloudhost-spark; the FlyCheap VPS before it), so a dead ATLAS process, a stalled scheduler or a dead host is still reported:
 nothing here depends on ATLAS's own worker, database or Slack bot.
 
 Three checks, each OK / FAIL / UNKNOWN (a check that cannot run is UNKNOWN,
@@ -64,7 +64,7 @@ log = logging.getLogger("atlas_watchdog")
 
 OK, FAIL, UNKNOWN = "OK", "FAIL", "UNKNOWN"
 
-# ATLAS runs locally since the server (atlas.example.com) was deleted on
+# ATLAS runs locally since the server (atlas.storefront.test) was deleted on
 # 2026-10-27: the api publishes 127.0.0.1:8080 (docker-compose.yml).
 DEFAULT_URL = "http://127.0.0.1:8080/healthz"
 LOOPBACK = ("127.0.0.1", "localhost", "::1")
@@ -95,7 +95,7 @@ class Config:
     heartbeat_max_s: int
     label: str
     seen_path: Path | None = None   # default: seen.json next to the state file
-    # Second route (the owner 2026-11-17): the Slack bot token + one alerts channel,
+    # Second route (Miro 2026-11-17): the Slack bot token + one alerts channel,
     # used only when no webhook is set. Own keys, own file, posted from this host.
     slack_token: str | None = None
     slack_channel: str | None = None
@@ -448,7 +448,7 @@ def run(cfg: Config) -> int:
         text = message(cfg.label, cfg.url, changed, results)
         try:
             send(cfg, text)
-        except Exception as e:  # noqa: BLE001 -- any failure means "not delivered"
+        except Exception as e:  # noqa: BLE001
             log.error("alert NOT delivered, state kept for retry: %s",
                       redact(redact(f"{type(e).__name__}: {e}", cfg.webhook), cfg.slack_token))
             return EXIT_SEND_FAILED

@@ -347,7 +347,7 @@ def test_every_number_on_every_page_is_catalog_text():
     for path, html in _pages(_render()).items():
         if path.startswith("blog/"):
             # A blog post's own prose (the <article class="post-body">) is
-            # the owner's writing, not a product claim: "a chess program from
+            # Miro's writing, not a product claim: "a chess program from
             # 1997" is no figure about a title. Everything around it on a
             # blog page (titles, dates, the list, the kit line) still obeys
             # the rule, and the prose may only carry the post's own text.
@@ -376,7 +376,7 @@ def _prose_is_the_posts_own(path: str, prose: bytes) -> bool:
 
 
 def test_a_bundle_total_is_shown_only_when_every_price_is_set():
-    # the owner, 2026-10-01: every title priced (20 + 9 + 19 + 39), bundle $79.
+    # Miro, 2026-10-01: every title priced (20 + 9 + 19 + 39), bundle $79.
     page = _render()["all-four/index.html"].decode()
     assert "$20 + $9 + $19 + $39 = <b>$87</b> bought separately." in page
     assert "The bundle is $79, $8 less than buying them one by one." in page
@@ -468,12 +468,12 @@ def test_the_public_catalog_has_the_agreed_shape():
         "sell-with-ai-video", "sell-with-ai-both", "all-four"}
     for e in entries:
         assert set(e) == ENTRY_KEYS
-        assert e["url"].startswith("https://agency.example.com/")
-        assert e["cover"].startswith("https://agency.example.com/assets/")
+        assert e["url"].startswith("https://agency.storefront.test/")
+        assert e["cover"].startswith("https://agency.storefront.test/assets/")
         assert e["currency"] == "USD"
         assert e["price_usd"] is None or isinstance(e["price_usd"], float | int)
     by = {e["slug"]: e for e in entries}
-    assert by["safe-ai-operator"]["price_usd"] == 20       # the owner, 2026-10-01
+    assert by["safe-ai-operator"]["price_usd"] == 20       # Miro, 2026-10-01
     assert by["30-business-lessons"]["price_usd"] == 9
     assert by["all-four"]["kind"] == "bundle"
 
@@ -528,7 +528,7 @@ def test_the_checked_in_catalog_sells_every_offer_and_the_bundle():
 
 
 def test_search_engines_and_ai_assistants_can_read_the_store():
-    """the owner, 2026-10-06: robots names the AI crawlers and the sitemap; the
+    """Miro, 2026-10-06: robots names the AI crawlers and the sitemap; the
     sitemap lists every page; llms.txt carries only catalog facts; a
     product's record offers only what is on sale and carries no rating."""
     files = _render()
@@ -538,13 +538,13 @@ def test_search_engines_and_ai_assistants_can_read_the_store():
     robots = (LANDING / "robots.txt").read_text()
     for bot in ("GPTBot", "ClaudeBot", "PerplexityBot"):
         assert f"User-agent: {bot}\nAllow: /" in robots
-    assert "Sitemap: https://agency.example.com/sitemap.xml" in robots
-    assert "Sitemap: https://agency.example.com/sitemap-academy.xml" in robots
+    assert "Sitemap: https://agency.storefront.test/sitemap.xml" in robots
+    assert "Sitemap: https://agency.storefront.test/sitemap-academy.xml" in robots
     sitemap = files["sitemap-academy.xml"].decode()
     for path in _pages(files):
         # a "sent" confirmation is not a page to find in search
         if path.endswith("index.html") and not path.startswith(("contact/sent", "help/sent", "updates/thanks")):
-            loc = "https://agency.example.com/" + path.removesuffix("index.html")
+            loc = "https://agency.storefront.test/" + path.removesuffix("index.html")
             assert f"<loc>{loc}</loc>" in sitemap, path
     llms = files["academy/llms.txt"].decode()
     assert llms.startswith("# ATLAS Academy") and "owner@example.com" in llms
@@ -557,7 +557,7 @@ def test_search_engines_and_ai_assistants_can_read_the_store():
     assert '"offers"' not in off
 
 
-# the owner, 2026-10-12 (the growth plan): /start/ and the worksheet, off until
+# Miro, 2026-10-12 (the growth plan): /start/ and the worksheet, off until
 # he has read the copy.
 
 def test_the_start_page_and_worksheet_are_off_until_switched_on(monkeypatch):
@@ -575,7 +575,7 @@ def test_the_start_page_and_worksheet_are_off_until_switched_on(monkeypatch):
 
 
 def test_every_sneak_peek_points_at_files_the_store_publishes():
-    """the owner, 2026-10-12: a preview on every course page. Each one is cut from
+    """Miro, 2026-10-12: a preview on every course page. Each one is cut from
     the delivered files (tools/academy_previews.py); every file it names is
     published with the store, and every product in the catalog has one."""
     files = _render()
@@ -601,7 +601,7 @@ def test_every_sitemap_page_names_itself_canonical_and_is_indexable():
     canonical that is its own sitemap address, and no noindex; robots.txt
     names the sitemap at the same origin."""
     files = _render()
-    base = "https://agency.example.com/"
+    base = "https://agency.storefront.test/"
     assert f"Sitemap: {base}sitemap-academy.xml" in (LANDING / "robots.txt").read_text()
     sitemap = files["sitemap-academy.xml"].decode()
     assert sitemap.startswith('<?xml version="1.0" encoding="UTF-8"?>')
@@ -623,16 +623,16 @@ def test_every_sitemap_page_names_itself_canonical_and_is_indexable():
 
 
 def test_every_public_page_carries_the_contact_address_and_phone():
-    # the owner 2026-11-13 reversed 2026-10-29: the public contact is the Gmail
+    # Miro 2026-11-13 reversed 2026-10-29: the public contact is the Gmail
     # address plus a phone number; the old mapfront address is not shown.
-    files = _no_ownertech_files()
+    files = _no_mirotech_files()
     assert any("owner@example.com" in b for b in files.values())
-    assert any("tel:+1 555 010 0100" in b for b in files.values())
+    assert any("tel:+15550100142" in b for b in files.values())
     for name, body in files.items():
-        assert "owner@mapfront" + ".io" not in body, name
+        assert "miro@mapfront" + ".io" not in body, name
 
 
-def _no_ownertech_files() -> dict[str, str]:
+def _no_mirotech_files() -> dict[str, str]:
     files = dict(site.render_root(cat_mod.load()))
     return {k: v.decode("utf-8", "replace") if isinstance(v, bytes) else str(v)
             for k, v in files.items()}
@@ -657,8 +657,8 @@ def _resolve(page: str, ref: str) -> str | None:
     from urllib.parse import urljoin, urlsplit
     if ref.startswith(("#", "mailto:", "tel:", "javascript:", "data:")):
         return None
-    full = urlsplit(urljoin("https://agency.example.com/" + page, ref))
-    if full.netloc != "agency.example.com":
+    full = urlsplit(urljoin("https://agency.storefront.test/" + page, ref))
+    if full.netloc != "agency.storefront.test":
         return None
     return full.path
 
@@ -667,10 +667,10 @@ def test_the_store_home_is_at_academy_and_the_root_is_the_landings():
     files = _render()
     assert "academy/index.html" in files and "index.html" not in files
     home = files["academy/index.html"].decode()
-    assert '<link rel="canonical" href="https://agency.example.com/academy/">' in home
+    assert '<link rel="canonical" href="https://agency.storefront.test/academy/">' in home
     sitemap = files["sitemap-academy.xml"].decode()
-    assert "<loc>https://agency.example.com/academy/</loc>" in sitemap
-    assert "<loc>https://agency.example.com/</loc>" not in sitemap   # the landing's own
+    assert "<loc>https://agency.storefront.test/academy/</loc>" in sitemap
+    assert "<loc>https://agency.storefront.test/</loc>" not in sitemap   # the landing's own
     assert "/academy/" in files["academy/llms.txt"].decode()
 
 

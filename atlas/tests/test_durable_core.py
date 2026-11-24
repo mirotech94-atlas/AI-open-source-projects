@@ -393,7 +393,7 @@ def test_r07_a_failed_notice_is_retried_and_a_failed_effect_is_not():
 
 @pytest.mark.parametrize("detail", [
     "ATLAS is in watch-only mode and did not run x.y.",
-    "not run: everything is paused since Mon 28 Sep 04:00 UTC by owner",
+    "not run: everything is paused since Mon 28 Sep 04:00 UTC by miro",
 ])
 def test_a_pause_or_watch_only_waits_and_never_spends_an_attempt(detail):
     """The plan: an intentionally disabled dependency is skipped as
@@ -441,9 +441,9 @@ def test_flag_off_the_step_set_is_unchanged():
                                    "content_weekly", "bizops_digest",
                                    "bizops_find_repeats", "seo_rank",
                                    "research_scan", "research_weekly",
-                                   "inbox_shift", "sites_shift", "mmt_shift",
+                                   "inbox_shift", "sites_shift", "tutorco_shift",
                                    "whatsapp_daily",
-                                   "sage_mmt_weekly", "youtube_learn")
+                                   "sage_tutorco_weekly", "youtube_learn")
 
 
 async def test_r07_a_notice_never_moves_its_workflow(db, executed):

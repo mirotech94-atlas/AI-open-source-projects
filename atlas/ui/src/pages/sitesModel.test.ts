@@ -16,7 +16,7 @@ const NOW = new Date("2026-10-27T10:00:00Z");
 
 function row(over: Partial<SiteRow> = {}): SiteRow {
   return {
-    slug: "examplehair", kind: "demo", hostname: "client-site.example.com",
+    slug: "examplesalon", kind: "demo", hostname: "examplesalon.storefront.test",
     source: "royal@176c272", managed: true, deployed_at: "2026-10-27T09:00:00Z",
     live_release: "20261027T090000000000Z", live_problem: null,
     health: "ok", health_detail: "up", health_read_at: "2026-10-27T09:45:00Z",
@@ -33,9 +33,9 @@ describe("groupSites", () => {
   it("groups by health and never counts UNKNOWN as OK", () => {
     const g = groupSites(view([
       row(),
-      row({ slug: "a", hostname: "agency.example.com", health: "unknown", health_read_at: null }),
+      row({ slug: "a", hostname: "agency.storefront.test", health: "unknown", health_read_at: null }),
       row({ slug: "b", hostname: "joes.example", health: "failing" }),
-      row({ slug: "c", hostname: "demo-site.vercel.example", health: "weird" }),
+      row({ slug: "c", hostname: "atlas-agency-c.vercel.app", health: "weird" }),
     ]), NOW);
     expect(okCount(g)).toBe(1);
     expect(g.unknown.map((r) => r.slug)).toEqual(["a", "c"]);
@@ -71,7 +71,7 @@ describe("orderEvents", () => {
 describe("SitesView", () => {
   it("renders UNKNOWN with its word and hatch, and every read time", () => {
     const html = renderToStaticMarkup(createElement(SitesView, {
-      data: view([row(), row({ slug: "x", hostname: "agency.example.com", health: "unknown",
+      data: view([row(), row({ slug: "x", hostname: "agency.storefront.test", health: "unknown",
                                health_read_at: null, health_detail: "no reading yet" })]),
       now: NOW,
     }));
@@ -79,7 +79,7 @@ describe("SitesView", () => {
     expect(html).toContain("hatch");
     expect(html).toContain("never read");
     expect(html).toContain("no reading yet");
-    expect(html).toContain("client-site.example.com");
+    expect(html).toContain("examplesalon.storefront.test");
     expect(html).toContain("20261027T090000000000Z");
   });
 });
@@ -88,7 +88,7 @@ const URL_OK = "https://claude.ai/artifact/abc123XYZ";
 
 function doc(over: Partial<SiteDoc> = {}): SiteDoc {
   return {
-    id: 7, kind: "brief", title: "examplehair brief", status: "published",
+    id: 7, kind: "brief", title: "Royal Hairstyles brief", status: "published",
     artifact_url: URL_OK, reported_at: "2026-10-29T10:00:00Z",
     created_at: "2026-10-29T09:00:00Z", handoff_status: "done", ...over,
   };
@@ -115,7 +115,7 @@ describe("SiteDocs", () => {
     const html = render({ docs: [doc()], docs_problem: null });
     expect(html).toContain(`href="${URL_OK}"`);
     expect(html).toContain('rel="noopener noreferrer"');
-    expect(html).toContain("examplehair brief");
+    expect(html).toContain("Royal Hairstyles brief");
     expect(html).toContain("not verified");
     expect(html).toContain("read ");
   });

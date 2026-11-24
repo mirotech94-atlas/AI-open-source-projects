@@ -118,7 +118,7 @@ async def test_a_regular_reel_runs_30_to_60_s_and_needs_no_captions(file_is):
 
 # ------------------------------------------------------------ the bands
 
-def test_the_bands_are_the_owners_and_every_drafted_length_fits_them():
+def test_the_bands_are_miros_and_every_drafted_length_fits_them():
     """A correctly made reel must pass, or a remake is doomed: every beat
     count `beat_range` can draft sits inside its band."""
     assert quality.SERIES_SECONDS == (60.0, 90.0)
@@ -308,7 +308,7 @@ async def test_the_gate_gets_the_band_the_caller_names(monkeypatch):
 
 
 async def test_motion_false_skips_only_the_still_frame_rule(monkeypatch, tmp_path):
-    """the owner, 2026-10-06: the Academy's designed reels are composed frames;
+    """Miro, 2026-10-06: the Academy's designed reels are composed frames;
     every other check still runs for them."""
     from atlas.modules.content import ffmpeg, quality
     path = tmp_path / "r.mp4"

@@ -92,10 +92,10 @@ describe("youtubeToken", () => {
 describe("academyChecks", () => {
   it("returns only the Academy's checks, with fixed labels", () => {
     const t = tile([check("clips_token"), check("clips_stats"), check("clips_latest_videos"),
-                    check("flycheap_stats"), check("guardian_token"), check("ecc_stats")]);
+                    check("flycheap_stats"), check("guardian_token"), check("amsm_stats")]);
     const rows = academyChecks(t, "clips");
     expect(rows.map((r) => r.label)).toEqual(["Token", "Channel stats", "Latest videos"]);
-    expect(JSON.stringify(rows)).not.toMatch(/flycheap|guardian|ecc|clips_/i);
+    expect(JSON.stringify(rows)).not.toMatch(/flycheap|guardian|amsm|clips_/i);
   });
 });
 

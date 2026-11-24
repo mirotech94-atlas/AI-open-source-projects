@@ -171,7 +171,7 @@ async def test_a_dropped_reddit_card_expires_and_never_runs(
         return any(fnmatch.fnmatchcase(value, p.replace("%", "*")) for p in patterns)
 
     cards = {51: ("reddit.submit_post", "reddit.submit_post:7"),
-             52: ("church.schedule_youtube_shorts", "church:day:1")}
+             52: ("community.schedule_youtube_shorts", "community:day:1")}
     status = dict.fromkeys(cards, "pending")
 
     async def fetchrow(sql, *args):
@@ -388,7 +388,7 @@ async def test_a_different_cause_still_raises_its_own_card(proposing):
     a = await propose("gitlab.open_issue", {"title": "a"}, reason="one",
                       dedup_key="gitlab.open_issue@stripe.flycheap_key")
     b = await propose("gitlab.open_issue", {"title": "b"}, reason="two",
-                      dedup_key="contact40@example.com")
+                      dedup_key="gitlab.open_issue@cloudhost.protection")
     assert a != b
     assert len(proposing) == 2
 
@@ -431,8 +431,8 @@ def test_cause_key_joins_checks_blocked_by_one_thing():
     wall = "Fiverr's bot detection (PerimeterX) blocked this request"
     assert (_cause_key(f("fiverr.gig_stats", Health.UNKNOWN, wall))
             == _cause_key(f("fiverr.session", Health.UNKNOWN, wall)))
-    assert (_cause_key(f("cloudco.balance", Health.FAILING, "0.7 months"))
-            == "cloudco.balance")
+    assert (_cause_key(f("cloudhost.balance", Health.FAILING, "0.7 months"))
+            == "cloudhost.balance")
 
 
 # ------------------------------------- a card that cannot run is not raised
@@ -684,7 +684,7 @@ async def test_an_unreadable_restore_fence_runs_nothing(
 
 
 def test_a_routine_card_waits_two_weeks_and_an_urgent_one_does_not():
-    """the owner, 2026-10-06: "cards should never expire". They expire (silence is
+    """Miro, 2026-10-06: "cards should never expire". They expire (silence is
     never consent) but a routine one waits 14 days; urgent clocks stay."""
     from datetime import timedelta
 

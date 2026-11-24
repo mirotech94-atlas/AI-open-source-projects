@@ -102,7 +102,7 @@ describe("decisionKind", () => {
     expect(decisionKind("seo.apply_change")).toBe("SEO change");
     expect(decisionKind("seo.publish_blog_post")).toBe("SEO change");
     expect(decisionKind("research.send_client_report")).toBe("Research");
-    expect(decisionKind("church.schedule_youtube_shorts")).toBe("Church post");
+    expect(decisionKind("community.schedule_youtube_shorts")).toBe("Community post");
     expect(decisionKind("reddit.submit_post")).toBe("Reddit post");
     expect(decisionKind("bizops.propose_automation")).toBe("Automation");
     expect(decisionKind("academy.send_comment_reply")).toBe("YouTube post");
@@ -113,7 +113,7 @@ describe("decisionTag", () => {
   it("tags agency cards with agent and client, and nothing else", () => {
     expect(decisionTag("sales.qualify", { lead_id: 3 }, { client: "Joe's Plumbing" }))
       .toBe("Sales · Joe's Plumbing");
-    expect(decisionTag("church.schedule_youtube_shorts", { post_ids: [1] })).toBe("Content · ECC");
+    expect(decisionTag("community.schedule_youtube_shorts", { post_ids: [1] })).toBe("Content · AMSM");
     expect(decisionTag("academy.switch_title", {})).toBe("Content · Atlas Academy");
     expect(decisionTag("agency.send_outreach", {})).toBe("Websites · Mapfront");
     expect(decisionTag("linkedin.publish_post", { page: "x" })).toBeNull();

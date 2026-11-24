@@ -19,7 +19,7 @@ from atlas.modules.mail.accounts import Account
 
 NOW = datetime(2026, 9, 28, 9, 0, tzinfo=UTC)
 
-ME = Account(name="owner", kind="google", email="me@example.com",
+ME = Account(name="myron", kind="google", email="me@example.com",
              refresh_token="t")
 
 
@@ -61,13 +61,13 @@ def _model(monkeypatch, answers: dict[str, str], seen: list | None = None):
 # ----------------------------------------------------------- header sorting
 
 @pytest.mark.parametrize(("sender", "subject", "kw", "want"), [
-    ("Spotify <contact65@example.com>", "Your receipt from Spotify", {}, "receipts"),
-    ("Shop <contact66@example.com>", "Your order has shipped", {"list_unsubscribe": True},
+    ("Spotify <no-reply@spotify.com>", "Your receipt from Spotify", {}, "receipts"),
+    ("Shop <orders@shop.com>", "Your order has shipped", {"list_unsubscribe": True},
      "receipts"),
-    ("Substack <contact23@example.com>", "This week in AI", {"list_unsubscribe": True},
+    ("Substack <hello@substack.com>", "This week in AI", {"list_unsubscribe": True},
      "newsletters"),
-    ("Morning Brew <contact67@example.com>", "Today", {"bulk": True}, "newsletters"),
-    ("GitLab <contact68@example.com>", "Pipeline failed", {}, "notifications"),
+    ("Morning Brew <crew@morningbrew.com>", "Today", {"bulk": True}, "newsletters"),
+    ("GitLab <notifications@gitlab.com>", "Pipeline failed", {}, "notifications"),
     ("Anna <anna@client.com>", "Invoice for September", {}, None),
 ])
 def test_machine_mail_is_sorted_by_headers(sender, subject, kw, want):
@@ -92,9 +92,9 @@ async def test_card_lists_only_person_mail_that_needs_a_reply(monkeypatch):
     _mailbox(monkeypatch, [
         _item("1", "Anna <anna@client.com>", "Can you confirm Friday?", 3),
         _item("2", "Bob <bob@x.com>", "Lunch sometime", 2),
-        _item("3", "Apple <contact69@example.com>", "Your receipt from Apple", 1),
+        _item("3", "Apple <no_reply@email.apple.com>", "Your receipt from Apple", 1),
         _item("4", "News <news@site.com>", "The weekly", 1, unsub=True),
-        _item("5", "GitLab <contact68@example.com>", "Pipeline #9 failed", 1),
+        _item("5", "GitLab <notifications@gitlab.com>", "Pipeline #9 failed", 1),
         _item("6", "Me <me@example.com>", "Re: Can you confirm Friday?", 0),
     ])
     seen: list = []
@@ -152,7 +152,7 @@ async def test_an_unreadable_mailbox_is_named_not_zero(monkeypatch):
 
 
 async def test_an_unconfigured_mailbox_is_named(monkeypatch):
-    bare = Account(name="flycheap", kind="imap", email="owner@flycheap.example")
+    bare = Account(name="flycheap", kind="imap", email="owner@example.com")
     card = await reply_today.read([bare], now=NOW)
     assert any("MAIL_FLYCHEAP_HOST" in u for u in card.unreadable)
 

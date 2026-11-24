@@ -1,6 +1,6 @@
 """The browser itself: open a page, search, find a business, submit a form.
 
-"Google" in the owner's words means "search the web". Google's own results page
+"Google" in Miro's words means "search the web". Google's own results page
 blocks headless browsers and is denied by policy, so search goes through Brave
 (when `BRAVE_API_KEY` is set) or DuckDuckGo's HTML endpoint, and the browser
 opens the results. The browser never signs in anywhere — a page that needs a
@@ -20,7 +20,7 @@ recorded plus every current frame: a page that went anywhere it may not is
 refused and both are discarded (the same after a form submit). That detects
 the hop; it cannot un-send the one GET the hop made, nor stop page script
 sending what it read — only an egress rule or a filtering proxy on the box
-closes those, which is the owner's call (see the module docstring and
+closes those, which is Miro's call (see the module docstring and
 `_netguard`). WebSockets opened by any page's worker skip
 `route_web_socket`; they are recorded (a `websocket` listener on every page
 of the context) and refuse the read, but their handshake has already been
@@ -293,7 +293,7 @@ class Watch:
 async def _close_quietly(page: Any) -> None:
     try:
         await page.close()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.debug("a popup was already gone when closed")
 
 
@@ -309,7 +309,7 @@ def _is_main(request: Any) -> bool:
     try:
         return bool(request.is_navigation_request()) and \
             request.frame.parent_frame is None
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -491,7 +491,7 @@ async def open(url: str, *, agent: str | None = None) -> tuple[dict | None, str 
                   f"{OPEN_WALL_S:g} s")
         await _record(url, agent=agent, reason=reason)
         return None, reason
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         reason = _aborted_main(watch, url) or (
             f"could not open {policy.without_query(url)}: {_first_line(exc)}")
         await _record(url, agent=agent, reason=reason)
@@ -567,7 +567,7 @@ async def _duckduckgo_html(query: str) -> tuple[str | None, str | None]:
         async with httpx.AsyncClient(timeout=20, follow_redirects=True) as c:
             r = await c.get(DDG_URL, params={"q": query}, headers={"User-Agent": _UA})
             r.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc)
     return r.text, None
 
@@ -786,7 +786,7 @@ async def _form(url: str, fields: str, *, commit: bool) -> ActionResult:
         try:
             await asyncio.sleep(SETTLE_S)
             await page.wait_for_load_state("domcontentloaded", timeout=TIMEOUT_MS)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             evidence["after_error"] = _first_line(exc)
         blocked = [a for a in watch.aborted[mark:]
                    if a.main or a.method not in ("GET", "WEBSOCKET")]
@@ -802,7 +802,7 @@ async def _form(url: str, fields: str, *, commit: bool) -> ActionResult:
         try:
             shot = await page.screenshot(type="png")
             text = (await page.inner_text("body") or "")[:TEXT_LIMIT]
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             evidence["after_error"] = _first_line(exc)
         landed = await _refusal(page, watch, url)
         if landed:
@@ -824,7 +824,7 @@ async def _form(url: str, fields: str, *, commit: bool) -> ActionResult:
                                 sent["evidence"])
         return ActionResult(False, f"no answer from {policy.without_query(url)} within "
                                    f"{FORM_WALL_S:g} s; nothing was submitted")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         if sent["submitted"]:
             return ActionResult(True, f"submitted on {policy.without_query(url)}; "
                                       f"then: {_first_line(exc)}", sent["evidence"])
@@ -881,7 +881,7 @@ async def check_engine() -> Observation:
     except TimeoutError:
         return Observation("engine", Health.UNKNOWN, detail=(
             f"chromium did not load about:blank within {ENGINE_TIMEOUT_S:g} s"))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("engine", Health.UNKNOWN,
                            detail=f"chromium would not start: {_first_line(exc)}")
     return Observation("engine", Health.OK,

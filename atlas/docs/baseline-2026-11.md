@@ -16,14 +16,14 @@ The disk is still at 96%, so the disk check is close to its floors.
 
 ## Not read, and why
 
-- Board snapshot by state, camera counts for 14 days, outbox by status, owner calls, token rows:
+- Board snapshot by state, sensor counts for 14 days, outbox by status, owner calls, token rows:
   the board and stats routes answer 404 without a session, and the rule allows only the existing local
-  API or CLI, read-only. No session token was used. Run the board read as the owner, then fill this in.
+  API or CLI, read-only. No session token was used. Run the board read as Miro, then fill this in.
 - Whether the host backup and housekeeping jobs run on this Mac (`launchctl list`) and which path the
   disk check measures: the new `ops/watchdog/host/disk_status.sh` writes the data-volume status file;
   it is not installed (see `ops/watchdog/INSTALL.md`).
 - Timed image build with per-step times: not run. `docker build` on this Mac with a few GiB of slack
-  could fill the disk and stop the camera stack. Build-cache is 11.5 GB; the Dockerfile layer order was
+  could fill the disk and stop the sensor stack. Build-cache is 11.5 GB; the Dockerfile layer order was
   fixed by reading only (see the loop notes in `docs/`).
 
 ## Test suite (Spark, 20 cores, read 2026-11-15)

@@ -190,7 +190,7 @@ async def purge_voice_clips() -> int:
 #
 # A streamer's VOD is 1-3 GB, and the server's disk is 39 GB. Once every clip
 # cut from a source is out of ATLAS's hands -- posted, submitted, withdrawn,
-# its cut rolled back, or its post card declined or expired (the owner's "no") --
+# its cut rolled back, or its post card declined or expired (Miro's "no") --
 # the source has done its job: the clips are their own files in out/, and a
 # source is never cut twice. So it goes, from here
 # and only here (the clips package deletes nothing, by test). Hourly, from
@@ -223,7 +223,7 @@ CLIP_POST_CARDS = ("clips.publish_clip", "clips.publish_clip_youtube",
                    "clips.hand_off")
 CLIP_CARD_NO = ("declined", "expired")
 # A clip in one of these states needs nothing more from its source.
-# rolled_back: the owner refused the cut.
+# rolled_back: Miro refused the cut.
 CLIP_DONE = ("posted", "submitted", "withdrawn", "rolled_back")
 # The clips package's own rules (sources.SLUG, sources.root), restated so
 # the kernel never imports a module to purge it; a test pins them equal.
@@ -263,7 +263,7 @@ def clip_source_due(row: dict[str, Any], now: datetime, days: int) -> bool:
 
 def clip_waiting(status: str, card: str | None) -> bool:
     """Is this clip still waiting to post? Pure. Not when it is done with
-    (CLIP_DONE), nor when the latest word on its post card is the owner's "no"
+    (CLIP_DONE), nor when the latest word on its post card is Miro's "no"
     -- declined, or expired unanswered (silence is never a yes)."""
     return status not in CLIP_DONE and (card or "") not in CLIP_CARD_NO
 

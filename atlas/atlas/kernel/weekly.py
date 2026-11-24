@@ -9,7 +9,7 @@ use out loud.
 So this deliberately does NOT reuse the brief's renderer. It counts and
 consequences: "FlyCheap was fine all week" rather than eleven check names,
 and "no backups exist, and that has been true for seven days" rather than
-`cloudco.protection: failing`. Same discipline as the phone greeting — a thing
+`cloudhost.protection: failing`. Same discipline as the phone greeting — a thing
 read once cannot be skimmed for the important line, so the important line has
 to be the one that is said.
 
@@ -80,7 +80,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                 still_wrong.append((str(row["property"]),
                                     str(row["check_name"]),
                                     str(row["detail"] or "")))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("weekly: could not read the board: %s", exc)
         paragraphs.append(
             "I could not read my own records this week, so everything below "
@@ -105,7 +105,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                       AND o.at > $3""", prop, check, since)
             if row and row[0]["since"]:
                 days_bad = (now - row[0]["since"]).days
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             log.debug("weekly: could not date %s %s; said without a length",
                       prop, check)
         how_long = (", and it has been like that all week" if days_bad
@@ -121,7 +121,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
     try:
         from .pause import lines as paused
         held = await paused()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.debug("weekly: pauses unreadable; said without them")
         held = []
     if held:
@@ -152,7 +152,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                 + ("I am in watch-only mode, so I report and don't act."
                    if watch_only() else
                    "nothing needed doing that I'm allowed to do."))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("weekly: could not read the action log: %s", exc)
         paragraphs.append(
             "*What I did*\nI could not read my own action log, so I cannot "
@@ -168,7 +168,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                 f"*Waiting on you*\n{waiting} "
                 f"{_plural(waiting, 'decision')} I can't make. They expire "
                 f"on their own if you'd rather they didn't happen.")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("weekly: could not count proposals")
 
     # --- approvals that came back (S08/P04): say why a card reappeared ---
@@ -183,7 +183,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                 f"came back to you for a fresh yes, because the action or "
                 f"its details changed after you approved "
                 f"{'it' if returned == 1 else 'them'}.")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("weekly: could not count superseded approvals")
 
     # --- the automation reporting on itself: read-backs, reconciles, ---
@@ -234,19 +234,19 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
             if top:
                 line += f' Most repeated problem: "{top[0][0]}" ({top[0][1]}x).'
             paragraphs.append("*How the days felt*\n" + line)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("weekly: could not read the daily reviews")
 
-    # --- what has earned the offer to run on its own (the owner: "earn it") --
+    # --- what has earned the offer to run on its own (Miro: "earn it") --
     try:
         from . import promotion
         cands = await promotion.candidates()
         if cands:
             paragraphs.append(promotion.render(cands))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("weekly: could not read the promotion candidates")
 
-    # --- content: what posted itself (the owner, 2026-10-06: no cards, the
+    # --- content: what posted itself (Miro, 2026-10-06: no cards, the
     # weekly is where posts are reported) -------------------------------
     try:
         from . import reels
@@ -256,7 +256,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
         paragraphs.append("*Content this week*\nI could not read the posting "
                           "ledgers, so this week's count is UNKNOWN — not zero.")
 
-    # --- the Academy's Shorts, each with its links and 7-day numbers (the owner,
+    # --- the Academy's Shorts, each with its links and 7-day numbers (Miro,
     # 2026-10-12, the growth plan: "weekly 7-day performance log") ------
     try:
         from ..modules.academy import growth_log
@@ -285,7 +285,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                           "week, so every figure is UNKNOWN — not zero. Alinea "
                           "trades on its own; ATLAS only reads its emails.")
 
-    # --- deals the owner checked (modules/realestate); it never raises ------
+    # --- deals Miro checked (modules/realestate); it never raises ------
     try:
         from ..modules import realestate
         deals = await realestate.weekly_section(now)
@@ -307,7 +307,7 @@ async def build(days: int = 7, money: Any = None) -> Weekly:
                 f"{_plural(removed, 'file')}, {gb:.1f} GB, once every clip cut "
                 f"from {'it' if removed == 1 else 'them'} was posted or refused, "
                 f"or none was waiting and it had sat past its retention window.")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("weekly: could not read the removed clip sources")
         paragraphs.append("*Clip footage*\nI could not read what footage was "
                           "removed this week, so that is UNKNOWN — not zero.")
@@ -542,7 +542,7 @@ async def _missed_lines(since: datetime) -> list[str]:
             GROUP BY job ORDER BY job""", since, LATE_RUN)
     try:
         from .scheduler import POLICIES
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         POLICIES = {}
     parts = []
     for r in rows:
@@ -606,14 +606,14 @@ async def checked_my_work(since: datetime, now: datetime) -> str | None:
             ("missed runs", lambda: _missed_lines(since))):
         try:
             lines.extend(await part())
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("weekly: could not read the %s: %s", name, exc)
             lines.append(f"Couldn't read the {name}, so that's unknown — not zero.")
     try:
         drill, warn = await _drill_line()
         if warn or lines:
             lines.append(drill)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("weekly: could not read the restore drill: %s", exc)
         lines.append("Couldn't read the restore drill, so that's unknown.")
     if not lines:

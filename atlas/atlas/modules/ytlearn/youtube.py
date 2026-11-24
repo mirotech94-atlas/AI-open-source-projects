@@ -156,7 +156,7 @@ async def fetch(video_id: str, *, published: str = "unknown",
     try:
         raw = await asyncio.wait_for(asyncio.to_thread(read, video_id),
                                      timeout=FETCH_TIMEOUT_S)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Unreadable(video_id, _why(exc), now)
     text = " ".join(str(raw or "").split())
     if not text:

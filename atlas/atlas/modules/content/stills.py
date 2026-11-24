@@ -1,7 +1,7 @@
 """The free render path's two inputs: Gemini stills and Fish narration.
 
 **Stills.** `GEMINI_IMAGE_MODEL` (default `gemini-3.1-flash-image`;
-`gemini-3-pro-image` also works -- both verified live on the owner's key, Task
+`gemini-3-pro-image` also works -- both verified live on Miro's key, Task
 55) through `generateContent`, asking for an image at 9:16. The key rides
 in the `x-goog-api-key` header, never `?key=` (the ed4a247 leak pattern
 `kernel.llm` still uses for text). A 404 means the model name is wrong for
@@ -89,7 +89,7 @@ async def narration(text: str, speed: float | None = None, model: str | None = N
         async with httpx.AsyncClient(timeout=90) as c:
             r = await c.post(url, headers=headers, json=body)
             r.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         key = os.getenv("FISH_AUDIO_API_KEY", "")
         return None, "", _masked(f"Fish narration failed: {explain(exc)}", key)

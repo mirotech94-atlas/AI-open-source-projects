@@ -41,7 +41,7 @@ from ...kernel.contracts import (
 from .._http import redact
 
 API = "https://api.stripe.com/v1"
-# the owner, 2026-10-29: "delete flycheap and guardian, we don't use them
+# Miro, 2026-10-29: "delete flycheap and guardian, we don't use them
 # anymore". They were the only two businesses, so no business is watched and
 # the module declares no checks until one is added here.
 BUSINESSES: tuple[str, ...] = ()
@@ -138,7 +138,7 @@ async def key_scope(business: str) -> Observation:
         account = await _get(business, "account")
     except NoKey as exc:
         return Observation(name, Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN, detail=redact(exc))
 
     profile = account.get("business_profile") or {}
@@ -171,7 +171,7 @@ async def failed_payments(business: str) -> Observation:
     except NoKey as exc:
         return Observation(
             f"{business}_failed_payments", Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(
             f"{business}_failed_payments", Health.UNKNOWN, detail=redact(exc))
 
@@ -193,7 +193,7 @@ async def disputes(business: str) -> Observation:
     except NoKey as exc:
         return Observation(
             f"{business}_disputes", Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(
             f"{business}_disputes", Health.UNKNOWN, detail=redact(exc))
 
@@ -215,7 +215,7 @@ async def webhook_health(business: str) -> Observation:
     except NoKey as exc:
         return Observation(
             f"{business}_webhooks", Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(
             f"{business}_webhooks", Health.UNKNOWN, detail=redact(exc))
 
@@ -249,7 +249,7 @@ async def mrr(business: str) -> Observation:
     except NoKey as exc:
         return Observation(
             f"{business}_mrr", Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(
             f"{business}_mrr", Health.UNKNOWN, detail=redact(exc))
 
@@ -274,7 +274,7 @@ async def expiring_cards(business: str) -> Observation:
     except NoKey as exc:
         return Observation(f"{business}_expiring_cards", Health.UNKNOWN,
                            detail=str(exc))
-    except Exception as exc:                          # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(f"{business}_expiring_cards", Health.UNKNOWN,
                            detail=redact(exc))
 
@@ -340,7 +340,7 @@ async def retry_invoice(business: str, invoice_id: str) -> ActionResult:
     not Tier 3. It still requires approval every time: a charge cannot be
     undone, and `contracts.py` refuses an irreversible Tier 1.
 
-    the owner, 2026-09-28: it always charges, and the customer always gets a
+    Miro, 2026-09-28: it always charges, and the customer always gets a
     receipt -- once a retry pays, the charge's receipt is emailed
     (`_send_receipt`), once per charge.
 
@@ -395,7 +395,7 @@ async def _charge_of(business: str, invoice: dict) -> str | None:
 
 
 async def _send_receipt(business: str, invoice: dict) -> str:
-    """the owner, 2026-09-28: a customer charged by a retry always gets a receipt.
+    """Miro, 2026-09-28: a customer charged by a retry always gets a receipt.
 
     Stripe emails the receipt when a charge's `receipt_email` is set. Sent
     once per charge: a charge that already carries `receipt_email` or a
@@ -427,7 +427,7 @@ async def _send_receipt(business: str, invoice: dict) -> str:
                 data={"receipt_email": email},
                 headers={"Idempotency-Key": receipt_key(charge_id)})
         r.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return f"receipt not sent: {explain(exc)}"
     return f"receipt emailed for {charge_id}"
 
@@ -443,7 +443,7 @@ async def retry_dry(business: str, invoice_id: str) -> ActionResult:
                                    f"watches {', '.join(BUSINESSES) or 'none'}")
     try:
         inv = await _get(business, f"invoices/{invoice_id}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"cannot read invoice: {exc}")
     if inv.get("status") != "open":
         return ActionResult(False, f"invoice is {inv.get('status')}, not open")

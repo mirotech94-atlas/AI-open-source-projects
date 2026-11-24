@@ -1,6 +1,6 @@
 # ATLAS Academy script writer — the checklist for every run
 
-The owner, 2026-10-15: "make sure videos are being posted automatically with no
+Miro, 2026-10-15: "make sure videos are being posted automatically with no
 stopping". `tutorials.daily()` posts one episode per series per day, but only
 episodes that have a script. This scheduled agent writes the next scripts
 before a series runs dry. It runs unattended and follows this list exactly,
@@ -29,8 +29,8 @@ run is timed to a render tick.
 
 - **Repo:**
   - Never push.
-  - Never work in `/home/user/Documents/Code/Atlas`, or in any worktree
-    other than `/home/user/Documents/Code/atlas-writer`.
+  - Never work in `/Users/mac/Documents/Code/Atlas`, or in any worktree
+    other than `/Users/mac/Documents/Code/atlas-writer`.
 - **Files:**
   - Never edit `.env` or any secret.
   - Never touch a file outside `atlas/modules/academy/tutorial_scripts/`.
@@ -46,7 +46,7 @@ run is timed to a render tick.
   - Never write a live-demo scene (`kind="demo"`, `demo_scene`). No new
     screen recordings can be made.
   - Never write a held episode: one `tutorial_series.held(key, ep)` names
-    (it needs a recording or the owner on camera; `tutorial_series_ai.HOLDS`).
+    (it needs a recording or Miro on camera; `tutorial_series_ai.HOLDS`).
     Skip it as if it were written. Never script around a hold by teaching a
     demo anchor as if it had been shown. Use `steps`, `bullets`, `code`,
     `diagram`, `quiz`, `pause`, `subscribe`, `lab` and `checklist`.
@@ -73,11 +73,11 @@ A failed episode never stops the run on its own.
 ## 0. Get into the writer's worktree
 
 ```
-cd /home/user/Documents/Code/atlas-writer || {
-  git -C /home/user/Documents/Code/atlas-academy worktree add -b academy-writer \
-      /home/user/Documents/Code/atlas-writer origin/phases-12-14 &&
-  ln -s /home/user/Documents/Code/atlas-academy/.venv /home/user/Documents/Code/atlas-writer/.venv &&
-  cd /home/user/Documents/Code/atlas-writer
+cd /Users/mac/Documents/Code/atlas-writer || {
+  git -C /Users/mac/Documents/Code/atlas-academy worktree add -b academy-writer \
+      /Users/mac/Documents/Code/atlas-writer origin/phases-12-14 &&
+  ln -s /Users/mac/Documents/Code/atlas-academy/.venv /Users/mac/Documents/Code/atlas-writer/.venv &&
+  cd /Users/mac/Documents/Code/atlas-writer
 }
 test "$(git branch --show-current)" = academy-writer || exit 1   # else stop
 git status --porcelain | grep -v '^?? .venv$'                    # must print nothing
@@ -130,7 +130,7 @@ earlier runs that hasn't been pushed.
   already has three days of posts waiting. This cap also bounds plan
   extensions.
 - `future` (Where AI Is Going) posts once a calendar month, UTC
-  (`tutorials.MONTHLY_SERIES`, the owner 2026-10-18). Skip it while it has 1 or
+  (`tutorials.MONTHLY_SERIES`, Miro 2026-10-18). Skip it while it has 1 or
   more episodes scripted but not public: that covers the month. Write it
   only when it has none.
 - Take the rest in this order:
@@ -150,28 +150,28 @@ For each picked series, the episode is the **lowest-numbered entry of
 A series climbs its ladder in order. List the held ones:
 
 ```
-/home/user/Documents/Code/atlas-writer/.venv/bin/python3 -c "from atlas.modules.academy import tutorial_series as ts; [print(s.key, e.number, ts.held(s.key, e)) for s in ts.SERIES for e in s.episodes if ts.held(s.key, e)]"
+/Users/mac/Documents/Code/atlas-writer/.venv/bin/python3 -c "from atlas.modules.academy import tutorial_series as ts; [print(s.key, e.number, ts.held(s.key, e)) for s in ts.SERIES for e in s.episodes if ts.held(s.key, e)]"
 ```
 
 Held today (2026-10-18): AI Explained #2, #3, #4, #5, #8; every AI Security
-lesson (#6 and #8 need the owner himself); Where AI Is Going #1–#5. Writable:
+lesson (#6 and #8 need Miro himself); Where AI Is Going #1–#5. Writable:
 AI Explained #1, #6, #7 and Where AI Is Going #6. A series whose only
 unwritten entries are held is skipped this run ("held: needs a recording or
-The owner"), and it is never extended (2b) while a held entry is left.
+Miro"), and it is never extended (2b) while a held entry is left.
 
-0. **Study the human tutorials first** (The owner 2026-10-18, rule 33). Run each
+0. **Study the human tutorials first** (Miro 2026-10-18, rule 33). Run each
    command on one line, exactly, with `<key>` = `<series>_<NN>` (`n8n_06`)
    and `<topic>` = the episode's search phrase:
    ```
-   /home/user/Documents/Code/atlas-writer/.venv/bin/python3 /home/user/Documents/Code/atlas-writer/tools/academy_refs/study.py study --topic "<topic>" --out /home/user/Documents/Code/.academy-refs/<key>
-   /home/user/Documents/Code/atlas-writer/.venv/bin/python3 /home/user/Documents/Code/atlas-writer/tools/academy_refs/study.py note --key <key> --refs /home/user/Documents/Code/.academy-refs/<key> --note /home/user/Documents/Code/atlas-writer/docs/academy-references/<key>.md
-   /home/user/Documents/Code/atlas-writer/.venv/bin/python3 /home/user/Documents/Code/atlas-writer/tools/academy_refs/study.py check --note /home/user/Documents/Code/atlas-writer/docs/academy-references/<key>.md --transcripts /home/user/Documents/Code/.academy-refs/<key>
+   /Users/mac/Documents/Code/atlas-writer/.venv/bin/python3 /Users/mac/Documents/Code/atlas-writer/tools/academy_refs/study.py study --topic "<topic>" --out /Users/mac/Documents/Code/.academy-refs/<key>
+   /Users/mac/Documents/Code/atlas-writer/.venv/bin/python3 /Users/mac/Documents/Code/atlas-writer/tools/academy_refs/study.py note --key <key> --refs /Users/mac/Documents/Code/.academy-refs/<key> --note /Users/mac/Documents/Code/atlas-writer/docs/academy-references/<key>.md
+   /Users/mac/Documents/Code/atlas-writer/.venv/bin/python3 /Users/mac/Documents/Code/atlas-writer/tools/academy_refs/study.py check --note /Users/mac/Documents/Code/atlas-writer/docs/academy-references/<key>.md --transcripts /Users/mac/Documents/Code/.academy-refs/<key>
    ```
    - `study` must report at least 2 videos; else rephrase the topic once,
      then skip the series ("no human tutorials found").
    - If `study` fails because YouTube is unreachable or blocks the Mac
      (rate limit, "sign in", network error), not because nothing matched:
-     the posting must never stop (rule 23, the owner 2026-10-15). If that
+     the posting must never stop (rule 23, Miro 2026-10-15). If that
      series' runway is 2 days or less, write the episode anyway. Its note
      is the title line plus `Status: pending study (<the error, short>,
      <today>)`, and the module's docstring still names the note. Report it
@@ -213,7 +213,7 @@ The owner"), and it is never extended (2b) while a held entry is left.
      60 characters, and `title_hook` must open (after "a", "an", "the" or
      "your") with the tool or subject term (`TOOL_TERMS`): "n8n Webhooks",
      not "to Connect Webhooks". Check it:
-     `/home/user/Documents/Code/atlas-writer/.venv/bin/python3 -c "from atlas.modules.academy import tutorial_series as ts, tutorials as t; ep=ts.series('<series>').episode(<NN>); ti=t.final_title(ep, 600.0); print(len(ti), ti, t.title_refusal(ep, ti, 600.0))"`
+     `/Users/mac/Documents/Code/atlas-writer/.venv/bin/python3 -c "from atlas.modules.academy import tutorial_series as ts, tutorials as t; ep=ts.series('<series>').episode(<NN>); ti=t.final_title(ep, 600.0); print(len(ti), ti, t.title_refusal(ep, ti, 600.0))"`
      It must print `None` at the end.
    - **Tags (rule 27):** if you override `tags`, give 3–5 lesson-specific
      phrases (the exact tool, node or feature name, no year). The channel

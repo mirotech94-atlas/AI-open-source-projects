@@ -29,7 +29,7 @@ Reputation (Task 42): `reputation(lead)` asks Perplexity's search what public
 reviews and local news say about the business — one call per lead, cached
 30 days in `agency_leads.meta["reputation"]` with the time it was read — and
 `agency.audit` carries it in its evidence. It is untrusted third-party text
-(wrapped as `perplexity`) with its Sources, background for the owner, never a
+(wrapped as `perplexity`) with its Sources, background for Miro, never a
 figure ATLAS measured. The question carries the lead's public name and
 address only; its phone number is never put in it, and the scrub would strip
 one anyway. The name rule is off for this one caller: the subject is a
@@ -173,7 +173,7 @@ async def _fetch(url: str) -> tuple[str | None, float, int, bool, str | None]:
             if response is None:
                 return None, time.monotonic() - start, 0, https, f"not fetched: {why}"
             response.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, time.monotonic() - start, 0, https, explain(exc)
     elapsed = time.monotonic() - start
     return response.text, elapsed, len(response.content), https, None
@@ -202,7 +202,7 @@ async def _dead_links(html: str, base_url: str) -> list[str]:
         for link in candidates:
             try:
                 response = await client.head(link, headers={"User-Agent": USER_AGENT})
-            except Exception as exc:                     # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 # A timeout or connection error is a network hiccup, not
                 # evidence of rot; log it at debug and move on rather than
                 # counting it as the 404 this check is actually looking for.

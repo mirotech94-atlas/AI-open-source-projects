@@ -1,6 +1,6 @@
 """ATLAS's fixed spoken lines, rendered once in Fish Audio and kept on disk.
 
-the owner, 2026-10-06: "make sure the voice is Fish Audio, not the sound of Siri
+Miro, 2026-10-06: "make sure the voice is Fish Audio, not the sound of Siri
 or anything else; make sure she responds with voice as well." So there is no
 system voice anywhere ATLAS answers. The lines ATLAS says again and again --
 "Listening", "Go ahead", "I couldn't reach my voice", the line for when its

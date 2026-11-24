@@ -19,7 +19,7 @@ def client(monkeypatch, memory_backend):
     for name in _SECRETS:
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("MESH_ALLOWED_CIDRS", "0.0.0.0/0")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
     monkeypatch.delenv("SLACK_APP_TOKEN", raising=False)
 
     from atlas.api.main import app

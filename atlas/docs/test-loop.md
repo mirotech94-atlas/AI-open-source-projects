@@ -49,7 +49,7 @@ and creates the database on demand, and the script creates them up front. Keep
 `ops/test_changed.sh [-b base] [-d db] [-f file]... [-l] [-- extra args]`
 
 `-f` names the changed file by hand instead of reading git (a one-module
-change: `ops/test_changed.sh -f atlas/modules/cameras/faces.py`, 5 s wall).
+change: `ops/test_changed.sh -f atlas/modules/sensors/matching.py`, 5 s wall).
 
 1. `ops/test_changed.py` lists what differs from the base branch
    (`feat/atlas-improve`, or `$TEST_BASE`): committed, staged, modified, untracked.

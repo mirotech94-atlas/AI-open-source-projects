@@ -1,4 +1,4 @@
-"""The lead follow-up that runs by itself (the owner, 2026-10-06: "make the lead
+"""The lead follow-up that runs by itself (Miro, 2026-10-06: "make the lead
 replies send themselves too - approve invoices too and schedule meetings
 with them via email as well and call them as well").
 
@@ -177,7 +177,7 @@ async def test_the_reply_autosend_switch_holds_in_the_guard(monkeypatch):
     from atlas.kernel import idempotency
     token = idempotency._RUN.set("proposal:5")
     try:
-        assert (await replies.send_reply_dry(21)).ok          # the owner's yes is the answer
+        assert (await replies.send_reply_dry(21)).ok          # Miro's yes is the answer
     finally:
         idempotency._RUN.reset(token)
 
@@ -233,7 +233,7 @@ def _draft_fakes(monkeypatch, reply_text: str, *, intent: str, slots):
 async def test_an_interested_lead_is_offered_the_real_slots_and_they_are_stored(
         monkeypatch):
     seen = _draft_fakes(
-        monkeypatch, "Happy to set up a call. the owner could do Tuesday 6 Oct at 14:00 in "
+        monkeypatch, "Happy to set up a call. Miro could do Tuesday 6 Oct at 14:00 in "
                      "the afternoon or Wednesday 7 Oct at 11:00 in the morning.",
         intent="interested", slots=(OFFERED, None))
     result = await replies.draft_reply(7, "email")
@@ -245,7 +245,7 @@ async def test_an_interested_lead_is_offered_the_real_slots_and_they_are_stored(
 
 
 async def test_a_draft_naming_a_time_outside_the_offer_is_refused(monkeypatch):
-    _draft_fakes(monkeypatch, "the owner could do Friday at 10 or Tuesday at 2.",
+    _draft_fakes(monkeypatch, "Miro could do Friday at 10 or Tuesday at 2.",
                  intent="interested", slots=(OFFERED, None))
     result = await replies.draft_reply(7, "email")
     assert not result.ok and "Friday at 10" in result.detail
@@ -253,7 +253,7 @@ async def test_a_draft_naming_a_time_outside_the_offer_is_refused(monkeypatch):
 
 
 async def test_an_unreadable_calendar_offers_nothing_and_a_time_is_refused(monkeypatch):
-    seen = _draft_fakes(monkeypatch, "the owner will send you a couple of times himself.",
+    seen = _draft_fakes(monkeypatch, "Miro will send you a couple of times himself.",
                         intent="interested", slots=(None, "401"))
     result = await replies.draft_reply(7, "email")
     assert result.ok and seen["offered_slots"] is None
@@ -274,7 +274,7 @@ async def test_a_question_gets_no_slots_and_may_name_no_time(monkeypatch):
 
 
 def test_the_slot_check_is_lenient_on_form_and_strict_on_the_set():
-    ok = ("the owner can do Tuesday 6 Oct at 14:00 in the afternoon, Wed, Oct 7, 11am "
+    ok = ("Miro can do Tuesday 6 Oct at 14:00 in the afternoon, Wed, Oct 7, 11am "
           "or Thursday at 3:30pm.")
     assert meetings.slot_refusal(ok, OFFERED) is None
     assert meetings.slot_refusal("Thursday at 3", OFFERED)        # 3:30 is not 3
@@ -557,7 +557,7 @@ async def test_an_unverified_lead_gets_neither(monkeypatch):
 HELD = ActionResult(True, "held Tue 06 Oct 14:00 EDT for Joe's Plumbing",
                     evidence={"meeting_id": 4, "event_id": "ev1",
                               "email": "joe@example.com"})
-INVITED = ActionResult(True, "invited joe@example.com to the call with the owner",
+INVITED = ActionResult(True, "invited joe@example.com to the call with Miro",
                        evidence={"to": "joe@example.com"})
 
 
@@ -585,7 +585,7 @@ async def test_a_booking_holds_then_raises_one_invite_card(monkeypatch):
 
 async def test_a_taken_slot_is_the_card_with_the_reason(monkeypatch):
     world = _booking_world(monkeypatch, hold=_refused(
-        "Tue 06 Oct 14:00 is not an open business-hours slot on the owner's calendar"))
+        "Tue 06 Oct 14:00 is not an open business-hours slot on Miro's calendar"))
     assert await lead_followup.bookings() == 1
     [(action, params, reason, kw)] = world.cards
     assert action == "agency.hold_meeting" and params["start"] == TUE_2PM.isoformat()
@@ -729,7 +729,7 @@ def _call_world(monkeypatch, call: ActionResult, *, guard_ok=True) -> World:
     async def guard(lead_id, channel, *, now=None):
         if guard_ok:
             return SimpleNamespace(lead=LEAD, phone="+17185550199",
-                                   opening="Hi, this is the owner's assistant"), None
+                                   opening="Hi, this is Miro's assistant"), None
         return None, ("no consent on record for a call to lead 7: ATLAS texts or "
                       "calls only a lead who asked for it (TCPA)")
     monkeypatch.setattr(consent, "contact_guard", guard)

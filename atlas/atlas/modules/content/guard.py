@@ -1,7 +1,7 @@
 """No real brand, no real person, in anything ATLAS asks a video or image
 model to make for the AI-stories account.
 
-the owner's rule (Task 55): the stories are fiction, and a prompt that names a
+Miro's rule (Task 55): the stories are fiction, and a prompt that names a
 real brand or a real person is refused, not softened. This is deliberately
 simple and says what it caught, so a false positive is one glance to
 understand and one edit to fix:
@@ -138,7 +138,7 @@ def refusal(text: str) -> str | None:
 
 # ------------------------------------------------ studio styles and characters
 #
-# Relayed from the owner's engine session, 2026-09-27: "Pixar-style 3D" plus "an
+# Relayed from Miro's engine session, 2026-09-27: "Pixar-style 3D" plus "an
 # old rusty tow truck with a hook" produced a near-copy of a famous film
 # character, and a gold sedan drifted toward another. A public account
 # cannot post that. So no prompt names a studio or a film's style, and the
@@ -178,7 +178,7 @@ def ip_refusal(text: str) -> str | None:
 
 # ------------------------------------------------------------- football lane
 #
-# the owner, 2026-09-29: a football (soccer) lane of stat reels. Real players and
+# Miro, 2026-09-29: a football (soccer) lane of stat reels. Real players and
 # clubs may be NAMED in the on-screen text, the post caption and a voice-over
 # script -- that is what the numbers are about -- but nothing sent to a video
 # model may depict a real person, and no club or league crest, badge or logo
@@ -267,7 +267,7 @@ def football_visual_refusal(text: str, names: list[str] | tuple[str, ...] = ()
 
 # ------------------------------------------------------------- course lane
 #
-# the owner, 2026-09-29: two course-promo reels a week on the AI-stories accounts
+# Miro, 2026-09-29: two course-promo reels a week on the AI-stories accounts
 # (`content.course`), honest by rule. Two rules live here so every door can
 # reach them without importing the lane:
 #

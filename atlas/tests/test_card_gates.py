@@ -117,7 +117,7 @@ async def test_card_always_makes_a_direct_slack_request_a_card(monkeypatch, fake
     monkeypatch.setattr(intent, "choose", choose)
     monkeypatch.setattr("atlas.kernel.executor.execute", never)
     monkeypatch.setattr("atlas.kernel.approvals.propose", propose)
-    out = await intent.act("text mum I'm late", channel="slack", who="UOWNER")
+    out = await intent.act("text mum I'm late", channel="slack", who="UMIRO")
     assert out.ran is False and out.proposal_id == 41 and proposed
     # The read-back carries the exact words, whole, not a 120-char cut.
     assert "To: +15551234567\nText: late, 10 min" in out.spoken

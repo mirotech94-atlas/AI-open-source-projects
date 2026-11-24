@@ -1,6 +1,6 @@
 # Independent watchdog (RA-F4)
 
-Status 2026-11-15: **built for the Spark (host `cloudco-spark`, ssh alias `spark`);
+Status 2026-11-15: **built for the Spark (host `cloudhost-spark`, ssh alias `spark`);
 nothing is installed there yet.** The exact install steps are in
 `ops/watchdog/INSTALL.md`; see "Phase 1" at the end of this file for the
 Spark, the reverse heartbeat (`watchdog_seen`) and the disk check. The older
@@ -161,8 +161,8 @@ the Spark on 2026-11-15, public https only:
 
 | URL | Answer from the Spark |
 |---|---|
-| `https://agency.example.com/` | 200 |
-| `https://agency.example.com/healthz` | **404** |
+| `https://agency.storefront.test/` | 200 |
+| `https://agency.storefront.test/healthz` | **404** |
 
 `/healthz` answers 404 on the public name because `Caddyfile.public` has no
 `/healthz` handle (only `Caddyfile`, the mesh one, has it). The Spark cannot
@@ -220,7 +220,7 @@ ATLAS check **`disk`** (HIGH, every 30 min):
 
 - FAILING at or below an **absolute floor** (`ATLAS_DISK_FLOOR_GIB`, default 4);
   DEGRADED (WARN) at or below `ATLAS_DISK_WARN_GIB` (default 10) **or** below 15%
-  free. The fraction is a secondary rule that can only warn, never fail (The owner,
+  free. The fraction is a secondary rule that can only warn, never fail (Miro,
   2026-11-15: a 96%-full disk with ~17 GiB free reads WARN). The floors are
   defaults and are not tuned to any one reading; the lead sets them.
 - UNKNOWN if `disk.json` is missing, unreadable, has bad numbers, or is older
@@ -238,7 +238,7 @@ file, `seen.json`).
 ## Simplest working design (2026-11-18): reverse tunnel
 
 ATLAS runs on the Mac (api on 127.0.0.1:8080). The public `/healthz` on
-agency.example.com is a static Caddy answer: it stays 200 when ATLAS is dead, so it
+agency.storefront.test is a static Caddy answer: it stays 200 when ATLAS is dead, so it
 cannot be the thing the watchdog trusts. Instead a launchd job on the Mac
 (`ops/watchdog/host/watchdog_tunnel.sh`, `com.atlas.watchdog-tunnel`, KeepAlive)
 holds `ssh -N -R 127.0.0.1:8080:127.0.0.1:8080 spark`. The Spark watchdog reads

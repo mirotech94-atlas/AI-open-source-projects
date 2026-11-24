@@ -218,7 +218,7 @@ async def set_reminder(rid: int, status: str) -> None:
 # ------------------------------------------------------------------ ideas
 
 async def recent_texts(days: int) -> list[tuple[str, str]]:
-    """(source, text): subjects of mail the owner sent and board task titles."""
+    """(source, text): subjects of mail Miro sent and board task titles."""
     mail = await fetch_all(
         """SELECT subject FROM mail_followups
             WHERE sent_at > now() - make_interval(days => $1)""", int(days))

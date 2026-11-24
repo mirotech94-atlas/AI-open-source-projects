@@ -1,6 +1,6 @@
 # ATLAS Academy: what the reference tutorials teach us
 
-The owner, 2026-10-11, pointing at five YouTube searches ("how to use n8n",
+Miro, 2026-10-11, pointing at five YouTube searches ("how to use n8n",
 "claude tutorials", "hermes agent", "agentic ai", "n8n labs"): "these all
 contain specific tutorials for n8n, Claude, Hermes. Take a look at these
 videos, don't mock them, but add improvements to your own and learn from
@@ -253,7 +253,7 @@ DYdvJCxWd6M.
 
    The lab file is a workflow JSON, built so that anyone can import it with
    no credentials. It is a free download at
-   `https://agency.example.com/free/<file>`, generated with the store, never
+   `https://agency.storefront.test/free/<file>`, generated with the store, never
    on a third-party host, and linked in the description (rule 12).
 4. **Common errors are named where they happen** (rule 13). Every lab has
    its "Stuck?" line, and every build episode names at least one failure

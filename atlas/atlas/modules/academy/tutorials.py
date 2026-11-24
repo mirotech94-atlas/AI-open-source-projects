@@ -1,6 +1,6 @@
 """ATLAS Academy tutorials on YouTube: render, then publish into a playlist.
 
-the owner, 2026-10-09: teach n8n workflows and Claude's MCP in long-form videos,
+Miro, 2026-10-09: teach n8n workflows and Claude's MCP in long-form videos,
 each with the same intro and ending, in playlist series. What each episode
 says is code-held (tutorial_series.py); how it looks is tutorial_design.py.
 
@@ -26,9 +26,9 @@ refused by `publishable_render`, by the publish gate and by the YouTube
 upload itself.
 
 How it reaches YouTube. The Academy reel reaches the clips YouTube channel
-(AtlasClips, @example_handle) as a Short through Postiz
+(AtlasClips, @miroatlas) as a Short through Postiz
 (`clips.autopublish_promo` -> `postiz.post_youtube_promo`), Tier 1 under
-the owner's standing rule (2026-10-06) with a card when a gate fails. Postiz
+Miro's standing rule (2026-10-06) with a card when a gate fails. Postiz
 gives no playlist or thumbnail call, so the tutorials go to the same
 channel through the YouTube Data API module that already exists
 (`youtube.api`, the YOUTUBE_CLIPS_* OAuth client): upload private, set the
@@ -42,7 +42,7 @@ Rollback is honest: the video goes back to private and leaves the
 playlist; a playlist this run created goes private (deleting either is
 Tier 3); a custom thumbnail cannot be put back by the API and is said so.
 
-Review in Slack first (the owner, 2026-10-10: "show me the videos first in
+Review in Slack first (Miro, 2026-10-10: "show me the videos first in
 Slack"). The daily tick renders the next scripted episode and raises the
 Tier 2 `academy.publish_tutorial` card in #atlas-academy-videos (topic
 `academy_videos`: ACADEMY_TUTORIALS_SLACK_CHANNEL, default that channel's
@@ -57,7 +57,7 @@ first day (nothing drafted or posted ever) two, so the welcome and the
 first Claude episode arrive together. A planned episode without a script
 is never rendered: the draft channel is told "script not written".
 
-Every lesson (the owner, 2026-10-17; docs/academy-video-system): its result for
+Every lesson (Miro, 2026-10-17; docs/academy-video-system): its result for
 6 s, the 1 s BrandSting at 6-7 s and the scope line, then the lesson with
 its quizzes, pauses and reminders, and the EndCard last (at least 15 s, the
 right 640 px left empty) -- checked from the manifest before a card is
@@ -143,10 +143,10 @@ from .tutorial_series import (
 )
 from .tutorial_series_ai import OPINION_LINE, OPINION_SERIES
 
-log = logging.getLogger("academy.example.tutorials")
+log = logging.getLogger("atlas.academy.tutorials")
 
 AI_LABEL = "Made with AI"           # content.drafts.AI_LABEL, said on every ATLAS video
-# the owner 2026-10-17 (docs/academy-video-system/narration.md): every description
+# Miro 2026-10-17 (docs/academy-video-system/narration.md): every description
 # says the narration is a synthetic (AI) voice, on the line above the label.
 # It names no voice: since 2026-10-19 a lesson may carry NotebookLM's own
 # narrator (notebooklm.py) rather than the Fish voice.
@@ -157,8 +157,8 @@ VOICE_LINE = ("Narration: synthetic voice (AI). Script written and checked by "
 VOICE_SHORT = "Synthetic voice (AI)."
 FPS = 30
 PAD = 0.6                            # a breath after each step's narration
-SCENE_GAP = 0.6                      # the owner, 2026-10-11 "no rush": more after a scene
-MIN_SECONDS, MAX_SECONDS = 240.0, 600.0   # the owner: 4 to 10 minutes
+SCENE_GAP = 0.6                      # Miro, 2026-10-11 "no rush": more after a scene
+MIN_SECONDS, MAX_SECONDS = 240.0, 600.0   # Miro: 4 to 10 minutes
 CHAPTER_MIN_SECONDS = 10.0           # YouTube: chapters start 00:00, >= 3, >= 10 s each
 DESCRIPTION_MAX = 5000
 TITLE_MAX = 100
@@ -176,18 +176,18 @@ ACTION_PIN = "academy.pin_comment"   # 2026-10-13: the quiz + lab comment
 WITHDRAWN = "(withdrawn)"            # its rollback's text: an edit, never a delete
 REVIEW_TOPIC = "academy_videos"      # channels.slack: #atlas-academy-videos
 REVIEW_LINK_TTL = timedelta(days=7)
-# The automatic (Tier 1) post's global cap only. the owner 2026-10-11: "one
+# The automatic (Tier 1) post's global cap only. Miro 2026-10-11: "one
 # video for each series each day" -- seven series, so the cap across them
 # is never lower than one per series (per_series_daily stays 1).
 PER_DAY_DEFAULT = 7
-PER_SERIES_DAILY_DEFAULT = 1         # the owner, 2026-10-11: one video per series per day
-# the owner, 2026-10-18: Where AI Is Going posts once a calendar month (UTC, the
+PER_SERIES_DAILY_DEFAULT = 1         # Miro, 2026-10-11: one video per series per day
+# Miro, 2026-10-18: Where AI Is Going posts once a calendar month (UTC, the
 # same clock as the daily count); every other series stays daily and the
 # global cap stays PER_DAY_DEFAULT.
 MONTHLY_SERIES: tuple[str, ...] = ("future",)
 DEFAULT_HOUR_UTC = 17
 NEW_YORK = ZoneInfo("America/New_York")   # teaching_day: New York's date
-# the owner, 2026-10-11: "make him talk slower, no rush" (0.9). 2026-10-18: all
+# Miro, 2026-10-11: "make him talk slower, no rush" (0.9). 2026-10-18: all
 # 30 lessons measured 156-161 words a minute at 0.9, above narration.md's
 # 130-150 for explanation; 0.8 brings the model to 144 (FISH_WORDS_PER_SECOND
 # x 0.8 x 60), the measured lessons to about 139-143. Fish's prosody speed
@@ -203,11 +203,11 @@ FISH_WORDS_PER_SECOND = 3.0
 # The cautious side of that pace, for a ceiling estimated before a render
 # (the render itself is measured and gated).
 CAUTIOUS_WPS = FISH_WORDS_PER_SECOND * 0.9
-# The preview's system voice: Daniel, British male, installed on the owner's Mac.
-# the owner, 2026-10-11: "don't use the girl voice, only use the guy voice at all
+# The preview's system voice: Daniel, British male, installed on Miro's Mac.
+# Miro, 2026-10-11: "don't use the girl voice, only use the guy voice at all
 # times" -- `say`'s default (Samantha) is female.
 PREVIEW_VOICE = "Daniel"
-# the owner, 2026-10-12: "the voice should have feelings and laughter". Fish S2
+# Miro, 2026-10-12: "the voice should have feelings and laughter". Fish S2
 # reads the scripts' [cue]s; S1 (FISH_AUDIO_MODEL's default, deprecated,
 # retiring 2026-12-31) would not. docs.fish.audio models-overview and
 # pricing, read 2026-10-12: "s2.1-pro" is the recommended model, and s1,
@@ -253,7 +253,7 @@ def autopost_enabled() -> bool:
 
 
 def autopublish_enabled() -> bool:
-    """the owner, 2026-10-15: "make sure videos are being posted automatically
+    """Miro, 2026-10-15: "make sure videos are being posted automatically
     with no stopping" -- a tutorial goes public by itself once every gate
     passes (autopublish_check, the strict publish); a render that fails a
     gate still comes to him as a card. ON unless ACADEMY_TUTORIALS_AUTOPUBLISH
@@ -282,7 +282,7 @@ def per_day() -> int:
 
 def per_series_daily() -> int:
     """ACADEMY_TUTORIALS_PER_SERIES_DAILY: drafts a day for each series
-    (the owner, 2026-10-11: "we need one video for each series each day")."""
+    (Miro, 2026-10-11: "we need one video for each series each day")."""
     try:
         return max(0, int(os.getenv("ACADEMY_TUTORIALS_PER_SERIES_DAILY",
                                     str(PER_SERIES_DAILY_DEFAULT))))
@@ -406,7 +406,7 @@ def opener_refusal(ep: Episode, spoken: int, seconds: float) -> str | None:
 # manifest. So the gate listens: the first HEARD_SECONDS of the file go
 # through the same Groq Whisper the reels use, and the words must be the
 # opener's. A check that cannot run holds the publish (invariant 7).
-# 2026-10-17 (the owner; the video system's result-first opening): a lesson's
+# 2026-10-17 (Miro; the video system's result-first opening): a lesson's
 # file must say "Here is the result" (RESULT_MARK) and none of the welcome
 # words; the old "welcome back" mark is gone. The result line ends before
 # the sting at 6 s, well inside HEARD_SECONDS.
@@ -472,7 +472,7 @@ def final_title(ep: Episode, seconds: float) -> str:
 def title_refusal(ep: Episode, title: str, seconds: float) -> str | None:
     """None when `title` follows its level's formula, its minutes are not
     under the real length, and it is at most 60 characters with the tool
-    name first (the owner 2026-10-18); otherwise why it may not be published."""
+    name first (Miro 2026-10-18); otherwise why it may not be published."""
     if len(title) > TITLE_MAX:
         return f"the title is over {TITLE_MAX} characters"
     if ep.title_hook:
@@ -587,7 +587,7 @@ class Manifest:
     voice_note: str = ""
     rendered_at: str = ""
     # The segments in order, by file name: the cached intro first and the
-    # cached ending last, always (the owner, 2026-10-10).
+    # cached ending last, always (Miro, 2026-10-10).
     parts: list[str] = field(default_factory=list)
     intro_seconds: float = 0.0
     outro_seconds: float = 0.0
@@ -606,7 +606,7 @@ class Manifest:
     # 2026-10-13 (rule 16): every narrated line as (start, end, said), for
     # the caption track; cues stripped at write time.
     timings: list[tuple[float, float, str]] = field(default_factory=list)
-    # 2026-10-13: the owner's clips in this render, "<slot>:<sha256 prefix>"
+    # 2026-10-13: Miro's clips in this render, "<slot>:<sha256 prefix>"
     # (none: the narrated intro and ending).
     presenter: list[str] = field(default_factory=list)
     # The tutorial_music.MUSIC_VERSION bed mixed into the file ("" = none:
@@ -675,7 +675,7 @@ def demo_keys(ep: Episode) -> list[str]:
 
 def music_spans(seconds: float, *, card_seconds: float,
                 sting: tuple[float, float] | None) -> list[tuple[float, float]]:
-    """Rule 22 (the owner, 2026-10-17; docs/academy-video-system/narration.md):
+    """Rule 22 (Miro, 2026-10-17; docs/academy-video-system/narration.md):
     where the bed sounds in a render of `seconds`: the sting's span (6-7 s
     in a result-first lesson; None, the welcome has no sting) and the
     EndCard's, the last `card_seconds` of the file."""
@@ -693,7 +693,7 @@ def sting_span(m: Manifest) -> tuple[float, float] | None:
     return (0.0, design.STING_SECONDS)
 
 
-# A render made before the EndCard ended on the owner's clip and a 5 s silent 3D
+# A render made before the EndCard ended on Miro's clip and a 5 s silent 3D
 # card, or on the narrated ending; its bed window is read the way it was mixed.
 LEGACY_CARD_SECONDS = 5.0
 
@@ -735,11 +735,11 @@ def bookends_refusal(m: Manifest) -> str | None:
 
 
 def ending_refusal(m: Manifest) -> str | None:
-    """the owner, 2026-10-17 (docs/academy-video-system EndCard): the end card
+    """Miro, 2026-10-17 (docs/academy-video-system EndCard): the end card
     runs at least END_CARD_MIN seconds, to the file's last frame, in a video
     of at least ENDSCREEN_VIDEO_MIN seconds; no presenter clip before it."""
     if m.presenter:
-        return "the video ends on the owner's clip, not on the end card"
+        return "the video ends on Miro's clip, not on the end card"
     if m.card_seconds < design.END_CARD_MIN - 0.5 / FPS:
         return (f"the end card lasts {m.card_seconds:.1f} s, under "
                 f"{design.END_CARD_MIN:g} s")
@@ -767,11 +767,11 @@ def end_card_text(ep: Episode) -> str:
 
 
 def opening_refusal(m: Manifest) -> str | None:
-    """the owner, 2026-10-17 (docs/academy-video-system/episode-structure.md): a
+    """Miro, 2026-10-17 (docs/academy-video-system/episode-structure.md): a
     lesson opens on its result, the sting at exactly STING_AT for
     STING_SECONDS, and no presenter clip; the welcome opens on its intro."""
     if any(p.startswith(f"{presenter.OPENING}:") for p in m.presenter):
-        return "the video opens on the owner's intro clip, not on the result"
+        return "the video opens on Miro's intro clip, not on the result"
     if m.opening == "welcome" and m.series == "channel":
         return None
     if m.opening != "result":
@@ -859,8 +859,8 @@ def _srt_stamp(seconds: float) -> str:
 
 
 def shown(said: str) -> str:
-    """A line as read, not as voiced: "agency dot one eight d n dot com"
-    is agency.example.com on screen (the store's spoken host first, whole)."""
+    """A line as read, not as voiced: "agency dot storefront dot test"
+    is agency.storefront.test on screen (the store's spoken host first, whole)."""
     text = plain(said).replace(store_origin.spoken(), store_origin.host())
     return text.replace(" dot ", ".")
 
@@ -879,7 +879,7 @@ def description(s: Series, ep: Episode, chapters: list[tuple[float, str]],
     # The plan's rule 6: the level and the time lead ("Level 0 · Basics ·
     # 5 minutes"), then what you'll be able to do. The channel welcome is no
     # lesson and carries neither.
-    # the owner 2026-10-18 (tags-and-hashtags.md): the first two lines, the ones
+    # Miro 2026-10-18 (tags-and-hashtags.md): the first two lines, the ones
     # shown before "more", are the promised result and the prerequisite
     # (rule 10's "What you need"); then the level and time (rule 6), the
     # summary, and for Where AI Is Going the opinion label.
@@ -956,7 +956,7 @@ HASHTAG = re.compile(r"(?<![\w#])#[A-Za-z]\w*")
 def hashtags_refusal(text: str) -> str | None:
     """YouTube Help, "Use hashtags for video search" (answer/6390658): the
     first three show above the title, more than 60 are all ignored, and
-    stuffing is a spam-policy matter. Ours (the owner 2026-10-18): 3-5, all on one
+    stuffing is a spam-policy matter. Ours (Miro 2026-10-18): 3-5, all on one
     line at the end, just above the voice line; none in the body; #shorts
     never first."""
     lines = text.rstrip().splitlines()
@@ -1495,7 +1495,7 @@ async def fixed_clip(kind: str, shooter: Shooter, preview: bool = False
 
 
 # ------------------------------------------------------------ the opening
-# the owner, 2026-10-17 (docs/academy-video-system/episode-structure.md, "Opening
+# Miro, 2026-10-17 (docs/academy-video-system/episode-structure.md, "Opening
 # (0-20 s)"): three parts, their edges fixed in code, never by a take's
 # length. The result (ResultTitle) for exactly RESULT_SECONDS, the badge
 # rising at frame 12 and one trace into the result at 3 s, under "Here is
@@ -1680,7 +1680,7 @@ def chapters_of_scenes(scenes: tuple[Scene, ...]) -> list[int]:
 async def render(series_key: str, episode: int, *, preview: bool = False
                  ) -> tuple[Path | None, Manifest | None, str | None]:
     """Render one episode into its directory: video, thumbnail, manifest.
-    A lesson: the result, the sting at 6-7 s and the scope line (the owner,
+    A lesson: the result, the sting at 6-7 s and the scope line (Miro,
     2026-10-17), the lesson, the ending. The channel welcome: its narrated
     intro, its topic line, the lesson, the ending."""
     from ..content import ffmpeg
@@ -1730,7 +1730,7 @@ async def render(series_key: str, episode: int, *, preview: bool = False
             # 2026-10-17: the opening claims no minutes; the title carries
             # them, measured (rule 2).
             spoken = 0
-            # the owner, 2026-10-17: his on-camera intro is no longer played (the
+            # Miro, 2026-10-17: his on-camera intro is no longer played (the
             # clip stays on disk, unused); a lesson opens on its result.
             parts: list[str] = []
             clock, t_intro = 0.0, 0.0
@@ -1869,7 +1869,7 @@ async def render(series_key: str, episode: int, *, preview: bool = False
             body = clock - (body_start if body_start is not None else clock)
             if (why := claim_refusal(ep, body)) is not None:
                 return None, None, why
-            # The EndCard (the owner, 2026-10-17): its own part, the last one, at
+            # The EndCard (Miro, 2026-10-17): its own part, the last one, at
             # least END_CARD_MIN seconds; no presenter clip, no goodbye.
             nxt = next_up(s.key, ep)
             card_doc = design.end_card(ep, nxt, shop=bool(downloads_of(ep)),
@@ -1901,7 +1901,7 @@ async def render(series_key: str, episode: int, *, preview: bool = False
                 return music_spans(seconds, card_seconds=t_outro, sting=sting)
 
             async def join() -> float:
-                """Rule 22 (the owner, 2026-10-17): every join is mixed with the
+                """Rule 22 (Miro, 2026-10-17): every join is mixed with the
                 quiet ambient bed at once -- under the sting and the end card
                 only, silence under the lesson -- and the MIXED file is measured.
                 The mix copies the picture and keeps the parts' times, so
@@ -2168,13 +2168,13 @@ async def _qa_remediation(series: str, episode: int, why: str) -> None:
         await qa_gate.remediate(ACTION,
                                 f"tutorial:{series}:{episode}@{sha[:12]}", sha,
                                 [why.removeprefix(QA_PREFIX)])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("QA remediation for %s %s not raised: %s", series, episode, exc)
 
 
 async def notebooklm_refusal(s: Series, ep: Episode, d: Path, m: Manifest, video: str
                              ) -> tuple[str | None, str | None]:
-    """ready()'s profile for an ingested NotebookLM render (the owner, 2026-10-19):
+    """ready()'s profile for an ingested NotebookLM render (Miro, 2026-10-19):
     (the description, None) or (None, why). NotebookLM's look, narrator and
     end card are taken as they are, so the Fish render's gates are not run
     here: the palette and type QA, the music windows, the pace, 1920x1080 at
@@ -2252,7 +2252,7 @@ async def _publish(series: str, episode: int, *, strict: bool,
     """Upload (private), thumbnail, playlist, then public. Resumable: a video
     already uploaded is finished, never uploaded twice. `strict` (the
     automatic post) makes nothing public unless the thumbnail and the
-    playlist both took; the owner's card (not strict) goes public and says what
+    playlist both took; Miro's card (not strict) goes public and says what
     is missing. `fresh` (the relaunch, 2026-10-13) uploads a NEW video and
     row even though the episode is already public, under its own claim."""
     from ...kernel import idempotency
@@ -2286,7 +2286,7 @@ async def _publish(series: str, episode: int, *, strict: bool,
                                    text, list(upload_tags(s, ep)),
                                    category_id=api.EDUCATION,
                                    language=api.TUTORIAL_LANGUAGE,
-                                   synthetic=True)   # the owner 2026-10-17: AI voice
+                                   synthetic=True)   # Miro 2026-10-17: AI voice
         if up is None:
             await idempotency.finish(ACTION, key, why)
             return ActionResult(False, f"upload refused: {why}")
@@ -2312,7 +2312,7 @@ async def _publish(series: str, episode: int, *, strict: bool,
             said.append("captions NOT set: the render predates caption timings; "
                         "render again")
         elif (no := await lacks_force_ssl(ch)) is not None:
-            again = "; the owner must re-consent" if no == NO_FORCE_SSL else ""
+            again = "; Miro must re-consent" if no == NO_FORCE_SSL else ""
             said.append(f"captions NOT set: {no}{again}")
         else:
             cap, why = await api.set_captions(ch, vid, caption_track(m, ep))
@@ -2360,7 +2360,7 @@ async def _publish(series: str, episode: int, *, strict: bool,
 
 
 async def publish_tutorial(series: str, episode: int) -> ActionResult:
-    """the owner's card: finish and make public, saying anything that is missing.
+    """Miro's card: finish and make public, saying anything that is missing.
     A card made for a Fish render before 2026-10-19 is refused (2026-10-19)."""
     if (refused := await old_design_refusal(series, episode)) is not None:
         return ActionResult(False, refused)
@@ -2400,7 +2400,7 @@ async def unpublish_tutorial(token: str) -> ActionResult:
 # "Welcome back... in under N minutes" opener. YouTube cannot replace a
 # video's file, so a relaunch uploads today's render as a NEW video and makes
 # the old one private -- never deleted (Tier 3). It changes which video the
-# channel's viewers have, so it is the owner's Tier 2 card, never automatic.
+# channel's viewers have, so it is Miro's Tier 2 card, never automatic.
 
 RERENDER = "render it again first"
 
@@ -2471,7 +2471,7 @@ async def relaunch_tutorial_dry(series: str, episode: int) -> ActionResult:
 
 
 async def relaunch_tutorial(series: str, episode: int) -> ActionResult:
-    """the owner's card: a new upload of today's render (or the finish of one a
+    """Miro's card: a new upload of today's render (or the finish of one a
     failed relaunch left private), then the old video private and out of its
     playlist. Only a NotebookLM render, unless the fallback (2026-10-19)."""
     from ...kernel.state import execute_sql, fetch_all
@@ -2583,7 +2583,7 @@ async def unrelaunch_tutorial(token: str) -> ActionResult:
 # ------------------------------------------------- the pinned comment
 #
 # 2026-10-13 (growth plan, task 6): the episode's quiz and its free lab file
-# in a comment under the public video. Tier 1 (the owner's standing policy: a
+# in a comment under the public video. Tier 1 (Miro's standing policy: a
 # routine action approves itself in code), so invariant 8 holds it to a real
 # dry run and a real rollback. YouTube has no API for pinning: the detail
 # says "pin it in Studio". A comment is never deleted (Tier 3): the rollback
@@ -2623,7 +2623,7 @@ async def pin_comment_dry(series: str, episode: int) -> ActionResult:
         return ActionResult(False, got)
     s, ep, vid = got
     return ActionResult(True, f"would post under video {vid} on the {channel()} channel, "
-                              f"for the owner to pin in Studio:\n{pinned_comment(s, ep)}")
+                              f"for Miro to pin in Studio:\n{pinned_comment(s, ep)}")
 
 
 async def pin_comment(series: str, episode: int) -> ActionResult:
@@ -2711,7 +2711,7 @@ async def _withdraw_unrecorded(ch: str, comment_id: str, undo: dict) -> ActionRe
                       (series, episode, video_id, comment_id, text, withdrawn)
                VALUES ($1, $2, $3, $4, $5, true)""",
             series, episode, video_id, comment_id, WITHDRAWN)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(True, f"{said} (its row was not recorded: "
                                   f"{type(exc).__name__})")
     return ActionResult(True, f"{said} (under {video_id}; recorded withdrawn)")
@@ -2751,7 +2751,7 @@ async def pin_pass() -> list[str]:
     said = []
     todo = (await unpinned())[:max(room, 0)]
     if todo and (no := await lacks_force_ssl(channel())) is not None:
-        # Final review M4: no call, so no claim, until the owner re-consents.
+        # Final review M4: no call, so no claim, until Miro re-consents.
         return [f"comments held: {no}"]
     for row in todo:
         key, n = str(row["series"]), int(row["episode"])
@@ -2803,7 +2803,7 @@ async def autopublish_tutorial_dry(series: str, episode: int) -> ActionResult:
 async def autopublish_tutorial(series: str, episode: int) -> ActionResult:
     """Post the episode by itself, or card it, reason first. A run that
     uploaded but could not finish leaves the video private and cards the
-    rest (the card finishes the same upload, never a second one). the owner,
+    rest (the card finishes the same upload, never a second one). Miro,
     2026-10-19: an episode with no current NotebookLM render is refused here
     too, not only by its caller (_post), unless ACADEMY_NOTEBOOKLM_FALLBACK."""
     if (refused := await old_design_refusal(series, episode)) is not None:
@@ -2876,7 +2876,7 @@ async def undo_series_playlist(token: str) -> ActionResult:
 # ------------------------------------------------------ review in Slack first
 
 def review_reason(s: Series, ep: Episode, m: Manifest) -> str:
-    """The card's words (verbose: the owner reads them before approving). No
+    """The card's words (verbose: Miro reads them before approving). No
     link here: a proposal's reason is audited for good, and the watch link
     carries a token. The link is in the preview message under the card."""
     where = f"the playlist \"{s.playlist}\"" if s.playlist else "no playlist"
@@ -2949,7 +2949,7 @@ async def _tell(text: str) -> None:
     try:
         await notify(Outbound(title=text[:150], body=text, topic=REVIEW_TOPIC,
                               severity=Severity.NORMAL))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tutorials: could not tell the drafts channel: %s", exc)
 
 
@@ -3013,7 +3013,7 @@ async def review_tutorial(series_key: str, episode: int) -> str:
 
 def order() -> list[tuple[str, int]]:
     """Every episode, the welcome first, then by level round-robin across
-    the series (the owner, 2026-10-10, "teach the basics first and then
+    the series (Miro, 2026-10-10, "teach the basics first and then
     advanced"). The local preview walks it; the daily drafts go by
     `lineup()`, one ladder per series."""
     out: list[tuple[str, int]] = [(s.key, e.number) for s in SERIES if not s.playlist
@@ -3038,9 +3038,9 @@ def next_in_series(s: Series, done: set[tuple[str, int]]
     """(the series' next episode to draft, None), or (None, the note) when
     that next episode has no script -- strict order: an unscripted lower
     episode is never skipped -- or (None, None) when the series is done. A
-    held episode (tutorial_series.held: it needs a recording or the owner) is
+    held episode (tutorial_series.held: it needs a recording or Miro) is
     passed over until released; when only held ones are left, the note
-    names the first (the owner 2026-10-18, video system pack)."""
+    names the first (Miro 2026-10-18, video system pack)."""
     hold: str | None = None
     for ep in ladder(s):
         if (s.key, ep.number) in done:
@@ -3068,7 +3068,7 @@ def lineup(done: set[tuple[str, int]], today: dict[str, int],
            last: dict[str, datetime] | None = None,
            month: dict[str, int] | None = None
            ) -> tuple[list[tuple[str, int]], list[str]]:
-    """Today's drafts, one series after another (the owner, 2026-10-11: "one video
+    """Today's drafts, one series after another (Miro, 2026-10-11: "one video
     for each series each day") in `fair_order(last)`: each series' next
     episodes, up to per_series_daily() less what it already drafted today;
     and the notes for the series whose next episode has no script. A
@@ -3132,7 +3132,7 @@ async def _done() -> tuple[set[tuple[str, int]], dict[str, int], dict[str, datet
     return done, today, last, month
 
 
-# the owner, 2026-10-15: "make sure videos are being posted automatically with no
+# Miro, 2026-10-15: "make sure videos are being posted automatically with no
 # stopping". A scheduled writer adds the next scripts (tutorial_scripts/,
 # docs/academy-script-writer.md); the runway says how many days of posting
 # each series has left at one a day, so a short one is said before it stops.
@@ -3183,7 +3183,7 @@ async def runway() -> dict[str, int | None]:
             """SELECT DISTINCT ON (dedup_key) dedup_key, reason, created_at
                  FROM proposals WHERE action = $1 AND dedup_key LIKE 'academy.tutorial.%'
                 ORDER BY dedup_key, created_at DESC""", ACTION)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tutorials: the runway could not be read: %s", type(exc).__name__)
         return {s.key: None for s in lessons}
     gone = {(str(r["series"]), int(r["episode"])) for r in rows}
@@ -3277,7 +3277,7 @@ async def finish_thumbnails() -> list[str]:
     without one. YouTube answers 403 to thumbnails.set until the channel is
     phone-verified (youtube.com/verify) -- both first videos went public
     that way on 2026-10-11 -- so this retries daily and finishes them the
-    day verification lands. It completes a publish the owner already approved;
+    day verification lands. It completes a publish Miro already approved;
     it never posts anything new."""
     from ...kernel.state import execute_sql, fetch_all
     from ..youtube import api
@@ -3375,7 +3375,7 @@ async def backfill_thumbnails(now: datetime | None = None) -> list[str]:
 # A draft whose card can no longer publish what it shows: the card failed
 # or was superseded after an approval (ready() refused a render of an older
 # script), or it is still waiting but the script or look changed under it.
-# 2026-10-12, card #364: a design deploy landed between the card and the owner's
+# 2026-10-12, card #364: a design deploy landed between the card and Miro's
 # tap, and the episode then counted as drafted forever.
 REDRAFT_STATUSES = ("failed", "superseded")
 
@@ -3507,7 +3507,7 @@ def notebooklm_current(s: Series, ep: Episode) -> bool:
 
 
 async def old_design_refusal(series: str, episode: int) -> str | None:
-    """Why this episode may not go public: the owner, 2026-10-19, only NotebookLM
+    """Why this episode may not go public: Miro, 2026-10-19, only NotebookLM
     renders post. None when its current render is NotebookLM's, or when
     ACADEMY_NOTEBOOKLM_FALLBACK is on. Every lesson-posting action asks,
     not only the daily pass that calls them."""
@@ -3537,7 +3537,7 @@ async def _post(todo: list[tuple[str, int]]) -> list[str]:
     """Render and post (or draft) each episode in turn, one render at a time:
     execute() awaits the run, so nothing overlaps on the one CPU.
 
-    the owner, 2026-10-19: an episode's ingested NotebookLM render is the one
+    Miro, 2026-10-19: an episode's ingested NotebookLM render is the one
     posted. Without one, the episode is skipped and the channel told
     "waiting on NotebookLM render" -- never rendered, and never a Fish render
     already on disk posted -- unless the fallback is on (notebooklm.fallback_enabled)."""
@@ -3597,7 +3597,7 @@ async def _post(todo: list[tuple[str, int]]) -> list[str]:
 
 
 async def daily() -> str:
-    """One video per series per day (the owner, 2026-10-11): each series' next
+    """One video per series per day (Miro, 2026-10-11): each series' next
     scripted episode, the series posted longest ago first, rendered one
     after another (one CPU). Since 2026-10-15 each posts itself through the
     Tier 1 academy.autopublish_tutorial once every gate passes (capped
@@ -3676,7 +3676,7 @@ async def daily() -> str:
     # After the day's uploads (~1600 quota units each): the lab playlist's
     # changes (~53 each) never spend what a post needs (review of 3108ed1e).
     await _lab_playlist()
-    # Teaching Shorts left this tick (the owner, 2026-10-13: two Shorts a day): a
+    # Teaching Shorts left this tick (Miro, 2026-10-13: two Shorts a day): a
     # 17 UTC teaching Short spent the 23 UTC reel's slot every day. They have
     # their own slot now (teaching_tick).
     return "; ".join(said + await _pins())
@@ -3703,7 +3703,7 @@ async def catch_up() -> str:
 
 
 async def _lab_playlist() -> None:
-    """the owner, 2026-10-22: every public lab also in the one lab playlist
+    """Miro, 2026-10-22: every public lab also in the one lab playlist
     (lab_playlist.py), each change through the executor. Never raises."""
     try:
         from . import lab_playlist
@@ -3761,12 +3761,12 @@ def teaching_tags(slug: str) -> list[str] | None:
 def teaching_caption(s: Series, ep: Episode, cut: tutorial_short.Cut,
                      video_id: str) -> str:
     """The post's text, TikTok's and YouTube's alike: tutorial_short's hook,
-    link and hashtags, the synthetic-voice line (the owner 2026-10-17), then the
+    link and hashtags, the synthetic-voice line (Miro 2026-10-17), then the
     AI label every promo caption ends with."""
     return f"{tutorial_short.caption(s, ep, cut, video_id)}\n{VOICE_SHORT}\n{AI_LABEL}"
 
 
-# the owner, 2026-10-19: every video on the channel is NotebookLM's. A teaching
+# Miro, 2026-10-19: every video on the channel is NotebookLM's. A teaching
 # cut always draws ATLAS's own portrait pages and a closing card naming the
 # lesson over the cut (short_frames), so no cut is NotebookLM's alone, even
 # of a NotebookLM lesson: none is made while the fallback is off.
@@ -3897,7 +3897,7 @@ async def render_teaching_short(series: str, episode: int, kind: str) -> ActionR
                                           captions=burned)
     except ffmpeg.FfmpegError as exc:
         return await render._fail(media_id, f"ffmpeg: {exc}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return await render._fail(media_id, f"{type(exc).__name__}: {exc}"[:300])
     if not result.ok:
         return result
@@ -4028,7 +4028,7 @@ async def teaching_pass() -> list[str]:
     said, stop = await notebooklm_shorts.post_next()
     if stop:
         return said
-    # the owner, 2026-10-19: NotebookLM videos only. The teaching cuts below are
+    # Miro, 2026-10-19: NotebookLM videos only. The teaching cuts below are
     # Fish, old-design Shorts: they run only with the switch on.
     from . import notebooklm
     if not await asyncio.to_thread(notebooklm.fallback_enabled):
@@ -4075,12 +4075,12 @@ async def teaching_pass() -> list[str]:
             reason=f"today's teaching Short: {slug}"))
         said.append(f"{slug}: {posted_.detail}")
         if posted_.detail.startswith("held (") and promo.CAP_HELD not in posted_.detail:
-            # Carded (not the day's cap): the owner has the card; rest the cut a
+            # Carded (not the day's cap): Miro has the card; rest the cut a
             # week and try the next candidate. A cap hold ends the run.
             await skip_teaching(slug, posted_.detail)
             continue
         if posted_.ok and not posted_.detail.startswith("held ("):
-            # the owner 2026-10-17: the AI flag on the Short (academy.synthetic);
+            # Miro 2026-10-17: the AI flag on the Short (academy.synthetic);
             # never raises, never holds the post; the daily catch-up retries.
             from . import synthetic
             if flagged := await synthetic.after_post(slug):
@@ -4098,7 +4098,7 @@ async def _teach() -> list[str]:
         return ["the teaching Short pass failed (see the log)"]
 
 
-# the owner, 2026-10-13: two Shorts a day (CLIPS_PROMO_PER_DAY stays 2). The
+# Miro, 2026-10-13: two Shorts a day (CLIPS_PROMO_PER_DAY stays 2). The
 # engine posts a lesson Short at 16 UTC and a reel at 23 UTC; the teaching
 # Short goes for the 23 UTC slot on alternate New York days only, so the reel
 # keeps the other half. The teaching tick is spawned before the reel's 23 UTC
@@ -4135,10 +4135,10 @@ async def teaching_tick() -> str:
     else:
         said = "; ".join(await _teach()) or "no teaching Short to post"
     # Every day: the AI flag on the Academy Shorts of the last 14 days that
-    # still lack it (the owner 2026-10-17). Never raises.
+    # still lack it (Miro 2026-10-17). Never raises.
     if flagged := await synthetic.catch_up():
         said = f"{said}; {flagged}"
-    # Every day (the owner 2026-10-18): a few public videos brought up to the
+    # Every day (Miro 2026-10-18): a few public videos brought up to the
     # current tags and description, each once. Never raises.
     if refreshed := await metadata.catch_up():
         said = f"{said}; {refreshed}"

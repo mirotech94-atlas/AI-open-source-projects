@@ -1,10 +1,10 @@
-"""Learn from what the owner says, after the reply has gone out.
+"""Learn from what Miro says, after the reply has gone out.
 
-`distill` reads one finished exchange and keeps the few durable things the owner
+`distill` reads one finished exchange and keeps the few durable things Miro
 said about himself, his people and his businesses (a fact, a decision, a
 preference, a person, a project) as SEMANTIC memory with a source and a time.
 
-Where it thinks (the owner 2026-11-12: ATLAS must always learn and must not depend
+Where it thinks (Miro 2026-11-12: ATLAS must always learn and must not depend
 on the Spark):
   1. a small model running ON THIS MAC, reached through an OpenAI-compatible
      address that `llm.local_base_url_ok` accepts (Ollama or an mlx server):
@@ -15,7 +15,7 @@ on the Spark):
 Never a cloud model. The Spark is an extra, not a need.
 
 Safety, in code:
-  * only the owner's own words: quoted and forwarded blocks are cut first, a turn
+  * only Miro's own words: quoted and forwarded blocks are cut first, a turn
     answered from a live read yields nothing, a turn that looks like it holds a
     secret is not read at all;
   * his text reaches the model through `wrap_untrusted` in a user message; the
@@ -55,7 +55,7 @@ SOURCES = frozenset({"whatsapp", "portal", "voice"})
 _PENDING: set[asyncio.Task] = set()
 
 SYSTEM = (
-    "You file notes for one person, the owner. From the message you are given, list "
+    "You file notes for one person, Miro. From the message you are given, list "
     "only durable things HE says about himself, his people, his businesses, his "
     "decisions or his preferences. Reply with a JSON array and nothing else, at "
     f"most {MAX_CANDIDATES} items, each {{\"kind\": one of {', '.join(KINDS)}, "
@@ -72,7 +72,7 @@ def enabled() -> bool:
 
 
 def businesses() -> list[str]:
-    raw = os.getenv("ATLAS_BUSINESSES", "mmt,agency")
+    raw = os.getenv("ATLAS_BUSINESSES", "tutorco,agency")
     return [b.strip().lower() for b in raw.split(",") if b.strip()]
 
 
@@ -88,7 +88,7 @@ _QUOTE_START = re.compile(
 
 
 def strip_quoted(text: str) -> str:
-    """the owner's own lines only. A `>` line is dropped; a forwarded or quoted
+    """Miro's own lines only. A `>` line is dropped; a forwarded or quoted
     header ends his part, and everything after it is somebody else's."""
     kept: list[str] = []
     for line in (text or "").splitlines():
@@ -131,14 +131,14 @@ async def _ask_model(text: str, source: str) -> str | None:
     try:
         reply = await MemoryLLM().complete(SYSTEM, messages, max_tokens=400)
         return str(getattr(reply, "text", "") or "")
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.info("memory model not reachable: %s", type(exc).__name__)
     if os.getenv("ATLAS_MEMORY_USE_PRIVATE_ROUTE", "").strip().lower() in (
             "1", "true", "yes"):
         try:
             done = await llm.think(llm.Need.PRIVATE, SYSTEM, messages, max_tokens=400)
             return str(getattr(done, "text", "") or "")
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.info("private route not reachable: %s", type(exc).__name__)
     return None
 
@@ -168,7 +168,7 @@ def credential_shaped(text: str) -> bool:
     return _CREDENTIAL.search(text or "") is not None
 
 
-# Text written to steer a model, not a note about the owner: pasted or forwarded
+# Text written to steer a model, not a note about Miro: pasted or forwarded
 # material can carry it without any quote marker, and grounding cannot catch it
 # (the words ARE in his message). Never stored.
 _INSTRUCTION = re.compile(
@@ -203,7 +203,7 @@ def _words(text: str) -> list[str]:
 
 def _grounded(candidate: str, said: str) -> bool:
     """At least GROUND_SHARE of ALL the candidate's words must be whole words
-    the owner wrote: a model that invents, or repeats text planted in its input, is
+    Miro wrote: a model that invents, or repeats text planted in its input, is
     dropped, and a long candidate cannot pass on its first few words."""
     terms = _words(candidate)
     if not terms or len(terms) > MAX_TERMS:
@@ -299,7 +299,7 @@ async def distill(user_text: str, reply: object, source: str, *,
                                     business=biz)
             written += 1
         return written
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("memory not learned: %s", type(exc).__name__)
         return 0
 
@@ -314,7 +314,7 @@ def schedule(user_text: str, reply: object, source: str) -> None:
         task = asyncio.get_running_loop().create_task(
             asyncio.wait_for(distill(user_text, reply, source), 90),
             context=contextvars.Context())
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("memory not scheduled: %s", type(exc).__name__)
         return
     _PENDING.add(task)

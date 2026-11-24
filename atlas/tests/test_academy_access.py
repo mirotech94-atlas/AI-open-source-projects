@@ -327,7 +327,7 @@ def test_a_refund_is_recorded_but_not_posted_as_a_purchase_twice(served):
     assert updates[0][1] == "refunded"
 
 
-def test_an_unknown_price_is_posted_so_owner_can_fix_the_catalog(served):
+def test_an_unknown_price_is_posted_so_miro_can_fix_the_catalog(served):
     served.verdict = stripe_read.judge(_session(price="price_NOTOURS999"), served.cat)
     r = _access(served)
     assert r.status_code == 409

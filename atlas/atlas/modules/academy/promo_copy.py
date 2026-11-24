@@ -1,7 +1,7 @@
 """The words around each Academy promo Short: its hooks, title, tags and
 hashtags, one entry per product, in code.
 
-the owner, 2026-10-11: "make the animated shorts better using good tags and
+Miro, 2026-10-11: "make the animated shorts better using good tags and
 hashtags that bring people in -- make the shorts actually wanting to watch
 it." Until then each Short was titled with the bare product name and tagged
 ['AI', 'ATLAS Academy']. On 2026-10-11 the best of five had 71 views.
@@ -37,7 +37,7 @@ What it never says: an income, a result, a number the catalog does not
 hold, or that something is free when it is sold. Nor an absolute about
 safety or money ("can't touch your money", "never sends"): the copy says
 what the mechanism does -- it asks first, it drafts and waits -- because a
-promise of "never" is one a buyer's own setup can break (the owner, 2026-10-11).
+promise of "never" is one a buyer's own setup can break (Miro, 2026-10-11).
 `tests/test_academy_reel` holds every entry to that.
 """
 from __future__ import annotations
@@ -47,7 +47,7 @@ from dataclasses import dataclass
 
 from .. import store_origin
 
-log = logging.getLogger("academy.example.promo_copy")
+log = logging.getLogger("atlas.academy.promo_copy")
 
 STORE_URL = store_origin.url().rstrip("/")     # https://<host>/academy
 TITLE_MAX = 70
@@ -197,7 +197,7 @@ async def tutorial_url(slug: str) -> str | None:
                 WHERE series = $1 AND public AND NOT withdrawn
                   AND coalesce(playlist_id, '') <> ''
                 ORDER BY at DESC LIMIT 1""", c.series)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tutorial playlist for %s unreadable (%s)", slug, type(exc).__name__)
         return None
     if row is None:

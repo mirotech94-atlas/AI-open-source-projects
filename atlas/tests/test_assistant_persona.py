@@ -1,6 +1,6 @@
 """The best-friend persona: warm voice, no tools and no status in casual talk.
 
-the owner, 2026-11-19. Live bug: a chat reply about an octopus added the camera
+Miro, 2026-11-19. Live bug: a chat reply about an octopus added the sensor
 status from earlier turns. Casual talk gets no tools and no status notes; a
 question about his systems keeps every tool it had (invariant 6: figures come
 only from a tool), and the persona never loosens privacy or tiers.
@@ -51,13 +51,13 @@ def test_plain_talk_is_casual(text):
 
 
 @pytest.mark.parametrize("text", [
-    "how many cameras are online",
+    "how many sensors are online",
     "any new email",
     "what is the status of atlas",
     "what time is it",
     "convert 5 miles to km",
     "what is 15% of 80",
-    "how is cloudco doing",
+    "how is cloudhost doing",
     "summarize my unread email",
 ])
 def test_systems_figures_and_clock_questions_are_not_casual(text):
@@ -75,23 +75,23 @@ async def _turn(monkeypatch, question, channel="dashboard"):
 async def test_casual_chat_is_offered_no_tool_and_no_status_note(monkeypatch):
     offered, system = await _turn(monkeypatch, "I had a rough day, honestly")
     assert offered == set()
-    assert loop.ATLAS_NOTE not in system and loop.CAMERA_NOTE not in system
-    assert "atlas_status" not in system and "camera_status" not in system
+    assert loop.ATLAS_NOTE not in system and loop.SENSOR_NOTE not in system
+    assert "atlas_status" not in system and "sensor_status" not in system
     assert persona.PERSONA in system and persona.CASUAL_NOTE in system
     assert loop.ASK_NOTE not in system and "`search" not in system.replace(
         persona.CASUAL_NOTE, "")
 
 
-async def test_the_octopus_turn_after_camera_talk_gets_no_camera_tool(monkeypatch):
+async def test_the_octopus_turn_after_sensor_talk_gets_no_sensor_tool(monkeypatch):
     offered, system = await _turn(monkeypatch, "tell me something about octopuses")
-    assert "camera_status" not in offered
-    assert loop.CAMERA_NOTE not in system
+    assert "sensor_status" not in offered
+    assert loop.SENSOR_NOTE not in system
 
 
 async def test_a_systems_question_keeps_its_tools_and_notes(monkeypatch):
-    offered, system = await _turn(monkeypatch, "how many cameras are online")
-    assert "camera_status" in offered
-    assert loop.CAMERA_NOTE in system
+    offered, system = await _turn(monkeypatch, "how many sensors are online")
+    assert "sensor_status" in offered
+    assert loop.SENSOR_NOTE in system
     assert persona.CASUAL_NOTE not in system
     assert persona.PERSONA in system            # same voice, with its tools
 
@@ -140,7 +140,7 @@ async def test_a_voice_status_question_keeps_the_live_board(monkeypatch):
     async def rows(sql, *a):
         return []
     monkeypatch.setattr(voice, "fetch_all", rows)
-    system = await voice.voice_system("how is cloudco doing")
+    system = await voice.voice_system("how is cloudhost doing")
     assert "LIVE STATUS" in system and persona.PERSONA in system
 
 

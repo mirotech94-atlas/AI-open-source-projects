@@ -67,7 +67,7 @@ _FLIGHT_NO = re.compile(r"^[A-Z0-9]{2}\s?\d{1,4}[A-Z]?$")
 _CODE = re.compile(r"^[A-Z0-9-]{3,20}$", re.IGNORECASE)
 
 SYSTEM = (
-    "Extract the travel bookings in this email for the owner. Reply with JSON only:\n"
+    "Extract the travel bookings in this email for Miro. Reply with JSON only:\n"
     '{"bookings": [{"kind": "flight" | "hotel" | "transfer", '
     '"confirmation": the booking reference or PNR exactly as written, or null, '
     '"flight_number": exactly as written (e.g. "ME 201"), or null, '
@@ -209,7 +209,7 @@ async def sweep(accounts=None, *, cap: int = CAP_PER_RUN) -> SweepResult:
             messages = await find(account, gmail_query=GMAIL_QUERY,
                                   imap_subjects=IMAP_SUBJECTS, days=SEARCH_DAYS,
                                   limit=SEARCH_LIMIT)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             result.unreadable.append(f"{who}: {redact(exc)}"[:160])
             continue
         for msg in messages:
@@ -270,14 +270,14 @@ async def _remember(b: dict) -> None:
     try:
         await remember(Kind.EPISODIC, "travel", f"Booking: {describe(b)}",
                        meta={"kind": b["kind"]}, importance=0.6)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not remember a booking: %s", type(exc).__name__)
 
 
 async def _run_sweep() -> None:
     try:
         result = await sweep()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import redact
         log.warning("travel sweep failed: %s", redact(exc))
         _state.update(at=datetime.now(UTC), error=redact(exc)[:200])

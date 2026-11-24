@@ -47,5 +47,5 @@ curl -s http://127.0.0.1:8080/api/session | sed 's/.*"configured":\([a-z]*\).*/\
 echo
 echo "Reach the dashboard over the mesh at http://<mesh-ip>:8080/"
 echo "Until NetBird is up, tunnel from your laptop:"
-echo "  ssh -N -L 8080:127.0.0.1:8080 root@${HOSTNAME:-atlas.example.com}"
+echo "  ssh -N -L 8080:127.0.0.1:8080 root@${HOSTNAME:-atlas.storefront.test}"
 echo "  then open http://localhost:8080"

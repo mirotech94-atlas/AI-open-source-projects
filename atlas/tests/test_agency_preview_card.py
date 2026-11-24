@@ -1,4 +1,4 @@
-"""The Websites lane's one approval card (the owner, 2026-10-28): a built preview
+"""The Websites lane's one approval card (Miro, 2026-10-28): a built preview
 reaches its owner only through an `agency.send_outreach` card that shows the
 preview link, the owner, the address, the subject and the email; approving
 sends that one email through the executor. US leads only; nothing sends on
@@ -13,7 +13,7 @@ from atlas.kernel.executor import HOLD
 from atlas.modules.agency import _store, contacts, preview_card, verify
 
 LEAD = {"id": 7, "name": "Joe's Plumbing <!channel>", "website": "https://joes.example"}
-URL = "https://agency.example.com/preview/joes-plumbing-7/"
+URL = "https://agency.storefront.test/preview/joes-plumbing-7/"
 BODY = "Hi Joe,\nWe built you a free preview: " + URL + "\n123 Main St\nReply STOP."
 
 
@@ -157,7 +157,7 @@ async def test_an_automatic_reply_gets_no_link_before_the_email_went(monkeypatch
     from atlas.modules.agency.audit import Audit
     monkeypatch.setattr(_store, "has_outreach", _returns(False))
     monkeypatch.setattr(_store, "lead_links", _returns(
-        {"domain": "demo-site.vercel.example", "deployed": True}))
+        {"domain": "atlas-agency-joes-plumbing-7.vercel.app", "deployed": True}))
     monkeypatch.setattr(replies, "audit_lead", _returns(Audit(url=None, findings=[], measured={}, severity=0)))
     material = await replies._material({"lead": {"id": 7, "name": "Joe"},
                                         "message": {"body": "hi"}})
@@ -165,4 +165,4 @@ async def test_an_automatic_reply_gets_no_link_before_the_email_went(monkeypatch
     monkeypatch.setattr(_store, "has_outreach", _returns(True))
     material = await replies._material({"lead": {"id": 7, "name": "Joe"},
                                         "message": {"body": "hi"}})
-    assert "https://demo-site.vercel.example" in material
+    assert "https://atlas-agency-joes-plumbing-7.vercel.app" in material

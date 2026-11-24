@@ -31,9 +31,9 @@ describe("todayLines", () => {
     expect(qa?.text).toBeNull();
     expect(qa?.health).toBe("unknown");
     expect(qa?.runs).toBeNull();
-    const mmt = lines.find((l) => l.name === "mmt");
-    expect(mmt?.health).toBe("unknown");
-    expect(mmt?.text).toBeNull();
+    const tutorco = lines.find((l) => l.name === "tutorco");
+    expect(tutorco?.health).toBe("unknown");
+    expect(tutorco?.text).toBeNull();
   });
   it("an unread read leaves every agent Unknown, never 0 runs", () => {
     for (const l of todayLines(null)) {

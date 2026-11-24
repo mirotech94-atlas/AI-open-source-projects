@@ -8,12 +8,8 @@
 // The brain view's row shape lives beside the layout that consumes it, so the
 // pure module can be tested without pulling this file (and `fetch`) in.
 import type { BrainRegion } from "./core/brain-layout";
-import type { ChurchOverview } from "./pages/churchModel";
 import type { SiteEvents, SitesOverview } from "./pages/sitesModel";
 import type { AcademyCalendar } from "./pages/deskModel";
-import type {
-  CameraAlerts, CameraClips, CameraEvents, CameraMode, CamerasOverview, Coverage, People,
-} from "./pages/camerasModel";
 import type { ProjectsRead, RemediationRead } from "./pages/remediationModel";
 
 export type { BrainRegion };
@@ -362,7 +358,7 @@ export interface AgentSummary extends AgentRosterFields {
   persona?: Persona;
 }
 
-// The roster fields of GET /api/agents (the owner 2026-10-29). Optional so an
+// The roster fields of GET /api/agents (Miro 2026-10-29). Optional so an
 // older server still types; a missing status reads as UNKNOWN.
 export interface AgentRosterFields {
   role?: string;
@@ -845,7 +841,7 @@ export interface Tasks extends Envelope {
 }
 
 // --- the work board (GET /api/tasks/board, kernel/workboard.py) ---------
-// One row per agent: what it has in hand, what waits on the owner, what it did
+// One row per agent: what it has in hand, what waits on Miro, what it did
 // in the window, and its modules' own progress. A count that is `null`
 // could not be read (the seat's `unread` names the table) -- unknown, never 0.
 
@@ -1359,7 +1355,7 @@ export interface Ambient extends Envelope {
 export const SCREEN_ROUTES: readonly string[] = [
   "/", "/core", "/tasks", "/calendar", "/conversations", "/knowledge", "/tools",
   "/workflows", "/marketing", "/status", "/activity", "/reports", "/fleet", "/memory",
-  "/airglass", "/church", "/sites",
+  "/airglass", "/sites",
 ];
 
 /** Where the dashboard should look after an answer. A view command ("show
@@ -1466,7 +1462,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 // (Task 59), which never reaches the executor either: it only asks every
 // roster agent for a tool-free self-introduction, so the fleet's LAST RUN
 // and MODEL stop reading "never". There is still nothing here that can act
-// on the world. One exception, the owner 2026-10-29 (GUI decisions):
+// on the world. One exception, Miro 2026-10-29 (GUI decisions):
 // `decideProposal` answers a pending Tier 2 card through the same `decide`
 // Slack uses; under watch-only an approve is refused and nothing runs.
 /** `GET /api/hud` (`kernel/hud.py`): what ATLAS is doing now. Every section
@@ -1516,14 +1512,6 @@ export interface HudSnapshot {
   errors: Record<string, string>;
 }
 
-function camerasPost(body: unknown, csrf: string): RequestInit {
-  return {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-    body: JSON.stringify(body),
-  };
-}
-
 export const api = {
   hud: () => request<HudSnapshot>("/hud"),
   session: () =>
@@ -1563,7 +1551,7 @@ export const api = {
 
   approvals: () => request<Approvals>("/approvals"),
 
-  /** the owner 2026-10-29: GUI decisions. Decline or approve one pending Tier 2
+  /** Miro 2026-10-29: GUI decisions. Decline or approve one pending Tier 2
    *  card; the server re-checks session, Origin, CSRF, tier (from code) and
    *  watch-only, and answers with `decide`'s own Verdict. Approve under
    *  watch-only is refused and the card stays pending. */
@@ -1707,6 +1695,9 @@ export const api = {
   agenda: (hours?: number) =>
     request<Agenda>(hours === undefined ? "/agenda" : `/agenda?hours=${hours}`),
 
+  /** Autopilot: last cycle, fixed, waiting on Miro (kernel, read only). */
+  autopilot: () => request<AutopilotRead>("/agency/autopilot"),
+
   tasks: () => request<Tasks>("/tasks"),
 
   /** The work board: what every agent has in hand (kernel/workboard.py). */
@@ -1740,35 +1731,6 @@ export const api = {
   tools: () => request<Tools>("/tools"),
 
   workflows: () => request<Workflows>("/workflows"),
-  church: () => request<ChurchOverview>("/church/overview"),
-  camerasOverview: () => request<CamerasOverview>("/cameras/overview"),
-  cameraEvents: () => request<CameraEvents>("/cameras/events"),
-  cameraAlerts: () => request<CameraAlerts>("/cameras/alerts"),
-  cameraClips: () => request<CameraClips>("/cameras/clips"),
-  cameraCoverage: () => request<Coverage>("/cameras/coverage"),
-  /** ATLAS-side mode only; the server re-checks session, Origin and CSRF. */
-  setCameraMode: (mode: CameraMode, csrf: string) =>
-    request<Envelope & { mode: CameraMode }>("/cameras/mode", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf },
-      body: JSON.stringify({ mode }),
-    }),
-  /** Face recognition: people slots and clusters. A 503 is UNKNOWN, never empty. */
-  cameraPeople: () => request<People>("/cameras/people"),
-  setPersonName: (slot: number, name: string, csrf: string) =>
-    request<Envelope & { ok: boolean; slot: number; name: string }>(
-      `/cameras/people/${slot}/name`, camerasPost({ name }, csrf)),
-  assignCluster: (id: string, slot: number | null, csrf: string) =>
-    request<Envelope & { ok: boolean }>(
-      `/cameras/clusters/${encodeURIComponent(id)}/assign`, camerasPost({ slot }, csrf)),
-  markClusterHousehold: (id: string, slot: number | null, csrf: string) =>
-    request<Envelope & { ok: boolean }>(
-      `/cameras/clusters/${encodeURIComponent(id)}/household`, camerasPost({ slot }, csrf)),
-  forgetFaces: (scope: "all" | "slot", slot: number | null, csrf: string) =>
-    request<Envelope & { ok: boolean; removed: number }>(
-      "/cameras/faces/forget",
-      camerasPost(scope === "slot" ? { scope, slot, confirm: "FORGET" }
-        : { scope, confirm: "FORGET" }, csrf)),
   sites: () => request<SitesOverview>("/agency/sites"),
   /** The built demo sites the Previews panel frames (atlas/api/agency_previews.py). */
   agencyPreviews: () => request<PreviewsList>("/agency/previews"),
@@ -1818,3 +1780,6 @@ export interface PreviewItem {
   src?: string;
 }
 export interface PreviewsList { previews: PreviewItem[]; read_at: string }
+
+import type { AutopilotRead } from "./pages/autopilotModel";
+export type { AutopilotRead };

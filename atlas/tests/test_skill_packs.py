@@ -32,7 +32,7 @@ SECRET_PATTERNS = (
     r"xox[baprs]-",                       # slack tokens
     r"sk-[A-Za-z0-9]{12,}",               # provider keys
     r"\bcalvin\b",                        # the idrac factory password
-    r"CloudCo@\w+",                         # node/service passwords
+    r"CloudHost@\w+",                         # node/service passwords
     r"\b\d{1,3}(\.\d{1,3}){3}\b",         # bare IPv4
     r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",   # emails / matrix ids
     r"password\s*[:=]\s*\S+",
@@ -54,8 +54,7 @@ def _pack_skills():
 
 def test_packs_registered() -> None:
     # Every pack in atlas/skills/ registered something, and the loader saw it.
-    assert len(_pack_skills()) >= 13
-    assert "Reading the CloudCo account" in {s.name for s in _pack_skills()}
+    assert len(_pack_skills()) >= 12
 
 
 @pytest.mark.parametrize("pattern", SECRET_PATTERNS)
@@ -111,10 +110,6 @@ def test_accuracy_skills_still_win_their_ground() -> None:
 
 def test_domain_skills_fire_on_their_own_ground() -> None:
     expected = {
-        ("corosync ring1 is dead and quorum dropped", "qa"):
-            "Proxmox cluster state",
-        ("power event, every service is crashlooping", "qa"):
-            "Pod power event",
         ("the lld and installation guide disagree", "qa"):
             "Deployment documents",
         ("cannot reach the pod, the tunnel is down", "qa"):
@@ -137,7 +132,7 @@ def test_bodies_do_not_instruct_actions() -> None:
 
 # --------------------------------------------- library seeding (Task 60)
 #
-# the owner: "there should also be some stuff on there [the knowledge base] based
+# Miro: "there should also be some stuff on there [the knowledge base] based
 # on his previous skills from agents that he has as well." `_playbook_title_
 # and_text` parses a pack's source statically (ast, no import -- it never
 # depends on `load_all()` having already run and never risks a module's

@@ -1,7 +1,7 @@
 """The quiet ambient bed under the brand sting and the end card of every
 Academy tutorial, and nowhere else.
 
-the owner, 2026-10-17 (docs/academy-video-system/narration.md, "Delivery":
+Miro, 2026-10-17 (docs/academy-video-system/narration.md, "Delivery":
 "Music, when used, sits under the brand sting and the end card only, ducked
 to nothing beneath explanations"): explanations are voice only. This
 replaced the 2026-10-13 bed under the whole lesson (rule 22 then: "add
@@ -45,7 +45,7 @@ from pathlib import Path
 # it, so the unposted drafts re-render once.
 MUSIC_VERSION = "2"
 BED_DB = -24.0           # under speech, inside a window
-BED_DB_OPEN = -16.0      # inside a window, nobody speaking (the owner 10-13: "isn't too loud")
+BED_DB_OPEN = -16.0      # inside a window, nobody speaking (Miro 10-13: "isn't too loud")
 # The fade at each window edge: the `title-rise` duration token, 300 ms
 # (docs/academy-video-system/tokens.json), inside the window.
 FADE = 0.3

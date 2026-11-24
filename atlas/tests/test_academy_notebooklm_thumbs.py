@@ -1,4 +1,4 @@
-"""NotebookLM thumbnails (academy/notebooklm_thumbs.py; the owner, 2026-10-20):
+"""NotebookLM thumbnails (academy/notebooklm_thumbs.py; Miro, 2026-10-20):
 the image checks (only ffmpeg decodes, mocked here), the thumbs inbox
 applied through the executor with its dry run, rollback, refusals and 403
 hold, the posted-lessons list, and the lesson ingest using a drop's own

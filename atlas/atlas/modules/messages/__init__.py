@@ -1,6 +1,6 @@
 """messages — Instagram DMs, in one inbox.
 
-Watches: messages from someone other than the owner, with no reply from him
+Watches: messages from someone other than Miro, with no reply from him
 within 4 hours (`check_unanswered`, computed live from the Graph API —
 DEGRADED past 5, UNKNOWN whenever Instagram does not answer).
 
@@ -13,10 +13,10 @@ May do exactly two things:
     `Need.PRIVATE`: these are personal messages, and the model that reads
     them never leaves the box.
   * `messages.reply` (Tier ASK, irreversible) — the only place in ATLAS that
-    can put words in the owner's mouth to anyone on Instagram.
+    can put words in Miro's mouth to anyone on Instagram.
 
 This is the mechanism behind "if I'm not next to my phone, he can send it
-for me": a reply leaves only through a proposal the owner approves — from Slack,
+for me": a reply leaves only through a proposal Miro approves — from Slack,
 the dashboard, or a call ATLAS placed to him. The approval IS the tap that
 would otherwise have happened on his phone. Nothing here, and nothing this
 module can reach, sends unattended.
@@ -24,7 +24,7 @@ module can reach, sends unattended.
 This module is the only path to anyone on Instagram DM at all.
 
 Endpoint assumed: the Graph API Messenger platform (`instagram_dm.py`) — see
-its docstring for the exact shape assumed, so the owner can correct it if it
+its docstring for the exact shape assumed, so Miro can correct it if it
 drifts.
 
 Only `platform = 'instagram'` rows are read back from `messages_inbound`:
@@ -68,11 +68,11 @@ CHECK_INSTAGRAM_LIMIT = 100
 PLATFORM = "instagram"
 
 DRAFT_SYSTEM = (
-    "You draft a short reply to a personal message, for the owner to review and "
+    "You draft a short reply to a personal message, for Miro to review and "
     "send himself if he approves it. Match the tone and length of the "
     "message below -- this is a text or a DM, not an email. Use only what "
     "is in the message; do not invent facts or commitments. Output the "
-    "reply text only, nothing else. It is written as the owner, in his own words; "
+    "reply text only, nothing else. It is written as Miro, in his own words; "
     "add no signature.\n\n" + EMAIL_STYLE
 )
 
@@ -112,7 +112,7 @@ async def _sync() -> None:
         if row.get("is_from_me") or not row.get("external_id"):
             continue
         # A stranger's DM is the highest-value injection surface this
-        # module has: it becomes a draft the owner taps approve on. Logged
+        # module has: it becomes a draft Miro taps approve on. Logged
         # here, at ingestion, same as `mail.ingest_message` — the text
         # itself is still only ever quoted through `wrap_untrusted` at
         # prompt time (invariant 4), never treated as an instruction.
@@ -132,14 +132,14 @@ async def _sync() -> None:
 
 
 async def check_unanswered() -> Observation:
-    """Messages from someone else with no reply from the owner within 4 hours,
+    """Messages from someone else with no reply from Miro within 4 hours,
     computed live from Instagram — not from `messages_inbound`, which only
     `messages.draft` may write (invariant 1: a Check only reads). UNKNOWN
     whenever Instagram does not answer: with no source read, there is no
     count to report (invariant 7).
 
     Judged per thread by its LATEST message only: if the newest thing in a
-    thread is from the owner (an approved `messages.reply`, or him answering from
+    thread is from Miro (an approved `messages.reply`, or him answering from
     his own phone — both show up as `is_from_me`), the thread reads as
     answered even if an earlier message from the other side once sat
     unanswered for days. That earlier gap is real but stale news by the time
@@ -210,7 +210,7 @@ async def draft_replies() -> ActionResult:
             """SELECT id, platform, sender, text FROM messages_inbound
                WHERE replied_at IS NULL AND draft IS NULL
                  AND platform = $1""", PLATFORM)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"could not read open messages: {exc}")
     if not rows:
         return ActionResult(True, "no open message needs a draft")
@@ -236,7 +236,7 @@ async def draft_replies() -> ActionResult:
             body = await reask(think, Need.PRIVATE, DRAFT_SYSTEM,
                                [Message("user", wrapped)], body, bad,
                                max_tokens=400) or body
-            # No rule holds a draft the owner reads before he sends it: what is
+            # No rule holds a draft Miro reads before he sends it: what is
             # still off-voice is cut, not kept.
             body = strip_banned(body) if voice_problems(body) else body
         if not body:
@@ -261,7 +261,7 @@ async def draft_dry() -> ActionResult:
             """SELECT id FROM messages_inbound
                WHERE replied_at IS NULL AND draft IS NULL
                  AND platform = $1""", PLATFORM)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"could not read open messages: {exc}")
     return ActionResult(
         True, f"would draft up to {len(rows)} open message(s), plus "
@@ -270,7 +270,7 @@ async def draft_dry() -> ActionResult:
 
 async def draft_rollback(token: str) -> ActionResult:
     """Clears the draft text `draft_replies` just wrote. The ingested rows
-    themselves stay — they are the owner's messages, not something to undo."""
+    themselves stay — they are Miro's messages, not something to undo."""
     if not token:
         return ActionResult(True, "nothing to roll back")
     ids = [int(t) for t in token.split(",") if t]
@@ -305,7 +305,7 @@ async def _recipient(row: dict, *, cache: bool) -> tuple[str | None, str | None]
 
 async def reply(inbound_id: int, text: str = "") -> ActionResult:
     """`messages.reply` — Tier ASK, irreversible. The only place in ATLAS
-    that can put words in the owner's mouth to a third party on Instagram.
+    that can put words in Miro's mouth to a third party on Instagram.
     Reached only through an approved proposal — from Slack, the
     dashboard, or a call ATLAS placed to him; the approval IS the tap that
     would otherwise have happened on his phone. Empty `text` sends the
@@ -462,7 +462,7 @@ class MessagesModule:
                 """SELECT count(*) AS n FROM messages_inbound
                    WHERE replied_at IS NULL AND draft IS NULL
                      AND platform = $1""", PLATFORM)
-        except Exception:                                # noqa: BLE001
+        except Exception:  # noqa: BLE001
             return ()
         n = int(row["n"]) if row else 0
         if not n:

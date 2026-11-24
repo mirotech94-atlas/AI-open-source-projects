@@ -3,7 +3,7 @@
     POST /hooks/tradingview
 
 Public, with no session: TradingView's servers have none to present, and
-TradingView cannot sign a request. The gate is a long random secret the owner
+TradingView cannot sign a request. The gate is a long random secret Miro
 puts in the alert's JSON body (`"secret"`), compared in constant time with
 TRADINGVIEW_WEBHOOK_SECRET. In order, each refusal saying nothing about the
 next:
@@ -45,7 +45,7 @@ PATH = "/hooks/tradingview"
 # Only REFUSED requests count toward the limit. Every real alert comes from
 # one of TradingView's four shared addresses, and any TradingView user can
 # point an alert at this URL from the same four: counting every request
-# would let someone else's wrong-secret spam, or the owner's own burst of alerts
+# would let someone else's wrong-secret spam, or Miro's own burst of alerts
 # at a daily close, get his real alerts a 429 -- and TradingView does not
 # retry. So a request with the right secret is never counted and never
 # refused for the rate: past the limit, every refusal is a 429 instead,
@@ -151,7 +151,7 @@ async def tradingview_hook(request: Request) -> Response:
             given.encode("utf-8"), expected.encode("utf-8")):
         return refuse(Response(status_code=401))
 
-    # Past the secret nothing counts toward the limit: this is the owner's alert.
+    # Past the secret nothing counts toward the limit: this is Miro's alert.
     try:
         alert = tv.parse(payload)
     except tv.Invalid as bad:
@@ -160,7 +160,7 @@ async def tradingview_hook(request: Request) -> Response:
 
     try:
         row_id = await asyncio.wait_for(tv.store(alert), DB_TIMEOUT_S)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("tradingview alert for %s not stored (%s)",
                   alert.ticker, type(exc).__name__)
         return PlainTextResponse("not stored", status_code=503)

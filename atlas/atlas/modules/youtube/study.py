@@ -1,6 +1,6 @@
-"""The channel study (six agents phase 8, B0): read-only, run by the owner.
+"""The channel study (six agents phase 8, B0): read-only, run by Miro.
 
-    python -m atlas.cli channel-study --channel clips|ecc
+    python -m atlas.cli channel-study --channel clips|amsm
 
 The uploads playlist, its items, `videos.list` (1 unit per 50 ids) and
 90 days of analytics for the newest videos; never `api.videos()` (search,
@@ -16,7 +16,7 @@ from . import api
 
 DAYS = 90
 MAX_VIDEOS = 25
-STUDY_CHANNELS = ("clips", "ecc")
+STUDY_CHANNELS = ("clips", "amsm")
 
 
 def _fig(value: Any) -> str:

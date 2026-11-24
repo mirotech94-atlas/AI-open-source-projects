@@ -1,10 +1,10 @@
 """Teaching Shorts cut from a published tutorial.
 
-Growth plan §4.3 and docs/academy-youtube-plan.md "Teaching Shorts" (the owner,
+Growth plan §4.3 and docs/academy-youtube-plan.md "Teaching Shorts" (Miro,
 2026-10-13): Shorts are trailers for lessons, not ads for products. Two or
 three cuts per lesson -- its payoff, its "Stuck?" beat and its quiz
 -- each ending on the answer, posted to YouTube and TikTok with the full
-video linked in the caption. 20-40 s since 2026-10-17 (the owner, the video
+video linked in the caption. 20-40 s since 2026-10-17 (Miro, the video
 system), closing card included. Promo Shorts are at most one in five: the
 single teaching Short already beat every promo Short.
 
@@ -30,7 +30,7 @@ first line) and runs into the first steps
 chapter's end, the fix or the reveal being the last thing seen. A chapter
 that is missing gives no cut, never a guessed one.
 
-No music in a teaching Short (rule 22, the owner 2026-10-17: music under the
+No music in a teaching Short (rule 22, Miro 2026-10-17: music under the
 brand sting and the end card only, and a Short has neither). The cut copies
 the source's sound, so a cut stops where the manifest's `music_windows`
 begin (the end card closes the last chapter) and starts after one it would
@@ -63,7 +63,7 @@ KINDS = ("payoff", "stuck", "quiz")
 QUIZ_CHAPTER = "Quick quiz"
 LAB_CHAPTER = "Lab"                 # its "Stuck?" beat is inside it
 STUCK_WORDS = ("Not working?", "Stuck?", "No tool?")
-# The Short slots in order (the owner, 2026-10-13): teaching Short, teaching
+# The Short slots in order (Miro, 2026-10-13): teaching Short, teaching
 # Short, lesson Short, concept Short, promo -- promo never first.
 ROTATION = ("teach", "teach", "lesson", "concept", "promo")
 PROMO_SHARE_MAX = 1 / 5
@@ -103,7 +103,7 @@ class Cut:
     lesson: str = ""    # the longer lesson's title as uploaded, named at the end
 
 
-# 2026-10-17 (the owner, the video system): a Short is 20-40 s in all. The cut is
+# 2026-10-17 (Miro, the video system): a Short is 20-40 s in all. The cut is
 # the lesson's own seconds; the closing card that names the longer lesson
 # follows it, so a cut leaves it room. A cut is trimmed only where a line of
 # the manifest starts or ends -- never mid-word -- and one that cannot make
@@ -203,7 +203,7 @@ def _payoff(m: CutSource, i: int) -> tuple[float, float] | None:
     start = a
     if timings:
         # Final review I5: since the presenter merge the opening is two lines
-        # (the owner's intro take, then the narrated opener), both before
+        # (Miro's intro take, then the narrated opener), both before
         # intro_seconds. A body line starts at the unrounded end, which the
         # manifest rounds to 0.01 s: hence the half-step of slack.
         intro = float(m.intro_seconds or 0.0)
@@ -287,7 +287,7 @@ def stuck_scene(ep: Episode) -> Scene | None:
 
 
 # ---------------------------------------------------------------- the hook
-# ShortsFrame (the owner, 2026-10-17): a shorts-hook headline on screen from frame
+# ShortsFrame (Miro, 2026-10-17): a shorts-hook headline on screen from frame
 # 0 -- three to five words in sentence case: the cut's result, its mistake or
 # its question. Taken from the episode's own fields, whole or one clause of
 # them (a sentence, or a part between arrows, dots or a colon), never written
@@ -419,7 +419,7 @@ def cuts(m: CutSource, ep: Episode) -> list[Cut]:
 def caption(s: Series, ep: Episode, cut: Cut, video_id: str) -> str:
     """The YouTube/TikTok text: the hook, the longer lesson by its exact
     title and its address, the series' three hashtags then #shorts fourth
-    (the owner 2026-10-18, tags-and-hashtags.md)."""
+    (Miro 2026-10-18, tags-and-hashtags.md)."""
     # An unhooked episode keeps its title; no "X?: ..." before the colon.
     x = (ep.title_hook or ep.title).rstrip("?!. ")
     hook = {"payoff": f"{x}: here's the result.",
@@ -435,7 +435,7 @@ def slot_kind(i: int) -> str:
 
 
 # ----------------------------------------------------------------- shots
-# What the Short shows (ShortsFrame, the owner 2026-10-17): the scene step being
+# What the Short shows (ShortsFrame, Miro 2026-10-17): the scene step being
 # said, recomposed at 1080x1920 (short_frame), over the long render's sound
 # for the same seconds, then the closing card. Each shot runs from its
 # line's start to the next line's start, so the silent beats -- a quiz's

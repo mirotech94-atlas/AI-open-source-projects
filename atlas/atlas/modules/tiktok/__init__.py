@@ -12,7 +12,7 @@ Reality check before anyone plans around this:
     or collection silently stops.
 
 Until the app passes audit, ATLAS uses UPLOAD mode: it prepares the video and
-puts it in the owner's TikTok drafts, then tells him it is ready to post. That is a
+puts it in Miro's TikTok drafts, then tells him it is ready to post. That is a
 better default anyway — nothing reaches a public feed unattended.
 """
 from __future__ import annotations
@@ -62,7 +62,7 @@ async def check_token() -> Observation:
         await _access_token()
         return Observation(check="token", health=Health.OK,
                            detail="refresh token still valid", )
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(
             check="token", health=Health.FAILING,
             detail=f"TikTok refresh failed: {exc}. The 365-day refresh token "
@@ -155,7 +155,7 @@ class TikTokModule:
             Action(
                 name="tiktok.upload_draft",
                 tier=Tier.ASK,
-                summary="Upload a video to TikTok drafts for the owner to finish and post",
+                summary="Upload a video to TikTok drafts for Miro to finish and post",
                 run=upload_draft, dry_run=upload_dry,
                 rollback=None, irreversible=True,
                 params={"video_url": "public https URL of the video",

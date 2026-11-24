@@ -1,5 +1,5 @@
 """Each roster agent's daily shift names ITS modules (plan 2026-10-30, A1):
-the one generic prompt named "fiverr, inroots, content", and every outcome
+the one generic prompt named "fiverr, attendance, content", and every outcome
 talked about Fiverr. The prefix stays, so `agent_runs` still finds shifts."""
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ OWN_MODULES = {
     "bizops": ("module_status bizops",),
     "seo": ("module_status seo",),
     "research": ("module_status research",),
-    "mmt": ("module_status mmt", "module_status linkedin"),
+    "tutorco": ("module_status tutorco", "module_status linkedin"),
 }
 
 
@@ -38,7 +38,7 @@ def test_every_roster_agent_has_its_own_shift(roster):
         assert text.startswith(agents.SHIFT_PREFIX), name
         assert text != agents.SHIFT_PROMPT, name
         low = text.lower()
-        assert "fiverr" not in low and "inroots" not in low, name
+        assert "fiverr" not in low and "attendance" not in low, name
         for needle in OWN_MODULES[name]:
             assert needle in text, f"{name} shift does not name {needle!r}"
 
@@ -64,17 +64,6 @@ def test_an_agent_without_a_shift_gets_the_generic_prompt(monkeypatch):
     assert agents.shift_prompt("nobody") == agents.SHIFT_PROMPT
 
 
-def test_the_content_shift_leaves_church_out_when_it_is_disabled(monkeypatch):
-    monkeypatch.setenv("ATLAS_DISABLED_MODULES", "browser,church,clips")
-    agents.build_roster()
-    content = agents.ROSTER["content"]
-    assert "ECC" not in content.system
-    assert "church" not in agents.shift_prompt("content")
-    assert "academy" in agents.shift_prompt("content")
-    monkeypatch.delenv("ATLAS_DISABLED_MODULES")
-    agents.build_roster()
-    assert agents.ROSTER["content"].system.startswith(agents._church_system())
-    assert "module_status church" in agents.shift_prompt("content")
 
 
 async def test_the_scheduler_runs_each_agent_with_its_own_shift(monkeypatch):

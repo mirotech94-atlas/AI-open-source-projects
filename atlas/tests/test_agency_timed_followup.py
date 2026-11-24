@@ -13,9 +13,9 @@ from atlas.kernel.contracts import ActionResult, FailureClass
 from atlas.kernel.executor import HOLD
 from atlas.modules.agency import _store
 
-FIRST = {"id": 1, "lead_id": 219, "to_address": "contact13@example.com",
+FIRST = {"id": 1, "lead_id": 219, "to_address": "owner@example.com",
          "sent_at": "2026-10-05 02:34:46+00"}
-LEAD = {"id": 219, "name": "Estelle Hair Studio"}
+LEAD = {"id": 219, "name": "Example Hair Studio"}
 
 
 def _returns(value):
@@ -49,7 +49,7 @@ class World:
             if request.action == "agency.draft_outreach":
                 assert request.params == {"lead_id": 219, "kind": "email"}
                 return ActionResult(True, "drafted", evidence={
-                    "outreach_id": 2, "to": "contact13@example.com", "text": "A short...",
+                    "outreach_id": 2, "to": "owner@example.com", "text": "A short...",
                     "followup_of": 1 if chained else None})
             raise AssertionError(request.action)
         monkeypatch.setattr("atlas.kernel.executor.execute", execute)
@@ -79,8 +79,8 @@ async def test_an_unanswered_first_email_gets_its_one_follow_up_card(monkeypatch
     assert world.claimed == [1] and world.ran == ["agency.draft_outreach"]
     [(action, params, reason, kw)] = world.cards
     assert action == "agency.send_outreach" and params == {"outreach_id": 2}
-    assert reason.startswith("Follow-up email to Estelle Hair Studio")
-    assert kw["evidence"]["client"] == "Estelle Hair Studio"
+    assert reason.startswith("Follow-up email to Example Hair Studio")
+    assert kw["evidence"]["client"] == "Example Hair Studio"
     assert kw["dedup_key"] == "agency.send_outreach:2" and kw["automatic"] is True
     assert world.slack == [] and world.released == []
 

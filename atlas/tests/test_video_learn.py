@@ -1,4 +1,4 @@
-"""ATLAS listens to YouTube videos and keeps lessons for the owner (ytlearn).
+"""ATLAS listens to YouTube videos and keeps lessons for Miro (ytlearn).
 
 Proved here, with the database, the model, YouTube and the approvals layer all
 faked (no network):
@@ -156,7 +156,7 @@ def test_youtube_addresses_give_the_id(text):
 
 @pytest.mark.parametrize("text", [
     f"https://youtube.com.evil.com/watch?v={VID}", f"https://evil.com/watch?v={VID}",
-    f"https://contact17@example.com/watch?v={VID}",
+    f"https://user@www.youtube.com/watch?v={VID}",
     f"https://www.youtube.com:8443/watch?v={VID}", f"javascript:alert('{VID}')",
     f"ftp://www.youtube.com/watch?v={VID}", f"https://www.youtube.com/watch?v={VID}x",
     f"https://www.youtube.com/watch?v={VID[:10]}", f"https://www.youtube.com/watch?v={VID};DROP",

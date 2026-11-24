@@ -42,7 +42,7 @@ log = logging.getLogger("atlas.slack_events")
 router = APIRouter(prefix="/webhooks/slack")
 
 def _owner_id() -> str:
-    """the owner's own Slack id: `SLACK_OWNER_ID`, else the sole approver, else none
+    """Miro's own Slack id: `SLACK_OWNER_ID`, else the sole approver, else none
     (no private reads on Slack until it is known)."""
     explicit = os.getenv("SLACK_OWNER_ID", "").strip()
     if explicit:
@@ -52,7 +52,7 @@ def _owner_id() -> str:
 
 
 def _private_sink(user: str, channel_type: str) -> bool:
-    """True only in the owner's own DM with ATLAS: a direct message (`im`) from his
+    """True only in Miro's own DM with ATLAS: a direct message (`im`) from his
     own user id. Never a channel, a group or another approver."""
     owner = _owner_id()
     return bool(owner) and channel_type == "im" and user == owner
@@ -134,7 +134,7 @@ async def _seen_before(event_id: str) -> bool:
                 event_id):
             return True
         await audit("slack.event", event_id, {})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not check slack event %s for a duplicate (%s); "
                     "taking it", event_id, type(exc).__name__)
     return False
@@ -305,7 +305,7 @@ _NAMED: dict[str, tuple[str, ...]] = {
     "instagram": ("instagram.",),
     "youtube": ("youtube.",),
     "issue": ("gitlab.",), "gitlab": ("gitlab.",), "ticket": ("gitlab.",),
-    "snapshot": ("cloudco.",), "cloudco": ("cloudco.",), "server": ("cloudco.",),
+    "snapshot": ("cloudhost.",), "cloudhost": ("cloudhost.",), "server": ("cloudhost.",),
     "invoice": ("stripe.",), "payment": ("stripe.",),
     "reply": ("mail.", "matrix_rooms.", "fiverr.", "instagram.reply"),
     "email": ("mail.",), "calendar": ("calendar.",),
@@ -368,7 +368,7 @@ def _linkedin_bank_line() -> str:
         from ..modules.linkedin import PAGES
         from ..modules.linkedin.store import bank, load
         state = load()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return f"The LinkedIn post bank could not be read ({type(exc).__name__})."
     parts = []
     for page, spec in PAGES.items():
@@ -538,7 +538,7 @@ async def handle_event(payload: dict) -> dict[str, Any]:
 def _addressed(text: str, channel: str, channel_type: str) -> bool:
     """Is this message for ATLAS?
 
-    the owner, 2026-09-27: "all Slack channels, I should be able to talk to them
+    Miro, 2026-09-27: "all Slack channels, I should be able to talk to them
     and interact normally." The workspace is ATLAS's own and only an
     approver's words ever reach here (`events` drops everyone else), so any
     channel ATLAS is in is a conversation with ATLAS -- unless the message
@@ -573,7 +573,7 @@ def _is_conversation(text: str) -> bool:
 
 
 CONVERSE = (
-    "You are ATLAS, answering the owner in Slack. Talk like a colleague who "
+    "You are ATLAS, answering Miro in Slack. Talk like a colleague who "
     "knows his systems: react to what he said, answer it plainly, ask one "
     "short follow-up only if it helps. Short paragraphs, Slack markdown is "
     "fine. Numbers about his own businesses and systems come only from the "
@@ -600,7 +600,7 @@ async def _converse(text: str) -> str:
     try:
         from ..kernel import search as records
         found = await asyncio.wait_for(records.context(text), timeout=8)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("records search failed (%s); answering without it",
                     type(exc).__name__)
         found = ""
@@ -616,7 +616,7 @@ async def _converse(text: str) -> str:
             return answer
         if answer:
             log.warning("slack answer looked cut off; asking the roster instead")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("slack conversation fast path failed (%s); routing",
                     type(exc).__name__)
     routed = await route(CONVERSE + "\n\n" + wrap_untrusted(text, "slack",
@@ -648,7 +648,7 @@ _SEARCH = re.compile(
 
 def search_terms(text: str) -> str | None:
     """The words to search when the message is a search of his own records,
-    else None. "search irubyana drafts", "what do you have on cloudco".
+    else None. "search irubyana drafts", "what do you have on cloudhost".
     "search for flights to Rome" is still a search of his records -- it
     finds nothing and says so, never books anything."""
     found = _SEARCH.match(text or "")
@@ -776,7 +776,7 @@ async def _assistant(request, user: str) -> str:
                             "assistant")
 
 
-@quota.for_owner
+@quota.for_miro
 async def _request(text: str, user: str, channel: str, ts: str,
                    channel_type: str = "") -> None:
     """A typed request from an approver. Slack is a channel that can
@@ -790,12 +790,12 @@ async def _request(text: str, user: str, channel: str, ts: str,
     from .voice import is_order
 
     # "search <words>": his own records, listed, no model in the loop
-    # (kernel/search.py). the owner, 2026-10-06: a search engine of his own.
+    # (kernel/search.py). Miro, 2026-10-06: a search engine of his own.
     if (sought := search_terms(text)) is not None:
         from ..kernel import search as records
         try:
             body = records.render(await records.search(sought), sought)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             body = (f"The records could not be read just now "
                     f"({type(exc).__name__}). Nothing was executed.")
         await _reply(body, channel, ts)
@@ -906,7 +906,7 @@ async def _request(text: str, user: str, channel: str, ts: str,
                 # Nothing in the catalog does it. First the agent that owns
                 # the domain (kernel/missions.py); then, when no agent does,
                 # not a dead end and not a request for his own `top` output
-                # (2026-09-28, the Roots CPU): the specialists measure, and
+                # (2026-09-28, the Attendance CPU): the specialists measure, and
                 # the work is written up for the coding agent as a Tier 2
                 # card (kernel/solve.py).
                 from ..kernel import missions

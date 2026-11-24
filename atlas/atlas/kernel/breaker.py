@@ -4,7 +4,7 @@ instead of waited on.
 `think()` walks its chain in order and, before this, tried every provider on
 every call: with Anthropic out of credit and two others rate-limited
 (prod, 2026-10-05) each turn spent seconds failing through the same dead
-endpoints, and a phone turn has eight. the owner's voice-partner brief asks for
+endpoints, and a phone turn has eight. Miro's voice-partner brief asks for
 breakers; this is the small version that fits the router already here.
 
   * Keyed by (provider, model): one model being limited says nothing about

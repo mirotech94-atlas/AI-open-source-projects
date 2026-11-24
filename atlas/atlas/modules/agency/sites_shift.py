@@ -2,7 +2,7 @@
 
 `read_state()` is the lane in one dict -- pure reads, no executor call:
 leads waiting on a demo, built sites not yet published, published sites
-not yet pitched, the publish/outreach cards waiting on the owner, and each
+not yet pitched, the publish/outreach cards waiting on Miro, and each
 deployed site's health with its read time (UNKNOWN when nothing observed
 it, never OK -- invariant 7).
 
@@ -11,7 +11,7 @@ it, never OK -- invariant 7).
 executes `agency.mockup` (when there is none) and `agency.build_site`, both
 Tier 1 through the executor, then RAISES the Tier 2 `agency.publish_vercel`
 card for each site it built. It never publishes and never emails: the
-owner email card follows only after the owner approves the publish
+owner email card follows only after Miro approves the publish
 (`lead_followup.after_deploys`). A hold from the executor ends the run.
 The job is claimed once a day, so the per-run cap is the daily cap."""
 from __future__ import annotations
@@ -76,7 +76,7 @@ def _plain(row: Any) -> dict:
 async def _read(name: str, unreadable: list[str]) -> list[dict] | None:
     try:
         return [dict(r) for r in await fetch_all(QUERIES[name])]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         unreadable.append(f"{name}: {type(exc).__name__}")
         return None
 
@@ -174,7 +174,7 @@ async def build_missing() -> dict[str, Any]:
                     f"{name}'s demo is built; publish it on Vercel so the owner "
                     f"email can follow", dedup_key=f"publish_vercel:{slug}")
                 out["cards"] += 1
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 # The QA gate or a parameter check refused the card: said,
                 # not retried here; the site stays built and listed.
                 out["cards_held"].append(f"{slug}: {type(exc).__name__}")

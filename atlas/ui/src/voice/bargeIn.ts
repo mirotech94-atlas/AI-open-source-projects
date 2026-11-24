@@ -1,5 +1,5 @@
 /**
- * Barge-in: the owner speaking over ATLAS, as pure rules -- no DOM, no timers.
+ * Barge-in: Miro speaking over ATLAS, as pure rules -- no DOM, no timers.
  *
  * "If I speak over ATLAS then I should be able to interrupt." The hard part
  * is not hearing him; it is NOT hearing ATLAS. The mic runs with echo

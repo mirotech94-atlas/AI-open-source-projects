@@ -1,19 +1,19 @@
-"""Mac -- the owner's laptop, driven instantly through a small agent on it.
+"""Mac -- Miro's laptop, driven instantly through a small agent on it.
 
-the owner, 2026-09-28: "it should be able to open things automatically and
+Miro, 2026-09-28: "it should be able to open things automatically and
 straight away when I ask". The agent on the Mac (bootstrap/mac/mac_agent.py,
 a LaunchAgent running as him) holds a long-poll open to /mac/next; a job
 queued here reaches it within a second. It runs only the closed list below,
 re-validates every parameter itself, and runs no shell.
 
-* Every action is `principal_only`: it runs only when the owner asked on a
+* Every action is `principal_only`: it runs only when Miro asked on a
   channel that proves it is him. No agent, reasoner, fix sweep or injected
   text can reach his laptop (executor.execute enforces it).
 * Tier 1, straight away, for what stays on his own screen and can be put
   back or left alone: apps (open and quit), YouTube Music, reminders, a new
   note, a web address or a web search in his browser, the volume (the dry
   run reads the level, the rollback restores it) and a local notification.
-  `open_url`, `web_search` and `quit_app` were Tier 2 cards until the owner's
+  `open_url`, `web_search` and `quit_app` were Tier 2 cards until Miro's
   standing ruling of 2026-09-30 (anything not urgent runs without a card)
   and his ask of 2026-10-06 to drive the Mac by voice without opening
   ATLAS. Their guards are in code: the same closed parameter checks here
@@ -171,8 +171,8 @@ URL_MAX = 2048
 # 2026-10-06): a tier chosen from a parameter would be a tier inferred at
 # runtime (CLAUDE.md invariant 3). A page load in his signed-in browser has
 # no real rollback, and the undo says so.
-OWN_SITES = ("atlas.example.com", "flycheap.example", "my.vault.example",
-             "academy-store.myshopify.example", "admin.shopify.com",
+OWN_SITES = ("atlas.storefront.test", "flycheap.example.com", "my.guarder.example.com",
+             "atlasacademy-ai.myshopify.com", "admin.shopify.com",
              "youtube.com", "instagram.com", "tiktok.com")
 
 
@@ -281,7 +281,7 @@ async def agent_state() -> tuple[datetime | None, str | None]:
     from ...kernel.state import fetch_one
     try:
         row = await fetch_one("SELECT max(last_seen) AS at FROM mac_agent")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"the Mac agent's state could not be read ({type(exc).__name__})"
     at = row["at"] if row else None
     if at is None:
@@ -713,17 +713,17 @@ class MacModule:
 
     def checks(self):
         return (Check("agent", check_agent, timedelta(minutes=5), Severity.INFO,
-                      "the agent on the owner's Mac is connected", baseline_sigma=None),)
+                      "the agent on Miro's Mac is connected", baseline_sigma=None),)
 
     def actions(self):
         common = {"tier": Tier.AUTO, "principal_only": True, "max_per_hour": 60}
         return (
-            Action(name="mac.open_app", summary="Open an app on the owner's Mac",
+            Action(name="mac.open_app", summary="Open an app on Miro's Mac",
                    run=open_app, dry_run=open_app_dry, rollback=undo_open_app,
                    params={"app": "the app's name, e.g. Notes or YouTube Music"},
                    **common),
             Action(name="mac.play_music",
-                   summary="Search YouTube Music on the owner's Mac for something to play",
+                   summary="Search YouTube Music on Miro's Mac for something to play",
                    run=play_music, dry_run=play_music_dry, rollback=undo_music,
                    params={"query": "what to play: an artist, song, mood or playlist"},
                    **common),
@@ -733,37 +733,37 @@ class MacModule:
                    rollback=undo_music_control,
                    params={"command": "play, pause, next or previous"}, **common),
             Action(name="mac.add_reminder",
-                   summary="Add a reminder to Reminders on the owner's Mac",
+                   summary="Add a reminder to Reminders on Miro's Mac",
                    run=add_reminder, dry_run=add_reminder_dry, rollback=undo_reminder,
                    params={"title": "what to be reminded of",
                            "due": "optional, YYYY-MM-DD or YYYY-MM-DD HH:MM local"},
                    **common),
-            Action(name="mac.set_volume", summary="Set the volume on the owner's Mac",
+            Action(name="mac.set_volume", summary="Set the volume on Miro's Mac",
                    run=set_volume, dry_run=set_volume_dry, rollback=undo_volume,
                    params={"level": "0 to 100"}, **common),
-            Action(name="mac.notify", summary="Show a notification on the owner's Mac",
+            Action(name="mac.notify", summary="Show a notification on Miro's Mac",
                    run=notify, dry_run=notify_dry, rollback=undo_notify,
                    params={"title": "a short title",
                            "body": "the notification's text, may be empty"},
                    **common),
             Action(name="mac.open_url",
-                   summary="Open a web address in the browser on the owner's Mac",
+                   summary="Open a web address in the browser on Miro's Mac",
                    run=open_url, dry_run=open_url_dry, rollback=undo_open_url,
                    params={"url": "a full http:// or https:// address"},
                    vet=vet_url, **common),
-            Action(name="mac.quit_app", summary="Quit an app on the owner's Mac",
+            Action(name="mac.quit_app", summary="Quit an app on Miro's Mac",
                    run=quit_app, dry_run=quit_app_dry, rollback=undo_quit_app,
                    params={"app": "the app's name, e.g. Notes"},
                    vet=vet_quit, **common),
             Action(name="mac.web_search",
-                   summary="Search the web in the browser on the owner's Mac",
+                   summary="Search the web in the browser on Miro's Mac",
                    run=web_search, dry_run=web_search_dry, rollback=undo_open_url,
                    params={"query": "what to search for",
                            "engine": ("optional: google (the default), duckduckgo, "
                                       "bing or youtube")},
                    **common),
             Action(name="mac.new_note",
-                   summary="Create a new note in Notes on the owner's Mac",
+                   summary="Create a new note in Notes on Miro's Mac",
                    run=new_note, dry_run=new_note_dry, rollback=undo_new_note,
                    params={"title": "the note's title",
                            "body": "optional, the note's text under the title"},
@@ -781,7 +781,7 @@ class MacModule:
                 "runs_in_background": True}
         return (
             Action(name="mac.send_imessage",
-                   summary="Send an iMessage from the owner's Mac",
+                   summary="Send an iMessage from Miro's Mac",
                    run=send_imessage, dry_run=send_imessage_dry,
                    params={"to": ("a phone number in +E.164 form, an email "
                                   "address, or a contact's name exactly as in "
@@ -790,7 +790,7 @@ class MacModule:
                    vet=vet_imessage, card_detail=card_imessage, card_always=True,
                    **card),
             Action(name="mac.run_shortcut",
-                   summary="Run one of the owner's macOS Shortcuts by its exact name",
+                   summary="Run one of Miro's macOS Shortcuts by its exact name",
                    run=run_shortcut, dry_run=run_shortcut_dry,
                    params={"name": "the Shortcut's exact name"},
                    vet=vet_shortcut, card_detail=card_shortcut, **card),

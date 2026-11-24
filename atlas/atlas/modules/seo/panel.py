@@ -89,12 +89,12 @@ async def build() -> dict[str, Any]:
     for name in CHECKS:
         try:
             got[name] = await store.latest_observation(name)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             got[name] = None
             errors[name] = explain(exc)
     try:
         reports = await store.recent_reports(10)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         reports = []
         errors["reports"] = explain(exc)
     out = summarize(got["search_console"], got[vitals.CHECK], reports)

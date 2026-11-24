@@ -1,6 +1,6 @@
 """The Academy YouTube thumbnail: one template, built as HTML/CSS, shot locally with Chrome.
 
-the owner, 2026-11-14: the channel's layout. 1280x720 PNG on a dark ground
+Miro, 2026-11-14: the channel's layout. 1280x720 PNG on a dark ground
 (#0A0D14); the title in big bold white caps, top-centre, on two lines; a glowing
 royal-blue (#5B8CFF) isometric icon in the centre; three or four small labelled
 callouts around it. The words come from the lesson or the product, never from

@@ -3,7 +3,7 @@
 Since 2026-10-29 that is the local clone of the NotebookLM host
 (voice_clone.py), with the Fish clip of a line when the clone is down.
 
-the owner wants ATLAS to speak only in his chosen Fish Audio voice, including when
+Miro wants ATLAS to speak only in his chosen Fish Audio voice, including when
 the network or this server is out of reach. ATLAS Menu and Air Glass cannot
 ask Fish anything then, so they keep a small pack of lines rendered here
 ahead of time and play those. A line with no kept clip is shown as text and
@@ -98,7 +98,7 @@ async def build_pack() -> dict:
                 audio, source = await _render(text)
                 if not audio:
                     raise RuntimeError("Fish Audio returned no audio")
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 from ..modules._http import explain
                 reason = explain(exc)
                 log.warning("offline pack: could not render %s: %s", name, reason)

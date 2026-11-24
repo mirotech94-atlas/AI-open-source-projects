@@ -118,7 +118,7 @@ def _decode(raw: Any) -> str:
         return ""
     try:
         return str(make_header(decode_header(str(raw))))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return str(raw)
 
 
@@ -158,7 +158,7 @@ def uidvalidity(conn: Any) -> str:
     try:
         _, data = conn.response("UIDVALIDITY")
         return re.sub(r"\D", "", (data or [b""])[0].decode("ascii", "ignore"))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ""
 
 
@@ -328,7 +328,7 @@ def _strip_tags(markup: str) -> str:
     try:
         parser.feed(markup)
         parser.close()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("text extraction stopped: %s", exc)
     return " ".join(" ".join(parser.parts).split())
 
@@ -360,7 +360,7 @@ def _addr(header: str) -> tuple[str, str, str]:
 
 
 BRANDS = ("paypal", "apple", "google", "microsoft", "amazon", "stripe", "netflix",
-          "fiverr", "github", "gitlab", "cloudco", "dhl", "fedex", "docusign",
+          "fiverr", "github", "gitlab", "cloudhost", "dhl", "fedex", "docusign",
           "dropbox", "linkedin", "facebook", "instagram", "whatsapp", "zoho",
           "namecheap", "godaddy", "cloudflare", "chase", "wells fargo",
           "bank of america", "irs", "usps", "coinbase", "binance")
@@ -481,7 +481,7 @@ def links_of(item: dict) -> tuple[list[tuple[str, str]], list[str]]:
         try:
             parser.feed(markup)
             parser.close()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.debug("anchor parse stopped: %s", exc)
         anchors = [(h, t) for h, t in parser.links if h.lower().startswith(
             ("http://", "https://"))]
@@ -694,7 +694,7 @@ async def second_opinion(item: dict) -> str | None:
         reply = await think(Need.PRIVATE, SYSTEM,
                             [Message("user", wrap_untrusted(text, "gmail"))],
                             max_tokens=16)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.info("spam second opinion unavailable: %s", type(exc).__name__)
         return None
     return parse_model_word(getattr(reply, "text", ""))
@@ -708,7 +708,7 @@ async def known_addresses() -> frozenset[str]:
     try:
         rows = await fetch_all("SELECT DISTINCT lower(to_address) AS to_address "
                                "FROM mail_followups")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("known contacts unreadable: %s", type(exc).__name__)
         return frozenset()
     out = set()
@@ -779,7 +779,7 @@ async def _load(key: str, item: dict, depth: str) -> SpamResult | None:
         row = await fetch_one(
             "SELECT verdict, bulk, reason, signals, model, depth, sender, subject, "
             "fingerprint, head_digest FROM mail_spam_verdicts WHERE message_key = $1", key)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("verdict store unreadable: %s", type(exc).__name__)
         return None
     if not row or not _same_message(row, item, depth):
@@ -811,7 +811,7 @@ async def _store(item: dict, account: Any, r: SpamResult) -> None:
             r.verdict, r.bulk, r.reason, json.dumps(
                 {"signals": list(r.signals), "score": r.score}), r.model, r.depth,
             fingerprint(item), head_digest(item))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("verdict not stored: %s", type(exc).__name__)
 
 
@@ -845,7 +845,7 @@ async def check(item: dict, account: Any = None, *, refresh: bool = False,
                 else:
                     result = SpamResult(UNSURE, result.bulk, reason, result.signals,
                                         result.score, word, result.depth)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return unknown(redact(exc)[:160])
     if result.verdict != UNKNOWN:
         await _store(item, account, result)
@@ -880,7 +880,7 @@ async def backfill(accounts: list | None = None, *, days: int = BACKFILL_DAYS,
         try:
             msgs = await search.find(account, gmail_query="", imap_subjects=(),
                                      days=days, limit=limit)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             out["unreadable"].append(f"{account.name}: {redact(exc)}"[:160])
             continue
         for m in msgs:

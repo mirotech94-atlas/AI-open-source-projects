@@ -17,20 +17,20 @@ CARD_BODY = ("The fare poller hit a rate wall and the queue is backing up.\n"
 
 
 def test_a_page_is_said_in_plain_words_not_as_a_check_key():
-    said = b.opening("cloudco.database is failing",
+    said = b.opening("cloudhost.database is failing",
                      "connection refused: could not connect to server at 10.0.0.4:5432 "
                      "after 3 tries (psycopg.OperationalError). Last good read 14:02 UTC.",
                      at_night=False)
-    assert said.startswith("Hey the owner, it's ATLAS. CloudCo's database check is failing.")
-    assert "cloudco.database" not in said
+    assert said.startswith("Hey Miro, it's ATLAS. CloudHost's database check is failing.")
+    assert "cloudhost.database" not in said
     assert "psycopg" not in said and "OperationalError" not in said
     assert "10.0.0.4" not in said and "5432" not in said
     assert "Last good read 14:02 UTC." in said          # a fact the alert stated
 
 
 def test_night_says_sorry_once_and_day_does_not():
-    night = b.opening("cloudco.disk is failing", "Disk at 96%.", at_night=True)
-    day = b.opening("cloudco.disk is failing", "Disk at 96%.", at_night=False)
+    night = b.opening("cloudhost.disk is failing", "Disk at 96%.", at_night=True)
+    day = b.opening("cloudhost.disk is failing", "Disk at 96%.", at_night=False)
     assert night.count("Sorry to wake you.") == 1 and "Sorry" not in day
     assert "96 percent" in night and "%" not in night
 
@@ -42,7 +42,7 @@ def test_unknown_is_not_called_failing():
 
 def test_a_card_says_its_reason_and_asks_its_action_as_yes_or_no():
     said = b.opening(CARD, CARD_BODY, at_night=False)
-    assert said == ("Hey the owner, it's ATLAS. The fare poller hit a rate wall and the "
+    assert said == ("Hey Miro, it's ATLAS. The fare poller hit a rate wall and the "
                     "queue is backing up.")
     assert "Tier" not in said and "rollback" not in said and "#284" not in said
     assert b.action_of(CARD) == "Restart the FlyCheap fare-polling worker"

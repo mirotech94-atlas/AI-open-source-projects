@@ -1,6 +1,6 @@
 -- Rollback of the local-agency upgrades schema (Part 0, 2026-11-12).
 --
--- the owner runs this, by hand, after a backup (pg_dump). Code never runs it.
+-- Miro runs this, by hand, after a backup (pg_dump). Code never runs it.
 -- Revert the merge commits first so no running code reads these objects.
 -- It drops only what Part 0 added; nothing that existed before is touched.
 --

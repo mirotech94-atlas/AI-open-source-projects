@@ -1,4 +1,4 @@
-"""Words said to the Mac from the menu bar (the owner, 2026-10-06, from a reel):
+"""Words said to the Mac from the menu bar (Miro, 2026-10-06, from a reel):
 read in code, resolved whole, run in order through the executor.
 
 The parser is pure (atlas/modules/mac/commands.py); the runner is
@@ -78,8 +78,8 @@ def test_the_browser_alone_opens_google():
                                      ("mac.open_app", {"app": "Notes"})]),
     ("go to youtube", [("mac.open_url", {"url": "https://www.youtube.com"})]),
     ("go to atlas", [("mac.open_url", {"url": "http://127.0.0.1:8080"})]),
-    ("go to flycheap.example/deals", [("mac.open_url",
-                                    {"url": "https://flycheap.example/deals"})]),
+    ("go to flycheap.example.com/deals", [("mac.open_url",
+                                    {"url": "https://flycheap.example.com/deals"})]),
     ("search for salt and pepper", [("mac.web_search",
                                      {"query": "salt and pepper", "engine": "google"})]),
     ("google how to open a jar", [("mac.web_search",
@@ -213,7 +213,7 @@ async def _no_model(*_a, **_k):
     raise AssertionError("the model was asked")
 
 
-async def test_a_chain_runs_in_order_as_owner_from_the_menu_bar(registered):
+async def test_a_chain_runs_in_order_as_miro_from_the_menu_bar(registered):
     fake = FakeExecutor()
     heard = await spoken.run_spoken_commands(
         "open Notes, once you're there create a new note, make the title say hello",

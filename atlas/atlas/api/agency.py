@@ -60,7 +60,7 @@ async def meeting(_s: SignedIn,
         today = datetime.now().astimezone().date()
         try:
             stored = await meeting_module.stored_for(today)
-        except Exception as exc:                              # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             why = explain(exc)
             log.warning("the agency meeting could not read agency_meetings: %s", why)
             raise HTTPException(
@@ -72,7 +72,7 @@ async def meeting(_s: SignedIn,
 
     try:
         built = await meeting_module.build(polish=False)
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the agency meeting could not read agent_runs: %s", why)
         raise HTTPException(
@@ -92,12 +92,21 @@ async def activity(_s: SignedIn) -> dict[str, Any]:
     served_at = datetime.now(UTC).isoformat()
     try:
         built = await agent_activity.activity()
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the agent activity panel could not be built: %s", why)
         raise HTTPException(
             503, f"I could not read the agents' activity — {why}") from None
     return {"served_at": served_at, **built}
+
+
+@router.get("/autopilot")
+async def autopilot_line(_s: SignedIn) -> dict[str, Any]:
+    """The Command Center's one Autopilot line (`modules/qa/autopilot.py`):
+    last cycle time, fixed N, waiting on Miro N. Read-only; an unreadable
+    figure is null and named in `unread` (UNKNOWN on the page), never 0."""
+    from ..modules.qa import autopilot
+    return await autopilot.read_summary()
 
 
 @router.get("/seo")
@@ -111,7 +120,7 @@ async def seo_panel(_s: SignedIn) -> dict[str, Any]:
     served_at = datetime.now(UTC).isoformat()
     try:
         built = await panel.build()
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the SEO panel could not be built: %s", why)
         raise HTTPException(503, f"I could not read the SEO readings — {why}") from None
@@ -133,7 +142,7 @@ async def brain(_s: SignedIn) -> dict[str, Any]:
     from ..kernel import brain as brain_module
     try:
         built = await brain_module.build()
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the brain could not be built: %s", why)
         raise HTTPException(503, f"I could not build the brain view — {why}") from None
@@ -152,7 +161,7 @@ async def missions(_s: SignedIn,
     from ..kernel.personas import persona_for
     try:
         rows = await missions_module.recent(limit)
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the missions could not be read: %s", why)
         raise HTTPException(503, f"I could not read the missions — {why}") from None
@@ -193,7 +202,7 @@ async def sites(_s: SignedIn) -> dict[str, Any]:
     from ..modules.agency import sites_view
     try:
         return await sites_view.overview()
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the client sites could not be read: %s", why)
         raise HTTPException(503, f"I could not read the client sites — {why}") from None
@@ -207,7 +216,7 @@ async def site_events(_s: SignedIn, slug: str) -> dict[str, Any]:
         raise HTTPException(422, "not a site slug")
     try:
         rows = await _store.site_events(slug, 50)
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the site events could not be read: %s", why)
         raise HTTPException(503, f"I could not read the site's events — {why}") from None

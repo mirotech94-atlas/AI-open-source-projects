@@ -1,0 +1,31 @@
+{
+ "key": "mcp-config",
+ "seconds": 9.146,
+ "marks": [
+  [
+   0.0,
+   6.129
+  ],
+  [
+   6.297,
+   9.146
+  ]
+ ],
+ "urls": [
+  "",
+  ""
+ ],
+ "captions": [
+  "claude_desktop_config.json: add your server under mcpServers",
+  "Save, restart Claude for Desktop, ask it to greet someone"
+ ],
+ "width": 1536,
+ "height": 864,
+ "fps": 30,
+ "bytes": 390119,
+ "sha256": "3ce99e0b7c5180f58fbd5bf42effdfc034baf7966f0515604b2872cb3b83830a",
+ "versions": {
+  "chromium": "153.0.8010.12"
+ },
+ "recorded_at": "2026-10-12T16:54:47+00:00"
+}

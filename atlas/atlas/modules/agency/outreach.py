@@ -7,7 +7,7 @@ and every guard `send_dry` and `send_outreach` check lives in one place
 `send_dry` IS what `send_outreach` would have done, minus the SMTP call.
 
 **It is a card** (Tier ASK since 2026-10-27, six agents: every send to a
-client waits for the owner). Even approved, it goes only past every guard below
+client waits for Miro). Even approved, it goes only past every guard below
 AND the holds in `auto_hold` (an approved card answers the autosend holds),
 each decided in code, never by a model:
 
@@ -19,7 +19,7 @@ each decided in code, never by a model:
   * the preview is live: `agency.publish_vercel` succeeded for this lead, so
     the email's link opens;
   * one outreach email per lead, ever, unless the lead wrote back: a second
-    message to someone who never answered is the owner's call, not ATLAS's;
+    message to someone who never answered is Miro's call, not ATLAS's;
   * `AGENCY_OUTREACH_AUTOSEND` is not off (on by default).
 
 A hold is answered by a card: `kernel.lead_followup.follow_site` raises
@@ -36,8 +36,8 @@ Guards run in this order, matching AGENCY.md §2.5 and CAN-SPAM:
 1. the outreach row exists and is still a `draft` (not already sent)
 2. `to_address` is set and is not on the permanent suppression list
 3. `sends_today() < AGENCY_DAILY_CAP` (default 10)
-4. the sender is ATLAS Agency's fixed Gmail address (`AGENCY_SENDER`, the owner
-   2026-10-30), never on example.com, and `GMAIL_APP_PASSWORD` is set: without
+4. the sender is ATLAS Agency's fixed Gmail address (`AGENCY_SENDER`, Miro
+   2026-10-30), never on storefront.test, and `GMAIL_APP_PASSWORD` is set: without
    it nothing is sent ("GMAIL_APP_PASSWORD missing")
 5. the body names no "mapfront": a draft written before the switch to ATLAS
    Agency (2026-10-30) is refused, never sent with a dead link
@@ -49,13 +49,13 @@ Guards run in this order, matching AGENCY.md §2.5 and CAN-SPAM:
 8. the holds of `auto_hold`, listed above, unless an approved card is
    running this send
 
-The email itself is written by code, not a model (`email_body`), in the owner's
+The email itself is written by code, not a model (`email_body`), in Miro's
 own framing (2026-10-01, brand ATLAS Agency since 2026-10-30): "This is
 ATLAS Agency. We looked at <business>'s website and thought it needed help
 / <business> has no website that we could find, so we built a free
 preview: <url>. Reply or call <our number> and we'll walk you through it;
 if you'd like, we can put you through to the owner." No claim about results, no figure, the
-CAN-SPAM footer, and the `— sent by the owner's assistant` trailer -- the
+CAN-SPAM footer, and the `— sent by Miro's assistant` trailer -- the
 assistant wrote every word, and the trailer says so honestly. The model
 still drafts the `call_script` and `one_pager` kinds, which nothing sends.
 An email draft needs a live preview to point at: without one it is refused,
@@ -90,17 +90,17 @@ from .._http import explain
 from . import _store
 from .audit import audit_lead
 
-TRAILER = "— sent by the owner's assistant"
+TRAILER = "— sent by Miro's assistant"
 # The head of every hold's detail, so `kernel.lead_followup` tells a hold
 # (a card with the reason) from a refusal, the way `clips.posting.HELD` does.
 HELD = "held for you"
-# the owner, 2026-10-30: the agency is "ATLAS Agency". Agency mail goes out from
+# Miro, 2026-10-30: the agency is "ATLAS Agency". Agency mail goes out from
 # this Gmail address (fixed: no env var can point it elsewhere) and its public
 # link is the storefront. 2026-11-14: ATLAS Academy's mail (receipts, sign-up,
 # support) uses the same address, so this is the ONE place the sender lives.
 BRAND = "ATLAS Agency"
-AGENCY_SENDER = "owner@example.com"
-AGENCY_URL = "https://agency.example.com"
+AGENCY_SENDER = "agency.sender@gmail.com"
+AGENCY_URL = "https://agency.storefront.test"
 GMAIL_SMTP = ("smtp.gmail.com", 587)
 GMAIL_MISSING = "GMAIL_APP_PASSWORD missing: nothing was sent"
 # ATLAS Academy's sender (`_send_from_address`, `_smtp_send`) defaults to it too.
@@ -130,17 +130,17 @@ DRAFT_SYSTEM = (
 
 
 def agency_sender() -> str:
-    """The address every agency email goes out from (the owner, 2026-10-30)."""
+    """The address every agency email goes out from (Miro, 2026-10-30)."""
     return AGENCY_SENDER
 
 
 def sender_problem() -> str | None:
-    """Why the agency sender cannot send right now: never from example.com
+    """Why the agency sender cannot send right now: never from storefront.test
     (that is the storefront, not a mailbox), and never without the app
     password. Shared by outreach, replies and agreements."""
     domain = agency_sender().lower().partition("@")[2]
-    if domain == "example.com" or domain.endswith(".example.com"):
-        return "the sending address must not be on example.com"
+    if domain == "storefront.test" or domain.endswith(".storefront.test"):
+        return "the sending address must not be on storefront.test"
     return gmail_problem()
 
 
@@ -251,7 +251,7 @@ def body_sha(body: str) -> str:
 
 
 async def auto_hold(outreach: dict[str, Any]) -> str | None:
-    """Why this email is held for the owner rather than sent on its own, or None.
+    """Why this email is held for Miro rather than sent on its own, or None.
     Asked last, after every guard of the draft itself, and never of an
     approved card: his approval is the answer to a hold."""
     if answered_by_card():
@@ -364,20 +364,20 @@ def mapfront_number() -> str:
 
 def callback_line() -> str:
     """The number a business rings back on. The AI answers it, so it is
-    the agency's number, never "the owner's"."""
+    the agency's number, never "Miro's"."""
     number = mapfront_number()
     return f"Questions? Call or text {BRAND} at {number}." if number else ""
 
 
 def more_info_line() -> str:
-    """Every drafted reply to a lead carries this (the owner, 2026-09-30)."""
+    """Every drafted reply to a lead carries this (Miro, 2026-09-30)."""
     number = mapfront_number()
     return (f"For more information, call or text {BRAND} at {number}; our AI "
             "assistant answers any time.") if number else ""
 
 
 def escalation_phone() -> str:
-    """the owner's own phone, for a lead who asks for him: AGENCY_ESCALATION_PHONE,
+    """Miro's own phone, for a lead who asks for him: AGENCY_ESCALATION_PHONE,
     else TWILIO_TO (the number ATLAS already rings him on). Never in a first
     cold email: only in replies, and on the line when someone asks for a
     person or is upset."""
@@ -388,13 +388,13 @@ def escalation_phone() -> str:
 
 def escalation_line() -> str:
     number = escalation_phone()
-    return f"To speak to the owner directly, call {number}." if number else ""
+    return f"To speak to Miro directly, call {number}." if number else ""
 
 
 def preview_url(links: dict[str, Any]) -> str | None:
     """The public address of what was built for the lead, once it is live:
     the domain `agency.publish_vercel` recorded (or the client's own). None
-    before that -- there is no box-hosted fallback any more (the owner,
+    before that -- there is no box-hosted fallback any more (Miro,
     2026-10-30: demos live on Vercel only)."""
     if not links.get("deployed") or not links.get("domain"):
         return None
@@ -440,7 +440,7 @@ def email_subject(lead: dict[str, Any], *, followup: bool = False) -> str:
 
 def email_body(lead: dict[str, Any], live: str, links: dict[str, Any],
                *, followup: bool = False) -> str:
-    """the owner's copy (2026-10-30), written by code so a model can neither
+    """Miro's copy (2026-10-30), written by code so a model can neither
     inflate it nor drop a line. Two variants: no website of its own, or a
     website that can be improved (only the latter is told "we looked at your
     website"). Then the CAN-SPAM footer the send guard requires."""
@@ -449,7 +449,7 @@ def email_body(lead: dict[str, Any], live: str, links: dict[str, Any],
             "gallery, maps, reviews, whatever makes sense) and I'll take it "
             "from there.")
     if has_own_site(lead):
-        intro = (f"I'm the owner, I run an agency called {BRAND}. I came across "
+        intro = (f"I'm Miro, I run an agency called {BRAND}. I came across "
                  f"the website for {name} and thought it could be doing more "
                  f"for you, so I put together a demo of a redesigned one. No "
                  f"charge, have a look: {live}")
@@ -458,7 +458,7 @@ def email_body(lead: dict[str, Any], live: str, links: dict[str, Any],
                  "more to it than the demo (integrations, search, the works). "
                  + asks)
     else:
-        intro = (f"I'm the owner, I run an agency called {BRAND}. I noticed "
+        intro = (f"I'm Miro, I run an agency called {BRAND}. I noticed "
                  f"{name} doesn't have a website yet, so I built a demo of one "
                  f"for you. No charge, have a look: {live}")
         offer = ("If you like it, we can have your live site up in under a "
@@ -468,7 +468,7 @@ def email_body(lead: dict[str, Any], live: str, links: dict[str, Any],
     parts = ["Hi,"]
     if followup:
         parts.append("Following up on my last email in case it got buried.")
-    parts.extend([intro, offer, "the owner"])
+    parts.extend([intro, offer, "Miro"])
     postal = os.getenv("AGENCY_POSTAL_ADDRESS", "").strip()
     footer = f"{BRAND} · {AGENCY_URL}"
     parts.append(f"{footer} · {postal}" if postal else footer)
@@ -487,7 +487,7 @@ async def _model_draft(lead: dict[str, Any], audit: Any, mockup_path: str | None
         f"Business name: {lead.get('name')}\n"
         f"Category: {lead.get('category')}\n"
         f"Audit findings:\n{findings_text}\n"
-        f"What the owner built: {built}\n"
+        f"What Miro built: {built}\n"
         f"{'This is a follow-up to an earlier message that got no reply.' if parent_id else ''}"
     )
     wrapped = wrap_untrusted(material, "agency-audit")
@@ -621,7 +621,7 @@ async def _deliver(message: EmailMessage, host: str, port: int, user: str,
         try:
             await aiosmtplib.send(message, hostname=host, port=port, username=user,
                                   password=password, start_tls=True)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return False, _scrub(explain(exc), password)
         return True, None
 
@@ -634,7 +634,7 @@ async def _deliver(message: EmailMessage, host: str, port: int, user: str,
 
     try:
         await asyncio.to_thread(_send_sync)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, _scrub(explain(exc), password)
     return True, None
 
@@ -716,11 +716,11 @@ async def _smtp_send(from_address: str, to_address: str, subject: str,
     return ok, reason
 
 
-def _owner_signed(body: str) -> bool:
-    """the owner's own cold email (2026-10-31): signed "the owner" and ending on the
+def _miro_signed(body: str) -> bool:
+    """Miro's own cold email (2026-10-31): signed "Miro" and ending on the
     CAN-SPAM opt-out line instead of the assistant trailer."""
     lines = [ln.strip() for ln in body.rstrip().splitlines() if ln.strip()]
-    return ("the owner" in lines and bool(lines)
+    return ("Miro" in lines and bool(lines)
             and ("reply stop" in lines[-1].lower() or "unsubscribe" in lines[-1].lower()))
 
 
@@ -737,9 +737,9 @@ async def send_outreach(outreach_id: int) -> ActionResult:
     if outreach.get("kind") != "email":
         return ActionResult(False, f"refused: kind is {outreach.get('kind')!r}, not 'email'")
     body = outreach["body"]
-    if not (body.endswith(TRAILER) or _owner_signed(body)):
+    if not (body.endswith(TRAILER) or _miro_signed(body)):
         return ActionResult(False, "refused: body does not end with the assistant trailer "
-                                   "or the owner's signature and the opt-out line")
+                                   "or Miro's signature and the opt-out line")
 
     from_address = agency_sender()
     # A Message-ID of ATLAS's own making: SMTP returns no id, and this is the

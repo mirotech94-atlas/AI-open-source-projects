@@ -2,8 +2,8 @@
 
 Each channel is a fully separate Google Cloud OAuth client and a fully
 separate YouTube channel: `clips` (the clips lane's Shorts channel) and
-`ecc`. FlyCheap and Guardian were removed on 2026-10-29. Every credential
-is namespaced by an env prefix (`YOUTUBE_CLIPS_` / `YOUTUBE_ECC_`) so a key
+`amsm`. FlyCheap and Guardian were removed on 2026-10-29. Every credential
+is namespaced by an env prefix (`YOUTUBE_CLIPS_` / `YOUTUBE_AMSM_`) so a key
 pasted into the wrong variable is visibly wrong rather than silently
 reading (or writing) another channel.
 
@@ -12,7 +12,7 @@ refuses any other path for it (`clips_path_refusal`), and the
 `youtube.upload` action refuses the channel outright -- the lane's own
 `clips.publish_clip_youtube` is the one way onto it.
 
-Endpoints this assumes, so the owner can correct them if wrong:
+Endpoints this assumes, so Miro can correct them if wrong:
   * OAuth token refresh: `POST https://oauth2.googleapis.com/token`
   * Data API v3:          `https://www.googleapis.com/youtube/v3/...`
       - `channels.list`  (part=statistics)               — subscriber/view counts
@@ -60,15 +60,15 @@ TOKEN_URL = "https://oauth2.googleapis.com/token"
 # CHANNEL_ID hang off each prefix.
 CHANNELS: dict[str, str] = {
     "clips": "YOUTUBE_CLIPS_",
-    # The ECC bookstore channel (@example_handle). It takes uploads only
-    # through `church.schedule_youtube_shorts`, one card per batch, each video
-    # reviewed by the owner first (atlas/modules/church).
-    "ecc": "YOUTUBE_ECC_",
-    # The MMT account (second monitored YouTube account, the owner 2026-11-13).
-    "mmt": "YOUTUBE_MMT_",
+    # The AMSM bookstore channel (@amsmlibrary). It takes uploads only
+    # through `community.schedule_youtube_shorts`, one card per batch, each video
+    # reviewed by the owner first (atlas/modules/community).
+    "amsm": "YOUTUBE_AMSM_",
+    # The TUTORCO account (second monitored YouTube account, Miro 2026-11-13).
+    "tutorco": "YOUTUBE_TUTORCO_",
 }
 CLIPS_CHANNEL = "clips"
-ECC_CHANNEL = "ecc"
+AMSM_CHANNEL = "amsm"
 
 CHUNK_SIZE = 8 * 1024 * 1024   # 8MB, per the brief; never slurp the whole file
 PRIVACY_VALUES = ("private", "unlisted", "public")
@@ -91,7 +91,7 @@ _token_cache: dict[str, tuple[str, float]] = {}
 
 class NoCredentials(Exception):
     """This channel's env vars are not set. Not the same as Google refusing
-    them — that distinction is what tells the owner whether to configure
+    them — that distinction is what tells Miro whether to configure
     something or to re-authorise something."""
 
 
@@ -514,7 +514,7 @@ async def _put_json(
             r = await c.put(url, headers=headers, params=params, json=json_body)
             r.raise_for_status()
             return r.json(), None
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc)
 
 
@@ -523,7 +523,7 @@ async def set_privacy(channel: str, video_id: str, privacy: str, *,
     """videos.update, part=status, through `_update_status`: every other
     writable status field is resent as read the moment before, so a
     visibility change no longer resets licence, embeddable or stats.
-    `synthetic` (the Academy's AI-voiced videos, the owner 2026-10-17) sends the
+    `synthetic` (the Academy's AI-voiced videos, Miro 2026-10-17) sends the
     flag again; it is never sent false. Nothing is written when the status
     cannot be read."""
     if channel not in CHANNELS:
@@ -544,7 +544,7 @@ async def set_privacy(channel: str, video_id: str, privacy: str, *,
 
 # 2026-10-13 (academy growth plan, task 6): the quiz + lab-file comment under
 # a tutorial. Called only from academy.pin_comment's run and rollback. The
-# API cannot pin (the owner pins it in Studio) and nothing here deletes: deletion
+# API cannot pin (Miro pins it in Studio) and nothing here deletes: deletion
 # is Tier 3, so the rollback edits the text instead.
 COMMENT_MAX = 9000                    # YouTube's comment limit is 10,000 characters
 
@@ -675,7 +675,7 @@ def clips_path_refusal(path: str) -> str | None:
 
 
 def academy_video_path(path: str) -> bool:
-    """the owner 2026-11-14: Academy lesson, preview and Short renders that passed the
+    """Miro 2026-11-14: Academy lesson, preview and Short renders that passed the
     Academy's own gate. A plain `.mp4` directly inside ACADEMY_STAGING_DIR
     (default data/academy-staging/video), never a symlink. Blocking."""
     try:
@@ -696,7 +696,7 @@ def academy_video_path(path: str) -> bool:
     import hashlib
     import json
     try:
-        gate = json.loads(open(real + ".gate.json", encoding="utf-8").read())
+        gate = json.loads(open(real + ".gate.json", encoding="utf-8").read())  # noqa: SIM115
         h = hashlib.sha256()
         with open(real, "rb") as f:
             for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -754,13 +754,13 @@ async def upload(
     Tier ASK decision (`set_visibility`).
 
     `synthetic` sets `status.containsSyntheticMedia` (the Academy's
-    AI-voiced tutorials, the owner 2026-10-17; developers.google.com/youtube/v3/
-    docs/videos, read 2026-10-17). Off by default: clips and church are not.
+    AI-voiced tutorials, Miro 2026-10-17; developers.google.com/youtube/v3/
+    docs/videos, read 2026-10-17). Off by default: clips and community are not.
 
     `publish_at` (timezone-aware, in the future) is YouTube's own scheduled
     publishing: the video still lands private and carries
     `status.publishAt`, and YouTube makes it public at that time. Only the
-    church lane passes it, from a card the owner approved for that batch.
+    community lane passes it, from a card the owner approved for that batch.
     """
     if publish_at is not None and (
             publish_at.tzinfo is None or publish_at <= datetime.now(UTC)):
@@ -774,11 +774,11 @@ async def upload(
     # The clips path check reads the filesystem: off the event loop.
     # The one other file the clips channel takes: a finished Academy
     # tutorial render narrated in the Fish voice (academy/tutorials.py
-    # `publishable_render`, the owner 2026-10-09), never a placeholder preview.
+    # `publishable_render`, Miro 2026-10-09), never a placeholder preview.
     if channel == CLIPS_CHANNEL and (
             why := await asyncio.to_thread(clips_path_refusal, path)) is not None:
         from ..academy.tutorials import publishable_render
-        if (no := await asyncio.to_thread(publishable_render, path)) is not None:
+        if (no := await asyncio.to_thread(publishable_render, path)) is not None:  # noqa: SIM102
             if not await asyncio.to_thread(academy_video_path, path):
                 return None, f"{channel}: {why}; and not an Academy tutorial: {no}"
 
@@ -889,7 +889,7 @@ async def upload(
                 else:
                     stalled_retries = 0
                 offset = new_offset
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Final review I1, as post_comment (604317b): a reason whose outcome is
         # unknown (a timeout, a 5xx) stays unprefixed, so the caller's
         # idempotency.finish keeps its claim -- YouTube may hold the video.
@@ -1263,7 +1263,7 @@ async def take_out_of_playlist(channel: str, item_id: str) -> tuple[bool, str | 
             r = await c.delete(f"{DATA_API}/playlistItems", headers=headers,
                                params={"id": item_id})
             r.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, f"{channel}: {explain(exc)}"
     return True, None
 
@@ -1300,7 +1300,7 @@ async def set_thumbnail(channel: str, video_id: str, path: str
                              headers={**headers, "Content-Type": mime}, content=body)
             r.raise_for_status()
             data = r.json()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"{channel}: {explain(exc)}"
     return {"video_id": video_id, "items": (data or {}).get("items") or []}, None
 
@@ -1329,5 +1329,5 @@ async def set_captions(channel: str, video_id: str, srt: str, *,
                        "file": ("captions.srt", srt.encode(), "application/octet-stream")})
             r.raise_for_status()
             return r.json(), None
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"{channel}: captions: {explain(exc)}"

@@ -1,4 +1,4 @@
-"""The hard wipe is by hand only and touches only the owner's own notes."""
+"""The hard wipe is by hand only and touches only Miro's own notes."""
 from __future__ import annotations
 
 import ast

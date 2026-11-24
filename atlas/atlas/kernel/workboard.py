@@ -1,6 +1,6 @@
 """The work board: what every agent is doing right now, from the record.
 
-the owner, 2026-09-29, by voice: "how is Hazel doing on the 50 websites?" -- and
+Miro, 2026-09-29, by voice: "how is Hazel doing on the 50 websites?" -- and
 ATLAS said it saw no data on Hazel's work. The voice path's context was the
 checks and the pending cards; the Tasks tab showed the cards and the
 nightshift. Nobody could see what each agent had in hand.
@@ -11,7 +11,7 @@ One source of truth, read for both surfaces:
     YOU), from the tables only: what is in flight (open missions, running
     nightshift jobs, queued outbox effects, queued research, the
     department's scheduled jobs with their last run and next due), what is
-    waiting on the owner (pending cards whose action is one of the agent's
+    waiting on Miro (pending cards whose action is one of the agent's
     modules'), what finished in the window (missions, outbox rows,
     `execute.finish` counts per action, read-backs), each module's own
     progress from its own tables (sites built, leads by stage, ideas by
@@ -244,7 +244,7 @@ async def _read_verify(since: datetime) -> list[Any]:
 async def _section(name: str, errors: dict[str, str], coro: Awaitable[Any]) -> Any:
     try:
         return await coro
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the work board could not read %s: %s", name, why)
         errors[name] = why
@@ -303,7 +303,7 @@ async def _agency_progress(since: datetime, now: datetime) -> list[dict[str, Any
     out.append(figure("mockups", int(mock["n"]), read_at=now))
     webild = _by(await fetch_all(
         "SELECT status, count(*) AS n FROM agency_webild GROUP BY status"), "status")
-    for st in ("drafted", "queued", "claimed", "published", "failed", "needs_owner"):
+    for st in ("drafted", "queued", "claimed", "published", "failed", "needs_miro"):
         if webild.get(st):
             out.append(figure(f"webild {st}", webild[st], read_at=now))
     return out
@@ -399,7 +399,7 @@ async def _progress(module: str, since: datetime, now: datetime) -> dict[str, An
         figures = await provider(since, now) if provider else []
         return {"module": module, "figures": figures, "read_at": now.isoformat(),
                 "error": None}
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the work board could not read %s progress: %s", module, why)
         return {"module": module, "figures": [], "read_at": now.isoformat(),
@@ -506,7 +506,7 @@ def _ok_of(payload: Any) -> bool | None:
         data = json.loads(payload) if isinstance(payload, str) else dict(payload)
         ok = (data.get("data") or {}).get("ok")
         return bool(ok) if ok is not None else None
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -542,7 +542,7 @@ def headline(agent: dict[str, Any]) -> str:
         return f"{kinds['research']} research question(s) queued"
     waiting = agent["counts"]["waiting"]
     if waiting:
-        return f"{waiting} card(s) waiting on the owner"
+        return f"{waiting} card(s) waiting on Miro"
     ran = sum(v["ok"] + v["failed"] for v in agent["recent"]["executions"].values())
     if ran:
         failed = sum(v["failed"] for v in agent["recent"]["executions"].values())
@@ -580,7 +580,7 @@ async def board(days: int = WINDOW_DAYS, now: datetime | None = None
     verify_rows = await _section("verify", errors, _read_verify(since))
     try:
         paused = await pause.active()
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         errors["paused"] = explain(exc)
         paused = None
 
@@ -734,7 +734,7 @@ async def board(days: int = WINDOW_DAYS, now: datetime | None = None
         agents_out.append(agent)
 
     # A pending card whose action no department holds is still waiting on
-    # the owner: it lands on YOU, so the seats add up to the badge's count.
+    # Miro: it lands on YOU, so the seats add up to the badge's count.
     if cards is not None:
         stray = [c for c in cards if c["id"] not in placed_cards]
         you = next(a for a in agents_out if a["name"] == YOU)
@@ -785,11 +785,11 @@ ALIASES: dict[str, tuple[str, ...]] = {
     "calendar": ("calendar", "meeting", "meetings", "booking", "bookings"),
     "research": ("research", "question", "questions"),
     "fiverr": ("fiverr", "gig", "gigs", "buyer", "buyers"),
-    "exampleco": ("ebay", "listing", "listings", "reselling"),
+    "mirotech": ("ebay", "listing", "listings", "reselling"),
     "marketing": ("experiment", "experiments", "playbook", "campaigning"),
     "course": ("course", "students", "lessons"),
-    "cloudco": ("cloudco", "vipsy", "instances", "cloud"),
-    "inroots": ("roots", "inroots", "attendance", "standup", "standups"),
+    "cloudhost": ("cloudhost", "vipsy", "instances", "cloud"),
+    "attendance": ("attendance", "attendance", "attendance", "standup", "standups"),
     "school": ("school", "college", "cuny", "class", "classes", "grades",
                "homework"),
     "stripe": ("stripe", "payments", "invoices", "revenue"),
@@ -857,7 +857,7 @@ def one_liner(a: dict[str, Any]) -> str:
     fl_s = "unknown" if fl is None else str(fl)
     wt_s = "unknown" if wt is None else str(wt)
     return (f"{a['label']} ({a['name']}, {a['department_name']}): {fl_s} in flight, "
-            f"{wt_s} waiting on the owner — {a['headline']}")
+            f"{wt_s} waiting on Miro — {a['headline']}")
 
 
 def detail(a: dict[str, Any], now: datetime, *, rows: int = MAX_ROWS) -> str:
@@ -900,9 +900,9 @@ def detail(a: dict[str, Any], now: datetime, *, rows: int = MAX_ROWS) -> str:
             quoted.append(f"research #{r['id']} question: {r['summary']}")
     wt = a["waiting"]
     if wt is None:
-        lines.append("waiting on the owner: unknown (proposals could not be read)")
+        lines.append("waiting on Miro: unknown (proposals could not be read)")
     else:
-        lines.append(f"waiting on the owner ({len(wt)}):" + ("" if wt else " nothing"))
+        lines.append(f"waiting on Miro ({len(wt)}):" + ("" if wt else " nothing"))
         for c in wt[:rows]:
             lines.append(f"  card #{c['id']} {c['action']} Tier {c['tier']}, "
                          f"{_left(c['expires_at'], now)}")
@@ -958,7 +958,7 @@ async def context_text(question: str, *, max_chars: int = 6000,
     seat, then the full detail of every seat the question names."""
     try:
         b = await board(days)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("the work board is unavailable: %s", exc)
         return ("AGENTS' WORK: unreadable right now. Say the source is "
                 "unreachable rather than guessing.")[:max_chars]
@@ -969,7 +969,7 @@ async def context_text(question: str, *, max_chars: int = 6000,
     head = (f"AGENTS' WORK, read at {_clock(now)} — answer from this; a figure "
             f"not here is unknown. "
             f"{'unknown' if waiting_all is None else waiting_all} card(s) waiting "
-            f"on the owner in all; {len(agents)} seats.")
+            f"on Miro in all; {len(agents)} seats.")
     if b["errors"]:
         head += " Could not read: " + ", ".join(sorted(b["errors"])) + "."
     order = sorted(agents, key=lambda a: (a["name"] not in picked,

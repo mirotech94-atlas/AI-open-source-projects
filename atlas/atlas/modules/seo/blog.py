@@ -1,6 +1,6 @@
 """Blog drafts, published posts and on-page changes (six agents phase 10).
 
-Draft only, the owner approves every change after QA:
+Draft only, Miro approves every change after QA:
 
 * `draft_blog_post` (Tier 1): a free model writes plain text from the
   keyword and the site's own text, wrapped as untrusted; facts come only
@@ -179,7 +179,7 @@ async def _write(system: str, prompt: str) -> tuple[str | None, str | None]:
     try:
         reply = await think(Need.DRAFT, system, [Message("user", prompt)],
                             max_tokens=1200)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"no free model answered ({type(exc).__name__})"
     text = getattr(reply, "text", None)
     return (str(text), None) if text else (None, "the model returned nothing")

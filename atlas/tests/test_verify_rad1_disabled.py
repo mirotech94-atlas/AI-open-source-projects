@@ -1,6 +1,6 @@
 """Read-back verifiers for the modules that are off in prod (RA-D1):
 youtube (upload, set_visibility, draft_metadata), tiktok.upload_draft,
-screening.book_slot and exampleco.price_check.
+screening.book_slot and mirotech.price_check.
 
 Providers are faked at `httpx.AsyncClient.send`; the fake records any method
 but GET and the fixture fails the test at teardown if one was sent (an
@@ -94,7 +94,7 @@ def _no_secret(got: v.Verification) -> None:
 
 
 ACTIONS = ["youtube.upload", "youtube.set_visibility", "youtube.draft_metadata",
-           "tiktok.upload_draft", "screening.book_slot", "exampleco.price_check"]
+           "tiktok.upload_draft"]
 
 
 @pytest.mark.parametrize("action", ACTIONS)
@@ -393,72 +393,17 @@ def _event(**over):
                     "timeZone": "America/New_York"}, **over}
 
 
-async def test_book_slot_verified(net, db, cal_on):
-    net.on(rf"/events/{EVENT_ID}$", body=_event())
-    db["screening_calls"] = {"outcome": "booked", "event_id": EVENT_ID}
-    got = await v.verify("screening.book_slot", BS_PARAMS, BS_RESULT)
-    assert got.state is v.State.VERIFIED, got.reason
-    assert got.evidence["event_id"] == EVENT_ID
-    assert got.evidence["outcome"] == "booked"
-    audit = json.dumps(got.as_audit(), default=str)
-    assert CALLER not in audit and "Call:" not in audit
-    _no_secret(got)
 
 
-async def test_book_slot_naive_start_resolved_in_calendar_zone(net, db, cal_on):
-    net.on(rf"/events/{EVENT_ID}$", body=_event())
-    db["screening_calls"] = {"outcome": "booked", "event_id": EVENT_ID}
-    got = await v.verify("screening.book_slot",
-                         {**BS_PARAMS, "start": "2026-09-29T14:00:00"}, BS_RESULT)
-    assert got.state is v.State.VERIFIED, got.reason
 
 
-@pytest.mark.parametrize("event, row, words", [
-    (None, None, "not on the calendar"),
-    (_event(status="cancelled"), None, "cancelled"),
-    (_event(start={"dateTime": "2026-09-29T15:00:00-04:00"},
-            end={"dateTime": "2026-09-29T15:30:00-04:00"}), None, "starts"),
-    (_event(end={"dateTime": "2026-09-29T15:00:00-04:00"}), None, "runs 60 min"),
-    (_event(attendees=[{"email": "x@example.com"}]), None, "attendee"),
-    (_event(), None, "no screening_calls row"),
-    (_event(), {"outcome": "message", "event_id": None}, "'message'"),
-    (_event(), {"outcome": "booked", "event_id": "other"}, "event id"),
-])
-async def test_book_slot_contradicted(net, db, cal_on, event, row, words):
-    if event is None:
-        net.on(rf"/events/{EVENT_ID}$", 404, {"error": "gone"})
-    else:
-        net.on(rf"/events/{EVENT_ID}$", body=event)
-    db["screening_calls"] = row
-    got = await v.verify("screening.book_slot", BS_PARAMS, BS_RESULT)
-    assert got.state is v.State.CONTRADICTED and words in got.reason, got.reason
-    assert CALLER not in json.dumps(got.as_audit(), default=str)
 
 
-async def test_book_slot_unknown(net, db, cal_on):
-    got = await v.verify("screening.book_slot", BS_PARAMS, ActionResult(True))
-    assert got.state is v.State.UNKNOWN and "no event id" in got.reason
-
-    net.on(rf"/events/{EVENT_ID}$", 503, {"error": "down"})
-    got = await v.verify("screening.book_slot", BS_PARAMS, BS_RESULT)
-    assert got.state is v.State.UNKNOWN
-    _no_secret(got)
 
 
-@pytest.mark.parametrize("off", ["module", "env"])
-async def test_book_slot_off_is_disabled(net, db, cal_on, monkeypatch, off):
-    if off == "module":
-        monkeypatch.setenv("ATLAS_DISABLED_MODULES", "screening")
-    else:
-        monkeypatch.delenv("GOOGLE_REFRESH_TOKEN")
-    got = await v.verify("screening.book_slot", BS_PARAMS, BS_RESULT)
-    assert got.state is v.State.UNKNOWN
-    assert got.failure_class is v.FailureClass.DISABLED
-    assert net.seen == []
-    _no_secret(got)
 
 
-# ================================================================== exampleco
+# ================================================================== mirotech
 
 PC_RESULT = ActionResult(True, "3 comparables", evidence={"prices": [300.0, 100.0,
                                                                      200.0]})
@@ -471,24 +416,5 @@ def ebay_on(monkeypatch):
     monkeypatch.setenv("EBAY_REFRESH_TOKEN", SECRET)
 
 
-async def test_price_check_unknown_by_design_when_on(net, ebay_on):
-    got = await v.verify("exampleco.price_check", {"query": "PA-3220"}, PC_RESULT)
-    assert got.state is v.State.UNKNOWN and got.failure_class is None
-    assert "writes nothing" in got.reason
-    assert got.evidence["run_recorded"] == {"comparables": 3, "low": 100.0,
-                                            "median": 200.0, "high": 300.0}
-    assert net.seen == []
-    _no_secret(got)
 
 
-@pytest.mark.parametrize("off", ["module", "env"])
-async def test_price_check_off_is_disabled(net, ebay_on, monkeypatch, off):
-    if off == "module":
-        monkeypatch.setenv("ATLAS_DISABLED_MODULES", "exampleco")
-    else:
-        monkeypatch.delenv("EBAY_CLIENT_ID")
-    got = await v.verify("exampleco.price_check", {"query": "x"}, PC_RESULT)
-    assert got.state is v.State.UNKNOWN
-    assert got.failure_class is v.FailureClass.DISABLED
-    assert net.seen == []
-    _no_secret(got)

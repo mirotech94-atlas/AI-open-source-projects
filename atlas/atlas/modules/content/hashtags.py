@@ -1,4 +1,4 @@
-"""Niche hashtags per lane, chosen in code from closed lists (the owner,
+"""Niche hashtags per lane, chosen in code from closed lists (Miro,
 2026-09-29: reach without paid promotion).
 
 No model writes a hashtag. Each lane has a fixed list, and the only choice
@@ -186,7 +186,7 @@ def lane_of(source: str, format_source: str | None = None) -> tuple[str, bool]:
         from . import calendar as cal
         try:
             j = cal.job(job_id)
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             j = None
         return "stories", bool(j and cal.is_series(j))
     if s.startswith("import:"):
@@ -225,6 +225,6 @@ async def with_lane_tags(media_id: int, caption: str) -> str:
     cannot be read (a missing tag never holds a post)."""
     try:
         lane, series, words = await media_lane(media_id)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return caption
     return apply(caption, for_lane(lane, words, series=series))

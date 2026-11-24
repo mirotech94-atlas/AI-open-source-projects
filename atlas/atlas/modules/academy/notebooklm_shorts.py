@@ -1,6 +1,6 @@
 """Academy Shorts rendered by Google NotebookLM, ingested on the server.
 
-the owner, 2026-10-19: a NotebookLM Short may run 60-90 s (the 20-40 s rule stays
+Miro, 2026-10-19: a NotebookLM Short may run 60-90 s (the 20-40 s rule stays
 for the Shorts ATLAS cuts itself, tutorials.render_teaching_short). A lesson
 rendered in NotebookLM has no teaching Short: tutorials._teaching_cut needs
 the Fish render's chapters and scenes. This fills that gap.
@@ -53,13 +53,13 @@ from ...kernel.contracts import ActionResult
 from . import notebooklm as nlm
 from . import tutorial_series as ts
 
-log = logging.getLogger("academy.example.notebooklm_shorts")
+log = logging.getLogger("atlas.academy.notebooklm_shorts")
 
 ACTION = "academy.ingest_notebooklm_short"
 POST_ACTION = "clips.autopublish_promo"
 KIND = "notebooklm"                  # the slug's kind: tutorial:<series>:<n>:notebooklm
 INGESTED = ".ingested"               # a drop made into a Short, kept for the rollback
-SECONDS = (50.0, 95.0)               # the owner 2026-10-19: 60-90 s, with a little slack
+SECONDS = (50.0, 95.0)               # Miro 2026-10-19: 60-90 s, with a little slack
 MIN_W, MIN_H = 720, 1280
 OUT_W, OUT_H = 1080, 1920            # content.ffmpeg.WIDTH x HEIGHT, the clips gate's
 SOURCE = re.compile(r"^academy:(tutorial:([a-z][a-z0-9]*):(\d{1,3}):notebooklm)$")
@@ -267,7 +267,7 @@ async def _make(s: ts.Series, ep: ts.Episode, video: Path, text: str, sl: str,
                                         captions=False)
     except ffmpeg.FfmpegError as exc:
         return await render._fail(media_id, f"ffmpeg: {exc}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return await render._fail(media_id, f"{type(exc).__name__}: {exc}"[:300])
 
 
@@ -350,7 +350,7 @@ async def ingest(series: str, episode: int) -> ActionResult:
             return await refuse(f"{public}; a Short follows its public lesson")
         if (why := await already(s, ep)) is not None:
             return await refuse(why)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return await hold(f"the posts record could not be read ({type(exc).__name__})")
     vid = public[2]
     refs = await asyncio.to_thread(nlm.reference_files, drop, s.key, ep.number)

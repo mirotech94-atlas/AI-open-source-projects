@@ -1,6 +1,6 @@
-"""Trade idea cards -- ATLAS suggests, the owner approves or declines, on PAPER.
+"""Trade idea cards -- ATLAS suggests, Miro approves or declines, on PAPER.
 
-the owner, 2026-09-29: "ATLAS sends trade suggestions, I approve or decline".
+Miro, 2026-09-29: "ATLAS sends trade suggestions, I approve or decline".
 ATLAS never places a real trade (money out is Tier 3, permanently
 denied); an idea is a card with a plain order ticket he may copy to his own
 broker if he chooses, and a paper position in ATLAS's own idea book.
@@ -351,7 +351,7 @@ async def rank(cands: list[Candidate], want: int, context: dict[str, dict]
     try:
         reply = await think(Need.REASON, SYSTEM, [Message("user", prompt)],
                             max_tokens=800)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return fallback, {}, f"ranked by the rule (no model answered: {explain(exc)})"
     model = f"{reply.provider}:{reply.model}"
@@ -632,7 +632,7 @@ async def scan(day: date) -> str:
 
 # ------------------------------------------------- a TradingView alert
 #
-# the owner's own chart alerts land in `tradingview_alerts` (tradingview.py) and
+# Miro's own chart alerts land in `tradingview_alerts` (tradingview.py) and
 # become one factual Slack line each. This runs the SAME idea rules on that
 # one ticker, once per alert, and hands back one line for that Slack
 # message: a paper idea card if a rule fired and the caps allow, else why
@@ -669,7 +669,7 @@ async def check_alert(alert_id: int, ticker: str, name: str = "",
         return str((row or {}).get("ivan_note") or "")
     try:
         note = await _check_alert(ticker, _plain(name), price, at, now)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("alert %s: Ivan could not check %s (%s)", alert_id, ticker,
                     type(exc).__name__)
         note = f"Ivan could not check {ticker} right now (unknown, not a no)."
@@ -755,7 +755,7 @@ async def _raise(day: date, c: Candidate, note: str, how: str, book: float,
             evidence={"read_at": read_at.isoformat(), "ranked_by": how},
             rollback_plan="cancels the idea if it is not booked yet",
             dedup_key=f"markets.idea:{day.isoformat()}:{c.ticker}", automatic=True)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         await execute_sql("UPDATE markets_ideas SET status = 'refused', note = $2 "
                           "WHERE id = $1", iid, f"the card could not be raised: {exc}")
         return False

@@ -1,4 +1,4 @@
-"""Rename a LinkedIn page and change its logo. the owner, 2026-09-27/28: "change
+"""Rename a LinkedIn page and change its logo. Miro, 2026-09-27/28: "change
 the LinkedIn pages' name from Guardian to Vault and the logo" (the Vault mark,
 docs/brand/vault-logo-400.png in the Guardian repo, 400x400).
 
@@ -21,7 +21,8 @@ import struct
 from pathlib import Path
 
 from ...kernel.contracts import ActionResult
-from . import KNOWN_PAGES, PAGES
+from . import COMPANY_PAGES as PAGES
+from . import KNOWN_PAGES
 
 BRAND_DIR = Path(os.getenv("LINKEDIN_BRAND_DIR", "/app/data/linkedin-agent/brand"))
 MIN_LOGO_PX = 300
@@ -161,7 +162,7 @@ async def _save_current_logo(tab, ctx, page: str) -> str:
         BRAND_DIR.mkdir(parents=True, exist_ok=True)
         (BRAND_DIR / name).write_bytes(body)
         return name
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ""
 
 
@@ -183,7 +184,7 @@ async def _toasts(tab) -> list[str]:
             """() => [...document.querySelectorAll(
                    '.artdeco-toast-item, [role=alert], [data-test-artdeco-toast-item-type]')]
                    .map(e => (e.innerText || '').trim()).filter(Boolean).slice(0, 4)""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return []
 
 
@@ -233,7 +234,7 @@ async def _logo_src(tab) -> str:
             """() => { const i = [...document.querySelectorAll('img')]
                          .find(i => /company-logo/.test(i.src) && i.offsetParent);
                        return i ? i.src : ''; }""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ""
 
 

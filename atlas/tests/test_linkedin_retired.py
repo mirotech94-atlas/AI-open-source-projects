@@ -1,6 +1,6 @@
-"""Retired LinkedIn pages. FlyCheap's left on 2026-10-09 (the owner: "delete
+"""Retired LinkedIn pages. FlyCheap's left on 2026-10-09 (Miro: "delete
 flycheap page and only keep guardian for now"); Guardian's (Vault) left on
-2026-10-29 (the owner: "delete flycheap and guardian, we don't use them
+2026-10-29 (Miro: "delete flycheap and guardian, we don't use them
 anymore"). Deleting a page is Tier 3 and is never automated; ATLAS stops
 using it. Its state is left untouched."""
 from __future__ import annotations

@@ -11,7 +11,7 @@ How it is measured:
   (channel, route, total ms, stages recall / live_read / model / other, model
   name). No message text is stored.
 - `python ops/latency_report.py --days 7` prints p50 and p95 per channel and
-  `target = round(0.28 x p50)` (the typical reply, the owner 2026-11-12). It prints
+  `target = round(0.28 x p50)` (the typical reply, Miro 2026-11-12). It prints
   UNKNOWN and exits 2 when a channel has fewer than 100 replies.
 - The baseline is the window before the memory recall change reaches the live
   box, so recall time counts against the target, not for it.

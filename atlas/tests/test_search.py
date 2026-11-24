@@ -1,4 +1,4 @@
-"""ATLAS's own search (kernel/search.py): the owner, 2026-10-06, "he should have
+"""ATLAS's own search (kernel/search.py): Miro, 2026-10-06, "he should have
 its own search engine for me". No network, no database: fetch_all is faked."""
 from __future__ import annotations
 
@@ -38,7 +38,7 @@ async def test_every_table_is_asked_with_every_word_and_hits_come_newest_first(
         if "FROM clip_outputs" in sql:
             return [{"id": 4, "at": NOW - timedelta(hours=2), "campaign": "irubyana-twitch",
                      "platform": "tiktok", "status": "draft_submitted", "post_url": None,
-                     "caption": "Best moments from @example_handle"}]
+                     "caption": "Best moments from @irubyana"}]
         return []
 
     monkeypatch.setattr(search, "fetch_all", fetch_all)
@@ -64,7 +64,7 @@ def test_render_lists_hits_with_their_times_or_says_nothing_matched():
     hits = [search.Hit("card", NOW - timedelta(hours=3), "content.publish_reel (expired)",
                        "business lesson, day 22", "#294"),
             search.Hit("clip", NOW - timedelta(days=3), "irubyana-twitch tiktok (posted)",
-                       "https://www.tiktok.com/@example_handle/video/1", "clip 6")]
+                       "https://www.tiktok.com/@atlasclips12/video/1", "clip 6")]
     out = search.render(hits, "irubyana", now=NOW)
     assert out.splitlines()[0] == '2 record(s) for "irubyana", newest first:'
     assert "12:00 UTC · card #294 — content.publish_reel (expired): business lesson" in out
@@ -90,7 +90,7 @@ async def test_context_is_quoted_as_data_and_empty_without_hits(monkeypatch):
 
 @pytest.mark.parametrize("text, q", [
     ("search irubyana drafts", "irubyana drafts"),
-    ("atlas, search for cloudco balance?", "cloudco balance"),
+    ("atlas, search for cloudhost balance?", "cloudhost balance"),
     ("what do you have on the reels calendar", "the reels calendar"),
     ("Search: #294", "#294"),
     ("search", None),
@@ -103,11 +103,11 @@ def test_only_a_search_phrase_is_a_search(text, q):
 
 
 def test_repeats_fold_into_one_line_with_a_count():
-    hits = [search.Hit("finding", NOW - timedelta(hours=h), "cloudco.balance degraded",
-                       "cloudco.balance is degraded", f"finding {9000 + h}") for h in range(6)]
+    hits = [search.Hit("finding", NOW - timedelta(hours=h), "cloudhost.balance degraded",
+                       "cloudhost.balance is degraded", f"finding {9000 + h}") for h in range(6)]
     hits.append(search.Hit("lesson", NOW - timedelta(days=1), "atlas (x3)", "still degraded",
                            "lesson 47"))
     folded = search.fold(hits)
     assert [h.ref for h in folded] == ["finding 9000", "lesson 47"]
     assert folded[0].times == 6
-    assert "(×6, newest shown)" in search.render(folded, "cloudco balance", now=NOW)
+    assert "(×6, newest shown)" in search.render(folded, "cloudhost balance", now=NOW)

@@ -79,7 +79,7 @@ async def selftest() -> None:
     # listing above. The exit code still says the run did not pass.
     try:
         ok, detail = await verify_chain()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .modules._http import explain
         print(f"\naudit    : UNKNOWN — the audit log could not be read "
               f"({explain(exc)})")
@@ -128,7 +128,7 @@ async def connect() -> None:
             try:
                 instance = getattr(
                     importlib.import_module(f"{package}.{name}"), "MODULE", None)
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 print(f"  {name:<16} import failed: {exc}")
                 continue
             if instance is None:
@@ -162,7 +162,7 @@ async def connect() -> None:
     if target not in names:
         raise SystemExit(f"no such module: {target}. One of: {', '.join(names)}")
 
-    # The comms module asks "can ATLAS reach the owner", and the answer depends on
+    # The comms module asks "can ATLAS reach Miro", and the answer depends on
     # the channels having been imported. Without this it reported "no
     # channels are registered at all" -- a broken reporting path, when the
     # truth was that this command had not loaded them.
@@ -201,7 +201,7 @@ async def connect() -> None:
         try:
             obs = await asyncio.wait_for(
                 check.run(), timeout=check.timeout.total_seconds())
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             print(f"  [UNKNOWN ] {check.name}: raised {type(exc).__name__}: {exc}")
             unknown += 1
             continue
@@ -233,7 +233,7 @@ async def _resolve_homeserver(candidate: str) -> str:
     """Turn whatever was typed into the client API base URL.
 
     A Matrix *server name* and its *client base URL* are different things:
-    `internal.example` is the server name, the API lives at `https://chat.internal.example`, and the
+    `matrix.example.com` is the server name, the API lives at `https://chat.matrix.example.com`, and the
     only correct way to get from one to the other is the well-known lookup.
     Guessing wrong produces a 404 that looks like a broken homeserver.
     """
@@ -256,7 +256,7 @@ async def _resolve_homeserver(candidate: str) -> str:
                 if base and base != candidate:
                     print(f"  {candidate} delegates to {base}")
                     candidate = base
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             # No well-known is normal for a server whose name and API host are
             # the same. The versions check below is what actually decides.
             print(f"  (no delegation found: {type(exc).__name__})")
@@ -313,7 +313,7 @@ async def _pick_room_and_write(homeserver: str, token: str, who: str) -> None:
         print(f"  {index:>2}. {label or '(unnamed)'}")
         print(f"      {room}")
 
-    # Alerts already go to Slack. Posting them here AS OWNER would put
+    # Alerts already go to Slack. Posting them here AS MIRO would put
     # ATLAS's messages under his name in front of colleagues, in rooms that
     # are theirs -- the opposite of "private to me". So the honest default
     # is no alert room at all: Matrix is read-and-draft only, and a reply
@@ -336,7 +336,7 @@ async def _pick_room_and_write(homeserver: str, token: str, who: str) -> None:
     # start and the running process never sees the file. So this writes to
     # the SERVER's .env over ssh, through envlock.py, the same way every
     # other secret lands. That also means this command is run on the Mac,
-    # not inside the container -- it is just HTTPS to chat.internal.example.
+    # not inside the container -- it is just HTTPS to chat.matrix.example.com.
     import os as _os
     import subprocess as _subprocess
 
@@ -346,7 +346,7 @@ async def _pick_room_and_write(homeserver: str, token: str, who: str) -> None:
     if host == "local":
         repo = pathlib.Path(__file__).resolve().parent.parent
         env_path = _os.getenv("ATLAS_ENV_PATH") or str(repo / ".env")
-        _subprocess.run(  # noqa: ASYNC221 -- a one-shot CLI on the Mac
+        _subprocess.run(  # noqa: ASYNC221
             [sys.executable, str(repo / "bootstrap" / "envlock.py")],
             input=pairs, text=True, check=True,
             env={**_os.environ, "ATLAS_ENV_PATH": env_path})
@@ -395,14 +395,14 @@ matrix-setup — wire the Matrix channel and write .env
         docker compose exec -e MATRIX_TOKEN="$TOKEN" -it api \\
           python -m atlas.cli matrix-setup
 
-  --admin-token TOKEN --user @atlas:internal.example
+  --admin-token TOKEN --user @atlas:matrix.example.com
       Mint a fresh token for that user through the Synapse admin API. Needs a
       server admin token. No user password is involved.
 
   --homeserver URL
       Defaults to MATRIX_HOMESERVER from .env, then to prompting. A server
-      name is resolved to its client API through .well-known, so `internal.example`
-      becomes `https://chat.internal.example` on its own.
+      name is resolved to its client API through .well-known, so `matrix.example.com`
+      becomes `https://chat.matrix.example.com` on its own.
 
   (no flags)
       Interactive password login. Works, but gives ATLAS a session for
@@ -444,7 +444,7 @@ async def matrix_setup() -> None:
     # API base URL — resolve whatever we are given rather than trusting it.
     candidate = (flag("--homeserver") or os.getenv("MATRIX_HOMESERVER") or "")
     if not candidate:
-        candidate = input("Homeserver (e.g. internal.example): ").strip()
+        candidate = input("Homeserver (e.g. matrix.example.com): ").strip()
     homeserver = await _resolve_homeserver(candidate)
 
     # --- a token we were handed -----------------------------------------
@@ -480,14 +480,14 @@ async def matrix_setup() -> None:
 
     # --- last resort: password login -------------------------------------
     print("\nThis logs in with a password and holds a session for that account.")
-    print("the owner's decision, 2026-09-22: ATLAS reads as HIS account, @owner:internal.example.")
+    print("Miro's decision, 2026-09-22: ATLAS reads as HIS account, @miro:matrix.example.com.")
     print("It never sends on its own -- a reply becomes a draft he approves in")
     print("Slack, and only then goes out, under his name, because ATLAS is")
     print("private to him. Read receipts are his, so \"not seen by me\" is")
-    print("literally his. The password is typed here, sent to chat.internal.example once,")
+    print("literally his. The password is typed here, sent to chat.matrix.example.com once,")
     print("and never stored; ATLAS keeps only the session token.\n")
 
-    user = input("Matrix user [@owner:internal.example]: ").strip() or user or "@owner:internal.example"
+    user = input("Matrix user [@miro:matrix.example.com]: ").strip() or user or "@miro:matrix.example.com"
     if not user:
         raise SystemExit("no user given")
     # A paste into a getpass prompt on macOS Terminal can arrive as an empty
@@ -546,7 +546,7 @@ async def test_channels() -> None:
     for name in sorted(CHANNELS):
         try:
             ok = await CHANNELS[name].available()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             print(f"  {name:<10} error: {exc}")
             continue
         print(f"  {name:<10} {'yes' if ok else 'no'}")
@@ -566,7 +566,7 @@ async def warm_agents() -> None:
         python -m atlas.cli warm-agents
 
     Fills in the Agents map's LAST RUN and MODEL with the truth, one row per
-    specialist, instead of waiting for the owner to happen to ask each one a real
+    specialist, instead of waiting for Miro to happen to ask each one a real
     question. Sequential, on purpose -- this is an operator running it by
     hand, not a stampede of concurrent LLM calls. Never fabricates a result:
     an agent whose model could not be reached prints why, not a made-up
@@ -800,7 +800,7 @@ async def sites_add_cmd() -> None:
     """Register a client demo or app (operator, on the host). Writes the
     registry row only; nothing is published until the card is approved.
 
-        python -m atlas.cli sites-add examplehair client-site.example.com \\
+        python -m atlas.cli sites-add examplesalon examplesalon.storefront.test \\
             demo "royal-hairstyles-site-demo@176c272"
     The site's up/cert check starts after the next api restart.
     """
@@ -843,8 +843,8 @@ async def sites_doc_cmd() -> None:
     approved card hands it to the coding agent, which makes the Claude Docs
     artifact.
 
-        python -m atlas.cli sites-doc examplehair brief \\
-            "examplehair site brief" brief.md client-email.txt
+        python -m atlas.cli sites-doc examplesalon brief \\
+            "Royal Hairstyles site brief" brief.md client-email.txt
     """
     from .modules.agency import sitedocs
     try:
@@ -888,7 +888,7 @@ async def shop_build() -> None:
     try:
         out = await asyncio.to_thread(publish._build, stamp, reviews, videos, lessons)
         await asyncio.to_thread(publish.point_current, build, stamp)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         print(f"REFUSED: build failed: {type(exc).__name__}: {str(exc)[:200]}")
         sys.exit(1)
     files = await asyncio.to_thread(lambda: sum(1 for p in out.rglob("*")
@@ -923,12 +923,12 @@ async def rebuild_tutorials() -> None:
 async def channel_study() -> None:
     """Read-only study of one YouTube channel, written to `reports`.
 
-        python -m atlas.cli channel-study --channel clips|ecc
+        python -m atlas.cli channel-study --channel clips|amsm
     """
     import argparse
 
     ap = argparse.ArgumentParser(prog="atlas.cli channel-study")
-    ap.add_argument("--channel", required=True, choices=("clips", "ecc"))
+    ap.add_argument("--channel", required=True, choices=("clips", "amsm"))
     a = ap.parse_args(sys.argv[2:])
     await boot()
     from .modules._http import install_log_redaction
@@ -955,28 +955,6 @@ async def research_cmd() -> None:
     from .modules.research import seed
     out = await seed.import_seed(a.file)
     print(f"added {out['added']}, already listed {out['skipped']}")
-
-
-async def cameras_forget() -> None:
-    """Delete stored household face data. the owner's own command: not an action, so
-    no model can run it.
-
-        python -m atlas.cli cameras-forget all
-        python -m atlas.cli cameras-forget person <slot 1-5>
-    """
-    args = sys.argv[2:]
-    if args[:1] == ["all"] and len(args) == 1:
-        scope, slot = "all", None
-    elif args[:1] == ["person"] and len(args) == 2 and args[1] in "12345" and len(args[1]) == 1:
-        scope, slot = "slot", int(args[1])
-    else:
-        print("usage: python -m atlas.cli cameras-forget all | person <1-5>")
-        sys.exit(1)
-    await boot()
-    from .modules.cameras import people
-    removed = await people.REPO.forget(scope, slot)
-    print(f"deleted {removed} face group(s) and their stored vectors"
-          + (f" for person slot {slot}" if slot else ""))
 
 
 async def memory_wipe_cmd() -> None:
@@ -1006,7 +984,6 @@ async def memory_wipe_cmd() -> None:
 
 
 COMMANDS = {
-    "cameras-forget": cameras_forget,
     "memory-wipe": memory_wipe_cmd,
     "channel-study": channel_study,
     "research": research_cmd,

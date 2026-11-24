@@ -1,6 +1,6 @@
 """agency.payments -- what Mapfront's Stripe account says was paid.
 
-the owner, 2026-09-30: payments reach Mapfront's own Stripe account through the
+Miro, 2026-09-30: payments reach Mapfront's own Stripe account through the
 Payment Links in `AGENCY_PAYMENT_LINKS` and through Stripe invoices. Stripe
 tells ATLAS over a signed webhook (`api/stripe_mapfront.py`); this module
 turns a verified event into rows. It never calls Stripe and holds no key --
@@ -20,7 +20,7 @@ it reads and records. Money out (refunds included) stays Tier 3.
     addresses on the lead's own record. Otherwise unmatched -- never a
     guess.
   * ``charge.refunded`` and ``charge.dispute.created`` update the payment
-    (a full refund takes the deal off "paid") and ring the owner through the
+    (a full refund takes the deal off "paid") and ring Miro through the
     emergency path (`escalate.emergency`): a dispute is an emergency.
 
 Every event id is claimed once (`agency_stripe_events`); a replay records

@@ -1,5 +1,5 @@
 {
-  "about": "The four YouTube videos proposed in the owner's competitor report (\"Compete through useful results\", 11 Oct 2026, section 05), as catalog entries for the tutorial lane to script later. Not wired into tutorial_series.py: a proposal has no scenes and nothing renders from it. Each one teaches one task for free and names one product as the next step. Demo data is made up and labelled so on screen; every fact in a demo was read from the product's own files on 11 Oct 2026 (the `source` lines). Titles follow tutorial_series.py's rules: at most 100 characters, a benefit or a clear task, no income claim, no other creator's name.",
+  "about": "The four YouTube videos proposed in Miro's competitor report (\"Compete through useful results\", 11 Oct 2026, section 05), as catalog entries for the tutorial lane to script later. Not wired into tutorial_series.py: a proposal has no scenes and nothing renders from it. Each one teaches one task for free and names one product as the next step. Demo data is made up and labelled so on screen; every fact in a demo was read from the product's own files on 11 Oct 2026 (the `source` lines). Titles follow tutorial_series.py's rules: at most 100 characters, a benefit or a clear task, no income claim, no other creator's name.",
   "proposals": [
     {
       "key": "customer-reply-draft-awaiting-approval",
@@ -34,7 +34,7 @@
       "cautions": [
         "Not the scripted \"Auto-Reply to Website Leads\" episode: that one sends a fixed first reply by Gmail. This one never sends.",
         "Say on screen that a form on the public internet can't reach localhost; hosting is outside the video.",
-        "TO DECIDE (the owner): whether the video shows the pack's own workflow file or builds a smaller one on screen."
+        "TO DECIDE (Miro): whether the video shows the pack's own workflow file or builds a smaller one on screen."
       ]
     },
     {
@@ -147,7 +147,7 @@
         "No statistics or case stories: the workbook prints none, and the video shouldn't either.",
         "Never suggest testing a relative with an unannounced call.",
         "US reporting sites only; say so if any are shown.",
-        "Not an AI or automation topic: the owner to decide which playlist, if any, it joins (series is empty)."
+        "Not an AI or automation topic: Miro to decide which playlist, if any, it joins (series is empty)."
       ]
     }
   ]

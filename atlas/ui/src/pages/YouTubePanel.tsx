@@ -34,7 +34,7 @@ export function YouTubePanel({ reading, token, at }: {
 }): JSX.Element {
   return (
     <CPanel id="youtube" title="Atlas Academy · YouTube" at={at}>
-      <p className="cmd-note cmd-yt-sub">@example_handle</p>
+      <p className="cmd-note cmd-yt-sub">@atlasacademyphp</p>
       {reading.state === "unknown" ? (
         <Unread>{reading.why}</Unread>
       ) : reading.state === "ok-nonumbers" ? (

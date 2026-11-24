@@ -23,7 +23,7 @@ It is not about marketing a course, so it contributed little.
 1. Write captions that inform, and add a few relevant hashtags. Every feed
    post already ends with its product's fixed hashtags.
 2. Answer the comments and questions under a post. ATLAS cannot do this: no
-   comment-reply action exists. The owner answers them himself.
+   comment-reply action exists. Miro answers them himself.
 3. Each platform has a different audience, so pick the product whose audience
    matches the platform (see "Product by platform" below).
 4. Use free material and email sign-up as a way in. Here that is the Free
@@ -40,7 +40,7 @@ It is not about marketing a course, so it contributed little.
   Marketplace, TikTok Shop, YouTube product shelves and Pinterest's Verified
   Merchant badge.** Each needs a Shopify sales-channel app or a Commerce
   account that ATLAS does not have. Each would also be a store or account
-  setting, which the owner would have to change himself.
+  setting, which Miro would have to change himself.
 - **Live shopping events and creator collaborations.** These need a person on
   camera or a deal with another person. Neither is an ATLAS action.
 - **Anything paid: ads, boosts, promoted posts or paid creators.** No such
@@ -54,7 +54,7 @@ It is not about marketing a course, so it contributed little.
   tagged link. On X and Bluesky, and on any 500-character feed where the full
   post is too long, the hook goes out with the title, the price and the link.
 - **Blog.** Each product gets one SEO article for the Shopify blog, handed to
-  the owner. The title is at most 60 characters and the meta description at most
+  Miro. The title is at most 60 characters and the meta description at most
   155. The body is 700 to 1,200 words of the product's own lesson excerpts,
   copied word for word. The product page is linked in the opening paragraph
   and in the call to action.

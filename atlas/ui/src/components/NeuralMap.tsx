@@ -85,7 +85,7 @@ export interface NodeModel {
 }
 
 /** A count the node carries under its name (the Agency tab: the previews
- *  waiting on the owner's card, on the `sites` neuron). `unknown` is a count that
+ *  waiting on Miro's card, on the `sites` neuron). `unknown` is a count that
  *  could not be read: grey, dashed, with the word, never a zero. */
 export interface NodeBadge {
   label: string;

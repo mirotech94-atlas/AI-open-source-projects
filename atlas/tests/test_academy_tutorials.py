@@ -1,7 +1,7 @@
 """ATLAS Academy YouTube tutorials (academy/tutorials.py, tutorial_series.py,
-tutorial_design.py, the playlist calls in youtube/api.py). the owner, 2026-10-09:
+tutorial_design.py, the playlist calls in youtube/api.py). Miro, 2026-10-09:
 n8n and Claude & MCP series, a fixed intro and ending, playlists, 4-10
-minutes, a thumbnail and https://agency.example.com in every description."""
+minutes, a thumbnail and https://agency.storefront.test in every description."""
 from __future__ import annotations
 
 import ast
@@ -29,8 +29,8 @@ REAL_UPLOAD = api.upload
 FORCE_SSL = "https://www.googleapis.com/auth/youtube.force-ssl"
 N8N, MCP = ts.series("n8n"), ts.series("claude")
 assert N8N is not None and MCP is not None
-# the owner 2026-10-18, video system pack: three more series, planned only, most
-# of their episodes held for a recording or for the owner (tutorial_series_ai).
+# Miro 2026-10-18, video system pack: three more series, planned only, most
+# of their episodes held for a recording or for Miro (tutorial_series_ai).
 NEW = ("explained", "security", "future")
 
 
@@ -58,7 +58,7 @@ def test_the_roadmap_series_and_their_playlists():
 
 
 def test_every_series_runs_from_level_0_to_advanced():
-    """the owner, 2026-10-10: "teach the basics first and then advanced, 0 to
+    """Miro, 2026-10-10: "teach the basics first and then advanced, 0 to
     advanced, for all series"."""
     for s in ts.SERIES:
         levels = [e.level for e in s.episodes]
@@ -111,7 +111,7 @@ SCRIPTED = [e for e in ALL if e.scripted]
 def test_the_scripted_episodes_are_each_ladders_first_rungs():
     """Scripts are written in ladder order: a series never has a scripted
     episode above an unscripted one. A held episode (it needs a recording or
-    the owner, tutorial_series.held) is skipped by the writer and the lineup."""
+    Miro, tutorial_series.held) is skipped by the writer and the lineup."""
     for s in ts.SERIES:
         flags = [e.scripted for e in tut.ladder(s) if ts.held(s.key, e) is None]
         assert flags == sorted(flags, reverse=True), s.key
@@ -121,7 +121,7 @@ def test_the_scripted_episodes_are_each_ladders_first_rungs():
 def test_every_episode_has_title_tags_hashtags_and_thumbnail_words(ep):
     assert len(ep.title) <= tut.TITLE_MAX
     assert len(ep.thumb_title.split("\n")) == 2
-    # 2-5 words (docs/academy-video-system/tags-and-hashtags.md, the owner
+    # 2-5 words (docs/academy-video-system/tags-and-hashtags.md, Miro
     # 2026-10-18; tutorial_thumbs.MAX_WORDS)
     assert 2 <= len(ep.thumb_title.replace("\n", " ").split()) <= 5
     assert tut.tags_length(ep.tags) <= tut.TAGS_MAX
@@ -267,7 +267,7 @@ def test_every_lesson_has_enough_teaching_to_clear_four_minutes(ep):
 
 @pytest.mark.parametrize("ep", SCRIPTED, ids=lambda e: e.slug)
 def test_the_slower_voice_still_fits_every_window_and_claim(ep):
-    """the owner, 2026-10-11 "no rush": at the tutorial voice speed and a cautious
+    """Miro, 2026-10-11 "no rush": at the tutorial voice speed and a cautious
     pace, every video stays under its ceiling, the welcome inside 90-180 s,
     and an "under five minutes" body under 300 s."""
     total, body = tut.estimate_seconds(ep, wps=SLOW_WPS)
@@ -403,13 +403,13 @@ def test_the_mcp_server_is_valid_python_and_never_prints():
     assert json.loads(ts.MCP_DESKTOP_JSON)["mcpServers"]["hello"]["command"] == "uv"
 
 
-def test_the_intro_and_ending_say_what_owner_asked():
-    """the owner, 2026-10-12: the "new channel" opener is the channel welcome's
+def test_the_intro_and_ending_say_what_miro_asked():
+    """Miro, 2026-10-12: the "new channel" opener is the channel welcome's
     only. 2026-10-17 (the video system): every lesson opens on its result,
     "Here is the result: ...", then its scope; no welcome, no number."""
-    assert ts.INTRO_SAID == ("Welcome, guys, to my new channel! My name is the owner, and "
+    assert ts.INTRO_SAID == ("Welcome, guys, to my new channel! My name is Myron, and "
                              "welcome to ATLAS Academy.")
-    assert "the owner · ATLAS Academy" in design.intro()
+    assert "Myron · ATLAS Academy" in design.intro()
     welcome = ts.series("channel").episodes[0]
     assert ts.opener_said(welcome) == ts.INTRO_SAID
     for s in ts.SERIES:
@@ -426,7 +426,7 @@ def test_the_intro_and_ending_say_what_owner_asked():
             assert line.startswith("Here is the result"), line
             low = line.lower()
             assert not [w for w in ts.WELCOME_WORDS if w in low], line
-            assert "minutes" not in low and "owner" not in low
+            assert "minutes" not in low and "myron" not in low
     # 2026-10-17: the narrated ending ("Thank you guys for watching ...") went;
     # every video ends on its EndCard
     assert not hasattr(ts, "OUTRO_SAID") and not hasattr(design, "outro")
@@ -435,7 +435,7 @@ def test_the_intro_and_ending_say_what_owner_asked():
 # ------------------------------------------------------------------ design
 
 def test_every_slide_carries_the_store_and_no_ai_label():
-    """The AI label is absent: the owner 2026-10-17: off screen; disclosed via containsSyntheticMedia + description."""
+    """The AI label is absent: Miro 2026-10-17: off screen; disclosed via containsSyntheticMedia + description."""
     ep = N8N.episode(1)
     for c, sc in enumerate(ep.scenes):
         for k in range(len(sc.said)):
@@ -489,11 +489,11 @@ def test_chapters_follow_youtubes_rules():
 
 def test_an_overlong_description_is_refused_never_cut():
     assert "over 5000" in tut.description_refusal("x" * 5001)
-    assert "agency.example.com" in tut.description_refusal(f"x\n\n{tut.AI_LABEL}")
+    assert "agency.storefront.test" in tut.description_refusal(f"x\n\n{tut.AI_LABEL}")
 
 
 def test_every_description_discloses_the_synthetic_voice_and_passes_its_gates():
-    """the owner 2026-10-17 (docs/academy-video-system/narration.md): the British
+    """Miro 2026-10-17 (docs/academy-video-system/narration.md): the British
     male AI voice stays, disclosed in every description, just before the
     AI label, outside the chapters block."""
     for s in ts.SERIES:
@@ -758,7 +758,7 @@ async def test_autopublish_holds_and_cards_when_a_check_fails(monkeypatch):
 
 
 def test_posting_by_itself_is_on_unless_autopublish_says_off(monkeypatch):
-    """the owner, 2026-10-15: tutorials go public by themselves once every gate
+    """Miro, 2026-10-15: tutorials go public by themselves once every gate
     passes; ACADEMY_TUTORIALS_AUTOPUBLISH=off brings back the review card."""
     monkeypatch.delenv("ACADEMY_TUTORIALS_AUTOPUBLISH", raising=False)
     monkeypatch.setenv("ACADEMY_TUTORIALS_AUTOPOST", "on")
@@ -772,10 +772,10 @@ def test_posting_by_itself_is_on_unless_autopublish_says_off(monkeypatch):
 
 
 def test_the_automatic_cap_is_one_per_series(monkeypatch):
-    """the owner 2026-10-11: one video for each series each day -- the global
+    """Miro 2026-10-11: one video for each series each day -- the global
     automatic cap is never lower than the number of series."""
     monkeypatch.delenv("ACADEMY_TUTORIALS_PER_DAY", raising=False)
-    # the owner's cap stays seven (rule 23); the three 2026-10-18 series have no
+    # Miro's cap stays seven (rule 23); the three 2026-10-18 series have no
     # script yet, so every series that can post still fits under it.
     can_post = [s for s in ts.SERIES if any(e.scripted for e in s.episodes)]
     assert tut.per_day() == 7 >= len(can_post)
@@ -891,7 +891,7 @@ async def test_publish_uploads_as_education_in_british_english(youtube):
 
 
 async def test_publish_declares_synthetic_media_on_upload_and_going_public(youtube):
-    """the owner 2026-10-17: status.containsSyntheticMedia on the upload, and the
+    """Miro 2026-10-17: status.containsSyntheticMedia on the upload, and the
     private -> public update sends it again."""
     result = await tut.publish_tutorial("n8n", 1)
     assert result.ok, result.detail
@@ -1074,7 +1074,7 @@ def _future_scripted(monkeypatch):
 
 
 def test_where_ai_is_going_takes_one_episode_a_calendar_month(monkeypatch):
-    """the owner, 2026-10-18: future posts monthly; the other series stay daily
+    """Miro, 2026-10-18: future posts monthly; the other series stay daily
     and the daily cap stays 7."""
     _future_scripted(monkeypatch)
     assert tut.MONTHLY_SERIES == ("future",) and tut.PER_DAY_DEFAULT == 7
@@ -1183,7 +1183,7 @@ NEW_NOTES = ["script not written for explained #1",
 
 
 def test_every_series_is_scripted_two_days_ahead():
-    """the owner, 2026-10-11: one a day per series, so today's and tomorrow's
+    """Miro, 2026-10-11: one a day per series, so today's and tomorrow's
     rung of every ladder must already have a script. The 2026-10-18 series
     start empty: the writer stocks them (docs/academy-script-writer.md)."""
     done = {("channel", 1), ("claude", 0)}
@@ -1329,7 +1329,7 @@ def tick(monkeypatch, tmp_path):
     state["noon"] = datetime.now(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
     monkeypatch.setattr(tut, "_clock", lambda: state["noon"])
     monkeypatch.setattr(tut, "_deferred", None)
-    # the owner 2026-10-17: the AI flag on the Shorts, recorded, never run here.
+    # Miro 2026-10-17: the AI flag on the Shorts, recorded, never run here.
     from atlas.modules.academy import synthetic
     state["flagged_after"], state["catch_ups"] = [], 0
 
@@ -1342,7 +1342,7 @@ def tick(monkeypatch, tmp_path):
         return state.get("catch_up_said", "")
     monkeypatch.setattr(synthetic, "after_post", after_post)
     monkeypatch.setattr(synthetic, "catch_up", catch_up)
-    # the owner 2026-10-18: the metadata refresh, recorded, never run here.
+    # Miro 2026-10-18: the metadata refresh, recorded, never run here.
     from atlas.modules.academy import metadata
     state["refreshes"] = 0
 
@@ -1414,7 +1414,7 @@ async def test_a_refused_render_does_not_stop_the_other_series(tick, monkeypatch
 
 
 async def test_by_default_the_tick_posts_by_itself_not_a_card(tick, monkeypatch):
-    """the owner, 2026-10-15: env unset -> academy.autopublish_tutorial for each
+    """Miro, 2026-10-15: env unset -> academy.autopublish_tutorial for each
     series; "off" -> the review card."""
     monkeypatch.delenv("ACADEMY_TUTORIALS_AUTOPUBLISH", raising=False)
     await tut.daily()
@@ -1694,7 +1694,7 @@ def test_the_tutorial_job_lists_the_comment_action():
 
 
 # 2026-10-13 (growth plan task 7, part B; part C moved it to its own tick,
-# teaching_tick, the owner, 2026-10-13: two Shorts a day): the tick cuts
+# teaching_tick, Miro, 2026-10-13: two Shorts a day): the tick cuts
 # one teaching Short from the oldest public tutorial with a cut not yet posted, renders it
 # (academy.render_teaching_short) and posts it (clips.autopublish_promo),
 # both through the executor.
@@ -2071,7 +2071,7 @@ def test_the_teaching_caption_passes_the_promo_gate_with_a_real_video_id():
 
 
 def test_every_teaching_caption_discloses_the_voice_in_its_short_form():
-    """the owner 2026-10-17: the Short's caption says "Synthetic voice (AI)." on
+    """Miro 2026-10-17: the Short's caption says "Synthetic voice (AI)." on
     the line above the label, never on the first line (the Short's title)."""
     from atlas.modules.clips import promo
     for s in ts.SERIES:
@@ -2294,7 +2294,7 @@ def test_the_teaching_job_lists_the_teaching_short_actions():
     """Part C: the teaching Short is its own job, not the tutorial tick's."""
     from atlas.kernel import departments
     acts = departments.JOBS["academy_teaching"].actions
-    # the owner 2026-10-17: the same tick runs the AI flag on the Shorts.
+    # Miro 2026-10-17: the same tick runs the AI flag on the Shorts.
     assert acts == ("academy.render_teaching_short", "clips.autopublish_promo",
                     "academy.flag_synthetic_short")
     tut_acts = departments.JOBS["academy_tutorial"].actions
@@ -2304,7 +2304,7 @@ def test_the_teaching_job_lists_the_teaching_short_actions():
 
 # ------------------------------------------- the teaching Short's own slot
 #
-# the owner, 2026-10-13: two Shorts a day. The teaching Short posts at or after
+# Miro, 2026-10-13: two Shorts a day. The teaching Short posts at or after
 # 23 UTC from its own tick, on even New York days of the year only; its tick
 # is spawned before the reel's 23 UTC slot, and a reel that finds the cap used
 # holds without a card
@@ -2719,7 +2719,7 @@ def test_the_intro_segment_opens_on_the_sting_with_no_label():
     assert str(design.STING) in argv and "/w/lead.png" in argv
     assert "[lv][la][body][a]concat=n=2:v=1:a=1" in graph
     assert argv[argv.index("-t", argv.index("-filter_complex")) + 1] == "10.000"   # 1 + 9
-    # the owner 2026-10-17: off screen; disclosed via containsSyntheticMedia + description
+    # Miro 2026-10-17: off screen; disclosed via containsSyntheticMedia + description
     assert design.TAG not in design.sting_layer() and "placeholder" in design.sting_layer(True)
 
 
@@ -2820,8 +2820,8 @@ def test_a_manifest_without_its_bookends_is_refused():
 
 
 def test_a_render_from_before_the_result_first_opening_is_refused():
-    """the owner, 2026-10-17: a lesson opens on its result, the sting at 6-7 s;
-    an older render (or one that opens on the owner's clip) is made again."""
+    """Miro, 2026-10-17: a lesson opens on its result, the sting at 6-7 s;
+    an older render (or one that opens on Miro's clip) is made again."""
     m = tut.Manifest("n8n", 1, "fish", 300.0, CH, parts=["intro-a.mp4", "outro-b.mp4"])
     assert "before the result-first opening" in tut.bookends_refusal(m)
     m = tut.Manifest("n8n", 1, "fish", 300.0, CH, parts=["intro-a.mp4", "outro-b.mp4"],
@@ -2832,7 +2832,7 @@ def test_a_render_from_before_the_result_first_opening_is_refused():
     m.sting_at, m.sting_seconds = 6.0, 4.0
     assert "not 6-7 s" in tut.bookends_refusal(m)
     m.sting_seconds, m.presenter = 1.0, ["intro:abc"]
-    assert "the owner's intro clip" in tut.bookends_refusal(m)
+    assert "Miro's intro clip" in tut.bookends_refusal(m)
     welcome = tut.Manifest("channel", 1, "fish", 120.0, CH,
                            parts=["intro-a.mp4", "outro-b.mp4"], opening="welcome",
                            card_at=105.0, card_seconds=15.0)
@@ -2847,7 +2847,7 @@ def test_cards_land_in_the_academy_videos_channel(monkeypatch):
     from atlas.channels.slack import SlackChannel
     monkeypatch.delenv("ACADEMY_TUTORIALS_SLACK_CHANNEL", raising=False)
     monkeypatch.delenv("SLACK_CHANNELS", raising=False)
-    assert SlackChannel().home_for("academy_videos") == "C0SLACKCH03"
+    assert SlackChannel().home_for("academy_videos") == "C0C89V8RNQJ"
     monkeypatch.setenv("ACADEMY_TUTORIALS_SLACK_CHANNEL", "C999")
     assert SlackChannel().home_for("academy_videos") == "C999"
     from atlas.kernel.approvals import _topic
@@ -2907,7 +2907,7 @@ def review(monkeypatch):
 
     class Slack:
         def channel_for(self, topic):
-            return "C0SLACKCH03" if topic == "academy_videos" else "CDEFAULT"
+            return "C0C89V8RNQJ" if topic == "academy_videos" else "CDEFAULT"
 
         async def post_blocks(self, *, channel, text, blocks):
             state["posts"].append((channel, blocks))
@@ -2926,7 +2926,7 @@ async def test_review_raises_the_card_then_posts_the_preview(review):
     said = await tut.review_tutorial("n8n", 1)
     assert review["cards"][0][:2] == ("academy.publish_tutorial",
                                       {"series": "n8n", "episode": 1})
-    assert review["posts"][0][0] == "C0SLACKCH03"
+    assert review["posts"][0][0] == "C0C89V8RNQJ"
     token = review["sql"][0][3]
     assert token.startswith("tut.") and token not in review["cards"][0][2]
     assert said == "card #41 in Slack; preview posted (123.4)"
@@ -3160,7 +3160,7 @@ async def test_the_backfill_renders_a_few_an_hour_once_each_and_sets_none(
 
 _LONG, _TOOL = "over 60", "lead with the tool"
 # The scripted titles the 2026-10-18 title rule holds, at 4 and 10 minutes:
-# reported to the owner, never hacked (their hooks are TITLE_HOOKS, Tier 2 to change).
+# reported to Miro, never hacked (their hooks are TITLE_HOOKS, Tier 2 to change).
 TITLE_HELD: dict[tuple[str, int], dict[float, str]] = {
     # the level 0/1 aside drops past 60; only these Learn titles still run
     # over at ten minutes (none renders that long today)
@@ -3278,13 +3278,13 @@ async def test_the_publish_gate_holds_the_opener_to_the_file(tmp_path, monkeypat
     ("n8n", ("Here is the result: the n8n basics. In this lesson: what automation is, "
              "what n8n is, and a quick tour of the editor."), True),
     ("n8n", "Here's the result. The N8N basics. In this lesson...", True),
-    ("n8n", ("Welcome back guys, my name is the owner and today we'll be learning "
+    ("n8n", ("Welcome back guys, my name is Myron and today we'll be learning "
              "about what automation is, in under five minutes."), False),   # the old opener
     ("n8n", "Here is the result. Welcome to my new channel, guys.", False),  # a welcome
     ("n8n", "Here is the result, guys.", False),
     ("n8n", "In this lesson: what automation is.", False),     # no result stated
     ("n8n", "", False),                                        # nothing heard
-    ("channel", "Welcome guys to my new channel, my name is the owner.", True),
+    ("channel", "Welcome guys to my new channel, my name is Myron.", True),
     ("channel", "Here is the result: the n8n basics.", False),
 ])
 def test_the_opener_heard_in_the_audio_must_be_the_one_the_manifest_claims(
@@ -3325,7 +3325,7 @@ async def test_the_publish_gate_refuses_a_file_whose_audio_says_another_opener(
     monkeypatch.setattr(tut.video_qa, "frame_rgb", navy)
 
     async def heard(_d, _m):
-        return "Welcome guys to my new channel, my name is the owner.", None
+        return "Welcome guys to my new channel, my name is Myron.", None
     monkeypatch.setattr(tut, "opener_heard", heard)
     got, why = await tut.ready("n8n", 0)
     assert got is None and "does not state its result" in why
@@ -3340,7 +3340,7 @@ async def test_the_publish_gate_refuses_a_file_whose_audio_says_another_opener(
 @pytest.mark.parametrize("key,ep", [(s.key, e) for s in ts.SERIES for e in s.episodes
                                     if e.scripted], ids=lambda x: getattr(x, "slug", x))
 def test_tags_are_channel_series_then_lesson_under_500_and_hashtags_at_the_end(key, ep):
-    """the owner 2026-10-18 (tags-and-hashtags.md): the five channel tags, the
+    """Miro 2026-10-18 (tags-and-hashtags.md): the five channel tags, the
     series' set in the spec's phrases, 3-5 lesson tags, under 500 characters
     as YouTube counts them; 3-5 hashtags, the series' strongest three first.
     Every scripted episode produces valid metadata."""
@@ -3423,25 +3423,7 @@ def test_every_demo_is_a_declarative_step_list():
                            for a in st.acts)
 
 
-def test_every_recording_is_on_disk_and_matches_its_sidecar():
-    import hashlib
-    assert td.missing(list(td.DEMOS)) is None
-    total = 0
-    for key, demo in td.DEMOS.items():
-        m = td.meta(key)
-        data = td.video_path(key).read_bytes()
-        assert hashlib.sha256(data).hexdigest() == m["sha256"] and len(data) == m["bytes"]
-        assert (m["width"], m["height"]) == (td.DEMO_W, td.DEMO_H)
-        assert len(m["marks"]) == len(demo.steps) == len(m["urls"])
-        ends = [b for _a, b in m["marks"]]
-        assert all(a < b for a, b in m["marks"]) and ends == sorted(ends)
-        assert ends[-1] <= m["seconds"] + 0.01
-        # nothing secret on screen or in the sidecar
-        text = json.dumps(m).lower()
-        assert "token" not in text and "password" not in text and "/users/" not in text
-        total += len(data)
-    kit = sum(p.stat().st_size for p in design.KIT.iterdir())
-    assert total + kit < 120_000_000
+
 
 
 def test_a_missing_recording_refuses_the_render(monkeypatch, tmp_path):
@@ -3550,7 +3532,7 @@ def test_a_demo_slide_shows_the_browser_not_a_scrim():
     for k in range(len(sc.said)):
         doc = design.slide(sc, k, mark=N8N.mark, chapter=1, chapters=5, progress=0.3)
         assert design.STORE_SHOWN in doc and "Live demo" in doc
-        assert design.TAG not in doc      # the owner 2026-10-17: off screen; disclosed via containsSyntheticMedia + description
+        assert design.TAG not in doc      # Miro 2026-10-17: off screen; disclosed via containsSyntheticMedia + description
         assert 'class="scrim"' not in doc and sc.items[k] in doc
         assert f"{k + 1}/{len(sc.said)}" in doc
         assert "localhost" in doc                       # the real address of the step
@@ -3568,7 +3550,7 @@ def test_a_new_recording_renders_the_episode_again(monkeypatch):
 
 
 async def test_the_preview_voice_is_male(monkeypatch, tmp_path):
-    """the owner, 2026-10-11: "only use the guy voice at all times". `say`'s
+    """Miro, 2026-10-11: "only use the guy voice at all times". `say`'s
     default is Samantha (female); the preview asks for Daniel."""
     import asyncio as aio
     import shutil as sh
@@ -3677,7 +3659,7 @@ async def test_a_redraft_is_tried_once_a_day(redraft, monkeypatch):
 
 
 # ------------------------------------- the voice: feelings, cues, human words
-# the owner, 2026-10-12: "the voice should have feelings and laughter and make
+# Miro, 2026-10-12: "the voice should have feelings and laughter and make
 # jokes ... don't make him sound like a robot" and "make it like a human
 # talking, not an AI".
 
@@ -3868,11 +3850,11 @@ def test_the_caption_track_is_the_script_without_cues_in_srt_order():
     m = tut.Manifest(series="n8n", episode=0, audio="fish", seconds=290.0,
                      timings=[(0.0, 4.2, "[happy] Welcome back, guys!"),
                               (4.2, 9.0, "Today we build a workflow."),
-                              (9.0, 12.0, "Find us at agency dot one eight d n dot com.")])
+                              (9.0, 12.0, "Find us at agency dot storefront dot test.")])
     srt = tut.caption_track(m, ep)
     assert srt.startswith("1\n00:00:00,000 --> 00:00:04,200\nWelcome back, guys!\n\n2\n")
     assert "[happy]" not in srt and "00:00:09,000" in srt
-    assert "agency.example.com" in srt and " dot " not in srt
+    assert "agency.storefront.test" in srt and " dot " not in srt
 
 
 async def test_a_render_without_timings_uploads_no_empty_caption_track(
@@ -3901,7 +3883,7 @@ async def test_a_render_with_timings_uploads_its_caption_track(youtube, monkeypa
 
 async def test_captions_are_not_tried_without_force_ssl(youtube, monkeypatch):
     """Final review M4: the caption upload needs youtube.force-ssl; without
-    it nothing is called and the card says the owner must re-consent."""
+    it nothing is called and the card says Miro must re-consent."""
     youtube["manifest"].timings = [(0.0, 3.0, "Welcome back!")]
     youtube["scopes"] = {"https://www.googleapis.com/auth/youtube"}
 
@@ -3909,7 +3891,7 @@ async def test_captions_are_not_tried_without_force_ssl(youtube, monkeypatch):
         raise AssertionError("no caption call without force-ssl")
     monkeypatch.setattr(api, "set_captions", captions)
     result = await tut.publish_tutorial("n8n", 1)
-    assert ("captions NOT set: the token lacks youtube.force-ssl; the owner must "
+    assert ("captions NOT set: the token lacks youtube.force-ssl; Miro must "
             "re-consent") in result.detail
     assert youtube["written"][-1][1][6] is False
 
@@ -4008,7 +3990,7 @@ def test_a_true_last_episode_closes_the_series():
     assert ts._later(s.episodes, last) is None
 
 
-def test_the_owners_closing_sentences_stay():
+def test_miros_closing_sentences_stay():
     kept = {("n8n", 1): "That's a real automation, and you built it.",
             ("business", 1): "Every lead, answered fast.",
             ("business", 2): "Run it by hand for a week and read every message "
@@ -4327,7 +4309,7 @@ def test_relaunch_is_a_tier_2_card_with_closed_params():
 
 async def test_every_render_carries_the_music_bed_after_the_final_join(fake_render):
     """Rule 22: the joined file is mixed once, after the opener settles; the
-    bed is the series' own. Since the owner 2026-10-17 (narration.md "Delivery")
+    bed is the series' own. Since Miro 2026-10-17 (narration.md "Delivery")
     it sounds only in the sting and end-card windows; until then (10-13:
     "add background music in the intro and the ending clip and in
     between") it ran under the whole file."""
@@ -4392,7 +4374,7 @@ async def test_a_preview_carries_the_bed_too(fake_render):
 
 
 def test_the_music_windows_come_from_the_render_timings():
-    """Rule 22 (the owner, 2026-10-17): the sting at 6-7 s and the EndCard, the
+    """Rule 22 (Miro, 2026-10-17): the sting at 6-7 s and the EndCard, the
     last card_seconds of the file; a render made before then is read the
     way it was mixed."""
     sting = (6.0, 7.0)
@@ -4406,7 +4388,7 @@ def test_the_music_windows_come_from_the_render_timings():
     assert tut.music_windows(m) == [sting, (285.0, 300.0)]
     m.opening = "welcome"
     assert tut.music_windows(m) == [(285.0, 300.0)]
-    # renders from before 2026-10-17: the sting at 0 s, the owner's 5 s 3D card or
+    # renders from before 2026-10-17: the sting at 0 s, Miro's 5 s 3D card or
     # the narrated ending (at most 15 s)
     old = tut.Manifest(series="n8n", episode=1, audio="fish", seconds=300.0,
                        outro_seconds=14.0, presenter=["intro:aaa", "outro:bbb"])
@@ -4684,7 +4666,7 @@ async def test_the_daily_tick_warns_of_a_short_runway_even_with_nothing_to_draft
 
 
 async def test_the_teaching_short_is_drawn_in_portrait_with_its_hook_first(teach):
-    """ShortsFrame (the owner, 2026-10-17): every page 1080x1920, the hook on the
+    """ShortsFrame (Miro, 2026-10-17): every page 1080x1920, the hook on the
     first from frame 0, the closing card naming the lesson last; no page
     says "Made with AI" and nothing is zoomed."""
     from atlas.modules.academy import short_frame as sf

@@ -1,6 +1,6 @@
 """Missions: a job bigger than one catalog action, handed to the agent that owns it.
 
-the owner, 2026-09-29, by voice: "Hey Atlas, search up the 50 local businesses
+Miro, 2026-09-29, by voice: "Hey Atlas, search up the 50 local businesses
 that have a very poor website or no website at all and make them one."
 ATLAS answered as small talk ("I can't pull a live list of local
 businesses") while the agency module does exactly that. His words: "he
@@ -88,31 +88,31 @@ OWNERS: tuple[Owner, ...] = (
     Owner("qa", ("qa",), re.compile(
         r"\bqa\b|\bquality\s+check\w*|\bsecurity\s+scan\w*"
         r"|\bmissed\s+(?:jobs?|runs?)\b|\bremediation\b", re.IGNORECASE)),
-    # Sage (seo) owns the TutorSite page calendar (SAGE_MMT_LINKEDIN): a request
+    # Sage (seo) owns the ExampleTutor page calendar (SAGE_TUTORCO_LINKEDIN): a request
     # about that page's SEO, LinkedIn posts, hashtags, tagline or keywords is search
-    # work. Only those words, ahead of mmt (prospects and product facts); a bare
-    # "MMT calendar" or "MMT pricing page" stays mmt's. Plain SEO words keep their
+    # work. Only those words, ahead of tutorco (prospects and product facts); a bare
+    # "TUTORCO calendar" or "TUTORCO pricing page" stays tutorco's. Plain SEO words keep their
     # place after sales below.
-    # Prospect, intro and outreach work on LinkedIn stays mmt's.
-    Owner("seo", ("seo", "sagemmt"), re.compile(
+    # Prospect, intro and outreach work on LinkedIn stays tutorco's.
+    Owner("seo", ("seo", "tutorseo"), re.compile(
         r"^(?!.*\b(?:prospects?|intros?|introductions?|leads?|outreach|customers?"
         r"|centers?\s+to\s+contact|dms?|messages?)\b).*?(?:"
-        r"(?:\bmeet\s*my\s*tutor\b|\bmmt\b)[^.\n]{0,40}"
+        r"(?:\bexample\s*tutor\b|\btutorco\b)[^.\n]{0,40}"
         r"\b(?:seo|linkedin|hashtags?|tagline|keywords?|posts?"
         r"|(?:page|post|content)\s+calendar)\b"
         r"|\b(?:seo|linkedin|hashtags?|tagline|keywords?|posts?"
         r"|(?:page|post|content)\s+calendar)\b[^.\n]{0,40}"
-        r"(?:\bmeet\s*my\s*tutor\b|\bmmt\b))", re.IGNORECASE | re.DOTALL)),
+        r"(?:\bexample\s*tutor\b|\btutorco\b))", re.IGNORECASE | re.DOTALL)),
     # Before sales and sites: their `lead`/`prospect` words would otherwise win.
-    Owner("mmt", ("mmt",), re.compile(
-        r"\bmeet\s*my\s*tutor\b|\bmmt\b"
+    Owner("tutorco", ("tutorco",), re.compile(
+        r"\bexample\s*tutor\b|\btutorco\b"
         r"|\btutor(?:ing)?\s+(?:centre|center)s?\b", re.IGNORECASE)),
     Owner("sales", ("sales",), re.compile(
         r"\bsales\b|\blead\s+gen\w*|\bcold\s+(?:email|outreach)\w*"
         r"|\bproposals?\b|\bcsv\s+(?:of\s+)?leads?\b", re.IGNORECASE)),
     # Before agency: "seo audit of joes" is search work, not a new site. Same
-    # modules as Sage's TutorSite-page entry above (BY_AGENT keeps this one).
-    Owner("seo", ("seo", "sagemmt"), re.compile(
+    # modules as Sage's ExampleTutor-page entry above (BY_AGENT keeps this one).
+    Owner("seo", ("seo", "tutorseo"), re.compile(
         r"\bseo\b|\bsearch\s+console\b|\bkeyword\s+research\b"
         r"|\bsearch\s+rank\w*|\bgoogle\s+rank\w*", re.IGNORECASE)),
     # Before agency: "competitor pricing table" is research, not a new site.
@@ -131,8 +131,8 @@ OWNERS: tuple[Owner, ...] = (
     Owner("bizops", ("bizops",), re.compile(
         r"\bbizops\b|\binvoic\w*|\bonboard\w*|\bpayment\s+reminders?\b"
         r"|\bautomation\s+ideas?\b", re.IGNORECASE)),
-    Owner("content", ("academy", "youtube", "church", "reddit"), re.compile(
-        r"\byoutube\b|\bacademy\b|\bchurch\b|\becc\b|\breddit\b"
+    Owner("content", ("academy", "youtube", "community", "reddit"), re.compile(
+        r"\byoutube\b|\bacademy\b|\bcommunity\b|\bamsm\b|\breddit\b"
         r"|\btitle\s+tests?\b|\bcomment\s+repl\w*", re.IGNORECASE)),
 )
 BY_AGENT: dict[str, Owner] = {o.agent: o for o in OWNERS}
@@ -211,7 +211,7 @@ def who(agent: str) -> str:
 
 # ------------------------------------------------- who answers, out loud
 #
-# the owner, 2026-09-29: "When I ask something, ATLAS should coordinate and
+# Miro, 2026-09-29: "When I ask something, ATLAS should coordinate and
 # redirect to the appropriate agent." `owner_for` decides whose WORK an order
 # is -- what Slack and the missions start. This decides who ANSWERS a spoken
 # question on the dashboard: wider (the business agents, his words for them,
@@ -284,7 +284,7 @@ async def agent_activity(agent: str, hours: int = 24) -> str:
             """SELECT created_at, request, status, report FROM missions
                 WHERE agent = $1 AND created_at > now() - make_interval(hours => $2::int)
                 ORDER BY created_at DESC LIMIT 4""", agent, hours)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("missions: activity of %s unreadable: %s", agent, exc)
         return ("YOUR RECENT WORK: unreadable right now. Say so rather than "
                 "guessing what was done.")
@@ -319,7 +319,7 @@ def _module_briefs(agent: str) -> list[str]:
             continue
         try:
             line = module.brief()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             line = f"could not summarise: {type(exc).__name__}"
         if line:
             out.append(f"{name}: {line}")
@@ -438,7 +438,7 @@ class Area:
 
 
 def home_area() -> Area | None:
-    """`AGENCY_HOME_AREA` = "lat,lng,radius_m,label" -- the owner's own words for
+    """`AGENCY_HOME_AREA` = "lat,lng,radius_m,label" -- Miro's own words for
     where he works, set by him. None when unset or malformed."""
     raw = os.getenv("AGENCY_HOME_AREA", "").strip()
     if not raw:
@@ -501,15 +501,15 @@ async def _model_slots(request: str) -> dict[str, Any]:
     try:
         completion = await asyncio.wait_for(think(
             Need.TRIVIAL,
-            "the owner asked for local businesses to be found. Read two slots from "
+            "Miro asked for local businesses to be found. Read two slots from "
             "his words and reply with one JSON object and nothing else:\n"
             '  {"business": "<the trade he named, plural, e.g. plumbers>" or '
             'null, "area": "<the place he named, e.g. Astoria>" or null}\n'
             "Use only words he said. A slot he did not say is null. 'Local "
             "businesses' in general is business null. Never write coordinates.",
-            [Message("user", wrap_untrusted(request, "owner", principal=True))],
+            [Message("user", wrap_untrusted(request, "miro", principal=True))],
             max_tokens=120), timeout=20)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return {}
     text = (getattr(completion, "text", "") or "").strip()
     try:
@@ -771,7 +771,7 @@ def next_agency_step(m: dict[str, Any], facts: list[LeadFact],
     blocked = st.setdefault("blocked", {})
     n = int(m["slots"].get("n") or 1)
 
-    # Verify before anything else is spent on a lead (the owner, 2026-09-30):
+    # Verify before anything else is spent on a lead (Miro, 2026-09-30):
     # only a verified lead is audited, mocked up or built for.
     if "verify" not in blocked:
         for f in facts:
@@ -888,7 +888,7 @@ async def run_step(m: dict[str, Any], owner: Owner, name: str,
             pid = await propose(
                 name, params,
                 reason=(f"Mission #{m.get('id')} ({who(owner.agent)}), asked by "
-                        f"the owner: “{request}”"),
+                        f"Miro: “{request}”"),
                 evidence={"mission": m.get("id"), "request": request},
                 dedup_key=f"mission:{m.get('id')}:{name}:"
                           f"{json.dumps(params, sort_keys=True, default=str)[:80]}")
@@ -897,13 +897,13 @@ async def run_step(m: dict[str, Any], owner: Owner, name: str,
                         "detail": exc.spoken})
             return "refused", exc.spoken
         _record(m, {"action": name, "params": params, "ok": True,
-                    "proposal_id": pid, "detail": f"card #{pid} raised for the owner"})
+                    "proposal_id": pid, "detail": f"card #{pid} raised for Miro"})
         return "card", pid
 
     from .executor import ExecutionRequest, execute
     result = await execute(ExecutionRequest(
         action=name, params=params,
-        reason=(f"Mission #{m.get('id')} for the owner, run by {who(owner.agent)}: "
+        reason=(f"Mission #{m.get('id')} for Miro, run by {who(owner.agent)}: "
                 f"“{request}”")))
     held = _held(result) and not result.ok
     if not held:
@@ -972,7 +972,7 @@ async def _notify(m: dict[str, Any], title: str, body: str) -> None:
     try:
         await notify(Outbound(title=title[:150], body=body, topic="agency",
                               severity=Severity.NORMAL))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("mission #%s: could not post to the agency channel", m.get("id"))
 
 
@@ -1027,7 +1027,7 @@ async def advance(mission_id: int) -> str:
     finally:
         try:
             await _release(mission_id)
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             log.warning("mission #%s: lease not released", mission_id)
 
 
@@ -1097,7 +1097,7 @@ async def _hold() -> str | None:
         return "ATLAS is in watch-only mode (ATLAS_WATCH_ONLY)"
     try:
         stopped = await pause.active_for("agency")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return "the pause state could not be read"
     return stopped.says() if stopped is not None else None
 
@@ -1125,7 +1125,7 @@ async def finish(m: dict[str, Any], status: str,
         if facts is None:
             facts = await lead_facts(m["state"].get("lead_ids", []))
         m["report"] = report(m, facts, read_at=datetime.now().astimezone())
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         m["report"] = (f"Mission #{m['id']} ended ({status}), but its results "
                        f"could not be read back: {explain(exc)}. The counts are "
@@ -1198,7 +1198,7 @@ async def tick(now: datetime | None = None) -> list[str]:
     from ..modules._http import explain
     try:
         ids = await _live_ids()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("missions: could not read live missions: %s", explain(exc))
         return [f"not read: {explain(exc)}"]
     said = []
@@ -1225,7 +1225,7 @@ def _kick(mission_id: int) -> None:
 @dataclass(frozen=True, slots=True)
 class Reply:
     """`spoken` is what ATLAS says and the dashboard types: one or two short
-    sentences, no config names, no file paths, no mission numbers (the owner,
+    sentences, no config names, no file paths, no mission numbers (Miro,
     2026-09-29: "not too chatty -- simple and straight to the point").
     `detail` is the full account for Slack and the Agency room, when there
     is more to it than the spoken line."""
@@ -1297,7 +1297,7 @@ async def take(request: str, *, channel: str, who_: str, thread: str = "",
                principal: bool = True) -> Reply | None:
     """Start a recipe mission for this request, or None when it is not one.
 
-    Only a surface that authenticates the owner starts one (Slack from an
+    Only a surface that authenticates Miro starts one (Slack from an
     approver, the signed-in dashboard); anything else gets an honest line.
     """
     from .solve import denied
@@ -1343,7 +1343,7 @@ async def take(request: str, *, channel: str, who_: str, thread: str = "",
     try:
         from ..modules.agency.prospect import cap, spend_this_month
         used, limit = await spend_this_month(), cap()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         used, limit = None, None
         log.warning("missions: Places spend unread: %s", explain(exc))
@@ -1443,7 +1443,7 @@ async def answer(text: str, *, channel: str) -> Reply | None:
         return None
     try:
         pending = await _pending_question(channel)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     if pending is None:
         return None
@@ -1467,7 +1467,7 @@ async def answer(text: str, *, channel: str) -> Reply | None:
 # ------------------------------------------------------- the generic path
 
 ASK_AGENT = (
-    "the owner asked for the job below and handed it to you. Nothing in your "
+    "Miro asked for the job below and handed it to you. Nothing in your "
     "catalog does it as one action, so do what you can with your tools: take "
     "the readings that bear on it, each with the time it was read, and answer "
     "him in at most four sentences. If it needs something you cannot do, say "
@@ -1475,7 +1475,7 @@ ASK_AGENT = (
 # The same, for a voice he is listening to: two short sentences, the read
 # time said compactly ("as of 7:52"), no tool, config or file names.
 ASK_AGENT_SAID = (
-    "the owner asked for the job below, out loud, and handed it to you. Nothing in "
+    "Miro asked for the job below, out loud, and handed it to you. Nothing in "
     "your catalog does it as one action, so do what you can with your tools. "
     "Answer in at most two short sentences he can take in by ear: lead with "
     "the answer, don't restate the question, no config names or file paths. "
@@ -1517,7 +1517,7 @@ async def delegate(request: str, *, channel: str, who_: str, thread: str = "",
         try:
             pid = await propose(
                 action, params,
-                reason=f"{name_of} took this for the owner over {channel}: “{asked[:300]}”",
+                reason=f"{name_of} took this for Miro over {channel}: “{asked[:300]}”",
                 evidence={"channel": channel, "request": asked[:500],
                           "agent": owner.agent},
                 dedup_key=f"{action}@{channel}:{asked[:80].lower()}")
@@ -1550,7 +1550,7 @@ async def delegate(request: str, *, channel: str, who_: str, thread: str = "",
             timeout=AGENT_TIMEOUT_S)
     except TimeoutError:
         text = ""
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         text = f"(couldn't answer: {explain(exc)})"
     text = (text or "").strip()
@@ -1588,6 +1588,6 @@ async def _record_single(owner: Owner, asked: str, channel: str, who_: str,
         return await _insert_mission(agent=owner.agent, recipe="single", request=asked,
                              channel=channel, who_=who_, thread=thread, slots={},
                              status=status, steps=steps, report=report_)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("missions: could not record a delegated request")
         return None

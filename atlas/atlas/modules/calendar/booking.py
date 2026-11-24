@@ -38,7 +38,7 @@ async def offer_slots(to: str, subject: str, slots: str) -> ActionResult:
     irreversible: a sent email cannot be un-sent the way a draft can."""
     tok = await _mail_token()
     body = (f"Hi,\n\nWould any of these work for a quick meeting?\n\n{slots}\n\n"
-           f"Best,\nOwner")
+           f"Best,\nMiro")
     raw = base64.urlsafe_b64encode(
         f"To: {to}\r\nSubject: {subject}\r\n"
         f"MIME-Version: 1.0\r\n"
@@ -173,7 +173,7 @@ async def free_slots_tool(days: int = 3, minutes: int = 30) -> dict:
 
     try:
         events = await _upcoming(days=max(days, 1))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
     busy = [(s, e) for ev in events if (s := _start(ev)) and (e := _end(ev))]
     blocks = parse_blocks(os.getenv("FOCUS_BLOCKS", ""))

@@ -1,6 +1,6 @@
 """What each roster agent is doing, did yesterday, and what is wrong.
 
-the owner, 2026-10-28: beside the Agency map, a live panel per agent -- what it
+Miro, 2026-10-28: beside the Agency map, a live panel per agent -- what it
 is doing now, what it did yesterday, and its issues -- from real data only,
 each item stamped with when it was read. `GET /api/agency/activity` serves
 `activity()`; the map polls it every 30 s.
@@ -128,7 +128,7 @@ async def _section(name: str, errors: dict[str, str], read: Awaitable[Any]
     """One read, and the time it finished. A failure is `None` + `errors`."""
     try:
         rows = await read
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("agent activity could not read %s: %s", name, why)
         errors[name] = why

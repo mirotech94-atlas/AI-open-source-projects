@@ -2,7 +2,7 @@
 
 A site is published on this box under `hosting.PUBLISH_ROOT` (one release
 per deploy, made live by swapping a relative symlink) and served by Caddy
-at `https://agency.example.com/preview/<slug>/`. Everything here runs on `tmp_path`; the
+at `https://agency.storefront.test/preview/<slug>/`. Everything here runs on `tmp_path`; the
 store is monkeypatched, nothing touches a socket.
 """
 from __future__ import annotations
@@ -108,9 +108,9 @@ def test_local_mode_is_unset_or_the_word_local(monkeypatch):
 
 def test_preview_origin_defaults_to_the_agency_host(monkeypatch):
     monkeypatch.delenv("AGENCY_PREVIEW_ORIGIN", raising=False)
-    assert hosting.preview_origin() == "https://agency.example.com"
-    assert hosting.public_url("joes-7") == "https://agency.example.com/preview/joes-7/"
-    assert hosting.public_host("joes-7") == "agency.example.com"
+    assert hosting.preview_origin() == "https://agency.storefront.test"
+    assert hosting.public_url("joes-7") == "https://agency.storefront.test/preview/joes-7/"
+    assert hosting.public_host("joes-7") == "agency.storefront.test"
     monkeypatch.setenv("AGENCY_PREVIEW_ORIGIN", " https://Example.COM/ ")
     assert hosting.public_url("joes-7") == "https://example.com/preview/joes-7/"
 
@@ -119,7 +119,7 @@ def test_preview_origin_defaults_to_the_agency_host(monkeypatch):
                                  "https://a.com/path", "https://user@a.com", "https://"])
 def test_a_bad_preview_origin_falls_back_to_the_default(monkeypatch, bad):
     monkeypatch.setenv("AGENCY_PREVIEW_ORIGIN", bad)
-    assert hosting.preview_origin() == "https://agency.example.com"
+    assert hosting.preview_origin() == "https://agency.storefront.test"
 
 
 def test_preview_slug_is_read_from_a_preview_url_path():
@@ -196,7 +196,7 @@ async def test_publish_is_a_relative_link_to_a_copied_release(monkeypatch, tmp_p
     _serve(monkeypatch, tmp_path)
     result = await deploy.deploy_site("joes-7")
     assert result.ok, result.detail
-    assert result.evidence["url"] == "https://agency.example.com/preview/joes-7/"
+    assert result.evidence["url"] == "https://agency.storefront.test/preview/joes-7/"
     link = root / "joes-7"
     assert link.is_symlink()
     target = os.readlink(link)
@@ -355,7 +355,7 @@ async def test_deploy_dry_names_the_public_url(monkeypatch, tmp_path, local):
     _serve(monkeypatch, tmp_path)
     preview = await deploy.deploy_dry("joes-7")
     assert preview.ok, preview.detail
-    assert "https://agency.example.com/preview/joes-7/" in preview.detail
+    assert "https://agency.storefront.test/preview/joes-7/" in preview.detail
     assert "first release" in preview.detail and "index.html (" in preview.detail
     assert not root.exists() or not (root / "joes-7").exists()
 
@@ -373,9 +373,9 @@ def test_published_domain_falls_back_to_the_preview_host(monkeypatch):
     monkeypatch.delenv("AGENCY_DEPLOY_HOST", raising=False)
     monkeypatch.delenv("AGENCY_PREVIEW_ORIGIN", raising=False)
     assert deploy.published_domain({"slug": "joes-7", "deployed_at": "x"}) \
-        == "agency.example.com"
+        == "agency.storefront.test"
     assert deploy.published_url({"slug": "joes-7", "deployed_at": "x"}) \
-        == "https://agency.example.com/preview/joes-7/"
+        == "https://agency.storefront.test/preview/joes-7/"
     assert deploy.published_url({"slug": "joes-7", "deployed_at": None}) is None
     assert deploy.published_domain({"slug": "joes-7", "deployed_at": None}) is None
     assert deploy.published_domain({"slug": "joes-7", "domain": "joes.com",

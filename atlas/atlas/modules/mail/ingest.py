@@ -7,7 +7,7 @@ Fiverr order, a Stripe dispute notice all sat there as "1 unread". Counting
 is not reading.
 
 This polls instead. It is honest polling: every account, every few minutes,
-only messages newer than the last one seen, only ones the owner has not opened.
+only messages newer than the last one seen, only ones Miro has not opened.
 That last part is the point. He asked to be told about things he has NOT
 seen, not about everything -- so anything he has already read is skipped
 and the watermark is per account, so a busy inbox does not starve a quiet
@@ -47,8 +47,8 @@ _started = datetime.now(UTC)
 # What the classifier can say that is worth interrupting him for.
 TELL_HIM = {"needs_reply", "client", "bill"}
 # What the sender can be that is worth interrupting him for regardless.
-WATCHED_SENDERS = ("fiverr.com", "stripe.com", "vault.example", "flycheap.example",
-                   "gitlab", "cloud-provider.example", "linkedin.com")
+WATCHED_SENDERS = ("fiverr.com", "stripe.com", "guarder.example.com", "flycheap.example.com",
+                   "gitlab", "cloudhost.example", "linkedin.com")
 
 
 def _topic_for(account: Account) -> str:
@@ -153,7 +153,7 @@ async def _new_imap(account: Account) -> list[dict]:
         finally:
             try:
                 conn.logout()
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 log.debug("imap logout failed for %s: %s", account.name, exc)
 
     return await asyncio.to_thread(sync)
@@ -177,7 +177,7 @@ async def sweep() -> list[Signal]:
         try:
             fresh = (await _new_imap(account) if account.kind == "imap"
                      else await _new_google(account))
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("mail sweep failed for %s: %s", account.name, exc)
             continue
 
@@ -204,7 +204,7 @@ async def sweep() -> list[Signal]:
                 unchecked += 1
             try:
                 verdict = await classify(m["subject"], m["sender"], m["body"])
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 verdict = {"unclassified": explain(exc)}
             if "unclassified" in verdict or not verdict.get("category"):
                 reason = str(verdict.get("unclassified") or "no category")
@@ -217,7 +217,7 @@ async def sweep() -> list[Signal]:
                     f"{verdict.get('summary', '')}",
                     meta={"category": verdict.get("category"),
                           "account": account.email}, importance=0.4)
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 log.warning("could not remember mail from %s: %s",
                             m["sender"], exc)
 

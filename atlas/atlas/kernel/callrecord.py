@@ -1,6 +1,6 @@
 """A record of every call ATLAS places, and a receipt for the ones he took.
 
-the owner's voice-partner brief asks that a call leave a trail: what it was
+Miro's voice-partner brief asks that a call leave a trail: what it was
 about, what he was asked, what was pressed, and how it ended. Until now a
 decision left a receipt, a missed call left a Slack post, and a call he
 answered without deciding left nothing at all -- the next morning there was
@@ -75,7 +75,7 @@ async def placed(sid: str | None, *, title: str, opening: str, ask: str = "",
                ON CONFLICT (call_sid) DO NOTHING""",
             sid, attempt, title[:300], opening[:1200], ask[:300], list(pids or []),
             incident_key, away, night)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("call %s not recorded: %s", sid[:10], type(exc).__name__)
 
 
@@ -91,7 +91,7 @@ async def decided(sid: str, pid: int, verdict: str, via: str, result: str = "") 
         await execute_sql(
             "UPDATE voice_calls SET decided = decided || $2::jsonb WHERE call_sid = $1",
             sid, json.dumps([entry]))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("decision on call %s not recorded: %s", sid[:10], type(exc).__name__)
 
 
@@ -127,7 +127,7 @@ async def ended(sid: str, outcome: str, answered_by: str = "") -> None:
             "UPDATE voice_calls SET outcome = $2, answered_by = $3, turn_ms = $4, "
             "ended_at = now() WHERE call_sid = $1",
             sid, outcome, answered_by[:40] or None, list(rec.turn_ms) if rec else [])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("end of call %s not recorded: %s", sid[:10], type(exc).__name__)
 
 

@@ -560,7 +560,7 @@ async def unpublish_webild(brief_id: int, url: str) -> bool:
 
 
 async def report_webild(lead_id: int, status: str, text: str) -> dict[str, Any] | None:
-    """The agent stopped: queued -> failed | needs_owner, with its own words,
+    """The agent stopped: queued -> failed | needs_miro, with its own words,
     only while the task is still live."""
     return _row(await fetch_one(
         """UPDATE agency_webild SET status=$2, report=$3, reported_at=now()
@@ -656,7 +656,7 @@ async def queue_reply(message_id: int, channel: str) -> None:
 
 
 async def messages_awaiting_reply(limit: int) -> list[dict[str, Any]]:
-    """Queued, unclaimed, and under a day old: an older one is the owner's to
+    """Queued, unclaimed, and under a day old: an older one is Miro's to
     answer, not a draft to spring on him late."""
     rows = await fetch_all(
         """SELECT id, lead_id, reply_channel FROM agency_lead_messages
@@ -1030,7 +1030,7 @@ async def count_closed_deals() -> int:
 
 
 async def lead_returning(lead_id: int) -> bool:
-    """A returning client: a won or paid deal on THIS lead, or a lead the owner
+    """A returning client: a won or paid deal on THIS lead, or a lead Miro
     linked to an earlier client (`returning_of_lead_id`). Never an email
     domain. Raises when unreadable -- the caller must not read a failure as
     new."""

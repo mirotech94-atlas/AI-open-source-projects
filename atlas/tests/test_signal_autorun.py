@@ -1,5 +1,5 @@
 """A signal that suggests a Tier 1 action on the closed SIGNAL_AUTORUN list
-runs it through the executor instead of raising a card (the owner, 2026-10-12;
+runs it through the executor instead of raising a card (Miro, 2026-10-12;
 memory approval-policy). A refusal is still the card, reason first; a hold
 (watch-only, a pause, an hourly ceiling) is neither; anything not on the
 list, card_only, principal_only or Tier 2 is a card exactly as before."""
@@ -164,7 +164,7 @@ async def test_the_switch_off_sends_it_back_to_a_card(wired, monkeypatch):
 
 
 def test_the_list_holds_no_card_only_or_tier3_action():
-    # Closed, and never the Whop record or anything the owner must do himself.
+    # Closed, and never the Whop record or anything Miro must do himself.
     assert "clips.submit_to_whop" not in scheduler.SIGNAL_AUTORUN
     assert "clips.hand_off" not in scheduler.SIGNAL_AUTORUN
     assert scheduler.SIGNAL_AUTORUN == {
@@ -190,7 +190,7 @@ def test_every_why_a_card_line_names_a_tier2_action(monkeypatch):
     for name in board.WHY_A_CARD:
         if name in ("clips.submit_to_whop", "academy.send_support_reply"):
             # Tier 1 in code, carded only when a check says no (support) or
-            # card_only because the card records the owner's own act (Whop).
+            # card_only because the card records Miro's own act (Whop).
             assert tiers[name] is Tier.AUTO
             continue
         assert tiers.get(name) is Tier.ASK, name

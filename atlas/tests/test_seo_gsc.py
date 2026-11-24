@@ -18,7 +18,7 @@ from atlas.modules import _http
 from atlas.modules.seo import gsc, store
 
 SITES = [{"slug": "joes", "domain": "joes.example", "path": None, "client": "Joe's"},
-         {"slug": "academy-store", "domain": "agency.example.com", "path": None,
+         {"slug": "academy-store", "domain": "agency.storefront.test", "path": None,
           "client": "ATLAS Academy"}]
 
 
@@ -92,7 +92,7 @@ class Google:
 
 NOW = datetime(2026, 10, 29, 12, 0, tzinfo=UTC)
 VERIFIED = [{"siteUrl": "sc-domain:joes.example", "permissionLevel": "siteOwner"},
-            {"siteUrl": "https://agency.example.com/", "permissionLevel": "siteFullUser"}]
+            {"siteUrl": "https://agency.storefront.test/", "permissionLevel": "siteFullUser"}]
 
 
 @pytest.fixture
@@ -217,17 +217,17 @@ async def test_an_unreadable_sitemap_or_inspection_is_named_not_counted(google):
 async def test_an_unverified_site_is_unknown_and_named(google):
     google(entries=VERIFIED[:1])
     obs = await gsc.check()
-    assert obs.health is Health.UNKNOWN and "agency.example.com" in obs.detail
+    assert obs.health is Health.UNKNOWN and "agency.storefront.test" in obs.detail
 
 
 def test_the_academy_store_is_a_target():
-    assert store.ACADEMY["domain"] == "agency.example.com"
+    assert store.ACADEMY["domain"] == "agency.storefront.test"
 
 
 def test_a_vercel_preview_host_is_a_preview_and_a_real_domain_is_not():
-    assert gsc.is_preview("demo-site.vercel.example")
+    assert gsc.is_preview("atlas-agency-barber-shop-nyc-61.vercel.app")
     assert gsc.is_preview("Atlas-Agency-West-Vibe-53.vercel.app.")
-    assert not gsc.is_preview("joes.example") and not gsc.is_preview("agency.example.com")
+    assert not gsc.is_preview("joes.example") and not gsc.is_preview("agency.storefront.test")
     assert not gsc.is_preview("vercel.app.evil.example")
 
 
@@ -237,13 +237,13 @@ async def test_client_previews_are_not_counted_unknown_and_are_named_as_noindex(
 
     async def targets():
         return [*SITES, {"slug": "barber-shop-nyc-61", "client": "Barber",
-                         "domain": "demo-site.vercel.example",
+                         "domain": "atlas-agency-barber-shop-nyc-61.vercel.app",
                          "path": None}]
     monkeypatch.setattr(store, "targets", targets)
     obs = await gsc.check()
     assert obs.health is Health.OK, obs.detail
     assert {s["slug"] for s in obs.evidence["sites"]} == {"joes", "academy-store"}
-    assert obs.evidence["previews"] == ["demo-site.vercel.example"]
+    assert obs.evidence["previews"] == ["atlas-agency-barber-shop-nyc-61.vercel.app"]
     assert "1 client preview(s) skipped (noindex)" in obs.detail
 
 
@@ -252,12 +252,55 @@ async def test_a_real_domain_without_a_property_still_makes_it_unknown(
     google()
 
     async def targets():
-        return [*SITES, {"slug": "mmt", "client": "MMT", "domain": "tutoring.example",
+        return [*SITES, {"slug": "tutorco", "client": "TUTORCO", "domain": "exampletutor.com",
                          "path": None},
                 {"slug": "p", "client": "P", "path": None,
-                 "domain": "demo-site.vercel.example"}]
+                 "domain": "atlas-agency-p-1.vercel.app"}]
     monkeypatch.setattr(store, "targets", targets)
     obs = await gsc.check()
     assert obs.health is Health.UNKNOWN
-    assert "UNKNOWN for 1 site(s)" in obs.detail and "tutoring.example" in obs.detail
+    assert "UNKNOWN for 1 site(s)" in obs.detail and "exampletutor.com" in obs.detail
     assert "atlas-agency-p-1" not in obs.detail
+
+
+def _inspector(monkeypatch, answers: dict[str, dict | None]):
+    seen: list[str] = []
+
+    async def post(url, **kw):
+        page = kw["json_body"]["inspectionUrl"]
+        seen.append(page)
+        res = answers.get(page)
+        if res is None:
+            return None, "HTTP 500 Internal Server Error"
+        return {"inspectionResult": {"indexStatusResult": res}}, None
+    monkeypatch.setattr(_http, "post_json", post)
+    return seen
+
+
+async def test_a_page_whose_canonical_is_elsewhere_is_judged_by_the_canonical(monkeypatch):
+    seen = _inspector(monkeypatch, {
+        "https://a.test/": {"verdict": "NEUTRAL", "userCanonical": "https://a.test/x/",
+                            "coverageState": "Crawled - currently not indexed"},
+        "https://a.test/x/": {"verdict": "PASS", "coverageState": "Submitted and indexed"}})
+    got, why = await gsc._inspect("sc-domain:a.test", {}, ["https://a.test/"])
+    assert seen == ["https://a.test/", "https://a.test/x/"]
+    assert got["n"] == 1 and got["indexed"] == 1 and got["not_indexed"] == []
+    assert why is None
+
+
+async def test_a_canonical_that_is_itself_not_indexed_is_still_a_problem(monkeypatch):
+    _inspector(monkeypatch, {
+        "https://a.test/": {"verdict": "NEUTRAL", "userCanonical": "https://a.test/x/"},
+        "https://a.test/x/": {"verdict": "NEUTRAL", "coverageState": "Discovered"}})
+    got, _ = await gsc._inspect("sc-domain:a.test", {}, ["https://a.test/"])
+    assert [b["url"] for b in got["not_indexed"]] == ["https://a.test/x/"]
+
+
+async def test_an_unreadable_canonical_is_unread_never_fine(monkeypatch):
+    _inspector(monkeypatch, {
+        "https://a.test/": {"verdict": "NEUTRAL", "userCanonical": "https://a.test/x/"},
+        "https://a.test/x/": None,
+        "https://a.test/y/": {"verdict": "PASS"}})
+    got, why = await gsc._inspect("sc-domain:a.test", {},
+                                  ["https://a.test/", "https://a.test/y/"])
+    assert got["n"] == 1 and got["unread"] == 1 and why is not None

@@ -1,7 +1,7 @@
 """Perplexity over MCP: research, reasoning and understanding, as a *source*
 with a budget (Phase 20.5, Task 42).
 
-the owner: "use MCP for Perplexity; use Perplexity for deep thinking and
+Miro: "use MCP for Perplexity; use Perplexity for deep thinking and
 understanding and research and everything that it is good for." This is the
 one place ATLAS talks to Perplexity. Every seam that wants research —
 knowledge mode, the research report, the weekly monetisation pass, agency
@@ -236,7 +236,7 @@ def names_own_system(text: str) -> bool:
     try:
         from ..api.voice import _mentions_a_name
         return _mentions_a_name(text)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("could not evaluate the name rule; refusing to ask")
         return True
 
@@ -297,7 +297,7 @@ async def call(tool: str, text: str, *, caller: str, guard_names: bool = True,
 
     try:
         used = await calls_this_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, _clean(f"perplexity budget unreadable, so nothing was "
                             f"spent: {type(exc).__name__}: {exc}")
     limit = cap()
@@ -331,7 +331,7 @@ async def _record(tool: str, caller: str, chars_in: int, chars_out: int) -> None
         await execute_sql(
             "INSERT INTO perplexity_calls (tool, caller, chars_in, chars_out) "
             "VALUES ($1, $2, $3, $4)", tool, caller, chars_in, chars_out)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not count a Perplexity call against the cap: %s",
                     _clean(str(exc)))
 
@@ -450,7 +450,7 @@ def _parse_mcp(result: Any) -> tuple[str | None, list[str], str | None]:
     """Never raises: a shape it does not expect is a reason."""
     try:
         return _parse_mcp_shape(result)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None, [], "unexpected result shape from Perplexity's tools/call"
 
 
@@ -533,7 +533,7 @@ async def check_budget() -> Observation:
             "counted"))
     try:
         used = await calls_this_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("budget", Health.UNKNOWN, detail=_clean(
             f"could not read perplexity_calls: {type(exc).__name__}: {exc}"))
 
@@ -569,7 +569,7 @@ async def budget_status() -> dict[str, Any]:
                 "read_at": None, "reason": f"{KEY_ENV} not set"}
     try:
         used = await calls_this_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {"configured": True, "used": None, "cap": limit, "read_at": None,
                 "reason": _clean(f"could not read perplexity_calls: {exc}")}
     return {"configured": True, "used": used, "cap": limit,

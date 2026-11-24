@@ -39,7 +39,7 @@ async def _clean() -> None:
 @pytest.fixture
 async def pg(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", DSN)
-    # The Guardian page is retired by default (the owner, 2026-10-29): its rows stay but
+    # The Guardian page is retired by default (Miro, 2026-10-29): its rows stay but
     # nothing reads them. These tests exercise the request store for that page, so
     # they switch it on for the test only.
     from atlas.modules import linkedin
@@ -138,7 +138,7 @@ async def test_the_claim_is_atomic_and_the_page_can_close_a_thread(pg):
     assert await lr.claim(rid) is True
     assert rid in {int(r["id"]) for r in await lr.awaiting_reply(50)}
 
-    ours = item(2, "You: Yes. the owner will follow up here.")
+    ours = item(2, "You: Yes. Miro will follow up here.")
     await lr.mark_answered_on_page(ours)
     row = await lr.get_request(rid)
     assert row["status"] == "replied" and row["replied_sha"] == ours.inbound_sha

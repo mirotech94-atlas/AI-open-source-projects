@@ -7,7 +7,7 @@
 
 The POST never writes a funnel: it raises the same `instagram.funnel_set`
 card the Slack command raises, through `approvals.propose` (the card shows
-the exact texts; the owner approves it in Slack). Nothing here reaches the
+the exact texts; Miro approves it in Slack). Nothing here reaches the
 executor (tests/test_api.py pins that no API route can): pausing is
 `/atlas funnel pause <id>` from Slack, or the set card's rollback. JSON
 only, so a cross-site form post cannot reach it.

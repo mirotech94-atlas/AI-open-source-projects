@@ -47,7 +47,7 @@ describe("SEO panel", () => {
 
   it("a site with no reading is UNKNOWN, grey and dashed, never zero", () => {
     const s = site({ search: null, vitals: null,
-                     unread: ["Search Console agency.example.com is not verified"] });
+                     unread: ["Search Console agency.storefront.test is not verified"] });
     expect(siteHealth(s)).toBe("unknown");
     const lines = siteLines(s);
     expect(lines.some((l) => l.health === "unknown" && l.text.includes("not measured"))).toBe(true);

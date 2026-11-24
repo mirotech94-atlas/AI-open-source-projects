@@ -1,7 +1,7 @@
 """rhythm — notices early, late, and what he told you about it.
 
 Watches: `atlas.kernel.rhythm.usual_window()`, the rolling picture of which
-hours, on each day of the week, the owner is usually active (built from voice
+hours, on each day of the week, Miro is usually active (built from voice
 turns, browser events and his own agent runs — see that module's docstring
 for exactly what counts and why calendar events are deliberately not part of
 it). The `pattern` check reports whether *this* hour matches. Below four
@@ -27,7 +27,7 @@ address is not raised again for 7 days, and an address already inside
 here concludes his home moved, and presence keeps reading "not home" the
 whole time regardless.
 
-May do: `rhythm.note_circumstance` — record something the owner said about his
+May do: `rhythm.note_circumstance` — record something Miro said about his
 schedule (exam week, travel, feeling sick). Tier AUTO: it only ever writes
 ATLAS's own bookkeeping (a `rhythm_notes` row and a memory), never anything
 an outside party would see, and it is fully reversible.
@@ -65,7 +65,7 @@ PROPERTY = "rhythm"
 
 
 async def check_pattern() -> Observation:
-    """Hourly. `value` is 1 when this hour is not the owner's usual one for this
+    """Hourly. `value` is 1 when this hour is not Miro's usual one for this
     day of the week, 0 when it is, `None` while there is nothing to judge
     against yet.
 
@@ -84,14 +84,14 @@ async def check_pattern() -> Observation:
     now = datetime.now().astimezone()
     try:
         window = await rhythm.usual_window(now.weekday())
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("pattern", Health.UNKNOWN,
                            detail=f"could not read rhythm_hours: {exc}")
 
     if window is None:
         try:
             days = await rhythm.days_observed()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return Observation("pattern", Health.UNKNOWN,
                                detail=f"could not read rhythm history: {exc}")
         return Observation(
@@ -160,7 +160,7 @@ async def check_home_ip_change() -> Observation:
     Always `Health.OK` once it has something to say either way: sitting on
     a foreign address for a long time is not this check failing, it is
     exactly the case `_home_ip_change_signals()` below watches for. A
-    `Check` is a read-only probe, so nothing here ever notifies the owner
+    `Check` is a read-only probe, so nothing here ever notifies Miro
     directly — it only leaves the evidence for that function (and the next
     run of this one) to read.
     """
@@ -304,7 +304,7 @@ async def _home_ip_change_signals() -> tuple[Signal, ...]:
 # on its own, so a fresh "anything I should know?" nudge on top of it is
 # noise, not news. Narrower than `api.voice.CIRCUMSTANCE`, which also catches
 # exams and deadlines: those don't say anything about *when* he's working, so
-# they must not silence this check. Matches free text the owner said aloud, not a
+# they must not silence this check. Matches free text Miro said aloud, not a
 # structured field -- `rhythm_notes.kind` is "circumstance" for every note
 # `note_circumstance` writes, whatever it's actually about.
 _COVERS_HOURS = re.compile(
@@ -315,7 +315,7 @@ _COVERS_HOURS = re.compile(
 
 
 async def signals() -> tuple[Signal, ...]:
-    """One INFO signal while this hour is off the owner's usual pattern for this
+    """One INFO signal while this hour is off Miro's usual pattern for this
     day. Title is fixed so the scheduler's own 24h title-dedup (see
     `kernel.scheduler.collect_signals`) keeps this to one a day even though
     the clock in the body changes every time it is asked. `suggests` is left
@@ -370,7 +370,7 @@ class RhythmModule:
     def checks(self):
         return (
             Check("pattern", check_pattern, timedelta(hours=1),
-                 Severity.INFO, "deviation from the owner's usual hours for today",
+                 Severity.INFO, "deviation from Miro's usual hours for today",
                  baseline_sigma=None),
             Check("home_ip_change", check_home_ip_change, HOME_IP_CHECK_INTERVAL,
                  Severity.INFO, "how long a listed peer has sat on one "
@@ -382,7 +382,7 @@ class RhythmModule:
             Action(
                 name="rhythm.note_circumstance",
                 tier=Tier.AUTO,
-                summary="Record something the owner said about his schedule "
+                summary="Record something Miro said about his schedule "
                         "(exam week, travel, feeling unwell, ...)",
                 run=rhythm.note_circumstance,
                 dry_run=rhythm.note_circumstance_dry,

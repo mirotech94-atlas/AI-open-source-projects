@@ -1,6 +1,6 @@
 """Which backend renders a reel, and the two that run on this box.
 
-Chosen per call, in this order (Task 55, the owner's ruling):
+Chosen per call, in this order (Task 55, Miro's ruling):
 
   1. **veo** -- `GEMINI_API_KEY` set, ffmpeg on the box, and the WHOLE
      story (beats x 8 s) fits under `VEO_MONTHLY_SECONDS`. Real motion: one
@@ -10,7 +10,7 @@ Chosen per call, in this order (Task 55, the owner's ruling):
      timings, burned in with libass. The cap is checked for the whole story
      BEFORE the first clip is asked for: a story is never half-rendered at
      the cap, it goes to the next backend instead.
-     **veo+higgsfield** (the owner, 2026-09-29) -- when Higgsfield is keyed and
+     **veo+higgsfield** (Miro, 2026-09-29) -- when Higgsfield is keyed and
      Veo's month or day (`VEO_DAILY_CLIPS`, reserve included) cannot make
      every beat, Veo makes what it can and Higgsfield the rest, every
      overflow clip's price reserved under `HIGGSFIELD_MONTHLY_USD` before
@@ -73,7 +73,7 @@ class Choice:
 
 
 VEO_AND_HIGGSFIELD = "veo+higgsfield"
-# the owner, 2026-09-30 (relayed by the Full-Upgrade session): "don't use veo, use
+# Miro, 2026-09-30 (relayed by the Full-Upgrade session): "don't use veo, use
 # higgsfield instead only". `REELS_RENDERER=higgsfield` turns Veo OFF -- not
 # first, not a fallback: every beat is made on Higgsfield under its cap, and
 # when Higgsfield cannot (no credits, the cap, no keys) the story fails and
@@ -111,7 +111,7 @@ async def veo_room(beats: int, used: int, cap: int) -> tuple[int, str | None]:
         from . import calendar
         try:
             today: int | None = await calendar.clips_today()
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             today = None
         if today is not None:
             allowance = calendar.daily_clips()
@@ -134,7 +134,7 @@ async def higgsfield_room() -> tuple[bool, str]:
         return False, "Higgsfield not configured"
     try:
         used = await higgsfield.spent_this_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return False, f"Higgsfield spend unreadable ({explain(exc)})"
     cap = higgsfield.monthly_cap()
@@ -153,7 +153,7 @@ async def choose_backend(script: Script) -> Choice:
     set; else local. Reads only: no estimate is asked for here."""
     passed: list[str] = []
     if higgsfield_only():
-        # Veo is off by the owner's word; `render_veo` refuses when Higgsfield
+        # Veo is off by Miro's word; `render_veo` refuses when Higgsfield
         # cannot make the story, rather than reaching for anything else.
         return Choice(HIGGSFIELD_ONLY,
                       f"Veo off ({RENDERER_ENV}={HIGGSFIELD_ONLY}): every beat on "
@@ -165,7 +165,7 @@ async def choose_backend(script: Script) -> Choice:
         cap = veo.monthly_cap()
         try:
             used = await veo.seconds_this_month()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             from .._http import explain
             used = None
             passed.append(f"Veo spend unreadable ({explain(exc)}), so not Veo")
@@ -317,10 +317,10 @@ def is_arabic(script: Script) -> bool:
     return ARABIC_MARK in str(getattr(script, "format", "") or "").lower()
 
 
-# the owner, 2026-09-27: "action and movement for all characters and 3D
+# Miro, 2026-09-27: "action and movement for all characters and 3D
 # movement -- not slides". Every Veo clip, daily reel or calendar, is asked
 # for it in these words.
-# the owner's reference reels (2026-09-27, two TikToks he sent): the look every
+# Miro's reference reels (2026-09-27, two TikToks he sent): the look every
 # clip asks for. Taken: the craft. Not taken: their real car brands and a
 # famous studio's look (guard.ip_refusal refuses both in code).
 STYLE = ("LOOK: high-end stylized 3D animation, photoreal materials and "
@@ -349,7 +349,7 @@ def beat_prompt(sheet: str, index: int, total: int, beat: str,
                 dialogue: bool = False) -> str:
     """The character sheet FIRST, then the beat, then the motion rule. A
     dialogue beat ("Name: line") is spoken by the characters to each other,
-    on camera, lip-synced -- no narrator (the owner, 2026-09-27). An older
+    on camera, lip-synced -- no narrator (Miro, 2026-09-27). An older
     narrated draft keeps its narrator; with `own_voice` false the chosen
     Fish voice is laid over it, so Veo is asked for no speech at all."""
     tongue = "Egyptian Arabic" if arabic else "English"
@@ -461,7 +461,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
         return ActionResult(False, f"refused: {why}")
     try:
         await reap_interrupted()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # A failed tidy-up must not block a render.
         import logging
         logging.getLogger("atlas.content").warning(
@@ -481,7 +481,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
         async with _VEO_CAP_LOCK:
             try:
                 used = await veo.seconds_this_month()
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 from .._http import explain
                 return ActionResult(False, f"Veo spend unreadable, so nothing "
                                            f"was asked of Veo: {explain(exc)}")
@@ -499,7 +499,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
             try:
                 if needed:
                     await veo.record(needed, media_id)  # counted BEFORE asking
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 from .._http import explain
                 return await _fail(media_id, f"Veo spend could not be recorded, "
                                              f"so nothing was asked of Veo: "
@@ -543,7 +543,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
             async with _VEO_CAP_LOCK:
                 try:
                     month = await veo.seconds_this_month()
-                except Exception:                       # noqa: BLE001
+                except Exception:  # noqa: BLE001
                     month = None
                 fits = month is not None and month + extra <= cap
                 if fits:
@@ -699,14 +699,14 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
                     tag=reels.screen_tag(script.format),
                     source=football.source_of(script.caption)))
             elif not series:
-                # the owner, 2026-09-27: captions on series only. The AI tag stays.
+                # Miro, 2026-09-27: captions on series only. The AI tag stays.
                 words, no_words = None, "not a series, so no captions"
                 await asyncio.to_thread(_write, ass, captions.build_scripted_ass(
                     [], total, arabic=False, tag=reels.screen_tag(script.format),
                     end_text=script.end_card))
             elif script.dialogue and (script.scripted or not is_arabic(script)):
                 # The script's own lines, each speaker in its own colour, over
-                # its beat -- exact words, not a transcription (the owner,
+                # its beat -- exact words, not a transcription (Miro,
                 # 2026-09-27: colour-coded per character).
                 cues = captions.dialogue_cues(script.exchanges()[:len(beats)],
                                               float(veo.CLIP_SECONDS))
@@ -716,7 +716,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
                     cues, total, arabic=False, tag=reels.screen_tag(script.format),
                     end_text=script.end_card))
             elif is_arabic(script):
-                # Arabic voice, English captions (the owner, 2026-09-27).
+                # Arabic voice, English captions (Miro, 2026-09-27).
                 english, no_words = await captions.english_segments(heard)
                 words = english
                 await asyncio.to_thread(_write, ass, captions.build_scripted_ass(
@@ -784,7 +784,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
                 continue
             try:
                 await higgsfield.refund(price, job_id=job, part=f"beat-{i}")
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 import logging
                 logging.getLogger("atlas.content").warning(
                     "Higgsfield refund for media %s beat %s not recorded (the "
@@ -795,7 +795,7 @@ async def render_veo(draft_id: int, script: Script) -> ActionResult:
         if unused > 0:
             try:
                 await veo.record(-unused, media_id)
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 import logging
                 logging.getLogger("atlas.content").warning(
                     "Veo refund of %s s for media %s not recorded (the cap "

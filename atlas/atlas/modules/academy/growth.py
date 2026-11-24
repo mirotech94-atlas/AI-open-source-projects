@@ -1,6 +1,6 @@
 """The Academy's growth work (Content agent, six agents phase 8).
 
-* A/B title tests, automatic (the owner, 2026-10-27, final answers): title A's
+* A/B title tests, automatic (Miro, 2026-10-27, final answers): title A's
   views per day over 7 days, then title B's over the next 7, each window
   read from `youtube_videos` (the youtube module's refresh) with the time
   it was read. No reading, no decision; only a public Academy video; the
@@ -41,7 +41,7 @@ from ...kernel.contracts import (
 from ...kernel.state import execute_sql, fetch_all, fetch_one
 from .. import store_origin
 
-log = logging.getLogger("academy.example.growth")
+log = logging.getLogger("atlas.academy.growth")
 
 WINDOW = timedelta(days=7)
 FRESH = timedelta(days=1)          # a reading counts only this close to "now"
@@ -449,14 +449,14 @@ async def _reads(now: datetime) -> Reads:
                  FROM youtube_videos WHERE channel=$1 AND privacy='public'
                 ORDER BY published_at DESC NULLS LAST LIMIT 25""", channel)
         videos, videos_why = [dict(r) for r in rows], None
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         videos, videos_why = None, f"youtube_videos unreadable ({type(exc).__name__})"
     subs, subs_why = await api.channel_stats(channel)
     try:
         plan = [dict(r) for r in await fetch_all(
             """SELECT title, ai_tag, week_of FROM academy_content_plan
                 WHERE status IN ('planned', 'scripted') ORDER BY week_of, id LIMIT 10""")]
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         plan = None
     posting, posting_why = await posting_counts(now)
     clicks, clicks_why = await store_clicks(now)
@@ -473,8 +473,8 @@ async def posting_counts(now: datetime) -> tuple[dict[str, Any] | None, str | No
         failed = await fetch_one(
             """SELECT count(*) AS n FROM schedule_runs
                 WHERE status='failed' AND claimed_at > $1
-                  AND job IN ('content_weekly', 'church')""", now - WINDOW)
-    except Exception as exc:                            # noqa: BLE001
+                  AND job IN ('content_weekly', 'community')""", now - WINDOW)
+    except Exception as exc:  # noqa: BLE001
         return None, f"posting records unreadable ({type(exc).__name__})"
     return {"due": WINDOW.days if tutorials.enabled() else 0,
             "posted": int(posted["n"]), "failed": int(failed["n"]),
@@ -548,21 +548,21 @@ async def problems(now: datetime | None = None) -> tuple[list[str], list[str]]:
                    OR (status='queued' AND queued_at < $1)""", now - timedelta(hours=6))
         if int(stalled["n"]):
             found.append(f"the Mac runner has {stalled['n']} job(s) stalled over 6 h")
-        # The church module switched off (ATLAS_DISABLED_MODULES) means no
-        # ECC slots are in scope: off by choice, not unmeasured.
-        uncovered = [] if church_off() else await fetch_all(
-            """SELECT platform, publish_at FROM church_posts
+        # The community module switched off (ATLAS_DISABLED_MODULES) means no
+        # AMSM slots are in scope: off by choice, not unmeasured.
+        uncovered = [] if community_off() else await fetch_all(
+            """SELECT platform, publish_at FROM community_posts
                 WHERE publish_at BETWEEN $1 AND $2
                   AND status IN ('planned', 'rendered', 'awaiting_review')""",
             now, now + timedelta(hours=24))
-        # Without YOUTUBE_ECC_* ATLAS cannot schedule or see YouTube uploads
-        # (the owner uploads in Studio): those slots are not measured, not missing.
+        # Without YOUTUBE_AMSM_* ATLAS cannot schedule or see YouTube uploads
+        # (Miro uploads in Studio): those slots are not measured, not missing.
         # check_posting_health says so; Facebook slots still count.
-        yt_off = ecc_youtube_unconfigured() is not None
-        found += [f"ECC {u['platform']} slot at {u['publish_at']:%Y-%m-%d %H:%M} UTC "
+        yt_off = amsm_youtube_unconfigured() is not None
+        found += [f"AMSM {u['platform']} slot at {u['publish_at']:%Y-%m-%d %H:%M} UTC "
                   "is not scheduled" for u in uncovered
                   if not (yt_off and u["platform"] == "youtube")]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         unread.append(f"posting records ({type(exc).__name__})")
     try:
         twice = await asyncio.to_thread(_refused_twice, notebooklm)
@@ -584,20 +584,23 @@ def _refused_twice(notebooklm: Any) -> list[str]:
     return sorted(n for n, c in seen.items() if c >= 2)
 
 
-def church_off() -> bool:
-    """The registry's rule: the church module named in ATLAS_DISABLED_MODULES."""
-    return "church" in {m.strip().lower() for m in
+def community_off() -> bool:
+    """The registry's rule: the community module named in ATLAS_DISABLED_MODULES."""
+    from importlib.util import find_spec
+    if find_spec("atlas.modules.community") is None:      # not shipped in this build
+        return True
+    return "community" in {m.strip().lower() for m in
                         os.getenv("ATLAS_DISABLED_MODULES", "").split(",")}
 
 
-def ecc_youtube_unconfigured() -> str | None:
-    """Why ATLAS cannot see ECC YouTube slots, or None when it can (or when
-    the church module is switched off, so there are no slots to see)."""
-    if church_off():
+def amsm_youtube_unconfigured() -> str | None:
+    """Why ATLAS cannot see AMSM YouTube slots, or None when it can (or when
+    the community module is switched off, so there are no slots to see)."""
+    if community_off():
         return None
-    from ..church import posting
+    from ..community import posting
     why = posting.yt_unconfigured()
-    return (f"ECC YouTube slots not measured: channel not configured ({why}); "
+    return (f"AMSM YouTube slots not measured: channel not configured ({why}); "
             "uploads go through Studio") if why else None
 
 
@@ -607,7 +610,7 @@ async def check_posting_health() -> Observation:
         return Observation("posting_health", Health.UNKNOWN,
                            detail="could not read " + ", ".join(unread),
                            evidence={"problems": found})
-    blind = ecc_youtube_unconfigured()
+    blind = amsm_youtube_unconfigured()
     if found:
         detail = "; ".join(found[:5]) + (f"; {blind}" if blind else "")
         return Observation("posting_health", Health.FAILING, float(len(found)),
@@ -615,15 +618,15 @@ async def check_posting_health() -> Observation:
     if blind:
         # Invariant 7: what cannot be measured is UNKNOWN, never OK.
         return Observation("posting_health", Health.UNKNOWN,
-                           detail=f"tutorials, runner, NotebookLM and ECC Facebook "
+                           detail=f"tutorials, runner, NotebookLM and AMSM Facebook "
                                   f"slots look right; {blind}",
                            evidence={"problems": [], "not_configured": blind})
-    if church_off():
+    if community_off():
         return Observation("posting_health", Health.OK, 0.0, "problems",
-                           "tutorials, runner and NotebookLM look right; ECC "
-                           "slots not in scope (church module switched off)")
+                           "tutorials, runner and NotebookLM look right; AMSM "
+                           "slots not in scope (community module switched off)")
     return Observation("posting_health", Health.OK, 0.0, "problems",
-                       "tutorials, runner, NotebookLM and ECC slots look right")
+                       "tutorials, runner, NotebookLM and AMSM slots look right")
 
 
 async def check_runway() -> Observation:
@@ -688,7 +691,7 @@ def checks() -> tuple[Check, ...]:
     return (
         Check("posting_health", check_posting_health, timedelta(hours=1),
               Severity.NORMAL, "tutorials post when due, once each; the Mac runner "
-              "and NotebookLM ingests move; ECC slots are scheduled",
+              "and NotebookLM ingests move; AMSM slots are scheduled",
               baseline_sigma=None),
         Check("runway", check_runway, timedelta(hours=6), Severity.INFO,
               "days of scripted Academy lessons left to post", baseline_sigma=None),

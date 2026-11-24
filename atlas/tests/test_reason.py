@@ -201,7 +201,7 @@ async def test_the_findings_title_and_detail_reach_the_model_only_quoted(
 
 async def test_the_prompt_is_compact_json_so_a_free_tier_takes_it(
         monkeypatch, no_runbook, catalog):
-    """the owner, 2026-10-05: free tiers only. Groq takes 8,000 tokens a request
+    """Miro, 2026-10-05: free tiers only. Groq takes 8,000 tokens a request
     and the pretty-printed catalog alone was 7,100: the JSON goes compact
     and the evidence is capped, the content stays."""
     seen: dict = {}

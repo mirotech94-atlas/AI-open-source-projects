@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps the Mac's tunnel to the Spark's vLLM up, so ATLAS's PRIVATE work
+  (LOCAL_LLM_BASE_URL=http://host.docker.internal:18000/v1) has its model.
+
+  bootstrap/mac/spark-vllm-tunnel.sh (repo copy) is idempotent: it does nothing
+  while 127.0.0.1:18000 is bound and /health answers, opens
+  `ssh -f -N -L 18000:127.0.0.1:8000 spark` when it is not (Mac loopback only;
+  OrbStack forwards host.docker.internal to it), and after 3 consecutive failed
+  /health ticks kills only that ssh and redials. Run every 60 s rather than
+  KeepAlive, because the ssh it starts forks away. Only :18000 is forwarded.
+  Rollback: run install-local.sh from the previous commit (its plist points back
+  at ~/.local/bin/spark-vllm.sh).
+
+  Installed by bootstrap/mac/install-local.sh. By hand (replace __HOME__, __WT__):
+    sed -e "s#__HOME__#$HOME#g" -e "s#__WT__#$PWD#g" \
+      bootstrap/mac/com.atlas.spark-vllm-tunnel.plist \
+      > ~/Library/LaunchAgents/com.atlas.spark-vllm-tunnel.plist
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.atlas.spark-vllm-tunnel.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.atlas.spark-vllm-tunnel</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__WT__/bootstrap/mac/spark-vllm-tunnel.sh</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>StartInterval</key><integer>60</integer>
+    <key>StandardOutPath</key><string>__HOME__/Library/Logs/atlas-spark-tunnel.log</string>
+    <key>StandardErrorPath</key><string>__HOME__/Library/Logs/atlas-spark-tunnel.log</string>
+</dict>
+</plist>

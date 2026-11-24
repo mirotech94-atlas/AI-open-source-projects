@@ -41,18 +41,18 @@ SOCKET = "/run/qa/qa-browser.sock"
 TIMEOUT_MS = 20_000
 MIN_W, MAX_W = 320, 1920
 def _store_host() -> str:
-    """The store's host from ACADEMY_PUBLIC_ORIGIN (default agency.example.com).
+    """The store's host from ACADEMY_PUBLIC_ORIGIN (default agency.storefront.test).
     Inlined, not imported: this file runs alone in its container."""
     raw = os.environ.get("ACADEMY_PUBLIC_ORIGIN", "").strip().rstrip("/").lower()
     host = raw.removeprefix("https://") if raw.startswith("https://") else ""
     ok = (host and "." in host
           and all(c in "abcdefghijklmnopqrstuvwxyz0123456789.-" for c in host))
-    return host if ok else "agency.example.com"
+    return host if ok else "agency.storefront.test"
 
 
 # Public https hosts only, never a compose service name or an address. The
 # agency landing, the store and the client previews are one host.
-ALLOWED = frozenset({"agency.example.com", _store_host()})
+ALLOWED = frozenset({"agency.storefront.test", _store_host()})
 # Inline content a page builds itself; it opens no connection.
 INLINE_SCHEMES = ("data:", "blob:", "about:")
 
@@ -278,7 +278,7 @@ class Handler(BaseHTTPRequestHandler):
         except Refused as exc:
             self._error(403, str(exc))
             return
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             self._error(502, f"not rendered: {type(exc).__name__}")
             return
         self._send(200, body, "application/pdf" if as_pdf else "image/png")

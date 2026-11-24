@@ -18,12 +18,12 @@ def clean():
 
 async def test_a_placed_call_is_written_with_its_opening_question_and_cards(memory_backend):
     await callrecord.placed("CA1", title="#41 — Restart the worker",
-                            opening="Hey the owner, it's ATLAS. The poller is stuck.",
+                            opening="Hey Miro, it's ATLAS. The poller is stuck.",
                             ask="Want me to restart the worker, yes or no?", pids=[41],
                             incident_key=None, away=True, night=True, attempt=1)
     [(_sql, args)] = [(s, a) for s, a in memory_backend.sql_log if "INSERT INTO voice_calls" in s]
     assert args[0] == "CA1" and args[1] == 1 and args[5] == [41]
-    assert args[3].startswith("Hey the owner") and args[4].endswith("yes or no?")
+    assert args[3].startswith("Hey Miro") and args[4].endswith("yes or no?")
     assert args[7] is True and args[8] is True
     assert callrecord.get("CA1").pids == [41]
 

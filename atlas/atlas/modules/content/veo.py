@@ -1,4 +1,4 @@
-"""Veo: real motion video, one 8-second 9:16 clip per scene, on the owner's
+"""Veo: real motion video, one 8-second 9:16 clip per scene, on Miro's
 Gemini billing.
 
 Verified live on his key (Task 55, relayed from production):
@@ -78,7 +78,7 @@ class VeoError(Exception):
         return self.status_code == 402
 
 
-# Where the owner tops the project up; the check and the failure both name it.
+# Where Miro tops the project up; the check and the failure both name it.
 TOP_UP = "https://ai.studio/projects"
 
 # When Veo last answered 402, until it next accepts a clip. Veo has no
@@ -110,7 +110,7 @@ RESOLUTIONS = ("720p", "1080p", "4k")
 
 
 def resolution() -> str:
-    """`VEO_RESOLUTION`: 1080p by default. the owner, 2026-09-27: "make the
+    """`VEO_RESOLUTION`: 1080p by default. Miro, 2026-09-27: "make the
     videos clearer". Veo renders 720p unless asked; the reels were upscaled
     from that. 1080p is what Instagram and TikTok actually show; 4k costs
     about three times as much per second and is downscaled to 1080 on the

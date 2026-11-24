@@ -12,7 +12,7 @@ the network with its own token, works on `--tmpfs` scratch space, and is
 `--read-only` everywhere else. It cannot reach the host filesystem to leak a
 secret onto it, and it cannot reach anything but the allow-listed egress the
 `nightshift` docker network's proxy permits (see bootstrap/nightshift/README.md
-— that network is a host action for the owner, not something this module creates).
+— that network is a host action for Miro, not something this module creates).
 """
 from __future__ import annotations
 
@@ -104,7 +104,7 @@ def docker_argv(job_id: int | str, task: str, repo: str, branch: str) -> list[st
         "--cpus", "2",
         "--read-only",
         "--tmpfs", "/tmp",
-        "--tmpfs", "/home/user",
+        "--tmpfs", "/home/night",
         # By NAME only: docker copies the values from the client's own
         # environment (`start` sets them there), so neither secret is ever
         # on this host's argv or in `docker inspect`'s recorded command.
@@ -277,7 +277,7 @@ def delete_branch_argv(repo_url: str, branch: str) -> list[str]:
         "--memory", "256m",
         "--read-only",
         "--tmpfs", "/tmp",
-        "--tmpfs", "/home/user",
+        "--tmpfs", "/home/night",
         "--entrypoint", "/bin/sh",
         "-e", "GIT_TOKEN",
         "-e", f"REPO={repo_url}",

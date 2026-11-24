@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- TEMPLATE, not installed. __WT__ = the repo checkout the stack runs from,
+     __HOME__ = Miro's home. Install steps: ops/watchdog/INSTALL.md (part B).
+     Read-only job: measures the data volume, writes one status file. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.atlas.disk-status</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__WT__/ops/watchdog/host/disk_status.sh</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ATLAS_COMPOSE_DIR</key><string>__WT__</string>
+    </dict>
+    <!-- Every 15 minutes (the check calls a file older than 1 h stale). -->
+    <key>StartInterval</key><integer>900</integer>
+    <key>RunAtLoad</key><true/>
+    <key>LowPriorityIO</key><true/>
+    <key>Nice</key><integer>10</integer>
+    <key>StandardOutPath</key><string>__HOME__/Library/Logs/atlas-disk-status.log</string>
+    <key>StandardErrorPath</key><string>__HOME__/Library/Logs/atlas-disk-status.log</string>
+</dict>
+</plist>

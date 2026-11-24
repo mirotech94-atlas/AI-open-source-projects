@@ -1,4 +1,4 @@
-"""The inbox shift (plan 2026-10-30, B2): reads owner over IMAP and
+"""The inbox shift (plan 2026-10-30, B2): reads example-owner over IMAP and
 reports. It drafts nothing: `mail.draft_reply` writes through the clips
 mailbox's Gmail token and Gmail thread ids, so an IMAP thread cannot be
 drafted -- the run says so instead of reporting zero drafts as done."""
@@ -11,7 +11,7 @@ from atlas.modules.mail import shift as inbox_shift
 from atlas.modules.mail.accounts import Account
 
 NOW = datetime(2026, 10, 30, 11, tzinfo=UTC)
-EXAMPLECO = Account(name="exampleco", kind="imap", email="owner@example.com",
+MIROTECH = Account(name="mirotech", kind="imap", email="owner@example.com",
                    host="imap.gmail.com", password="test-only")
 
 
@@ -22,7 +22,7 @@ def _card(**kw) -> reply_today.ReplyToday:
     return card
 
 
-def _patch(monkeypatch, card, commitments=2, accounts=(EXAMPLECO,)):
+def _patch(monkeypatch, card, commitments=2, accounts=(MIROTECH,)):
     calls: list = []
 
     async def read(accts=None, now=None):
@@ -44,7 +44,7 @@ def _patch(monkeypatch, card, commitments=2, accounts=(EXAMPLECO,)):
     return calls
 
 
-async def test_reads_ownertech_and_reports_without_drafting(monkeypatch):
+async def test_reads_mirotech_and_reports_without_drafting(monkeypatch):
     card = _card(looked=7, reply=[{"account": "owner@example.com",
                                    "sender": "Ana", "subject": "Quote?",
                                    "age_h": 3.0, "urgency": 2}])

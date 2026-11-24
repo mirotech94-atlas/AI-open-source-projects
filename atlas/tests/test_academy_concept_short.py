@@ -1,4 +1,4 @@
-"""Concept Shorts (academy/concept_short.py): the owner, 2026-10-12. Every
+"""Concept Shorts (academy/concept_short.py): Miro, 2026-10-12. Every
 factual line says only what its product's catalog entry says."""
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ def test_the_panels_are_labelled_and_never_show_a_send():
 
 
 @pytest.mark.parametrize(("env", "on"), [("", False), ("off", False), ("on", True)])
-def test_concepts_wait_for_owner(monkeypatch, env, on):
+def test_concepts_wait_for_miro(monkeypatch, env, on):
     monkeypatch.setenv(cs.ENABLE_ENV, env)
     assert cs.enabled() is on
 
@@ -82,7 +82,7 @@ async def test_the_dry_run_knows_a_concept_key(monkeypatch):
 
 
 def test_cues_reach_the_voice_and_never_the_screen(monkeypatch):
-    """the owner, 2026-10-12: a human voice with feelings and humour. The scripts
+    """Miro, 2026-10-12: a human voice with feelings and humour. The scripts
     carry Fish S2 cues; the S2 voice gets them, captions and checks never."""
     from atlas.modules.academy import concept_short as cs
     from atlas.modules.academy.tutorial_series import CUE, plain
@@ -101,6 +101,6 @@ def test_a_machine_sounding_phrase_is_refused():
 
     from atlas.modules.academy import concept_short as cs
     c = cs.concepts()[0]
-    bad = replace(c, close="Let's dive in and unlock the pack at agency.example.com.")
+    bad = replace(c, close="Let's dive in and unlock the pack at agency.storefront.test.")
     why = cs.evidence_refusal(bad, cs.product_text(c.product))
     assert why is not None and "machine-written" in why

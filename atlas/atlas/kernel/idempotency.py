@@ -97,7 +97,7 @@ async def claim(action: str, key: str) -> str:
         prior = await fetch_one(
             "SELECT status FROM effect_claims WHERE action = $1 AND key = $2",
             action, key)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s: the effect could not be claimed (%s); not sending",
                     action, type(exc).__name__)
         return UNREADABLE
@@ -115,7 +115,7 @@ async def settle(action: str, key: str, detail: str = "") -> None:
             """UPDATE effect_claims SET status = 'sent', settled_at = now(),
                       detail = $3
                 WHERE action = $1 AND key = $2""", action, key, detail[:300])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s: sent, but the claim was not settled (%s)", action,
                     type(exc).__name__)
 
@@ -128,7 +128,7 @@ async def release(action: str, key: str) -> None:
         await execute_sql(
             "DELETE FROM effect_claims WHERE action = $1 AND key = $2 "
             "AND status = 'sending'", action, key)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s: a refused send kept its claim (%s); a retry will "
                     "read it as in doubt", action, type(exc).__name__)
 

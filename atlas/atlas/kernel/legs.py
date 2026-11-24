@@ -15,8 +15,8 @@ executor's limiter rather than keeping a second one:
 
   * **Tier.** Which parents may perform which leg is fixed here, in code
     (`PARENTS`), like every tier (invariant 3). `content.publish_reel` is
-    Tier 2 -- the owner's approval of the card covers every leg on it.
-    `content.autopublish_reel` is Tier 1 by the owner's settled decision
+    Tier 2 -- Miro's approval of the card covers every leg on it.
+    `content.autopublish_reel` is Tier 1 by Miro's settled decision
     (2026-09-27/28: reels that pass every check post themselves), and that
     decision is what covers its Instagram leg. Any other caller is refused.
   * **Registered and allowed.** The leg's action must be in the registry
@@ -48,7 +48,7 @@ PARENTS: dict[str, frozenset[str]] = {
                                     # same settled decision; content.legsync)
                                     "content.post_missing_leg",
                                     # the Academy store's promo reel on the
-                                    # clips account (the owner, 2026-10-05)
+                                    # clips account (Miro, 2026-10-05)
                                     "clips.publish_promo"}),
 }
 

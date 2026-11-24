@@ -250,7 +250,7 @@ p.desk-nm { margin: 4px 0 0; }
 .desk-fix { display: block; }
 
 /* ======================================================================
- * ATLAS Academy brand layer (the owner, 2026-10-28): the portal wears the
+ * ATLAS Academy brand layer (Miro, 2026-10-28): the portal wears the
  * storefront's identity -- atlas/modules/academy/assets/style.css, dark:
  * black + royal blue, Cabinet Grotesk headings, Atkinson Next text,
  * 12px cards, 10px buttons, a 3px #8fb0ff focus ring. Loaded last, so it
@@ -380,7 +380,7 @@ html, body { background: #0a0d14; }
   .cmd-brand .aw-agency { display: none; }
 }
 
-/* ------------------------------------------ compact (the owner 2026-10-29)
+/* ------------------------------------------ compact (Miro 2026-10-29)
    Each section scannable at a glance: short one-line rows, long lists cut
    to "+n more", the small sections side by side. */
 .desk-more { color: var(--d-dim); font-size: 12px; padding: 6px 0; }
@@ -399,7 +399,7 @@ html, body { background: #0a0d14; }
 }
 
 /* ============================================================== redesign
-   ATLAS Agency UI redesign (the owner 2026-10-30; spec atlas-agency-redesign-spec.pdf).
+   ATLAS Agency UI redesign (Miro 2026-10-30; spec atlas-agency-redesign-spec.pdf).
    Black + royal blue glass. Royal blue is brand, active tab, links and focus
    only, never health: ok green, degraded amber, failing red, unknown grey,
    dashed and unlit, with the word. Every figure still comes from its read. */
@@ -501,7 +501,7 @@ html, body { background: #0a0d14; }
 }
 
 /* ------------------------------------------- Agency tab: the map fills the screen
-   (the owner 2026-10-30). `.desk` centres itself with auto margins, which in the
+   (Miro 2026-10-30). `.desk` centres itself with auto margins, which in the
    tab's grid shrinks it to its content (about 990 px on a 1913 px screen):
    the map panel is full width instead. From 900 px up the map is as tall as
    the area under the header and above the footer; the activity cards follow

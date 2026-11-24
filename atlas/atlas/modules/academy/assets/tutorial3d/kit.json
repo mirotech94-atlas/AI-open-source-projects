@@ -1,0 +1,146 @@
+{
+ "three": "0.186.1",
+ "fps": 30,
+ "loop_seconds": 10,
+ "sting_seconds": 4,
+ "width": 1920,
+ "height": 1080,
+ "files": {
+  "loop-agents.mp4": {
+   "bytes": 5161477,
+   "sha256": "c830d19bef4db9626ee986d1471052da18db029ad77fbec0bcce6a95635a2c8e"
+  },
+  "loop-api.mp4": {
+   "bytes": 1609894,
+   "sha256": "3e0c09ede6b6e471b5eb2bec41f305e84c30f92d6b992f870af108a56eb94b22"
+  },
+  "loop-business.mp4": {
+   "bytes": 2212525,
+   "sha256": "6da7a290b7961bce63e43b588543c21fa509501e4c1b8d07a2b4c418c0bcdc6c"
+  },
+  "loop-channel.mp4": {
+   "bytes": 1859217,
+   "sha256": "8f054c2bee77bec2b266a0f291c76def0ca11dc29a24eabef1ce33614823d509"
+  },
+  "loop-claude.mp4": {
+   "bytes": 3404848,
+   "sha256": "9327932035c7dad5b48fa0e82d089bf763fafb9bc6d5db6af98823c6b84b99d4"
+  },
+  "loop-cloud.mp4": {
+   "bytes": 1711016,
+   "sha256": "d4b0b485043a44d9ea7b2811de1655a5540f5e4ae452251637e098565add42e7"
+  },
+  "loop-code.mp4": {
+   "bytes": 1454983,
+   "sha256": "024c9c54e6ee99984b78ce1fe528d1edf71ec3145037b6341f6a6dfbce289f6e"
+  },
+  "loop-explained.mp4": {
+   "bytes": 2987707,
+   "sha256": "272bc08432cc31d06d48dcc4f3139ada5c1e9020474d5f4c7c4a173b6734f9ef"
+  },
+  "loop-future.mp4": {
+   "bytes": 1843796,
+   "sha256": "07304093f881c9446b2dfb357c663e8bf294976352529daedf5ed2d7184e5359"
+  },
+  "loop-local.mp4": {
+   "bytes": 2956160,
+   "sha256": "a89af5885a807c47fe228f31f77d68b824656cc5e42704c10a497cecb0b473d5"
+  },
+  "loop-mark.mp4": {
+   "bytes": 1974656,
+   "sha256": "47889584be15a7a28a6e2535f7161b7bc176a11fd9410121b2d2bd821101ac68"
+  },
+  "loop-memory.mp4": {
+   "bytes": 1534619,
+   "sha256": "d6dd986e11d051b095da9b5c2836015cf74fd633e168cad1775b0bdd9cc673b2"
+  },
+  "loop-message.mp4": {
+   "bytes": 1613951,
+   "sha256": "9da72b48e1640891b199108593ef3db12f6985c570c18c81d0caf0b6277fdcc3"
+  },
+  "loop-n8n.mp4": {
+   "bytes": 2521048,
+   "sha256": "87b9448a1bbaced816f0ab4b51ce06c3c42bff097f24ba2ac27daf350db3dcdd"
+  },
+  "loop-outro.mp4": {
+   "bytes": 2292112,
+   "sha256": "139e40a955abd28e65b8d0436741df1582653c3c77d11a268396b70baa8a9494"
+  },
+  "loop-project.mp4": {
+   "bytes": 2794652,
+   "sha256": "066a1ba7bc8b9dd3d81fc81e9c1c639726f02d99d221634a2d6e9cea1c0a0be1"
+  },
+  "loop-quiz.mp4": {
+   "bytes": 1566801,
+   "sha256": "147a172db28970cab3ff11373301559374c2ac0686c90550f77c0c9b57ed696d"
+  },
+  "loop-recap.mp4": {
+   "bytes": 1268552,
+   "sha256": "3dd600f66948f40adf5867e433ac89fc7664de7345e31da96dee018280006971"
+  },
+  "loop-security.mp4": {
+   "bytes": 1743361,
+   "sha256": "cd5ba3fb7de8b05f643f24fa2b0fbeabf6b4a2ca0e9c896d142d9045cfdd026d"
+  },
+  "loop-server.mp4": {
+   "bytes": 1459823,
+   "sha256": "a9553bf315ca049d7ff9027dfa0d96bf136128287445a651059b7e153fc659d2"
+  },
+  "loop-tools.mp4": {
+   "bytes": 1745424,
+   "sha256": "2fe73c83767636a95eaca6b3f6fde8ea89338278ac5255407fd2c4ca53d8ac64"
+  },
+  "loop-trigger.mp4": {
+   "bytes": 2160191,
+   "sha256": "30cf6b505bf367df4e2a0f645884639b0c9b80f6d6ca85997424d0339a3985e2"
+  },
+  "loop-vault.mp4": {
+   "bytes": 1895990,
+   "sha256": "2f4a5a2fabea483807b7cc06bceb8f311ace6c4f550805e03d7c371a370e4d95"
+  },
+  "still-agents.jpg": {
+   "bytes": 107267,
+   "sha256": "695ed599207c199c23da06fedd90d44da4de142f1a010ab033b84a59a390fd91"
+  },
+  "still-business.jpg": {
+   "bytes": 72692,
+   "sha256": "5fa8a4438ba3c9cdc7869b89c988671292e15e45a1b0c9bdee41c50f0a713900"
+  },
+  "still-channel.jpg": {
+   "bytes": 57570,
+   "sha256": "f15c1c2994e1d75e98a58220176142e59e6e619dc73456249e49fda654ee752c"
+  },
+  "still-claude.jpg": {
+   "bytes": 84485,
+   "sha256": "f3dac4fe47fa60796f5fba0682da0f24858f82a7745c3b812045093c7183dbf8"
+  },
+  "still-explained.jpg": {
+   "bytes": 83589,
+   "sha256": "0dac3d3b90d02aaa809cd28c1aaa386baf72d84484e0c3d291a2cc68dffbdff6"
+  },
+  "still-future.jpg": {
+   "bytes": 59295,
+   "sha256": "e43852db83d6b210fc65dcc4b2c7bb3b5c4635ec54b091bcc8b4340c07349a56"
+  },
+  "still-local.jpg": {
+   "bytes": 76688,
+   "sha256": "8e1856d13068f990ec987b351255defe825c4d02c17b6a52210aec07718262b2"
+  },
+  "still-n8n.jpg": {
+   "bytes": 73391,
+   "sha256": "92cb5b56209e8257f0523799ba89790e370c9f9a9d2749d9a435c8c0989e61af"
+  },
+  "still-project.jpg": {
+   "bytes": 79332,
+   "sha256": "408e6b6001e09ccbf1ef6044db516d1b7a2a69130ab2962933c15a38862bf5e5"
+  },
+  "still-vault.jpg": {
+   "bytes": 56292,
+   "sha256": "40f9763e82d85813ce529f0ec1c6961cd4d12c607c9b09f5fe1f597c5612e51c"
+  },
+  "sting.mp4": {
+   "bytes": 1135319,
+   "sha256": "e998a0dedc56558cf8b9531d0a7ebbe90fe91747cf1b021d1d2ea5ab4647fe05"
+  }
+ }
+}

@@ -1,10 +1,10 @@
 """localstack — is the Spark reachable from ATLAS on the Mac?
 
-ATLAS Agency runs on the owner's Mac; its PRIVATE model (qwen3.8, vLLM :8000) lives
+ATLAS Agency runs on Miro's Mac; its PRIVATE model (qwen3.8, vLLM :8000) lives
 on the Spark, loopback only there, reached through the launchd job
 `com.atlas.spark-vllm-tunnel` (bootstrap/mac/install-local.sh).
 
-The embedder (mxbai-embed-large, :8001) is retired (the owner, 2026-11-17): recall
+The embedder (mxbai-embed-large, :8001) is retired (Miro, 2026-11-17): recall
 is keyword only, so there is no embeddings check and the tunnel probes only
 the model forward.
 
@@ -54,7 +54,7 @@ async def _health(what: str, var: str) -> str | None:
     try:
         async with llm._local_client(10) as c:
             r = await c.get(f"{root}/health")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return f"{what}: {root} did not answer ({type(exc).__name__})"
     if r.status_code != 200:
         return f"{what}: {root}/health answered HTTP {r.status_code}"
@@ -129,7 +129,7 @@ async def check_speed() -> Observation:
 
 
 async def check_answers() -> Observation:
-    """Which model last answered a person. the owner, 2026-11-17: every reply is
+    """Which model last answered a person. Miro, 2026-11-17: every reply is
     qwen3.8 on the Spark first. OK only when the last one was; a fallback is
     DEGRADED and says why; none yet is UNKNOWN (read from the router's own
     record, so nothing is asked and nothing is guessed)."""

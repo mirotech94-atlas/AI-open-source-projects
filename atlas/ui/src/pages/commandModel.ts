@@ -76,7 +76,7 @@ export interface ServiceSpec {
   to?: string;
 }
 
-/** The services the owner checks, and what reads each one. A service with no
+/** The services Miro checks, and what reads each one. A service with no
  *  `source` is not read by any check today, so it is always Unknown. */
 export const SERVICES: readonly ServiceSpec[] = [
   { name: "Mapfront", source: "agency", to: "/agency#seat-websites" },

@@ -57,7 +57,7 @@ async def claim(job: str, window: str,
                        AND schedule_runs.claimed_at < now() - $3::interval)
                RETURNING job""",
             job, window, STALE_AFTER, scheduled_for)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s %s: the window could not be claimed (%s); not running "
                     "it this tick", job, window, type(exc).__name__)
         return False
@@ -77,7 +77,7 @@ async def _mark(job: str, window: str, status: str, detail: str | None = None) -
                           detail = $4
                     WHERE job = $1 AND occurrence = $2""", job, window, status,
                 detail[:900])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s %s: could not record %s (%s)", job, window, status,
                     type(exc).__name__)
 
@@ -107,7 +107,7 @@ async def claim_once(job: str, window: str,
                ON CONFLICT (job, occurrence) DO NOTHING
                RETURNING job""",
             job, window, scheduled_for)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s %s: the window could not be claimed (%s); not running "
                     "it this tick", job, window, type(exc).__name__)
         return False
@@ -123,7 +123,7 @@ async def fail(job: str, window: str, detail: str = "") -> None:
             """UPDATE schedule_runs SET status = 'failed', finished_at = now(),
                       detail = $3
                 WHERE job = $1 AND occurrence = $2""", job, window, detail[:500])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s %s: could not record failed (%s)", job, window,
                     type(exc).__name__)
 
@@ -149,7 +149,7 @@ async def skip(job: str, window: str, scheduled_for: datetime,
                                                EXCLUDED.scheduled_for)
                 WHERE schedule_runs.status = 'failed'""",
             job, window, scheduled_for, reason[:500])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s %s: could not record skipped (%s)", job, window,
                     type(exc).__name__)
         return False
@@ -169,7 +169,7 @@ async def history(job: str, windows: list[str]
                 WHERE job = $1 AND occurrence = ANY($2::text[])""", job, windows)
         any_row = await fetch_one(
             "SELECT 1 AS x FROM schedule_runs WHERE job = $1 LIMIT 1", job)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s: schedule history unreadable (%s); not running it this "
                     "tick", job, type(exc).__name__)
         return None

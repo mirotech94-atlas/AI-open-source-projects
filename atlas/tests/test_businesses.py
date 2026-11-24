@@ -159,9 +159,9 @@ async def test_module_status_carries_observed_at_on_every_check(monkeypatch):
                  "detail": "", "observed_at": datetime(2026, 9, 24, 7, 12, tzinfo=UTC)}]
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", fake_fetch_all)
-    result = await module_status("inroots")
+    result = await module_status("attendance")
 
-    assert result["module"] == "inroots"
+    assert result["module"] == "attendance"
     assert result["checks"][0]["observed_at"] == "2026-09-24T07:12:00+00:00"
 
 
@@ -171,7 +171,7 @@ async def test_module_status_defaults_a_missing_health_to_unknown(monkeypatch):
                  "unit": None, "detail": None, "observed_at": None}]
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", fake_fetch_all)
-    result = await module_status("inroots")
+    result = await module_status("attendance")
 
     assert result["checks"][0]["health"] == "unknown"
     assert result["checks"][0]["observed_at"] is None
@@ -182,7 +182,7 @@ async def test_module_status_says_so_when_nothing_is_recorded(monkeypatch):
         return []
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", empty)
-    result = await module_status("inroots")
+    result = await module_status("attendance")
     assert "error" in result
 
 
@@ -242,7 +242,7 @@ def _imports_of(path: pathlib.Path) -> set[str]:
 @pytest.mark.parametrize("path", [
     pathlib.Path(__file__).resolve().parent.parent / "atlas" / "kernel" / "businesses.py",
     *sorted((SKILLS_ROOT / f"{n}.py") for n in
-            ("exampleco", "fiverr", "agency")),
+            ("fiverr", "agency")),
 ])
 def test_no_file_here_imports_the_executor(path: pathlib.Path):
     """Invariant 1: collectors and skills only read. A business agent

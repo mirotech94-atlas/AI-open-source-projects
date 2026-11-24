@@ -79,7 +79,7 @@ def verify_token(token: str, slug: str) -> bool:
         exp = int(exp_s)
         ok = hmac.compare_digest(sig, _sign(slug, exp))
         return ok and exp > time.time()
-    except Exception:  # noqa: BLE001 - a weak/absent secret or junk is a refusal
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -129,7 +129,7 @@ async def previews(_s: SignedIn) -> Any:
             rows = await fetch_all(
                 "SELECT id, name FROM agency_leads WHERE id = ANY($1::bigint[])", ids)
             names = {int(r["id"]): str(r["name"]) for r in rows}
-        except Exception as exc:  # noqa: BLE001 - a label only; sites still list
+        except Exception as exc:  # noqa: BLE001
             log.warning("previews: lead names unreadable: %s", exc)
     out = []
     for s in slugs:

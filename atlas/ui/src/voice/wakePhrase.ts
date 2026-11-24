@@ -3,7 +3,7 @@
  * detectors (the on-device whisper gate and the browser's SpeechRecognition),
  * so they can never disagree.
  *
- * the owner, 2026-11-10: "Atlas" and "Hey Atlas" both wake him, and wake him at
+ * Miro, 2026-11-10: "Atlas" and "Hey Atlas" both wake him, and wake him at
  * once. But the word is also an ordinary one -- "the atlas report", "an atlas
  * of Europe" -- and a microphone that is always listening must not open the
  * HUD on those. So the bare word wakes only when it is plainly addressed to
@@ -47,7 +47,7 @@ export function normalise(text: string): string {
 }
 
 /**
- * True when `text` is the owner addressing ATLAS: "Atlas" or "Hey Atlas".
+ * True when `text` is Miro addressing ATLAS: "Atlas" or "Hey Atlas".
  *
  * `final` is false for a recogniser's interim result: "atlas report" first
  * arrives as the interim "atlas", so the bare word on its own wakes only once

@@ -1,6 +1,6 @@
 """ATLAS Academy thumbnails: a family per episode, one real image (2026-10-17).
 
-the owner, 2026-10-17: "create thumbnails for each video and different as well".
+Miro, 2026-10-17: "create thumbnails for each video and different as well".
 Batch 7 of the video system (docs/academy-video-system/production-system.md:
 "Thumbnail: 1280x720 PNG, one real screenshot, 2-5 words in `chapter`, the
 same outcome as the title").
@@ -30,7 +30,7 @@ same outcome as the title").
            series puts its blue accent rule on its own edge.
   Labels   one tab hanging from the top left: the level and the measured
            minutes in sentence case ("5 min"), 56 px. No "Made with AI" on
-           the picture (the owner: the disclosure is YouTube's flag and the
+           the picture (Miro: the disclosure is YouTube's flag and the
            description).
   Glyphs   single-stroke line glyphs, 2 px on a 24 box, scaled.
 """

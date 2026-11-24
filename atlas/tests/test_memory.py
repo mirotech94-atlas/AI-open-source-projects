@@ -169,7 +169,7 @@ async def test_learn_fact_dedupe_is_bookkeeping_not_a_read(monkeypatch, logged):
 
     monkeypatch.setattr(memory, "fetch_all", fake_fetch_all)
     monkeypatch.setattr(memory, "fetch_one", fake_fetch_one)
-    await memory.learn_fact("preferences", "the owner takes his coffee black")
+    await memory.learn_fact("preferences", "Miro takes his coffee black")
 
     assert not [sql for sql, _ in logged if "memory_reads" in sql]
 

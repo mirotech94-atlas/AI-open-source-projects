@@ -1,4 +1,4 @@
-"""What the futures engine tells the owner, and how little: one daily close
+"""What the futures engine tells Miro, and how little: one daily close
 summary, one weekly scoreboard. No per-trade cards -- intraday cards are
 noise. Every figure is read from ATLAS's own tables at the time of writing;
 what cannot be read is UNKNOWN, never zero. "Paper, not advice." once.
@@ -263,7 +263,7 @@ async def explain(block: str) -> str | None:
         prompt = (wrap_untrusted(block, "the futures paper scoreboard, ATLAS's own tables")
                   + "\n\nWrite the one line now.")
         reply = await think(Need.REASON, SYSTEM, [Message("user", prompt)], max_tokens=200)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.info("futures: no model note (%s)", type(exc).__name__)
         return None
     text = (getattr(reply, "text", "") or "").strip().replace("\n", " ")

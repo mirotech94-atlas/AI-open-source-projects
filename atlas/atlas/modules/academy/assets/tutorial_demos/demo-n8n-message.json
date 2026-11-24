@@ -1,0 +1,38 @@
+{
+ "key": "n8n-message",
+ "seconds": 28.392,
+ "marks": [
+  [
+   0.0,
+   12.578
+  ],
+  [
+   12.777,
+   18.837
+  ],
+  [
+   19.008,
+   28.392
+  ]
+ ],
+ "urls": [
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/293ef7",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/293ef7",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM"
+ ],
+ "captions": [
+  "Edit Fields shapes the message (your Slack node goes here)",
+  "Execute step: the message is ready",
+  "Execute workflow: every node turns green"
+ ],
+ "width": 1536,
+ "height": 864,
+ "fps": 30,
+ "bytes": 2812040,
+ "sha256": "e07f72efce29caa780d20078a5a258ed7d178e736a51bf3823df002ab583bc88",
+ "versions": {
+  "chromium": "153.0.8010.12",
+  "n8n": "2.40.7"
+ },
+ "recorded_at": "2026-10-12T16:51:19+00:00"
+}

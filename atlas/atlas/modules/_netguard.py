@@ -2,7 +2,7 @@
 a search engine or an agent chose.
 
 ATLAS runs next to its own API, which trusts 127.0.0.0/8 and the mesh as
-the owner. A fetch of `http://localtest.me:8080/api/memory` — a public name that
+Miro. A fetch of `http://localtest.me:8080/api/memory` — a public name that
 resolves to 127.0.0.1 — would hand his memory to the prompt, and the next
 fetch could carry it out in a query string. Reading is the leak, so every
 fetch of an outside-chosen URL asks `assert_public` first, and every redirect
@@ -24,7 +24,7 @@ What this does not close, stated so nobody relies on it for more:
     detects and refuses such a page afterwards; httpx callers here follow
     redirects by hand and check each hop first).
 The lasting fix is at the network layer — an egress rule denying these ranges
-to the fetching process, or a filtering forward proxy. That is the owner's call.
+to the fetching process, or a filtering forward proxy. That is Miro's call.
 """
 from __future__ import annotations
 

@@ -9,7 +9,7 @@ message down it as an envelope.
 Authority. Socket Mode skips `_verify_slack`: there is no signed HTTP request
 to verify. What proves the envelope came from Slack is the `xapp-` app-level
 token (SLACK_APP_TOKEN, scope `connections:write`) that opened the socket --
-only Slack holds the other end. What proves it came from the owner is unchanged:
+only Slack holds the other end. What proves it came from Miro is unchanged:
 the same pure handlers (`handle_interaction`, `handle_command`,
 `handle_event`) check the user id against SLACK_APPROVER_IDS, drop duplicate
 event ids durably (`_seen_before`) and reach the one write path
@@ -221,7 +221,7 @@ async def run(app_token: str, *, opener: Opener | None = None,
                     asked, greeted = await _serve(ws)
             except asyncio.CancelledError:
                 raise
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 # The type and Slack's error code only: the wss URL holds a
                 # ticket and the token must never reach a log.
                 STATE.last_error = (str(exc) if isinstance(exc, SocketOpenError)

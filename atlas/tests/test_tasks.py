@@ -1,5 +1,5 @@
-"""kernel/tasks.py: every request the owner makes is on the record, and a status
-question is answered from it (the owner, 2026-10-06: "just check on him")."""
+"""kernel/tasks.py: every request Miro makes is on the record, and a status
+question is answered from it (Miro, 2026-10-06: "just check on him")."""
 from __future__ import annotations
 
 import json

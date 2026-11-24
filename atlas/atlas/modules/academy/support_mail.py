@@ -12,7 +12,7 @@ second ticket.
 Never a ticket: mail from a machine (`mail.accounts.automated`, an
 Auto-Submitted or bulk/list header), mail from our own addresses, and a
 message that only says STOP -- that address is suppressed instead.
-`authenticated` records Gmail's DKIM/DMARC verdict; it is shown to the owner,
+`authenticated` records Gmail's DKIM/DMARC verdict; it is shown to Miro,
 and a reply only ever goes back to the From address, never to an address
 named inside the message.
 
@@ -31,7 +31,7 @@ from typing import Any
 from . import support
 from .support_guard import is_stop
 
-log = logging.getLogger("academy.example.support_mail")
+log = logging.getLogger("atlas.academy.support_mail")
 
 ACCOUNT_ENV = "ACADEMY_SUPPORT_MAILBOX"
 DEFAULT_MAILBOX = "clips"

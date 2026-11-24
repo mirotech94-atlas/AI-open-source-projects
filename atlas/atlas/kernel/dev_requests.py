@@ -140,7 +140,7 @@ async def note(text: str) -> str:
             dedup_key=key,
             rollback_plan="nothing is applied; approval only records the decision "
                           "and a task note")
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("dev request not queued: %s", type(exc).__name__)
         return COULD_NOT
     return reply_for(card)

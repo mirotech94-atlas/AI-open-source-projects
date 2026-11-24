@@ -114,7 +114,7 @@ def test_the_daily_lineup_never_picks_an_episode_already_posted(monkeypatch):
 
 async def test_a_public_episode_is_never_uploaded_again(monkeypatch, tmp_path):
     """The bump re-keys public episodes too; if one reached _publish (the
-    automatic post, or the owner's card), it is refused before any upload."""
+    automatic post, or Miro's card), it is refused before any upload."""
     from atlas.kernel import idempotency
     from atlas.modules.youtube import api
     s, ep = tut.resolve("n8n", 1)

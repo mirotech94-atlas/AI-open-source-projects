@@ -17,6 +17,7 @@ import { decisionButtons, decisionNote, type DecisionNote } from "./opsFloorMode
 import { academyLabel, isRetiredText, isHiddenModule, safeText } from "./retired";
 import { CommandSections } from "./CommandSections";
 import { nextUp } from "./commandSections";
+import { autopilotLine } from "./autopilotModel";
 import { WORDMARK } from "./deskModel";
 import { useWhy } from "../components/WhyPanel";
 import { readTime } from "./healthWhy";
@@ -25,7 +26,7 @@ import type { LiveRead } from "../hooks/useLiveRead";
 export { CPanel, Unread, stamp };
 
 /**
- * ATLAS · Command Center -- the home page (the owner, 2026-10-06: "make the
+ * ATLAS · Command Center -- the home page (Miro, 2026-10-06: "make the
  * ATLAS frontend tech based ... include all necessary things ... if
  * something is not needed to check all the time don't put it").
  *
@@ -33,7 +34,7 @@ export { CPanel, Unread, stamp };
  * could not be read says Unknown in grey, dashed and unlit, and never
  * shares a treatment with OK (invariants 6 and 7). Nothing here acts on
  * the world: the one write is Decline/Approve on a pending Tier 2 card
- * (the owner 2026-10-29: GUI decisions), which goes through `decide` exactly as
+ * (Miro 2026-10-29: GUI decisions), which goes through `decide` exactly as
  * Slack does and is refused for approve while watch-only.
  */
 
@@ -62,8 +63,8 @@ export function CommandMark({ size = 30 }: { size?: number }): JSX.Element {
   return <img src="/favicon.svg" width={size} height={size} alt="" className="cmd-mark" />;
 }
 
-/** The header: the two tabs, the clock, health and what needs the owner. No
- *  voice tab and no sign-out (the owner, 2026-10-28): the voice loop answers the
+/** The header: the two tabs, the clock, health and what needs Miro. No
+ *  voice tab and no sign-out (Miro, 2026-10-28): the voice loop answers the
  *  footer mic and the wake word, and an expired session lands on the login
  *  gate by itself. */
 export function CommandHeader({ overview, waiting, feed }: {
@@ -278,8 +279,45 @@ export function NextUp({ agenda, board, now }: {
   );
 }
 
+/** One Autopilot line (last cycle, fixed, waiting on Miro) with its read time.
+ *  A null figure or a failed read is Unknown, never 0. */
+export function AutopilotLine({ autopilot }: {
+  autopilot: Fresh<Awaited<ReturnType<typeof api.autopilot>>>;
+}): JSX.Element {
+  const rd = readOf(autopilot);
+  if (rd.error || !rd.data) {
+    return (
+      <p className="cmd-next" data-health="unknown">
+        <span className="cmd-next-k">Autopilot</span>
+        <span className="cmd-word-unknown">Unknown</span>
+        <span className="cmd-dim">{stamp(autopilot.fetchedAt, rd.error !== null)}</span>
+      </p>
+    );
+  }
+  const l = autopilotLine(rd.data, hhmm);
+  const bad = l.unknown.length > 0;
+  return (
+    <div>
+      <p className="cmd-next" data-health={bad ? "unknown" : undefined}>
+        <span>{l.text.split(/(Unknown|no cycle yet)/).map((part, i) =>
+          part === "Unknown" || part === "no cycle yet"
+            ? <span key={i} className="cmd-word-unknown">{part}</span> : part)}</span>
+        <span className="cmd-dim">{stamp(autopilot.fetchedAt)}</span>
+      </p>
+      {l.items.length > 0 && (
+        <ul className="cmd-dim">
+          {l.items.map((it, i) => (
+            <li key={i}>{safeText(it.subject)}: {safeText(it.cause)} → {safeText(it.fix)}
+              {" "}({safeText(it.outcome)})</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /** Needs you: the pending cards, with Decline and Approve on a pending
- *  Tier 2 card (the owner 2026-10-29: GUI decisions). The server re-checks
+ *  Tier 2 card (Miro 2026-10-29: GUI decisions). The server re-checks
  *  everything (session, Origin, CSRF, tier from code, watch-only, a
  *  per-session rate); this page says its answer in plain words above the
  *  list, where it stays after a declined card leaves (a click never fails
@@ -387,6 +425,7 @@ export function CommandCenter({ reloadKey, overview }: {
   const agenda = useFresh(() => api.agenda(WEEK_HOURS), [reloadKey]);
   const approvals = useFresh(() => api.approvals(), [reloadKey]);
   const session = useFresh(() => api.session(), [reloadKey]);
+  const autopilot = useFresh(() => api.autopilot(), [reloadKey]);
   useEffect(() => {
     const before = document.title;
     document.title = `${WORDMARK} · Command Center`;
@@ -409,8 +448,9 @@ export function CommandCenter({ reloadKey, overview }: {
                        watchOnly={session.data?.watch_only ?? ap.data?.watch_only ?? null}
                        needsYou={<Decisions approvals={approvals} now={now.getTime()}
                                             session={session} />}
-                       nextUp={<NextUp agenda={agenda} board={board} now={now} />} />
-      {/* Everything else is on the Agency tab (the owner 2026-10-29: keep it short). */}
+                       nextUp={<><NextUp agenda={agenda} board={board} now={now} />
+                                 <AutopilotLine autopilot={autopilot} /></>} />
+      {/* Everything else is on the Agency tab (Miro 2026-10-29: keep it short). */}
     </div>
   );
 }

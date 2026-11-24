@@ -6,7 +6,7 @@ import { AgencyDeskBody, DeskTop, Palette } from "./AgencyDesk";
 import { AgencyBody } from "./AgencySeatCards";
 
 /**
- * The Agency desk, as a Command Center section (the owner, 2026-10-28: "the
+ * The Agency desk, as a Command Center section (Miro, 2026-10-28: "the
  * agency tab should have only the agency map"). Everything that used to sit
  * under the map lives here, in the Command Center's order: the team with
  * its seat cards, Sales, SEO, Research, Remediation, the week's schedule and

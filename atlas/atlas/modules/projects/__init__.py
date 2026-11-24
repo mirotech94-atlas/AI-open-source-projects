@@ -174,7 +174,7 @@ async def check_overdue() -> Observation:
     now = datetime.now(UTC)
     try:
         n = await store.overdue_count()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("overdue", Health.UNKNOWN, at=now,
                            detail=f"project board unreadable: {explain(exc)}")
     return Observation("overdue", Health.DEGRADED if n else Health.OK,

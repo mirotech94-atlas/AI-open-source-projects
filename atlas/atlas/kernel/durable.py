@@ -320,7 +320,7 @@ async def claim(workflow_id: int, ttl: timedelta,
                   AND (lease_expiry IS NULL OR lease_expiry <= now())
             RETURNING id, fencing_token, lease_expiry""",
             workflow_id, owner, ttl, sorted(str(s) for s in TERMINAL))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("workflow %s could not be claimed (%s)", workflow_id,
                     type(exc).__name__)
         return None
@@ -354,7 +354,7 @@ async def claim_next(states: list[State], ttl: timedelta,
                   AND (lease_expiry IS NULL OR lease_expiry <= now())
             RETURNING id, state, fencing_token, lease_expiry""",
             owner, ttl, wanted)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("no workflow claimed (%s)", type(exc).__name__)
         return None
     if row is None:
@@ -372,7 +372,7 @@ async def release(fence: Fence) -> bool:
                 WHERE id = $1 AND fencing_token = $2 AND lease_owner = $3
             RETURNING id""",
             int(fence.key), fence.token, fence.owner)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("workflow %s lease not released (%s); it lapses on its own",
                     fence.key, type(exc).__name__)
         return False
@@ -398,5 +398,5 @@ async def _quiet_audit(audit_fn: Any, event: str, workflow_id: int,
                        data: dict[str, Any]) -> None:
     try:
         await audit_fn(event, f"workflow:{workflow_id}", data)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("%s for workflow %s not audited", event, workflow_id)

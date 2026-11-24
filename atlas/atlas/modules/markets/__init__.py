@@ -1,6 +1,6 @@
 """Markets -- watches the AI stock basket; never trades.
 
-the owner, 2026-09-28, after an Alinea ad ("ChatGPT and Claude picking stocks"):
+Miro, 2026-09-28, after an Alinea ad ("ChatGPT and Claude picking stocks"):
 "make sure there is a trading agent in control of this as well". ATLAS
 never trades: moving money is Tier 3, permanently denied, and nothing here
 gives personal investment advice. What it does:
@@ -12,7 +12,7 @@ gives personal investment advice. What it does:
   a claim (the control);
 * keeps the **Claude playlist (paper)** (`playlist.py`), the Alinea
   "Playlist Pro" loop on paper: once a week (Sunday 15:00 New York) a model,
-  Claude first, proposes target weights from prices ATLAS read itself; the owner
+  Claude first, proposes target weights from prices ATLAS read itself; Miro
   approves or declines the card; approved, `markets.paper_rebalance` moves
   the paper holdings at the latest closes. It starts at $100 split equally
   across the non-VOO tickers and is compared weekly with the control and
@@ -21,23 +21,23 @@ gives personal investment advice. What it does:
   deterministic long-only rules over the watchlist, index and sector ETFs
   (a model may only rank them), at most 2 a day; approved, an idea is
   booked in a $10,000 PAPER idea book; declined, its hypothetical result is
-  tracked too. The card's order ticket is for the owner's own broker, if he
+  tracked too. The card's order ticket is for Miro's own broker, if he
   chooses -- ATLAS never places a real trade;
 * says plainly when a price can't be read (UNKNOWN, never a guess).
 
-It also reads back the owner's own Alinea account from Alinea's emails (the
+It also reads back Miro's own Alinea account from Alinea's emails (the
 `alinea` check, `alinea.py`): Alinea trades on its own; ATLAS only reads.
 
 And, since 2026-09-29, SEC EDGAR (the `filings` check, `edgar.py`): the
 watchlist's new 10-K, 10-Q and 8-K filings and Form 4 insider purchases and
 sales, read from SEC's public JSON with a contact User-Agent.
 
-Its actions: `markets.alert` (Tier 1, `alerts.py`) sends the owner a Slack
+Its actions: `markets.alert` (Tier 1, `alerts.py`) sends Miro a Slack
 message when a watchlist stock moves more than MARKETS_ALERT_MOVE_PCT on the
 day, a new 8-K or insider purchase/sale is filed, or Alinea trails VOO by the
 Alinea rule -- a message and nothing else. `markets.paper_rebalance` and
 `markets.paper_idea` are Tier 2 and card_only: raised only by their own
-scheduled jobs, approved only by the owner, never offered to a model; they write
+scheduled jobs, approved only by Miro, never offered to a model; they write
 ATLAS's own paper tables. No action here can trade or move money, and none
 may be added (money out is Tier 3). Prices come from Yahoo's public chart
 endpoint (no key; unofficial, so it can change); Finnhub is read if
@@ -225,7 +225,7 @@ async def _paper(quotes: dict) -> tuple[float, datetime] | None:
             return None
         value = sum(float(r["shares"]) * quotes[str(r["ticker"])]["last"] for r in rows)
         return value, rows[0]["started_at"]
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -244,7 +244,7 @@ class MarketsModule:
                       "the AI stock basket's prices and the paper basket, read-only",
                       baseline_sigma=None),
                 Check("alinea", check_alinea, timedelta(hours=2), Severity.INFO,
-                      "the owner's Alinea account as its emails state it, read-only; "
+                      "Miro's Alinea account as its emails state it, read-only; "
                       "Alinea trades on its own",
                       baseline_sigma=None),
                 Check("filings", check_filings, timedelta(hours=1), Severity.INFO,
@@ -256,19 +256,19 @@ class MarketsModule:
                       timeout=timedelta(seconds=150)),
                 Check("tradingview", check_tradingview, timedelta(minutes=15),
                       Severity.INFO,
-                      "the owner's own TradingView alerts as TradingView sent them, "
+                      "Miro's own TradingView alerts as TradingView sent them, "
                       "read-only; never traded on",
                       baseline_sigma=None))
 
     def actions(self):
-        # The alert sends the owner a message; the two paper actions move ATLAS's
+        # The alert sends Miro a message; the two paper actions move ATLAS's
         # own paper books on his approval. Nothing here can trade; money out
         # is Tier 3, permanently denied.
         from . import ideas, playlist
         from .alerts import ACTION, alert, alert_dry, alert_rollback
         return (Action(
-            name=ACTION, tier=Tier.AUTO,   # a message to the owner; trades nothing
-            summary=("Send the owner one planned market alert (a big move, a new "
+            name=ACTION, tier=Tier.AUTO,   # a message to Miro; trades nothing
+            summary=("Send Miro one planned market alert (a big move, a new "
                      "8-K or insider purchase/sale, Alinea trailing VOO): "
                      "facts with their read time, never advice"),
             run=alert, dry_run=alert_dry, rollback=alert_rollback,

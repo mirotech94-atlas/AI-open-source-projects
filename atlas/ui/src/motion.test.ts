@@ -1,5 +1,5 @@
 /**
- * The animated black + royal blue backdrop and the portal's motion (the owner,
+ * The animated black + royal blue backdrop and the portal's motion (Miro,
  * 2026-11-10). One backdrop lives in _tokens.css and reaches both the Vite
  * bundle and the server-rendered pages; motion.css adds panel, route and
  * login motion. These tests pin the safety rules: motion is off for

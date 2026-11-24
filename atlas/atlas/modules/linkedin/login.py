@@ -1,6 +1,6 @@
 """One-time login helper. Run it through bootstrap/linkedin-login.sh.
 
-Opens a real browser window so the owner signs in himself, including any
+Opens a real browser window so Miro signs in himself, including any
 verification LinkedIn asks for, and ATLAS never sees the password. It waits
 by watching for the feed to load signed-in, so nobody has to press Enter in
 a terminal. Tick "Keep me signed in".
@@ -20,7 +20,7 @@ async def _signed_in(page) -> bool:
     try:
         await page.goto("https://www.linkedin.com/feed/",
                         wait_until="domcontentloaded", timeout=20000)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return False
     url = page.url
     return "/feed" in url and not any(s in url for s in ("/login", "/checkpoint",

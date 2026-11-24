@@ -22,9 +22,9 @@ def _msg(sender, subject="hi", body="text"):
 
 @pytest.fixture
 def one_account(monkeypatch):
-    acct = Account(name="flycheap", kind="imap", email="owner@flycheap.example",
+    acct = Account(name="flycheap", kind="imap", email="owner@flycheap.example.com",
                    host="imap.zoho.com", password="x",
-                   aliases=("owner@vault.example",))
+                   aliases=("owner@flycheap.example.com",))
     monkeypatch.setattr(ingest, "all_accounts", lambda: [acct])
 
     async def quiet(*a, **k):
@@ -52,7 +52,7 @@ async def test_a_client_email_becomes_a_signal_in_that_business_channel(
 async def test_urgent_reads_as_high(one_account, monkeypatch):
     """HIGH is the severity that can reach the phone. Urgency 3 earns it."""
     async def fresh(_a):
-        return [_msg("ops@vault.example", "PRODUCTION DOWN")]
+        return [_msg("ops@guarder.example.com", "PRODUCTION DOWN")]
 
     async def classify(s, f, b):
         return {"category": "client", "urgency": 3, "summary": "site down"}
@@ -81,7 +81,7 @@ async def test_a_watched_sender_is_announced_even_when_classified_fyi(
     small local model thinks of the wording. This is the Fiverr path now
     that the site itself is behind a bot wall."""
     async def fresh(_a):
-        return [_msg("contact46@example.com", "You have a new order")]
+        return [_msg("noreply@fiverr.com", "You have a new order")]
 
     async def classify(s, f, b):
         return {"category": "fyi", "urgency": 1, "summary": "order"}
@@ -95,7 +95,7 @@ async def test_a_watched_sender_is_announced_even_when_classified_fyi(
 async def test_his_own_mail_is_never_announced(one_account, monkeypatch):
     """A message FROM him -- including from an alias -- is not news to him."""
     async def fresh(_a):
-        return [_msg("owner@vault.example", "re: invoice")]
+        return [_msg("owner@flycheap.example.com", "re: invoice")]
 
     async def classify(s, f, b):
         raise AssertionError("must not even classify his own mail")
@@ -106,9 +106,9 @@ async def test_his_own_mail_is_never_announced(one_account, monkeypatch):
 
 
 def test_the_mail_module_routes_by_mailbox():
-    assert ingest._topic_for(Account("g", "imap", "owner@vault.example")) == "guardian"
-    assert ingest._topic_for(Account("f", "imap", "owner@flycheap.example")) == "flycheap"
-    assert ingest._topic_for(Account("p", "google", "contact47@example.com")) == "mail"
+    assert ingest._topic_for(Account("g", "imap", "owner@guarder.example.com")) == "guardian"
+    assert ingest._topic_for(Account("f", "imap", "owner@flycheap.example.com")) == "flycheap"
+    assert ingest._topic_for(Account("p", "google", "me@gmail.com")) == "mail"
 
 
 def test_a_signal_may_name_its_own_channel():
@@ -147,7 +147,7 @@ async def test_unclassified_mail_is_one_alert_and_is_read_again_next_sweep(
     monkeypatch.setattr("atlas.modules.mail.classify", classify)
 
     signal, = await ingest.sweep()
-    assert signal.title == "owner@flycheap.example: 3 unclassified — local model down"
+    assert signal.title == "owner@flycheap.example.com: 3 unclassified — local model down"
     assert "Subject m1" in signal.body and "Subject m3" in signal.body
     assert "local model unavailable" in signal.body
     assert "fyi" not in signal.body

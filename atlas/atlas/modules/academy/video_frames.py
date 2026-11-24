@@ -1,6 +1,6 @@
 """A NotebookLM lesson's thumbnail frame, picked from its own video (2026-10-20).
 
-the owner, 2026-10-20: every Academy tutorial thumbnail unique and made from the
+Miro, 2026-10-20: every Academy tutorial thumbnail unique and made from the
 actual video. A NotebookLM Video Overview is a run of drawn slides; the
 drawn navy card made the recent lessons look alike.
 

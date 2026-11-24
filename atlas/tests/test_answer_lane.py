@@ -1,4 +1,4 @@
-"""the owner, 2026-11-17: "use the qwen3.8:27B model always to answer and voice".
+"""Miro, 2026-11-17: "use the qwen3.8:27B model always to answer and voice".
 
 Every call that answers a person (`think(..., answer=True)`) asks the Spark's
 qwen3.8:27b first, whatever Need it names. The Need's own chain is only the

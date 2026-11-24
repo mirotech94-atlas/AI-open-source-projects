@@ -14,7 +14,7 @@ from atlas.kernel.permissions import classify
 from atlas.kernel.registry import REGISTRY
 
 CLEAN_EMAIL = ("Hi Joe,\n\nI looked at your site and the booking link is broken.\n\n"
-               "ATLAS, assistant to the owner at Mapfront\n1 Main St, Newark NJ\n"
+               "ATLAS, assistant to Miro at Mapfront\n1 Main St, Newark NJ\n"
                "Reply STOP to opt out.")
 
 
@@ -264,7 +264,7 @@ async def test_tutorial_ready_refuses_a_notebooklm_render_qa_fails(memory_backen
     monkeypatch.setattr(tut, "read_manifest", lambda d: m)
 
     async def no_refusal(s, e, d, man, video):
-        return "A lesson with no disclosure. https://agency.example.com/x", None
+        return "A lesson with no disclosure. https://agency.storefront.test/x", None
 
     monkeypatch.setattr(tut, "notebooklm_refusal", no_refusal)
     got, why = await tut.ready(series.key, ep.number)

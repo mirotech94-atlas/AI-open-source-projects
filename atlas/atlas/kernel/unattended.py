@@ -44,8 +44,7 @@ from .registry import REGISTRY
 # Every action a surface with no person behind it may run. One line per
 # action, on purpose.
 ALLOWED = frozenset({
-    "screening.book_slot",
-    # The agent on the owner's Mac recording a clip it submitted on Whop (the owner,
+    # The agent on Miro's Mac recording a clip it submitted on Whop (Miro,
     # 2026-09-29): a status on ATLAS's own row, mesh-only and behind the
     # HANDOFF_TOKEN bearer (atlas/api/clips.py).
     "clips.record_whop_submission",
@@ -55,20 +54,20 @@ ALLOWED = frozenset({
     # door and bearer (atlas/api/clips.py).
     "clips.record_draft_submitted",
     "clips.record_draft_decision",
-    # The agent on the owner's Mac recording the Webild site it published for a
-    # lead (the owner, 2026-09-29): a status on ATLAS's own row and a read-only
+    # The agent on Miro's Mac recording the Webild site it published for a
+    # lead (Miro, 2026-09-29): a status on ATLAS's own row and a read-only
     # launch check, mesh-only and behind the HANDOFF_TOKEN bearer
     # (atlas/api/webild.py).
     "agency.record_webild_site",
     # A lead on ATLAS's own consented call picking one of the free slots
-    # just read from the owner's calendar (the owner, 2026-09-30): a hold on his own
+    # just read from Miro's calendar (Miro, 2026-09-30): a hold on his own
     # calendar with no attendee, re-checked free by its dry run, rolled back
     # by deleting it (atlas/api/lead_call.py).
     "agency.hold_meeting",
     # agency.send_invite and agency.send_agreement left this list on
     # 2026-10-27 (six agents): every send to a client is a Tier 2 card, and
     # a Tier 2 action never goes through this door.
-    # The agent on the owner's Mac asking for an approved draft to post now
+    # The agent on Miro's Mac asking for an approved draft to post now
     # (2026-10-06: Whop takes a live link only within 30 minutes of the
     # post), through the clip's own Tier 1 auto action with every gate it
     # already has -- the same post the posting pass would make on its own

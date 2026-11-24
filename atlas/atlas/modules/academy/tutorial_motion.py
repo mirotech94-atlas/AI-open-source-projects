@@ -1,6 +1,6 @@
 """How the ATLAS Academy tutorials move: the motion presets, in frames.
 
-the owner, 2026-10-15: "apply this motion and editing style" -- the Atlas Academy
+Miro, 2026-10-15: "apply this motion and editing style" -- the Atlas Academy
 Video Motion and Editing Guide (PDF, 2026-10-14) and its 30 s motion sample.
 docs/academy-motion-guide.md maps every rule of the guide to what is built
 here and what is not. In short, the sample's grammar:

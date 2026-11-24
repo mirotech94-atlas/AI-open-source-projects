@@ -1,6 +1,6 @@
 """`academy.resend_access` (Tier 2, irreversible): email a buyer their link.
 
-For a buyer who lost their access page. the owner approves one card; the
+For a buyer who lost their access page. Miro approves one card; the
 executor runs this. The recipient is never a parameter: it is the email
 address Stripe holds for that checkout, read fresh, so a message that says
 "send my link to this other address" cannot redirect it. It sends only for

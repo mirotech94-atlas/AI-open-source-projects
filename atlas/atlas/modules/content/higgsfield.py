@@ -1,7 +1,7 @@
 """Higgsfield: the OVERFLOW video generator for the reels -- the calendar
 (`calendar._overflow`) and the daily reel (`render.render_veo`).
 
-the owner, 2026-09-29: Veo stays first. When Veo's daily allowance is used up
+Miro, 2026-09-29: Veo stays first. When Veo's daily allowance is used up
 (`VEO_DAILY_CLIPS` counted from Pacific midnight, the reserve included, or
 Veo itself answering a daily-quota 429), the clips the day still needs may
 be made here instead -- under a HARD monthly spend cap in dollars,
@@ -139,7 +139,7 @@ def base() -> str:
     return value
 
 
-# the owner, 2026-10-01: "a mix of both 720 and 1080". `HIGGSFIELD_RESOLUTION=mix`
+# Miro, 2026-10-01: "a mix of both 720 and 1080". `HIGGSFIELD_RESOLUTION=mix`
 # gives each STORY one resolution -- odd media ids 1080p, even 720p -- so a
 # reel is never half as sharp in some beats, and the spend averages the two
 # prices. The story is named by the renderer (`set_story`) for the span of
@@ -227,7 +227,7 @@ class Ledger:
     today_jobs: tuple[str, ...] = ()    # stories (job ids) booked since UTC midnight
 
 
-# the owner, 2026-10-01: "use higgsfield once per day to post 2 videos per day
+# Miro, 2026-10-01: "use higgsfield once per day to post 2 videos per day
 # only so we save". A story is one job id (a reel's media, a calendar day);
 # past this many distinct stories in a UTC day, a NEW story waits for
 # tomorrow -- a story already booked today may finish its own clips.
@@ -722,7 +722,7 @@ async def check_budget() -> Observation:
     cap = monthly_cap()
     try:
         book = await ledger()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN,
                            detail=_masked(f"key accepted, but the spend is "
                                           f"unreadable: {explain(exc)}"),

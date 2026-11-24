@@ -117,7 +117,7 @@ def test_the_stores_files_folder_is_never_a_source(tmp_path, monkeypatch):
 
 # ------------------------------------------------------------------ audience, text
 
-def test_everything_is_unlisted_until_owner_names_the_free_previews():
+def test_everything_is_unlisted_until_miro_names_the_free_previews():
     assert ly.FREE_PREVIEWS == frozenset()
     assert ly.privacy_for("aiea-adults-video-7-5") == "unlisted"
 
@@ -147,7 +147,7 @@ def test_description_links_back_to_the_store_and_says_the_voice_is_synthetic():
     d = ly.build_description("Course", "1.1", "Title", "https://shop.example/academy/",
                              public=True)
     assert "https://shop.example/academy/" in d and "synthetic" in d
-    assert ly.store_url({"domain": "agency.example.com"}) == "https://agency.example.com/academy/"
+    assert ly.store_url({"domain": "agency.storefront.test"}) == "https://agency.storefront.test/academy/"
     assert ly.store_url({}) == ""
 
 

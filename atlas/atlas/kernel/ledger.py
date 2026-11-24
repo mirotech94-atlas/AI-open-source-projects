@@ -4,7 +4,7 @@
 failed twice. What it cannot see is one fault wearing different parameters:
 a provider that rejects every post, a tool that times out for every site.
 Each is a fresh pair of (action, params) to `lessons`, so nothing ever
-reaches two. the owner's operations brief (2026-10-04) asks for a ledger that
+reaches two. Miro's operations brief (2026-10-04) asks for a ledger that
 knows a mistake when it comes back.
 
 Nightly, after the review, `nightly()` reads the week's `failed_action`
@@ -172,7 +172,7 @@ async def nightly(now: datetime | None = None) -> str | None:
                   AND last_at > $1""", now - timedelta(days=WINDOW_DAYS))
         known_rows = await fetch_all(
             "SELECT fingerprint, state, told_at, closed_at, last_seen FROM ledger_mistakes")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("ledger: could not read (%s); nothing changed", type(exc).__name__)
         return None
     known = {str(r["fingerprint"]): dict(r) for r in known_rows or []}
@@ -205,7 +205,7 @@ async def nightly(now: datetime | None = None) -> str | None:
             from .contracts import Severity
             await notify(Outbound(title=line, body=body, severity=Severity.NORMAL,
                                   topic="brief", kind="digest"))
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("ledger: digest not posted (%s)", type(exc).__name__)
     log.info(line)
     return line

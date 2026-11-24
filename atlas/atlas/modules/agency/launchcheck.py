@@ -12,7 +12,7 @@ query) — and reports each of the 20 items as:
 * **NEEDS_CLIENT** — ATLAS will not make this up and the client hasn't given
   it yet (reviews, case studies, a team photo, a stated response time,
   opening hours, a form service, the site's domain). Listed on the approval
-  card; it does not block a deploy the owner approves;
+  card; it does not block a deploy Miro approves;
 * **N/A** — does not apply (analytics when PostHog is not configured).
 
 Read-only and blocking: run it through `asyncio.to_thread`. It never
@@ -95,7 +95,7 @@ CONTENT_ITEM = "A real page, not tool output"
 MEDIA_NUMBER = 23
 MEDIA_ITEM = "Self-hosted media"
 
-# Also on every report (the owner, 2026-10-06, "AI search visibility"): what an
+# Also on every report (Miro, 2026-10-06, "AI search visibility"): what an
 # AI assistant can read about the business in one fetch. A sold site built
 # from 2026-10-06 carries llms.txt, a LocalBusiness record with a name,
 # address and phone, and a robots.txt that names and allows the assistants'
@@ -164,7 +164,7 @@ class LaunchReport:
         def cell(text: str) -> str:
             return text.replace("|", "\\|").replace("\n", " ")
 
-        verdict = ("**Ready to deploy: yes.** the owner approves the deploy; the "
+        verdict = ("**Ready to deploy: yes.** Miro approves the deploy; the "
                    "NEEDS_CLIENT items travel on the approval card." if self.ready else
                    f"**Ready to deploy: no.** {c['ISSUE']} ISSUE(s) must be fixed first; "
                    "`agency.deploy_site` refuses until they are.")

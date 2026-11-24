@@ -1,6 +1,6 @@
 """ATLAS Academy support's knowledge base: the only thing support may answer from.
 
-the owner, 2026-10-11 (Q&A): ATLAS answers product questions itself "from the
+Miro, 2026-10-11 (Q&A): ATLAS answers product questions itself "from the
 product files"; anything it cannot ground goes to him. This module is the
 "product files" half: chunks of text, each tagged with the product it is
 about, the source it came from and who may see it, and a retrieval that
@@ -24,12 +24,12 @@ Where the chunks come from, and nothing else:
   allowlist (`SOURCES`): lessons, chapters, workbook parts, kit READMEs.
   Internal notes (BRIEF.md, VERIFY-LOG.md, Sales page.md, Selling on
   Shopify, Roadmap, Products index, FlyCheap, TikTok listings, frontmatter
-  and [[wiki links]]) are never read. These are built on the owner's Mac by
+  and [[wiki links]]) are never read. These are built on Miro's Mac by
   `python -m atlas.modules.academy.support_kb build <Products dir> <out>`
   into `data/academy/support_kb.json` (ACADEMY_SUPPORT_KB) and shipped like
   the product files -- paid lesson text stays out of git. With the file
   missing, support still answers from the catalog and the policy, and hands
-  everything else to the owner; it never improvises.
+  everything else to Miro; it never improvises.
 
 **Scope.** A chunk is `public` (catalog, policy, store pages, a kit's
 setup/start-here pages, the free kit) or `buyer` (the paid lessons and
@@ -63,7 +63,7 @@ KB_ENV = "ACADEMY_SUPPORT_KB"
 DEFAULT_KB = "data/academy/support_kb.json"
 KB_VERSION = 1
 CHUNK_CHARS = 1100
-REPLY_DAYS = 2                       # the owner, 2026-10-11: "within 2 business days"
+REPLY_DAYS = 2                       # Miro, 2026-10-11: "within 2 business days"
 REPLY_DAYS_WORD = "two"              # as the pages write it (no stray figures)
 REPLY_TZ = "America/New_York"
 
@@ -325,7 +325,7 @@ def catalog_chunks(cat: Catalog) -> list[Chunk]:
     return out
 
 
-DEFAULT_SUPPORT_ADDRESS = "owner@example.com"
+DEFAULT_SUPPORT_ADDRESS = "agency.sender@gmail.com"
 
 
 def support_address() -> str:
@@ -336,13 +336,13 @@ def support_address() -> str:
     try:
         from .catalog import load
         return load().support_email.strip().lower() or DEFAULT_SUPPORT_ADDRESS
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return DEFAULT_SUPPORT_ADDRESS
 
 
 def policy_chunks(cat: Catalog) -> list[Chunk]:
     """The support FAQ and policy, written in code from the catalog's facts.
-    Every figure here is the catalog's or the owner's decision of 2026-10-11."""
+    Every figure here is the catalog's or Miro's decision of 2026-10-11."""
     days = int(cat.store["download_link_days"])
     base = cat.store_url
     help_url = f"{base}/help/"
@@ -368,7 +368,7 @@ def policy_chunks(cat: Catalog) -> list[Chunk]:
           f"to {support} and say which file, which device and the exact error.")),
         ("refund-how", "How do I ask for a refund?",
          (f"Refund terms are set per title and listed on {base}/refunds/. Refund "
-          f"requests are handled by the owner himself: email {contact} from the address you "
+          f"requests are handled by Miro himself: email {contact} from the address you "
           "paid with and include your Stripe receipt number if you have it.")),
         ("reply-time", "How fast does support reply?",
          (f"ATLAS Academy support replies within {REPLY_DAYS_WORD} business days (Monday to "
@@ -376,7 +376,7 @@ def policy_chunks(cat: Catalog) -> list[Chunk]:
           "support assistant from the product files.")),
         ("ai-assistant", "Am I talking to a person?",
          ("No. This is the ATLAS Academy support assistant, an AI. It answers only from "
-          "the product files and the store's published terms. the owner reviews anything it "
+          "the product files and the store's published terms. Miro reviews anything it "
           "can't answer.")),
         ("scope", "What does support cover?",
          ("Support covers access and downloads, setting up the kits (Docker, n8n, "
@@ -385,7 +385,7 @@ def policy_chunks(cat: Catalog) -> list[Chunk]:
           "are a paid service.")),
         ("custom-work", "Can you build or set this up for me?",
          ("Custom builds and done-for-you setup are not part of a purchase. They are a "
-          "paid service from ATLAS Agency, the owner's studio. Write with what you need and the owner "
+          "paid service from ATLAS Agency, Miro's studio. Write with what you need and Miro "
           "replies with a quote.")),
         ("report-broken", "How do I report a broken workflow or error?",
          ("Say which product and which workflow or chapter, what you did step by step, "
@@ -421,7 +421,7 @@ how i if in into is it its itself just me more most my myself no nor not now of 
 once only or other our ours out over own same she should so some such than that the
 their them then there these they this those through to too under until up very was we
 were what when where which while who whom why will with would you your yours yourself
-hi hello hey thanks thank please regards dear owner atlas academy question help know
+hi hello hey thanks thank please regards dear miro atlas academy question help know
 get got im ive dont cant wont doesnt isnt also still just really need want would like
 one way thing things anything something"""
 STOP = frozenset(_STOP_WORDS.split())

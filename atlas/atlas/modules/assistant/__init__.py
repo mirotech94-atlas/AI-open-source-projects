@@ -9,7 +9,7 @@ and page/weather/Wikipedia/dictionary/rate fetches) against the two daily
 caps in `budget.py`, with the time it was read. UNKNOWN when the audit log
 cannot be counted (invariant 7), DEGRADED when a cap is spent.
 
-What it may do: one thing, tell the owner a short code-built note (`notices.py`, the
+What it may do: one thing, tell Miro a short code-built note (`notices.py`, the
 Tier 1 action `assistant.update_owner`, a Slack DM, 1 an hour, 3 a day). Every tool it hands a model is
 a read (`tools.py`), the loop (`loop.py`) can reach no catalog action, and
 nothing in this package imports the executor. It answers questions -- about
@@ -25,7 +25,7 @@ How it is asked (ASSISTANT.md has the full account):
   * `atlas, <question>` when what follows is shaped like a question and is
     not an order, through `kernel.intent.act`'s module `command` hook (the
     same hook as `/atlas funnel ...`), so only after the channel has proved
-    it is the owner;
+    it is Miro;
   * every plain message in the channel `SLACK_ASSISTANT_CHANNEL` names
     (topic `assistant`), and `stop` there; unset, that door is closed;
   * `assistant_ask`, a kernel read tool, for the voice route to call later
@@ -41,7 +41,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from ...kernel.contracts import Check, Health, Observation, Severity
-from ...kernel.quota import for_owner
+from ...kernel.quota import for_miro
 from ...kernel.tools import Tool, register
 from . import budget, modes, notices, runs
 from .doors import door_enabled, propose_enabled
@@ -167,7 +167,7 @@ NOTHING_TO_PROPOSE = "There is no earlier message of yours here to act on."
 
 async def propose(text: str, *, channel: str, who: str,
                   conversation: str | None = None) -> str:
-    """`ASSISTANT_PROPOSE`: hand the owner's OWN previous message in this channel
+    """`ASSISTANT_PROPOSE`: hand Miro's OWN previous message in this channel
     (never ATLAS's words, never a private turn) to the action picker, which
     raises a card at most -- `intent.queue` runs nothing and refuses Tier 3.
     The reply is written here, from the outcome, not by a model."""
@@ -185,7 +185,7 @@ async def propose(text: str, *, channel: str, who: str,
 
 
 # Tools whose result holds no free text from outside ATLAS (no mail, note,
-# camera label, web page, buyer words, a collector's detail or a last subject): only a reply that used these alone may
+# sensor label, web page, buyer words, a collector's detail or a last subject): only a reply that used these alone may
 # be stored as prose (figures masked). Any other tool: the placeholder only, so
 # untrusted text never becomes a trusted assistant turn.
 PROSE_SAFE_TOOLS: frozenset[str] = frozenset({
@@ -204,7 +204,7 @@ async def converse(text: str, *, channel: str, who: str = "",
 
     `conversation` keys the memory (default: the channel; Slack passes
     `slack:<channel id>`). `private_ok` is set by a door only when the principal
-    is the owner AND the reply goes to a private sink (dashboard, his WhatsApp, his
+    is Miro AND the reply goes to a private sink (dashboard, his WhatsApp, his
     Slack DM); without it private reads are never offered and a PRIVATE run is
     refused rather than answered into a shared place."""
     from ...kernel import chat_memory
@@ -235,10 +235,10 @@ async def converse(text: str, *, channel: str, who: str = "",
     return said
 
 
-@for_owner
+@for_miro
 async def handle(request: Request, *, channel: str, who: str) -> str:
     """Carry out a parsed request: answer the question, or cancel the run.
-    the owner asked it, so it may spend the free allowance kept for him
+    Miro asked it, so it may spend the free allowance kept for him
     (kernel/quota.py)."""
     if request.kind == "cancel":
         return await cancel(request.run_id, by=who)
@@ -257,7 +257,7 @@ async def check_budget() -> Observation:
         cap = budget.cap_for(tool)
         try:
             used = await budget.used_today(tool)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return Observation("budget", Health.UNKNOWN, detail=(
                 f"the assistant's call count could not be read "
                 f"({type(exc).__name__}); nothing is counted"))
@@ -328,7 +328,7 @@ class AssistantModule:
         )
 
     def actions(self):
-        # The one thing the assistant may do: tell the owner a short code-built note
+        # The one thing the assistant may do: tell Miro a short code-built note
         # (Tier 1, `notices.py`). It reaches no other action.
         return notices.actions()
 

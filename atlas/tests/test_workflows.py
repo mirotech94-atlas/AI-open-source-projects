@@ -454,21 +454,21 @@ def test_an_action_reads_its_result_inside_the_audit_envelope():
     assert "Veo said no" in wf._action_status(bad).note
 
 
-async def test_church_nodes_count_posts_at_their_stage(monkeypatch):
-    """The ECC channel: a stage reads the count of church_posts there now;
+async def test_community_nodes_count_posts_at_their_stage(monkeypatch):
+    """The AMSM channel: a stage reads the count of community_posts there now;
     zero is never, an unreadable table is unknown -- never ok."""
     from datetime import UTC, datetime
     at = datetime(2026, 10, 15, 12, tzinfo=UTC)
     rows = [{"platform": "youtube", "status": "scheduled", "n": 7, "at": at},
             {"platform": "facebook", "status": "scheduled", "n": 30, "at": at},
             {"platform": "facebook", "status": "awaiting_review", "n": 3, "at": at}]
-    yt = wf._church_status("youtube:scheduled", rows, None)
+    yt = wf._community_status("youtube:scheduled", rows, None)
     assert yt.outcome == wf.OK and "7 post" in yt.note
-    both = wf._church_status("awaiting_review|rendered", rows, None)
+    both = wf._community_status("awaiting_review|rendered", rows, None)
     assert both.outcome == wf.OK and "3 post" in both.note
-    assert wf._church_status("published", rows, None).outcome == wf.NEVER
-    assert wf._church_status("planned", None, None).outcome == wf.UNKNOWN
-    assert wf._church_status("metrics", rows, {"n": 0, "at": None}).outcome == wf.NEVER
-    assert wf._church_status("metrics", rows, "__unreadable__").outcome == wf.UNKNOWN
-    church = next(w for w in wf.WORKFLOWS if w.id == "church")
-    assert [n.label for n in church.nodes][:2] == ["Photos", "Script (EN / AR)"]
+    assert wf._community_status("published", rows, None).outcome == wf.NEVER
+    assert wf._community_status("planned", None, None).outcome == wf.UNKNOWN
+    assert wf._community_status("metrics", rows, {"n": 0, "at": None}).outcome == wf.NEVER
+    assert wf._community_status("metrics", rows, "__unreadable__").outcome == wf.UNKNOWN
+    community = next(w for w in wf.WORKFLOWS if w.id == "community")
+    assert [n.label for n in community.nodes][:2] == ["Photos", "Script (EN / AR)"]

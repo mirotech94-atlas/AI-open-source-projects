@@ -24,7 +24,7 @@ class World:
     def __init__(self, monkeypatch, *, email: str | None, hold: str | None = None,
                  has_outreach: bool = False, send_refused: str | None = None,
                  qa_passed: bool = True,
-                 preview_url: str = "https://agency.example.com/preview/joes-plumbing-7/"):
+                 preview_url: str = "https://agency.storefront.test/preview/joes-plumbing-7/"):
         self.reasons: list[str] = []
         self.ran: list[str] = []
         self.previewed: list[str] = []
@@ -128,7 +128,7 @@ def test_the_card_reason_leads_with_held_for_you(monkeypatch):
         "Held for you: CAN-SPAM: missing postal address line. Approving runs every "
         "check again and sends it only if it passes then.\n"
         "Email Joe's Plumbing the preview of their site, built by Websites.")
-    for shown in ("Preview: https://agency.example.com/preview/joes-plumbing-7/",
+    for shown in ("Preview: https://agency.storefront.test/preview/joes-plumbing-7/",
                   "Owner: Joe's Plumbing, office@joesplumbing.example", "Hi Joe ..."):
         assert shown in captured["reason"], shown
 
@@ -207,9 +207,9 @@ async def test_a_draft_that_failed_qa_gets_a_brief_that_says_so(monkeypatch):
 
 
 async def test_a_vercel_preview_is_one_card_naming_its_url_never_a_send(monkeypatch):
-    url = "https://demo-site.vercel.example/"
+    url = "https://mapfront-joes-plumbing-7.vercel.app/"
     world = World(monkeypatch, email="office@joesplumbing.example", preview_url=url)
-    site = {**SITE, "domain": "demo-site.vercel.example"}
+    site = {**SITE, "domain": "mapfront-joes-plumbing-7.vercel.app"}
     assert await lead_followup.follow_site(site) == "card"
     assert [c[0] for c in world.cards] == ["agency.send_outreach"]
     assert f"Preview: {url}" in world.reasons[0]

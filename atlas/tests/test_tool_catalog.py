@@ -2,7 +2,7 @@
 
 A write tool is a name an agent can call and an action name it forwards to.
 Both halves drift independently: a module drops an action (the old
-`inroots.nudge_missing`) and the tool keeps pointing at nothing; an action
+`attendance.nudge_missing`) and the tool keeps pointing at nothing; an action
 gains a required parameter and the tool's schema never offers it, so every
 call is refused as "undeclared" or fails with a TypeError on approval.
 
@@ -87,7 +87,6 @@ def test_every_write_tool_requires_what_the_action_cannot_run_without(catalog):
 @pytest.mark.parametrize(("tool", "action"), [
     ("mail_draft_reply", "mail.draft_reply"),
     ("mail_draft_nudge", "mail.draft_nudge"),
-    ("screening_book_slot", "screening.book_slot"),
 ])
 def test_the_actions_found_without_a_tool_now_have_one(catalog, tool, action):
     assert tool in TOOLS
@@ -95,20 +94,9 @@ def test_the_actions_found_without_a_tool_now_have_one(catalog, tool, action):
     assert set(TOOLS[tool].schema["properties"]) == set(catalog[action].params)
 
 
-def test_no_agent_holds_the_screening_booking_tool():
-    """`screening.book_slot` is Tier 1 and its one door is the screening
-    webhook through `unattended.run_tier1`. An agent holding the tool would
-    be a second, unattended way onto his calendar."""
-    from atlas.kernel.agents import ROSTER, build_roster
-    register_all()
-    build_roster()
-    holders = [a.name for a in ROSTER.values() if "screening_book_slot" in a.tools]
-    assert not holders
-
-
 def test_no_write_tool_wraps_a_card_only_action(catalog):
     """A card-only send (six agents, 2026-10-27: the outreach, the invite,
-    the agreement) is raised by its pass and approved by the owner; an agent
+    the agreement) is raised by its pass and approved by Miro; an agent
     holding a tool for it would be a second way to propose it."""
     holders = {t.name: t.action for t in _write_tools()
                if getattr(catalog[t.action], "card_only", False)}

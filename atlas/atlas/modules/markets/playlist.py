@@ -1,6 +1,6 @@
 """The Claude playlist (paper): the Alinea "Playlist Pro" loop, on paper.
 
-the owner, 2026-09-29, after the Alinea ad ("open Alinea -> Playlist Pro -> the
+Miro, 2026-09-29, after the Alinea ad ("open Alinea -> Playlist Pro -> the
 Claude portfolio -> deposit $100 -> AI researches and the Alinea team
 reviews and approves every move weekly"): "use this for the trading as
 well, follow the steps in the video". The same loop, with no money in it:
@@ -519,7 +519,7 @@ async def propose_week(week: date | None = None) -> str:
     try:
         reply = await think(Need.REASON, SYSTEM, [Message("user", prompt)],
                             max_tokens=1500)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         await _record(week, "no_model", before=before, stats=stored,
                       why=f"no model answered ({explain(exc)}); nothing proposed")
@@ -554,7 +554,7 @@ async def propose_week(week: date | None = None) -> str:
             evidence={"model": model, "prices_read_at": read_at.isoformat()},
             rollback_plan="restores the previous paper weights",
             dedup_key=f"markets.playlist:{week.isoformat()}", automatic=True)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         await execute_sql(
             "UPDATE markets_playlist_proposals SET status = 'refused', why = $2 "
             "WHERE id = $1", pid, f"the card could not be raised: {exc}")

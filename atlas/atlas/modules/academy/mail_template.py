@@ -1,4 +1,4 @@
-"""ATLAS Academy's branded HTML email (the owner, 2026-11-18).
+"""ATLAS Academy's branded HTML email (Miro, 2026-11-18).
 
 Every mail the store sends (signup confirmation, access link, contact receipt,
 support reply) keeps its plain-text body as the text part and gains this HTML

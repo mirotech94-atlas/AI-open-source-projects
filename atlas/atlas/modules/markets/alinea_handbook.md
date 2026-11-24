@@ -1,11 +1,11 @@
 # Alinea handbook
 
-A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Ivan, the ATLAS markets agent, to use when explaining Alinea to the owner.
+A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Ivan, the ATLAS markets agent, to use when explaining Alinea to Miro.
 
 - Compiled: 2026-09-28. Every source below was read on 2026-09-28 unless another date is given.
 - Sources used: Perplexity plus primary sources. Perplexity findings were re-checked against primary documents. Where they conflicted, the primary document wins, and the conflict is noted.
 - This is not investment advice. It describes what Alinea says about itself and what its regulators' filings show. It does not say whether to buy, sell, hold, open, close or switch anything.
-- Rule for Ivan: the figures here are *documented terms* (fees, timings, legal facts). They are never the owner's balances or returns. For any number about his account, read it fresh from the source (Alinea emails table / app) and state the read time. If a figure here is older than about 90 days, re-read the source before quoting it as current.
+- Rule for Ivan: the figures here are *documented terms* (fees, timings, legal facts). They are never Miro's balances or returns. For any number about his account, read it fresh from the source (Alinea emails table / app) and state the read time. If a figure here is older than about 90 days, re-read the source before quoting it as current.
 
 ---
 
@@ -290,7 +290,7 @@ A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Iv
   - a confirmation for each trade
   - a statement each month with activity, and at least quarterly
 - Tax reporting documents are among the materials DriveWealth delivers electronically. [DW-CAA §32] The specific form (e.g. a consolidated 1099) and its issue date are **not stated** in sources read.
-- Errors: statements are binding unless you object within **10 calendar days** (confirmations: **3 calendar days**). The support contact is contact74@example.com. [DW-CAA §33]
+- Errors: statements are binding unless you object within **10 calendar days** (confirmations: **3 calendar days**). The support contact is support@drivewealth.com. [DW-CAA §33]
 - **Tax-loss harvesting:** not offered or mentioned anywhere. The ADV says Alinea "does not consider a client's personal tax situation" and gives no tax advice. [ADV2W Item 8]
 - **Wash-sale handling:** not addressed in any Alinea or DriveWealth document read. Cost-basis method: not stated.
 - Selling fractional shares to transfer out is a sale, and in a taxable account that is a taxable event. This is general tax mechanics, not advice.
@@ -313,7 +313,7 @@ A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Iv
   - Employees may trade the same securities. [CRS; ADV2W Item 11]
   - The CRS says there are no proprietary products, revenue sharing, third-party payments or principal trading. [CRS]
   - The Terms say Alinea may be paid when users engage with partner offers in its messages. [TOU §21]
-- **Disputes:** binding individual arbitration and a class-action waiver, under New York law. You can opt out within 30 days by emailing contact75@example.com with the subject "30-Day Right to Opt Out". [TOU §22]
+- **Disputes:** binding individual arbitration and a class-action waiver, under New York law. You can opt out within 30 days by emailing info@alinea-invest.com with the subject "30-Day Right to Opt Out". [TOU §22]
 - **Service changes:** Alinea may modify or discontinue services at any time. [TOU; ALLIE]
 - **Marketing vs disclosures, side by side.**
   - The blog calls Allie a proactive advice-giver [BLOG-AI]. The legal terms say educational only, with no account authority [ALLIE].
@@ -333,7 +333,7 @@ A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Iv
 
 ## 7. Email: what Alinea mail looks like (for ATLAS's email reader)
 
-- **Published Alinea addresses:** contact75@example.com (general, billing, arbitration opt-out) and contact51@example.com (support). [HOME; PAY; TOU] Trustpilot replies come from contact51@example.com. [TP]
+- **Published Alinea addresses:** info@alinea-invest.com (general, billing, arbitration opt-out) and support@example.com (support). [HOME; PAY; TOU] Trustpilot replies come from support@example.com. [TP]
 - **alinea-invest.com DNS** [DNS, 2026-09-28]:
   - MX: Google Workspace
   - SPF: `v=spf1 include:_spf.google.com ~all` (softfail)
@@ -344,10 +344,10 @@ A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Iv
 - **DriveWealth mail:**
   - DriveWealth, not Alinea, is required to send account statements "directly to clients". [ADV2W Item 13, Item 15]
   - DriveWealth may send them by email. [DW-CAA §32]
-  - The contact is contact74@example.com. [DW-CAA §33]
+  - The contact is support@drivewealth.com. [DW-CAA §33]
   - So statement, confirmation and tax-form emails may come from a **drivewealth.com** (or DriveWealth vendor) address that an alinea-invest.com-only filter would ignore. The actual sender address is **unverified**.
 - **zerohash mail:** whether zerohash emails crypto users directly is unknown.
-- **the owner's inbox:** a Gmail search (his main Gmail address, 2026-09-28) for alinea, drivewealth and zerohash found **no Alinea, DriveWealth or zerohash mail**. The owner's Alinea account may use a different address, so no sender could be sampled.
+- **Miro's inbox:** a Gmail search (his main Gmail address, 2026-09-28) for alinea, drivewealth and zerohash found **no Alinea, DriveWealth or zerohash mail**. Miro's Alinea account may use a different address, so no sender could be sampled.
 
 ---
 
@@ -374,7 +374,7 @@ A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Iv
 
 ---
 
-## 9. Questions the owner may ask, with the factual answer
+## 9. Questions Miro may ask, with the factual answer
 
 **Does Alinea rebalance automatically?**
 - Alinea's marketing says yes, for managed portfolios and Playlists Pro. [BLOG-AUTO; WHAT]
@@ -446,7 +446,7 @@ A factual reference on Alinea Invest ("Alinea: Automated Investing", iOS) for Iv
 7. Underlying ETF expense ratios, and which securities the "conservative/moderate/aggressive/opportunistic" portfolios hold.
 8. Deposit and withdrawal dollar limits.
 9. Tax form type and issue dates, cost-basis method, and wash-sale handling.
-10. Actual sender addresses for DriveWealth statement, confirmation and 1099 emails, and whether Alinea transactional mail uses subdomains. No sample was available in the owner's Gmail.
+10. Actual sender addresses for DriveWealth statement, confirmation and 1099 emails, and whether Alinea transactional mail uses subdomains. No sample was available in Miro's Gmail.
 11. The free-trial length (7 days per secondary sources only) and when the monthly $5–$12 option applies.
 12. Which legal entity name is correct for consumer contracts (Inc. vs LLC). Alinea's own materials are inconsistent.
 13. Whether the homepage "human advisor team" means registered persons. ADV1 reports 1 advisory employee and 0 state-registered IARs.

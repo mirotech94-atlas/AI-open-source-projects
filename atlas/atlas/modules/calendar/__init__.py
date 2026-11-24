@@ -132,7 +132,7 @@ async def _upcoming(days: int = 7) -> list[dict]:
 async def check_conflicts() -> Observation:
     try:
         events = await _upcoming(7)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("conflicts", Health.UNKNOWN, detail=str(exc))
 
     timed = [(s, e, ev) for ev in events
@@ -163,7 +163,7 @@ async def check_deadline_collisions() -> Observation:
     """Business deadlines against coursework. The one he doesn't see coming."""
     try:
         events = await _upcoming(14)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("deadline_collisions", Health.UNKNOWN, detail=str(exc))
 
     school_words = ("assignment", "exam", "quiz", "lab", "midterm", "final",
@@ -267,7 +267,7 @@ async def _prep_signals() -> tuple[Signal, ...]:
         summary = event.get("summary") or "(no title)"
         try:
             body = await prep_card(event)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             # A card that fails to build (the reasoner is down, memory is
             # unreachable) must not be marked prepped -- retry next tick --
             # and must not take the rest of this tick's signals (deadlines,
@@ -312,7 +312,7 @@ class CalendarModule:
             Action(
                 name="calendar.create_block",
                 tier=Tier.AUTO,     # his own calendar, no other attendees
-                summary="Block time on the owner's own calendar",
+                summary="Block time on Miro's own calendar",
                 run=create_block, dry_run=create_dry, rollback=delete_block,
                 params={"summary": "what the block is for",
                         "start": "ISO datetime",
@@ -356,7 +356,7 @@ class CalendarModule:
     async def signals(self):
         # `check_focus_invites` (below) already reports pending invites at
         # Severity.NORMAL on its own interval -- a signal here too would
-        # repeat the same finding every SIGNAL_INTERVAL_S until the owner RSVPs,
+        # repeat the same finding every SIGNAL_INTERVAL_S until Miro RSVPs,
         # which is exactly the double notification that gets a check muted.
         out = list(await _prep_signals())
 

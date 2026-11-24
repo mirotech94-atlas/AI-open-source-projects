@@ -306,80 +306,22 @@ async def test_an_empty_runway_reading_is_unknown(monkeypatch):
     assert obs.health is Health.UNKNOWN
 
 
-# ------------------------------------------------- ECC YouTube not configured
-
-def _posting_rows(rows):
-    """Fake reads for problems(): nothing stalled; `rows` are the church slots."""
-    async def one(*_a, **_kw):
-        return {"n": 0}
-
-    async def all_(sql, *_a, **_kw):
-        return [] if "academy_tutorial_posts" in sql else rows
-
-    return one, all_
+# ------------------------------------------------- AMSM YouTube not configured
 
 
-def _setup_posting(monkeypatch, rows, *, yt_configured):
-    from atlas.modules.academy import tutorials
-    from atlas.modules.church import posting
-    one, all_ = _posting_rows(rows)
-    monkeypatch.setattr(growth, "fetch_one", one)
-    monkeypatch.setattr(growth, "fetch_all", all_)
-    monkeypatch.setattr(tutorials, "enabled", lambda: False)
-    monkeypatch.setattr(growth, "_refused_twice", lambda _nb: [])
-    for key in posting.YT_ENV:
-        if yt_configured:
-            monkeypatch.setenv(key, "set-for-test")
-        else:
-            monkeypatch.delenv(key, raising=False)
+
 
 
 YT_SLOT = {"platform": "youtube", "publish_at": NOW + timedelta(hours=3)}
 FB_SLOT = {"platform": "facebook", "publish_at": NOW + timedelta(hours=4)}
 
 
-async def test_unconfigured_ecc_youtube_is_unknown_not_failing(monkeypatch):
-    _setup_posting(monkeypatch, [YT_SLOT], yt_configured=False)
-    found, unread = await growth.problems()
-    assert found == [] and unread == []
-    obs = await growth.check_posting_health()
-    assert obs.health is Health.UNKNOWN
-    assert "not configured" in obs.detail and "YOUTUBE_ECC" in obs.detail
-    assert "ECC slots look right" not in obs.detail
 
 
-async def test_configured_ecc_youtube_slot_still_fails(monkeypatch):
-    _setup_posting(monkeypatch, [YT_SLOT], yt_configured=True)
-    obs = await growth.check_posting_health()
-    assert obs.health is Health.FAILING and "youtube slot" in obs.detail
 
 
-async def test_facebook_slot_fails_even_when_youtube_is_unconfigured(monkeypatch):
-    _setup_posting(monkeypatch, [YT_SLOT, FB_SLOT], yt_configured=False)
-    obs = await growth.check_posting_health()
-    assert obs.health is Health.FAILING
-    assert "facebook slot" in obs.detail and "youtube slot" not in obs.detail
-    assert "not configured" in obs.detail
 
 
-async def test_church_switched_off_puts_ecc_out_of_scope(monkeypatch):
-    # Off by choice is not unmeasured: no ECC slot is read, so a switched-off
-    # church module can neither fail nor blind the check (registry rule).
-    _setup_posting(monkeypatch, [YT_SLOT, FB_SLOT], yt_configured=False)
-    monkeypatch.setenv("ATLAS_DISABLED_MODULES", "clips, Church ,shop")
-    obs = await growth.check_posting_health()
-    assert obs.health is Health.OK
-    assert "not configured" not in obs.detail
 
 
-async def test_church_on_keeps_youtube_blind_spot_unknown(monkeypatch):
-    _setup_posting(monkeypatch, [], yt_configured=False)
-    monkeypatch.setenv("ATLAS_DISABLED_MODULES", "clips,shop")
-    obs = await growth.check_posting_health()
-    assert obs.health is Health.UNKNOWN
 
-
-async def test_all_clear_with_youtube_configured_is_ok(monkeypatch):
-    _setup_posting(monkeypatch, [], yt_configured=True)
-    obs = await growth.check_posting_health()
-    assert obs.health is Health.OK

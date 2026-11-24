@@ -3,7 +3,7 @@
     python -m atlas.cli import-reel data/import/<file>.mp4 "<caption>" \\
         [--series "<title>" --part N --of M]
 
-the owner, 2026-09-28: "Veo makes the clips for the reel series, sends them to
+Miro, 2026-09-28: "Veo makes the clips for the reel series, sends them to
 ATLAS, and ATLAS uploads them to all the platforms available -- simple." The
 episode jobs render on Veo and call this. It files the video -- one
 `content_media` row with its public `/media` token, one `story_script`
@@ -181,7 +181,7 @@ async def import_reel(path: str, caption: str, *, series: str | None = None,
         # The day's automatic posts are used. Nothing retries a one-off
         # import on its own, so it is marked waiting and the reels tick
         # posts it once the cap frees (`post_waiting`) -- no card, no
-        # meddling (the owner, 2026-09-28).
+        # meddling (Miro, 2026-09-28).
         await execute_sql("UPDATE content_drafts SET status = 'waiting' "
                           "WHERE id = $1", draft["id"])
         return Imported(True, f"filed media {media_id}; today's automatic posts "

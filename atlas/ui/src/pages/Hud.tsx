@@ -18,9 +18,9 @@ function Unknown({ why }: { why: string }): JSX.Element {
 }
 
 /**
- * The HUD. Read-only: it shows what ATLAS is doing and what waits on the owner.
+ * The HUD. Read-only: it shows what ATLAS is doing and what waits on Miro.
  * There is no button that approves or runs anything; a waiting card shows its
- * id and the owner decides in Slack. It shows no request text, only a short label
+ * id and Miro decides in Slack. It shows no request text, only a short label
  * (source, route, status, time).
  */
 export function Hud({ reloadKey, stream }: { reloadKey: number; stream: StreamState }): JSX.Element {

@@ -21,7 +21,7 @@ import { splitFlanks, type FlankUnit } from "./flankLayout";
 import "../cmdSections.css";
 
 /**
- * The Command Center, short (the owner, 2026-10-29: "don't make the Command
+ * The Command Center, short (Miro, 2026-10-29: "don't make the Command
  * Center so long; keep the page short with only the most important
  * sections"). One screen: the summary strip, Roster, Needs you and one
  * compact Health & money panel. Everything else that used to sit here
@@ -31,7 +31,7 @@ import "../cmdSections.css";
  * Unknown is the grey dashed word.
  */
 
-/** Site rows Search & Sites shows before "+n more" (the owner 2026-10-29). */
+/** Site rows Search & Sites shows before "+n more" (Miro 2026-10-29). */
 const SITES_SHOWN = 6;
 
 const U = (): JSX.Element => <span className="cmd-word-unknown">Unknown</span>;
@@ -545,7 +545,7 @@ export function CommandFloorBody({ agents, pipe, money, overview, pending, needs
     places: m.data && !m.error
       ? { used: m.data.costs.places.used, readAt: m.data.costs.places.read_at } : null,
   });
-  // Every section sits left or right of the ring (the owner 2026-11-12). The
+  // Every section sits left or right of the ring (Miro 2026-11-12). The
   // split is pure (flankLayout.ts); each unit renders exactly what it did.
   const parts: Record<string, JSX.Element> = {};
   const units: FlankUnit[] = [];

@@ -125,7 +125,7 @@ async def _legs(caption: str, statuses: dict[str, Any], posted: dict[str, str]
         if ref:
             try:
                 out[leg] = await read_leg(leg, str(ref), caption)
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 from .._http import explain
                 out[leg] = unknown(f"read raised: {explain(exc)}")
         elif status == crosspost.REFUSED:
@@ -210,7 +210,7 @@ async def reconcile_reel(params: dict[str, Any], started: datetime) -> Verificat
     caption = str(params.get("caption") or "")
     try:
         recorded = await _recorded(media_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return unknown(f"reel_posts could not be read: {explain(exc)}",
                        FailureClass.TRANSIENT)

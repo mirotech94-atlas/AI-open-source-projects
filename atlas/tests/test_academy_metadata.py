@@ -1,4 +1,4 @@
-"""academy.refresh_video_metadata (the owner, 2026-10-18): the already-public
+"""academy.refresh_video_metadata (Miro, 2026-10-18): the already-public
 lessons and teaching Shorts brought up to the current tags, hashtags and
 description, through the executor, a few a day, each once. Only the tags and
 the description change; the title is resent as read, never rewritten."""
@@ -134,12 +134,12 @@ async def test_an_already_current_video_is_not_written(yt):
 
 async def test_the_rollback_restores_the_previous_text_and_keeps_todays_title(yt):
     r = await md.refresh("claude", 1, "lesson")
-    yt["snippets"][LESSON_VID]["title"] = "the owner's own title, edited in Studio"
+    yt["snippets"][LESSON_VID]["title"] = "Miro's own title, edited in Studio"
     back = await md.unrefresh(r.rollback_token)
     assert back.ok, back.detail
     body = yt["puts"][-1]["json_body"]["snippet"]
     assert body["description"] == "old description #ai" and body["tags"] == ["old"]
-    assert body["title"] == "the owner's own title, edited in Studio"
+    assert body["title"] == "Miro's own title, edited in Studio"
     bad = json.dumps({"channel": "elsewhere", "video_id": LESSON_VID, "previous": {}})
     assert not (await md.unrefresh(bad)).ok
 

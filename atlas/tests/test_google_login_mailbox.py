@@ -1,7 +1,7 @@
 """bootstrap/google_login.py's mailbox mode (ATLAS_GOOGLE_MAILBOX=CLIPS).
 
-the owner, 2026-10-11: Porkbun forwarded the support, alerts and owner addresses to
-contact14@example.com. Connecting that Gmail must add a MAIL_<KEY>_*
+Miro, 2026-10-11: Porkbun forwarded the support, alerts and miro addresses to
+dropclips@example.com. Connecting that Gmail must add a MAIL_<KEY>_*
 account on the SHARED client, Gmail only, without touching the GOOGLE_*
 token, and append the key to MAIL_ACCOUNTS rather than replace the list.
 """
@@ -39,13 +39,13 @@ def test_mailbox_mode_asks_for_gmail_and_the_address_only(monkeypatch):
 
 def test_mailbox_lines_add_the_account_and_append_it_to_mail_accounts(monkeypatch):
     gl = _load(monkeypatch, ATLAS_GOOGLE_MAILBOX="CLIPS")
-    lines = gl.mailbox_lines("CLIPS", "contact14@example.com", "1//tok",
-                             "exampleco,owner,flycheap,guardian")
-    assert lines == ["MAIL_CLIPS_KIND=google", "MAIL_CLIPS_EMAIL=contact14@example.com",
+    lines = gl.mailbox_lines("CLIPS", "dropclips@example.com", "1//tok",
+                             "mirotech,myron,flycheap,guardian")
+    assert lines == ["MAIL_CLIPS_KIND=google", "MAIL_CLIPS_EMAIL=dropclips@example.com",
                      "MAIL_CLIPS_REFRESH_TOKEN=1//tok",
-                     "MAIL_ACCOUNTS=exampleco,owner,flycheap,guardian,clips"]
+                     "MAIL_ACCOUNTS=mirotech,myron,flycheap,guardian,clips"]
     assert not any(x.startswith("GOOGLE_") for x in lines)   # the shared token is kept
-    assert gl.merged_accounts("owner, Clips", "CLIPS") == "owner,clips"   # once
+    assert gl.merged_accounts("myron, Clips", "CLIPS") == "myron,clips"   # once
     assert gl.merged_accounts("", "clips") == "clips"
 
 

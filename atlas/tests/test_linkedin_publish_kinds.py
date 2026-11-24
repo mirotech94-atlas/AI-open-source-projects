@@ -24,7 +24,7 @@ from atlas.modules.linkedin import publish, store
 @pytest.fixture(autouse=True)
 def _flycheap_as_fixture_page(monkeypatch):
     """These tests drive the page mechanics with FlyCheap as their example
-    page. FlyCheap is retired by default (the owner, 2026-10-09); that default is
+    page. FlyCheap is retired by default (Miro, 2026-10-09); that default is
     pinned in test_linkedin_retired.py, not here."""
     from atlas.modules import linkedin as _li
     monkeypatch.setitem(_li.PAGES, "flycheap", _li.KNOWN_PAGES["flycheap"])
@@ -51,10 +51,10 @@ def doc(entry: dict, *, page: str = "flycheap") -> dict:
 
 
 IMAGE_ENTRY = {"id": "B1", "status": "approved", "kind": "image",
-              "text": "Stop overpaying for flights.\nhttps://flycheap.example #travel",
+              "text": "Stop overpaying for flights.\nhttps://flycheap.example.com #travel",
               "media": "/tmp/does-not-need-to-exist.png"}
 VIDEO_ENTRY = {"id": "B2", "status": "approved", "kind": "video",
-              "text": "Watch fares drop.\nhttps://flycheap.example #travel",
+              "text": "Watch fares drop.\nhttps://flycheap.example.com #travel",
               "media": "/tmp/does-not-need-to-exist.mp4"}
 POLL_ENTRY = {"id": "B3", "status": "approved", "kind": "poll",
              "text": "Quick one for you.",

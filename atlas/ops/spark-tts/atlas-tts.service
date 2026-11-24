@@ -1,0 +1,14 @@
+[Unit]
+Description=ATLAS voice: Chatterbox clone TTS of the NotebookLM host (loopback)
+After=network.target
+
+[Service]
+WorkingDirectory=%h/apps/tts
+Environment=PYTHONWARNINGS=ignore HF_HUB_DISABLE_TELEMETRY=1
+ExecStart=%h/apps/tts/.venv/bin/uvicorn server:app --host 127.0.0.1 --port 8010 --log-level warning
+Restart=on-failure
+RestartSec=10
+Nice=5
+
+[Install]
+WantedBy=default.target

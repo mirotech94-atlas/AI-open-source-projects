@@ -16,7 +16,7 @@ SCRIPT = Path(__file__).resolve().parent.parent / "bootstrap" / "envlock.py"
 
 
 def _run(env: Path, stdin: str) -> subprocess.CompletedProcess:
-    return subprocess.run([sys.executable, str(SCRIPT)], input=stdin, text=True,
+    return subprocess.run([sys.executable, str(SCRIPT)], input=stdin, text=True,  # noqa: PLW1510
                           capture_output=True,
                           env={"ATLAS_ENV_PATH": str(env), "PATH": "/usr/bin:/bin"})
 
@@ -51,7 +51,7 @@ def test_a_dollar_is_escaped_once(tmp_path):
 def test_reading_returns_the_stored_form(tmp_path):
     env = tmp_path / ".env"
     env.write_text("TOKEN=abc\n")
-    out = subprocess.run([sys.executable, str(SCRIPT), "TOKEN"], text=True,
+    out = subprocess.run([sys.executable, str(SCRIPT), "TOKEN"], text=True,  # noqa: PLW1510
                          capture_output=True,
                          env={"ATLAS_ENV_PATH": str(env), "PATH": "/usr/bin:/bin"})
     assert out.stdout.strip() == "abc"
@@ -69,7 +69,7 @@ def test_set_secret_refuses_a_secret_as_the_name():
     """The mistake that actually happened: the token passed as the argument.
     It went into shell history and nothing went into .env."""
     script = SCRIPT.parent / "set-secret.sh"
-    out = subprocess.run(["bash", str(script), "glpat-EXAMPLE"], text=True,
+    out = subprocess.run(["bash", str(script), "glpat-EXAMPLE"], text=True,  # noqa: PLW1510
                          capture_output=True)
     assert out.returncode == 2
     assert "looks like a SECRET" in out.stderr

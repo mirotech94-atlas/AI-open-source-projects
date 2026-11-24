@@ -1,7 +1,7 @@
 """A TradingView alert runs Ivan's idea rules on that one ticker, once
 (ideas.check_alert), and its one-line verdict rides on the alert's Slack
 line (alerts.tradingview_events). A rule that fires raises the normal
-paper idea card, marked "Triggered by your TradingView alert". the owner,
+paper idea card, marked "Triggered by your TradingView alert". Miro,
 2026-09-30: "make sure these alerts work and alert me in slack ... to sell
 or buy". Paper only; the alert line itself stays factual."""
 from __future__ import annotations

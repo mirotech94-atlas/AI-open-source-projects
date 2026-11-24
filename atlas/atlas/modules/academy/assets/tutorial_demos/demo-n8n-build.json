@@ -1,0 +1,38 @@
+{
+ "key": "n8n-build",
+ "seconds": 29.904,
+ "marks": [
+  [
+   0.0,
+   8.203
+  ],
+  [
+   8.378,
+   16.165
+  ],
+  [
+   16.363,
+   29.904
+  ]
+ ],
+ "urls": [
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/973cbf",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/973cbf",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/973cbf"
+ ],
+ "captions": [
+  "Create a workflow \u00b7 add a Webhook trigger",
+  "HTTP Method: POST \u00b7 Path: city-info",
+  "Listen for test event \u00b7 send it a city"
+ ],
+ "width": 1536,
+ "height": 864,
+ "fps": 30,
+ "bytes": 2140086,
+ "sha256": "70520abf89af3bdebcc9519f07d30290205c21e785ba3a6b8ba6fd27cf5f9b4b",
+ "versions": {
+  "chromium": "153.0.8010.12",
+  "n8n": "2.40.7"
+ },
+ "recorded_at": "2026-10-12T16:49:49+00:00"
+}

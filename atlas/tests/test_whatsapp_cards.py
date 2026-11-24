@@ -1,5 +1,5 @@
 """kernel/whatsapp_cards: the catch-up sweep that puts every pending Tier 2 card on
-the owner's WhatsApp, and the wording of that message."""
+Miro's WhatsApp, and the wording of that message."""
 from __future__ import annotations
 
 import types
@@ -88,7 +88,7 @@ async def test_a_pending_card_is_sent_once_through_the_executor(cards):
     out = await whatsapp_cards.run(NOW)
     assert out["sent"] == 1
     req = cards.executed[0]
-    assert req.action == "mmt.notify_card" and req.params == {"proposal_id": 445}
+    assert req.action == "tutorco.notify_card" and req.params == {"proposal_id": 445}
     cards.claims.add(whatsapp_cards.CATCHUP_KEY)
     again = await whatsapp_cards.run(NOW)               # dedupe: the try-claim holds
     assert again.get("cards") == 0 and len(cards.executed) == 1
@@ -152,14 +152,14 @@ async def test_the_query_leaves_out_expired_decided_and_already_sent_cards(monke
     await whatsapp_cards._pending(NOW)
     sql = seen["sql"]
     assert "status = 'pending'" in sql and "expires_at > $2" in sql
-    assert "effect_claims" in sql and "mmt.notify_card" in sql
+    assert "effect_claims" in sql and "tutorco.notify_card" in sql
     assert seen["args"][0] == 2 and seen["args"][1] == NOW
 
 
 # ------------------------------------------------------------------ the message
 
 def test_a_portal_only_card_message_has_no_code_and_points_at_the_portal():
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     body = notify.compose_card(445, "bizops.send_invoice",
                                {"series": "claude", "episode": 1},
                                NOW + timedelta(days=2), None)
@@ -169,7 +169,7 @@ def test_a_portal_only_card_message_has_no_code_and_points_at_the_portal():
 
 
 def test_an_unknown_action_falls_back_to_a_generic_line():
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     body = notify.compose_card(7, "nope.unknown", {"secret": "sk-live-123"},
                                NOW + timedelta(days=1), None)
     assert "sk-live-123" not in body and "#7" in body
@@ -184,7 +184,7 @@ MARKER = whatsapp_cards.CATCHUP_KEY
 
 
 async def test_unconfigured_burns_nothing(cards):
-    cards.problem = "MMT_OWNER_WHATSAPP is not set"
+    cards.problem = "TUTORCO_OWNER_WHATSAPP is not set"
     cards.pending = _cards(*range(10, 0, -1))
     out = await whatsapp_cards.run(NOW)
     assert out["not_configured"] and cards.executed == [] and cards.claims == set()

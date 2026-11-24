@@ -21,7 +21,7 @@ narrowest reading, on purpose):
         a required, unchecked box whose label is the written consent
         (`consent_from_web_form`, source `web_form`; `callme.py` stores the
         page URL, time, IP hash, user agent and the exact text shown);
-      - they told the owner so on HIS call from the brief ("Can my assistant call
+      - they told Miro so on HIS call from the brief ("Can my assistant call
         you back with the full proposal?"), and he recorded it himself:
         `agency.record_consent` (Tier AUTO, principal_only; source
         `principal`, the number their listed one, his words and the time on
@@ -36,19 +36,19 @@ narrowest reading, on purpose):
     the suppression list (`OPT_OUT`, `opt_out`). Twilio's own STOP handling
     (`OptOutType=STOP` on the webhook, error 21610 on a send) counts too.
   * **Identification.** Every text and every call opens with
-    `disclosure()`: "Hi, this is the owner's assistant from ATLAS Agency,
+    `disclosure()`: "Hi, this is Miro's assistant from ATLAS Agency,
     calling about <business>." -- built here, the first line, and refused
     outright when AGENCY_NAME is set empty: the business responsible is
-    named first (47 CFR 64.1200(b)(1)). the owner, 2026-10-01: the opening does
+    named first (47 CFR 64.1200(b)(1)). Miro, 2026-10-01: the opening does
     not say "AI". The truth rule stands exactly as before: asked whether
     they are talking to a bot, an AI or a recording, the assistant answers
-    plainly that it is the owner's AI assistant (`reception.AI_QUESTION`,
+    plainly that it is Miro's AI assistant (`reception.AI_QUESTION`,
     `lead_call.DISCLOSE_AGAIN`, `reception.DISCLOSURE`), matched in code
-    before any model; it never claims to be the owner or a person
-    (`playbook.honesty_refusal` refuses "I'm the owner" and "I'm a real person"
+    before any model; it never claims to be Miro or a person
+    (`playbook.honesty_refusal` refuses "I'm Miro" and "I'm a real person"
     in every drafted or spoken line). His 2026-09-29 ask to introduce
     itself AS him stays refused: not saying "AI" unasked is one thing,
-    saying "this is the owner" is a lie to the person on the line.
+    saying "this is Miro" is a lie to the person on the line.
   * **Hours.** Calls and texts only 08:00-21:00 in the lead's time zone
     (`AGENCY_LEAD_TZ`, default America/New_York -- the missions prospect
     New York).
@@ -61,7 +61,7 @@ and the run of `text_lead`, `call_lead` and `send_reply(sms)` -- one place,
 so the preview and the send can never disagree.
 
 Cold outreach stays email only (`outreach.send_outreach`, CAN-SPAM). A lead
-with no consent gets a call brief the owner dials himself (`calls.call_brief`).
+with no consent gets a call brief Miro dials himself (`calls.call_brief`).
 """
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ CALL_START_HOUR = 8
 CALL_END_HOUR = 21          # exclusive: 20:59 is the last minute
 
 
-# the owner, 2026-10-01: "say: this is ATLAS Academy". The number and the domain
+# Miro, 2026-10-01: "say: this is ATLAS Academy". The number and the domain
 # stay the agency's (`outreach.mapfront_number`).
 DEFAULT_AGENCY = "ATLAS Agency"
 
@@ -96,7 +96,7 @@ def agency_name() -> str:
 def lead_tz() -> ZoneInfo:
     try:
         return ZoneInfo(os.getenv("AGENCY_LEAD_TZ", DEFAULT_TZ).strip() or DEFAULT_TZ)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ZoneInfo(DEFAULT_TZ)
 
 
@@ -108,7 +108,7 @@ def contact_cap() -> int:
 
 
 def sms_enabled() -> bool:
-    """Off by default: the owner, 2026-09-30, "texting is off for leads; calls
+    """Off by default: Miro, 2026-09-30, "texting is off for leads; calls
     only". His own updates come over Slack."""
     return os.getenv("AGENCY_SMS_ENABLED", "").strip().lower() in ("1", "true", "yes", "on")
 
@@ -206,7 +206,7 @@ def _scopes_asked(text: str) -> set[str]:
 def consent_from_email(text: str) -> list[Grant]:
     """An email grants consent only with exactly one phone number in it and
     an explicit ask to be called or texted. Two numbers, or a number with no
-    ask ("my number is ..."), grant nothing -- the owner reads it himself."""
+    ask ("my number is ..."), grant nothing -- Miro reads it himself."""
     if is_opt_out(text):
         return []
     numbers = phones_in(text)
@@ -294,7 +294,7 @@ async def _principal_grant(lead_id: int, how: str) -> tuple[dict[str, Any] | Non
 
 
 async def record_consent(lead_id: int, how: str) -> ActionResult:
-    """Tier AUTO, principal_only (the owner, 2026-10-01): the lead told HIM, on
+    """Tier AUTO, principal_only (Miro, 2026-10-01): the lead told HIM, on
     his own call from the brief, that the assistant may call them back with
     the proposal. Only his word reaches this -- a consent row is what lets
     `agency.call_lead` dial, so no email, page or model may write one. The
@@ -310,8 +310,8 @@ async def record_consent(lead_id: int, how: str) -> ActionResult:
                             evidence={"phone": phone, "already": True})
     stamp = datetime.now(UTC).isoformat(timespec="seconds")
     consent_id = await _store.insert_consent(
-        lead_id, phone, "call", PRINCIPAL, f"owner:{stamp}", words,
-        evidence={"recorded_by": "the owner", "at": stamp})
+        lead_id, phone, "call", PRINCIPAL, f"miro:{stamp}", words,
+        evidence={"recorded_by": "Miro", "at": stamp})
     if consent_id is None:
         return ActionResult(False, "failed to record the consent")
     return ActionResult(
@@ -360,7 +360,7 @@ async def opt_out(lead_id: int | None, *, phone: str | None = None,
 
 # ------------------------------------------------------------- disclosure
 
-DISCLOSURE_HEAD = "Hi, this is the owner's assistant from"
+DISCLOSURE_HEAD = "Hi, this is Miro's assistant from"
 # The words of the honest answer, when a lead asks (never volunteered in
 # the opening since 2026-10-01; never withheld when asked).
 AI_WORDS = "I'm an AI"
@@ -368,7 +368,7 @@ AI_WORDS = "I'm an AI"
 
 def disclosure(business: str, *, calling: bool) -> str:
     """The first line of every text and call: who is calling, from where,
-    about what. A call does not say "AI" (the owner, 2026-10-01): the person can
+    about what. A call does not say "AI" (Miro, 2026-10-01): the person can
     ask, and gets the plain answer. A text cannot be asked, so a text still
     says it up front. Raises when AGENCY_NAME is set empty: a message that
     cannot say who it is from is not sent."""
@@ -425,7 +425,7 @@ async def contact_guard(lead_id: int, channel: str, *,
     if consent_row is None:
         return None, (f"no consent on record for a {'text' if channel == 'sms' else 'call'}"
                       f" to lead {lead_id}: ATLAS texts or calls only a lead who "
-                      "asked for it (TCPA). Use agency.call_brief for the owner to dial "
+                      "asked for it (TCPA). Use agency.call_brief for Miro to dial "
                       "himself")
     phone = str(consent_row["phone"])
     if await _store.is_suppressed(tel_key(phone)):

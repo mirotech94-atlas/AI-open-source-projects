@@ -118,7 +118,7 @@ async def queue(text: str) -> str:
                     "limit. Send it again tomorrow. Nothing was queued.")
         if not await _enqueue(video_id, "owner"):
             return "I already have that video. Nothing new was queued."
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("video not queued: %s", type(exc).__name__)
         return COULD_NOT
     return ("Queued. I'll listen to it in the next daily pass and send you the "
@@ -189,7 +189,7 @@ async def process(video_id: str, *, published: str = "unknown", title: str = "",
             dedup_key=f"ytlearn:{video_id}",
             rollback_plan="nothing is applied; approval only marks the stored note "
                           "as approved knowledge")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         await _mark(video_id, "queued", f"card not raised ({type(exc).__name__})")
         return "card not raised; will retry"
     await execute_sql("UPDATE video_lessons SET card_id = $2 WHERE video_id = $1",
@@ -217,7 +217,7 @@ async def tick(**fakes: Any) -> dict[str, Any]:
                budget - len(queued))
     try:
         cards, why = await _channel_candidates(room)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         cards, why = [], f"the channel could not be read ({type(exc).__name__})"
     if why:
         status["channel_unknown"] = why

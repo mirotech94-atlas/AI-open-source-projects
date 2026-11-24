@@ -6,7 +6,7 @@ Two design points that matter more than the code:
    leaves the box. This is not a nicety — it is what makes it acceptable to
    point an agent at an inbox at all.
 
-2. ATLAS never sends. It drafts into Gmail's own drafts folder and tells the owner
+2. ATLAS never sends. It drafts into Gmail's own drafts folder and tells Miro
    it is there. A draft he can edit in the client he already uses beats an
    approval card he has to read in another app.
 
@@ -152,7 +152,7 @@ async def classify(subject: str, sender: str, body: str) -> dict:
     try:
         reply = await think(
             Need.PRIVATE,
-            "Classify this email for the owner. Reply with JSON only:\n"
+            "Classify this email for Miro. Reply with JSON only:\n"
             '{"category": one of ' + str(list(CATEGORIES)) + ', '
             '"urgency": 0-3, "commitment": "what was promised, by whom, by '
             'when" or null, "summary": one short sentence}',
@@ -209,7 +209,7 @@ async def _classify_capped(thread_id: str, subject: str, sender: str,
 
 
 # The unreplied check owns its budget. The scheduler's default 30s killed it
-# from outside every time (exampleco: one list call plus up to 25 thread reads
+# from outside every time (mirotech: one list call plus up to 25 thread reads
 # over Google's API on a slow day), and a kill from outside says only "timed
 # out". The body gives up first, at DEADLINE_S, and names what it was doing;
 # the Check's own timeout sits above it so the scheduler is the backstop, not
@@ -237,7 +237,7 @@ async def check_unreplied_for(account) -> Observation:
 
 
 async def _check_unreplied(account) -> Observation:
-    """Threads in one mailbox where the owner was asked something and hasn't answered.
+    """Threads in one mailbox where Miro was asked something and hasn't answered.
 
     The account's OWN address decides "he replied last". A single global
     address made every thread in every other mailbox look unanswered — a
@@ -296,7 +296,7 @@ async def _check_unreplied(account) -> Observation:
                     continue                 # spam is not waiting on him
                 stale += 1
                 waiting.append(_header(last, "Subject")[:80])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import redact
         return Observation(name, Health.UNKNOWN,
                            detail=f"{account.email or account.name}: "
@@ -324,7 +324,7 @@ async def check_unreplied() -> Observation:
 
 # A made-up message, so the check reads nobody's mail to prove the route.
 _PROBE = ("Invoice 4471 due Friday", "billing@example.com",
-          "Hi the owner, invoice 4471 for October is attached and due on Friday.")
+          "Hi Miro, invoice 4471 for October is attached and due on Friday.")
 
 
 async def check_classify_local() -> Observation:
@@ -367,7 +367,7 @@ async def check_watch_active() -> Observation:
             float(total) if isinstance(total, (int, float)) else None,
             "messages" if isinstance(total, (int, float)) else None,
             "Gmail API answers for this mailbox (mail is polled, not pushed)")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("watch_active", Health.FAILING,
                            detail=f"Gmail unreachable — re-auth may be needed: {exc}")
 
@@ -665,7 +665,7 @@ async def apply_label_map(mapping: str) -> ActionResult:
     for label, ids in groups.items():
         try:
             result = await apply_labels(",".join(ids), label)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             # A later group failing must not lose the earlier groups' undo:
             # what landed is returned with its token below.
             from .._http import explain
@@ -710,7 +710,7 @@ async def remove_label_map(token: str) -> ActionResult:
 
 async def suggest_labels() -> list[dict]:
     """Read-only: the classifier's own category for every unread thread, so
-    the owner can decide what to label before ATLAS touches Gmail at all. Uses
+    Miro can decide what to label before ATLAS touches Gmail at all. Uses
     the same `classify()` mail already runs for triage -- a second,
     disagreeing classifier here would be a second answer to "what is this
     email", which this repo consistently rejects."""
@@ -752,12 +752,12 @@ async def _nudge_text(thread_id: str) -> tuple[str | None, str | None]:
 
     `max_per_hour` on the action caps how often it fires at all; it does not
     stop it firing twice on the SAME thread. Two proposals both naming the
-    oldest open thread -- e.g. the owner approving several days of pending cards
+    oldest open thread -- e.g. Miro approving several days of pending cards
     at once -- would otherwise draft two nudges on one thread with nothing
     to stop it. Checking `nudged_at` here is that stop.
 
     The `resolved_at` check exists because a Signal's proposal can sit
-    unapproved for up to 24h (the Tier 2 TTL) before the owner acts on it, and
+    unapproved for up to 24h (the Tier 2 TTL) before Miro acts on it, and
     `check_followups` runs on its own two-hour schedule the whole time. If
     the other side replies during that window, the thread is resolved before
     the stale proposal is approved -- and without this check, approving it
@@ -785,7 +785,7 @@ async def _nudge_text(thread_id: str) -> tuple[str | None, str | None]:
     try:
         reply = await think(
             Need.PRIVATE,
-            "Write ONE short, friendly follow-up sentence in the owner's voice, "
+            "Write ONE short, friendly follow-up sentence in Miro's voice, "
             "checking in on something he already asked and has not heard "
             "back on. Do not invent new facts and do not ask a new question. "
             "Reply with the nudge text only -- no quotes, no subject line.",
@@ -890,10 +890,10 @@ class MailModule:
             Action(
                 name="mail.draft_reply",
                 tier=Tier.AUTO,     # a draft is reversible and nobody sees it
-                summary="Save a reply into Gmail drafts for the owner to review",
+                summary="Save a reply into Gmail drafts for Miro to review",
                 run=draft_reply, dry_run=draft_dry, rollback=delete_draft,
                 params={"thread_id": "Gmail thread id",
-                        "body": "the reply text, in the owner's voice"},
+                        "body": "the reply text, in Miro's voice"},
                 max_per_hour=20,
             ),
             Action(

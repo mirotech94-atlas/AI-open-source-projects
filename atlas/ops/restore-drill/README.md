@@ -1,6 +1,6 @@
 # Weekly restore drill (RA-H2 / S05)
 
-The owner approved scheduling it on 2026-09-29. `atlas-restore-drill.timer` runs
+Miro approved scheduling it on 2026-09-29. `atlas-restore-drill.timer` runs
 `ops/restore_drill.sh` every Sunday at 07:30 UTC, after the 06:20 backup. The
 drill restores the newest dump into a throwaway, network-less postgres, checks
 it, writes `data/app/backups/restore_drill.json`, and always removes its own

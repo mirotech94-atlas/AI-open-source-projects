@@ -28,7 +28,7 @@ from atlas.modules import gitlab, nightshift
 from atlas.modules.nightshift import readback, sandbox
 
 SECRET = "glpat-merge-supersecret-0123456789"
-REPO = "https://aicode.example.com/root/flycheap-tracker.git"
+REPO = "https://aicode.storefront.test/root/flycheap-tracker.git"
 PROJECT = r"/api/v4/projects/root%2Fflycheap-tracker"
 PIN = "a" * 40
 OTHER = "b" * 40
@@ -46,7 +46,7 @@ class GitLab:
 
     def mr(self, **over) -> dict:
         m = {"iid": 3, "state": "opened", "sha": PIN,
-             "web_url": "https://aicode.example.com/root/flycheap-tracker/-/merge_requests/3",
+             "web_url": "https://aicode.storefront.test/root/flycheap-tracker/-/merge_requests/3",
              "merge_commit_sha": None, **over}
         self.mrs.append(m)
         return m
@@ -99,7 +99,7 @@ def gl(monkeypatch):
 
     monkeypatch.setattr(httpx.AsyncClient, "send", send)
     monkeypatch.setenv("GITLAB_TOKEN", SECRET)
-    monkeypatch.setenv("NIGHTSHIFT_REPOS", "aicode.example.com/root/flycheap-tracker")
+    monkeypatch.setenv("NIGHTSHIFT_REPOS", "aicode.storefront.test/root/flycheap-tracker")
     return fake
 
 
@@ -221,21 +221,21 @@ def test_merge_keeps_its_tier():
 # ---------------------------------------------------------- atlas is never listed
 
 @pytest.mark.parametrize("repos", [
-    "aicode.example.com/root/atlas",
-    "aicode.example.com/root/ATLAS.git",
-    "aicode.example.com/root/flycheap-tracker, aicode.example.com/root/atlas",
-    "git.internal.example/owner/atlas-tools",
+    "aicode.storefront.test/root/atlas",
+    "aicode.storefront.test/root/ATLAS.git",
+    "aicode.storefront.test/root/flycheap-tracker, aicode.storefront.test/root/atlas",
+    "code.matrix.example.com/miro/atlas-tools",
 ])
 def test_nightshift_repos_never_includes_atlas(monkeypatch, repos):
     monkeypatch.setenv("NIGHTSHIFT_REPOS", repos)
     allowed = nightshift.allowed_repos()
     assert not any("atlas" in k for k in allowed)
-    url, why = nightshift.repo_url("https://aicode.example.com/root/atlas.git")
+    url, why = nightshift.repo_url("https://aicode.storefront.test/root/atlas.git")
     assert url is None and "ATLAS" in why
 
 
 async def test_the_merge_helper_refuses_atlas_itself(gl):
-    result = await gitlab.merge_branch("https://aicode.example.com/root/atlas.git",
+    result = await gitlab.merge_branch("https://aicode.storefront.test/root/atlas.git",
                                        "nightshift/job-1", PIN)
     assert not result.ok and "ATLAS" in result.detail
     assert gl.calls == []

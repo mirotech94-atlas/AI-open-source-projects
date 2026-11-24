@@ -1,5 +1,5 @@
 """T12: `academy.publish_shop_remote` pushes the `shop-build` output to the
-storefront VM (ACADEMY_STORE_HOST:ACADEMY_STORE_ROOT). Tier 2: the owner approves
+storefront VM (ACADEMY_STORE_HOST:ACADEMY_STORE_ROOT). Tier 2: Miro approves
 every push. Its argv names the VM root, scopes `--delete` to one new release,
 and never carries `.env` or `data/app`; the dry run spawns nothing; watch-only
 refuses the run before anything is spawned. No test here reaches a network."""

@@ -39,7 +39,7 @@ async def test_no_tiktok_posts_is_said_not_zeroed(memory_backend):
 
 
 async def test_the_daily_digest_is_stored_but_said_only_weekly(memory_backend, monkeypatch):
-    """the owner, 2026-10-06: content posts itself with no card and is reported
+    """Miro, 2026-10-06: content posts itself with no card and is reported
     in the weekly. The day's digest is still written (the weekly reads it,
     and the day is not run twice) but no #reels message goes out unless
     REELS_DIGEST=daily."""

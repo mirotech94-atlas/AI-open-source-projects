@@ -34,8 +34,6 @@ const AirGlass = lazy(() =>
   import("./pages/AirGlass").then((m) => ({ default: m.AirGlass })));
 
 const Hud = lazy(() => import("./pages/Hud").then((m) => ({ default: m.Hud })));
-const Cameras = lazy(() =>
-  import("./pages/Cameras").then((m) => ({ default: m.Cameras })));
 
 const STALE_FEED_MS = 60_000;
 
@@ -126,6 +124,22 @@ export function App(): JSX.Element {
   // "ATLAS, look" is not answered twice.
   const voice = useVoice(session?.authenticated === true && location.pathname !== "/airglass");
 
+  // The HUD has no tab (Miro, 2026-11-24): it lives in the backend and comes up
+  // when ATLAS is called, then the screen goes back to where it was. Navigation
+  // only: it reads, it never acts.
+  const hudReturn = useRef<string | null>(null);
+  useEffect(() => {
+    const awake = voice.phase !== "dormant";
+    if (awake && hudReturn.current === null && location.pathname !== "/airglass") {
+      hudReturn.current = location.pathname;
+      if (location.pathname !== "/hud") navigate("/hud");
+    } else if (!awake && hudReturn.current !== null) {
+      const back = hudReturn.current;
+      hudReturn.current = null;
+      if (location.pathname === "/hud" && back !== "/hud") navigate(back);
+    }
+  }, [voice.phase, location.pathname, navigate]);
+
   // An answer may say where to look (`voice/focus.ts`). A view command or a
   // system check moves the screen now; a spoken status naming a module shows
   // its card beside the answer and moves the screen once the conversation
@@ -212,7 +226,7 @@ export function App(): JSX.Element {
 
   // A slow poll behind the stream. If SSE drops the screen still refreshes,
   // and the indicator still says so rather than quietly looking fine. It
-  // re-reads the session too: there is no sign-out button (the owner, 2026-10-28),
+  // re-reads the session too: there is no sign-out button (Miro, 2026-10-28),
   // so an expired session is how the login gate comes back.
   useEffect(() => {
     if (!session?.authenticated) return;
@@ -321,7 +335,7 @@ export function App(): JSX.Element {
     );
   }
 
-  // The dashboard is four tabs inside one dark shell: Command Center, Agency, HUD and Cameras.
+  // The dashboard is three tabs inside one dark shell: Command Center and Agency (the HUD opens when ATLAS is called).
   const handToggle = voice.capabilities?.gestures === true
     ? <HandBadge state={hand.state} lent={airglass}
                  pinch={voice.detector !== "pinch" ? "none" : voice.handsFree ? "live" : "muted"} />
@@ -351,10 +365,6 @@ export function App(): JSX.Element {
           <Route path="/hud" element={
             <Suspense fallback={<p className="stamp">Loading HUD…</p>}>
               <Hud reloadKey={reloadKey} stream={stream.state} />
-            </Suspense>} />
-          <Route path="/cameras" element={
-            <Suspense fallback={<p className="stamp">Loading Cameras…</p>}>
-              <Cameras />
             </Suspense>} />
           <Route path="/airglass" element={
             <Suspense fallback={<p className="stamp">Loading Air Glass…</p>}>

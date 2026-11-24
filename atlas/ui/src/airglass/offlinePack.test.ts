@@ -65,7 +65,7 @@ function memoryCaches(): { open: (n: string) => Promise<{
     match: async (k: string) => (store.has(k) ? new Response(store.get(k)!.slice(0)) : undefined),
     put: async (k: string, r: Response) => { store.set(k, await r.arrayBuffer()); },
     delete: async (k: string) => store.delete(k),
-    keys: async () => [...store.keys()].map((k) => ({ url: `https://atlas.example.com${k}` })),
+    keys: async () => [...store.keys()].map((k) => ({ url: `https://atlas.storefront.test${k}` })),
   };
   return { open: async () => cache, store };
 }

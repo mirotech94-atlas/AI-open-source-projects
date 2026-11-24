@@ -18,14 +18,14 @@ Every `CLIPS_LINKS_MIN` minutes (default 60), from the scheduler
   * a row is filled in only when the Postiz post with its `post_ref` as id
     is `PUBLISHED`, not deleted, on the row's platform, and its `releaseURL`
     is that platform's post URL: for TikTok `https://(www.)tiktok.com/
-    @example_handle/video/<n>` (`posting.POST_URL`, on the clips account);
+    @atlasclips12/video/<n>` (`posting.POST_URL`, on the clips account);
     for YouTube a `youtube.com` / `youtu.be` URL for the id Postiz names,
     recorded as its `shorts/` link (`postiz.clip_youtube_url`). Anything
     else is left alone. Never a URL built from an id: it feeds a payout
     claim (invariant 6). A short link (`vm.tiktok.com`) is not taken either:
     it proves neither the account nor the video;
   * the write is guarded (`post_url IS NULL`, same `post_ref`, still
-    `posted`), so a link the owner recorded, or a row that changed, is never
+    `posted`), so a link Miro recorded, or a row that changed, is never
     overwritten. `post_url_source` is the platform's (`tiktok` /
     `youtube`, both in `whop.TRUSTED_SOURCES`): the URL is Postiz relaying
     the platform's own answer, as at publish time.
@@ -41,7 +41,7 @@ Seen live 2026-09-30: Postiz lists TikTok posts with the PROFILE URL as
 reports the video itself -- `clips.record_link` stays the way for those.
 
 **A TikTok link handed in** (`record_tiktok_link`, behind `POST
-/clips/links/{clip_id}` in `atlas/api/clips.py`): a task on the owner's Mac reads
+/clips/links/{clip_id}` in `atlas/api/clips.py`): a task on Miro's Mac reads
 the public profile in a browser and hands ATLAS candidate video URLs. Its
 word is not the platform's, so nothing is written on it alone: the URL must
 be exactly `https://www.tiktok.com/@<clips handle>/video/<id>`, and ATLAS
@@ -144,7 +144,7 @@ async def reconcile(now: datetime | None = None) -> list[str]:
         return [f"{postiz.KEY_ENV} unset; Postiz not read"]
     try:
         rows = await waiting(now)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("clip links: rows not read: %s", explain(exc))
         return [f"clip rows not read: {explain(exc)}"]
     if not rows:
@@ -152,7 +152,7 @@ async def reconcile(now: datetime | None = None) -> list[str]:
     start = min(r["posted_at"] for r in rows) - MARGIN
     try:
         posts = await postiz.posts_between(start, now + MARGIN)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Unreachable, refused or malformed: nothing is guessed, nothing
         # is written.
         said = str(exc) if isinstance(exc, postiz.PostizError) else explain(exc)
@@ -182,7 +182,7 @@ async def reconcile(now: datetime | None = None) -> list[str]:
 
 async def _fill(cid: int, post_ref: str, url: str, platform: str) -> bool:
     """The one write: the link, guarded so a row that changed, or a link
-    already recorded (the owner's included), is never overwritten, and so one
+    already recorded (Miro's included), is never overwritten, and so one
     URL is never two clips'. True when this call wrote it."""
     done = await fetch_one(
         """UPDATE clip_outputs SET post_url = $3, post_url_source = $4
@@ -202,7 +202,7 @@ async def _audit(event: str, cid: int, platform: str, post_ref: str, url: str,
                     {"platform": platform, "postiz_post": post_ref,
                      "post_url": url, "post_url_source": SOURCE[platform],
                      **(extra or {})})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         log.warning("clip links: clip %d's link not audited: %s", cid,
                     explain(exc))

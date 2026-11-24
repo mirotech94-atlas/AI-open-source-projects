@@ -1,4 +1,4 @@
-"""Reach without paid promotion (the owner, 2026-09-29).
+"""Reach without paid promotion (Miro, 2026-09-29).
 
 * Promote candidates: a stories reel that clearly outperforms raises ONE
   information-only card; never a clip, never a football or course reel;
@@ -356,7 +356,7 @@ def test_tiktok_adds_stories_tags_only_to_a_stories_reel():
 
 @pytest.mark.parametrize("source, fsource, lane, series", [
     ("reel_format:3", "perplexity", "stories", False),
-    ("reel_format:3", "owner", "stories", False),
+    ("reel_format:3", "miro", "stories", False),
     ("reel_format:9", "football", "football", False),
     ("reel_format:4", "course", "course", False),
     ("series:2:3", None, "stories", True),

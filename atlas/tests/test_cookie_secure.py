@@ -16,7 +16,7 @@ from atlas.api.peers import PROXY_NETWORK
 SECRET = "s" * 40
 PASSWORD = "a-long-enough-password"
 CADDY = str(next(PROXY_NETWORK.hosts()) + 4)
-MESH = "100.64.0.7"
+MESH = "100.84.1.7"
 
 
 @pytest.fixture

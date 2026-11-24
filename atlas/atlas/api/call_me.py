@@ -10,7 +10,7 @@ guard (`main.PUBLIC_PATTERNS`). In order, each refusal saying nothing about
 the next:
 
     404  not a label, or no deployed site (with a lead) by that label
-    403  an Origin other than https://agency.example.com (or the site's own
+    403  an Origin other than https://agency.storefront.test (or the site's own
          domain), or `null` for a site that is not deployed (see below); a POST
          needs one
     429  this address past 3 in ten minutes, or this site past 20 today
@@ -30,8 +30,8 @@ the consent guard passes -- inside calling hours, the number not
 suppressed, the lead verified; a refusal is the Tier 2 card) and a Slack
 alert. Nothing here reaches the executor itself; the kernel does.
 
-`Origin: null` (weakened check, the owner 2026-11-14): previews are served at
-`agency.example.com/preview/<slug>/` under a CSP `sandbox` WITHOUT
+`Origin: null` (weakened check, Miro 2026-11-14): previews are served at
+`agency.storefront.test/preview/<slug>/` under a CSP `sandbox` WITHOUT
 `allow-same-origin`, so the browser sends `Origin: null` from them. It is
 accepted only for a slug in the URL path that is a deployed site with a lead
 (`_site`); any sandboxed page can send it, so it no longer proves which page
@@ -85,7 +85,7 @@ async def _site(slug: str) -> tuple[dict, dict] | None:
         return await callme.site_lead(slug)
     except callme.NotHere:
         return None
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("call-me %s: sites unreadable (%s)", slug, type(exc).__name__)
         return None
 
@@ -205,7 +205,7 @@ async def call_me(slug: str, request: Request) -> Response:
     from ..kernel.lead_followup import call_due
     try:
         card = await call_due(sub.consent_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("call-me %s: the call could not be placed (%s)", slug,
                     type(exc).__name__)
         card = "the call could not be placed; the next tick tries again"

@@ -108,7 +108,7 @@ async def think_turn(
 
 
 def local_down(exc: LocalModelUnavailable) -> str:
-    """What the owner is told when PRIVATE work had nowhere local to run."""
+    """What Miro is told when PRIVATE work had nowhere local to run."""
     return f"{LOCAL_DOWN} ({exc.reason})."
 
 
@@ -160,7 +160,7 @@ async def record_run(
 ) -> None:
     """The one INSERT into `agent_runs`, shared by `run_agent` (reached only
     through `ask_specialist`, a handoff) and `agents.Agent.run()` (the path
-    `route()` takes for every chat and voice turn -- the one the owner actually
+    `route()` takes for every chat and voice turn -- the one Miro actually
     reaches an agent through most of the time). Without this, the fleet
     card's MODEL line stayed "not yet run" for an agent that had been
     answering him the whole time.
@@ -182,7 +182,7 @@ async def record_run(
                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)""",
             agent_name, task[:2000], model, provider, turns, tokens_in,
             tokens_out, outcome[:2000], json.dumps(transcript or [], default=str))
-    except Exception as exc:                        # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not record the run for %s (%s: %s)",
                     agent_name, type(exc).__name__, exc)
     run_event(agent_name, "finished")

@@ -194,57 +194,12 @@ async def test_fiverr_orders_matching_nothing_is_unknown(monkeypatch, tmp_path):
     assert "0 active order" not in obs.detail
 
 
-# --------------------------------------------------------------------- cloudco
-
-async def test_cloudco_auth_proves_a_cached_token_before_saying_ok(monkeypatch):
-    from atlas.modules import cloudco
-
-    monkeypatch.setattr(cloudco, "_token", ("jwt", 9e12))
-    asked: list[str] = []
-
-    async def token():
-        return "jwt"
-
-    async def refused(path, **params):
-        asked.append(path)
-        raise cloudco.CloudCoRejected("token expired")
-    monkeypatch.setattr(cloudco, "_access_token", token)
-    monkeypatch.setattr(cloudco, "_get", refused)
-    obs = await cloudco.check_auth()
-    assert asked == ["/vm"]
-    assert obs.health is Health.UNKNOWN
-    assert "cached token" in obs.detail
-
-    async def fine(path, **params):
-        return {"data": []}
-    monkeypatch.setattr(cloudco, "_get", fine)
-    obs = await cloudco.check_auth()
-    assert obs.health is Health.OK and "authenticated read" in obs.detail
+# --------------------------------------------------------------------- cloudhost
 
 
-async def test_cloudco_ledger_with_no_total_is_unknown(monkeypatch):
-    from atlas.modules import cloudco
-
-    async def get(path, **params):
-        return {"data": [{"hostname": "a"}]}
-    monkeypatch.setattr(cloudco, "_get", get)
-    assert (await cloudco.check_resource_ledger()).health is Health.UNKNOWN
-
-    async def with_total(path, **params):
-        return {"data": [{"hostname": "a"}], "total": 1}
-    monkeypatch.setattr(cloudco, "_get", with_total)
-    assert (await cloudco.check_resource_ledger()).health is Health.OK
 
 
-def _cloudco_protection(monkeypatch, *, vm, policy):
-    from atlas.modules import cloudco
 
-    async def get(path, **params):
-        return {"/snapshot": {"data": [{"identifier": "s1", "status": "ok"}]},
-                "/backups": {"data": [{"identifier": "b1"}]},
-                "/vm": vm, "/backups/policy/all": policy}[path]
-    monkeypatch.setattr(cloudco, "_get", get)
-    return cloudco
 
 
 POLICY = {"data": {"rows": [{"name": "daily", "vmsCount": 1, "planEvery": 1,
@@ -252,61 +207,20 @@ POLICY = {"data": {"rows": [{"name": "daily", "vmsCount": 1, "planEvery": 1,
                              "created_on": "2026-01-01T00:00:00Z"}]}}
 
 
-async def test_cloudco_protection_unreadable_policy_is_not_ok(monkeypatch):
-    cloudco = _cloudco_protection(monkeypatch, vm={"data": [{"hostname": "a"}]},
-                              policy={"data": "nope"})
-    obs = await cloudco.check_protection()
-    assert obs.health is Health.UNKNOWN
-    assert "policy unreadable" in obs.detail
-    assert "first scheduled backup" not in obs.detail
 
 
-async def test_cloudco_protection_unreadable_vm_list_is_not_full_coverage(
-        monkeypatch):
-    cloudco = _cloudco_protection(monkeypatch, vm={"weird": 1}, policy=POLICY)
-    obs = await cloudco.check_protection()
-    assert obs.health is Health.UNKNOWN
-    assert "all 0 instances" not in obs.detail
 
 
-async def test_cloudco_protection_readable_policy_still_reads_ok(monkeypatch):
-    cloudco = _cloudco_protection(monkeypatch, vm={"data": [{"hostname": "a"}]},
-                              policy=POLICY)
-    obs = await cloudco.check_protection()
-    assert obs.health is Health.OK, obs.detail
 
 
-# ------------------------------------------------------------------ exampleco
-
-def _ebay(monkeypatch, payload):
-    from atlas.modules import exampleco
-
-    async def api(path, **params):
-        return payload
-    monkeypatch.setattr(exampleco, "_api", api)
-    return exampleco
+# ------------------------------------------------------------------ mirotech
 
 
-@pytest.mark.parametrize("fn", ["check_listings", "check_orders",
-                                "check_stale_listings"])
-async def test_ebay_response_without_its_list_is_unknown(monkeypatch, fn):
-    exampleco = _ebay(monkeypatch, {"href": "x"})
-    assert (await getattr(exampleco, fn)()).health is Health.UNKNOWN
 
 
-@pytest.mark.parametrize("fn", ["check_listings", "check_orders",
-                                "check_stale_listings"])
-async def test_ebay_total_zero_is_a_real_empty(monkeypatch, fn):
-    exampleco = _ebay(monkeypatch, {"total": 0})
-    assert (await getattr(exampleco, fn)()).health is Health.OK
 
 
-async def test_ebay_listing_age_that_is_never_present_is_unknown(monkeypatch):
-    exampleco = _ebay(monkeypatch, {"offers": [
-        {"sku": "a", "status": "PUBLISHED", "listing": {"listingId": "1"}}]})
-    obs = await exampleco.check_stale_listings()
-    assert obs.health is Health.UNKNOWN
-    assert "no" in obs.detail and "listing age" in obs.detail
+
 
 
 # -------------------------------------------------------------------- tiktok

@@ -2,11 +2,11 @@
 submission card.
 
 **Posting** goes through the existing Instagram poster, never a new one:
-`instagram.publish` with `account="clips"` (@example_handle,
+`instagram.publish` with `account="clips"` (@atlas.clipsdrop,
 `INSTAGRAM_CLIPS_ACCOUNT_ID` / `INSTAGRAM_CLIPS_TOKEN`) and
 `content_kind="campaign_clip"`, whose account rule is the campaigns' FTC
 `#Ad` line rather than the AI label. `clips.publish_clip` is Tier 1 since
-2026-09-30 (the owner: clips post themselves, the reels lane's way; the
+2026-09-30 (Miro: clips post themselves, the reels lane's way; the
 "automatic" section below), gated in code and run by the intake
 (`kernel.clip_intake`); a clip it holds is a Tier 2 card with the reason.
 The Graph API fetches the file from a 24 h `GET /media/clip.<token>` link,
@@ -19,7 +19,7 @@ campaign's rules before every post.
 -- which always lands private, `api.upload` refuses anything else -- then
 sets it public and reads its privacy back, recording it posted at
 `youtube.com/shorts/<id>` only once YouTube says it is public. Approving
-the card IS the owner's word to publish that one Short, and the card says so.
+the card IS Miro's word to publish that one Short, and the card says so.
 The title is the approved post text whole, then `#Ad`, then the
 campaign's YouTube handle; the description the campaign's full caption (`captions.youtube_title`,
 `build_caption(..., "youtube")`). The uploaded video's id is kept the
@@ -28,19 +28,19 @@ a second copy. Its rollback sets the Short private -- deletion is Tier 3 --
 and marks the clip `withdrawn`, never posted again.
 
 **TikTok** goes through Postiz, the reels lane's path, to the clips
-lane's own TikTok @example_handle (`POSTIZ_TIKTOK_CLIPS_INTEGRATION`, beside
+lane's own TikTok @atlasclips12 (`POSTIZ_TIKTOK_CLIPS_INTEGRATION`, beside
 `POSTIZ_API_KEY`): `clips.publish_clip_tiktok` (Tier 1 since 2026-09-30,
 the same gates and holds) hands `postiz.post_tiktok_clip` the clip's PATH
 -- which takes nothing but a lane-cut file, and never the AI-stories
 integration -- and the exact caption, re-checked against the campaign's
 rules. It is recorded posted once Postiz accepts it; its URL only when
-Postiz returns one on that account (never built from an id), else the owner
+Postiz returns one on that account (never built from an id), else Miro
 sends it (`clips.record_link`) and the Whop card follows. Its rollback
 deletes the Postiz post while it is still queued; a published one is a
 MANUAL note (deletion is Tier 3).
 
 **YouTube Shorts through Postiz** (2026-09-29) go to the same clips channel,
-AtlasClips (@example_handle), through the Postiz integration
+AtlasClips (@miroatlas), through the Postiz integration
 `POSTIZ_YOUTUBE_CLIPS_INTEGRATION` names: `clips.publish_clip_youtube_postiz`
 (Tier 1 since 2026-09-30, the TikTok leg's shape) hands
 `postiz.post_youtube_clip` the lane-cut file, the title
@@ -62,7 +62,7 @@ Postiz is used.
 When an account cannot be reached -- its env unset, or for Instagram
 `ATLAS_HOST` unset so no link would resolve -- the card is `clips.hand_off`
 instead: the same file and caption (for YouTube, title and description),
-for the owner to post by hand, and approving it records that he has it.
+for Miro to post by hand, and approving it records that he has it.
 
 **One platform per clip** when the campaign's rules forbid the same video
 on more than one account (`cross_post_allowed` False; both live ones): the
@@ -81,20 +81,20 @@ is one account per platform today, so this is a guard, not a feature.
 
 **The post URL** is read back from Instagram (`permalink`) when ATLAS
 posts; for a hand-posted clip, or a permalink that could not be read, it
-comes through `clips.record_link`, which runs only when the owner himself says
+comes through `clips.record_link`, which runs only when Miro himself says
 it (`principal_only`): a URL a model read somewhere must never become a
 payout claim.
 
-**Submitting to Whop** is never done by ATLAS: it touches the owner's payout
+**Submitting to Whop** is never done by ATLAS: it touches Miro's payout
 account and ATLAS has no verified way in. The agent on his Mac submits in
 his own Chrome and records it through `clips.record_whop_submission`
-(`whop.py`, the owner 2026-09-29). The Tier 2 card `clips.submit_to_whop` -- the
+(`whop.py`, Miro 2026-09-29). The Tier 2 card `clips.submit_to_whop` -- the
 post URL and the campaign's Whop link (or that it is not on file);
 approving records that he submitted it -- comes up at once for a clip the
 agent will never see, and for one it is offered only as the fallback, 48 h
 after it posted unsubmitted (`whop.card_due`). Every writer of `post_url` here also sets
 `post_url_source` (the platform's own response, or `record_link` for
-the owner's word): the agent is offered only those.
+Miro's word): the agent is offered only those.
 """
 from __future__ import annotations
 
@@ -113,18 +113,18 @@ from ...kernel.state import execute_sql, fetch_all, fetch_one
 from ..content import ffmpeg
 from . import campaigns, captions, sources
 
-ACCOUNT = "@example_handle"
-TT_HANDLE = "@example_handle"
+ACCOUNT = "@atlas.clipsdrop"
+TT_HANDLE = "@atlasclips12"
 IG_ACCOUNT = "clips"                 # instagram.ACCOUNTS key
 YT_CHANNEL = "clips"                 # youtube.CHANNELS key
 TT_ACCOUNT = "clips"                 # postiz's clips integration
-YT_CHANNEL_NAME = "AtlasClips (@example_handle)"   # POSTIZ_YOUTUBE_CLIPS_INTEGRATION
+YT_CHANNEL_NAME = "AtlasClips (@miroatlas)"   # POSTIZ_YOUTUBE_CLIPS_INTEGRATION
 # A YouTube Short: vertical and at most this long. The cut's windows stop
 # at 60 s (cut.MAX_WINDOW); an encoded file may run a few frames past its
 # window, so ffprobe's reading gets SHORTS_PAD_S of slack, the window none.
 SHORTS_MAX_S = 60.0
 SHORTS_PAD_S = 0.1
-# Where each platform's clips go, as the owner reads it on a card ...
+# Where each platform's clips go, as Miro reads it on a card ...
 ACCOUNTS = {"instagram": f"{ACCOUNT} (Instagram)",
             "tiktok": f"{TT_HANDLE} (TikTok)",
             "youtube": "the clips YouTube channel (Shorts)"}
@@ -233,7 +233,7 @@ def autopost_gap(platform: str = "instagram") -> str | None:
 
 # ----------------------------------------------------------------- automatic
 #
-# the owner, 2026-09-30: Whop clips post themselves, "the same way the AI reels
+# Miro, 2026-09-30: Whop clips post themselves, "the same way the AI reels
 # lane does it" -- no approval card per post. So `clips.publish_clip`,
 # `clips.publish_clip_tiktok` and `clips.publish_clip_youtube_postiz` are
 # Tier AUTO -- a tier assigned in code and reviewed like any other change
@@ -255,7 +255,7 @@ def autopost_gap(platform: str = "instagram") -> str | None:
 #     `CLIPS_DAILY_CAP` (default 6, the intake's own cap) posts per platform
 #     per UTC day, counted from `clip_outputs`.
 #
-# A hold answers to the owner: the same check under an approved card (the run
+# A hold answers to Miro: the same check under an approved card (the run
 # `approvals.decide` names, `idempotency.current_run()` = `proposal:<id>`)
 # passes it and posts. Nothing that fails is skipped in silence:
 # `kernel.clip_intake` raises the ordinary post card with the reason first,
@@ -264,7 +264,7 @@ def autopost_gap(platform: str = "instagram") -> str | None:
 # note) and marks the clip withdrawn. Every automatic post is the
 # executor's audit line and a receipt in the clips channel.
 #
-# **Two legs from one cut** (the owner, 2026-10-01: clip reels on Instagram AND
+# **Two legs from one cut** (Miro, 2026-10-01: clip reels on Instagram AND
 # TikTok), the shape of `content.post_missing_leg`: when a campaign's
 # reviewed rules allow the same clip on more than one account
 # (`cross_post_allowed`) the cut makes one `clip_outputs` row per platform
@@ -325,7 +325,7 @@ def answered_by_card() -> bool:
 
 async def posted_today(platform: str, now: datetime | None = None) -> int:
     """Clips posted on `platform` since midnight UTC, by any path (the
-    intake, a card, the owner's own link): the cap is on the account's day, not
+    intake, a card, Miro's own link): the cap is on the account's day, not
     on who pressed the button."""
     from .intake import today_utc
     row = await fetch_one(
@@ -336,7 +336,7 @@ async def posted_today(platform: str, now: datetime | None = None) -> int:
 
 
 async def auto_hold(platform: str) -> str | None:
-    """Why this clip is held for the owner rather than posted on its own, or
+    """Why this clip is held for Miro rather than posted on its own, or
     None. Asked last, after every check of the clip itself, and never of an
     approved card: his approval is the answer to a hold."""
     if answered_by_card():
@@ -345,7 +345,7 @@ async def auto_hold(platform: str) -> str | None:
         return f"{HELD}: automatic posting is off (CLIPS_AUTOPUBLISH)"
     try:
         done = await posted_today(platform)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return (f"{HELD}: today's posts on {platform} could not be counted, "
                 f"so nothing posts itself")
     cap = daily_cap()
@@ -595,7 +595,7 @@ async def hand_off_dry(campaign: str, clip_ids: str) -> ActionResult:
     rows, why = await _handoff_check(campaign, clip_ids)
     if why:
         return ActionResult(False, why)
-    return ActionResult(True, f"would mark {len(rows)} clip(s) handed to the owner to "
+    return ActionResult(True, f"would mark {len(rows)} clip(s) handed to Miro to "
                               f"post on {_where(rows)}")
 
 
@@ -609,7 +609,7 @@ async def hand_off(campaign: str, clip_ids: str) -> ActionResult:
             "WHERE id = $1 AND status IN ('made', 'draft_approved')",
             row["id"], POST_ACCOUNT[str(row["platform"])])
     ids = [r["id"] for r in rows]
-    return ActionResult(True, f"clip(s) {', '.join(map(str, ids))} are with the owner "
+    return ActionResult(True, f"clip(s) {', '.join(map(str, ids))} are with Miro "
                               f"to post on {_where(rows)}; send each post URL "
                               f"back to claim it",
                         rollback_token=json.dumps({"ids": ids}))
@@ -625,7 +625,7 @@ async def hand_off_rollback(token: str) -> ActionResult:
 
 
 def _words(campaign: campaigns.Campaign, row: dict[str, Any]) -> list[str]:
-    """What the owner posts, word for word: Instagram's or TikTok's caption; for
+    """What Miro posts, word for word: Instagram's or TikTok's caption; for
     YouTube the title and the description."""
     caption = str(row["caption"])
     platform = str(row.get("platform") or "instagram")
@@ -657,7 +657,7 @@ def _only_here(campaign: campaigns.Campaign, row: dict[str, Any]) -> list[str]:
 
 def ready_card(campaign: campaigns.Campaign, row: dict[str, Any]) -> Signal:
     """The Tier 2 card for one finished clip: its file and its caption, word
-    for word -- what the owner posts is what he read. One clip per card, so the
+    for word -- what Miro posts is what he read. One clip per card, so the
     caption is never cut short by the card's length limit, and each card
     carries its own file."""
     platform = str(row.get("platform") or "instagram")
@@ -688,7 +688,7 @@ async def _publish_check(clip_id: int) -> tuple[dict[str, Any] | None, str | Non
     if row is None:
         return None, f"no clip {clip_id}"
     if row["status"] not in WAITING:
-        # handed_off is the owner's to post by hand: posting it here too would
+        # handed_off is Miro's to post by hand: posting it here too would
         # put the same clip up twice.
         return None, not_waiting(clip_id, str(row["status"]))
     if row["platform"] != "instagram":
@@ -762,7 +762,7 @@ async def publish_clip(clip_id: int) -> ActionResult:
     try:
         result = await instagram.publish(str(row["caption"]), url, kind="reel",
                                          account=IG_ACCOUNT, content_kind=CONTENT_KIND)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         result = ActionResult(False, instagram._why(exc))
     if not result.ok or not result.rollback_token:
         await idempotency.finish(action, key, result.detail or "refused")
@@ -774,7 +774,7 @@ async def publish_clip(clip_id: int) -> ActionResult:
         got = await instagram._get(media_id, account=IG_ACCOUNT, fields="permalink")
         link = str(got.get("permalink") or "")
         permalink = link if POST_URL["instagram"].match(link) else None
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         permalink = None
     await execute_sql(
         """UPDATE clip_outputs SET status = 'posted', post_ref = $2, post_url = $3,
@@ -997,7 +997,7 @@ def youtube_card(campaign: campaigns.Campaign, row: dict[str, Any]) -> Signal:
 async def _tiktok_check(clip_id: int
                         ) -> tuple[tuple[dict[str, Any], campaigns.Campaign, Path] | None,
                                    str | None]:
-    """The clip, re-checked end to end for @example_handle, or why it may not
+    """The clip, re-checked end to end for @atlasclips12, or why it may not
     post there."""
     row = (await _clips([int(clip_id)])).get(int(clip_id))
     if row is None:
@@ -1047,7 +1047,7 @@ async def publish_clip_tiktok_dry(clip_id: int) -> ActionResult:
 
 
 async def publish_clip_tiktok(clip_id: int) -> ActionResult:
-    """Post one clip to @example_handle through Postiz. Recorded posted once
+    """Post one clip to @atlasclips12 through Postiz. Recorded posted once
     Postiz accepts it; its URL only when Postiz returns one."""
     found, why = await _tiktok_check(clip_id)
     if found is None:
@@ -1101,7 +1101,7 @@ async def unpublish_clip_tiktok(token: str) -> ActionResult:
 
 
 def tiktok_card(campaign: campaigns.Campaign, row: dict[str, Any]) -> Signal:
-    """The card that posts one clip to @example_handle: its file and its
+    """The card that posts one clip to @atlasclips12: its file and its
     exact caption."""
     path = sources.out_dir(campaign.slug) / row["filename"]
     body = "\n".join([
@@ -1340,17 +1340,17 @@ async def submit_to_whop_dry(clip_id: int, post_url: str) -> ActionResult:
     if row is None:
         return ActionResult(False, why or "refused")
     return ActionResult(True, f"would record {post_url} as submitted to "
-                              f"{row['campaign']} on Whop, by the owner")
+                              f"{row['campaign']} on Whop, by Miro")
 
 
 async def submit_to_whop(clip_id: int, post_url: str) -> ActionResult:
-    """Records the owner's own submission. ATLAS does not submit to Whop."""
+    """Records Miro's own submission. ATLAS does not submit to Whop."""
     row, why = await _submit_check(clip_id, post_url)
     if row is None:
         return ActionResult(False, why or "refused")
     await execute_sql(
         """UPDATE clip_outputs SET status = 'submitted', submitted_at = now(),
-                  submitted_by = 'owner'
+                  submitted_by = 'miro'
            WHERE id = $1 AND status = 'posted'""", int(clip_id))
     return ActionResult(True, f"clip {clip_id} ({post_url}) recorded as submitted "
                               f"to {row['campaign']} on Whop",
@@ -1383,7 +1383,7 @@ def submit_card(campaign: campaigns.Campaign, row: dict[str, Any]) -> Signal:
 
 
 def link_wanted(campaign: campaigns.Campaign, row: dict[str, Any]) -> Signal:
-    """A posted clip whose link ATLAS could not read back: told to the owner (no
+    """A posted clip whose link ATLAS could not read back: told to Miro (no
     action -- the link is his word only, through clips.record_link), since
     its Whop card needs it."""
     where = ACCOUNTS.get(str(row.get("platform")), str(row.get("platform")))
@@ -1479,8 +1479,8 @@ async def signals() -> list[Signal]:
     honouring the one-platform rule -- a clip on an automatic leg
     (`auto_action`) is the intake's, which posts it or raises its card
     with the reason; a note for a posted clip whose URL is not known; and,
-    as the fallback for the agent on the owner's Mac that submits posts on Whop
-    (the owner, 2026-09-29), one Whop card per posted clip with a known URL not
+    as the fallback for the agent on Miro's Mac that submits posts on Whop
+    (Miro, 2026-09-29), one Whop card per posted clip with a known URL not
     yet submitted: at once when the agent will never see it
     (`whop.offered`), else once it is still unsubmitted
     `whop.FALLBACK_AFTER` after it posted."""

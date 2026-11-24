@@ -6,14 +6,14 @@ useless or unmanageably large:
 
   EPISODIC   what happened, and when. Incidents, decisions, conversations.
              Searchable by meaning. Decays: rolled up after 90 days.
-  SEMANTIC   durable facts about the owner, his businesses, his people, his
+  SEMANTIC   durable facts about Miro, his businesses, his people, his
              preferences. Never decays. Small. This is the valuable one.
   PROCEDURAL runbooks: how to fix a class of problem. Earns trust by
              succeeding; demoted by failing.
   WORKING    the current task's scratch space. Dies with the task.
 
 Everything is namespaced, and agents are scoped to namespaces, so the Inbox
-agent cannot read security memory and the Growth agent cannot read the owner's mail.
+agent cannot read security memory and the Growth agent cannot read Miro's mail.
 """
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ class Memory:
     importance: float = 0.5
     at: datetime | None = None
     source: str | None = None        # whatsapp | portal | voice | ... ; None = older rows
-    business: str | None = None      # a business key ("mmt"), or None
+    business: str | None = None      # a business key ("tutorco"), or None
     score: float = 0.0               # the hybrid rank; 0 when not ranked
 
 
@@ -166,7 +166,7 @@ async def _embed(text: str) -> list[float] | None:
             })
             r.raise_for_status()
             return _vector(r.json().get("embedding"))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("embedding failed: %s", exc)
         return None
 
@@ -191,7 +191,7 @@ async def _embed_openai(url: str, text: str) -> list[float] | None:
                 return None
             data = r.json().get("data") or [{}]
             return _vector(data[0].get("embedding"))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # The class only: the request (and so the key header) stays out.
         log.warning("embedding failed: %s", type(exc).__name__)
         return None
@@ -238,7 +238,7 @@ async def _log_reads(namespaces: Sequence[str], found: Sequence[Memory],
             await execute_sql(
                 "INSERT INTO memory_reads (namespace, hits, agent) "
                 "VALUES ($1,$2,$3)", ns, hits[ns], agent)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not log a memory read: %s", exc)
 
 
@@ -419,7 +419,7 @@ async def learn_fact(namespace: str, fact: str, importance: float = 0.8, *,
                      source: str | None = None, business: str | None = None) -> int:
     """Semantic memory. Deduplicates: an existing near-identical fact is
     reinforced rather than duplicated, which is what stops memory bloating.
-    A fact the owner made ATLAS forget (hidden, not wiped) is not learned again:
+    A fact Miro made ATLAS forget (hidden, not wiped) is not learned again:
     the hidden row's id comes back and nothing is written."""
     hidden = await fetch_all(
         "SELECT id FROM memories WHERE namespace = $1 AND deleted_at IS NOT NULL "
@@ -472,9 +472,9 @@ async def consolidate() -> int:
 
 
 def owner_namespaces() -> list[str]:
-    """Where the owner's own notes live: `owner`, and `biz.<key>` for each business in
-    ATLAS_BUSINESSES (default "mmt,agency")."""
-    keys = [b.strip().lower() for b in os.getenv("ATLAS_BUSINESSES", "mmt,agency").split(",")
+    """Where Miro's own notes live: `owner`, and `biz.<key>` for each business in
+    ATLAS_BUSINESSES (default "tutorco,agency")."""
+    keys = [b.strip().lower() for b in os.getenv("ATLAS_BUSINESSES", "tutorco,agency").split(",")
             if b.strip()]
     return ["owner", *(f"biz.{k}" for k in keys)]
 
@@ -483,7 +483,7 @@ RECALL_TIMEOUT_S = 0.4
 
 
 async def owner_recall_block(question: str, *, agent: str = "chat") -> str | None:
-    """What ATLAS remembers of the owner that bears on `question`, quoted for a user
+    """What ATLAS remembers of Miro that bears on `question`, quoted for a user
     message, or None. Never raises and never waits long: past RECALL_TIMEOUT_S
     the reply goes out without memory. Only for a question that is NOT about live
     figures; the caller decides that, a memory is never a source for a number."""
@@ -495,7 +495,7 @@ async def owner_recall_block(question: str, *, agent: str = "chat") -> str | Non
             found = await asyncio.wait_for(
                 recall(question, owner_namespaces(), token_budget=RECALL_TOKENS,
                        agent=agent), RECALL_TIMEOUT_S)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.info("recall skipped: %s", type(exc).__name__)
         return None
     return quote_memories(found, "memory") if found else None
@@ -515,7 +515,7 @@ def format_for_prompt(memories: Sequence[Memory]) -> str:
     return "\n".join(lines)
 
 
-NOT_A_LIVE_READING = ("Recollection of what the owner said; not a live reading. "
+NOT_A_LIVE_READING = ("Recollection of what Miro said; not a live reading. "
                       "Never quote a figure from it.")
 
 

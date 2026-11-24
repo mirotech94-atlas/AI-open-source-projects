@@ -2,7 +2,7 @@
 
 Three properties are load-bearing and tested here:
 
-* `gather("note:...")` is the owner's own words on an authenticated channel and
+* `gather("note:...")` is Miro's own words on an authenticated channel and
   wraps with `principal=True`; every other source is a plain
   `wrap_untrusted` (invariant 4 -- everything ingested is untrusted, and
   the one exception is deliberate and narrow).
@@ -79,10 +79,10 @@ def test_no_file_in_the_module_imports_the_executor():
 # --------------------------------------------------------------------- gather
 
 async def test_gather_note_wraps_with_principal_true():
-    wrapped, reason = await sources.gather("note:snapshot the cloudco instances")
+    wrapped, reason = await sources.gather("note:snapshot the cloudhost instances")
     assert reason is None
     assert wrapped == wrap_untrusted(
-        "snapshot the cloudco instances", "note", principal=True)
+        "snapshot the cloudhost instances", "note", principal=True)
     assert "<request " in wrapped
 
 
@@ -112,7 +112,7 @@ async def test_gather_voice_reads_n_rows(monkeypatch):
     for phrase in ("first thing I said", "second thing I said",
                    "third thing I said", "ack one", "ack three"):
         assert phrase in wrapped
-    # Not principal: this is a transcript, not the owner speaking on this channel.
+    # Not principal: this is a transcript, not Miro speaking on this channel.
     assert "<untrusted_data " in wrapped
 
 
@@ -135,14 +135,14 @@ async def test_gather_weekly_reads_latest_report(monkeypatch):
     async def fake_fetch_one(sql, *args):
         assert "reports" in sql
         assert "weekly" in sql
-        return {"title": "Week of Sept 22", "body": "ExampleCo shipped 4 orders."}
+        return {"title": "Week of Sept 22", "body": "Mirotech shipped 4 orders."}
 
     monkeypatch.setattr(sources, "fetch_one", fake_fetch_one)
     wrapped, reason = await sources.gather("weekly")
 
     assert reason is None
     assert "Week of Sept 22" in wrapped
-    assert "ExampleCo shipped 4 orders." in wrapped
+    assert "Mirotech shipped 4 orders." in wrapped
 
 
 async def test_gather_weekly_missing_report_is_a_reason(monkeypatch):
@@ -387,11 +387,11 @@ def test_render_video_is_tier_auto_with_a_dry_run_and_a_rollback():
     assert action.irreversible is False
 
 
-def test_publishing_is_tier_ask_except_the_one_automatic_path_owner_asked_for():
-    """the owner, 2026-09-27: "fully automated so I don't have to manually do
+def test_publishing_is_tier_ask_except_the_one_automatic_path_miro_asked_for():
+    """Miro, 2026-09-27: "fully automated so I don't have to manually do
     anything". content.publish_reel stays Tier ASK (the card, when a reel is
     held); content.autopublish_reel is the one Tier AUTO publish action, and
-    it has a dry run, a rollback and its checks in code. the owner, 2026-09-29:
+    it has a dry run, a rollback and its checks in code. Miro, 2026-09-29:
     YouTube Shorts too -- content.publish_short, Tier AUTO, three a week,
     only a reel that already posted, its checks in code, one an hour."""
     publishing = {a.name: a for a in content.MODULE.actions()
@@ -998,7 +998,7 @@ async def test_render_video_marks_failed_on_mcp_error_without_charging(monkeypat
 async def test_render_video_downloads_and_saves_under_data_content(
         monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
 
     async def fake_fetch_one(sql, *args):
         if "content_drafts" in sql:

@@ -86,7 +86,7 @@
   box.appendChild(el("h2", {id: "mfm-title"}, "Is this your business? Have ATLAS Agency call you"));
   box.appendChild(el("p", null,
     "Mapfront made this preview for " + (C.business || "your business") + ". Leave your " +
-    "number and the owner's assistant, an AI, will call you about it. This goes to " +
+    "number and Miro's assistant, an AI, will call you about it. This goes to " +
     "Mapfront, not to " + (C.business || "the business") + "."));
 
   var form = el("form", {novalidate: "novalidate"});
@@ -156,7 +156,7 @@
           form.hidden = true;
           status.textContent = "";
           var done = el("p", {role: "status"},
-            "Thanks. Mapfront has your request to call " + pretty(n) + ", and the owner " +
+            "Thanks. Mapfront has your request to call " + pretty(n) + ", and Miro " +
             "reviews every one before anyone calls. Say \"don't call\" anytime.");
           box.insertBefore(done, form);
           return;

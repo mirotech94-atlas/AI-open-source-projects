@@ -4,7 +4,7 @@ Design plan (frontend-design pass, 2026-10-09; the interactive pass and the
 thumbnail redesign 2026-10-10), made for this brief rather than taken from a
 template:
 
-  Colour   (2026-10-17, the owner: the Atlas Academy video system,
+  Colour   (2026-10-17, Miro: the Atlas Academy video system,
            docs/academy-video-system; video_tokens.py) the frame is navy
            #101b30, never pure black; cards and plates are navy-raised
            #182540 on a navy-line #2a3a5c hairline; type is paper #f6f8ff and
@@ -56,7 +56,7 @@ template:
            its tools for MCP -- with a hand-drawn arrow at the result. No
            faces, no logos: the products are named in words only.
 
-  3D (2026-10-10, the owner: "make the design for each thumbnail etc animated and
+  3D (2026-10-10, Miro: "make the design for each thumbnail etc animated and
            3D and actually interesting"): the workbench at night. Every
            slide is now a transparent layer over a 3D loop of its series --
            a black, faintly reflective bench printed with the n8n dot grid,
@@ -73,7 +73,7 @@ template:
            three.js) and committed under assets/tutorial3d/; the one-CPU
            server only overlays and encodes.
 
-No "Made with AI" label is drawn on a video frame (the owner, 2026-10-17: the
+No "Made with AI" label is drawn on a video frame (Miro, 2026-10-17: the
 disclosure is YouTube's containsSyntheticMedia flag and the description
 line); the store's address sits in the corner of every slide, and on the
 end card only as a secondary line when the lesson has practice files. A
@@ -113,7 +113,7 @@ from .video_tokens import fonts_css
 
 W, H = 1920, 1080
 TW, TH = 1280, 720
-DESIGN_VERSION = "8"                 # 5: black + royal blue (the owner, 2026-10-12)
+DESIGN_VERSION = "8"                 # 5: black + royal blue (Miro, 2026-10-12)
                                      # 6: demo crop boxes, 2026-10-13
                                      # 7: the motion guide, 2026-10-15
                                      # 8: the navy video system (2026-10-17) and
@@ -125,7 +125,7 @@ STORE_SHOWN = STORE_URL.removeprefix("https://").split("/")[0]    # the host
 STORE_FILES_SHOWN = STORE_URL.removeprefix("https://")             # host/academy
 
 # ------------------------------------------------------------- the palette
-# the owner, 2026-10-17: videos, thumbnails and Shorts use the Atlas Academy video
+# Miro, 2026-10-17: videos, thumbnails and Shorts use the Atlas Academy video
 # system (docs/academy-video-system, video_tokens.py): a navy frame, never
 # pure black; navy-raised cards on a navy-line hairline; paper and
 # paper-muted type; blue the one accent, as text only at 24px and up
@@ -327,7 +327,7 @@ KIT_AI_SERIES = ("explained", "security", "future")
 # loop (a padlock), so AI Security's own scene is the vault.
 SERIES_SCENE = {"security": "vault"}
 LOOP_SECONDS = 10.0                  # every loop is seamless at this length
-# docs/academy-youtube-plan.md rule 17 (the owner, 2026-10-13): the sting is at
+# docs/academy-youtube-plan.md rule 17 (Miro, 2026-10-13): the sting is at
 # most one second, so the payoff is on screen in the first seconds.
 STING_SECONDS = 1.0
 STING = KIT / "sting.mp4"            # the mark assembling, before the intro's words
@@ -335,7 +335,7 @@ INTRO_LOOP = KIT / "loop-mark.mp4"   # the mark idling, under the intro's words
 OUTRO_LOOP = KIT / "loop-outro.mp4"  # the Subscribe button (the mid-lesson beat only)
 
 
-# The watermark (the owner, 2026-10-11: "video with watermark as well"): the
+# The watermark (Miro, 2026-10-11: "video with watermark as well"): the
 # ATLAS Academy mark (Grid A0 over its wordmark since 2026-10-16, built by
 # tools/academy_logo.py), semi-transparent (the alpha is in the PNG), at the top
 # of the left rail on every teaching segment -- the one corner no slide,
@@ -378,7 +378,7 @@ def still_path(series_key: str) -> Path:
     return KIT / f"still-{SERIES_SCENE.get(series_key, series_key)}.jpg"
 
 
-# Topic backdrops (the owner, 2026-10-11: "make the background keep changing and
+# Topic backdrops (Miro, 2026-10-11: "make the background keep changing and
 # not stick to one ... change background depending on what you are talking
 # about"). Every topic is one seamless 10 s loop of the kit; the series
 # loops double as topics where they already show the thing.
@@ -663,7 +663,7 @@ ICON_CHAT = ('<svg viewBox="0 0 48 48"><path d="M8 10h32a4 4 0 0 1 4 4v16a4 4 0 
 ICON_PLAY = ('<svg viewBox="0 0 48 48"><path d="M14 8l26 16-26 16z" fill="currentColor"/></svg>')
 ICON_BELL = (f'<svg viewBox="0 0 48 48"><path d="M24 6a12 12 0 0 1 12 12v9l5 7H7l5-7v-9A12 12 0 0 1 24 6z'
              f'" fill="{ON_BLUE}"/><circle cx="24" cy="40" r="5" fill="{ON_BLUE}"/></svg>')
-# the owner, 2026-10-18: a recap tick and the right quiz answer are the neutral
+# Miro, 2026-10-18: a recap tick and the right quiz answer are the neutral
 # blue; `success` green is only for a step marked verified.
 ICON_TICK = (f'<svg viewBox="0 0 50 50"><path d="M12 26l9 9 17-19" fill="none" stroke="{BLUE}" '
              f'stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>')
@@ -712,7 +712,7 @@ def _doc(body: str, *, w: int = W, h: int = H, css: str = "", preview: bool = Fa
 
 
 def sting_layer(preview: bool = False) -> str:
-    """What sits over the 3D sting: only a preview's banner. the owner,
+    """What sits over the 3D sting: only a preview's banner. Miro,
     2026-10-17: no on-screen "Made with AI" label on video frames; the
     disclosure is YouTube's containsSyntheticMedia flag and the
     description line."""
@@ -869,7 +869,7 @@ def _quiz(scene: Scene, step: int, countdown: int | None) -> str:
         rows.append(f'<li class="{cls}"><b>{mark}</b><span>{html.escape(item)}</span></li>')
     say = ("Comment A or B" if poll and len(scene.items) == 2 else "Comment your answer")
     if reveal and not poll:
-        # the owner, 2026-10-13 / rule 19: the tick never shares a frame with the
+        # Miro, 2026-10-13 / rule 19: the tick never shares a frame with the
         # comment prompt -- once the answer is shown, the ask turns into an invitation.
         say = "Did you get it? Tell me in the comments"
     lit = " lit" if (poll and reveal) or countdown is not None else ""
@@ -1049,7 +1049,7 @@ def demo_slide(scene: Scene, step: int, *, address: str, mark: str, chapter: int
 
 
 # ------------------------------------------------------ teaching components
-# docs/academy-video-system/components (the owner, 2026-10-17; .video-gap.md batch
+# docs/academy-video-system/components (Miro, 2026-10-17; .video-gap.md batch
 # 4): StepMap, LowerThird, CheckpointTag, ErrorRecovery and the WorkflowTrace
 # token, each drawn only from what the script fills in (tutorial_series:
 # Episode.steps_map, Scene.map_step / introduces / checks / error / tokens /
@@ -1359,7 +1359,7 @@ def topic(ep: Episode, preview: bool = False, minutes: int | None = None) -> str
 
 
 # ------------------------------------------------------------ the opening
-# The Atlas Academy video system (the owner, 2026-10-17; docs/academy-video-system
+# The Atlas Academy video system (Miro, 2026-10-17; docs/academy-video-system
 # episode-structure.md "Opening (0-20 s)"): the result on screen from frame 0
 # (ResultTitle), its badge rising at frame 12; one trace along one connector
 # at 3-6 s (WorkflowTrace); the 1 s BrandSting at 6-7 s on a flat navy
@@ -1501,12 +1501,12 @@ def sting_frame(frame: int, preview: bool = False) -> str:
 
 
 # ------------------------------------------------------------ the end card
-# EndCard (the owner, 2026-10-17; docs/academy-video-system/components/EndCard):
+# EndCard (Miro, 2026-10-17; docs/academy-video-system/components/EndCard):
 # the last END_CARD_MIN seconds or more on flat navy. Left, inside
 # safe-16-9: a check and "You now have <result>.", the next lesson's title
 # and why it follows, and (only with lab files) a secondary shop line. The
 # right vt.ENDSCREEN_RESERVE px inside the safe area stay flat navy and empty
-# for the native element the owner adds in Studio: no Subscribe, no painted
+# for the native element Miro adds in Studio: no Subscribe, no painted
 # thumbnail, nothing that loops. It rises in once and stays to the last frame.
 END_CARD_MIN = 15.0
 CARD_LEFT_W = W - 2 * SAFE - vt.ENDSCREEN_RESERVE - vt.STEP_8      # 1024

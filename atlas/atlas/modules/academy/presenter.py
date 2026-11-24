@@ -1,13 +1,13 @@
-"""the owner on camera: the presenter clips that open and close every tutorial.
+"""Miro on camera: the presenter clips that open and close every tutorial.
 
-the owner, 2026-10-13: "put me on camera in the intro and the ending, so viewers
-know a real human is behind the channel". the owner records the clips on a webcam;
+Miro, 2026-10-13: "put me on camera in the intro and the ending, so viewers
+know a real human is behind the channel". Miro records the clips on a webcam;
 tools/presenter/process.py (run on the Mac: the server has one CPU and never
-mattes) takes out the background, sets the owner on the ATLAS set, evens the
+mattes) takes out the background, sets Miro on the ATLAS set, evens the
 loudness to the narration's and writes the finished clips here with a
 manifest. Nothing else touches the face or the voice.
 
-Slots (the owner, 2026-10-13, via the coordinator): ONE intro clip opens every
+Slots (Miro, 2026-10-13, via the coordinator): ONE intro clip opens every
 episode, the channel welcome and every lesson alike; the narrated part after
 it begins "Today we'll be learning about ...". The ending is his whole outro
 take, uncut. 2026-11-14: the recorded outro names an address that no longer
@@ -34,14 +34,14 @@ from pathlib import Path
 DIR_DEFAULT = Path(__file__).resolve().parent / "assets" / "presenter"
 MANIFEST = "manifest.json"
 
-# What the owner says in each clip, word for word (his own wording, 2026-10-13).
+# What Miro says in each clip, word for word (his own wording, 2026-10-13).
 # The captions and the transcript carry these.
 LINES: dict[str, str] = {
-    "intro": ("Welcome back, guys, to my new channel! My name is the owner. "
+    "intro": ("Welcome back, guys, to my new channel! My name is Myron. "
               "Welcome to ATLAS Academy."),
     "outro": ("Thank you guys for watching, make sure to subscribe, like and comment "
               "what video you would like to see next. You can also check out "
-              "agency.example.com, which has all the courses needed and videos, these "
+              "agency.storefront.test, which has all the courses needed and videos, these "
               "videos posted as well. And yeah, I'll see you in the next one."),
 }
 OPENING = "intro"                    # every episode opens with this slot

@@ -1,9 +1,9 @@
-"""Client-site documents are Claude Docs artifacts (the owner's rule, 2026-10-29).
+"""Client-site documents are Claude Docs artifacts (Miro's rule, 2026-10-29).
 
 Every document the sites agent writes for a client site -- a brief, a
 handoff, a report, a proposal, a client guide -- ends up as a Claude Docs
 artifact. ATLAS cannot create one: only `kernel/executor.py` acts, and the
-artifact lives in Claude, reached by the coding agent on the owner's Mac. So:
+artifact lives in Claude, reached by the coding agent on Miro's Mac. So:
 
 1. `agency.draft_doc` (Tier AUTO, ATLAS's own row only) stores the draft in
    `agency_site_docs` and raises the publish card. Its rollback withdraws
@@ -37,7 +37,7 @@ KIND_LABEL = {"brief": "brief", "handoff": "handoff", "report": "report",
 MAX_TITLE = 120
 MAX_BODY = 8000
 MAX_CLIENT = 3000
-# Strict on purpose: the title is shown on the owner's card and reaches the
+# Strict on purpose: the title is shown on Miro's card and reaches the
 # coding agent (inside the wrapped EVIDENCE only). Letters, digits, spaces
 # and plain punctuation; no quotes, backticks, brackets or markup.
 _TITLE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ,.:&()/?!+-]{2,119}$")
@@ -169,7 +169,7 @@ async def draft_doc_dry(slug: str = "", kind: str = "", title: str = "",
     return ActionResult(
         True, f"would store a {KIND_LABEL[kind]} draft for {slug} "
               f"(\"{title.strip()}\", {len(body.strip())} characters) and raise "
-              f"its {PUBLISH} card; nothing is published until the owner approves it")
+              f"its {PUBLISH} card; nothing is published until Miro approves it")
 
 
 async def draft_doc(slug: str, kind: str, title: str, body: str,
@@ -189,7 +189,7 @@ async def draft_doc(slug: str, kind: str, title: str, body: str,
             PUBLISH, {"doc_id": str(did)}, _reason(kind, slug, title, body),
             rollback_plan="cancel the handoff before the coding agent claims it",
             dedup_key=f"sitedoc:{did}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # No card, no draft: a row nobody can approve would wait forever.
         await _set_status(did, "withdrawn", was=("draft",))
         return ActionResult(False, f"document #{did} withdrawn: its publish card "
@@ -239,7 +239,7 @@ def _handoff(doc: dict[str, Any], site: dict[str, Any] | None) -> handoff.Handof
     if source:
         done += f", and the README of {source} names that link on one line"
     return handoff.delegate(
-        what_changed=(f"the owner approved publishing the {KIND_LABEL.get(kind, kind)} "
+        what_changed=(f"Miro approved publishing the {KIND_LABEL.get(kind, kind)} "
                       f"for client site {slug} as a Claude Docs artifact"),
         evidence=evidence,
         source="agency.publish_doc card",

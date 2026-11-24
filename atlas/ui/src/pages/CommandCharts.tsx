@@ -9,7 +9,7 @@ import { stageBreakdown } from "./stageBreakdown";
 import { isoBar, latestLeads, pipelineBars, scaleHeights, shiftBars } from "./chartModel";
 
 /**
- * 3D charts and the lead grid for the Command Center (the owner 2026-10-30).
+ * 3D charts and the lead grid for the Command Center (Miro 2026-10-30).
  * Inline SVG only: extruded bars with front, top and side faces over an
  * isometric floor grid. Reads only. A bar that was not read is a grey dashed
  * box with the word UNKNOWN, never a zero; an empty real result is a real 0

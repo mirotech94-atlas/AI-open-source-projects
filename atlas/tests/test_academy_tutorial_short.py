@@ -1,6 +1,6 @@
 """Teaching Shorts cut from a published tutorial (academy/tutorial_short.py,
 growth plan §4.3): the payoff, the "Stuck?" beat and the quiz, 30-60 s each,
-ending on the answer; promo Shorts at most one in five (the owner, 2026-10-13)."""
+ending on the answer; promo Shorts at most one in five (Miro, 2026-10-13)."""
 from __future__ import annotations
 
 import re
@@ -62,7 +62,7 @@ def _c4(**kw: object) -> tuple[tut.Manifest, ts.Episode]:
 
 
 def test_a_short_is_20_to_40_seconds_with_its_closing_card():
-    """the owner, 2026-10-17: Shorts are 20-40 s; the card naming the longer
+    """Miro, 2026-10-17: Shorts are 20-40 s; the card naming the longer
     lesson is inside the 40."""
     assert (ts.SHORT_MIN, ts.SHORT_MAX) == (20.0, 40.0)
     assert tsh.CUT_MIN == 20.0 and tsh.CUT_MAX + tsh.CLOSE_SECONDS == 40.0
@@ -184,13 +184,13 @@ def test_the_payoff_cut_skips_the_opener_folded_into_the_payoff_chapter():
 
 def test_the_payoff_cut_skips_both_opening_lines_the_intro_covers():
     """Final review I5: since the presenter merge a lesson opens on TWO
-    timings -- the owner's intro take, then the narrated opener -- before the
+    timings -- Miro's intro take, then the narrated opener -- before the
     payoff. The cut starts at the first line at or after intro_seconds."""
     m = _manifest(seconds=300.0, intro_seconds=9.12,
                   chapters=[(0.0, ts.PAYOFF_CHAPTER), (40.0, "What is MCP?"),
                             (200.0, "Stuck? Read this"), (250.0, "Quick quiz"),
                             (285.0, "Recap")],
-                  timings=[(0.8, 3.5, "Hi, I'm the owner."),
+                  timings=[(0.8, 3.5, "Hi, I'm Miro."),
                            (3.5, 9.116, "Welcome back. Under ten minutes..."),
                            (9.116, 14.0, "Here's the result."),
                            (14.5, 30.0, "First, open settings."),
@@ -206,7 +206,7 @@ def test_the_payoff_falls_back_to_the_chapter_start_when_the_intro_covers_every_
     m = _manifest(seconds=300.0, intro_seconds=26.0,
                   chapters=[(0.0, ts.PAYOFF_CHAPTER), (40.0, "What is MCP?"),
                             (285.0, "Recap")],
-                  timings=[(0.8, 3.5, "Hi, I'm the owner."), (3.5, 9.0, "The opener."),
+                  timings=[(0.8, 3.5, "Hi, I'm Miro."), (3.5, 9.0, "The opener."),
                            (25.0, 30.0, "Later line.")])
     payoff = tsh.cuts(m, _ep())[0]
     assert (payoff.start, payoff.end) == (0.0, 30.0)
@@ -256,7 +256,7 @@ def test_promo_shorts_are_at_most_one_in_five():
 
 
 # ------------------------------------------- word-highlight captions (2026-10-16)
-# YouTube Create's animated captions, kept automatic (the owner, 2026-10-16): the
+# YouTube Create's animated captions, kept automatic (Miro, 2026-10-16): the
 # phrase-level cues stay; inside each, only the word being said is royal
 # blue on the white type -- one Dialogue a word, the whole phrase shown,
 # that word coloured. The manifest has line timings only, so the words
@@ -437,7 +437,7 @@ def test_no_shot_is_empty_when_a_line_starts_on_the_cuts_rounded_end():
 
 
 def test_the_hook_is_on_the_first_frame_and_nothing_fades_in():
-    """the owner, 2026-10-17: the hook from frame 0, no fade-in; a fade-out at
+    """Miro, 2026-10-17: the hook from frame 0, no fade-in; a fade-out at
     the end is fine."""
     argv = tut.short_argv("in.mp4", 12.0, 42.0, "out.mp4", frames=_frames(),
                           close="/w/close.png", ass="/w/c.ass")
@@ -519,7 +519,7 @@ def test_the_look_tag_names_the_version_of_the_cut():
 # ------------------------------------------- no music in a Short (rule 22)
 
 def test_a_cut_never_reaches_into_the_end_card_music():
-    """Rule 22 (the owner, 2026-10-17): music under the sting and the end card
+    """Rule 22 (Miro, 2026-10-17): music under the sting and the end card
     only, and a teaching Short has neither. The quiz closes the last chapter,
     whose end is the file's end -- the end card's window -- so the cut stops
     where the window begins; the answer is still the last thing seen."""

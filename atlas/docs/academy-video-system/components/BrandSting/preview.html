@@ -1,0 +1,24 @@
+<!-- @dsCard group="Opening" width=1920 height=1080 subtitle="One second: wordmark, line draws, out" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1920px;height:1080px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);display:grid;place-items:center;overflow:hidden}
+.mark{display:grid;gap:var(--step-3);justify-items:start;animation:fade var(--sting) linear infinite}
+.word{font-size:120px;line-height:1;font-weight:600;letter-spacing:-.02em}
+.word span{color:var(--paper-muted);font-weight:500}
+.line{height:10px;width:100%;background:var(--blue);transform-origin:left;transform:scaleX(0);animation:draw 400ms var(--draw) 200ms infinite}
+@keyframes draw{0%{transform:scaleX(0)}100%{transform:scaleX(1)}}
+@keyframes fade{0%{opacity:0;transform:translateY(16px)}25%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0}}
+.timer{position:absolute;right:var(--safe-16-9);bottom:var(--safe-16-9);color:var(--paper-muted)}
+@media (prefers-reduced-motion:reduce){.mark,.line{animation:none;transform:none;opacity:1}}
+</style></head><body>
+<div class="frame">
+  <div class="mark">
+    <div class="word">Atlas <span>Academy</span></div>
+    <div class="line"></div>
+  </div>
+  <div class="timer support">0:06 → 0:07</div>
+</div>
+</body></html>

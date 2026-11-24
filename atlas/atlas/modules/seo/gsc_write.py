@@ -1,6 +1,6 @@
 """Search Console registration: add a property, verify it, submit a sitemap.
 
-Three Tier 2 actions (a card the owner approves), each with a dry run and a
+Three Tier 2 actions (a card Miro approves), each with a dry run and a
 rollback. They are the only place ATLAS writes to Search Console, and they
 need two scopes the default consent does not carry (`webmasters`,
 `siteverification`), asked for only with `ATLAS_GOOGLE_SEARCH_CONSOLE_WRITE=1`
@@ -10,7 +10,7 @@ and says exactly what to consent; nothing is guessed and nothing is sent.
 Scope kept narrow on purpose:
   * a URL-prefix property, `https://<host>/`, verified with the META tag
     method. DNS verification (a domain property) needs a TXT record, and DNS
-    is Tier 3, permanently denied: that one stays the owner's, at his DNS host.
+    is Tier 3, permanently denied: that one stays Miro's, at his DNS host.
   * a Vercel client preview is refused: previews are noindex on purpose.
   * `verify` goes ahead only when the tag Google issued is already live on the
     page, so it never asks Google to check something that cannot pass.
@@ -285,17 +285,17 @@ def describe(params: dict[str, Any]) -> str:
 # Raising the Tier 2 cards is the missing half: the three actions above only
 # ran if something proposed them, and nothing did, so the Board said "no
 # property" while the approvals list stayed empty. This reads (read-only
-# scope) and proposes; the writes still wait for the owner's approval.
+# scope) and proposes; the writes still wait for Miro's approval.
 
-MMT_DOMAIN = "tutoring.example"
+TUTORCO_DOMAIN = "exampletutor.com"
 
 
 def own_hosts(academy_host: str | None) -> list[str]:
-    """Our own public sites only (the store and TutorSite). Client sites and
+    """Our own public sites only (the store and ExampleTutor). Client sites and
     previews are never registered by us."""
     import os
-    mmt = os.environ.get("MMT_PUBLIC_DOMAIN", MMT_DOMAIN).strip().lower()
-    hosts = [h for h in (str(academy_host or "").lower(), mmt) if h]
+    tutorco = os.environ.get("TUTORCO_PUBLIC_DOMAIN", TUTORCO_DOMAIN).strip().lower()
+    hosts = [h for h in (str(academy_host or "").lower(), tutorco) if h]
     return list(dict.fromkeys(h for h in hosts if _site(f"https://{h}/")[0]))
 
 
@@ -336,6 +336,6 @@ async def raise_cards(academy_host: str | None) -> dict[str, str]:
                 rollback_plan="the action's own rollback removes what it added",
                 dedup_key=f"{action}:{host}")
             out[host] = f"card #{pid} ({action})"
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             out[host] = f"card held: {type(exc).__name__}"
     return out

@@ -38,7 +38,7 @@ geocoding-api.open-meteo.com/v1/serch returned 404 and /v1/search 200
 (curl), so the node fails until the viewer fixes it. The lab uses only the
 Manual Trigger, HTTP Request and Edit Fields (Set v3.4), no credentials.
 
-Added 2026-10-25 (the owner): the one failure Retry On Fail, On Error and an
+Added 2026-10-25 (Miro): the one failure Retry On Fail, On Error and an
 error workflow do not catch -- a workflow that never starts (its trigger
 stopped, or it was turned off) fails nothing, so nothing fires. The answer
 taught is a silent-failure watch, our own build: a second workflow on a

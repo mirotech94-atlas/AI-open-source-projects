@@ -1,7 +1,7 @@
 """ATLAS's face and card: `/api/self`, `/api/self/atlas.vcf`,
 `/api/self/avatar.png`. Read-only, signed-in, mesh-only like the rest of /api.
 
-the owner: "when he calls me the contact photo should show ATLAS or the humanoid."
+Miro: "when he calls me the contact photo should show ATLAS or the humanoid."
 ATLAS cannot set a caller-ID image — no carrier or Twilio API does that. What
 it can do is hand him a contact card carrying its number(s) and its face;
 once saved, the iPhone shows that face whenever the number rings.

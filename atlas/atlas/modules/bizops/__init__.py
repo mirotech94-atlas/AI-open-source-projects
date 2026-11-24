@@ -47,7 +47,7 @@ async def digest_lines(now: datetime | None = None) -> list[str]:
     stamp = f"(read {now:%Y-%m-%d %H:%M} UTC)"
     try:
         r = await store.digest_reads()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return [(f"UNKNOWN: the BizOps figures could not be read "
                  f"({type(exc).__name__}, tried {now:%Y-%m-%d %H:%M} UTC)")]
     _secret, why = stripe_invoice.key()
@@ -100,14 +100,14 @@ async def run_daily() -> dict[str, str]:
     out: dict[str, str] = {}
     try:
         leads = await store.leads_to_onboard()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         leads, out["leads"] = [], f"unreadable: {type(exc).__name__}"
     for lead in leads:
         out[f"onboard:{lead}"] = await _run("bizops.start_onboarding",
                                             {"lead_id": lead}, "a won or paid deal")
     try:
         overdue = await store.overdue_invoices()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         overdue, out["overdue"] = [], f"unreadable: {type(exc).__name__}"
     for inv in overdue:
         out[f"remind:{inv['id']}"] = await _run(
@@ -141,7 +141,7 @@ async def check_overdue() -> Observation:
     now = datetime.now(UTC)
     try:
         rows = await store.overdue_invoices()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("invoices_overdue", Health.UNKNOWN,
                            detail=f"bizops_invoices unreadable: {type(exc).__name__}")
     return Observation("invoices_overdue", Health.DEGRADED if rows else Health.OK,
@@ -155,7 +155,7 @@ async def check_stalled() -> Observation:
     now = datetime.now(UTC)
     try:
         n = await store.stalled_onboardings(STALLED_DAYS)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("onboarding_stalled", Health.UNKNOWN,
                            detail=f"bizops_onboardings unreadable: "
                                   f"{type(exc).__name__}")

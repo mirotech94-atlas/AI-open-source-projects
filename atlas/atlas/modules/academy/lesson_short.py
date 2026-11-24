@@ -1,6 +1,6 @@
 """A Short from one lesson: the part that matters, in the lesson's own voice.
 
-the owner, 2026-10-11: "make the reels shorts about each video and the
+Miro, 2026-10-11: "make the reels shorts about each video and the
 important parts to it as well, not just any random part of the video --
 make it entertaining and animated". The daily Academy reel now takes one
 lesson at a time, in rotation across every course whose lessons are on
@@ -93,7 +93,7 @@ def _order(lesson: str) -> tuple[int, ...]:
 
 
 COURSES_ENV = "ACADEMY_LESSON_COURSES"
-# the owner, 2026-10-12 (the growth plan): business first -- small-business
+# Miro, 2026-10-12 (the growth plan): business first -- small-business
 # owners and freelancers. The adults and 60+ courses wait until the main
 # series has a baseline; ACADEMY_LESSON_COURSES brings them back.
 DEFAULT_COURSES = ("operator", "sell")

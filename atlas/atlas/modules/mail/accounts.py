@@ -3,17 +3,17 @@
 Four mailboxes across two providers, which is why this is a list rather than
 a set of singular GOOGLE_* variables:
 
-    exampleco, owner      Google      personal
+    mirotech, myron      Google      personal
     flycheap, guardian   Zoho IMAP   business
 
 Configured as one line naming the accounts, plus a few variables per account:
 
-    MAIL_ACCOUNTS=exampleco,owner,flycheap,guardian
-    MAIL_EXAMPLECO_KIND=google
-    MAIL_EXAMPLECO_EMAIL=owner@example.com
-    MAIL_EXAMPLECO_REFRESH_TOKEN=...
+    MAIL_ACCOUNTS=mirotech,myron,flycheap,guardian
+    MAIL_MIROTECH_KIND=google
+    MAIL_MIROTECH_EMAIL=owner@example.com
+    MAIL_MIROTECH_REFRESH_TOKEN=...
     MAIL_FLYCHEAP_KIND=imap
-    MAIL_FLYCHEAP_EMAIL=owner@flycheap.example
+    MAIL_FLYCHEAP_EMAIL=owner@example.com
     MAIL_FLYCHEAP_HOST=imap.zoho.com
     MAIL_FLYCHEAP_PASSWORD=...          (a Zoho app password, not the login)
 
@@ -45,11 +45,11 @@ class Account:
     port: int = 993
     # Other addresses that deliver into this same mailbox.
     #
-    # Zoho gives one licence several addresses: owner@flycheap.example,
-    # owner@vault.example and support@vault.example are one INBOX, verified by
+    # Zoho gives one licence several addresses: owner@example.com,
+    # owner@example.com and support@guarder.example.com are one INBOX, verified by
     # identical message counts and the same newest subject. So Guardian mail
-    # is already read -- but a reply the owner sent FROM owner@vault.example does not
-    # match owner@flycheap.example, and the thread would be counted as still
+    # is already read -- but a reply Miro sent FROM owner@example.com does not
+    # match owner@example.com, and the thread would be counted as still
     # waiting on him. Every alias has to count as him.
     aliases: tuple[str, ...] = ()
 
@@ -149,7 +149,7 @@ BULK_HEADERS = ("List-Unsubscribe", "List-Id", "Auto-Submitted")
 
 
 def bulk_headers(headers: list[dict]) -> bool:
-    """True when the message carries a bulk/automated marker header (the owner,
+    """True when the message carries a bulk/automated marker header (Miro,
     2026-11-18: automated senders never count as waiting on him)."""
     names = {str(h.get("name", "")).lower(): str(h.get("value", "")).lower()
              for h in headers or []}

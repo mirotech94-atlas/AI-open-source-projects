@@ -59,16 +59,16 @@ def test_a_missing_demo_is_a_noindex_404():
 
 
 def test_the_royal_demo_block_imports_the_snippet():
-    block = _uncommented(_top_level("client-site.example.com"))
-    assert block.strip() == "import demo_site examplehair"
+    block = _uncommented(_top_level("examplesalon.storefront.test"))
+    assert block.strip() == "import demo_site examplesalon"
 
 
 def test_the_snippet_is_defined_before_it_is_used():
     """Caddy reads a snippet before an import can use it. (The old mapfront
     section is gone from the main Caddyfile, tests/test_agency_caddy.py.)"""
     snippet_at = CADDYFILE.index("\n(demo_site) {")
-    block_at = CADDYFILE.index("\nexamplehair.example.com {")
-    assert CADDYFILE.index("\natlas.example.com {") < snippet_at < block_at
+    block_at = CADDYFILE.index("\nexamplesalon.storefront.test {")
+    assert CADDYFILE.index("\natlas.storefront.test {") < snippet_at < block_at
 
 
 def test_compose_mounts_the_demos_read_only_into_caddy():

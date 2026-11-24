@@ -1,0 +1,37 @@
+<!-- @dsCard group="Teaching" width=1920 height=1080 subtitle="One labeled token, one connector, stops at the node" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1920px;height:1080px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);overflow:hidden}
+.lane{position:absolute;left:var(--safe-16-9);right:var(--safe-16-9);top:50%;transform:translateY(-50%);display:flex;align-items:center}
+.node{width:420px;background:var(--navy-raised);border:2px solid var(--navy-line);border-radius:var(--radius-card);padding:var(--step-3);box-sizing:border-box}
+.node .k{display:block;color:var(--paper-muted);margin-bottom:var(--step-1)}
+.node .v{display:block;font-family:var(--font-mono);color:var(--paper)}
+.node.in{border-color:var(--success)}
+.conn{position:relative;flex:1;height:4px;background:var(--navy-line)}
+.conn::after{content:"";position:absolute;left:0;top:0;height:100%;width:0;background:var(--blue);animation:fill var(--trace) var(--settle) .3s forwards}
+.token{position:absolute;left:0;top:50%;transform:translate(0,-50%);padding:var(--step-1) var(--step-2);border-radius:var(--radius-chip);background:var(--blue);color:var(--on-blue);font-family:var(--font-mono);white-space:nowrap;animation:move var(--trace) var(--settle) .3s forwards}
+.io{position:absolute;left:var(--safe-16-9);bottom:var(--safe-16-9);display:flex;gap:var(--step-6);color:var(--paper-muted)}
+.io b{color:var(--paper);font-weight:500;font-family:var(--font-mono)}
+@keyframes fill{to{width:100%}}
+@keyframes move{to{left:calc(100% - 100%);transform:translate(calc(var(--w) - 100%),-50%)}}
+@media (prefers-reduced-motion:reduce){.conn::after{animation:none;width:100%}.token{animation:none;transform:translate(0,-50%)}}
+</style></head><body>
+<div class="frame">
+  <div class="lane">
+    <div class="node"><span class="k support">Inquiry</span><span class="v callout">body: "Can I move…"</span></div>
+    <div class="conn" id="c"><span class="token value-tag" id="t">status: ready</span></div>
+    <div class="node in"><span class="k support">Review</span><span class="v callout">draft: "Hi Dana, yes…"</span></div>
+  </div>
+  <div class="io support">
+    <span>Input <b>1 inquiry</b></span><span>Output <b>1 draft · status ready</b></span>
+  </div>
+</div>
+<script>
+  // Compute the token's travel so it stops exactly at the next node, not past it.
+  var c=document.getElementById('c'),t=document.getElementById('t');
+  t.style.setProperty('--w',(c.clientWidth)+'px');
+</script>
+</body></html>

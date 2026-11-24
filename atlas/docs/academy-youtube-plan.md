@@ -1,6 +1,6 @@
 # ATLAS Academy on YouTube — the title, tag and timing plan
 
-The owner, 2026-10-11: "search for new titles for each video to keep it attractive,
+Miro, 2026-10-11: "search for new titles for each video to keep it attractive,
 add under 4 / 5 / 10 minutes depending on the video so people can learn a lot
 in a set time; look at other videos that do the same thing, improve from
 them, their tags, how they gain viewers; make a plan and stick to it."
@@ -58,7 +58,7 @@ Most-viewed videos since 2025-10 for our eight topics
    truth for which formula applies.
    A series may add one proven hook in front ("You're not behind (yet):"),
    never two, never a money claim, never "secret", never a name we don't own.
-3. **The video opens on the finished result** (The owner, 2026-10-17;
+3. **The video opens on the finished result** (Miro, 2026-10-17;
    `docs/academy-video-system/episode-structure.md` "Opening (0–20 s)",
    `narration.md`). 0–6 s: the result on screen from frame 0 (ResultTitle),
    its badge (`Episode.result`, three words or fewer; `success` only when
@@ -72,7 +72,7 @@ Most-viewed videos since 2025-10 for our eight topics
    welcome word (`tutorials.heard_refusal`); a file that cannot be heard is
    held. Only the channel welcome still says "Welcome, guys, to my new
    channel! ...". Superseded: the 2026-10-12 "Welcome back, guys! ... in
-   under <N> minutes" opener and the owner's on-camera intro (2026-10-13).
+   under <N> minutes" opener and Miro's on-camera intro (2026-10-13).
 4. **Thumbnail carries the time badge** ("5 MIN") as a royal-blue badge, big
    text of 2–4 words, one 3D focal object, the level chip.
 5. **(Superseded 2026-10-18 by rules 27–28.) Tags: 20–25, under 500 characters**, in this order: the series head
@@ -82,7 +82,7 @@ Most-viewed videos since 2025-10 for our eight topics
    #AIAgents, #DGXSpark, #Automation).
 6. **Description** opens with the level and the time ("Level 0 · Basics ·
    5 minutes"), then one line of what you'll be able to do, the comment
-   question, chapters from 0:00, the links, agency.example.com/academy/, the hashtags,
+   question, chapters from 0:00, the links, agency.storefront.test/academy/, the hashtags,
    and the AI label last.
 7. **Measure, then adjust, weekly.** Every Monday ATLAS reads each video's
    views, likes and comments from the Data API (CTR is not exposed by the
@@ -94,7 +94,7 @@ Most-viewed videos since 2025-10 for our eight topics
 
 ## What the reference tutorials added (2026-10-11)
 
-The owner, 2026-10-11, pointing at the searches "how to use n8n", "claude
+Miro, 2026-10-11, pointing at the searches "how to use n8n", "claude
 tutorials", "hermes agent", "agentic ai" and "n8n labs": "don't mock them
 but add improvements to your own and learn from them". The evidence is in
 `docs/academy-reference-learnings.md` (128 videos, YouTube Data API,
@@ -127,7 +127,7 @@ but add improvements to your own and learn from them". The evidence is in
     only credential-free nodes (a trigger, the free no-key Open-Meteo
     search, Edit Fields), so an import runs as it is.
 12. **Lab files are free downloads from the store itself:**
-    `https://agency.example.com/free/<file>`.
+    `https://agency.storefront.test/free/<file>`.
     - **Where they come from.** `tutorial_series.LAB_FILES` holds them.
       `site.render` writes them, so the store republishes them after a
       deploy. They are never on a third-party host, behind an email gate, or
@@ -143,7 +143,7 @@ but add improvements to your own and learn from them". The evidence is in
     names at least one failure and its fix: a red node in n8n #1, "No tool?
     Check the path" in Claude #1, the "Not working?" checklist in Claude #2,
     and the lab's Stuck? beat in n8n #2.
-14. **A person talking, with feelings** (The owner, 2026-10-12: "don't make
+14. **A person talking, with feelings** (Miro, 2026-10-12: "don't make
     him sound like a robot", "make it like a human talking, not an AI").
     Contractions, short sentences, "you". Now and then a rhetorical question
     or a light, generic aside: never at the viewer's expense, never a made-up
@@ -161,7 +161,7 @@ but add improvements to your own and learn from them". The evidence is in
     "seamless", "leverage", "unlock", "game-changer", "it's important to
     note", "let's dive in" and "in conclusion".
 
-## The growth rules (The owner approved 2026-10-13, `docs/academy-growth-plan.md`)
+## The growth rules (Miro approved 2026-10-13, `docs/academy-growth-plan.md`)
 
 15. **Upload metadata.** Category 27 (Education), `defaultLanguage` and
     `defaultAudioLanguage` `en-GB`, and every tag `full_tags` produced (the
@@ -184,32 +184,32 @@ but add improvements to your own and learn from them". The evidence is in
     step only. A recap scene may show the answer again.
 20. **Next episode out loud, pinned comment, end screen.** The recap's last
     line names the next episode in the series (`next_line`); since
-    2026-10-17 that sentence is said over the EndCard. The EndCard (The owner,
+    2026-10-17 that sentence is said over the EndCard. The EndCard (Miro,
     2026-10-17; `docs/academy-video-system/components/EndCard`) is the last
     15 s or more, to the last frame, on flat navy: "You now have <result>.",
     the next lesson (the next scripted episode's title up to its measured
     minutes, else the series playlist; never an invented title) and why it
-    follows, and "Practice files: agency.example.com/academy/ (link in the
+    follows, and "Practice files: agency.storefront.test/academy/ (link in the
     description)" only when the lesson has lab files. The right 640 px stay
     empty: no Subscribe button, no painted thumbnail, nothing that loops.
-    The owner's outro clip and "Thanks for watching" are gone. The pinned comment
+    Miro's outro clip and "Thanks for watching" are gone. The pinned comment
     (quiz question + lab link) is a Tier 2 card (`academy.pin_comment`). End
-    screens are set by the owner in Studio (no API).
+    screens are set by Miro in Studio (no API).
 21. **Measure.** The Monday table carries, per tutorial: views, likes,
     comments, estimated minutes watched, average view duration and average
     view percentage from the Analytics API. A figure that cannot be read is
     UNKNOWN. Any title or thumbnail change that follows is a Tier 2 card.
 22. **Background music.** Music plays only under the 1 s brand sting and
-    the end card; explanations are voice only (The owner, 2026-10-17;
+    the end card; explanations are voice only (Miro, 2026-10-17;
     docs/academy-video-system/narration.md, "Delivery": "ducked to nothing
     beneath explanations"). The bed is the same quiet synthesized one
-    (`tutorial_music`), at −16 dB inside its windows (The owner, 2026-10-13:
+    (`tutorial_music`), at −16 dB inside its windows (Miro, 2026-10-13:
     "make sure it isn't too loud"), ducked by the voice where narration
     overlaps a window, faded over the 300 ms `title-rise` token just inside
     each window edge, and multiplied by zero everywhere else. The sting's
     window is 6–7 s and the end card's is the EndCard's own span to the end
     (2026-10-17; before then the sting opened the file and the card was the
-    3D one after the owner's clip, or the narrated ending); the windows are
+    3D one after Miro's clip, or the narrated ending); the windows are
     recorded in the manifest. A teaching Short cut from such a render
     carries no music: its cut stops before the end card's window. Shorts
     cut from renders made before 2026-10-17 (no windows in the manifest)
@@ -217,38 +217,38 @@ but add improvements to your own and learn from them". The evidence is in
     Superseded (2026-10-13): one bed under the whole lesson, −24 dB under
     speech and −16 dB in the open, 1.5 s in and 3 s out.
 23. **Posting by itself.** Since 2026-10-15 tutorials go public
-    automatically once every gate passes (The owner); a failed gate is a card in
+    automatically once every gate passes (Miro); a failed gate is a card in
     #atlas-academy-videos. `ACADEMY_TUTORIALS_AUTOPUBLISH=off` brings back
     the review card; the automatic cap is seven a day, one per series.
-24. **The AI voice is disclosed** (The owner, 2026-10-17;
+24. **The AI voice is disclosed** (Miro, 2026-10-17;
     `docs/academy-video-system/narration.md`). Every tutorial description
     carries "Narration: synthetic voice (AI). Script written and checked by
     ATLAS Academy." above "Made with AI", and every teaching-Short caption
     "Synthetic voice (AI)."; `description_refusal` refuses one without it.
 25. **`status.containsSyntheticMedia = true`** on every tutorial upload and
-    visibility change (The owner, 2026-10-17; `docs/academy-video-system/narration.md`;
+    visibility change (Miro, 2026-10-17; `docs/academy-video-system/narration.md`;
     the field per developers.google.com/youtube/v3/docs/videos, read
     2026-10-17). The Academy's Shorts post through Postiz, which cannot set
-    it, so `academy.flag_synthetic_short` (Tier 1, the owner 2026-10-17: "yes add
+    it, so `academy.flag_synthetic_short` (Tier 1, Miro 2026-10-17: "yes add
     the AI flag for Shorts too") sets it after each teaching Short and in a
     daily 14-day catch-up, on the recorded id only, every other status field
     resent as read.
-26. **End screens to add, every Monday** (The owner, 2026-10-17;
-    `docs/academy-video-system/episode-structure.md`). The owner adds the native
+26. **End screens to add, every Monday** (Miro, 2026-10-17;
+    `docs/academy-video-system/episode-structure.md`). Miro adds the native
     element in Studio; the Monday digest lists each tutorial public in the
     last 7 days with the next public episode, else its series playlist, else
     "Start here"; a failed read says UNKNOWN.
 
-## The video system pack (The owner 2026-10-18, video system pack)
+## The video system pack (Miro 2026-10-18, video system pack)
 
 `docs/academy-video-system/tags-and-hashtags.md` and
 `series-ai-explained-and-security.md`. These supersede rule 5 (tags and
 hashtags) and the head of rule 6 (the description's first lines); every
 other rule stands.
 
-27. **Tags: channel, series, lesson, under 500** (The owner 2026-10-18, video
+27. **Tags: channel, series, lesson, under 500** (Miro 2026-10-18, video
     system pack). Every upload carries the five channel tags (`atlas
-    academy`, `atlasacademyphp`, `owner atlas academy`, `practical ai
+    academy`, `atlasacademyphp`, `miro atlas academy`, `practical ai
     tutorial`, `ai automation for beginners`), then its series' set in the
     spec's exact phrases (`tutorial_series.SERIES_TAGS`), then 3–5 tags
     specific to the lesson: the exact tool, node or feature name
@@ -261,9 +261,9 @@ other rule stands.
     minimal role in discovery and states no counting rule). Fewer than three
     lesson tags that fit hold the episode with the reason
     (`tags_refusal`); nothing is padded or cut. The Claude + n8n project
-    takes the Claude / MCP / Skills set (the spec names none; the owner to
+    takes the Claude / MCP / Skills set (the spec names none; Miro to
     confirm).
-28. **Hashtags: 3–5, at the end, the strongest three first** (The owner
+28. **Hashtags: 3–5, at the end, the strongest three first** (Miro
     2026-10-18, video system pack). One line of the series' hashtags
     (`SERIES_HASHTAGS`, lower case as the spec writes them) just above the
     synthetic-voice line and "Made with AI". YouTube shows the first three
@@ -273,13 +273,13 @@ other rule stands.
     description with a hashtag in its body, more than five, or `#shorts`
     first.
 29. **The description's first two lines are the result and the
-    prerequisite** (The owner 2026-10-18, video system pack): "What you'll have:
+    prerequisite** (Miro 2026-10-18, video system pack): "What you'll have:
     <result>." then "What you need: …" (rule 10's `Episode.needs`; an
     episode without needs shows its level and time there). Then the level
     and time, the summary, the lab files, chapters, links, hashtags, the
     voice line and the label. Where AI Is Going adds "Opinion: …" under the
     summary, and its scope line says "an opinion piece on …".
-30. **Title at most 60 characters, the tool name front-loaded** (The owner
+30. **Title at most 60 characters, the tool name front-loaded** (Miro
     2026-10-18, video system pack). Length is a check, never a truncation:
     past 60 the level 0/1 formula's closing aside ("(for total beginners)",
     "(step by step)") is dropped first, since it carries no search term;
@@ -288,23 +288,23 @@ other rule stands.
     project and business series outright. `tool_first()` lists the hooks
     to reword (project #1-#4, business #2-#4, agents #2); changing a public
     title is a Tier 2 card (rule 7).
-31. **Chapter names are search terms** (The owner 2026-10-18, video system pack):
+31. **Chapter names are search terms** (Miro 2026-10-18, video system pack):
     "Add the Wait for approval node", never "Step 3". `chapters_refusal`
     refuses a bare "Step N" / "Part N" / "Section N".
-32. **Three more series** (The owner 2026-10-18, video system pack): AI Explained
+32. **Three more series** (Miro 2026-10-18, video system pack): AI Explained
     (8 concept lessons, Level 0 then 1), AI Security (8, every one ends with
     a fix verified on camera), Where AI Is Going (6, one a month, opinion
     labelled as opinion). Planned in `tutorial_series_ai.py`: each outline
     opens with the 0–3 s result, the demo anchor (or the attack, on our own
     test setup) and the checkpoint (or the verified fix). Episodes that need
-    a screen recording or the owner on camera are held (`HOLDS`,
+    a screen recording or Miro on camera are held (`HOLDS`,
     `tutorial_series.held`): the writer skips them, render refuses them, the
     lineup passes over them and the runway does not count them. Writable
     today: AI Explained #1, #6, #7 and Where AI Is Going #6. Security rules:
     our own accounts and test data only, never a working attack on a third
     party, the defense named before the attack is fully shown, no fear
     music, no red flashing.
-33. **Study the human tutorials first** (The owner 2026-10-18, video system pack).
+33. **Study the human tutorials first** (Miro 2026-10-18, video system pack).
     Before an episode is written, `tools/academy_refs/study.py` finds the
     three most-viewed human-made videos on its topic (4–25 min, not ours),
     measures their pace, first action and chapters, and the writer commits a
@@ -318,9 +318,9 @@ other rule stands.
 Teaching Shorts (plan §4.3): two or three 30-60 s cuts per lesson, from its
 `payoff`, its "Stuck?" beat and its quiz, each ending on the answer, posted
 to YouTube and TikTok with the full video linked in the caption. Promo
-Shorts are at most one in five (The owner, 2026-10-13).
+Shorts are at most one in five (Miro, 2026-10-13).
 
-The teaching Short's slot (The owner, 2026-10-13: two Shorts a day):
+The teaching Short's slot (Miro, 2026-10-13: two Shorts a day):
 it posts at or after 23 UTC (`ACADEMY_TEACHING_HOUR_UTC`) from its own
 scheduler tick (`academy_teaching`, `tutorials.teaching_tick`), not from the
 17 UTC tutorial tick, and only on alternate New York days (even day of the

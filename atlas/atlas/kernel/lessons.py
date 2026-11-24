@@ -1,6 +1,6 @@
 """The lessons ledger. A mistake is allowed once; it is not allowed forever.
 
-the owner's rule, verbatim: "learn all the skills and improve based on what it has
+Miro's rule, verbatim: "learn all the skills and improve based on what it has
 learned and made mistakes on; mistakes are okay, permanent mistakes
 unacceptable." This file is the mechanism for the second half of that
 sentence, and it has exactly two moving parts:
@@ -144,7 +144,7 @@ async def record(
                 "UPDATE lessons SET times = times + 1, last_at = now() "
                 "WHERE id = $1", int(existing["id"]))
             return int(existing["id"])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not read the ledger: %s", exc)
         return 0
 
@@ -154,7 +154,7 @@ async def record(
             Kind.PROCEDURAL, NAMESPACE, lesson,
             meta={"kind": kind, "agent": agent, "action": action},
             importance=0.7)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not remember %r: %s", lesson[:60], exc)
 
     try:
@@ -163,7 +163,7 @@ async def record(
                                     memory_id)
                VALUES ($1,$2,$3,$4,$5,$6) RETURNING id""",
             kind, agent, action, key, lesson, memory_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not write the ledger: %s", exc)
         return 0
     return int(row["id"]) if row else 0
@@ -207,7 +207,7 @@ async def blocked(action: str, params: dict) -> str | None:
                 ORDER BY times DESC, last_at DESC LIMIT 1""",
             action, params_key(params or {}), list(BLOCKING_KINDS),
             REPEATS_BEFORE_BLOCK, WINDOW_DAYS)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not check the never-repeat ledger: %s", exc)
         return None
     if row is None:
@@ -229,7 +229,7 @@ async def clear(action: str, params: dict, why: str) -> None:
                 WHERE action = $1 AND params_key = $2 AND cleared_at IS NULL
                   AND kind = ANY($3)""",
             action, key, list(BLOCKING_KINDS))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not clear %s: %s", action, exc)
         return
     await record("told", f"{action} is different now: {why}",
@@ -247,7 +247,7 @@ async def reblock(action: str, params: dict) -> None:
             """UPDATE lessons SET cleared_at = NULL
                 WHERE action = $1 AND params_key = $2 AND kind = ANY($3)""",
             action, params_key(params or {}), list(BLOCKING_KINDS))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not re-block %s: %s", action, exc)
 
 
@@ -265,12 +265,12 @@ async def for_task(agent: str, task: str) -> str:
                                    limit=MAX_FOR_TASK):
             if atlas_authored((memory.meta or {}).get("kind"), memory.content):
                 lines.append(_one_line(memory.content))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not recall for %s: %s", agent, exc)
 
     try:
         # `told` is excluded: a clearance is bookkeeping for `clear()`, not
-        # guidance. "He said cloudco.restart is different now" in a prompt
+        # guidance. "He said cloudhost.restart is different now" in a prompt
         # reads as permission, which is the one thing a lesson must never be.
         rows = await fetch_all(
             """SELECT lesson, kind FROM lessons
@@ -279,7 +279,7 @@ async def for_task(agent: str, task: str) -> str:
                   AND last_at > now() - make_interval(days => $2)
                 ORDER BY times DESC, last_at DESC LIMIT $3""",
             agent, WINDOW_DAYS, MAX_FOR_TASK)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not read recent lessons: %s", exc)
         rows = []
     for row in rows:
@@ -311,7 +311,7 @@ async def from_review(day: date) -> int:
     try:
         row = await fetch_one(
             "SELECT went_wrong FROM reviews WHERE day = $1", day)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lessons: could not read the review for %s: %s", day, exc)
         return 0
     if row is None:

@@ -101,7 +101,7 @@ async def stripe_mapfront(request: Request) -> Response:
     kind, event_id = str(event.get("type") or ""), str(event.get("id") or "")
     try:
         recorded, what = await payments.handle(event)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("stripe-mapfront %s %s not recorded (%s)", kind, event_id,
                   type(exc).__name__)
         return PlainTextResponse("not recorded", status_code=500)

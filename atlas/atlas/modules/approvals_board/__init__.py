@@ -9,7 +9,7 @@ holds the two things that are not drawing:
     `conversations.create` when SLACK_APPROVALS_CHANNEL is not a channel id
     and none was made before. Idempotent: a channel of that name that already
     exists (`name_taken`) is found and joined, not duplicated. Every approver
-    in SLACK_APPROVER_IDS is invited, so the owner is in it. The id is saved in
+    in SLACK_APPROVER_IDS is invited, so Miro is in it. The id is saved in
     `approvals_board`. Rollback: the channel is archived (only one this
     action created).
   * the `board` check: whether the board was drawn recently. UNKNOWN when it

@@ -16,7 +16,7 @@ from atlas.kernel.contracts import Health
 from atlas.modules import localstack
 
 BASE = "http://host.docker.internal:18000/v1"
-BASE2 = "http://10.0.0.9:8000/v1"
+BASE2 = "http://10.2.6.9:8000/v1"
 
 
 @pytest.fixture(autouse=True)
@@ -72,13 +72,13 @@ async def test_model_with_two_endpoints_one_down_is_degraded_not_ok(monkeypatch)
     monkeypatch.setenv("LOCAL_LLM_BASE_URL_2", BASE2)
 
     def handler(r):
-        if r.url.host == "10.0.0.9":
+        if r.url.host == "10.2.6.9":
             raise httpx.ConnectError("refused")
         return _models("qwen3.8:27b")
 
     _serve(monkeypatch, handler)
     obs = await localstack.check_model()
-    assert obs.health is Health.DEGRADED and "10.0.0.9" in obs.detail
+    assert obs.health is Health.DEGRADED and "10.2.6.9" in obs.detail
 
 
 async def test_speed_unknown_with_no_sample_in_the_window():

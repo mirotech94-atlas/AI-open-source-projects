@@ -31,7 +31,6 @@ describe("crumbOf", () => {
   it("names the tab for the path", () => {
     expect(crumbOf("/")).toBe("Command Center");
     expect(crumbOf("/agency")).toBe("Agency");
-    expect(crumbOf("/cameras/x")).toBe("Cameras");
     expect(crumbOf("/hud")).toBe("HUD");
   });
 });

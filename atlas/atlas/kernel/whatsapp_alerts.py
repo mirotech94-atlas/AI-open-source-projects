@@ -7,10 +7,10 @@ for "degraded", never twice for the same reading.
 
 How it stays inside CLAUDE.md:
   * read-only scan of `observations`; the only send is the Tier 1 action
-    `mmt.notify_alert`, reached through `executor.execute` (invariant 1);
+    `tutorco.notify_alert`, reached through `executor.execute` (invariant 1);
   * `ATLAS_WATCH_ONLY` sends nothing (the job logs "would send"; the executor
     refuses too);
-  * dedupe: one ping per failing reading (`mmt_owner_outbox` unique slot), plus a
+  * dedupe: one ping per failing reading (`tutorco_owner_outbox` unique slot), plus a
     per-hour cap (`WHATSAPP_ALERTS_PER_HOUR`, default 3);
   * quiet hours (`QUIET_HOURS`) and a closed 24 h window (the owner has not
     written in 24 h, so free-form text would be refused) go to ONE Slack note
@@ -31,7 +31,7 @@ from .executor import ExecutionRequest, execute, watch_only
 
 log = logging.getLogger("atlas.whatsapp_alerts")
 
-ACTION = "mmt.notify_alert"
+ACTION = "tutorco.notify_alert"
 ALERT_KIND = "alert"
 DEFAULT_PER_HOUR = 3
 LOOKBACK = timedelta(minutes=30)     # a flip older than this is no longer news
@@ -117,7 +117,7 @@ async def window_open(now: datetime) -> bool:
     """Whether the owner wrote within 24 h. Unreadable counts as closed."""
     try:
         at = await _last_inbound()
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("alerts: last inbound unreadable: %s", type(exc).__name__)
         return False
     return at is not None and now - at <= WINDOW
@@ -126,7 +126,7 @@ async def window_open(now: datetime) -> bool:
 async def sent_last_hour() -> int:
     from .state import fetch_one
     row = await fetch_one(
-        "SELECT count(*) AS n FROM mmt_owner_outbox WHERE kind = $1 AND "
+        "SELECT count(*) AS n FROM tutorco_owner_outbox WHERE kind = $1 AND "
         "status <> 'failed' AND created_at > now() - interval '1 hour'", ALERT_KIND)
     return int(row["n"]) if row else 0
 
@@ -144,7 +144,7 @@ async def _slack_note(flip: dict[str, Any], why: str) -> bool:
             title="A check just failed",
             body=say(flip["property"], flip["check_name"]) + f" ({why})",
             severity=Severity.HIGH, kind="alert", topic="alerts"))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("alerts: the Slack note failed: %s", type(exc).__name__)
         return False
     return bool(used)
@@ -157,13 +157,13 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
     now = now or datetime.now(UTC)
     try:
         flips = await _flips(now)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("alerts: checks unreadable: %s", type(exc).__name__)
         return {"error": "unreadable"}
     if not flips:
         return {"flips": 0}
     if watch_only():
-        log.info("whatsapp alerts: ATLAS_WATCH_ONLY is on, would tell the owner about %d "
+        log.info("whatsapp alerts: ATLAS_WATCH_ONLY is on, would tell Miro about %d "
                  "failing check(s)", len(flips))
         return {"watch_only": True, "would_send": len(flips)}
     sent = slacked = 0
@@ -178,7 +178,7 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
             if await sent_last_hour() >= per_hour():
                 log.info("whatsapp alerts: hourly cap reached")
                 break
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("alerts: cap unreadable: %s", type(exc).__name__)
             break
         result = await execute(ExecutionRequest(

@@ -1,0 +1,281 @@
+# agency.storefront.test on the public internet (docker-compose.local.yml, profile
+# `public`, service shop-public). Automatic HTTPS (HTTP-01 / TLS-ALPN-01) for
+# this one name only; certificates persist in the shop_public_caddy volume.
+#
+# Exposed: the static storefront, /public/academy/* (the store's own API
+# calls) and TWO webhooks: POST /webhooks/stripe-academy and POST /webhooks/twilio/whatsapp (Twilio's WhatsApp
+# sandbox; signed, owner-only and read-only in the API, body capped here, rate
+# limited in the API because stock Caddy has no rate_limit module). Nothing
+# else (but the one-time sensor clip link, GET /media/clipv.<token>): no /api, /hud,
+# /dashboard, /app, admin, portal, GitLab, no other /webhooks/*, no other /public/* (site-chat, call-me are not the store's). Any other Host,
+# on 80 or 443, gets 421. Admin API off, HTTP/3 off (only TCP 80/443 are
+# forwarded).
+#
+# PUBLIC_CADDY_EXTRA is empty in production. For a local test only, set it to
+# `local_certs` (self-signed, no ACME) in the environment of `docker compose`.
+# 2026-11-13: ONE Caddy owns the router's 80/443 (philo-leads' philo-caddy-1).
+# It terminates TLS for agency.storefront.test and proxies to this container's plain
+# HTTP port (127.0.0.1:18082 on the host); see philo-leads deploy/Caddyfile.
+{
+	admin off
+	auto_https off
+	servers {
+		protocols h1
+	}
+	{$PUBLIC_CADDY_EXTRA}
+}
+
+http://agency.storefront.test {
+	@wrong not host agency.storefront.test
+	handle @wrong {
+		respond "misdirected" 421
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		?Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	handle /public/academy/* {
+		reverse_proxy api:8080 {
+			header_up Host api:8080
+			# Nothing the client sent may speak for the proxy. XFF is replaced
+			# by Caddy with the peer it sees (OrbStack shows the docker gateway,
+			# not the real client), so the API is told to treat this traffic as
+			# public: the marker is overwritten here, never passed through.
+			header_up -X-Forwarded-For
+			header_up -X-Real-IP
+			header_up -Forwarded
+			header_up -X-Atlas-Device
+			header_up X-Atlas-Public 1
+		}
+	}
+
+	# Stripe's signed ATLAS Academy webhook (2026-11-13): POST only, body capped,
+	# verified in the API against the endpoint's signing secret (401 without a
+	# valid Stripe-Signature, 503 while no secret is set).
+	@stripe {
+		method POST
+		path /webhooks/stripe-academy
+	}
+	handle @stripe {
+		request_body {
+			max_size 256KB
+		}
+		reverse_proxy api:8080 {
+			header_up Host api:8080
+			header_up -X-Forwarded-For
+			header_up -X-Real-IP
+			header_up -Forwarded
+			header_up -X-Atlas-Device
+			header_up X-Atlas-Public 1
+		}
+	}
+
+	# Twilio's inbound WhatsApp webhook: the one POST path. A GET or any other
+	# /webhooks/* path does not match and falls through to the static files.
+	@whatsapp {
+		method POST
+		path /webhooks/twilio/whatsapp
+	}
+	handle @whatsapp {
+		request_body {
+			max_size 8KB
+		}
+		reverse_proxy api:8080 {
+			header_up Host api:8080
+			# Same rules as above: the marker is overwritten, nothing the client
+			# sent speaks for the proxy. X-Twilio-Signature passes through: it is
+			# what the API verifies (over the public URL, from a setting).
+			header_up -X-Forwarded-For
+			header_up -X-Real-IP
+			header_up -Forwarded
+			header_up -X-Atlas-Device
+			header_up X-Atlas-Public 1
+		}
+	}
+
+	# One home-sensor clip for Twilio (WHATSAPP_CLIP_VIDEO): exactly
+	# /media/clipv.<43 URL-safe characters>, GET or HEAD. The token is 256 bits,
+	# works five minutes and ends at the first full download (atlas/modules/
+	# sensors/clip_share.py). No wildcard on /media, no listing: any other /media
+	# path falls through to the static files and 404s.
+	@clipvideo {
+		method GET HEAD
+		path_regexp clipv ^/media/clipv\.[A-Za-z0-9_-]{43}$
+	}
+	handle @clipvideo {
+		reverse_proxy api:8080 {
+			header_up Host api:8080
+			header_up -X-Forwarded-For
+			header_up -X-Real-IP
+			header_up -Forwarded
+			header_up -X-Atlas-Device
+			header_up X-Atlas-Public 1
+		}
+	}
+
+	# The website contact form (2026-11-14): one exact POST path, body capped,
+	# stored first in the API and delivered by the executor. The API is told
+	# the traffic is public by a marker overwritten here, never passed through.
+	@contact {
+		method POST
+		path /public/agency/contact
+	}
+	handle @contact {
+		request_body {
+			max_size 16KB
+		}
+		reverse_proxy api:8080 {
+			header_up Host api:8080
+			header_up -X-Forwarded-For
+			header_up -X-Real-IP
+			header_up -Forwarded
+			header_up -X-Atlas-Device
+			header_up X-Atlas-Public 1
+		}
+	}
+
+	# Liveness for an outside monitor (2026-11-15): exactly GET /healthz, no
+	# wildcard and no second path. It is rewritten to the API's /public/ping,
+	# which answers a fixed {"status","time"} and nothing else (the richer
+	# mesh-only /healthz is not what this reaches). Tiny body cap, no cookie or
+	# credential passed on, marker overwritten as everywhere else.
+	@healthz {
+		method GET
+		path /healthz
+	}
+	handle @healthz {
+		request_body {
+			max_size 1KB
+		}
+		rewrite * /public/ping
+		reverse_proxy api:8080 {
+			header_up Host api:8080
+			header_up -X-Forwarded-For
+			header_up -X-Real-IP
+			header_up -Forwarded
+			header_up -X-Atlas-Device
+			header_up -Cookie
+			header_up -Authorization
+			header_up X-Atlas-Public 1
+			header_down -Server
+		}
+	}
+
+	handle /public/* {
+		respond "not found" 404
+	}
+
+	# ------------------------------------------------------------ one host
+	# 2026-11-14 (Miro): agency.storefront.test is the only agency name. Layout:
+	#   /                  the agency landing (atlas/modules/agency/landing,
+	#                      mounted read-only at /srv/landing), also /thanks/,
+	#                      /fonts/*, /mapfront-icon.png
+	#   /academy/          the whole store: /academy/join /academy/recover
+	#                      /academy/lessons /academy/help /academy/free /academy/blog
+	#                      /academy/videos /academy/terms ... product dirs,
+	#                      /academy/catalog.json, /academy/assets. The old bare
+	#                      paths 308-redirect there (@oldstore below), so paid
+	#                      links already sent keep working
+	#   /preview/<slug>/   a prospect's preview (/srv/sites/<slug>)
+	# robots.txt, sitemap.xml and llms.txt: ONE of each for the host, the
+	# landing's, served at the root. robots.txt names two sitemaps: the
+	# landing's /sitemap.xml and the store's /sitemap-academy.xml (the store
+	# build writes that one, and no robots.txt). The store's own llms.txt is
+	# served at /academy/llms.txt and the landing's llms.txt links to it.
+
+	# The old bare store paths (2026-11-16): the whole store now lives under
+	# /academy/, but paid, Stripe-return, receipt, recover and unsubscribe links
+	# already sent point at the bare paths. 308 keeps the method and, with {uri},
+	# the query string. Only the store's own top-level names are listed: the
+	# landing's /contact.js, /fonts/*, /thanks, /robots.txt, /sitemap.xml,
+	# /llms.txt, the store's /sitemap-academy.xml, /preview/*, /public/*, /media/*,
+	# /healthz and the webhooks are never redirected. A new store top-level name
+	# needs a line here (tests/test_academy_mount.py fails until it has one).
+	@oldstore {
+		path /catalog.json /assets /assets/* /free /free/* /blog \
+			/blog/* /videos /videos/* /updates /updates/* /lessons \
+			/lessons/* /join /join/* /recover /recover/* /help \
+			/help/* /terms /terms/* /privacy /privacy/* /refunds \
+			/refunds/* /contact /contact/* /all-four /all-four/* /safe-ai-operator \
+			/safe-ai-operator/* /sell-with-ai /sell-with-ai/* /ai-for-every-age /ai-for-every-age/* /30-business-lessons \
+			/30-business-lessons/* /family-ai-scam-defence-workbook /family-ai-scam-defence-workbook/* /local-business-automation-pack /local-business-automation-pack/* /claude-obsidian-vault-kit \
+			/claude-obsidian-vault-kit/*
+	}
+	redir @oldstore /academy{uri} 308
+
+	# A preview is model-written HTML under a path of the store's origin, so it
+	# must not run as that origin: the CSP sandbox (no allow-same-origin) gives
+	# it an opaque origin, with no access to the store's storage or API.
+	# Read-only mount; slug = first path segment, one valid slug label;
+	# dotfiles never served; no directory listing (no `browse`).
+	@slashless path_regexp slashless ^/preview/([a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?)$
+	redir @slashless /preview/{re.slashless.1}/ 308
+	@preview path_regexp preview ^/preview/([a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?)(/.*)$
+	handle @preview {
+		@hidden path */.*
+		respond @hidden "not here" 404
+		root * /srv/sites/{re.preview.1}
+		rewrite * {re.preview.2}
+		encode zstd gzip
+		header {
+			Content-Security-Policy "sandbox allow-scripts allow-forms allow-popups"
+			X-Frame-Options "SAMEORIGIN"
+			Permissions-Policy "sensor=(), microphone=(), geolocation=()"
+			Cache-Control "no-cache"
+		}
+		file_server {
+			hide .*
+		}
+	}
+
+	# The landing: one HTML file with inline CSS and SVG plus one self-hosted
+	# font. The CSP allows inline styles and same-origin images and fonts,
+	# nothing else; its one form posts to /public/agency/contact (script-src 'self'). `templates` renders exactly one
+	# thing into it: the postal address from AGENCY_POSTAL_ADDRESS,
+	# HTML-escaped. Templates run in THIS block only -- never on previews or
+	# the store, whose HTML is partly model output and could otherwise print
+	# any variable in this container's environment. Only the listed paths are
+	# the landing's; the checked-in design notes and review images beside it
+	# (_review/, DESIGN.md, getlayers.json) are not matched and so never served.
+	# The store home is the whole site (Miro, 2026-11-17): / serves the store's
+	# /academy/ page. The agency offer and its contact form moved to /agency/.
+	@home path / /index.html
+	handle @home {
+		rewrite * /academy/
+		root * /srv/shop/current
+		file_server
+	}
+
+	@landing {
+		path /agency /agency/ /thanks /thanks/ /thanks/* /robots.txt /sitemap.xml /llms.txt /mapfront-icon.png /contact.js /fonts/*
+	}
+	handle @landing {
+		encode zstd gzip
+		header {
+			X-Frame-Options "DENY"
+			Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+			Cache-Control "public, max-age=300"
+		}
+		root * /srv/landing
+		@agencypage path /agency /agency/
+		rewrite @agencypage /index.html
+		templates
+		file_server {
+			hide .*
+		}
+	}
+
+	handle {
+		root * /srv/shop/current
+		file_server
+	}
+}
+
+# Plain HTTP for any name that is not agency.storefront.test.
+http:// {
+	respond "misdirected" 421
+}

@@ -1,6 +1,6 @@
 """kernel.fixes: a lasting degraded check gets a diagnosis and a fix card.
 
-the owner, 2026-09-27: "always watch the degraded status on the app and always
+Miro, 2026-09-27: "always watch the degraded status on the app and always
 find a way to fix it."
 """
 from __future__ import annotations
@@ -24,10 +24,10 @@ def _row(module, check, health, *, last_ok=None, first_seen=None, detail="d"):
 def world(memory_backend, monkeypatch):
     memory_backend.responses["DISTINCT ON (check_id)"] = [
         _row("guardian", "open_alerts", "degraded", last_ok=NOW - timedelta(hours=5)),
-        _row("inroots", "open_errors", "failing", last_ok=NOW - timedelta(hours=30)),
+        _row("attendance", "open_errors", "failing", last_ok=NOW - timedelta(hours=30)),
         _row("gitlab", "pipelines", "degraded", last_ok=NOW - timedelta(minutes=30)),
         _row("youtube", "flycheap_stats", "unknown"),
-        _row("cloudco", "balance", "ok"),
+        _row("cloudhost", "balance", "ok"),
     ]
     memory_backend.responses["FROM acks WHERE until > now()"] = []
     memory_backend.responses["event = 'fixes.attempted'"] = []
@@ -54,23 +54,23 @@ def world(memory_backend, monkeypatch):
 async def test_only_lasting_degraded_or_failing_checks_qualify(world):
     items = await fixes.lasting(NOW)
     # the 30-minute one is too fresh; unknown and ok never qualify
-    assert [i.key for i in items] == ["inroots.open_errors", "guardian.open_alerts"]
+    assert [i.key for i in items] == ["attendance.open_errors", "guardian.open_alerts"]
 
 
 async def test_each_lasting_check_goes_to_an_agent_and_the_answer_to_its_channel(world):
     backend, routed, sent = world
     done = await fixes.sweep(NOW)
-    assert [k for k, _ in done] == ["inroots.open_errors", "guardian.open_alerts"]
-    assert "inroots.open_errors has read FAILING for 30 hours" in routed[0]
+    assert [k for k, _ in done] == ["attendance.open_errors", "guardian.open_alerts"]
+    assert "attendance.open_errors has read FAILING for 30 hours" in routed[0]
     assert "call that action now" in routed[0] and "Never claim" in routed[0]
-    assert [m.topic for m in sent] == ["inroots", "guardian"]
+    assert [m.topic for m in sent] == ["attendance", "guardian"]
     assert sent[1].body.startswith("Proposed guardian.alert_op")
     assert ("audit fixes.attempted", ("guardian.open_alerts",)) in backend.sql_log
 
 
 async def test_a_check_tried_in_the_last_day_or_acknowledged_is_left_alone(world):
     backend, routed, _ = world
-    backend.responses["FROM acks WHERE until > now()"] = [{"key": "inroots.open_errors"}]
+    backend.responses["FROM acks WHERE until > now()"] = [{"key": "attendance.open_errors"}]
     backend.responses["event = 'fixes.attempted'"] = [
         {"at": NOW - timedelta(hours=2), "payload": "{}"}]
     assert await fixes.sweep(NOW) == []
@@ -99,8 +99,8 @@ async def test_a_check_that_is_no_longer_registered_is_history(world, monkeypatc
     """2026-09-27: "comms.sms_registered has been failing since Tue" was
     posted for a check that no longer exists."""
     from atlas.kernel.registry import REGISTRY
-    monkeypatch.setattr(REGISTRY, "checks", {"inroots.open_errors": object()})
-    assert [i.key for i in await fixes.lasting(NOW)] == ["inroots.open_errors"]
+    monkeypatch.setattr(REGISTRY, "checks", {"attendance.open_errors": object()})
+    assert [i.key for i in await fixes.lasting(NOW)] == ["attendance.open_errors"]
 
 
 def test_an_unconfigured_unknown_is_not_reasoned_over():
@@ -144,12 +144,12 @@ async def test_an_investigation_that_stops_short_is_an_incident_card(world, monk
     await fixes.sweep(NOW)
     card = sent[0]
     assert card.presentation == "INCIDENT"
-    assert card.title.startswith("inroots.open_errors — investigation incomplete")
+    assert card.title.startswith("attendance.open_errors — investigation incomplete")
     for line in ("*Observation:*", "*Observed at:* Sun 27 Sep 22:29 UTC",
                  "*Impact:* unknown",
                  "*Investigation:* stopped before identifying the cause",
-                 "*Next step:*", "*Owner:* the owner", "*Retry:* not before",
-                 "*Incident:* inroots.open_errors"):
+                 "*Next step:*", "*Owner:* Miro", "*Retry:* not before",
+                 "*Incident:* attendance.open_errors"):
         assert line in card.body, line
     assert "answered by" not in card.body
     assert "Stopped after" not in card.title, "the agent's text never goes in the title"
@@ -165,7 +165,7 @@ async def test_a_real_diagnosis_is_posted_plain_and_without_the_provider_note(
     monkeypatch.setattr("atlas.kernel.agents.route", said)
     await fixes.sweep(NOW)
     assert sent[0].body == "Proposed guardian.alert_op."
-    assert sent[0].title.startswith("inroots.open_errors — failing since")
+    assert sent[0].title.startswith("attendance.open_errors — failing since")
 
 
 # ---------------------------------------------------------------- RA-D4
@@ -181,7 +181,7 @@ def _attempt(item, *, hours_ago, **override):
 
 
 def _item(**kw):
-    base = {"key": "inroots.open_errors", "health": "failing",
+    base = {"key": "attendance.open_errors", "health": "failing",
             "detail": "3 errors open, read 14:02 UTC",
             "since": NOW - timedelta(hours=30),
             "last_ok": NOW - timedelta(hours=30), "severity": "HIGH"}
@@ -266,8 +266,8 @@ async def test_a_quiet_incident_costs_no_model_call(
     items = await fixes.lasting(NOW)
     by_key = {i.key: i for i in items}
     backend.responses["event = 'fixes.attempted'"] = _attempt(
-        by_key["inroots.open_errors"], hours_ago=48)
-    # both lasting checks answer with inroots' row: inroots is unchanged
+        by_key["attendance.open_errors"], hours_ago=48)
+    # both lasting checks answer with attendance' row: attendance is unchanged
     # (quiet); guardian's own print differs, so it is raised
     done = await fixes.sweep(NOW)
     assert [k for k, _ in done] == ["guardian.open_alerts"]

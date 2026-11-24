@@ -1,4 +1,4 @@
-"""The Atlas Academy video system's teaching components (the owner, 2026-10-17;
+"""The Atlas Academy video system's teaching components (Miro, 2026-10-17;
 docs/academy-video-system/components: StepMap, LowerThird, CheckpointTag,
 ErrorRecovery, WorkflowTrace; .video-gap.md batch 4). Each is drawn only from
 what the script fills in, never invented, and `success` only where the

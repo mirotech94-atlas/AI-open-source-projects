@@ -14,7 +14,7 @@ export type Line = { text: string; health: "ok" | "degraded" | "failing" | "unkn
 
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-/** "now": what it has in hand, what waits on the owner, its last run. */
+/** "now": what it has in hand, what waits on Miro, its last run. */
 export function nowLines(a: AgentActivity): Line[] {
   const n = a.now;
   const out: Line[] = [];

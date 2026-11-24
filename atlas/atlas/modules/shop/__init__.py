@@ -1,17 +1,17 @@
 """Shop -- a product for every reel, and the money it brings in.
 
-the owner, 2026-09-28: "create own plan to make money per reel". The plan lives
+Miro, 2026-09-28: "create own plan to make money per reel". The plan lives
 in his vault (Plans/Money per reel.md); this is its Seller. Each reel type
 points to one product; a caption carries that product's call to action
 (link in bio -- caption links are not clickable on Instagram); a product
-is sold through a Stripe Payment Link that the owner approved on a Tier 2 card;
+is sold through a Stripe Payment Link that Miro approved on a Tier 2 card;
 a digital product is handed over at /deliver/{checkout session}, only after
 Stripe says that session is paid.
 
 Money comes IN here. Nothing refunds, pays out or changes a price after
 the fact: those stay denied or his to do in Stripe.
 
-The Stripe key is STRIPE_SHOP_<ACCOUNT>_KEY -- a restricted key the owner makes
+The Stripe key is STRIPE_SHOP_<ACCOUNT>_KEY -- a restricted key Miro makes
 with write access to Products, Prices and Payment Links and read access to
 Checkout Sessions. ATLAS's existing Stripe keys are read-only and are not
 used to write.
@@ -35,7 +35,7 @@ from ...kernel.contracts import (
 )
 
 API = "https://api.stripe.com/v1"
-ACCOUNTS = ("owner",)   # his own account; guardian/flycheap removed 2026-10-29
+ACCOUNTS = ("miro",)   # his own account; guardian/flycheap removed 2026-10-29
 REEL_TYPES = ("business", "tech", "travel", "stories")
 
 # What each reel type says at the end of its caption. A product that is not
@@ -74,7 +74,7 @@ async def product_for(reel_type: str) -> dict | None:
         return await fetch_one(
             """SELECT key, name, payment_link_url, status FROM shop_products
                 WHERE reel_type = $1 ORDER BY key LIMIT 1""", reel_type)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -88,7 +88,7 @@ async def caption_with_cta(media_id: int, caption: str) -> str:
             """SELECT d.source, d.kind FROM content_media m
                  JOIN content_drafts d ON d.id = m.draft_id WHERE m.id = $1""",
             media_id)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         row = None
     rtype = reel_type_of(str((row or {}).get("source") or ""),
                          str((row or {}).get("kind") or ""))
@@ -241,7 +241,7 @@ async def sales_since(days: int = 7, *, since: datetime | None = None,
 async def check_sales() -> Observation:
     try:
         sales, why = await sales_since(7)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("sales_7d", Health.UNKNOWN,
                            detail=f"Stripe could not be read: {type(exc).__name__}")
     if why:
@@ -262,7 +262,7 @@ async def check_sales_count() -> Observation:
     cannot be read."""
     try:
         sales, why = await sales_since(7)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("sales_count_7d", Health.UNKNOWN,
                            detail=f"Stripe could not be read: {type(exc).__name__}")
     if why:
@@ -295,7 +295,7 @@ class ShopModule:
                    summary="Put a product on sale with a Stripe payment link",
                    run=create_link, dry_run=create_link_dry, rollback=deactivate_link,
                    params={"product_key": "the shop product, e.g. business_guide",
-                           "account": "owner: the Stripe account",
+                           "account": "miro: the Stripe account",
                            "price_cents": "the price in cents, e.g. 1900"},
                    card_only=True, max_per_hour=4),
         )

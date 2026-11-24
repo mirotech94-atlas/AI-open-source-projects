@@ -226,7 +226,7 @@ async def test_a_reconnect_in_env_beats_the_stored_rotated_token(
     fake = Fake(monkeypatch, [_tokens(ACCESS_1, refresh=ROTATED),
                               _tokens(ACCESS_2)])
     await McpClient().call("x", {})
-    # the owner re-ran the connect script: new client, new refresh token in .env.
+    # Miro re-ran the connect script: new client, new refresh token in .env.
     monkeypatch.setenv(oauth.CLIENT_ID_ENV, "client-new")
     monkeypatch.setenv(oauth.REFRESH_TOKEN_ENV, "rt-fresh-from-reconnect")
     oauth.reset()

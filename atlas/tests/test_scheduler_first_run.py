@@ -1,6 +1,6 @@
 """After a restart every check is measured soon, not at its next interval.
 
-the owner (2026-11-12) saw ~42 checks read UNKNOWN right after an API restart until
+Miro (2026-11-12) saw ~42 checks read UNKNOWN right after an API restart until
 the collectors ran. The scheduler keeps `_next_run` in memory only, so a fresh
 process has no schedule and every check is due on the first pass. These tests
 pin that, and the budget the first pass is held to (FIRST_PASS_BUDGET_S).

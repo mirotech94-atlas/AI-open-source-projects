@@ -1,7 +1,7 @@
 
 
 def test_a_module_can_be_switched_off_by_name(monkeypatch):
-    """the owner, 2026-09-27: "we don't need YouTube". Off by choice is recorded
+    """Miro, 2026-09-27: "we don't need YouTube". Off by choice is recorded
     as such, so it never reads UNKNOWN and is never silently absent."""
     from atlas.kernel.registry import Registry
     monkeypatch.setenv("ATLAS_DISABLED_MODULES", "youtube, Voice")

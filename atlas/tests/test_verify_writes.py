@@ -323,19 +323,19 @@ def mx(monkeypatch):
     monkeypatch.setenv("MATRIX_TOKEN", SECRET)
 
 
-MX_PARAMS = {"room_id": "!r:internal.example", "body": "deployed at 4", "room_name": "ops",
-             "to": "@sam:internal.example"}
-MX_RESULT = ActionResult(True, "sent to ops", rollback_token="!r:internal.example|$e1")
+MX_PARAMS = {"room_id": "!r:matrix.example.com", "body": "deployed at 4", "room_name": "ops",
+             "to": "@sam:matrix.example.com"}
+MX_RESULT = ActionResult(True, "sent to ops", rollback_token="!r:matrix.example.com|$e1")
 
 
 def _event(**over):
-    return {"event_id": "$e1", "sender": "@owner:internal.example", "type": "m.room.message",
+    return {"event_id": "$e1", "sender": "@miro:matrix.example.com", "type": "m.room.message",
             "content": {"msgtype": "m.text", "body": "deployed at 4"},
             "origin_server_ts": int(T0.timestamp() * 1000) + 5000, **over}
 
 
 def _whoami(net):
-    net.on(r"/account/whoami$", body={"user_id": "@owner:internal.example"})
+    net.on(r"/account/whoami$", body={"user_id": "@miro:matrix.example.com"})
 
 
 async def test_matrix_verified(net, mx):

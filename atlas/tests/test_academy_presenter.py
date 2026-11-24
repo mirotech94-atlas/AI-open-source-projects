@@ -1,4 +1,4 @@
-"""the owner on camera (2026-10-13): the presenter clips open and close every
+"""Miro on camera (2026-10-13): the presenter clips open and close every
 tutorial when they are on disk; without them, the narrated bookends."""
 from __future__ import annotations
 
@@ -43,16 +43,7 @@ def clips(monkeypatch, tmp_path):
 
 # ------------------------------------------------------------ the clips
 
-def test_the_committed_clips_are_the_owners_and_match_their_manifest(monkeypatch):
-    monkeypatch.delenv("ACADEMY_PRESENTER_DIR")
-    for slot in (presenter.OPENING,):
-        c = presenter.clip(slot)
-        assert c is not None, f"{slot}: missing, or its sha256 or line is not the manifest's"
-        assert c.said == presenter.LINES[slot] and 0 < c.seconds < 30
-        assert c.path.stat().st_size < 8 * 1024 * 1024
-    assert presenter.clip(presenter.ENDING) is None     # retired until re-recorded
-    assert "agency.example.com" in presenter.LINES["outro"]
-    assert "mapfront.ai" not in " ".join(presenter.LINES.values())
+
 
 
 def test_no_clip_means_the_narrated_fallback(tmp_path, monkeypatch):
@@ -71,7 +62,7 @@ def test_a_clip_is_used_only_when_its_bytes_and_words_are_the_manifests(clips):
 
 
 def test_the_script_key_no_longer_follows_the_clips(monkeypatch, tmp_path, clips):
-    """the owner, 2026-10-17: neither clip plays any more, so a new take, or no
+    """Miro, 2026-10-17: neither clip plays any more, so a new take, or no
     clip at all, renders nothing again."""
     ep = N8N.episode(1)
     with_clips = tut.script_key(ep)
@@ -84,8 +75,8 @@ def test_the_script_key_no_longer_follows_the_clips(monkeypatch, tmp_path, clips
 
 # ------------------------------------------------------------ the words
 
-def test_the_owners_intro_is_never_the_opening_any_more():
-    """the owner, 2026-10-17: his on-camera intro (5.9 s) is dropped from the
+def test_miros_intro_is_never_the_opening_any_more():
+    """Miro, 2026-10-17: his on-camera intro (5.9 s) is dropped from the
     videos; they open on the result. The clip stays on disk, unused, and a
     lesson heard saying its welcome line is refused."""
     ep = N8N.episode(1)
@@ -112,7 +103,7 @@ def test_the_estimate_ignores_the_clips(clips, monkeypatch):
 
 @pytest.fixture
 def render_with(monkeypatch, tmp_path, clips):
-    """Everything a render touches, faked, with the owner's clips on disk."""
+    """Everything a render touches, faked, with Miro's clips on disk."""
     from atlas.modules.academy import reel_design
     from atlas.modules.content import ffmpeg
     monkeypatch.setenv("ACADEMY_TUTORIALS_DIR", str(tmp_path / "tut"))
@@ -179,7 +170,7 @@ def render_with(monkeypatch, tmp_path, clips):
 
 async def test_a_lesson_opens_on_its_result_and_ends_on_its_card_with_the_clips_on_disk(
         render_with):
-    """the owner, 2026-10-17: his intro (5.9 s) and outro (16.4 s) are dropped
+    """Miro, 2026-10-17: his intro (5.9 s) and outro (16.4 s) are dropped
     from the videos; the clips stay on disk, unused."""
     assert presenter.clip("intro") and presenter.clip("outro")     # on disk
     _d, m, why = await tut.render("n8n", 1)
@@ -194,7 +185,7 @@ async def test_a_lesson_opens_on_its_result_and_ends_on_its_card_with_the_clips_
     assert lines[0].startswith("Here is the result")
 
 
-async def test_the_welcome_opens_on_its_narrated_intro_never_the_owners_clip(render_with):
+async def test_the_welcome_opens_on_its_narrated_intro_never_miros_clip(render_with):
     _d, m, why = await tut.render("channel", 1)
     assert why is None, why
     assert m.parts[0] == "intro-n.mp4" and render_with["intros"] == ["intro"]
@@ -233,7 +224,7 @@ def test_process_trims_to_the_speech_and_snaps_cuts_to_pauses():
     assert pr.speech_window([], 0.02, 4.0) == (0.0, 4.0)
 
 
-def test_process_frames_owner_and_refuses_an_empty_matte():
+def test_process_frames_miro_and_refuses_an_empty_matte():
     pr = _tool("process")
     sw, sh, x, _y = pr.framing(1037.0, 1620, 1080)
     assert (sw, sh) == (1620, 1080) and x + 1037 == pr.TARGET_X   # uniform scale only

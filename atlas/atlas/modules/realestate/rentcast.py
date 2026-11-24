@@ -144,7 +144,7 @@ async def calls_line() -> str:
         return f"RentCast not configured ({KEY_ENV} unset) — no calls made"
     try:
         used = await used_this_month()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return "RentCast calls this month: unknown (ATLAS's count unreadable)"
     return (f"ATLAS counted {used}/{monthly_limit()} RentCast calls this month "
             f"({datetime.now(UTC):%Y-%m} UTC)")

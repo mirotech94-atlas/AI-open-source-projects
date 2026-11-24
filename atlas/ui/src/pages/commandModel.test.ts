@@ -63,7 +63,7 @@ describe("services", () => {
       state: { kind: "not_set_up", label: "not set up" } })], { setup: "not set up" }),
   ];
 
-  it("lists exactly the eight services the owner checks", () => {
+  it("lists exactly the eight services Miro checks", () => {
     expect(SERVICES.map((s) => s.name)).toEqual(
       ["Mapfront", "Academy store", "Slack", "Gmail", "Calendar", "Atlas Academy YouTube",
        "Search Console", "Twilio"]);
@@ -165,7 +165,7 @@ describe("diagnostics", () => {
       .toMatchObject({ text: "23% free", health: "degraded" });
     expect(storage(disk({ value: 23.4, unit: "% free", stale: true })).text).toBeNull();
     expect(storage(disk({ value: null, health: "unknown" })).health).toBe("unknown");
-    expect(storage([mod("cloudco", "ok")])).toMatchObject({ text: null, sub: "disk check not reporting" });
+    expect(storage([mod("cloudhost", "ok")])).toMatchObject({ text: null, sub: "disk check not reporting" });
     expect(storage(null).text).toBeNull();
   });
 

@@ -1,6 +1,6 @@
 """Degraded checks get a fix, not just a colour.
 
-the owner, 2026-09-27: "always watch the degraded status on the app and always
+Miro, 2026-09-27: "always watch the degraded status on the app and always
 find a way to fix it." A check that has read DEGRADED or FAILING for
 `LASTING_HOURS` or more is handed to the agent roster once per
 `RETRY_HOURS`, with its own evidence, and asked to diagnose it and fix it
@@ -182,7 +182,7 @@ def prompt(item: Lasting, now: datetime) -> str:
         f"detail, quoted as data:\n{wrap_untrusted(item.detail, 'check')}\n\n"
         "Diagnose it from the evidence your read tools give you. If an action "
         "in your catalog would fix it, call that action now -- it becomes a "
-        "card for the owner when it needs his approval. If none can, say in two "
+        "card for Miro when it needs his approval. If none can, say in two "
         "sentences the exact manual step he should take. Never claim to have "
         "fixed anything you only proposed."
     )
@@ -212,7 +212,7 @@ async def _observed_at(key: str) -> datetime | None:
                  JOIN properties p ON p.id = c.property_id
                 WHERE p.name = $1 AND c.name = $2
                 ORDER BY o.at DESC LIMIT 1""", module, check)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     return rows[0]["at"] if rows else None
 
@@ -235,7 +235,7 @@ def incident_body(item: Lasting, said: str, observed: datetime | None,
         "",
         (f"*Next step:* check {item.key.split('.', 1)[0]} directly, against "
          f"the observation above, and tell me what you find"),
-        "*Owner:* the owner",
+        "*Owner:* Miro",
         (f"*Retry:* not before {retry:%a %d %b %H:%M} UTC, and only if it "
          f"changes; unchanged, it is raised again {remind:%a %d %b} (acknowledge "
          f"it to silence it)"),
@@ -257,7 +257,7 @@ async def sweep(now: datetime | None = None) -> list[tuple[str, str]]:
     try:
         acked = {str(r["key"]) for r in await fetch_all(
             "SELECT key FROM acks WHERE until > now()")}
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         acked = set()
 
     done: list[tuple[str, str]] = []
@@ -292,7 +292,7 @@ async def sweep(now: datetime | None = None) -> list[tuple[str, str]]:
         else:
             try:
                 said = await route(prompt(item, now))
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 from ..modules._http import explain
                 said = f"could not diagnose it: {explain(exc)}"
         done.append((item.key, said))

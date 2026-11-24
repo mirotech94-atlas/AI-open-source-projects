@@ -1,7 +1,7 @@
 """`academy.publish_shop_remote` (Tier 2): push the built storefront to the
-store VM (agency.example.com), 2026-10-27, plan step 4.3.
+store VM (agency.storefront.test), 2026-10-27, plan step 4.3.
 
-ATLAS now runs on the owner's Mac, on 127.0.0.1 only. The one public surface is
+ATLAS now runs on Miro's Mac, on 127.0.0.1 only. The one public surface is
 the storefront: static files on a VM that holds no ATLAS secret, no
 database and no token. This is the one-way push, through the executor:
 
@@ -128,7 +128,7 @@ async def _run(argv: list[str]) -> tuple[bool, str]:
     try:
         proc = await asyncio.create_subprocess_exec(
             *argv, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, explain(exc)
     try:
         out, err = await asyncio.wait_for(proc.communicate(), timeout=TIMEOUT)
@@ -137,7 +137,7 @@ async def _run(argv: list[str]) -> tuple[bool, str]:
             proc.kill()
         await proc.wait()
         return False, f"{argv[0]} did not finish in {TIMEOUT:.0f}s and was killed"
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, explain(exc)
     if proc.returncode != 0:
         return False, (err or b"").decode(errors="replace")[:300]

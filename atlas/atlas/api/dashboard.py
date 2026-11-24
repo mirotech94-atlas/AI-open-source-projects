@@ -1,7 +1,7 @@
 """Dashboard API. Mesh-only, session-authenticated, read-mostly.
 
 There is deliberately no admin panel and no "run this check now". Decisions
-go through `approvals.decide`: by text (Slack, phone) and, since the owner
+go through `approvals.decide`: by text (Slack, phone) and, since Miro
 2026-10-29 (GUI decisions), from the dashboard's own decision route, which
 answers only a pending Tier 2 card behind session, Origin, CSRF and rate
 checks (see the comment below `/approvals`). Login and logout are the
@@ -107,7 +107,7 @@ async def logout(request: Request, response: Response) -> dict:
 
 
 # ------------------------------------------------------- settings secrets
-# The Agency tab's Settings section: which of the names the owner re-enters on
+# The Agency tab's Settings section: which of the names Miro re-enters on
 # the Mac are set. A FIXED list (the plan's "Secrets to re-enter"), never a
 # scan of the environment, and only a boolean per name: no value, no length,
 # no prefix ever leaves this function.
@@ -205,7 +205,7 @@ async def overview(_s: SignedIn) -> dict:
         key = f"{name}.{row['check_name']}"
         seen_keys.add(key)
         # A check its module no longer registers (renamed or retired, e.g.
-        # cloudco "snapshots" -> "protection", or a whole module taken out of
+        # cloudhost "snapshots" -> "protection", or a whole module taken out of
         # the code) keeps its old rows forever. Its last reading is history,
         # not a reading of now: it is listed as RETIRED, never OK, and left
         # out of the module's colour. A switched-off module is different: its
@@ -263,7 +263,7 @@ async def overview(_s: SignedIn) -> dict:
         # unmeasured — the inverse of the dangerous direction, but wrong.
         # A check that is not set up, or deliberately paused, says so on its
         # own row but does not decide the module's colour: "nobody has given
-        # me a token" is not the module failing (the owner, 2026-09-27: the board
+        # me a token" is not the module failing (Miro, 2026-09-27: the board
         # should be clean). It stays UNKNOWN underneath -- never OK.
         worst = tile.get("_worst")
         if state is not None:
@@ -565,7 +565,7 @@ async def approvals(_s: SignedIn) -> dict:
 async def _whatsapp_undelivered() -> int | None:
     """How many pending cards that WhatsApp could really have decided (eligible
     now, by the same check the send uses) are older than ten minutes and never got
-    their message (no `mmt.notify_card` claim): the portal banner that replaces a
+    their message (no `tutorco.notify_card` claim): the portal banner that replaces a
     Slack nag. 0 when WhatsApp cards are off or watch-only (nothing is sent then,
     so nothing is "missing"); None when it cannot be read (never a guessed 0)."""
     from ..kernel import wa_approvals
@@ -577,17 +577,17 @@ async def _whatsapp_undelivered() -> int | None:
                 WHERE p.status = 'pending' AND p.tier >= 2 AND p.expires_at > now()
                   AND p.created_at < now() - interval '10 minutes'
                   AND NOT EXISTS (SELECT 1 FROM effect_claims e
-                                   WHERE e.action = 'mmt.notify_card'
+                                   WHERE e.action = 'tutorco.notify_card'
                                      AND e.key = 'card:' || p.id::text)
                 LIMIT 50""")
         return sum(1 for r in rows or [] if wa_approvals.eligibility(
             str(r["action"]), wa_approvals._params_of(r["params"]),
             dry_ok=r.get("dry_run_ok") if hasattr(r, "get") else None)[0])
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 
-# the owner 2026-10-29: GUI decisions. The dashboard answers a pending Tier 2 card
+# Miro 2026-10-29: GUI decisions. The dashboard answers a pending Tier 2 card
 # through `approvals.decide` -- the same door Slack and the phone use, with
 # the card's STORED action and params; the browser sends only a verdict. The
 # controls, each failing closed and in this order: a session (401), the
@@ -607,7 +607,7 @@ class DecisionBody(BaseModel):
 # Keyed per signed-in SESSION, never per address: behind Docker Desktop every
 # tab and tool on the Mac is one gateway address, so a per-address bucket was
 # shared, and ten watch-only approves (refused, nothing changed) made the next
-# Decline answer 429 on its first click (the owner 2026-10-29). `_decision_limit`
+# Decline answer 429 on its first click (Miro 2026-10-29). `_decision_limit`
 # counts only answers that changed a card; `_decision_calls` bounds every call
 # (each one writes audit rows) more loosely.
 _decision_limit = PerAddressLimiter(10, 60.0)
@@ -636,7 +636,7 @@ async def approval_decision(pid: int, request: Request, session: SignedIn) -> di
 
     # Unset ATLAS_ALLOWED_HOSTS turns the global Host middleware off (Caddy's
     # public names); it never turns this check off: the decision route then
-    # answers only the loopback names (the owner 2026-10-29).
+    # answers only the loopback names (Miro 2026-10-29).
     hosts = _allowed_hosts() or frozenset(DEFAULT_ALLOWED_HOSTS)
     if not auth.same_origin(request, hosts):
         raise HTTPException(403, "this request did not come from the dashboard page")
@@ -987,8 +987,8 @@ def _agent_group(name: str, businesses_by_name: dict) -> str:
 
 # The map's own shortened name for a card, distinct from `title` (which
 # Fleet's cards, the org chart and DeepDive all still read unchanged).
-# the owner's own words for the redesign: guardian reads "Vault", school reads
-# "College" rather than its full "College (the university, Fall 2026)".
+# Miro's own words for the redesign: guardian reads "Vault", school reads
+# "College" rather than its full "College (CUNY, Fall 2026)".
 _DISPLAY_NAME = {"guardian": "Vault", "school": "College"}
 
 
@@ -1014,7 +1014,7 @@ async def agents(_s: SignedIn) -> dict:
     from ..kernel.agent_activity import day_start
     now = datetime.now(UTC)
     # "Today" is New York's day: UTC midnight is 20:00 there, and every
-    # agent read 0 all evening (the owner 2026-10-29).
+    # agent read 0 all evening (Miro 2026-10-29).
     midnight = day_start(now)
 
     # A read that fails is UNKNOWN for every row, never an empty table that
@@ -1054,7 +1054,7 @@ async def agents(_s: SignedIn) -> dict:
                WHERE event = 'agent.shift_alert_unrouted' AND at >= $1::timestamptz""",
             midnight)
         unrouted = {r["subject"] for r in unrouted_rows}
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("roster runs unreadable (%s)", type(exc).__name__)
         read_failed = True
     read_at = datetime.now(UTC).isoformat()
@@ -1086,7 +1086,7 @@ async def agents(_s: SignedIn) -> dict:
             status = "ok"
         last_attempt = srow["last_attempt"] if srow else None
         # One short, plain line; the model's prose is never handed over raw
-        # (the owner 2026-10-29). `last_outcome_detail` is the same text cleaned,
+        # (Miro 2026-10-29). `last_outcome_detail` is the same text cleaned,
         # longer, for the page's expand.
         last_shift_outcome = (
             agents_module.outcome_line(last["outcome"])
@@ -1793,7 +1793,7 @@ async def module_detail(name: str, _s: SignedIn) -> dict:
 # extended to labels, not only numbers).
 _LEAD_STATUSES = ("new", "audited", "mocked", "contacted", "closed", "dropped")
 # The outreach pipeline's own derived states (see `_lead_json`) live in the
-# same flat chip namespace -- the owner filters "who is waiting on me" the same
+# same flat chip namespace -- Miro filters "who is waiting on me" the same
 # way he filters "who is still new", and both are real, read states.
 _OUTREACH_STATES = ("drafted", "waiting on you", "sent", "replied", "bounced")
 
@@ -1934,7 +1934,7 @@ async def leads(
 
     `status` matches either `agency_leads.status` or the derived outreach
     state above -- one flat set of chips over two underlying columns, since
-    the owner filters "who is new" and "who is waiting on me" the same way.
+    Miro filters "who is new" and "who is waiting on me" the same way.
     """
     limit = max(1, min(500, limit))
     offset = max(0, offset)
@@ -2183,7 +2183,7 @@ async def agenda(
     unread: list[str] = []
     try:
         items = await agenda_items(moment, timedelta(hours=hours), unread)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # A diary that could not be read is not an empty diary.
         log.warning("agenda could not be built: %s", exc)
         return envelope(items=[], unavailable=f"{type(exc).__name__}: {exc}",
@@ -2211,7 +2211,7 @@ async def agenda(
 
 @router.get("/tasks")
 async def tasks(_s: SignedIn) -> dict:
-    """Everything with work still in it: decisions waiting on the owner, the
+    """Everything with work still in it: decisions waiting on Miro, the
     nightshift jobs that have not finished, and research still queued."""
     # The link runs findings -> proposals, not the other way: a proposal has
     # no finding column. Same join /approvals uses, for the same reason.
@@ -2267,7 +2267,7 @@ async def tasks(_s: SignedIn) -> dict:
 
 @router.get("/conversations")
 async def conversations(_s: SignedIn, limit: int = 60) -> dict:
-    """Everything said to ATLAS or to the owner, from all three surfaces, newest
+    """Everything said to ATLAS or to Miro, from all three surfaces, newest
     first.
 
     `unanswered` counts only the two inbound message tables: a voice turn was
@@ -2300,7 +2300,7 @@ async def conversations(_s: SignedIn, limit: int = 60) -> dict:
     for r in turns:
         rows.append({
             "source": "voice", "id": r["id"], "at": _iso(r["at"]),
-            "platform": "voice", "thread": None, "who": "the owner",
+            "platform": "voice", "thread": None, "who": "Miro",
             "text": r["transcript"], "answer": r["answer"],
             "intent": r["intent"], "agent": r["agent"],
             "replied_at": None, "draft": None, "label": None,
@@ -2471,7 +2471,7 @@ async def tools(_s: SignedIn) -> dict:
 
     try:
         perplexity = await _perplexity.budget_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         perplexity = {"configured": _perplexity.configured(), "used": None,
                       "cap": _perplexity.cap(), "read_at": None,
                       "reason": f"could not read the budget: {type(exc).__name__}"}
@@ -2491,7 +2491,7 @@ async def tools(_s: SignedIn) -> dict:
 
 @router.get("/workflows")
 async def workflows(_s: SignedIn) -> dict:
-    """The two kinds of standing behaviour: what the owner said once and meant
+    """The two kinds of standing behaviour: what Miro said once and meant
     permanently, and the steps the scheduler runs on a clock — plus, under
     `graphs`, what those steps actually connect to: the nine workflows in
     `kernel.workflows.WORKFLOWS`, each read fresh against the real tables
@@ -2547,7 +2547,7 @@ async def workflows(_s: SignedIn) -> dict:
 # -------------------------------------------------------------- marketing
 
 # The publish decisions a marketing experiment waits on. Tier ASK, every one:
-# a post under the owner's name is his word each time, so "awaiting approval" is a
+# a post under Miro's name is his word each time, so "awaiting approval" is a
 # pending proposal for one of these and nothing else.
 MARKETING_PUBLISH_ACTIONS: tuple[str, ...] = (
     "youtube.upload", "youtube.set_visibility",
@@ -2668,7 +2668,7 @@ async def _marketing_channels() -> list[dict[str, Any]]:
     tiles = [await _marketing_channel(ch, PARTNER_SUBSCRIBERS) for ch in CHANNELS]
     for tile in tiles:
         tile.setdefault("platform", "YouTube")
-    # the owner, 2026-09-27: "include Instagram channels and TikTok as well".
+    # Miro, 2026-09-27: "include Instagram channels and TikTok as well".
     tiles += [await _instagram_tile(a) for a in ("main", "stories")]
     tiles.append(await _tiktok_tile())
     return tiles
@@ -2932,7 +2932,7 @@ async def marketing(_s: SignedIn) -> dict:
     async def section(name: str, read):
         try:
             return await read
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("marketing %s could not be read: %s", name, exc)
             unavailable[name] = f"{type(exc).__name__}: {exc}"
             return []
@@ -2973,7 +2973,7 @@ async def marketing(_s: SignedIn) -> dict:
 
 
 # WMO weather codes, as Open-Meteo documents them. Anything not listed reports
-# its number: a word ATLAS made up is worse than a code the owner can look up.
+# its number: a word ATLAS made up is worse than a code Miro can look up.
 WMO = {
     0: "Clear", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
     45: "Fog", 48: "Rime fog", 51: "Light drizzle", 53: "Drizzle",
@@ -2996,7 +2996,7 @@ _weather_cache: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
 
 @router.get("/ambient")
 async def ambient(_s: SignedIn) -> dict:
-    """The bottom bar: the server's clock, and the weather where the owner is.
+    """The bottom bar: the server's clock, and the weather where Miro is.
 
     Without `ATLAS_LAT`/`ATLAS_LON` there is nothing to ask, so `weather` is
     null and the reason says why. A temperature is a number, and invariant 6
@@ -3099,7 +3099,7 @@ async def stream(request: Request, _s: SignedIn) -> StreamingResponse:
     )
 
 
-# --- Command Center read models (the owner 2026-10-29) ---------------------------
+# --- Command Center read models (Miro 2026-10-29) ---------------------------
 # Reads only. A half that cannot be read says "unknown" and why, never an
 # empty list that would render as "nothing in the pipeline" (invariant 7).
 
@@ -3120,7 +3120,7 @@ async def pipeline(_s: SignedIn) -> dict:
     sites_block: dict[str, Any]
     try:
         view = await sites_view.overview()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         sites_block = {"state": "unknown", "read_at": now(),
                        "reason": f"client sites could not be read: {type(exc).__name__}"}
     else:
@@ -3141,7 +3141,7 @@ async def pipeline(_s: SignedIn) -> dict:
     leads_block: dict[str, Any]
     try:
         lead_rows = await fetch_all(_LEADS_JOIN_SQL + " ORDER BY l.id")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         leads_block = {"state": "unknown", "read_at": now(),
                        "reason": f"leads could not be read: {type(exc).__name__}"}
     else:
@@ -3173,13 +3173,13 @@ async def money(_s: SignedIn) -> dict:
         perplexity = dict(await _perplexity.budget_status())
         perplexity.setdefault("read_at", now())
         perplexity["read_at"] = perplexity["read_at"] or now()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         perplexity = {"used": None, "cap": None, "state": "unknown", "read_at": now(),
                       "reason": f"could not read the budget: {type(exc).__name__}"}
     month = datetime.now(UTC).strftime("%Y-%m")
     try:
         used = await prospect.spend_this_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         places = {"used": None, "cap": prospect.cap(), "month": month,
                   "state": "unknown", "read_at": now(),
                   "reason": f"could not read Places spend: {type(exc).__name__}"}

@@ -1,6 +1,6 @@
 # ATLAS Academy on YouTube — the free growth plan
 
-**Status: approved by the owner 2026-10-13 ("approve all, fix the opener bug
+**Status: approved by Miro 2026-10-13 ("approve all, fix the opener bug
 first").** Rules 15-21 are in `docs/academy-youtube-plan.md`; the work is
 `docs/superpowers/plans/2026-10-13-academy-growth.md`. Defect 1's root
 cause: the five lessons were rendered before fd7a501 shipped and uploaded
@@ -13,9 +13,9 @@ without paying for ads".
 
 ## 1. What the channel is today (read 2026-10-13)
 
-@example_handle is the same channel as `UCexamplechannel00000001`. At read
+@atlasacademyphp is the same channel as `UC-smnVfEbe18jA4fFmSDIAw`. At read
 time it had 5 subscribers and 17 videos. The About text reads "practical AI
-and automation through real demonstrations… agency.example.com/academy/".
+and automation through real demonstrations… agency.storefront.test/academy/".
 
 | Video | Length | Views | Age |
 |---|---|---|---|
@@ -42,7 +42,7 @@ These are fixes, not ideas. They come first because they cost views on
 every upload.
 
 1. **Wrong opener on all five lessons.** Each auto-caption track starts
-   "Welcome guys to my new channel. My name is the owner and welcome to Atlas
+   "Welcome guys to my new channel. My name is Myron and welcome to Atlas
    Academy."
    - Only the welcome video may say that (rule 3). The MCP episode also
      promises "under 5 minutes", while the title says 6 and the video runs
@@ -52,7 +52,7 @@ every upload.
      actually says. Either these were rendered before the 10-12 gate, or
      the metadata and the audio disagree. **Needs a check before the next
      upload.**
-   - Retitling or re-uploading live videos is a Tier 2 card for the owner.
+   - Retitling or re-uploading live videos is a Tier 2 card for Miro.
 2. **Category is "People & Blogs".** The uploads set no `categoryId`, so
    YouTube uses its default. It should be **27 (Education)**, which puts
    the videos next to the tutorials they compete with. This is a free,
@@ -158,7 +158,7 @@ every upload.
   Posting it is a Tier 2 card or a catalogued action, never a connector
   write from the Mac.
 - **Comment replies.** In the first 24 h, every real question gets a draft
-  reply on a Slack card for the owner. Nothing posts by itself.
+  reply on a Slack card for Miro. Nothing posts by itself.
 - **Free lab file** on every build episode (rule 12 already says so). This
   is the reason to come back and the reason to subscribe.
 
@@ -188,7 +188,7 @@ sharing done by hand.
    - Each one is 20–45 s, ends on the answer, and links the full video
      through YouTube's "Related video" field.
    - The single teaching Short already beat every promo Short.
-   - **the owner's call:** move the product promo reels off this channel, or
+   - **Miro's call:** move the product promo reels off this channel, or
      down to at most one in five Shorts.
    - The same cuts go to TikTok. The voice stays the British male voice,
      and nothing goes to Instagram.
@@ -200,7 +200,7 @@ sharing done by hand.
 5. **Community posts** become available as the channel grows. Use them for
    a weekly "which should we build next?" poll and post the winner, with
    the comment question carried into the video.
-6. **Places the owner already is, posted by hand, value first.** On LinkedIn
+6. **Places Miro already is, posted by hand, value first.** On LinkedIn
    (through ATLAS, Tier 2), a post teaches the episode's one idea in text
    and links the video. In Reddit and Discord-style communities, answer a
    real question and link the lesson only where the rules allow. **No
@@ -210,7 +210,7 @@ sharing done by hand.
      where the answer is genuinely useful.
    - Offer a free lab file to small creators in the same niche for a
      mention.
-   - This is outreach, so every message is drafted to the owner for approval.
+   - This is outreach, so every message is drafted to Miro for approval.
 8. **Refresh what works.** When a video outperforms the channel median
    after 7 days, make the follow-up ("part 2", or the next level) within
    the week, and send a Tier 2 card for a thumbnail or title A/B test on
@@ -239,7 +239,7 @@ sharing done by hand.
    fix the mismatched thumbnails, and pin the comments.
 3. Renderer changes: payoff first, demo zoom, delayed quiz reveal, one
    thumbnail system in blue.
-4. Shorts: teaching cuts with a related-video link, and the owner's decision on
+4. Shorts: teaching cuts with a related-video link, and Miro's decision on
    promo reels.
 5. The analytics scope and the extended Monday table.
 6. After 4 weeks of data, revisit everything above that is not a defect fix.

@@ -196,7 +196,7 @@ async def _seed_hazel(request: str = "build 50 websites for local businesses"):
                    'pending')""")
     await state.execute_sql(
         """INSERT INTO pauses (scope, paused_by, reason)
-           VALUES ('agency', 'owner', 'holiday')""")
+           VALUES ('agency', 'miro', 'holiday')""")
     return a, b, c
 
 
@@ -209,7 +209,7 @@ async def test_seeded_work_lands_on_the_right_seats(world):
     await _seed_hazel()
     await state.execute_sql(
         """INSERT INTO nightshift_jobs (task, repo, branch, status)
-           VALUES ('add the board', 'the owner/ai', 'board', 'running')""")
+           VALUES ('add the board', 'Miro/ai', 'board', 'running')""")
     await state.execute_sql(
         """INSERT INTO proposals (expires_at, action, tier, reason, status)
            VALUES (now() + interval '1 hour', 'retired.thing', 2, 'stray', 'pending')""")
@@ -345,7 +345,7 @@ async def test_context_text_gives_hazel_in_full_when_asked_and_a_line_otherwise(
     assert "== Felix (sites)" in by_alias and "2/50 sites built" in by_alias
 
     other = await workboard.context_text("how is Rex doing on the research?")
-    assert "Felix (sites, Sales & Sites): 2 in flight, 1 waiting on the owner — " \
+    assert "Felix (sites, Sales & Sites): 2 in flight, 1 waiting on Miro — " \
            "mission #1 agency.sites: 2/50 sites, running" in other
     assert "== Felix (sites)" not in other
     assert "build 50 websites" not in other

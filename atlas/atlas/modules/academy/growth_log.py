@@ -1,6 +1,6 @@
 """The weekly 7-day log of the Academy's Shorts, for the Monday summary.
 
-the owner, 2026-10-12 (the growth plan, Q&A: "weekly 7-day performance log").
+Miro, 2026-10-12 (the growth plan, Q&A: "weekly 7-day performance log").
 The plan's routine: per video, the date, platform, URL, topic, CTA,
 destination and seven-day views; unavailable fields left blank, never
 invented; no conversion rate from site visits ATLAS does not measure (the
@@ -27,7 +27,7 @@ from typing import Any
 
 from ..youtube import api
 
-log = logging.getLogger("academy.example.growth_log")
+log = logging.getLogger("atlas.academy.growth_log")
 
 POSTIZ_ID = re.compile(r"Postiz post (\w+)")
 YT_ID = re.compile(r"(?:watch\?v=|shorts/)([A-Za-z0-9_-]{6,})")
@@ -45,7 +45,7 @@ LOW_RETENTION = 40.0                  # avg % below this: the video loses people
 
 
 def _what(slug: str) -> str:
-    """A post's subject as the owner reads it: "Sell With AI 1.2", or a product."""
+    """A post's subject as Miro reads it: "Sell With AI 1.2", or a product."""
     m = re.fullmatch(r"lesson:([a-z0-9-]+)/([0-9.]+)", slug or "")
     if not m:
         return slug or "?"
@@ -59,7 +59,7 @@ async def _postiz_urls(since: datetime, now: datetime) -> tuple[dict[str, tuple[
     from ..content import postiz
     try:
         posts = await postiz.posts_between(since - timedelta(hours=1), now + timedelta(hours=1))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {}, f"Postiz could not be read ({type(exc).__name__})"
     out = {}
     for p in posts:
@@ -108,7 +108,7 @@ async def rows(days: int = 7, now: datetime | None = None) -> tuple[list[dict], 
         out.append({"at": p["at"], "what": _what(str(p["slug"])), "legs": legs})
     try:
         stats = await _youtube_stats(video_ids)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         stats = {}
         gaps.append(f"YouTube stats could not be read ({type(exc).__name__})")
     for r in out:
@@ -164,7 +164,7 @@ async def access_section() -> str:
     try:
         cat = load()
         return delivery.exceptions_text(await delivery.exceptions(cat), at)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("academy exceptions not read: %s", type(exc).__name__)
         return delivery.exceptions_text(
             delivery.Exceptions("unknown", detail=f"not read ({type(exc).__name__})"),
@@ -174,7 +174,7 @@ async def access_section() -> str:
 async def _shorts_section(days: int) -> str:
     try:
         found, gaps = await rows(days)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("growth log not read: %s", type(exc).__name__)
         return (f"{TITLE}\nThe posting record could not be read ({type(exc).__name__}), "
                 f"so this week's Shorts are UNKNOWN, not zero.")
@@ -185,7 +185,7 @@ async def _tutorials_section(days: int) -> str:
     line = await _runway_line()
     try:
         found, gaps = await tutorial_rows(days)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tutorial table not read: %s", type(exc).__name__)
         return (f"{TUTORIALS}\nThe tutorial record could not be read "
                 f"({type(exc).__name__}), so this week's tutorials are UNKNOWN, not zero."
@@ -203,13 +203,13 @@ async def _runway_line() -> str:
         # nothing read is "tried", never "read" (every value UNKNOWN)
         how = "tried" if all(n is None for n in days.values()) else "read"
         return f"Script runway ({how} {at:%a %H:%M} UTC): {runway_text(days)}"
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("script runway not read: %s", type(exc).__name__)
         return f"Script runway (tried {datetime.now(UTC):%a %H:%M} UTC): UNKNOWN"
 
 
 # ------------------------------------------------- end screens to add
-# the owner, 2026-10-17 (docs/academy-video-system/episode-structure.md): native
+# Miro, 2026-10-17 (docs/academy-video-system/episode-structure.md): native
 # end-screen elements are his, in Studio (the Data API has no end-screen
 # resource); ATLAS lists, every Monday, each tutorial that went public in
 # the last 7 days and what to attach: the next episode of its series when
@@ -238,7 +238,7 @@ async def _attach(series_key: str, episode: int, playlist_id: str | None) -> str
     if later:
         try:
             row = await tutorials.posted(series_key, later[0])
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("next episode not read: %s", type(exc).__name__)
             return f"UNKNOWN ({series_key} #{later[0]} not read)"
         if row and row.get("public") and row.get("video_id"):
@@ -254,7 +254,7 @@ async def end_screen_section(days: int = 7, now: datetime | None = None) -> str:
     head = f"{END_SCREENS} (read {now:%a %H:%M} UTC)"
     try:
         posts = await _end_screen_posts(now - timedelta(days=days))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("end-screen list not read: %s", type(exc).__name__)
         return (f"{END_SCREENS} (tried {now:%a %H:%M} UTC)\nThe tutorial record could "
                 f"not be read ({type(exc).__name__}), so the list is UNKNOWN.")
@@ -312,7 +312,7 @@ async def tutorial_rows(days: int = 7,
     gaps: list[str] = []
     try:
         granted, why = await api.token_scopes(ch)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         granted, why = None, f"{ch}: tokeninfo raised {type(exc).__name__}"
     if granted is None:
         gaps.append(f"the {ch} token's scopes could not be read ({why})")
@@ -320,13 +320,13 @@ async def tutorial_rows(days: int = 7,
         missing = _missing_scopes(granted)
         if missing:
             gaps.append(f"the {ch} token lacks {', '.join(missing)}: "
-                        f"the owner must re-consent the token")
+                        f"Miro must re-consent the token")
     out = []
     for p in await _tutorial_posts(now - timedelta(days=days)):
         label, level = _label(p["series"], p["episode"])
         try:
             stats, why = await api.analytics(ch, str(p["video_id"]), days)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             stats, why = None, f"{ch}: analytics raised {type(exc).__name__}"
         if stats is None:
             gaps.append(f"{label} ({p['video_id']}): {why}")

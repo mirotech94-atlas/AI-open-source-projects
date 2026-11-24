@@ -4,7 +4,7 @@ SELECTed by that id: kind 'circumstance', the approved `detail` (compared by
 hash) and `until`. The rollback deletes the row, so a missing row is
 contradicted.
 
-The detail is the owner's own words, which the module keeps out of memory on
+The detail is Miro's own words, which the module keeps out of memory on
 purpose: only its hash goes into evidence, never the text. Reads only. See
 docs/verification.md.
 """

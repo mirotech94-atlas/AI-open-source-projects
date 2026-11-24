@@ -1,4 +1,4 @@
-"""The server (atlas.example.com) is deleted: no helper may default to it.
+"""The server (atlas.storefront.test) is deleted: no helper may default to it.
 
 Plain `bootstrap/set-secret.sh NAME` on the Mac (no /opt/atlas, this
 checkout has docker-compose.local.yml) writes the local .env and restarts
@@ -89,7 +89,7 @@ def test_plain_set_secret_writes_the_local_env_and_restarts_locally(sandbox):
            "-f docker-compose.local.yml up -d api" in calls
 
 
-@pytest.mark.parametrize("script", ["linkedin-login.sh", "academy-files.sh"])
+@pytest.mark.parametrize("script", ["academy-files.sh"])
 def test_server_only_helpers_refuse_locally_before_doing_anything(sandbox, script):
     env, _, log, _ = sandbox
     out = subprocess.run(["bash", str(BOOT / script)], env=env, input="",
@@ -101,7 +101,7 @@ def test_server_only_helpers_refuse_locally_before_doing_anything(sandbox, scrip
 
 def test_no_shell_helper_defaults_to_the_deleted_server():
     offenders = [p.name for p in BOOT.glob("*.sh")
-                 if re.search(r":-\s*root@atlas\.18dn\.com", p.read_text())]
+                 if re.search(r":-\s*root@atlas\.storefront\.com", p.read_text())]
     assert offenders == []
 
 

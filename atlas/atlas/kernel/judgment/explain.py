@@ -74,7 +74,7 @@ def explain(model, x: np.ndarray, mean: np.ndarray, *, pair: str = "",
     """Top `top` reasons for model's probability on x.
 
     `mean` is the training-set mean vector (WIDTH wide). One-hot slots are
-    neutralised together: turning "module=cloudco" off is meaningless unless
+    neutralised together: turning "module=cloudhost" off is meaningless unless
     the other module slots move to their means too.
     """
     x = np.asarray(x, dtype=np.float32).reshape(1, -1)

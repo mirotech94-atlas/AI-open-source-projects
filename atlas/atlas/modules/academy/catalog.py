@@ -2,7 +2,7 @@
 
 Everything the store says about a product comes from that file, and
 everything the access page hands over is named there too. A value that is
-the owner's to decide (a price, a refund term, a payment link) is `null` or empty
+Miro's to decide (a price, a refund term, a payment link) is `null` or empty
 until he sets it, and the code treats "unset" as "not on sale", never as a
 default:
 
@@ -50,13 +50,13 @@ class File:
 
 # ------------------------------------------------- offer panels (2026-10-11)
 #
-# the owner's competitor report ("Compete through useful results", 11 Oct 2026):
+# Miro's competitor report ("Compete through useful results", 11 Oct 2026):
 # lead each page with what the buyer will finish, the free lesson that leads
 # to it, what was tested and when, a troubleshooting preview, the approval
 # step, real samples, and exactly what is in the box. Every field below is
 # optional and defaults to empty, so a product without it renders as before.
 # What could not be checked goes in `unverified` (a product's) or a store
-# `*_note`, which no page ever prints: it is the list of questions for the owner.
+# `*_note`, which no page ever prints: it is the list of questions for Miro.
 
 INCLUSION_KINDS = ("video", "guide", "files", "worksheet")
 EVIDENCE_KINDS = ("sample-lesson", "worksheet", "page-image", "template", "exercise")
@@ -230,7 +230,7 @@ class Product:
     review_demo: ReviewDemo | None = None
     evidence: tuple[Evidence, ...] = ()
     testimonials: tuple[str, ...] = ()   # genuine, with permission; none yet
-    unverified: tuple[str, ...] = ()     # the owner's open questions; never rendered
+    unverified: tuple[str, ...] = ()     # Miro's open questions; never rendered
 
 
 @dataclass(frozen=True)
@@ -264,7 +264,7 @@ class Catalog:
     @property
     def support(self) -> dict[str, Any]:
         """The bounded-help policy (store.support). `*_note` keys and null
-        values are the owner's to decide and are never rendered."""
+        values are Miro's to decide and are never rendered."""
         return dict(self.store.get("support") or {})
 
     def routes_for(self, slug: str) -> tuple[Route, ...]:

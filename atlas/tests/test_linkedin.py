@@ -18,7 +18,7 @@ from atlas.modules import linkedin
 @pytest.fixture(autouse=True)
 def _flycheap_as_fixture_page(monkeypatch):
     """These tests drive the page mechanics with FlyCheap as their example
-    page. FlyCheap is retired by default (the owner, 2026-10-09); that default is
+    page. FlyCheap is retired by default (Miro, 2026-10-09); that default is
     pinned in test_linkedin_retired.py, not here."""
     from atlas.modules import linkedin as _li
     monkeypatch.setitem(_li.PAGES, "guardian", _li.KNOWN_PAGES["guardian"])
@@ -119,7 +119,7 @@ async def test_the_two_pages_read_different_locations(state):
 
 async def test_an_absent_bank_is_unknown_not_zero(state):
     """"No bank found" and "the bank is empty" are different facts. Reporting
-    the first as FAILING would page the owner about a path that changed."""
+    the first as FAILING would page Miro about a path that changed."""
     state({"improver": {}})
     obs = await linkedin.post_runway("flycheap")
     assert obs.health is Health.UNKNOWN
@@ -177,12 +177,12 @@ async def test_a_timestamp_without_an_offset_is_unknown(state):
 # ------------------------------------------------------------ alert prose
 
 NEGATED = (
-    "BROWSER UNAVAILABLE - run cut short. Browser pane: signed OUT of "
+    "BROWSER UNAVAILABLE - run cut short. Browser pane: signed OUT of "  # noqa: ISC004
     "LinkedIn, lands on the Sign in page. NOT a LinkedIn restriction/CAPTCHA/"
     "limit warning - no LinkedIn-side block was seen.",
-    "Browser pane: signed OUT of LinkedIn. NO LinkedIn-side restriction, "
+    "Browser pane: signed OUT of LinkedIn. NO LinkedIn-side restriction, "  # noqa: ISC004
     "CAPTCHA or limit warning was seen - this is a tooling failure.",
-    "Not a LinkedIn restriction/CAPTCHA/limit warning - LinkedIn was never "
+    "Not a LinkedIn restriction/CAPTCHA/limit warning - LinkedIn was never "  # noqa: ISC004
     "reached at all this run.",
 )
 
@@ -237,7 +237,7 @@ async def test_old_alerts_do_not_page_forever(state):
 async def test_runway_does_not_also_raise_a_signal(state):
     """The check reports runway as DEGRADED/FAILING at Severity.HIGH, which
     is actionable and routes on its own. A signal too is two notifications
-    for one fact — and the second one is what makes the owner mute the first."""
+    for one fact — and the second one is what makes Miro mute the first."""
     state({"improver": bank("approved")})
     assert [s for s in await linkedin.MODULE.signals() if "runs out" in s.title] == []
 
@@ -255,9 +255,9 @@ async def test_open_items_are_surfaced_with_their_blocker(state):
     """The key is date-suffixed, so the name is not fixed."""
     state({"open_items_2026_09_21": [
         {"what": "delete and repost B11 text-only, or leave it?",
-         "blocked_by": "the owner's decision"}]})
+         "blocked_by": "Myron's decision"}]})
     signal, = [s for s in await linkedin.MODULE.signals() if "waiting on you" in s.title]
-    assert "the owner's decision" in signal.body
+    assert "Myron's decision" in signal.body
 
 
 async def test_agenda_names_the_day_each_page_goes_quiet(state):

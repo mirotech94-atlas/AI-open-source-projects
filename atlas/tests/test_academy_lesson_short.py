@@ -1,4 +1,4 @@
-"""Lesson Shorts (academy/lesson_short.py): the owner, 2026-10-11, "make the
+"""Lesson Shorts (academy/lesson_short.py): Miro, 2026-10-11, "make the
 reels shorts about each video and the important parts to it". The picker
 is code, not a model; the words are the lesson's own."""
 from __future__ import annotations
@@ -131,11 +131,11 @@ def test_build_says_the_lesson_then_closes_on_the_store(tmp_path):
     assert beats[1].audio == "" and "lesson 1.2 of Sell With AI" in beats[1].text
     assert caption.split("\n")[0] == "The idea. " + WORDS + " " + WORDS or \
         caption.split("\n")[0] == "Permission first"
-    assert caption.endswith("Made with AI") and "agency.example.com/sell-with-ai/" in caption
+    assert caption.endswith("Made with AI") and "agency.storefront.test/sell-with-ai/" in caption
     assert "link in bio" not in caption.lower()
     yt = ls.youtube_text(les, title, beats)
     assert yt.split("\n")[0] == "Permission first" and yt.endswith("Made with AI")
-    assert "https://agency.example.com/sell-with-ai/" in yt
+    assert "https://agency.storefront.test/sell-with-ai/" in yt
 
 
 def test_find_reads_only_real_course_keys(tmp_path):
@@ -260,7 +260,7 @@ def test_each_course_cover_exists_in_the_store_assets():
         assert (ASSETS / path).is_file(), (course, path)
 
 
-# the owner, 2026-10-11: "post 2x per day, each reel a different lesson".
+# Miro, 2026-10-11: "post 2x per day, each reel a different lesson".
 
 @pytest.mark.parametrize(("env", "single", "hours"), [
     ("", "", (16, 23)), ("9, 21", "", (9, 21)), ("", "14", (14,)), ("x", "", (16, 23)),
@@ -360,7 +360,7 @@ def test_lesson_pages_use_the_brand_and_keep_text_inside_the_safe_zone():
 
 
 async def test_a_lesson_short_is_said_fresh_in_the_human_voice(monkeypatch, tmp_path):
-    """the owner, 2026-10-12: "make it like a human talking", "go for it". Every
+    """Miro, 2026-10-12: "make it like a human talking", "go for it". Every
     beat is said by Fish S2 with its cue; a beat Fish cannot say falls back
     to the lesson's recording; the captions never show a cue."""
     from atlas.modules.content import ffmpeg, stills

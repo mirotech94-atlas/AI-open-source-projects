@@ -1,9 +1,9 @@
 """What the client told us — the only source a client site's claims come from.
 
-the owner, 2026-09-29, from the "20 things before launch" reel: reviews, case
+Miro, 2026-09-29, from the "20 things before launch" reel: reviews, case
 studies, a team photo, a response-time promise, opening hours and any
 stat must be the client's own. None of it is ever generated, paraphrased or
-guessed. It lives in one file the owner puts beside the client's other uploads:
+guessed. It lives in one file Miro puts beside the client's other uploads:
 
     AGENCY_UPLOADS_DIR/<lead_id>/client.json
 
@@ -46,7 +46,7 @@ retired "100" package does not, and neither does a missing or unrecognised value
 tier is a commercial fact a person writes down, never a build argument a
 model could pick. `area` is the client's own words for where they work.
 `domain` is the client's own address for the site when it has one besides
-the preview (`agency.example.com/preview/<slug>/`); it is the only other origin the chat answers. The
+the preview (`agency.storefront.test/preview/<slug>/`); it is the only other origin the chat answers. The
 lead's old `website` never is: that is the site ATLAS audited, not this one.
 """
 from __future__ import annotations
@@ -73,7 +73,7 @@ DEFAULT_COLOURS = {"primary": "#0f6e8c", "background": "#ffffff", "text": "#1b24
 
 PACKAGES = ("500", "300", "100")
 CHAT_PACKAGES = frozenset({"500", "300"})
-# 2026-10-29: ATLAS runs on the owner's Mac at 127.0.0.1 only, so no visitor's
+# 2026-10-29: ATLAS runs on Miro's Mac at 127.0.0.1 only, so no visitor's
 # browser can reach /public/site-chat/<slug> or /public/call-me/<slug>. While
 # there is no public door, a build ships neither the chat widget nor "Have
 # Mapfront call me"; the API routes stay for the day one exists. A code
@@ -347,7 +347,7 @@ def _colours(raw: object, problems: list[str]) -> dict[str, str]:
 def read_client_file(root: Path) -> tuple[dict[str, Any] | None, str | None]:
     """The raw `client.json` under `root`, `(None, None)` when there is none,
     or `(None, reason)` when it exists but is not a JSON object — a file
-    the owner put there and that ATLAS could not read must stop the build, not
+    Miro put there and that ATLAS could not read must stop the build, not
     be silently treated as "no client data". Blocking."""
     path = root / CLIENT_FILE
     if not path.exists():

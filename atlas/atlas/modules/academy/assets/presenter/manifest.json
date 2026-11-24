@@ -1,0 +1,23 @@
+{
+ "version": 1,
+ "clips": {
+  "intro": {
+   "file": "intro.mp4",
+   "sha256": "34b04076e57c64480ff4c463c675cfad5c6ed7cad27d5989d8fbc4c3015528fc",
+   "seconds": 5.867,
+   "said": "Welcome back, guys, to my new channel! My name is Myron. Welcome to ATLAS Academy.",
+   "bytes": 2666356,
+   "source": "intro.mov",
+   "source_sha256": "cafcd1103d48286c9e15e25ed1f9e570a4d11b22a180762ea82a4f7e36f6c356",
+   "kept": [
+    [
+     0.02,
+     5.931
+    ]
+   ],
+   "cuts_asked": [],
+   "lufs": -21.0,
+   "made_at": "2026-10-13T05:07:15+00:00"
+  }
+ }
+}

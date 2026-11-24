@@ -4,7 +4,7 @@
 Tier 1 (an email can't be unsent), with a dry run that sends nothing, to
 the address Stripe holds and never one given as a parameter.
 `academy.publish_shop` puts the storefront live as a release link under the
-publish root, served at agency.example.com.
+publish root, served at agency.storefront.test.
 """
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def test_resend_access_can_never_be_made_tier_1():
 
 
 def test_publish_shop_is_tier_1_with_a_dry_run_and_a_rollback():
-    # the owner, 2026-09-30: "anything that is not urgent, you approve it".
+    # Miro, 2026-09-30: "anything that is not urgent, you approve it".
     a = _actions()["academy.publish_shop"]
     assert a.tier is Tier.AUTO and a.dry_run is not None and a.rollback is not None
     assert classify(a).allowed
@@ -148,7 +148,7 @@ async def test_the_publish_dry_run_writes_nothing_public(roots, monkeypatch):
     monkeypatch.setattr(publish, "load", lambda: cat, raising=False)
     monkeypatch.setattr(academy, "load", lambda: cat)
     out = await publish.publish_shop_dry()
-    assert out.ok and "agency.example.com" in out.detail
+    assert out.ok and "agency.storefront.test" in out.detail
     assert "nothing yet" in out.detail
     assert not (roots / "shop").exists()
 
@@ -279,7 +279,7 @@ async def test_an_unreadable_catalog_is_unknown_never_ok(monkeypatch):
 # ------------------------------------------- the pinned comment (task 6)
 #
 # 2026-10-13 (growth plan, task 6): the quiz and the free lab file go in a
-# comment under a public tutorial. Tier 1 by the owner's standing policy, so it
+# comment under a public tutorial. Tier 1 by Miro's standing policy, so it
 # has a real dry run and a real rollback -- one that edits the comment to
 # "(withdrawn)", never deletes it (deletion is Tier 3).
 
@@ -294,7 +294,7 @@ def test_the_pinned_comment_is_tier_1_with_the_quiz_and_the_lab():
     ep = s.episodes[1]
     text = tut.pinned_comment(s, ep)
     assert "comment your answer." in text
-    assert "https://agency.example.com/academy/free/" in text
+    assert "https://agency.storefront.test/academy/free/" in text
     assert "Free lab file (no sign-up): " in text and "A. " in text
 
 

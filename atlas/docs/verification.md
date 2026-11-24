@@ -176,11 +176,11 @@ regenerated for these two lines on purpose.
 | `linkedin.publish_post` | The page's published list, read in a browser under the module's `lock()`. The session is never saved back. The post-bank entry supplies the entry id, status and activity URL. |
 | `gitlab.open_issue` | The issue by its iid, in the approved project, with the approved title. |
 | `calendar.create_block`, `calendar.book_with` | The event by id on the primary calendar. Checks: not cancelled; start and end; title; attendee scope (none for a block, exactly the approved attendee for a booking). A naive `start` is resolved in the calendar's own timezone, and the evidence records that (RA-E2). |
-| `calendar.decline_invite` | the owner's own attendee row, which must read `declined`. |
+| `calendar.decline_invite` | Miro's own attendee row, which must read `declined`. |
 | `calendar.offer_slots` | The sent Gmail message, by id: metadata only, labelled SENT, to the approved recipient. |
-| `cloudco.snapshot_all` | `/snapshot`, checked for a snapshot named `atlas-<stamp>` for each targeted instance. The run's evidence now lists each instance: queued, or failed at dispatch. A dispatch failure, a failed status, or no listing within 10 minutes means contradicted, and each failure is listed (RA-D2). Not listed yet, within that window, means unknown. |
+| `cloudhost.snapshot_all` | `/snapshot`, checked for a snapshot named `atlas-<stamp>` for each targeted instance. The run's evidence now lists each instance: queued, or failed at dispatch. A dispatch failure, a failed status, or no listing within 10 minutes means contradicted, and each failure is listed (RA-D2). Not listed yet, within that window, means unknown. |
 | `nightshift.merge` | The branch's merge requests, by GET, against the commit pinned on the job (`nightshift_jobs.head_sha`, read from GitLab when `check_jobs` marks the job done). Merged at the pin: verified. Merged at any other commit: contradicted, class `security`. Not merged: contradicted. The reconciler makes the same check. |
-| `linkedin.reshare_post` | The post bank must record `reshared` as `True`, and the entry's first 40 characters must be on the owner's recent activity. One read in a browser under the module's `lock()`; the session is never saved back. |
+| `linkedin.reshare_post` | The post bank must record `reshared` as `True`, and the entry's first 40 characters must be on Miro's recent activity. One read in a browser under the module's `lock()`; the session is never saved back. |
 | `linkedin.update_page_identity` | The page's public name, read the same way. A logo change cannot be compared, because LinkedIn re-encodes the image, so its leg is always unknown and a change that includes a logo never reads verified. |
 | `agency.deploy_site` | One GET of `https://<agency_sites.domain>/`, compared with the `<title>` of the release the deploy recorded. 200 with that title: verified. Another title, or a 4xx: contradicted. A 5xx, no answer, no domain, or no title to expect: unknown. |
 | `shop.create_payment_link` | The payment link and its line items, read from Stripe by GET with the same shop key: active, tagged with the approved product, one item at the approved price in USD, quantity 1, and a redirect to `/deliver/`. A 404 is contradicted. |
@@ -193,7 +193,7 @@ regenerated for these two lines on purpose.
 | `instagram.hide_comment` | The comment by id, whose `hidden` must be true. |
 | `instagram.reply_comment` | The comment's replies, which must include the reply id the run recorded, with the approved text. |
 | `nightshift.merge` | The merge request by the iid the run records. It must be merged, from the job's branch, and at the `sha` the run records. With no recorded sha, the result is unknown. The action itself still fails, because there is no `gitlab.merge_branch`. |
-| `delegate.claude_code` | The `handoffs` row, read with a SELECT. `queued`, `claimed`, `done`, `needs_owner` or `failed` means the job was handed over. `expired`, `draft` or `cancelled` is contradicted. |
+| `delegate.claude_code` | The `handoffs` row, read with a SELECT. `queued`, `claimed`, `done`, `needs_miro` or `failed` means the job was handed over. `expired`, `draft` or `cancelled` is contradicted. |
 | `agency.prospect` | The `agency_leads` rows by the `lead_ids` the run recorded: all present, none `dropped`. A run that added no lead is unknown. |
 | `agency.audit` | The `agency_audits` row by the recorded `audit_id`: the approved lead, not withdrawn (severity -1), and the severity the run reported. A cached audit says so in evidence. |
 | `agency.rank` | The ranked leads' scores, compared with the recorded `scores_sha` (rounded through float4, the column's type). A missing row or null score is contradicted. |
@@ -223,15 +223,15 @@ regenerated for these two lines on purpose.
 | `vault.log_reading` | The `library_entries` row by id (kind, title, notes hash, memory id) and that memory. |
 | `vault.reindex` | The `vault_documents` rows for the first 20 recorded paths: sha prefix and chunks. A newer sha is unknown, class `stale`. A run that indexed nothing is checked only by the document count and last-indexed time. |
 | `lessons.clear` | Its own SELECT of `blocked()`'s rule: no row may still block, and the latest cleared row is read. `blocked()` itself fails open, so it is not used. |
-| `rhythm.note_circumstance` | The `rhythm_notes` row by the rollback-token id: kind, detail hash, until. The owner's words never go into evidence. |
+| `rhythm.note_circumstance` | The `rhythm_notes` row by the rollback-token id: kind, detail hash, until. Miro's words never go into evidence. |
 | `linkedin.approve_draft` | The post-bank entry, read from the state file without a browser, the lock or a save: status approved, `posted_unverified` or published, and a payload hash equal to the approved `text_sha256` (a mismatch is contradicted, class `security`). |
 | `youtube.upload`, `youtube.set_visibility` | The video by id, by GET on `videos.list`: exists, title, and `privacyStatus` (private for an upload, the approved value for a change). The token comes only from the module's cache; a cold cache is unknown, class `stale`, because a refresh is a POST. |
 | `youtube.draft_metadata` | The `content_drafts` row by id: kind `youtube_video`, not dropped, source, title, body hash. |
 | `tiktok.upload_draft` | Nothing is read: TikTok's publish-status fetch and video list are POSTs. Unknown by design, with the `publish_id` as evidence. |
 | `screening.book_slot` | The calendar event by id (start, 30 minutes, no other attendee) and the `screening_calls` row (`booked`, that event id). The title holds the caller's number, so neither goes into evidence. |
-| `exampleco.price_check` | Nothing to read: a read-only search that writes nothing. Unknown by design, with the run's comparables summary as evidence. |
+| `mirotech.price_check` | Nothing to read: a read-only search that writes nothing. Unknown by design, with the run's comparables summary as evidence. |
 
-Each of `youtube.*`, `tiktok.*`, `screening.*` and `exampleco.*` returns unknown, class `disabled`, before any read when its module is off: named in `ATLAS_DISABLED_MODULES`, or missing its `requires_env` (and, for YouTube, the channel's credentials; for screening, the calendar's `GOOGLE_*`).
+Each of `youtube.*`, `tiktok.*`, `screening.*` and `mirotech.*` returns unknown, class `disabled`, before any read when its module is off: named in `ATLAS_DISABLED_MODULES`, or missing its `requires_env` (and, for YouTube, the channel's credentials; for screening, the calendar's `GOOGLE_*`).
 
 ### Coverage
 
@@ -240,7 +240,7 @@ not mean an action can read verified:
 
 - **Never verified, by design (8):** `mac.open_app`, `mac.play_music`,
   `mac.music_control`, `mac.add_reminder`, `tiktok.upload_draft`,
-  `exampleco.price_check` and `browser.submit_form` are unknown at best, with
+  `mirotech.price_check` and `browser.submit_form` are unknown at best, with
   the reason. (The Guardian actions were removed on 2026-10-29.)
 - **Can read verified (63):** every other action. `purchasing.prepare_flight`
   is among them but is never read today, because its run cannot return ok.
@@ -251,7 +251,7 @@ not mean an action can read verified:
 
 These have one: the reel pair, `instagram.*`, `linkedin.publish_post`,
 `gitlab.open_issue`, `calendar.create_block`, `calendar.book_with`,
-`calendar.decline_invite`, `cloudco.snapshot_all`, `nightshift.merge`,
+`calendar.decline_invite`, `cloudhost.snapshot_all`, `nightshift.merge`,
 `stripe.retry_invoice`, `messages.reply`, `matrix_rooms.send_reply`,
 `agency.send_outreach`, `delegate.claude_code`, and, new with this pass, `agency.suppress`,
 `marketing.record_outcome`, `school.set_course`, `lessons.clear`,
@@ -273,18 +273,18 @@ Which actions have a reconciler is listed under Reconcilers above.
   (`crosspost._record_posts`). A reel with no facebook row therefore proves
   nothing. The reel reconciler looks for the Facebook leg in the Page's own
   video listing.
-- Whether CloudCo's `/snapshot` returns the complete list (pagination,
+- Whether CloudHost's `/snapshot` returns the complete list (pagination,
   ordering) has not been read from production. So an instance's absence is
   contradicted only while at least one of the same run's snapshots is
   visible. If none are, the result is unknown.
-- The CloudCo snapshot listing's field for the VM is taken from `vmIdentifier`,
+- The CloudHost snapshot listing's field for the VM is taken from `vmIdentifier`,
   `vm_identifier`, `vmId`, `vm_id` or `vm.identifier`. A listing that has
   none of these gives unknown, never verified. The real shape has not been
   read from production.
 - The LinkedIn reconciler can only pin a run to a post-bank entry when the
   start row names `entry_id`, or when exactly one entry was stamped after the
   start. Otherwise it gives unknown.
-- The reshare read-back looks once at the first screen of the owner's "all"
+- The reshare read-back looks once at the first screen of Miro's "all"
   activity, which also lists his comments and reactions. A busy day can push
   the repost below it, which reads contradicted. The run itself only returns
   ok after it saw the repost there.

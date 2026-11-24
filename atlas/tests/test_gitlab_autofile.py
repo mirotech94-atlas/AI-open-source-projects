@@ -97,8 +97,8 @@ async def test_a_missing_project_is_still_named(monkeypatch):
         raise httpx.HTTPStatusError(
             "404", request=request, response=httpx.Response(404, request=request))
     monkeypatch.setattr(gitlab, "_api", missing)
-    got = await gitlab.open_issue_dry("business", "the owner/ai", "x y z")
-    assert not got.ok and "no project 'the owner/ai'" in got.detail
+    got = await gitlab.open_issue_dry("business", "Miro/ai", "x y z")
+    assert not got.ok and "no project 'Miro/ai'" in got.detail
 
 
 @pytest.mark.parametrize(("a", "b", "same"), [

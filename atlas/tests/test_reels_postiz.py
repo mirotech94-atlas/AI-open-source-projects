@@ -338,7 +338,7 @@ CLIPS = {"id": "tt-2", "identifier": "tiktok-business", "name": "atlasclips12"}
 OTHER = {"id": "tt-3", "identifier": "tiktok", "name": "someoneelse"}
 
 
-@pytest.mark.parametrize("clips_env", [None, "tt-2", "atlasclips12", "@example_handle"])
+@pytest.mark.parametrize("clips_env", [None, "tt-2", "atlasclips12", "@atlasclips12"])
 @pytest.mark.parametrize("listed", [[STORIES, CLIPS], [CLIPS, STORIES]])
 def test_the_reels_lane_never_picks_the_clips_tiktok(monkeypatch, clips_env, listed):
     if clips_env:
@@ -421,8 +421,8 @@ async def test_a_clip_posts_to_the_clips_integration_as_brand_content(monkeypatc
 
 @pytest.mark.parametrize(("answer", "url"), [
     ({"postId": "pz-9", "releaseId": "74",
-      "releaseURL": "https://www.tiktok.com/@example_handle/video/74"},
-     "https://www.tiktok.com/@example_handle/video/74"),
+      "releaseURL": "https://www.tiktok.com/@atlasclips12/video/74"},
+     "https://www.tiktok.com/@atlasclips12/video/74"),
     # A URL on another account is not this post's: never recorded.
     ({"postId": "pz-9", "releaseId": "74",
       "releaseURL": "https://www.tiktok.com/@atlasstories7/video/74"}, None),
@@ -537,7 +537,7 @@ def _yt_fake(monkeypatch, *, integrations=None, settings=YT_SETTINGS, post=None,
     return seen
 
 
-@pytest.mark.parametrize("env", ["yt-1", "AtlasClips", "@example_handle"])
+@pytest.mark.parametrize("env", ["yt-1", "AtlasClips", "@atlasclips"])
 @pytest.mark.parametrize("listed", [[YT_OTHER, YT_CLIPS, STORIES, CLIPS],
                                     [YT_CLIPS, CLIPS, YT_OTHER]])
 def test_the_clips_shorts_take_only_the_youtube_integration_their_env_names(
@@ -592,7 +592,7 @@ def test_a_course_post_never_goes_to_the_clips_youtube(monkeypatch):
     from atlas.modules.course import channels
     monkeypatch.setenv("POSTIZ_YOUTUBE_CLIPS_INTEGRATION", "yt-7")
     assert channels.is_clips({"id": "yt-7", "identifier": "youtube",
-                              "name": "the owner"})
+                              "name": "Miro"})
 
 
 async def test_a_short_posts_to_the_clips_youtube_as_a_public_short(monkeypatch,

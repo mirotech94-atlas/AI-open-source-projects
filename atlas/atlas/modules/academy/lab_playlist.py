@@ -1,11 +1,11 @@
 """The one "Hands-On Labs & Live Builds" playlist.
 
-the owner, 2026-10-22: every hands-on lab and live demo stays in its own course
+Miro, 2026-10-22: every hands-on lab and live demo stays in its own course
 playlist and is ALSO added to one playlist, grouped by course so a viewer
 sees which lab belongs to which course. Which videos are labs is the
 reviewed tuple tutorial_series.LABS, never inferred.
 
-* `academy.add_to_lab_playlist` (Tier 1 by the owner's approval policy: the
+* `academy.add_to_lab_playlist` (Tier 1 by Miro's approval policy: the
   promotion is made here, in code) adds a lab lesson's NEWEST public, not
   withdrawn post on record at the place that keeps the playlist ordered by
   (course, episode). The video id comes from academy_tutorial_posts, never

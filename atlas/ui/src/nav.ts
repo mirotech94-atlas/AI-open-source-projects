@@ -1,12 +1,10 @@
 /**
- * The dashboard is four tabs. Every older path still resolves: it redirects
+ * The dashboard is three tabs (the HUD is not one: it opens when ATLAS is called). Every older path still resolves: it redirects
  * to the tab that now holds what it showed (the pages stay on disk).
  */
 export const TABS = [
   { to: "/", label: "Command Center" },
   { to: "/agency", label: "Agency" },
-  { to: "/hud", label: "HUD" },
-  { to: "/cameras", label: "Cameras" },
 ] as const;
 
 export const REDIRECTS: Readonly<Record<string, string>> = {
@@ -19,7 +17,6 @@ export const REDIRECTS: Readonly<Record<string, string>> = {
   "/tasks": "/agency",
   "/calendar": "/agency",
   "/marketing": "/",
-  "/church": "/",
   "/leads": "/agency",
   "/activity": "/agency",
   "/reports": "/agency",

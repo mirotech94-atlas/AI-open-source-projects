@@ -7,14 +7,14 @@ import hashlib
 import re
 from urllib.parse import urlsplit
 
-# the owner, 2026-10-27: places of worship are never sales leads (the church work
-# is ECC's own channel, not a prospect list).
+# Miro, 2026-10-27: places of worship are never sales leads (the community work
+# is AMSM's own channel, not a prospect list).
 EXCLUDED_TYPES = frozenset({
-    "church", "place_of_worship", "synagogue", "mosque", "temple", "hindu_temple",
+    "community", "place_of_worship", "synagogue", "mosque", "temple", "hindu_temple",
     "buddhist_temple", "religious_organization", "cathedral", "chapel",
 })
 _WORSHIP_NAME = re.compile(
-    r"\b(?:church|chapel|cathedral|parish|synagogue|shul|temple|mosque|masjid"
+    r"\b(?:community|chapel|cathedral|parish|synagogue|shul|temple|mosque|masjid"
     r"|ministr(?:y|ies)|congregation|tabernacle|diocese|gurdwara|mandir)\b",
     re.IGNORECASE)
 

@@ -1,0 +1,44 @@
+{
+ "key": "n8n-manage",
+ "seconds": 28.143,
+ "marks": [
+  [
+   0.0,
+   7.437
+  ],
+  [
+   7.575,
+   11.427
+  ],
+  [
+   11.567,
+   20.341
+  ],
+  [
+   20.443,
+   28.143
+  ]
+ ],
+ "urls": [
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/executions/5"
+ ],
+ "captions": [
+  "Open a node: what went in, what came out",
+  "A red node? Open it, read the error, fix, test again",
+  "Publish: the Production URL starts listening",
+  "Every real run is in the Executions tab"
+ ],
+ "width": 1536,
+ "height": 864,
+ "fps": 30,
+ "bytes": 3333107,
+ "sha256": "314e6b7307828bd5db771e846cad84502affe8770328aaff036b4b910bcc0104",
+ "versions": {
+  "chromium": "153.0.8010.12",
+  "n8n": "2.40.7"
+ },
+ "recorded_at": "2026-10-12T16:52:09+00:00"
+}

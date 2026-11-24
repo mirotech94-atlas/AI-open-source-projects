@@ -1,4 +1,4 @@
-"""CSV leads the owner drops in `data/sales/inbox/`: parsed in code, never by a
+"""CSV leads Miro drops in `data/sales/inbox/`: parsed in code, never by a
 model. Every cell is untrusted text stored as data; nothing here reaches a
 prompt.
 

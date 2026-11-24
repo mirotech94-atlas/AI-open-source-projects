@@ -1,4 +1,4 @@
-"""The Websites lane's approval card (agent `sites`, the owner 2026-10-28).
+"""The Websites lane's approval card (agent `sites`, Miro 2026-10-28).
 
 "All the live projections that are done should be seen by me first to
 approve and you send out email to each owner." A preview the lane built
@@ -65,9 +65,9 @@ def card_text(*, name: str, to: str, subject: str | None, body: str,
 async def shared(lead_id: int) -> bool:
     """True once an email to this lead left (sent, bounced or replied): only
     then may anything else (an AI call, an automatic reply) name the preview
-    link. Before that the link is the owner's to approve on the card."""
+    link. Before that the link is Miro's to approve on the card."""
     from . import _store
     try:
         return bool(await _store.has_outreach(int(lead_id)))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return False                    # unreadable: not shown to be shared

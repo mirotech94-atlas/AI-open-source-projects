@@ -55,7 +55,7 @@ def test_render_writes_a_1280x720_png_where_the_uploader_looks(tmp_path, monkeyp
     monkeypatch.setenv(ly.STAGING_ENV, str(tmp_path))
     try:
         out = lt.stage("lesson-adults-7.5", "Learn AI", lt.lesson_callouts("Adults", "7.5", 186))
-    except Exception as e:  # no Chrome installed here
+    except Exception as e:  # no Chrome installed here  # noqa: BLE001
         pytest.skip(f"no Chrome: {e}")
     assert out == tmp_path / "lesson-adults-7.5.png" and ly._thumb("lesson-adults-7.5") == out
     data = out.read_bytes()

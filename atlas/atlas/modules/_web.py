@@ -64,7 +64,7 @@ async def fetch_text(url: str, *, limit: int = 14000,
             if refused is not None:
                 return None, refused
             r.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc)
     text = _flatten(r.text)
     text = await _firecrawl_fallback(url, text)
@@ -136,7 +136,7 @@ async def _search_brave(query: str, limit: int, key: str) -> tuple[list[dict], s
                             params={"q": query, "count": limit})
             r.raise_for_status()
             hits = r.json().get("web", {}).get("results", [])[:limit]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return [], explain(exc)
     return [{"title": h.get("title", ""), "url": h.get("url", ""),
              "snippet": h.get("description", "")} for h in hits], None

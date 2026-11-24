@@ -1,6 +1,6 @@
 """Fiverr, read from Fiverr's own notification emails.
 
-WHY THIS EXISTS (the owner, 2026-09-28). Fiverr's PerimeterX bot wall blocks
+WHY THIS EXISTS (Miro, 2026-09-28). Fiverr's PerimeterX bot wall blocks
 every seller page ATLAS asks for, and getting past bot detection is not on
 the table. Fiverr does, however, mail him about every buyer message, every
 order and every dispute, and ATLAS already reads his Gmail. This is the
@@ -24,7 +24,7 @@ WHAT EMAIL CAN AND CANNOT PROVE.
   check DEGRADED.
 
 Formats, verified against real notifications in his inbox on 2026-09-28
-(all from contact41@example.com):
+(all from noreply@e.fiverr.com):
 
     You’ve got new messages from {name}           (U+2019 apostrophe)
     You've received messages from {name}          (older, order threads)
@@ -33,7 +33,7 @@ Formats, verified against real notifications in his inbox on 2026-09-28
     {user} opened a dispute regarding your order
     Hi {username}   + body "Your Gigs have been paused ..."
 
-Mail about orders the owner PLACED as a buyer ("Your order is ready", "your
+Mail about orders Miro PLACED as a buyer ("Your order is ready", "your
 order has started!", "A custom offer, just for you", receipts, invoices,
 "rate your recent order") is filed as buyer-side and kept out of every
 seller count. announce./affiliates./notifications. mail is marketing or
@@ -76,7 +76,7 @@ SOURCE = "fiverr-email"
 WINDOW_DAYS = int(os.getenv("FIVERR_MAIL_DAYS", "7") or 7)
 MAX_MESSAGES = 40
 
-# Kinds. Seller-side first; BUYER_SIDE is the owner buying from someone else.
+# Kinds. Seller-side first; BUYER_SIDE is Miro buying from someone else.
 MESSAGE = "message"
 NEW_ORDER = "new_order"
 DUE_SOON = "due_soon"
@@ -106,7 +106,7 @@ def _norm(subject: str) -> str:
 
 def is_fiverr(sender: str) -> bool:
     """The ADDRESS is Fiverr's -- not the display name, which anyone can set
-    to "contact41@example.com"."""
+    to "noreply@e.fiverr.com"."""
     _, addr = parseaddr(sender or "")
     dom = addr.rpartition("@")[2].lower()
     return dom == SENDER or dom.endswith(f".{SENDER}")

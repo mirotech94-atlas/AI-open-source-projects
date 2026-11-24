@@ -1,4 +1,4 @@
-"""The store's free video lessons page, agency.example.com/videos/ (the owner,
+"""The store's free video lessons page, agency.storefront.test/videos/ (Miro,
 2026-10-11): every tutorial public on YouTube, and nothing else, with the
 series' course beside it; schema.org records for the videos; nothing loads
 from YouTube before a visitor presses play; and the store republishes when
@@ -65,11 +65,11 @@ def test_todays_two_videos_are_on_the_page_in_their_series():
     assert site._e(claude0.topic_shown) in page
     assert "<b>You'll learn:</b> What Claude is; Your first chat;" in page
     assert page.count('class="vrel"') == 2
-    assert page.count("https://www.youtube.com/@example_handle?sub_confirmation=1") >= 3
+    assert page.count("https://www.youtube.com/@atlasacademyphp?sub_confirmation=1") >= 3
     # The Claude series' level ladder lights Basics only.
     assert '<li class="on"><b>Level 0</b>Basics</li>' in page
     assert "<li><b>Level 3</b>Advanced</li>" in page
-    assert "Go deeper: courses at agency.example.com" in page
+    assert "Go deeper: courses at agency.storefront.test" in page
 
 
 def test_a_series_with_nothing_public_has_no_section():
@@ -249,14 +249,14 @@ def test_json_ld_has_a_valid_video_object_per_video():
         assert v["uploadDate"] == row.uploaded.isoformat().replace("+00:00", "Z")
         assert datetime.fromisoformat(v["uploadDate"]) == row.uploaded
         assert v["thumbnailUrl"][0] == f"https://i.ytimg.com/vi/{row.video_id}/hqdefault.jpg"
-        assert v["thumbnailUrl"][1].startswith("https://agency.example.com/assets/videos/")
+        assert v["thumbnailUrl"][1].startswith("https://agency.storefront.test/assets/videos/")
 
 
 def test_sitemap_llms_nav_and_home_point_at_the_videos():
     files = _render()
-    assert "<loc>https://agency.example.com/videos/</loc>" in files["sitemap-academy.xml"].decode()
+    assert "<loc>https://agency.storefront.test/videos/</loc>" in files["sitemap-academy.xml"].decode()
     llms = files["academy/llms.txt"].decode()
-    assert "https://agency.example.com/videos/" in llms
+    assert "https://agency.storefront.test/videos/" in llms
     assert "https://youtu.be/uPzByskDRXw" in llms and "https://youtu.be/M1a9Rd9mN6E" in llms
     home = files["academy/index.html"].decode()
     assert 'href="../videos/"' in home and ">Free lessons</a>" in home

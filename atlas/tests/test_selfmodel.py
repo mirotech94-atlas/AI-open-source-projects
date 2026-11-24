@@ -1,4 +1,4 @@
-"""The self-model: what ATLAS knows about itself, where the owner is, and how
+"""The self-model: what ATLAS knows about itself, where Miro is, and how
 short to be when he is out.
 
 The property that matters here is the same one that matters everywhere else
@@ -121,22 +121,22 @@ async def test_presence_is_unknown_when_home_ips_is_not_set(monkeypatch):
     """PRESENCE_PEERS alone is Task 33's old contract -- Task 51 also needs
     HOME_IPS before it will say True or False. The mesh is still read, so
     the peers' current addresses come back for him to copy from."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     monkeypatch.delenv("HOME_IPS", raising=False)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     seen = await rhythm.presence()
     assert seen["home"] is None
     assert "HOME_IPS" in seen["reason"]
-    assert seen["peers"]["owner-iphone"]["connection_ip"] == HOME_IP
+    assert seen["peers"]["miro-iphone"]["connection_ip"] == HOME_IP
 
 
 async def test_presence_is_unknown_when_the_mesh_is_unreachable(monkeypatch):
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch)
 
     async def unreachable(_path):
@@ -149,11 +149,11 @@ async def test_presence_is_unknown_when_the_mesh_is_unreachable(monkeypatch):
 
 
 async def test_presence_is_true_when_a_named_peer_connects_from_home(monkeypatch):
-    monkeypatch.setenv("PRESENCE_PEERS", "the owner-iPhone, studio-mac")
+    monkeypatch.setenv("PRESENCE_PEERS", "Miro-iPhone, studio-mac")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP},
                 {"id": "2", "name": "studio-mac", "connected": False},
                 {"id": "3", "name": "atlas-box", "connected": True,
@@ -162,16 +162,16 @@ async def test_presence_is_true_when_a_named_peer_connects_from_home(monkeypatch
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     seen = await rhythm.presence()
     assert seen["home"] is True
-    assert seen["peers_seen"] == ["owner-iphone"]
-    assert seen["home_peer"] == {"name": "owner-iphone", "ip": HOME_IP}
+    assert seen["peers_seen"] == ["miro-iphone"]
+    assert seen["home_peer"] == {"name": "miro-iphone", "ip": HOME_IP}
 
 
 async def test_presence_is_true_with_a_cidr_in_home_ips(monkeypatch):
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch, "203.0.113.0/24")
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
@@ -183,11 +183,11 @@ async def test_a_malformed_home_ips_entry_refuses_the_whole_list(monkeypatch):
     """One typo must not silently shrink the home set to whatever else
     happened to parse -- that is a guess about which entries he meant. It
     refuses the list outright and says which entry was the problem."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch, HOME_IP, "nope")
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
@@ -199,11 +199,11 @@ async def test_a_malformed_home_ips_entry_refuses_the_whole_list(monkeypatch):
 async def test_every_malformed_home_ips_entry_is_named(monkeypatch):
     """Minor from the branch review: with more than one bad entry, every
     one is named, not just the first."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch, HOME_IP, "nope", "also-bad")
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
@@ -215,11 +215,11 @@ async def test_every_malformed_home_ips_entry_is_named(monkeypatch):
 
 async def test_home_ips_of_only_commas_is_unknown_not_open_or_closed(
         monkeypatch):
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     monkeypatch.setenv("HOME_IPS", ", ,")
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
@@ -232,17 +232,17 @@ async def test_an_unparseable_connection_ip_is_unknown_not_away(monkeypatch):
     port suffix, a hostname, garbage) must read the same as no address at
     all -- never "away", and the raw text must not surface in `peers` or in
     `reason` (it is an outside API's own text)."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": "198.51.100.4:51820"}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     seen = await rhythm.presence()
     assert seen["home"] is None
-    assert seen["peers"]["owner-iphone"]["connection_ip"] is None
+    assert seen["peers"]["miro-iphone"]["connection_ip"] is None
     assert "51820" not in seen["reason"]
 
 
@@ -250,11 +250,11 @@ async def test_presence_is_true_when_one_peer_is_home_and_another_has_no_ip(
         monkeypatch):
     """A confirmed-home peer settles it; an unresolved second peer elsewhere
     does not veto that."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone, studio-mac")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone, studio-mac")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP},
                 {"id": "2", "name": "studio-mac", "connected": True}], None
 
@@ -267,11 +267,11 @@ async def test_presence_is_unknown_when_one_peer_is_away_and_another_has_no_ip(
         monkeypatch):
     """Without a confirmed-home peer, an unresolved one blocks a False
     verdict -- "every listed peer is known to be away" is not true here."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone, studio-mac")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone, studio-mac")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": AWAY_IP},
                 {"id": "2", "name": "studio-mac", "connected": True}], None
 
@@ -285,29 +285,29 @@ async def test_presence_is_false_when_connected_from_outside_home_ips(
     """The mesh being reachable and the peer being connected is not enough
     any more -- Task 51's whole point. A phone tethered from a cafe is on
     the mesh from an address that is not home."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": AWAY_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     seen = await rhythm.presence()
     assert seen["home"] is False
     assert seen["peers_seen"] == []
-    assert seen["away_peer"] == {"name": "owner-iphone", "ip": AWAY_IP}
+    assert seen["away_peer"] == {"name": "miro-iphone", "ip": AWAY_IP}
 
 
 async def test_every_named_peer_offline_is_unknown_not_away(monkeypatch):
     """2026-09-26 22:50: his phone's NetBird app was off while he was home,
     and the call opened "You're out". Off the mesh is not away."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     monkeypatch.delenv("PRESENCE_LAN_LABELS", raising=False)
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": False}], None
+        return [{"id": "1", "name": "miro-iphone", "connected": False}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     seen = await rhythm.presence()
@@ -317,44 +317,44 @@ async def test_every_named_peer_offline_is_unknown_not_away(monkeypatch):
 
 
 async def test_a_peer_with_no_connected_field_is_unknown_not_offline(monkeypatch):
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone"}], None
+        return [{"id": "1", "name": "miro-iphone"}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     seen = await rhythm.presence()
     assert seen["home"] is None
-    assert "owner-iphone" in seen["reason"]
+    assert "miro-iphone" in seen["reason"]
 
 
 async def test_a_connected_peer_with_no_connection_ip_is_unknown(monkeypatch):
     """Connected but the mesh names no address is unknown, never a guess in
     either direction: not home, and not "he must be out" either."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True}], None
+        return [{"id": "1", "name": "miro-iphone", "connected": True}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     seen = await rhythm.presence()
     assert seen["home"] is None
-    assert "owner-iphone" in seen["reason"]
-    assert seen["peers"]["owner-iphone"]["connection_ip"] is None
+    assert "miro-iphone" in seen["reason"]
+    assert seen["peers"]["miro-iphone"]["connection_ip"] is None
 
 
 async def test_presence_is_cached_for_a_minute(monkeypatch):
     """Every alert asks where he is; the mesh is asked at most once a
     minute."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch)
     calls: list[str] = []
 
     async def peers(path):
         calls.append(path)
-        return [{"id": "1", "name": "owner-iphone", "connected": False}], None
+        return [{"id": "1", "name": "miro-iphone", "connected": False}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
     first = await rhythm.presence()
@@ -371,11 +371,11 @@ async def test_changing_home_ips_is_never_served_from_the_peers_cache(
         monkeypatch):
     """The cache key covers HOME_IPS too, not just PRESENCE_PEERS -- setting
     it for the first time must not read back the pre-HOME_IPS answer."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     monkeypatch.delenv("HOME_IPS", raising=False)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
@@ -388,13 +388,13 @@ async def test_changing_home_ips_is_never_served_from_the_peers_cache(
 
 
 async def test_a_named_peer_the_mesh_has_never_heard_of_is_not_a_no(monkeypatch):
-    """A typo in PRESENCE_PEERS must not read as "the owner is out"; that is a
+    """A typo in PRESENCE_PEERS must not read as "Miro is out"; that is a
     guess dressed as a measurement."""
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphonr")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphonr")
     _home_ips(monkeypatch)
 
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                 "connection_ip": HOME_IP}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
@@ -407,7 +407,7 @@ async def test_a_mesh_that_hangs_is_unknown_not_a_stall(monkeypatch):
     not hold an alert for the 25 seconds `get_json` would wait."""
     import asyncio
 
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     _home_ips(monkeypatch)
     monkeypatch.setattr(rhythm, "PRESENCE_TIMEOUT_S", 0.05)
 
@@ -447,7 +447,7 @@ async def test_status_reports_unknown_rather_than_zero_when_blind(monkeypatch):
 
 async def test_status_presence_is_unknown_when_the_mesh_is_unreachable(monkeypatch):
     _blind(monkeypatch)
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
 
     async def unreachable(_path):
         return None, "the mesh did not answer"
@@ -499,17 +499,17 @@ async def test_spoken_reads_back_the_numbers_from_status(monkeypatch):
             "memories": 10,
             "lessons_open": 1,
             "proposals_waiting": 0,
-            "presence": {"home": True, "peers_seen": ["owner-iphone"],
-                         "peers": {"owner-iphone": {"connected": True,
+            "presence": {"home": True, "peers_seen": ["miro-iphone"],
+                         "peers": {"miro-iphone": {"connected": True,
                                                   "connection_ip": "203.0.113.7",
                                                   "home": True},
-                                  "atlas.example.com": {"connected": True,
+                                  "atlas.storefront.test": {"connected": True,
                                                      "connection_ip":
                                                          "198.51.100.1",
                                                      "home": None}},
                          "read_at": "2026-09-24T09:46:00+00:00",
                          "reason": None,
-                         "home_peer": {"name": "owner-iphone",
+                         "home_peer": {"name": "miro-iphone",
                                       "ip": "203.0.113.7"},
                          "away_peer": None},
         }
@@ -525,9 +525,9 @@ async def test_spoken_reads_back_the_numbers_from_status(monkeypatch):
     assert "2 errors since deploy" in said
     assert "38 of 41 checks fine" in said
     assert "3 unmeasured" in said
-    assert "Where you are: home (owner-iphone on 203.0.113.7)." in said
-    assert ("Peer IPs for HOME_IPS: owner-iphone 203.0.113.7, "
-            "atlas.example.com 198.51.100.1.") in said
+    assert "Where you are: home (miro-iphone on 203.0.113.7)." in said
+    assert ("Peer IPs for HOME_IPS: miro-iphone 203.0.113.7, "
+            "atlas.storefront.test 198.51.100.1.") in said
     assert "Last thing I got wrong: Declined instagram.publish" in said
 
 
@@ -536,18 +536,18 @@ async def test_spoken_says_he_is_out_when_the_mesh_says_so(monkeypatch):
 
     async def away():
         return {"home": False, "peers_seen": [],
-                "peers": {"owner-iphone": {"connected": True,
+                "peers": {"miro-iphone": {"connected": True,
                                           "connection_ip": "198.51.100.4",
                                           "home": False}},
                 "read_at": "now", "reason": None,
                 "home_peer": None,
-                "away_peer": {"name": "owner-iphone", "ip": "198.51.100.4"}}
+                "away_peer": {"name": "miro-iphone", "ip": "198.51.100.4"}}
 
     monkeypatch.setattr(selfmodel, "presence", away)
     said = await selfmodel.spoken()
-    assert ("Where you are: out (owner-iphone connected from 198.51.100.4)."
+    assert ("Where you are: out (miro-iphone connected from 198.51.100.4)."
            in said)
-    assert "Peer IPs for HOME_IPS: owner-iphone 198.51.100.4." in said
+    assert "Peer IPs for HOME_IPS: miro-iphone 198.51.100.4." in said
 
 
 # ------------------------------------------- what it did, what it holds (G17)
@@ -697,7 +697,7 @@ async def test_brevity_never_trims_a_digest_or_a_receipt(monkeypatch, kind):
 
 
 def _mesh_says_he_is_out(monkeypatch) -> None:
-    monkeypatch.setenv("PRESENCE_PEERS", "owner-iphone")
+    monkeypatch.setenv("PRESENCE_PEERS", "miro-iphone")
     monkeypatch.setenv("HOME_IPS", "203.0.113.7")
     monkeypatch.setenv("QUIET_HOURS", "")
 
@@ -706,7 +706,7 @@ def _mesh_says_he_is_out(monkeypatch) -> None:
     # Out means connected from somewhere that is not home: an offline peer
     # no longer reads as out (2026-09-26).
     async def peers(_path):
-        return [{"id": "1", "name": "owner-iphone", "connected": True,
+        return [{"id": "1", "name": "miro-iphone", "connected": True,
                  "connection_ip": "198.51.100.4"}], None
 
     monkeypatch.setattr("atlas.modules.netbird._get", peers)
@@ -790,7 +790,7 @@ async def test_the_morning_brief_arrives_whole_when_he_is_out(monkeypatch):
 
 async def test_brevity_leaves_everything_alone_when_he_is_home(monkeypatch):
     async def home():
-        return {"home": True, "peers_seen": ["owner-iphone"], "read_at": "now",
+        return {"home": True, "peers_seen": ["miro-iphone"], "read_at": "now",
                 "reason": None}
 
     monkeypatch.setattr(comms, "presence", home)

@@ -30,7 +30,7 @@ def _decode(raw: str | None) -> str:
         return ""
     try:
         return str(make_header(decode_header(raw)))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return raw
 
 
@@ -105,7 +105,7 @@ def _sync_unreplied(host: str, port: int, user: str, password: str,
     finally:
         try:
             conn.logout()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             logging.getLogger("atlas.mail.imap").debug("imap logout failed: %s", exc)
 
 
@@ -182,7 +182,7 @@ def _sync_unread_headers(host: str, port: int, user: str, password: str,
     finally:
         try:
             conn.logout()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             logging.getLogger("atlas.mail.imap").debug("imap logout failed: %s", exc)
 
 

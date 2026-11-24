@@ -1,6 +1,6 @@
 """Academy lessons rendered by Google NotebookLM, ingested on the server.
 
-the owner, 2026-10-19: lesson videos are made in NotebookLM (Video Overview ->
+Miro, 2026-10-19: lesson videos are made in NotebookLM (Video Overview ->
 Explainer: its sketch slides, its own narrator, its "Gemini Notebook" end
 card) by a browser runner on the Mac, instead of ATLAS's Chromium + Fish
 renderer. NotebookLM's look and voice are taken as they are; the honesty
@@ -32,7 +32,7 @@ nothing leaves the box) checks a drop, cheapest first, and either
     number the script never says, a human-on-camera claim, or a run of
     eight words shared with a human tutorial; said in the channel;
   * or re-encodes it (slowed to ACADEMY_NOTEBOOKLM_PACE, pitch kept, and
-    upscaled to ACADEMY_NOTEBOOKLM_HEIGHT; the owner, 2026-10-20) into the
+    upscaled to ACADEMY_NOTEBOOKLM_HEIGHT; Miro, 2026-10-20) into the
     episode directory as a plain video.mp4 with its manifest (audio
     "notebooklm", the Whisper lines on the slowed clock as caption timings),
     the navy thumbnail and description.txt. The drop's own file waits in
@@ -65,7 +65,7 @@ from typing import Any
 from ...kernel.contracts import ActionResult, Health, Observation
 from . import tutorial_series as ts
 
-log = logging.getLogger("academy.example.notebooklm")
+log = logging.getLogger("atlas.academy.notebooklm")
 
 ACTION = "academy.ingest_notebooklm"
 AUDIO = "notebooklm"                 # Manifest.audio of an ingested render
@@ -86,7 +86,7 @@ WAITING_SINCE = ".waiting-since"     # when the lane began waiting on NotebookLM
 LAST_INGEST = ".last-ingest"         # touched by every ingest
 STALE_AFTER = timedelta(days=3)      # then the lane is said stale (never Fish)
 # Posted lessons whose script changed after they went out, rendered again
-# for the owner's relaunch card (tutorials.relaunch_tutorial, Tier 2): `next`
+# for Miro's relaunch card (tutorials.relaunch_tutorial, Tier 2): `next`
 # lists them while their render on disk is not current, and the ingest
 # stores the new render (every gate but "already uploaded" still runs). It
 # never uploads: only the card does. Code only, reviewed in a commit: no
@@ -107,15 +107,15 @@ CUE_WORDS = 14                       # a caption line: at most this many words
 CUE_GAP = 1.0                        # or a pause this long starts a new one
 WHISPER_TIMEOUT = 300
 # A narrator that claims a person at a keyboard: NotebookLM's voices are no
-# one's, and the lesson must never imply the owner recorded it.
+# one's, and the lesson must never imply Miro recorded it.
 HUMAN_ON_CAMERA = re.compile(
-    r"\b(on my screen|let me open my|i recorded|my terminal|i'?m owner|i am owner|"
-    r"my name is owner|share my screen|on my (?:desktop|laptop|computer))\b")
+    r"\b(on my screen|let me open my|i recorded|my terminal|i'?m miro|i am miro|"
+    r"my name is miro|share my screen|on my (?:desktop|laptop|computer))\b")
 NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
 # A number glued to the letters before it ("GB10", "H100", "RTX4090", "v1"):
 # a model or product name, not a quantity. A unit after ("100GB") is a quantity.
 IDENTIFIER = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]+)(\d+(?:[.,]\d+)*)")
-# the owner, 2026-10-17: a lesson opens on the finished result, never on a
+# Miro, 2026-10-17: a lesson opens on the finished result, never on a
 # welcome. Read over the narration's first OPENING_SECONDS (Whisper's word
 # timings), lower case with curly apostrophes made straight.
 WELCOME = "opens with a welcome"     # the refusal's first words, counted below
@@ -127,7 +127,7 @@ WELCOME_OPENING = re.compile(
 # quota each time: after this many welcome refusals for one episode, the
 # next drop passes this one gate (every other gate still applies).
 WELCOME_WAIVER_AFTER = 2
-# the owner, 2026-10-20: "make the voice speak slower" and "support of up until 4k
+# Miro, 2026-10-20: "make the voice speak slower" and "support of up until 4k
 # on youtube". After every gate, the drop is re-encoded: slowed to PACE
 # (pitch kept: atempo) and upscaled to HEIGHT (never down). The Shorts take
 # the pace only: the clips gate wants exactly 1080x1920 (notebooklm_shorts).
@@ -151,7 +151,7 @@ CAP_HEADROOM = 1.0
 def fallback_enabled() -> bool:
     """ACADEMY_NOTEBOOKLM_FALLBACK (default false): only then may an episode
     without a NotebookLM render be rendered, or posted, with the Fish voice,
-    or a Fish teaching Short be cut. the owner, 2026-10-19: NotebookLM videos only,
+    or a Fish teaching Short be cut. Miro, 2026-10-19: NotebookLM videos only,
     never the old design; no number of days without a render turns it on. A
     lane that waits too long is said instead (stale, stale_note)."""
     return os.getenv("ACADEMY_NOTEBOOKLM_FALLBACK", "false").strip().lower() in (
@@ -211,7 +211,7 @@ async def waiting_work() -> int | None:
 
 
 def _runner_hint() -> str:
-    return (f"The runner '{RUNNER}' is a Claude-in-Chrome task on the Mac, using the owner's "
+    return (f"The runner '{RUNNER}' is a Claude-in-Chrome task on the Mac, using Miro's "
             "Google sign-in (NotebookLM has no headless login, so it cannot move to "
             "the Spark). Check its notes in ~/Documents/Code/.academy-nlm/notes.md")
 
@@ -903,13 +903,13 @@ async def ingest(series: str, episode: int) -> ActionResult:
         return await refuse("video.mp4 is missing or not a plain file")
     try:
         row = await tut.posted(s.key, ep.number)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return await hold(f"the posts record could not be read ({type(exc).__name__})")
     if row and (s.key, ep.number) not in RERENDER_POSTED:
         return await refuse(f"the episode is already uploaded ({row.get('video_id')}); "
-                            "a new file is a relaunch, the owner's card")
+                            "a new file is a relaunch, Miro's card")
     # RERENDER_POSTED: the render is only stored here; the old video, its row
-    # and any upload stay with the owner's relaunch card.
+    # and any upload stay with Miro's relaunch card.
     refs = await asyncio.to_thread(reference_files, drop, s.key, ep.number)
     if not refs:
         _, why = overlap_refusal("", refs)
@@ -1303,7 +1303,7 @@ def main(argv: list[str] | None = None) -> int:
             got_next = asyncio.run(notebooklm_thumbs.next_thumbs(a.limit))
         else:
             got_next = asyncio.run(next_episodes(a.limit))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         print(f"error: the runway is UNKNOWN: {type(exc).__name__}: could not read "
               "the Academy records", file=sys.stderr)
         return 1

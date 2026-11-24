@@ -18,7 +18,7 @@ def _google_env(monkeypatch):
 
 
 def _account() -> Account:
-    return Account(name="exampleco", kind="google", email="m@example.com",
+    return Account(name="mirotech", kind="google", email="m@example.com",
                    refresh_token="r")
 
 
@@ -43,7 +43,7 @@ async def test_a_mailbox_that_answers_reads_a_real_number(monkeypatch):
             return {"threads": [{"id": f"t{i}"} for i in range(25)]}
         return {"messages": [{"internalDate": "1000",
                               "payload": {"headers": [
-                                  {"name": "From", "value": "Buyer <contact1@example.com>"},
+                                  {"name": "From", "value": "Buyer <b@x.org>"},
                                   {"name": "Subject", "value": "hello"}]}}]}
 
     monkeypatch.setattr(mail, "_api", fake)
@@ -58,8 +58,8 @@ async def test_a_mailbox_that_answers_reads_a_real_number(monkeypatch):
 
 def test_the_check_budget_sits_above_the_body_deadline(monkeypatch):
     assert mail.UNREPLIED_TIMEOUT > timedelta(seconds=mail.UNREPLIED_DEADLINE_S)
-    monkeypatch.setenv("MAIL_ACCOUNTS", "exampleco")
-    monkeypatch.setenv("MAIL_EXAMPLECO_EMAIL", "m@example.com")
+    monkeypatch.setenv("MAIL_ACCOUNTS", "mirotech")
+    monkeypatch.setenv("MAIL_MIROTECH_EMAIL", "m@example.com")
     unreplied = [c for c in mail.MODULE.checks() if c.name.endswith("_unreplied")]
     assert unreplied
     assert all(c.timeout == mail.UNREPLIED_TIMEOUT for c in unreplied)

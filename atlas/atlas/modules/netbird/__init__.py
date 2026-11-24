@@ -1,14 +1,14 @@
 """NetBird mesh — and ATLAS's own perimeter, which is why it is watched.
 
-Mesh membership *is* the authentication for the dashboard: `atlas.example.com`
+Mesh membership *is* the authentication for the dashboard: `atlas.storefront.test`
 answers only to a source inside the mesh. So a peer appearing here is not a
 networking event, it is an access-control event, and it is the one thing in
 this module worth waking someone for.
 
 Three corrections over the previous version:
 
-* **It pointed at `api.netbird.io`**, the hosted service. the owner runs his own
-  NetBird at `mesh.example.com`. A token minted on the self-hosted server
+* **It pointed at `api.netbird.io`**, the hosted service. Miro runs his own
+  NetBird at `netbird-host.storefront.test`. A token minted on the self-hosted server
   would have authenticated against a SaaS account that has none of his peers
   — the same class of error as reading Guardian from its marketing domain.
 
@@ -39,7 +39,7 @@ from typing import Any
 from ...kernel.contracts import Check, Health, Observation, Severity, Signal
 from .._http import get_json
 
-BASE = os.getenv("NETBIRD_API_URL", "https://mesh.example.com").rstrip("/")
+BASE = os.getenv("NETBIRD_API_URL", "https://netbird-host.storefront.test").rstrip("/")
 
 NO_TOKEN = ("no NETBIRD_TOKEN set. Create a personal access token in the "
             "NetBird console at " + BASE + " (Settings -> Users -> your "
@@ -244,7 +244,7 @@ class NetBirdModule:
         )
 
     def actions(self):
-        return ()          # mesh changes are the owner's, not ATLAS's
+        return ()          # mesh changes are Miro's, not ATLAS's
 
     async def signals(self):
         obs = await check_new_peers()
@@ -255,7 +255,7 @@ class NetBirdModule:
             title=f"NetBird: {len(arrived)} peer(s) joined the mesh",
             body=", ".join(arrived)
                  + "\n\nMesh membership is what authenticates the ATLAS "
-                   "dashboard — a peer here can reach atlas.example.com. If you "
+                   "dashboard — a peer here can reach atlas.storefront.test. If you "
                    "did not add these, treat it as urgent.",
             severity=Severity.HIGH),)
 

@@ -1,4 +1,4 @@
-"""Reply drafts for a mailbox ATLAS reads over IMAP (owner).
+"""Reply drafts for a mailbox ATLAS reads over IMAP (example-owner).
 
 `mail.draft_reply` takes a thread id. A plain id is a Gmail-API thread (the
 clips mailbox, OAuth token). `imap:<account>:<Message-ID>` is a message in an
@@ -90,7 +90,7 @@ def _connect(login: _Login) -> imaplib.IMAP4_SSL:
 def _logout(conn) -> None:
     try:
         conn.logout()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("imap logout failed: %s", type(exc).__name__)
 
 
@@ -215,7 +215,7 @@ async def draft(thread_id: str, body: str) -> ActionResult:
         draft_id, to, subject = await asyncio.to_thread(_sync_draft, login, orig, body)
     except LookupError as exc:
         return ActionResult(False, str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"draft not saved: {_fail(exc)}")
     token = f"{PREFIX}{name}:{draft_id}"
     return ActionResult(
@@ -235,7 +235,7 @@ async def delete(token: str) -> ActionResult:
         return ActionResult(False, f"cannot undo: {why}")
     try:
         gone = await asyncio.to_thread(_sync_delete, login, draft_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"draft not deleted: {_fail(exc)}")
     if not gone:
         return ActionResult(False, "the draft is not in Drafts (already gone?)")

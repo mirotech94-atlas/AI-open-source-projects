@@ -301,7 +301,7 @@ class Pages:
             return
         try:
             texts = await page.evaluate(MEASURE_JS, SKIP)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             self.add([f"a {rule.name} page could not be measured ({type(exc).__name__})"])
             return
         self.measured += 1

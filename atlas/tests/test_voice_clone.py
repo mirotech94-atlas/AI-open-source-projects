@@ -1,7 +1,7 @@
 """ATLAS's own voice is the local clone of the NotebookLM host; Fish Audio is
 the fallback.
 
-the owner, 2026-10-29: ATLAS's spoken voice, in the portal and everywhere local
+Miro, 2026-10-29: ATLAS's spoken voice, in the portal and everywhere local
 voice is used, is NotebookLM's voice. NotebookLM has no TTS API, so a
 zero-shot clone TTS (Chatterbox) on the Spark speaks it, from one reference
 clip of the NotebookLM host. When the clone is down, the old Fish path speaks
@@ -74,7 +74,7 @@ def test_unset_is_not_configured(monkeypatch):
 
 @pytest.mark.parametrize("url", [
     "http://127.0.0.1:18010", "http://localhost:18010",
-    "http://host.docker.internal:18010", "http://192.0.2.169:8010",
+    "http://host.docker.internal:18010", "http://192.168.80.169:8010",
 ])
 def test_local_hosts_are_allowed(monkeypatch, url):
     monkeypatch.setenv("ATLAS_VOICE_CLONE_URL", url)
@@ -84,7 +84,7 @@ def test_local_hosts_are_allowed(monkeypatch, url):
 
 @pytest.mark.parametrize("url", [
     "https://api.example.com", "http://8.8.8.8:8010", "ftp://127.0.0.1",
-    "http://contact18@example.com",
+    "http://evil.com@127.0.0.1.nip.io",
 ])
 def test_a_cloud_or_odd_url_is_refused(monkeypatch, url):
     """Never a cloud TTS: the clone is local or it is not used at all."""
@@ -103,19 +103,19 @@ def test_a_url_without_a_key_is_not_configured(monkeypatch):
 
 def test_atlas_speaks_in_the_clone(client, monkeypatch):
     calls = _voices(monkeypatch, b"ID3clone")
-    r = client.post("/api/voice/speak", json={"text": "CloudCo is fine."})
+    r = client.post("/api/voice/speak", json={"text": "CloudHost is fine."})
     assert r.status_code == 200 and r.content == b"ID3clone"
     assert r.headers["X-Voice-Source"] == "clone"
     assert r.headers["content-type"] == "audio/mpeg"
-    assert calls == {"clone": ["CloudCo is fine."], "fish": []}
+    assert calls == {"clone": ["CloudHost is fine."], "fish": []}
 
 
 def test_clone_down_falls_back_to_fish(client, monkeypatch):
     calls = _voices(monkeypatch, None)
-    r = client.post("/api/voice/speak", json={"text": "CloudCo is fine."})
+    r = client.post("/api/voice/speak", json={"text": "CloudHost is fine."})
     assert r.status_code == 200 and r.content == b"ID3fish"
     assert r.headers["X-Voice-Source"] == "fish"
-    assert calls["clone"] == ["CloudCo is fine."]
+    assert calls["clone"] == ["CloudHost is fine."]
 
 
 def test_both_down_is_a_502_with_text_only(client, monkeypatch):

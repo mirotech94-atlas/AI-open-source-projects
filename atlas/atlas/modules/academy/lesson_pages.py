@@ -1,4 +1,4 @@
-"""One page per public free lesson: agency.example.com/lessons/<series>-<n>/
+"""One page per public free lesson: agency.storefront.test/lessons/<series>-<n>/
 (shop master plan F11 individual lesson pages, F12 learning paths with
 honest availability, F15 small practice checks; 16 Oct 2026).
 

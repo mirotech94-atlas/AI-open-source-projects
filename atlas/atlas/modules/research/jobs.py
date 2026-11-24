@@ -27,7 +27,7 @@ async def run_weekly() -> dict[str, str]:
     out: dict[str, str] = {}
     try:
         comps = await store.competitors()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         comps = []
         out["competitors"] = f"unreadable: {type(exc).__name__}"
     for c in comps[:MAX_REFRESH]:

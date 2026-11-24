@@ -26,7 +26,7 @@ def _fresh_state(monkeypatch):
         await asyncio.sleep(0)
 
     monkeypatch.setattr(slack_socket, "_sleep", no_sleep)
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
     monkeypatch.delenv("ATLAS_DURABLE_FLOWS", raising=False)
     yield
     slack_socket.STATE.reset()
@@ -54,7 +54,7 @@ class FakeSlack:
                 self.acks.append(json.loads(raw))
                 if len(self.acks) >= self.expect_acks:
                     self.got_acks.set()
-        except Exception:                               # noqa: BLE001, S110
+        except Exception:  # noqa: BLE001, S110
             pass
 
 
@@ -114,11 +114,11 @@ async def test_acks_first_and_dispatches_each_kind(monkeypatch):
 
     fake = FakeSlack([[
         {"envelope_id": "e1", "type": "interactive",
-         "payload": {"user": {"id": "UOWNER"}, "actions": [{"value": "approve:5"}]}},
+         "payload": {"user": {"id": "UMIRO"}, "actions": [{"value": "approve:5"}]}},
         {"envelope_id": "e2", "type": "events_api",
          "payload": {"event_id": "Ev1", "event": {"type": "message"}}},
         {"envelope_id": "e3", "type": "slash_commands",
-         "payload": {"user_id": "UOWNER", "text": "restart x"}},
+         "payload": {"user_id": "UMIRO", "text": "restart x"}},
     ]])
     server, task, opened = await _running(fake)
     try:
@@ -211,8 +211,8 @@ async def test_non_approver_ignored_and_duplicate_dropped(monkeypatch, memory_ba
 
     fake = FakeSlack([[
         {"envelope_id": "a", "type": "events_api", "payload": msg("UOTHER", "Ev7")},
-        {"envelope_id": "b", "type": "events_api", "payload": msg("UOWNER", "Ev8")},
-        {"envelope_id": "c", "type": "events_api", "payload": msg("UOWNER", "Ev8")},
+        {"envelope_id": "b", "type": "events_api", "payload": msg("UMIRO", "Ev8")},
+        {"envelope_id": "c", "type": "events_api", "payload": msg("UMIRO", "Ev8")},
     ]])
     server, task, _ = await _running(fake)
     try:

@@ -1,7 +1,7 @@
-"""the owner's memory commands in the owner chat: remember, forget, restore, correct,
+"""Miro's memory commands in the owner chat: remember, forget, restore, correct,
 and "what do you know about ...". Strict regexes, no model.
 
-The words after the verb only pick WHICH notes: the code searches the owner's own
+The words after the verb only pick WHICH notes: the code searches Miro's own
 namespaces (`owner`, `biz.<key>`) and hands the ids it found to the executor
 (`owner_memory.*`, Tier 1, dry run and rollback). The model never sees the
 request and never chooses an id. Forget hides, never deletes; the hard wipe is
@@ -70,7 +70,7 @@ def is_memory_command(body: str) -> bool:
 
 
 async def find(topic: str, *, hidden: bool = False) -> list[dict[str, Any]]:
-    """Up to FIND_LIMIT notes of the owner's matching the topic's words, found by
+    """Up to FIND_LIMIT notes of Miro's matching the topic's words, found by
     code. `hidden` looks among the hidden ones (for restore)."""
     terms = memory._terms(topic)
     if not terms:

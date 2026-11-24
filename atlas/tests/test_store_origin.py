@@ -1,6 +1,6 @@
 """The store's one origin (atlas/modules/store_origin.py).
 
-The store is ACADEMY_PUBLIC_ORIGIN (https://agency.example.com). Links, the CORS
+The store is ACADEMY_PUBLIC_ORIGIN (https://agency.storefront.test). Links, the CORS
 origin, allow-lists, SEO targets and the spoken address all derive from one
 helper."""
 from __future__ import annotations
@@ -17,21 +17,21 @@ from atlas.modules.qa import browser_service, egress_proxy
 from atlas.modules.seo import panel, store, vitals
 
 
-@pytest.mark.parametrize("raw", ["", "http://agency.example.com", "agency.example.com"])
+@pytest.mark.parametrize("raw", ["", "http://agency.storefront.test", "agency.storefront.test"])
 def test_a_bad_value_falls_back_to_the_default(monkeypatch, raw):
     monkeypatch.setenv(store_origin.ENV, raw)
-    assert store_origin.origin() == "https://agency.example.com"
-    assert store_origin.host() == "agency.example.com"
+    assert store_origin.origin() == "https://agency.storefront.test"
+    assert store_origin.host() == "agency.storefront.test"
 
 
 def test_the_host_is_said_naturally():
-    assert store_origin.spoken("agency.example.com") == "agency dot one eight d n dot com"
+    assert store_origin.spoken("agency.storefront.test") == "agency dot storefront dot test"
 
 
 def test_captions_show_the_host_not_its_spoken_form():
     from atlas.modules.academy import tutorials
     said = f"there's more at {store_origin.spoken()}."
-    assert tutorials.shown(said) == "there's more at agency.example.com."
+    assert tutorials.shown(said) == "there's more at agency.storefront.test."
 
 
 # ------------------------------------------------------------------- SEO
@@ -43,17 +43,17 @@ async def test_seo_targets_are_the_store_and_never_the_retired_row(monkeypatch):
                  "client": "Mapfront"}]
     monkeypatch.setattr(store, "fetch_all", rows)
     got = await store.targets()
-    assert [s["domain"] for s in got] == ["joes.example", "agency.example.com"]
-    assert (await store.site("academy-store"))["domain"] == "agency.example.com"
+    assert [s["domain"] for s in got] == ["joes.example", "agency.storefront.test"]
+    assert (await store.site("academy-store"))["domain"] == "agency.storefront.test"
     assert "mapfront-shop" not in store.OWN
 
 
 def test_the_panel_hides_an_old_reading_of_the_retired_row():
     old = {"health": "unknown", "at": None, "detail": "x", "evidence": {"sites": [
         {"slug": "mapfront-shop", "domain": "old-shop.example", "unread": ["HTTP 400"]},
-        {"slug": "academy-store", "domain": "agency.example.com", "unread": []}]}}
+        {"slug": "academy-store", "domain": "agency.storefront.test", "unread": []}]}}
     out = panel.summarize(None, old, [])
-    assert [s["domain"] for s in out["sites"]] == ["agency.example.com"]
+    assert [s["domain"] for s in out["sites"]] == ["agency.storefront.test"]
 
 
 def test_the_schema_withdraws_only_the_retired_rows():
@@ -114,24 +114,24 @@ async def test_an_unreadable_store_is_unknown_with_the_reason(monkeypatch):
     monkeypatch.setattr(_http, "get_json", get_json)
     obs = await vitals.check()
     assert obs.health is Health.UNKNOWN
-    assert "agency.example.com" in obs.detail and "FAILED_DOCUMENT_REQUEST" in obs.detail
+    assert "agency.storefront.test" in obs.detail and "FAILED_DOCUMENT_REQUEST" in obs.detail
 
 
 # ----------------------------------------------------------- QA allow-lists
 
 @pytest.mark.parametrize("mod", [egress_proxy, browser_service])
 def test_qa_allows_only_the_one_agency_host(mod):
-    assert "agency.example.com" in mod.ALLOWED
+    assert "agency.storefront.test" in mod.ALLOWED
     assert not any(h.endswith("mapfront") or "mapfront" in h for h in mod.ALLOWED)
 
 
 def test_the_egress_proxy_allows_the_agency_host_only():
-    assert egress_proxy.host_allowed("agency.example.com")
+    assert egress_proxy.host_allowed("agency.storefront.test")
     assert not egress_proxy.host_allowed("joes-7.example.net")
 
 
 def test_the_browser_allows_the_agency_host_only():
-    assert browser_service.allowed("https://agency.example.com/preview/joes-7/")
+    assert browser_service.allowed("https://agency.storefront.test/preview/joes-7/")
     assert not browser_service.allowed("https://joes-7.example.net/")
 
 
@@ -139,11 +139,11 @@ def test_store_facing_constants_name_the_new_host():
     from atlas.api import academy, academy_support
     from atlas.modules.academy import lesson_short, promo_copy, reel, tutorial_series
     from atlas.modules.qa import security, video
-    assert academy_support.STORE_ORIGIN == "https://agency.example.com"
+    assert academy_support.STORE_ORIGIN == "https://agency.storefront.test"
     assert not hasattr(academy_support, "SENT_URL")       # no help/sent/ page
     assert not hasattr(academy, "CONTACT_SENT_URL")       # no contact/sent/ page
-    assert academy.RECOVER_PAGE_URL.startswith("https://agency.example.com/")
-    assert reel.STORE == lesson_short.STORE == "agency.example.com"
-    assert promo_copy.STORE_URL == tutorial_series.STORE_URL == "https://agency.example.com/academy"
-    assert security.FIXED_HOSTS["shop"] == "agency.example.com"
+    assert academy.RECOVER_PAGE_URL.startswith("https://agency.storefront.test/")
+    assert reel.STORE == lesson_short.STORE == "agency.storefront.test"
+    assert promo_copy.STORE_URL == tutorial_series.STORE_URL == "https://agency.storefront.test/academy"
+    assert security.FIXED_HOSTS["shop"] == "agency.storefront.test"
     assert "mapfront" not in " ".join(video.ALLOWED_HOSTS)

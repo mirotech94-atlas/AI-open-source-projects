@@ -10,7 +10,7 @@
     - **Flights**: searches, compares, uses flycheap's own price history to say
       whether now is a good time, holds the fare if the airline offers a free
       hold, hands you a checkout link with everything filled in.
-    - **ExampleCo supplies**: SSDs and RAM for firewall upgrades, shipping boxes,
+    - **Mirotech supplies**: SSDs and RAM for firewall upgrades, shipping boxes,
       labels — finds the best price, builds the cart, one link.
 
     You tap, you pay. That's about 95% of the value for none of the risk.

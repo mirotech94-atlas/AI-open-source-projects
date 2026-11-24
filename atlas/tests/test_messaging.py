@@ -3,7 +3,7 @@
 What has to hold: the module only reads; unanswered Slack mentions are
 counted, and a Slack that cannot be read is never a confident zero
 (invariant 7). WhatsApp, the last platform `messaging.reply` could send on,
-was removed at the owner's request on 2026-09-28, and the action went with it:
+was removed at Miro's request on 2026-09-28, and the action went with it:
 old WhatsApp and Telegram rows stay in `messaging_inbound`, but are never
 read back, and nothing can reply on them.
 """
@@ -67,12 +67,12 @@ async def test_unanswered_is_empty_without_configuration(monkeypatch):
 async def test_unanswered_finds_a_mention_with_no_reply(monkeypatch):
     monkeypatch.setenv("MESSAGING_SLACK_CHANNELS", "C1")
     monkeypatch.setenv("SLACK_BOT_TOKEN", "tok")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def fake_get_json(url, **kw):
         if url.endswith("conversations.history"):
             return {"ok": True, "messages": [
-                {"user": "UBUYER", "text": "hey <@UOWNER> any update?",
+                {"user": "UBUYER", "text": "hey <@UMIRO> any update?",
                  "ts": "100.1"}]}, None
         return {"ok": True, "messages": []}, None
 
@@ -81,20 +81,20 @@ async def test_unanswered_finds_a_mention_with_no_reply(monkeypatch):
     assert len(out) == 1 and out[0]["sender"] == "UBUYER"
 
 
-async def test_unanswered_skips_a_thread_owner_already_answered(monkeypatch):
+async def test_unanswered_skips_a_thread_miro_already_answered(monkeypatch):
     monkeypatch.setenv("MESSAGING_SLACK_CHANNELS", "C1")
     monkeypatch.setenv("SLACK_BOT_TOKEN", "tok")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def fake_get_json(url, **kw):
         if url.endswith("conversations.history"):
             return {"ok": True, "messages": [
-                {"user": "UBUYER", "text": "hey <@UOWNER>",
+                {"user": "UBUYER", "text": "hey <@UMIRO>",
                  "ts": "100.1", "thread_ts": "100.1", "reply_count": 1}]}, None
         if url.endswith("conversations.replies"):
             return {"ok": True, "messages": [
                 {"user": "UBUYER", "ts": "100.1"},
-                {"user": "UOWNER", "ts": "100.2"}]}, None
+                {"user": "UMIRO", "ts": "100.2"}]}, None
         return {"ok": False}, None
 
     monkeypatch.setattr(slack_read, "get_json", fake_get_json)
@@ -104,11 +104,11 @@ async def test_unanswered_skips_a_thread_owner_already_answered(monkeypatch):
 async def test_unanswered_ignores_atlas_own_messages(monkeypatch):
     monkeypatch.setenv("MESSAGING_SLACK_CHANNELS", "C1")
     monkeypatch.setenv("SLACK_BOT_TOKEN", "tok")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def fake_get_json(url, **kw):
         return {"ok": True, "messages": [
-            {"bot_id": "B1", "text": "<@UOWNER> approve this",
+            {"bot_id": "B1", "text": "<@UMIRO> approve this",
              "ts": "100.1", "user": "UATLAS"}]}, None
 
     monkeypatch.setattr(slack_read, "get_json", fake_get_json)
@@ -151,7 +151,7 @@ async def test_a_reply_to_an_old_whatsapp_row_is_refused_at_the_executor(
     monkeypatch.setattr(executor, "audit", fake_audit)
     result = await executor.execute(executor.ExecutionRequest(
         "messaging.reply", {"inbound_id": 1, "text": "hi"},
-        "old whatsapp row", approved_by="slack:UOWNER"))
+        "old whatsapp row", approved_by="slack:UMIRO"))
     assert result.ok is False
     assert result.detail == "no such action in the catalog"
     assert refused == [("execute.refused", "messaging.reply")]
@@ -229,7 +229,7 @@ async def test_a_slack_channel_that_cannot_be_read_raises(monkeypatch, reply):
     """It used to be skipped -- and a skipped channel is a zero."""
     monkeypatch.setenv("MESSAGING_SLACK_CHANNELS", "C1")
     monkeypatch.setenv("SLACK_BOT_TOKEN", "tok")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def fake_get_json(url, **kw):
         return reply
@@ -242,12 +242,12 @@ async def test_a_slack_channel_that_cannot_be_read_raises(monkeypatch, reply):
 async def test_a_failed_reply_lookup_is_not_counted_as_unreplied(monkeypatch):
     monkeypatch.setenv("MESSAGING_SLACK_CHANNELS", "C1")
     monkeypatch.setenv("SLACK_BOT_TOKEN", "tok")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def fake_get_json(url, **kw):
         if url.endswith("conversations.history"):
             return {"ok": True, "messages": [
-                {"user": "UBUYER", "text": "hey <@UOWNER>", "ts": "100.1"}]}, None
+                {"user": "UBUYER", "text": "hey <@UMIRO>", "ts": "100.1"}]}, None
         return None, "timed out"
 
     monkeypatch.setattr(slack_read, "get_json", fake_get_json)
@@ -347,7 +347,7 @@ def test_the_only_check_is_unanswered():
 
 
 def test_telegram_is_gone():
-    """Removed at the owner's request, 2026-09-28: no check, no env var, no
+    """Removed at Miro's request, 2026-09-28: no check, no env var, no
     webhook route, and no module file left to import."""
     names = [c.name for c in messaging.MODULE.checks()]
     assert "telegram_bot" not in names
@@ -358,7 +358,7 @@ def test_telegram_is_gone():
 
 
 def test_whatsapp_is_gone():
-    """Removed at the owner's request, 2026-09-28: no token check, no env var,
+    """Removed at Miro's request, 2026-09-28: no token check, no env var,
     no webhook route or router, no module file, and no reply action."""
     names = [c.name for c in messaging.MODULE.checks()]
     assert "whatsapp_token" not in names
@@ -366,17 +366,17 @@ def test_whatsapp_is_gone():
     assert not (PKG / "whatsapp.py").exists()
     assert importlib.util.find_spec("atlas.api.messaging_webhooks") is None
     assert not hasattr(messaging, "answer_principal")
-    assert not hasattr(messaging, "is_owner")
+    assert not hasattr(messaging, "is_miro")
     assert "messaging.reply" not in {a.name for a in messaging.MODULE.actions()}
     from atlas.api.main import app
     assert not any("whatsapp" in getattr(r, "path", "") for r in app.routes)
 
 
 @pytest.mark.parametrize("platform", REMOVED)
-def test_a_removed_platform_is_never_owner(monkeypatch, platform):
+def test_a_removed_platform_is_never_miro(monkeypatch, platform):
     """A leftover setting names nobody."""
-    monkeypatch.setenv("OWNER_TELEGRAM_CHAT_ID", "555")
-    monkeypatch.setenv("OWNER_WHATSAPP_NUMBER", "15550001111")
+    monkeypatch.setenv("MIRO_TELEGRAM_CHAT_ID", "555")
+    monkeypatch.setenv("MIRO_WHATSAPP_NUMBER", "15550001111")
     chat = "555" if platform == "telegram" else "15550001111"
     assert _intent.principal_channel(platform, chat) is None
 

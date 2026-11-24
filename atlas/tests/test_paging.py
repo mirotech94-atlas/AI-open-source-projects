@@ -1,4 +1,4 @@
-"""A failing HIGH or CRITICAL check reaches the owner on its own.
+"""A failing HIGH or CRITICAL check reaches Miro on its own.
 
 The case that motivated this: `matrix_rooms.urgent`, a CRITICAL check,
 failed sixty-two times through one night. The reasoner had no action for
@@ -16,7 +16,7 @@ from atlas.kernel.detect import Finding
 
 def finding(severity: Severity, health: Health = Health.FAILING) -> Finding:
     obs = Observation(check="matrix_rooms.urgent", health=health,
-                      detail="1 message(s) look urgent: @ai.bot in CloudCo Support")
+                      detail="1 message(s) look urgent: @ai.bot in CloudHost Support")
     return Finding("matrix_rooms.urgent", severity,
                    f"matrix_rooms.urgent is {health}", obs.detail, obs, "rule")
 

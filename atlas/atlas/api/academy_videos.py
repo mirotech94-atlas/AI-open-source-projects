@@ -55,7 +55,7 @@ async def videos(request: Request) -> Response:
     try:
         if not hit:
             cards = await video_feed.feed()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("academy videos: the list could not be built")
         return _unavailable(503)
     if cards is None:

@@ -1,7 +1,7 @@
-"""The course-promo lane: two reels a week for the owner's own course, on the
+"""The course-promo lane: two reels a week for Miro's own course, on the
 AI-stories accounts, honest by rule.
 
-the owner, relayed 2026-09-29: "The AI That Can't Burn Your Business: Build a
+Miro, relayed 2026-09-29: "The AI That Can't Burn Your Business: Build a
 Safe AI Operator", sold on his Shopify store. One lesson per reel, rotating
 through the lessons that carry a hook in his outline
 (`calendars/course-promo.json`, copied from the vault, which the server
@@ -25,7 +25,7 @@ Where it posts: the AI-stories path only -- `kernel.reels.post_or_card`,
 i.e. `content.autopublish_reel` / `content.publish_reel`, whose legs are the
 Instagram `stories` account, the Atlas Stories Facebook Page and the Postiz
 TikTok integration `atlasstories7`. Nothing here names or reaches a clips
-integration (Instagram `clips`, TikTok @example_handle, YouTube clips).
+integration (Instagram `clips`, TikTok @atlasclips12, YouTube clips).
 
 The rules, in code, tested:
 
@@ -142,7 +142,7 @@ def data() -> dict[str, Any]:
 
 
 def products() -> list[dict[str, Any]]:
-    """Every course the lane advertises (the owner, 2026-10-05: all of them, as
+    """Every course the lane advertises (Miro, 2026-10-05: all of them, as
     reels): the first is the data file's own `product`, with its lessons
     and images; the rest are `products[]`, each with its own."""
     d = data()
@@ -304,7 +304,7 @@ def price_said(price: Price | None) -> str | None:
 
 def store_json_url(item: dict[str, str] | None = None) -> str:
     """Where the price is read: the store's public catalog JSON when the
-    data file names one (ATLAS Academy, agency.example.com/academy/catalog.json),
+    data file names one (ATLAS Academy, agency.storefront.test/academy/catalog.json),
     else Shopify's `<product url>.json`."""
     p = product(item)
     return p.get("price_json") or f"{p['url'].rstrip('/')}.json"
@@ -400,7 +400,7 @@ async def read_price(url: str | None = None, *,
                                      follow_redirects=False) as client:
             r = await client.get(url, headers={"User-Agent": "ATLAS/1.0",
                                                "Accept": "application/json"})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return not_read(explain(exc))
     at = datetime.now(UTC)
     if r.status_code != 200:
@@ -566,7 +566,7 @@ async def ensure_format() -> int:
                               WHERE r.source = $3 AND lower(r.format) = lower($1)
                                 AND r.retired_at IS NULL)
            RETURNING id""",
-        FORMAT, "chosen by the owner, 2026-09-29: two course-promo reels a week for "
+        FORMAT, "chosen by Miro, 2026-09-29: two course-promo reels a week for "
                 "Build a Safe AI Operator", SOURCE, SEED_WEIGHT, MAX_BEATS)
     if row is None:
         row = await fetch_one(
@@ -600,7 +600,7 @@ async def attempted_today(format_id: int, day: date) -> int:
 
 async def done_this_week(format_id: int, day: date) -> int:
     """Course reels that went out this New York week: posted, or on a card
-    (a declined or expired card counts -- the owner's no is not re-asked daily)."""
+    (a declined or expired card counts -- Miro's no is not re-asked daily)."""
     row = await fetch_one(
         """SELECT count(*) AS n FROM content_drafts
             WHERE source = $1 AND at >= $2

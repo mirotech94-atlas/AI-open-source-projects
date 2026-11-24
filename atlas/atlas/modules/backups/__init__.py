@@ -1,6 +1,6 @@
 """Backups and disk: is ATLAS's memory safe, and is there room to keep working?
 
-the owner, 2026-09-28: automate what can be. Everything ATLAS knows is one
+Miro, 2026-09-28: automate what can be. Everything ATLAS knows is one
 Postgres database on one host, and until today nothing copied it anywhere.
 The host now dumps it nightly and copies each dump to the GitLab VM
 (`bootstrap/backup/atlas-backup.sh`), and a weekly job keeps the disk from
@@ -40,7 +40,7 @@ DRILL = os.path.join(DATA, "backups", "restore_drill.json")
 DRILL_STALE = timedelta(days=8)
 BACKUP_STALE = timedelta(hours=30)          # a nightly job, with slack
 DISK_DEGRADED, DISK_FAILING = 0.15, 0.05     # free fraction (secondary, warn only)
-# Absolute GiB floors decide (the owner, 2026-11-15): a big disk that is "96 % full"
+# Absolute GiB floors decide (Miro, 2026-11-15): a big disk that is "96 % full"
 # can still hold 17 GiB, which is room for a dump, so the fraction alone must
 # not fail it. Under the fail floor it FAILS; under the warn floor it WARNS.
 # The old fractions stay as a secondary rule that can only raise OK to WARN
@@ -162,7 +162,7 @@ async def check_disk() -> Observation:
     """Free space on the Mac's real data volume, from the host job's disk.json.
 
     ATLAS never measures its own disk (inside the container that is the VM)
-    and never deletes anything: it names the largest folders so the owner can.
+    and never deletes anything: it names the largest folders so Miro can.
     The old housekeeping-DEGRADED rule is gone: nothing runs housekeeping on
     the Mac, so it would have pinned this check at DEGRADED for good."""
     data, why = await asyncio.to_thread(_read, DISK_STATUS)
@@ -258,7 +258,7 @@ async def check_watchdog_seen() -> Observation:
     if data.get("route_configured") is not True:
         return Observation("watchdog_seen", Health.UNKNOWN,
                            detail="the watchdog runs but has no alert route "
-                                  "(webhook not configured): it could not tell the owner")
+                                  "(webhook not configured): it could not tell Miro")
     if last is None:
         return Observation("watchdog_seen", Health.UNKNOWN,
                            detail="the watchdog has never read /healthz successfully "

@@ -1,7 +1,7 @@
 """The Sites shift (plan 2026-10-30, B3 + B5): the lane's daily state in one
 dict, and -- only under AGENCY_AUTO_BUILD=on -- up to three demos built a
 day, each followed by a publish CARD. Publishing is Tier 2: proposed, never
-executed here. The owner email follows only after the owner approves the publish
+executed here. The owner email follows only after Miro approves the publish
 (lead_followup.after_deploys)."""
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ async def test_each_bucket_comes_from_its_rows(monkeypatch):
         "needs_demo": [{"id": 7, "name": "Joe's Deli", "has_mockup": True}],
         "built_unpublished": [{"slug": "joes-deli", "lead_id": 7}],
         "published_unpitched": [{"slug": "ana-salon", "lead_id": 8,
-                                 "domain": "demo-site.vercel.example",
+                                 "domain": "atlas-agency-ana-salon.vercel.app",
                                  "deployed_at": AT}],
         "cards_waiting": [{"id": 31, "action": "agency.publish_vercel",
                            "target": "joes-deli", "created_at": AT}],

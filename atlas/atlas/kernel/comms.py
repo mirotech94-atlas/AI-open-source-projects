@@ -1,11 +1,11 @@
 """Channel routing.
 
-ATLAS talks to the owner over whichever channel suits the moment, and listens on all
+ATLAS talks to Miro over whichever channel suits the moment, and listens on all
 of them. A Channel is a plugin like anything else: implement the protocol, drop
 it in `atlas/channels/`, and it joins the routing table.
 
 Routing is by severity, not preference, because the failure mode of this whole
-system is the owner muting it in week three.
+system is Miro muting it in week three.
 """
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ class Outbound:
     # only for a reply to something he typed: the answer belongs where the
     # question was asked, under it. Before this every typed reply went to
     # the `decisions` topic carrying a thread ts from another channel, so
-    # "how many servers do I have?" asked in #cloudco was answered in
+    # "how many servers do I have?" asked in #cloudhost was answered in
     # #atlas-decisions, detached from the question (2026-09-27). Channels
     # other than Slack ignore it.
     channel: str = ""
@@ -156,7 +156,7 @@ async def attach_to_card(pid: int, *, topic: str, path: str, filename: str,
         why = await slack.upload(
             channel=slack.channel_for(topic), thread=None, filename=filename,
             data=data, title=title, comment=f"#{pid} — {note}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return f"Slack upload failed: {explain(exc)}"
     return why or "uploaded"
@@ -164,7 +164,7 @@ async def attach_to_card(pid: int, *, topic: str, path: str, filename: str,
 
 @dataclass(frozen=True, slots=True)
 class Inbound:
-    """Something the owner said, from any channel, normalised."""
+    """Something Miro said, from any channel, normalised."""
 
     channel: str
     sender: str
@@ -176,7 +176,7 @@ class Inbound:
 class Channel(Protocol):
     name: str
     rich: bool          # supports buttons
-    interactive: bool   # the owner can reply through it
+    interactive: bool   # Miro can reply through it
 
     async def send(self, msg: Outbound) -> str | None: ...
     async def available(self) -> bool: ...
@@ -279,13 +279,13 @@ async def _audit_undelivered(msg: Outbound) -> None:
         await audit("comms.undelivered", msg.title,
                     {"severity": msg.severity.name,
                      "routed_to": list(ROUTING.get(msg.severity, ()))})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not record the undelivered message: %s", exc)
 
 
 # ---------------------------------------------------------------- brevity
 #
-# the owner, 2026-09-24: "ATLAS can call me anytime in an emergency; he should
+# Miro, 2026-09-24: "ATLAS can call me anytime in an emergency; he should
 # realise I'm not home when I'm not on my internet and be quick and straight
 # to the point." Calling him anytime is already the CRITICAL path. What this
 # adds is the second half: when `rhythm.presence()` says he is off his own
@@ -327,7 +327,7 @@ def shorten(text: str, sentences: int = BRIEF_SENTENCES) -> str:
 # more useful when he is away from his own network. G2 of the reel audit:
 # "Jarvis calls you mid-workout: 30 seconds, one decision."
 CALL_AWAY_LINE = (
-    "the owner is out (not on his own network). Open with the single decision "
+    "Miro is out (not on his own network). Open with the single decision "
     "you need in one sentence, keep this call under 30 seconds, offer to "
     "text the details, and do not call again about this once he is home."
 )
@@ -347,7 +347,7 @@ async def call_brevity_line() -> str | None:
     """
     try:
         seen = await asyncio.wait_for(presence(), PRESENCE_TIMEOUT_S)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.info("call_brevity_line: presence unreadable, no change: %s", exc)
         return None
     if (seen or {}).get("home") is False:
@@ -359,7 +359,7 @@ async def brevity(msg: Outbound) -> tuple[Outbound, bool]:
     """(the message to send, whether it may ring the phone).
 
     "He should realise I'm not home when I'm not on my internet and be
-    quick" — the owner.
+    quick" — Miro.
 
     Unchanged and free to ring unless he is known to be out — then an
     alert's body is cut to two sentences and says so (`TRIMMED`), and the
@@ -377,7 +377,7 @@ async def brevity(msg: Outbound) -> tuple[Outbound, bool]:
         return msg, True
     try:
         seen = await asyncio.wait_for(presence(), PRESENCE_TIMEOUT_S)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.info("brevity: presence unreadable, sending in full: %s", exc)
         return msg, True
     if (seen or {}).get("home") is not False:
@@ -434,7 +434,7 @@ async def notify(msg: Outbound) -> list[str]:
             ref = await slack.send(msg)
             if ref:
                 _remember(msg.title, "slack", str(ref))
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("channel slack failed during quiet hours: %s", exc)
             await _audit_undelivered(msg)
             _record(msg, [])
@@ -469,7 +469,7 @@ async def notify(msg: Outbound) -> list[str]:
         try:
             seen = await asyncio.wait_for(presence(), PRESENCE_TIMEOUT_S)
             home = (seen or {}).get("home")
-        except Exception:                                # noqa: BLE001, S110
+        except Exception:  # noqa: BLE001, S110
             pass
 
     ranked = await candidates(msg.severity, home=home, title=msg.title,
@@ -502,7 +502,7 @@ async def notify(msg: Outbound) -> list[str]:
         # numbered reply list rather than vanishing. Without this exemption a
         # CRITICAL proposal (which always carries approve/decline/detail
         # buttons) reached sms and slack only -- the phone call, the one
-        # channel that works when the owner is away from a screen, never fired.
+        # channel that works when Miro is away from a screen, never fired.
         if (msg.buttons and not channel.rich and used
                 and msg.severity < Severity.CRITICAL):
             continue
@@ -520,7 +520,7 @@ async def notify(msg: Outbound) -> list[str]:
                 from .escalation import record
                 record(msg.severity, home=home, title=msg.title,
                       incident_key=msg.incident_key)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("channel %s failed: %s", name, exc)
             continue
         if msg.severity < Severity.CRITICAL:

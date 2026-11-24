@@ -30,13 +30,13 @@ gave, a tracker the privacy page doesn't mention) refuses the deploy by
 name; there is no override parameter, because the fix is a rebuild, not a
 flag. NEEDS_CLIENT items (reviews, case studies, a team photo, a stated
 response time...) are listed on the card and do not block: approving the
-card is the owner deciding the site can go live without them. The second check
+card is Miro deciding the site can go live without them. The second check
 exists because files can change between the card and the click.
 
 **Local target: Mapfront (2026-09-29).** With `AGENCY_DEPLOY_HOST` unset or
 `local`, the site is published on this box instead of rsynced anywhere:
 copied into a new release under `hosting.PUBLISH_ROOT` and made live by
-swapping one relative symlink, served by Caddy at `https://agency.example.com/preview/<slug>/`
+swapping one relative symlink, served by Caddy at `https://agency.storefront.test/preview/<slug>/`
 (`hosting.py` has the layout and what it refuses). The launch check runs a
 third time there, on the release copy, before the swap -- the bytes it
 approves are the bytes that go live. Rollback points the link back at the
@@ -124,7 +124,7 @@ async def _run(argv: list[str]) -> tuple[bool, str]:
     try:
         proc = await asyncio.create_subprocess_exec(
             *argv, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, explain(exc)
     try:
         _out, err = await asyncio.wait_for(proc.communicate(), timeout=RSYNC_TIMEOUT)
@@ -134,16 +134,16 @@ async def _run(argv: list[str]) -> tuple[bool, str]:
         await proc.wait()
         return False, (f"rsync did not finish in {RSYNC_TIMEOUT:.0f}s and was killed; "
                        "the remote directory may be partially updated")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, explain(exc)
     if proc.returncode != 0:
         return False, (err or b"").decode(errors="replace")[:300]
     return True, ""
 
 
-# the owner, 2026-10-30: client demos and previews go live on Vercel only
+# Miro, 2026-10-30: client demos and previews go live on Vercel only
 # (`agency.publish_vercel`, a card). This box no longer serves them at
-# agency.example.com/preview/<slug>/, whatever AGENCY_DEPLOY_HOST says.
+# agency.storefront.test/preview/<slug>/, whatever AGENCY_DEPLOY_HOST says.
 VERCEL_ONLY = True
 VERCEL_REFUSAL = ("previews publish on Vercel only, through agency.publish_vercel "
                   "(a card); this box no longer serves <slug> sites")
@@ -336,7 +336,7 @@ def _published_here(site: dict) -> bool:
 def published_domain(site: dict) -> str | None:
     """Where a site row is live, as a HOST, for the site check: its own
     `domain`, else -- for a site this box published (local target,
-    deployed) -- the preview host, `agency.example.com`. Never a link for a
+    deployed) -- the preview host, `agency.storefront.test`. Never a link for a
     lead: `outreach.preview_url` takes the recorded domain only."""
     if site.get("domain"):
         return str(site["domain"])
@@ -346,7 +346,7 @@ def published_domain(site: dict) -> str | None:
 def published_url(site: dict) -> str | None:
     """The page URL the read-back fetches: `https://<domain>/` for a site
     with its own domain, else the path-based preview URL
-    `https://agency.example.com/preview/<slug>/` for one this box published."""
+    `https://agency.storefront.test/preview/<slug>/` for one this box published."""
     if site.get("domain"):
         return f"https://{str(site['domain']).strip('/')}/"
     return hosting.public_url(str(site.get("slug"))) if _published_here(site) else None

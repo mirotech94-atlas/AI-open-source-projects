@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ATLAS Agency: websites for New York small businesses, plus courses and ebooks</title>
+<meta name="description" content="ATLAS Agency builds websites for small businesses in New York City. See a free preview of your new site first, and pay only if you launch it.">
+<meta name="theme-color" content="#0a0d14">
+<meta name="color-scheme" content="dark">
+<link rel="canonical" href="https://agency.storefront.test/agency/">
+<link rel="icon" type="image/png" href="/mapfront-icon.png">
+<link rel="apple-touch-icon" href="/mapfront-icon.png">
+<link rel="preload" href="/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin>
+<!--
+  ATLAS Agency landing page, served by Caddy at https://agency.storefront.test/ from
+  atlas/modules/agency/landing/ (read-only mount at /srv/landing, Caddyfile.public).
+  One file, no scripts, no images: inline CSS, inline SVG, one self-hosted
+  variable font (fonts/archivo-var.woff2, OFL). The CSP allows exactly that.
+  Direction: ATLAS royal blue on near-black, dark only (see DESIGN.md, not served).
+  Every claim below is something agency.build_site produces, except the
+  assistant in the Website Package, which may be named only inside that section.
+  tests/test_agency_landing.py fails on ratings, client counts, testimonials,
+  unlisted prices and any digit in the visible text other than the price and
+  the phone number. The postal address is rendered by Caddy's `templates`
+  from AGENCY_POSTAL_ADDRESS and is never written here.
+-->
+<style>
+@font-face {
+  font-family: "Archivo";
+  src: url("/fonts/archivo-var.woff2") format("woff2-variations"),
+       url("/fonts/archivo-var.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* sample-colours: the made-up bakery in the hero sample only
+   crust #8a4b2a, cream #f7ecd9, oven #3a2a20 */
+
+:root {
+  color-scheme: dark;
+  --blue: #5b8cff;
+  --blue-light: #8fb0ff;
+  --on-accent: #070a12;
+  --band: #0f1420;
+  --field: #0a0d14;
+  --surface: #131a28;
+  --ink: #eef2fa;
+  --muted: #9aa5ba;
+  --line: rgba(143, 176, 255, 0.16);
+  --line-strong: rgba(143, 176, 255, 0.34);
+  --focus: #8fb0ff;
+  --on-band: #eef2fa;
+  --on-band-muted: #c9d2e3;
+  --shadow: 0 1px 1px rgba(0, 0, 0, 0.4), 0 24px 56px -20px rgba(0, 0, 0, 0.75);
+  --font: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --wrap: 75rem;
+  --gutter: clamp(1rem, 4vw, 2.5rem);
+  --gap-package: 10.5rem;
+  --gap-how: 6.5rem;
+  --gap-statement: 4rem;
+  --bar: 4rem;
+}
+@media (max-width: 640px) {
+  :root { --gap-package: 5.25rem; --gap-how: 3.25rem; --gap-statement: 2rem; }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--field);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1.125rem;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, p, ul, ol, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+a { color: inherit; text-underline-offset: 0.2em; transition: color 150ms; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 2px; }
+.skip { position: absolute; left: 1rem; top: -4rem; background: var(--surface); color: var(--ink); padding: .75rem 1rem; z-index: 5; }
+.skip:focus { top: 1rem; }
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+.pin { width: 1.1em; height: 1.1em; flex: none; }
+
+h1, h2, .price { font-stretch: 76%; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.75rem, 6.4vw, 5.5rem); font-weight: 750; line-height: 1; }
+h2 { font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 700; font-stretch: 80%; line-height: 1.05; }
+h3 { font-size: 1.375rem; font-weight: 650; line-height: 1.25; }
+.small { font-size: 0.9375rem; font-weight: 600; line-height: 1.4; }
+.muted { color: var(--muted); }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 3rem; padding: 0.7rem 1.4rem;
+  border: 2px solid var(--blue); border-radius: 6px;
+  background: var(--blue); color: var(--on-accent);
+  font: inherit; font-size: 1rem; font-weight: 700; text-decoration: none; cursor: pointer;
+  transition: background-color 150ms, color 150ms, border-color 150ms;
+}
+.btn:hover { background: var(--blue-light); border-color: var(--blue-light); color: var(--on-accent); }
+.btn-line { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.btn-line:hover { background: var(--surface); color: var(--ink); border-color: var(--blue-light); }
+
+/* header */
+.top { padding: 1.25rem 0; }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.brand { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; text-decoration: none; }
+.wordmark { font-weight: 900; font-size: 1.5rem; letter-spacing: -0.035em; text-transform: lowercase; }
+.top nav { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 0 1.25rem; }
+.top nav a:not(.btn) { font-size: 1rem; font-weight: 600; text-decoration: none; padding: .75rem 0; }
+.top nav a:not(.btn):hover { text-decoration: underline; }
+.top .btn { min-height: 2.75rem; padding: .5rem 1.1rem; }
+
+/* hero */
+.hero { padding: 3rem 0 4rem; }
+.hero .wrap { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 1.5rem; row-gap: 3rem; align-items: center; }
+.hero-copy { grid-column: 1 / span 7; }
+.tagline { display: flex; align-items: center; gap: .5rem; margin-bottom: 1.5rem; color: var(--muted); }
+.lede { max-width: 38rem; margin-top: 1.5rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.75rem; margin-top: 2.5rem; }
+.actions a:not(.btn) { font-weight: 600; padding: .75rem 0; }
+.facts { display: flex; flex-wrap: wrap; gap: .75rem 2.5rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.facts li { color: var(--muted); }
+.hero-sample { grid-column: 8 / span 5; }
+
+/* sample site: a plain browser frame, a phone laid over it, all made up */
+.sample { position: relative; padding-bottom: 3.5rem; }
+.frame { background: #f7ecd9; color: #3a2a20; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow), 0 0 0 1px var(--line); }
+.frame-bar { display: flex; gap: .35rem; padding: .6rem .8rem; background: #ffffff; border-bottom: 1px solid rgba(58, 42, 32, 0.18); }
+.frame-bar span { width: .55rem; height: .55rem; border-radius: 50%; background: rgba(58, 42, 32, 0.28); }
+.s-nav { display: flex; align-items: center; justify-content: space-between; padding: .8rem 1rem; font-size: .8125rem; font-weight: 700; }
+.s-nav b { font-weight: 800; font-stretch: 80%; font-size: 1.05rem; color: #8a4b2a; }
+.s-nav span { display: flex; gap: 1rem; }
+.s-body { padding: 1.5rem 1rem 1.75rem; }
+.s-body h4 { margin: 0; font-size: 1.75rem; font-weight: 800; font-stretch: 75%; line-height: 1.05; }
+.s-body p { margin-top: .75rem; font-size: .875rem; line-height: 1.5; max-width: 22rem; }
+.s-btns { display: flex; gap: .6rem; margin-top: 1rem; }
+.s-btns span { padding: .45rem .8rem; border-radius: 4px; font-size: .8125rem; font-weight: 700; background: #8a4b2a; color: #f7ecd9; }
+.s-btns span + span { background: transparent; color: #8a4b2a; border: 1.5px solid #8a4b2a; }
+.s-menu { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; margin-top: 1.25rem; padding-top: .9rem; border-top: 1px solid rgba(58, 42, 32, .25); font-size: .8125rem; font-weight: 600; }
+.phone { position: absolute; right: -0.5rem; bottom: 0; width: 38%; background: #f7ecd9; color: #3a2a20; border: 5px solid #3a2a20; border-radius: 18px; padding: .9rem .7rem; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.6); }
+.phone b { display: block; font-size: .95rem; font-weight: 800; font-stretch: 80%; color: #8a4b2a; }
+.phone p { margin-top: .35rem; font-size: .75rem; line-height: 1.35; }
+.phone span { display: block; margin-top: .6rem; padding: .4rem; border-radius: 4px; background: #8a4b2a; color: #f7ecd9; font-size: .75rem; font-weight: 700; text-align: center; }
+.caption { margin-top: .9rem; color: var(--muted); }
+
+.rise { animation: rise 400ms ease-out both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* trades */
+.trades { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 1.75rem 0; }
+.trades p { max-width: 58rem; font-size: 1.25rem; font-weight: 500; line-height: 1.5; }
+
+/* package */
+.band { padding: var(--gap-package) 0; }
+.alt { background: var(--surface); }
+.spec { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 1.5rem; row-gap: 3rem; }
+.spec-lead { grid-column: 1 / span 4; align-self: start; position: sticky; top: 2rem; }
+.price { margin-top: 1.5rem; color: var(--ink); font-size: clamp(5rem, 11vw, 9rem); font-weight: 800; font-stretch: 72%; line-height: .9; }
+.rule { width: 4rem; height: 6px; margin: 1.25rem 0 1.5rem; background: var(--blue); }
+.spec-lead .btn { margin-top: 1.75rem; }
+.not { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+.not h3 { font-size: 1.0625rem; }
+.not li { margin-top: .5rem; color: var(--muted); font-size: 1rem; line-height: 1.5; }
+.rows { grid-column: 6 / span 7; }
+.rows li { padding: 1.5rem 0; border-top: 1px solid var(--line); }
+.rows li:first-child { padding-top: 0; border-top: 0; }
+.rows p { margin-top: .4rem; max-width: 38rem; color: var(--muted); }
+
+/* how it works */
+.how { padding: var(--gap-how) 0; }
+.how h2 { margin-bottom: 4rem; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 2.5rem; border-top: 2px solid var(--line-strong); }
+.steps li { position: relative; padding-top: 2.5rem; }
+.bullet { position: absolute; top: -1.25rem; left: 0; width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center; background: var(--blue); color: var(--on-accent); font-weight: 800; }
+.steps p { margin-top: .5rem; color: var(--muted); }
+
+/* statement */
+.statement-wrap { padding: var(--gap-statement) 0 var(--gap-how); }
+.statement { display: flex; gap: 1rem; align-items: flex-start; max-width: 60rem; font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 700; font-stretch: 80%; line-height: 1.1; }
+.statement .pin { margin-top: .2em; }
+
+/* contact + footer */
+.contact { background: var(--band); border-top: 1px solid var(--line); color: var(--on-band); padding: 6.5rem 0 2.5rem; }
+.contact .wrap > .split { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 1.5rem; row-gap: 2.5rem; }
+.contact-copy { grid-column: 1 / span 5; }
+.contact-copy .lede { color: var(--on-band-muted); }
+.lines { margin-top: 2rem; }
+.lines li { padding: .35rem 0; font-size: 1.125rem; }
+.lines a, .foot a { white-space: nowrap; }
+.lines a { font-weight: 700; text-decoration-color: var(--blue); text-decoration-thickness: 2px; display: inline-block; padding: .6rem 0; }
+.ask { grid-column: 7 / span 6; }
+.ask label { display: block; font-size: .9375rem; font-weight: 600; }
+.ask textarea, .ask input[type=text], .ask input[type=email], .ask input[type=tel] { display: block; width: 100%; margin: .5rem 0 1rem; padding: .9rem 1rem; border: 2px solid var(--line-strong); border-radius: 6px; background: var(--field); color: var(--ink); font: inherit; font-size: 1rem; line-height: 1.5; resize: vertical; }
+.ask input:focus-visible, .ask textarea:focus-visible { border-color: var(--blue-light); }
+.ask :focus-visible, .contact a:focus-visible { outline-color: var(--blue-light); }
+.hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.ask .status { margin: .75rem 0 0; min-height: 1.4em; font-size: .9375rem; font-weight: 600; }
+.ask .status.bad { color: var(--blue-light); }
+.ask .btn[disabled] { opacity: .7; cursor: progress; }
+.hint { margin-top: 1rem; font-size: .9375rem; color: var(--on-band-muted); line-height: 1.5; }
+.foot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem 2.5rem; margin-top: 5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--on-band-muted); font-size: .9375rem; }
+.foot .wordmark { color: var(--on-band); font-size: 1.25rem; }
+.foot a { font-weight: 600; padding: .7rem 0; display: inline-block; }
+.foot address { font-style: normal; }
+
+/* phone action bar */
+.bar { display: none; }
+@media (max-width: 900px) {
+  .hero-copy, .hero-sample, .spec-lead, .rows, .contact-copy, .ask { grid-column: 1 / -1; }
+  .spec-lead { position: static; }
+  .steps { grid-template-columns: 1fr; border-top: 0; border-left: 2px solid var(--line-strong); gap: 2rem 0; }
+  .steps li { padding: 0 0 0 2.5rem; }
+  .bullet { top: 0; left: -1.25rem; }
+  .how h2 { margin-bottom: 2.5rem; }
+  .contact { padding-top: 4rem; }
+}
+@media (max-width: 640px) {
+  body { padding-bottom: var(--bar); font-size: 1.0625rem; }
+  .top nav a:not(.btn) { display: none; }
+  .hero { padding: 1.5rem 0 2.5rem; }
+  .hero .wrap { row-gap: 2.5rem; }
+  .actions { margin-top: 1.75rem; }
+  .facts { flex-direction: column; gap: .5rem; margin-top: 1.75rem; }
+  .sample { padding-bottom: 3rem; }
+  .phone { right: 0; width: 44%; }
+  .trades p { font-size: 1.0625rem; }
+  .foot { margin-top: 3rem; }
+  .bar { display: flex; gap: .75rem; position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: var(--bar); padding: .5rem var(--gutter); background: var(--surface); border-top: 1px solid var(--line); }
+  .bar .btn { flex: 1; min-height: 3rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rise { animation: none; }
+  a, .btn { transition: none; }
+}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "ProfessionalService", "name": "ATLAS Agency", "url": "https://agency.storefront.test/", "email": "owner@example.com", "telephone": "+1 555 010 0142", "description": "ATLAS Agency builds websites for small businesses in New York City. See a free preview of your new site first, and pay only if you launch it.", "areaServed": {"@type": "City", "name": "New York"}, "makesOffer": {"@type": "Offer", "name": "Website Package", "price": "500", "priceCurrency": "USD"}}</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="pin" viewBox="0 0 24 24"><path fill="#5b8cff" d="M12 1.5c-4.7 0-8.5 3.7-8.5 8.3 0 5.9 7 12.4 7.7 13a1.2 1.2 0 0 0 1.6 0c.7-.6 7.7-7.1 7.7-13 0-4.6-3.8-8.3-8.5-8.3zm0 11.6a3.3 3.3 0 1 1 0-6.6 3.3 3.3 0 0 1 0 6.6z"/></symbol></svg>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="ATLAS Agency home"><svg class="pin" aria-hidden="true"><use href="#pin"/></svg><span class="wordmark">ATLAS Agency</span></a>
+    <nav aria-label="Main">
+      <a href="/agency/">Agency</a>
+      <a href="/academy/#catalog">Courses</a>
+      <a href="/academy/#catalog">Ebooks</a>
+      <a href="/academy/blog/">Blog</a>
+      <a href="/academy/videos/">Free lessons</a>
+      <a href="/academy/help/">Help</a>
+      <a class="btn" href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-copy rise">
+      <p class="tagline small"><svg class="pin" aria-hidden="true"><use href="#pin"/></svg>Websites for New York small businesses</p>
+      <h1>See your new website before you pay for it.</h1>
+      <p class="lede">ATLAS Agency builds websites for small businesses in New York City. We build a preview around your business first, free. You pay only if you want it live.</p>
+      <div class="actions">
+        <a class="btn" href="#contact">Ask for a free preview</a>
+        <a href="#package">See what's in the package</a>
+        <a class="btn btn-line" href="/academy/">Courses &amp; ebooks</a>
+      </div>
+      <ul class="facts small">
+        <li>Preview: free, before you pay</li>
+        <li>Price: one, for everything listed below</li>
+        <li>Launch: only when you say yes</li>
+      </ul>
+    </div>
+    <figure class="hero-sample rise">
+      <div class="sample" aria-hidden="true">
+        <div class="frame">
+          <div class="frame-bar"><span></span><span></span><span></span></div>
+          <div class="s-nav"><b>Corner Oven</b><span><i>Menu</i><i>Visit</i><i>Call us</i></span></div>
+          <div class="s-body">
+            <h4>Fresh bread, baked every morning.</h4>
+            <p>A family bakery in Queens. Loaves, rolls and pastry, made the same day.</p>
+            <div class="s-btns"><span>Order for pickup</span><span>Call us</span></div>
+            <div class="s-menu"><span>Sesame loaf</span><span>Cheese danish</span><span>Rye rolls</span></div>
+          </div>
+        </div>
+        <div class="phone"><b>Corner Oven</b><p>Fresh bread, baked every morning.</p><span>Call us</span></div>
+      </div>
+      <figcaption class="caption small">Sample: a made-up Queens bakery, not a client.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="trades" aria-label="Who it is for">
+  <div class="wrap"><p>Bakeries, barbershops, plumbers, florists, delis, tailors, electricians, pizzerias, nail salons, taquerias, hardware stores, laundromats, contractors, coffee shops, locksmiths, hair salons. Anywhere in the five boroughs.</p></div>
+</section>
+
+<section class="band alt" id="package">
+  <div class="wrap spec">
+    <div class="spec-lead">
+      <h2>Website Package</h2>
+      <p class="price">$500</p>
+      <div class="rule"></div>
+      <p>Built for your business after you've seen the preview. Live only when you say yes.</p>
+      <a class="btn" href="#contact">Ask for a free preview</a>
+      <div class="not">
+        <h3>Not part of it</h3>
+        <ul>
+          <li>No online checkout or card payments. Store pages end at call or email to order.</li>
+          <li>No invented reviews or figures.</li>
+        </ul>
+      </div>
+    </div>
+    <ul class="rows">
+      <li><h3>The pages a business needs</h3><p>A home page, a contact page, privacy and terms pages, and a page for broken links.</p></li>
+      <li><h3>Call and booking buttons</h3><p>A call or booking button near the top of every page, and a call bar that stays within thumb's reach on phones.</p></li>
+      <li><h3>Search set-up</h3><p>Each page gets its own title and description, a robots file, and structured data that tells search engines who you are and where you are. AI assistants such as ChatGPT, Claude and Perplexity can read the same details. We don't promise a ranking.</p></li>
+      <li><h3>An AI chat assistant</h3><p>It answers visitors' questions on your site from your business's own information.</p></li>
+      <li><h3>A share image</h3><p>When someone texts or posts your link, it shows your name and colours.</p></li>
+      <li><h3>A check before launch</h3><p>Every page is checked for missing titles, missing image descriptions and claims nobody can back up.</p></li>
+      <li><h3>Only what is true</h3><p>Reviews, photos and team details come from you. What you haven't given us is left off the page.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="band" id="academy">
+  <div class="wrap">
+    <h2>Courses, ebooks and kits</h2>
+    <p class="lede">ATLAS Academy: practical AI courses, an ebook, printable workbooks and ready-made kits. Pay once, download the PDFs and files, and keep them.</p>
+    <ul class="lines">
+      <li><a href="/academy/safe-ai-operator/">Build a Safe AI Operator</a> (course)</li>
+      <li><a href="/academy/sell-with-ai/">Sell With AI</a> (course)</li>
+      <li><a href="/academy/ai-for-every-age/">AI for Every Age</a> (course)</li>
+      <li><a href="/academy/30-business-lessons/">30 Business Lessons</a> (ebook)</li>
+      <li><a href="/academy/family-ai-scam-defence-workbook/">The Family AI-Scam Defense Workbook</a> (printable PDF)</li>
+      <li><a href="/academy/local-business-automation-pack/">Local Business Automation Pack</a> (workflow pack)</li>
+      <li><a href="/academy/claude-obsidian-vault-kit/">Claude + Obsidian Vault Kit</a> (kit)</li>
+    </ul>
+    <p><a class="btn" href="/academy/">See all courses and ebooks</a></p>
+  </div>
+</section>
+
+<section class="how" id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><span class="bullet">A</span><h3>We look at what you have</h3><p>Your current site, if there is one: how it loads on a phone, whether the links work, what search engines can read. No site yet is fine.</p></li>
+      <li><span class="bullet">B</span><h3>We build a free preview</h3><p>A draft of your site, built around your business.</p></li>
+      <li><span class="bullet">C</span><h3>You decide</h3><p>Launch it, ask for changes, or say no.</p></li>
+    </ol>
+  </div>
+</section>
+
+<div class="statement-wrap">
+  <div class="wrap">
+    <p class="statement"><svg class="pin" aria-hidden="true"><use href="#pin"/></svg><span>If you haven't given it to us, it isn't on your site.</span></p>
+  </div>
+</div>
+</main>
+
+<footer class="contact" id="contact">
+  <div class="wrap">
+    <div class="split">
+      <div class="contact-copy">
+        <h2>Want to see yours first?</h2>
+        <p class="lede">Tell us the business and how to reach you. Miro builds the preview and gets back to you within a day. It's free, and you only pay if you launch it.</p>
+        <ul class="lines">
+          <li>Call <a href="tel:+1 555 010 0142">+1 555 010 0142</a></li>
+          <li>Email <a href="mailto:owner@example.com">owner@example.com</a></li>
+        </ul>
+      </div>
+      <form class="ask" method="post" action="/public/agency/contact" data-contact-form>
+        <input type="hidden" name="source" value="landing">
+        <input type="hidden" name="topic" value="preview">
+        <p class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></p>
+        <label>Your name
+          <input type="text" name="name" required maxlength="80" autocomplete="name">
+        </label>
+        <label>Your email
+          <input type="email" name="email" required maxlength="254" autocomplete="email" inputmode="email">
+        </label>
+        <label>Phone or WhatsApp (optional)
+          <input type="tel" name="phone" maxlength="30" autocomplete="tel">
+        </label>
+        <label>Tell us about the business
+          <textarea name="message" required minlength="10" maxlength="4000" rows="6" placeholder="Business name, your current website if you have one, and what you want from a site."></textarea>
+        </label>
+        <button class="btn" type="submit" data-contact-submit>Ask for a free preview</button>
+        <p class="status" role="status" aria-live="polite" data-contact-status></p>
+        <p class="hint">Miro reads every message himself and replies by email, usually within a day. We only use these details to answer you. Prefer your own mail app? Write to <a href="mailto:owner@example.com">owner@example.com</a>.</p>
+      </form>
+    </div>
+    <div class="foot">
+      <span class="wordmark">ATLAS Agency</span>
+      <span>ATLAS Agency / Websites for New York small businesses</span>
+      <a href="tel:+1 555 010 0142">+1 555 010 0142</a>
+      <a href="mailto:owner@example.com">owner@example.com</a>
+      {{with env "AGENCY_POSTAL_ADDRESS"}}<address>{{. | html}}</address>{{else}}<!-- TODO(miro): set AGENCY_POSTAL_ADDRESS in .env (the business postal address, as used in the CAN-SPAM footer), then recreate caddy. Never invent one. -->{{end}}
+    </div>
+  </div>
+</footer>
+
+<nav class="bar" aria-label="Quick contact">
+  <a class="btn" href="tel:+1 555 010 0142">Call</a>
+  <a class="btn btn-line" href="/academy/">Courses</a>
+  <a class="btn btn-line" href="#contact">Free preview</a>
+</nav>
+<script src="/contact.js" defer></script>
+</body>
+</html>

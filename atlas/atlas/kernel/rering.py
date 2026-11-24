@@ -3,7 +3,7 @@
 `escalation.CRITICAL_RETRIES` and `ladder()` have described this since
 COMMS.md 3.3 ("call again in two minutes, then every five") and nothing
 ever dialled: one missed call at night and the incident sat in Slack until
-morning. the owner's voice-partner brief (2026-10-04) asks for the step-up.
+morning. Miro's voice-partner brief (2026-10-04) asks for the step-up.
 
 What this does, and what it never does:
 
@@ -111,7 +111,7 @@ async def still_open(msg: Outbound) -> bool:
                 return False
             row = await fetch_one("SELECT 1 AS x FROM acks WHERE key = $1 AND until > now()", key)
             return row is None
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not tell whether to ring again: %s", type(exc).__name__)
     return False
 
@@ -125,7 +125,7 @@ async def _ring_later(entry: Placed, delay: float,
         return "settled"
     try:
         sid = await send(entry.msg)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("the re-ring could not be placed: %s", type(exc).__name__)
         return "failed"
     placed(sid, entry.msg, entry.attempt + 1)

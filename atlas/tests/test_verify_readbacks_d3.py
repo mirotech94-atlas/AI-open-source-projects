@@ -129,7 +129,7 @@ async def test_reshare_verified(li_state, monkeypatch):
     _li(monkeypatch, "activity_text", "Activity\n" + LI_TEXT + "\n3 reactions")
     got = await v.verify("linkedin.reshare_post", RS, ActionResult(True))
     assert got.state is v.State.VERIFIED, got.reason
-    assert got.evidence["on_the_owners_activity"] is True
+    assert got.evidence["on_miros_activity"] is True
 
 
 async def test_reshare_contradicted(li_state, monkeypatch):
@@ -283,14 +283,14 @@ async def test_deploy_raises_is_unknown(net, agency, monkeypatch):
 # ==================================================================== shop
 
 LINK = "plink_1Abc"
-SHOP_PARAMS = {"product_key": "vault_kit", "account": "owner", "price_cents": 1900}
+SHOP_PARAMS = {"product_key": "vault_kit", "account": "miro", "price_cents": 1900}
 SHOP_RESULT = ActionResult(True, "on sale", evidence={"payment_link": LINK},
-                           rollback_token=f"owner:{LINK}:vault_kit")
+                           rollback_token=f"miro:{LINK}:vault_kit")
 
 
 @pytest.fixture
 def shop(monkeypatch):
-    monkeypatch.setenv("STRIPE_SHOP_OWNER_KEY", SECRET)
+    monkeypatch.setenv("STRIPE_SHOP_MIRO_KEY", SECRET)
 
 
 def _link(**over):
@@ -336,7 +336,7 @@ async def test_payment_link_unknown(net, shop, monkeypatch):
     assert got.state is v.State.UNKNOWN and got.failure_class is v.FailureClass.AUTH
     got = await v.verify("shop.create_payment_link", SHOP_PARAMS, ActionResult(True))
     assert got.state is v.State.UNKNOWN and "no payment link" in got.reason
-    monkeypatch.delenv("STRIPE_SHOP_OWNER_KEY")
+    monkeypatch.delenv("STRIPE_SHOP_MIRO_KEY")
     got = await v.verify("shop.create_payment_link", SHOP_PARAMS, SHOP_RESULT)
     assert got.state is v.State.UNKNOWN and "no shop key" in got.reason
 
@@ -350,7 +350,7 @@ async def test_payment_link_raises_is_unknown(net, shop):
 
 # ================================================================= browser
 
-FORM = {"url": "https://www.example.org/contact", "fields": "#name=the owner"}
+FORM = {"url": "https://www.example.org/contact", "fields": "#name=Miro"}
 
 
 def _submitted(**over):

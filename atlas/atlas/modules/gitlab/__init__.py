@@ -1,8 +1,8 @@
 """GitLab — both self-hosted instances.
 
-the owner runs two:
-  aicode.example.com   business repos (flycheap, Guardian, ExampleCo, ATLAS itself)
-  git.internal.example        work repos, including the owner/ai behind InRoots
+Miro runs two:
+  aicode.storefront.test   business repos (flycheap, Guardian, Mirotech, ATLAS itself)
+  code.matrix.example.com        work repos, including Miro/ai behind Attendance
 
 Both are watched the same way. The valuable signals are not "is git up" but the
 things that rot quietly: failed pipelines nobody looked at, merge requests that
@@ -45,7 +45,7 @@ def _gitlab_reason(exc: BaseException) -> str:
         return redact(exc)
     try:
         body = response.json()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         body = {}
     if isinstance(body, dict):
         if body.get("error") == GRANULAR:
@@ -75,9 +75,9 @@ class Instance:
 
 
 INSTANCES = (
-    Instance("business", os.getenv("GITLAB_URL", "https://aicode.example.com"),
+    Instance("business", os.getenv("GITLAB_URL", "https://aicode.storefront.test"),
              "GITLAB_TOKEN"),
-    Instance("work", os.getenv("GITLAB_WORK_URL", "https://git.internal.example"),
+    Instance("work", os.getenv("GITLAB_WORK_URL", "https://code.matrix.example.com"),
              "GITLAB_WORK_TOKEN"),
 )
 
@@ -101,7 +101,7 @@ async def instance_up(inst: Instance) -> Observation:
 
     Omnibus restricts the `/-/` monitoring endpoints to an allow-listed set of
     IPs, so from anywhere else they 404 -- and a 404 is indistinguishable from
-    the instance being broken. This check reported aicode.example.com as FAILING
+    the instance being broken. This check reported aicode.storefront.test as FAILING
     while it was serving fine.
 
     `/api/v4/version` proves the app is up and routing whatever the token
@@ -113,7 +113,7 @@ async def instance_up(inst: Instance) -> Observation:
             r = await c.get(f"{inst.url}/api/v4/version",
                             headers={"PRIVATE-TOKEN": inst.token})
         ms = r.elapsed.total_seconds() * 1000
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(f"{inst.key}_up", Health.FAILING, None, None,
                            f"unreachable: {redact(exc)}")
 
@@ -124,7 +124,7 @@ async def instance_up(inst: Instance) -> Observation:
     if r.status_code == 200:
         try:
             version = r.json().get("version", "?")
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             version = "?"
         return Observation(f"{inst.key}_up", Health.OK, ms, "ms",
                            f"GitLab {version} responding",
@@ -151,7 +151,7 @@ async def admin_locked(inst: Instance) -> Observation:
     name = f"{inst.key}_admin_locked"
     try:
         users = await _api(inst, "users", username="root")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN, detail=_gitlab_reason(exc))
     if not isinstance(users, list) or not users or not isinstance(users[0], dict):
         return Observation(name, Health.UNKNOWN, detail="no root user returned")
@@ -196,7 +196,7 @@ async def token_ok(inst: Instance) -> Observation:
                             headers={"PRIVATE-TOKEN": inst.token},
                             params={"membership": True, "simple": True,
                                     "per_page": 1})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN, detail=redact(exc))
 
     if r.status_code == 200:
@@ -268,7 +268,7 @@ async def failed_pipelines(inst: Instance) -> Observation:
             Health.DEGRADED if failures else Health.OK,
             float(len(failures)), "pipelines", detail,
             evidence={"pipelines": failures[:10], "never_ran": never_ran[:10]})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(f"{inst.key}_failed_pipelines", Health.UNKNOWN,
                            detail=_gitlab_reason(exc))
 
@@ -287,7 +287,7 @@ async def stale_mrs(inst: Instance) -> Observation:
             float(len(stale)), "MRs",
             f"{len(stale)} merge requests untouched for 14+ days",
             evidence={"titles": [m["title"] for m in stale[:8]]})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(f"{inst.key}_stale_mrs", Health.UNKNOWN,
                            detail=_gitlab_reason(exc))
 
@@ -313,7 +313,7 @@ async def runners_online(inst: Instance) -> Observation:
             f"{len(offline)} active runner(s) offline" if offline
             else f"all {len(runners)} runners online",
             evidence={"offline": [r["description"] for r in offline]})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(f"{inst.key}_runners", Health.UNKNOWN,
                            detail=_gitlab_reason(exc))
 
@@ -336,7 +336,7 @@ async def open_issue(instance: str, project: str, title: str,
 
 # ------------------------------------------------- filing on its own (Tier 1)
 #
-# the owner, 2026-09-30 and 2026-10-12 (memory approval-policy): "whatever you
+# Miro, 2026-09-30 and 2026-10-12 (memory approval-policy): "whatever you
 # think should be done should be automatically approved". 181 cards in 30
 # days, 138 of them expired unanswered, were this action. It is Tier 1 now,
 # gated in code here, in the dry run the executor runs before every run:
@@ -410,7 +410,7 @@ async def open_issue_dry(instance: str, project: str, title: str,
         return ActionResult(False, "automatic issue filing is off (GITLAB_AUTOFILE)")
     if not (title or "").strip():
         return ActionResult(False, "an issue needs a title")
-    # The project has to exist. Every early card named "the owner/ai", a project
+    # The project has to exist. Every early card named "Miro/ai", a project
     # that was never there, and the 404 surfaced only after approval -- as
     # a failed card, not as a dry run that said so.
     inst = next(i for i in INSTANCES if i.key == instance)
@@ -466,7 +466,7 @@ async def close_issue(token: str) -> ActionResult:
 
 # `nightshift.merge` (Tier ASK, irreversible) is the only caller. What it
 # merges is pinned: the SHA the job's branch pointed at when the job
-# finished, which is what the card the owner approves names. Anything pushed to
+# finished, which is what the card Miro approves names. Anything pushed to
 # the branch after that is refused, and GitLab itself is handed the pin
 # (`sha=` on the accept call) so a push between the check and the merge
 # cannot slip in either. ATLAS's own repository is never merged here.
@@ -614,7 +614,7 @@ async def merge_branch(repo_url: str, branch: str, expected_sha: str) -> ActionR
 
 class GitLabModule:
     name = "gitlab"
-    title = "GitLab (aicode + git.internal.example)"
+    title = "GitLab (aicode + code.matrix.example.com)"
     requires_env = ("GITLAB_TOKEN",)     # work instance is optional
 
     async def setup(self) -> None: ...
@@ -654,14 +654,14 @@ class GitLabModule:
         return (
             Action(
                 name="gitlab.open_issue",
-                # Tier 1 again since 2026-10-12 (the owner: "whatever you think
+                # Tier 1 again since 2026-10-12 (Miro: "whatever you think
                 # should be done should be automatically approved, but
                 # whatever is really urgent should only need human
                 # approval"; memory approval-policy). It was AUTO, then ASK
                 # because an issue emails every watcher -- colleagues on the
                 # work instance -- and closing it undoes none of that. So the
                 # dry run (open_issue_dry) files on the business instance
-                # only, where the owner is the watcher, never on work; never a
+                # only, where Miro is the watcher, never on work; never a
                 # near-duplicate of an open or recently closed atlas issue;
                 # at most GITLAB_ISSUES_PER_DAY per project a day; nothing
                 # with GITLAB_AUTOFILE=off. The rollback closes the issue it
@@ -674,8 +674,8 @@ class GitLabModule:
                         "project": "namespace/path. On 'business' the "
                                    "projects are root/atlas (ATLAS's own "
                                    "notes and findings -- the default), "
-                                   "owner/guardian, "
-                                   "owner/flycheap-tracker",
+                                   "example-owner/guardian, "
+                                   "example-owner/flycheap-tracker",
                         "title": "issue title", "body": "markdown body"},
                 max_per_hour=6,
             ),

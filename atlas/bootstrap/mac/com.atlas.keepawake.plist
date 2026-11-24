@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.atlas.keepawake</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <string>__WT__/bootstrap/mac/atlas-wake.sh</string>
+    </array>
+    <!-- 13:00 local, before the 13:05 pmset wake: launchd runs a missed
+         calendar interval when the Mac wakes. -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key><integer>13</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key><string>__HOME__/Library/Logs/atlas-wake.log</string>
+    <key>StandardErrorPath</key><string>__HOME__/Library/Logs/atlas-wake.log</string>
+</dict>
+</plist>

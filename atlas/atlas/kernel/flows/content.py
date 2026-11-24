@@ -546,7 +546,7 @@ async def _receipt(workflow_id: int, action: str, state: State,
     if notice is not None:
         from .. import outbox
         try:
-            await outbox.enqueue(notice, {"text": body}, destination="owner",
+            await outbox.enqueue(notice, {"text": body}, destination="miro",
                                  occurrence=f"receipt:{workflow_id}",
                                  kind="notice", workflow_id=workflow_id,
                                  reason=f"receipt for workflow #{workflow_id}")
@@ -559,5 +559,5 @@ async def _receipt(workflow_id: int, action: str, state: State,
         await notify(Outbound(title=f"Reel workflow #{workflow_id}", body=body,
                               topic="instagram_stories", severity=Severity.INFO,
                               kind="receipt"))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("receipt for workflow %s not sent", workflow_id)

@@ -1,7 +1,7 @@
 """vault — documents indexed for recall, and a reading log that becomes memory.
 
 Watches: the local document vault (`VAULT_DIR`, default `data/vault`) —
-leases, insurance policies, contracts, receipts, whatever the owner drops there as
+leases, insurance policies, contracts, receipts, whatever Miro drops there as
 `.txt`, `.md` or `.pdf`. Nothing here fetches from anywhere; it only reads
 what is already on disk. Files are hashed, chunked and remembered as
 semantic memory in the `"vault"` namespace, so "when does my insurance

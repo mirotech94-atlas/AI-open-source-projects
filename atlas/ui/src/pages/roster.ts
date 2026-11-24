@@ -8,13 +8,13 @@
 export const FRONT_DOOR_AGENT = "inbox";
 
 export const ROSTER_AGENTS = [
-  "inbox", "sites", "content", "qa", "sales", "bizops", "seo", "research", "mmt",
+  "inbox", "sites", "content", "qa", "sales", "bizops", "seo", "research", "tutorco",
 ] as const;
 
 export const RETIRED_AGENTS = [
   "agency", "analyst", "commerce", "concierge", "fiverr", "flycheap", "growth",
-  "guardian", "inroots", "marketing", "markets", "exampleco", "ops", "reels",
-  "scheduler", "school", "sentinel", "cloudco",
+  "guardian", "attendance", "marketing", "markets", "mirotech", "ops", "reels",
+  "scheduler", "school", "sentinel", "cloudhost",
 ] as const;
 
 const RETIRED = new Set<string>(RETIRED_AGENTS);

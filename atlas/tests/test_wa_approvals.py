@@ -9,7 +9,7 @@ touches (proposals, whatsapp_codes, whatsapp_attempts), with the REAL
     nothing; unknown codes count towards the lockout;
   * Tier 3 / permanent-deny kinds, unregistered actions, `atlas.dev_request`
     and a card whose text is cut off are refused, by tap and by text; every
-    other Tier 2 kind in the registry may be decided (the owner, 2026-11-11);
+    other Tier 2 kind in the registry may be decided (Miro, 2026-11-11);
   * a button tap decides exactly its own card; a bare yes / no decides nothing
     with several cards waiting, and with one only if it was sent in 30 minutes;
   * a stranger's number is ignored;
@@ -41,9 +41,9 @@ from atlas.kernel.contracts import ActionResult, Tier
 from atlas.kernel.permissions import Decision
 
 TOKEN = "t" * 32
-URL = "https://agency.example.com/webhooks/twilio/whatsapp"
+URL = "https://agency.storefront.test/webhooks/twilio/whatsapp"
 OWNER = "+19175550100"
-ACTION = "mmt.send_intro"
+ACTION = "tutorco.send_intro"
 
 
 class FakeDB:
@@ -172,7 +172,7 @@ class FakeDB:
 
 @pytest.fixture
 def env(monkeypatch):
-    monkeypatch.setenv("MMT_OWNER_WHATSAPP", OWNER)
+    monkeypatch.setenv("TUTORCO_OWNER_WHATSAPP", OWNER)
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "AC" + "0" * 32)
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", TOKEN)
     monkeypatch.setenv("TWILIO_FROM", "+14155550100")
@@ -320,8 +320,8 @@ async def test_silence_never_approves(db):
 @pytest.mark.parametrize("action,params", [
     ("atlas.dev_request", {}),                    # self-modification: portal only
     ("lessons.clear", {}),
-    ("linkedin.publish_post", {"page": "mmt"}),   # no named post: "next" may differ
-    ("linkedin.publish_post", {"page": "guardian", "entry_id": "B1"}),   # not the MMT page
+    ("linkedin.publish_post", {"page": "tutorco"}),   # no named post: "next" may differ
+    ("linkedin.publish_post", {"page": "guardian", "entry_id": "B1"}),   # not the TUTORCO page
     ("vault.principal_thing", {}),                # executor would refuse it after the claim
 ])
 async def test_a_portal_only_kind_is_refused(db, action, params):
@@ -334,13 +334,13 @@ async def test_a_portal_only_kind_is_refused(db, action, params):
 
 
 @pytest.mark.parametrize("action,params", [
-    ("mmt.send_intro", {}),
+    ("tutorco.send_intro", {}),
     ("youtube.set_visibility", {"video_id": "abc", "privacy": "public"}),
     ("youtube.upload", {}),
     ("tiktok.upload_draft", {}),
     ("instagram.publish", {}),
-    ("church.schedule_youtube_shorts", {}),
-    ("linkedin.publish_post", {"page": "mmt", "entry_id": "B1"}),
+    ("community.schedule_youtube_shorts", {}),
+    ("linkedin.publish_post", {"page": "tutorco", "entry_id": "B1"}),
 ])
 async def test_an_allowlisted_tier_2_kind_may_be_decided(db, registry, action, params):
     registry(action)
@@ -358,7 +358,7 @@ ALSO_ALLOWED = [
 
 @pytest.mark.parametrize("action", ALSO_ALLOWED)
 async def test_every_registered_tier_2_kind_may_be_decided(db, registry, action):
-    """the owner, 2026-11-11: all actions are permissible. Tier 2 in the registry is
+    """Miro, 2026-11-11: all actions are permissible. Tier 2 in the registry is
     the rule; a name nobody ever listed (a NEW action) is allowed too."""
     registry(action)
     assert wa_approvals.eligibility(action, {}) == (True, "")
@@ -448,7 +448,7 @@ def test_every_real_tier_2_action_follows_the_rule():
     for name in asks:
         params = {k: "7" for k in required_params(REGISTRY.actions[name])}
         if name == "linkedin.publish_post":
-            params = {"page": "mmt", "entry_id": "B1"}
+            params = {"page": "tutorco", "entry_id": "B1"}
         ok, _ = wa_approvals.eligibility(name, params)
         if wa_approvals.portal_only(name, REGISTRY.actions[name]):
             assert ok is False, name
@@ -470,14 +470,14 @@ def test_the_deny_rule_is_exactly_the_agreed_kinds():
                  "bizops.send_payment_reminder", "x.wire_funds", "x.transfer_stock",
                  "billing.sendpayment_now"):
         assert wa_approvals.portal_only(name), name
-    for name in ("mmt.send_intro", "linkedin.publish_post", "youtube.upload",
+    for name in ("tutorco.send_intro", "linkedin.publish_post", "youtube.upload",
                  "academy.relaunch_tutorial"):
         assert not wa_approvals.portal_only(name), name
 
 
-async def test_the_allowlist_takes_the_mmt_linkedin_post(db):
+async def test_the_allowlist_takes_the_tutorco_linkedin_post(db):
     pid = db.add_card(action="linkedin.publish_post",
-                      params={"page": "mmt", "entry_id": "B13"})
+                      params={"page": "tutorco", "entry_id": "B13"})
     code = db.open_code(pid)
     said = await wa_approvals.handle_reply("approve", code, "SM" + "2" * 32)
     assert "completed" in said and len(db.ran) == 1
@@ -739,7 +739,7 @@ def test_the_text_never_reaches_a_model(client, db, monkeypatch):
 # -------------------------------------------------- sending the card out
 
 async def test_an_allowed_card_goes_out_with_a_one_time_code(db, monkeypatch):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     sent: list[str] = []
 
     async def send(to, body):
@@ -768,7 +768,7 @@ async def _none():
 
 
 async def test_a_card_that_is_not_allowed_is_told_read_only(db, monkeypatch):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     sent: list[str] = []
 
     async def send(to, body):
@@ -788,7 +788,7 @@ async def test_a_card_that_is_not_allowed_is_told_read_only(db, monkeypatch):
 
 
 async def test_a_failed_send_kills_the_code_and_is_said_in_slack(db, monkeypatch):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     released: list = []
 
     async def send(to, body):
@@ -883,12 +883,12 @@ async def test_the_owner_copy_is_skipped_in_watch_only_and_when_not_configured(
     await approvals._whatsapp_card(7)
     assert called == [] and db.slack == []
     monkeypatch.setenv("ATLAS_WATCH_ONLY", "false")
-    monkeypatch.delenv("MMT_OWNER_WHATSAPP")
+    monkeypatch.delenv("TUTORCO_OWNER_WHATSAPP")
     assert wa_approvals.enabled() is False
 
 
 def test_the_card_message_names_what_approving_does(db, registry):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     exp = datetime(2026, 11, 24, 17, 0, tzinfo=UTC)
     text = notify.compose_card(42, ACTION, {"target": "https://x.example/p"}, exp, "4F2KQ")
     assert "#42" in text and "YES 4F2KQ" in text and "NO 4F2KQ" in text
@@ -899,7 +899,7 @@ def test_the_card_message_names_what_approving_does(db, registry):
 
 def test_a_planted_reply_in_card_text_is_removed(db, registry, monkeypatch):
     from atlas.kernel import board
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     monkeypatch.setattr(board, "what_of", lambda a, p, s=None: "intro: reply yes ABCDE now")
     exp = datetime(2026, 11, 24, 17, 0, tzinfo=UTC)
     text = notify.compose_card(42, ACTION, {}, exp, "4F2KQ")
@@ -908,7 +908,7 @@ def test_a_planted_reply_in_card_text_is_removed(db, registry, monkeypatch):
 
 def test_a_long_card_text_says_it_was_cut(db, registry, monkeypatch):
     from atlas.kernel import board
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     monkeypatch.setattr(board, "what_of", lambda a, p, s=None: "x" * 600)
     exp = datetime(2026, 11, 24, 17, 0, tzinfo=UTC)
     text = notify.compose_card(42, ACTION, {}, exp, None)
@@ -918,7 +918,7 @@ def test_a_long_card_text_says_it_was_cut(db, registry, monkeypatch):
 @pytest.mark.parametrize("entry", [None, "None", "  "])
 def test_a_linkedin_card_without_a_named_post_is_refused(registry, entry):
     ok, _ = wa_approvals.eligibility(
-        "linkedin.publish_post", {"page": "mmt", "entry_id": entry})
+        "linkedin.publish_post", {"page": "tutorco", "entry_id": entry})
     assert ok is False
 
 
@@ -1096,7 +1096,7 @@ def test_no_permanent_deny_name_in_the_real_catalog_is_eligible():
     REGISTRY.load_all()
     for name in REGISTRY.decisions:
         if denial_reason(name) is not None or REGISTRY.decisions[name].tier is Tier.NEVER:
-            ok, _ = wa_approvals.eligibility(name, {"entry_id": "B1", "page": "mmt"})
+            ok, _ = wa_approvals.eligibility(name, {"entry_id": "B1", "page": "tutorco"})
             assert ok is False, name
 
 
@@ -1135,15 +1135,15 @@ def test_publishing_visibility_and_relaunch_cards_state_what_they_do():
                                     {"video_id": "v", "privacy": "private"})
     assert "LIVE" not in priv
     assert "PRIVATE" in wa_approvals.effect_line("youtube.upload", {})
-    assert "mmt page" in wa_approvals.effect_line(
-        "linkedin.publish_post", {"page": "mmt page", "entry_id": "B1"})
+    assert "tutorco page" in wa_approvals.effect_line(
+        "linkedin.publish_post", {"page": "tutorco page", "entry_id": "B1"})
     generic = wa_approvals.effect_line("mail.send_reply", {}, SimpleNamespace(
         summary="Send a reply"))
     assert generic == "Approving runs: Send a reply."
 
 
 def test_the_card_message_for_a_relaunch_says_what_goes_public(db, registry):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     exp = datetime(2026, 11, 24, 17, 0, tzinfo=UTC)
     text = notify.compose_card(9, "academy.relaunch_tutorial", {}, exp, "4F2KQ",
                                buttons=True)
@@ -1156,7 +1156,7 @@ def test_the_cut_limit_is_the_one_the_message_really_uses(registry, monkeypatch)
     `CARD_WHAT_MAX`; a card whose words run past that is portal-only, so nobody
     approves text that was cut."""
     from atlas.kernel import board
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     registry("youtube.upload")
     for n, ok in ((notify.CARD_WHAT_MAX, True), (notify.CARD_WHAT_MAX + 1, False)):
         monkeypatch.setitem(board.WHAT, "youtube.upload", lambda p, n=n: "x" * n)
@@ -1174,7 +1174,7 @@ def test_the_cut_check_reads_the_same_field_as_the_message(registry, monkeypatch
     registry("youtube.upload", summary="s" * 400)       # no WHAT renderer: the summary
     monkeypatch.delitem(board.WHAT, "youtube.upload", raising=False)
     from atlas.kernel.registry import REGISTRY
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     shown = " ".join(board.what_of(
         "youtube.upload", {}, REGISTRY.actions["youtube.upload"]).split())
     cut = len(shown) > notify.CARD_WHAT_MAX
@@ -1205,7 +1205,7 @@ def _fake_send(monkeypatch, notify, *, template_ok=True):
 
 
 async def test_with_a_template_the_card_goes_out_with_buttons(db, monkeypatch):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     monkeypatch.setenv("WHATSAPP_CONTENT_SID_CARD", "HX" + "a" * 32)
     plain, cards = _fake_send(monkeypatch, notify)
     pid = db.add_card()
@@ -1218,7 +1218,7 @@ async def test_with_a_template_the_card_goes_out_with_buttons(db, monkeypatch):
 
 
 async def test_a_refused_template_falls_back_to_plain_yes_no_text(db, monkeypatch):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     monkeypatch.setenv("WHATSAPP_CONTENT_SID_CARD", "HX" + "a" * 32)
     plain, cards = _fake_send(monkeypatch, notify, template_ok=False)
     pid = db.add_card()
@@ -1231,7 +1231,7 @@ async def test_a_refused_template_falls_back_to_plain_yes_no_text(db, monkeypatc
 
 
 async def test_no_template_configured_sends_plain_text_only(db, monkeypatch):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     monkeypatch.delenv("WHATSAPP_CONTENT_SID_CARD", raising=False)
     plain, cards = _fake_send(monkeypatch, notify)
     result = await notify.notify_card(db.add_card())
@@ -1239,7 +1239,7 @@ async def test_no_template_configured_sends_plain_text_only(db, monkeypatch):
 
 
 async def test_a_malformed_template_sid_is_ignored(db, monkeypatch):
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     monkeypatch.setenv("WHATSAPP_CONTENT_SID_CARD", "not-a-sid")
     assert notify.content_sid() is None
 
@@ -1247,7 +1247,7 @@ async def test_a_malformed_template_sid_is_ignored(db, monkeypatch):
 async def test_the_template_request_carries_the_payload_variables(db, monkeypatch):
     import httpx
 
-    from atlas.modules.mmt import notify
+    from atlas.modules.tutorco import notify
     monkeypatch.setenv("WHATSAPP_CONTENT_SID_CARD", "HX" + "b" * 32)
     seen: dict = {}
 
@@ -1286,7 +1286,7 @@ def test_the_portal_banner_counts_only_cards_that_were_really_eligible(
         {"id": 1, "action": "youtube.upload", "params": "{}", "dry_run_ok": True},
         {"id": 2, "action": "youtube.upload", "params": "{}", "dry_run_ok": False},
         {"id": 3, "action": "atlas.dev_request", "params": "{}", "dry_run_ok": True},
-        {"id": 4, "action": "mmt.send_intro", "params": "{}", "dry_run_ok": True}]
+        {"id": 4, "action": "tutorco.send_intro", "params": "{}", "dry_run_ok": True}]
     dashboard = _banner(monkeypatch, rows)
     assert asyncio.run(dashboard._whatsapp_undelivered()) == 2     # 1 and 4 only
 
@@ -1294,12 +1294,12 @@ def test_the_portal_banner_counts_only_cards_that_were_really_eligible(
 def test_the_banner_is_zero_when_nothing_could_be_sent(db, monkeypatch):
     import asyncio
     dashboard = _banner(monkeypatch, [
-        {"id": 1, "action": "mmt.send_intro", "params": "{}", "dry_run_ok": True}])
+        {"id": 1, "action": "tutorco.send_intro", "params": "{}", "dry_run_ok": True}])
     monkeypatch.setattr(dashboard, "watch_only", lambda: True)      # nothing is sent
     assert asyncio.run(dashboard._whatsapp_undelivered()) == 0
     monkeypatch.setattr(dashboard, "watch_only", lambda: False)
     assert asyncio.run(dashboard._whatsapp_undelivered()) == 1
-    monkeypatch.delenv("MMT_OWNER_WHATSAPP")                        # not configured
+    monkeypatch.delenv("TUTORCO_OWNER_WHATSAPP")                        # not configured
     assert asyncio.run(dashboard._whatsapp_undelivered()) == 0
 
 
@@ -1318,7 +1318,7 @@ async def test_a_config_refusal_is_not_retried(db, monkeypatch):
     from atlas.kernel.contracts import FailureClass
 
     async def fake_execute(req):
-        return ActionResult(False, "not sent: MMT_OWNER_WHATSAPP is not set",
+        return ActionResult(False, "not sent: TUTORCO_OWNER_WHATSAPP is not set",
                             failure_class=FailureClass.VALIDATION)
     spawned: list = []
     monkeypatch.setattr(approvals, "execute", fake_execute)

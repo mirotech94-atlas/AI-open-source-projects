@@ -1,0 +1,45 @@
+{
+ "key": "mcp-setup",
+ "seconds": 28.156,
+ "marks": [
+  [
+   0.0,
+   7.332
+  ],
+  [
+   7.484,
+   14.076
+  ],
+  [
+   14.61,
+   19.465
+  ],
+  [
+   19.638,
+   28.156
+  ]
+ ],
+ "urls": [
+  "",
+  "",
+  "",
+  ""
+ ],
+ "captions": [
+  "uv init hello \u00b7 cd hello",
+  "uv add \"mcp[cli]\": the official Python SDK",
+  "server.py: the tiny server from the card",
+  "Test it: npx @modelcontextprotocol/inspector"
+ ],
+ "width": 1536,
+ "height": 864,
+ "fps": 30,
+ "bytes": 2590707,
+ "sha256": "7272be461c413f0b49724684f9cf9b97d96ce2995d0d62b3b31e2accb9e20c1f",
+ "versions": {
+  "chromium": "153.0.8010.12",
+  "uv": "uv 0.13.0 (4ecd0eff2 2026-10-09 aarch64-apple-darwin)",
+  "inspector": "2.8.0"
+ },
+ "recorded_at": "2026-10-12T16:53:41+00:00"
+}

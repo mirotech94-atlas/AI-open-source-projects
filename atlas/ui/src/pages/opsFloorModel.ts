@@ -1,5 +1,5 @@
 /**
- * The ops floor's pure read models (the owner 2026-10-29): roster rows, the
+ * The ops floor's pure read models (Miro 2026-10-29): roster rows, the
  * decision buttons, the summary strip and the alert lines. No fetching
  * here, so every rule is tested on its own (opsFloorModel.test.ts).
  *
@@ -80,7 +80,7 @@ export interface DecisionNote {
   text: string;
 }
 
-/** The server's answer to a click, in plain words (the owner 2026-10-29: a click
+/** The server's answer to a click, in plain words (Miro 2026-10-29: a click
  *  never fails silently). The panel keeps the note after the card leaves the
  *  list, so a decline is visibly done. */
 export function decisionNote(
@@ -124,7 +124,7 @@ export function decisionNote(
 }
 
 /** A roster row's last shift: one line of at most 60 characters, and the
- *  whole clean text for the expand, only when it says more (the owner 2026-10-29). */
+ *  whole clean text for the expand, only when it says more (Miro 2026-10-29). */
 export function shiftOutcome(
   a: Pick<RosterAgent, "last_shift_outcome" | "last_shift_outcome_detail">,
 ): { line: string; detail: string | null } | null {

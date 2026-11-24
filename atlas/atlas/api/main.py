@@ -54,11 +54,11 @@ from .deliver import router as deliver_router
 from .handoffs import router as handoffs_router
 from .hud import router as hud_router
 from .ig_funnels import router as ig_funnel_router
+from .learn import router as learn_router
 from .mac_agent import router as mac_agent_router
 from .media import router as media_router
 from .projects import router as projects_router
 from .public_ping import router as public_ping_router
-from .learn import router as learn_router
 from .selfmodel import router as selfmodel_router
 from .site_chat import router as site_chat_router
 from .slack_events import router as slack_events_router
@@ -265,7 +265,7 @@ _effective_client = peers.effective_client
 
 
 def _device_certified(request: Request) -> bool:
-    """the owner's own device, off the mesh, holding its client certificate.
+    """Miro's own device, off the mesh, holding its client certificate.
 
     Caddy verifies the certificate against ATLAS's private device CA during
     the TLS handshake and forwards its SHA-256 fingerprint in
@@ -341,7 +341,7 @@ async def _host_allowlist(request: Request, call_next):
 
 
 # The same policy Caddy sets on 443 (Caddyfile), so the SPA shell carries it
-# on the plain :8080 port too, now that the page can answer a card (the owner
+# on the plain :8080 port too, now that the page can answer a card (Miro
 # 2026-10-29: GUI decisions). Only the SPA shell: other HTML pages set their
 # own, and a response that already carries one keeps it.
 # `frame-src 'self'` (2026-10-30): the Previews panel frames the built demo
@@ -394,7 +394,7 @@ async def _newest_observation() -> datetime | None:
             HEARTBEAT_DB_TIMEOUT_S)
         at = row["at"] if row else None
         _obs_at = at if isinstance(at, datetime) else None
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("healthz: newest observation unreadable (%s)",
                     type(exc).__name__)
         _obs_at = None
@@ -472,7 +472,7 @@ async def _slack_reply(response_url: str, text: str, *,
                 "replace_original": False,
                 "text": text,
             })
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         # The decision already happened; failing to narrate it must not
         # unwind it, and must not 500 back at Slack either.
         log.warning("could not post the outcome to Slack: %s", exc)
@@ -499,7 +499,7 @@ async def handle_interaction(payload: dict) -> None:
     route above, or Socket Mode (atlas/channels/slack_socket.py), where the
     `xapp-` token that opened the socket stands in for the signature."""
     # A valid Slack signature proves the request came from Slack, not that it
-    # came from the owner. Without this check, approval authority is "anyone in the
+    # came from Miro. Without this check, approval authority is "anyone in the
     # workspace who can see the card".
     clicker = (payload.get("user") or {}).get("id", "")
     allowed = {u for u in os.getenv("SLACK_APPROVER_IDS", "").split(",") if u}
@@ -564,7 +564,7 @@ async def _proposal_detail(pid: int) -> str:
     if row is None:
         return f"#{pid} does not exist. It may have been cleaned up."
 
-    lines = [f"*#{pid}* `{row['action']}`  _(Tier {row['tier']}, "
+    lines = [f"*#{pid}* `{row['action']}`  _(Tier {row['tier']}, "  # noqa: ISC004
              f"{row['status']})_"]
     if row["reason"]:
         lines.append(str(row["reason"]))
@@ -725,7 +725,7 @@ async def twilio_sms(request: Request,
     Deleted by accident in the commit that added the brand mark -- a
     scripted edit to this file dropped it, the route table got shorter, and
     nothing failed: no test covered it, so the suite stayed green and I told
-    the owner the path was intact while it was gone. A route disappearing is
+    Miro the path was intact while it was gone. A route disappearing is
     silent in a way a broken route is not.
     """
     form = dict(await request.form())
@@ -736,9 +736,9 @@ async def twilio_sms(request: Request,
         raise HTTPException(503, "not configured")
     if not _verify_twilio(url, form, x_twilio_signature):
         raise HTTPException(401, "bad signature")
-    # Only the owner's own number may issue commands. Anyone else -- a local
+    # Only Miro's own number may issue commands. Anyone else -- a local
     # business answering outreach that said "call or text" -- is passed to
-    # the owner in Slack, quoted, and gets no reply: no command runs, nothing is
+    # Miro in Slack, quoted, and gets no reply: no command runs, nothing is
     # promised, and the words never reach a model (invariant 4).
     if form.get("From") != os.getenv("TWILIO_TO"):
         # A lead's reply -- or a STOP from anyone -- is taken in first,
@@ -965,7 +965,7 @@ async def twilio_voice_inbound(request: Request,
         from . import reception
         sid = str(form.get("CallSid") or request.query_params.get("CallSid") or "")
         if reception.enabled() and sid and caller:
-            # The business line (the owner, 2026-09-27): answered as the owner, with
+            # The business line (Miro, 2026-09-27): answered as Miro, with
             # no hands -- nothing on it reaches the executor.
             reception.open_call(sid, caller, await reception.lead_for(caller))
             host = os.getenv("ATLAS_HOST", "").strip()
@@ -1031,7 +1031,7 @@ async def _inbound_greeting() -> str:
             line += (f" {unknown} check{'s' if unknown != 1 else ''} "
                      f"couldn't run, so I can't speak for "
                      f"{'those' if unknown != 1 else 'that'}.")
-    except Exception:
+    except Exception:  # noqa: BLE001
         log.warning("inbound greeting could not read the board")
         line = "I can't reach my own records right now, so I won't guess."
 
@@ -1158,7 +1158,7 @@ async def twilio_agency_turn(request: Request,
         text, done = lead_call.FAILED, True
     clip = await phone.clip(text)
     if call.transferring:
-        # The lead said yes to the owner: bridge to the owner's phone, with the
+        # The lead said yes to the owner: bridge to Miro's phone, with the
         # whisper on its own signed route and the outcome on the dial route.
         return Response(media_type="application/xml",
                         content=lead_call.transfer_twiml(call, clip, host, token))
@@ -1172,7 +1172,7 @@ async def twilio_agency_turn(request: Request,
 @app.post("/webhooks/twilio/agency/whisper")
 async def twilio_agency_whisper(request: Request,
                                 x_twilio_signature: str = Header("")) -> Response:
-    """What the owner hears before a transferred lead is bridged to him: the
+    """What Miro hears before a transferred lead is bridged to him: the
     child leg of the `<Dial>`, admitted on its ParentCallSid being a lead
     call this process holds, the secret, and `To` being his own number."""
     form = dict(await request.form())
@@ -1195,7 +1195,7 @@ async def twilio_agency_whisper(request: Request,
 @app.post("/webhooks/twilio/agency/dial")
 async def twilio_agency_dial(request: Request,
                              x_twilio_signature: str = Header("")) -> Response:
-    """How the transfer to the owner ended (the `<Dial>` action, on the lead's
+    """How the transfer to Miro ended (the `<Dial>` action, on the lead's
     own call): he answered and they talked, or the lead hears that he will
     call back today and Slack is alerted. Either way the call ends here."""
     form = dict(await request.form())
@@ -1218,7 +1218,7 @@ async def twilio_agency_dial(request: Request,
 async def twilio_agency_status(request: Request,
                                x_twilio_signature: str = Header("")) -> dict:
     """How a lead call ended. Never `escalation.record_outcome`: a lead not
-    answering is not the owner declining a call."""
+    answering is not Miro declining a call."""
     form = dict(await request.form())
     url = _public_url(request)
     if url is None or not _verify_twilio(url, form, x_twilio_signature):
@@ -1294,7 +1294,7 @@ async def _phone_turn(form: dict, turn: int, resume: int = 0) -> Response:
         # The stop window after a spoken yes was read back: "stop" or 2
         # cancels; anything else, silence included, goes ahead.
         heard = str(form.get("SpeechResult") or "").strip()
-        phone.remember(call, "the owner", f"(pressed {digit})" if digit else heard or "(said nothing)")
+        phone.remember(call, "Miro", f"(pressed {digit})" if digit else heard or "(said nothing)")
         task = phone.spawn_turn(phone.finish_confirm(call, digit, heard))
         return await _deliver(phone, call, task, turn + 1, 0, host)
 
@@ -1303,7 +1303,7 @@ async def _phone_turn(form: dict, turn: int, resume: int = 0) -> Response:
         # remembered on the call, logged, or shown to a model.
         outcome = phone.check_pin(call, digit) if digit else "wrong-empty"
         if outcome == "ok":
-            phone.remember(call, "the owner", "(entered the PIN)")
+            phone.remember(call, "Miro", "(entered the PIN)")
             line_ = phone.PIN_OK
             phone.remember(call, "ATLAS", line_)
             return Response(media_type="application/xml", content=phone.listening(
@@ -1341,7 +1341,7 @@ async def _phone_turn(form: dict, turn: int, resume: int = 0) -> Response:
             speech=speech))
 
     phone.heard(call)
-    phone.remember(call, "the owner", f"(pressed {digit}) {said}" if digit in _KEYPAD
+    phone.remember(call, "Miro", f"(pressed {digit}) {said}" if digit in _KEYPAD
                    else said)
     # Approve, decline, or answer. Decided inside phone.respond so that
     # "do it" is matched before anything reaches a model, and cannot be
@@ -1403,7 +1403,7 @@ async def _deliver(phone, call: str, task: asyncio.Task, turn: int, resume: int,
             spoken, await phone.clip(spoken), host, turn=turn,
             digits=phone.pin_length()))
     if phone.machine(call):
-        # A recording, not the owner: say where it is and hang up.
+        # A recording, not Miro: say where it is and hang up.
         return Response(media_type="application/xml", content=phone.closing(
             spoken, await phone.clip(spoken), host))
     speech = not phone.outbound(call) or phone.human(call)
@@ -1568,7 +1568,7 @@ async def _handle_command(text: str, *, via: str) -> str:
 # ---------------------------------------------------------------- mesh-only
 
 # The old mesh-only /ask and /agents routes are gone (audit 2026-09-28): they
-# had no sign-in, nothing called them, and any page the owner visited from the mesh
+# had no sign-in, nothing called them, and any page Miro visited from the mesh
 # could POST a task to the agents. The signed-in dashboard's /api/voice/ask
 # and /api/agents are the ways in.
 
@@ -1609,13 +1609,13 @@ app.include_router(tradingview_router)
 app.include_router(stripe_mapfront_router)
 app.include_router(site_chat_router)
 app.include_router(call_me_router)
-# the owner's WhatsApp questions (Twilio sandbox): read-only, signed, owner-only
+# Miro's WhatsApp questions (Twilio sandbox): read-only, signed, owner-only
 # (atlas/api/whatsapp.py). Under /webhooks/, so public by the path rule.
 app.include_router(whatsapp_router)
 app.include_router(webild_router)
 app.include_router(realestate_router)
 app.include_router(workboard_router)
-# The ECC channel's page, and the Mac's bearer-token progress sync
+# The AMSM channel's page, and the Mac's bearer-token progress sync
 # (mesh-only like /handoffs: nothing under /api is public).
 app.include_router(ig_funnel_router)
 # The local project board and remediation list (read-only; writes are actions).

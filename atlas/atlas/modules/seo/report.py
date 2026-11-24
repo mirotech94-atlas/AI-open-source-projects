@@ -294,7 +294,7 @@ async def draft_report_email(slug: str) -> ActionResult:
     client = clean(site.get("client") or slug)
     title = f"Your website's search report, week {rep['week']}"
     body = (f"Hi {client},\n\nHere is this week's search report for "
-            f"{clean(site.get('domain'), 120)}.\n\n{rep['text']}\nOwner\nMapfront\n")
+            f"{clean(site.get('domain'), 120)}.\n\n{rep['text']}\nMiro\nMapfront\n")
     did = await store.insert_email_draft(str(slug), str(rep["week"]), title, body)
     return ActionResult(True, f"email draft {did} for {slug} saved (not sent)",
                         evidence={"draft_id": did, "title": title, "text": body},

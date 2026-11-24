@@ -1,6 +1,6 @@
 """What is SAID of an answer, as opposed to what is typed.
 
-the owner, 2026-11-10: every spoken answer is a short summary in the NotebookLM
+Miro, 2026-11-10: every spoken answer is a short summary in the NotebookLM
 host's way -- the answer first, one to three short sentences, plain warm
 words, no list read aloud, no id spelled out, no module-name pile, no
 "please note the source". The screen keeps all the detail.

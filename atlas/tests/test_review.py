@@ -32,7 +32,7 @@ async def test_two_recoveries_against_one_failure_scores_two_thirds(monkeypatch)
     monkeypatch.setattr("atlas.kernel.state.fetch_all", _fake_fetch_all({
         "bad.health IN": [
             {"property": "flycheap", "check_name": "affiliate_links"},
-            {"property": "cloudco", "check_name": "protection"},
+            {"property": "cloudhost", "check_name": "protection"},
         ],
         "execute.error": [{"subject": "guardian.reply", "n": 1}],
     }))
@@ -42,7 +42,7 @@ async def test_two_recoveries_against_one_failure_scores_two_thirds(monkeypatch)
     assert result.score == pytest.approx(2 / 3)
     assert len(result.went_well) == 2
     assert any("flycheap.affiliate_links recovered" in x for x in result.went_well)
-    assert any("cloudco.protection recovered" in x for x in result.went_well)
+    assert any("cloudhost.protection recovered" in x for x in result.went_well)
     assert len(result.went_wrong) == 1
     assert "guardian.reply failed, 1 time" in result.went_wrong[0]
 
@@ -74,7 +74,7 @@ async def test_expired_proposals_and_open_findings_count_as_went_wrong(monkeypat
         "DISTINCT ON (f.check_key)": [
             {"check_key": "flycheap.api", "detail": "still 500ing",
              "health": "failing"},
-            {"check_key": "cloudco.protection", "detail": "recovered now",
+            {"check_key": "cloudhost.protection", "detail": "recovered now",
              "health": "ok"},
         ],
     }))
@@ -84,7 +84,7 @@ async def test_expired_proposals_and_open_findings_count_as_went_wrong(monkeypat
     # The detail stays out: every went_wrong line becomes a lesson in each
     # agent's system prompt, and a detail quotes what the collector saw.
     assert not any("500ing" in x for x in result.went_wrong)
-    assert not any("cloudco.protection" in x for x in result.went_wrong)
+    assert not any("cloudhost.protection" in x for x in result.went_wrong)
     assert result.score == 0.0
 
 
@@ -107,7 +107,7 @@ async def test_a_live_phone_approval_is_labelled_on_your_word(monkeypatch):
     must not be mislabelled with the Tier 1 "ran on its own" wording."""
     monkeypatch.setattr("atlas.kernel.state.fetch_all", _fake_fetch_all({
         "approved_by') IS NOT NULL": [
-            {"subject": "guardian.refund", "approved_by": "voice:owner"},
+            {"subject": "guardian.refund", "approved_by": "voice:miro"},
         ],
     }))
     result = await build(TODAY)

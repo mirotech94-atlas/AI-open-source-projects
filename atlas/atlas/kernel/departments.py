@@ -1,6 +1,6 @@
 """The Brain: ATLAS's real agents, jobs and actions grouped into departments.
 
-the owner, 2026-09-29, after a reel ("37 AI agents run my entire company"): make
+Miro, 2026-09-29, after a reel ("37 AI agents run my entire company"): make
 the Agency tab read like a company -- departments with a head, how much of
 each runs without him, what is waiting on him, and each seat's standard
 operating procedure. The twist is ATLAS's own rule: nothing is invented.
@@ -87,7 +87,7 @@ class Department:
     core: bool = False
 
 
-# the owner, 2026-10-28: eight agents, nine with mmt (agents.AGENT_NAMES). The retired agents'
+# Miro, 2026-10-28: eight agents, nine with tutorco (agents.AGENT_NAMES). The retired agents'
 # seats are gone; their jobs and modules stay where their work still lands,
 # and a department with no agent of its own is headed by "you".
 DEPARTMENTS: tuple[Department, ...] = (
@@ -113,24 +113,24 @@ DEPARTMENTS: tuple[Department, ...] = (
         modules=("markets", "stripe", "purchasing", "realestate", "futures")),
     Department(
         "content", "Content & YouTube", "content",
-        "owns academy, youtube, church and reddit (missions.OWNERS)",
+        "owns academy, youtube, community and reddit (missions.OWNERS)",
         agents=("content",),
         jobs=("reels", "reels_nudge", "calendar", "clips", "clip_links", "funnels",
               "academy_reel", "academy_tutorial", "academy_teaching", "academy_videos",
-              "youtube_learn", "linkedin_replies", "linkedin_autopost", "church",
+              "youtube_learn", "linkedin_replies", "linkedin_autopost", "community",
               "content_weekly"),
         modules=("content", "instagram", "tiktok", "youtube", "linkedin",
-                 "clips", "football", "church", "reddit", "ytlearn"),
+                 "clips", "football", "ytlearn"),
         head_owns_missions=True),
     Department(
         "sales", "Sales & Sites", "sales",
         "owns the sales module (missions.OWNERS); BizOps and SEO hand off to it",
-        agents=("sales", "sites", "bizops", "seo", "mmt"),
+        agents=("sales", "sites", "bizops", "seo", "tutorco"),
         jobs=("marketing", "measure", "lead_replies", "agency_lead_board",
               "academy_support", "academy_subscribe", "agency_contact", "sales_shift", "sites_shift", "bizops_digest",
-              "bizops_find_repeats", "seo_rank", "mmt_shift", "sage_mmt_weekly"),
-        modules=("marketing", "course", "agency", "fiverr", "exampleco", "shop",
-                 "academy", "sales", "bizops", "seo", "mmt", "sagemmt"),
+              "bizops_find_repeats", "seo_rank", "tutorco_shift", "sage_tutorco_weekly"),
+        modules=("marketing", "course", "agency", "fiverr", "shop",
+                 "academy", "sales", "bizops", "seo", "tutorco"),
         handoffs_to_head=("bizops", "seo"),
         head_owns_missions=True),
     Department(
@@ -139,9 +139,10 @@ DEPARTMENTS: tuple[Department, ...] = (
         "missed runs",
         agents=("qa",),
         jobs=("checks", "signals", "fixes", "outbox", "retention", "approvals",
-              "approvals_board", "qa_verify_runs", "whatsapp_daily", "whatsapp_alerts",
+              "approvals_board", "qa_verify_runs", "qa_autopilot",
+              "whatsapp_daily", "whatsapp_alerts",
               "whatsapp_cards", "owner_calls", "draft_notice"),
-        modules=("cloudco", "inroots", "netbird",
+        modules=("netbird",
                  "backups", "gitlab", "nightshift", "delegate", "comms", "voice",
                  "approvals_board", "projects", "qa", "localstack", "atlas"),
         head_owns_missions=True),
@@ -152,7 +153,7 @@ DEPARTMENTS: tuple[Department, ...] = (
         agents=("inbox",),
         jobs=("rhythm", "inbox_shift"),
         modules=("mail", "calendar", "messages", "messaging", "matrix_rooms",
-                 "mac", "browser", "screening", "school", "rhythm", "cameras"),
+                 "mac", "browser", "rhythm"),
         head_has_tool="mail_draft_reply"),
     Department(
         "strategy", "Strategy", YOU,
@@ -208,7 +209,7 @@ JOBS: dict[str, Job] = {
                "day; nothing is sent"),
     "inbox_shift": Job(
         "daily 07:00 New York; a missed day is skipped",
-        "every MAIL_ACCOUNTS mailbox (owner over IMAP, read-only) and the "
+        "every MAIL_ACCOUNTS mailbox (example-owner over IMAP, read-only) and the "
         "commitments classify() already stored",
         "code rules and the capped classifier: who is owed a reply today; an "
         "unreadable mailbox is UNKNOWN, never zero", Layer.AUTOMATION,
@@ -221,16 +222,16 @@ JOBS: dict[str, Job] = {
         "waiting leads get a mockup and a built site", Layer.AUTOMATION,
         actions=("agency.mockup", "agency.build_site", "agency.publish_vercel"),
         result="agency.publish_vercel cards (Tier 2); the owner email card only "
-               "after the owner approves the publish; nothing published or sent here"),
-    "mmt_shift": Job(
+               "after Miro approves the publish; nothing published or sent here"),
+    "tutorco_shift": Job(
         "daily 09:00 New York; a missed day is skipped",
         "public tutoring-centre pages (robots, daily cap, none of linkedin, "
-        "instagram or facebook), mmt_prospects, mmt_intros",
+        "instagram or facebook), tutorco_prospects, tutorco_intros",
         "code rules and a closed-schema extract: discover, score by code, draft "
         "one intro per prospect from facts with a verbatim quote; off unless "
-        "MMT_DISCOVERY is on", Layer.AUTOMATION,
-        actions=("mmt.discover", "mmt.score", "mmt.draft_intro"),
-        result="mmt.send_intro cards (Tier 2); nothing sent here"),
+        "TUTORCO_DISCOVERY is on", Layer.AUTOMATION,
+        actions=(),
+        result="tutorco.send_intro cards (Tier 2); nothing sent here"),
     "whatsapp_daily": Job(
         "daily at WHATSAPP_DAILY_HOUR (20:00) New York; off unless WHATSAPP_DAILY=on; "
         "unsent, it retries every 30 min until midnight",
@@ -238,7 +239,7 @@ JOBS: dict[str, Job] = {
         "the work board",
         "nothing: lines are built by code per agent (Mark, Bea, Sage, Sam, Rex, "
         "Felix); an unreadable source says UNKNOWN", Layer.AUTOMATION,
-        actions=("mmt.notify_daily",),
+        actions=("tutorco.notify_daily",),
         result="one WhatsApp to the owner per New York date (Tier 1, notify only); "
                "nothing sent under ATLAS_WATCH_ONLY; a failed send leaves one Slack "
                "note"),
@@ -248,7 +249,7 @@ JOBS: dict[str, Job] = {
         "the health checks: a reading that turned from OK to failing in the last "
         "30 minutes (UNKNOWN and degraded never count)",
         "nothing: one plain line per reading built by code", Layer.AUTOMATION,
-        actions=("mmt.notify_alert",),
+        actions=("tutorco.notify_alert",),
         result="one WhatsApp to the owner per failing reading (Tier 1, notify only); "
                "nothing sent under ATLAS_WATCH_ONLY; a refused send leaves one Slack "
                "note"),
@@ -266,7 +267,7 @@ JOBS: dict[str, Job] = {
         "every pass; off unless the assistant is on; at most 1 an hour and 3 a day "
         "(rolling), nothing in QUIET_HOURS, the same thing once per window",
         "what ATLAS already holds: a check that went from OK to failing, a "
-        "proposal waiting over 2 hours, the cameras-online count dropping",
+        "proposal waiting over 2 hours, the sensors-online count dropping",
         "nothing: the text is fixed templates filled from fixed fields in code, "
         "outside words defanged; severity is NORMAL, never a page",
         Layer.AUTOMATION,
@@ -280,7 +281,7 @@ JOBS: dict[str, Job] = {
         "answered for CALL_ESCALATE_MINUTES (15) while the problem is still there",
         "nothing: the words are fixed text in code, <Say> only; one call per event",
         Layer.AUTOMATION,
-        actions=("mmt.call_owner",),
+        actions=("tutorco.call_owner",),
         result="one phone call to the owner per unanswered event (Tier 1); nothing "
                "under ATLAS_WATCH_ONLY; a call that could not be placed leaves one "
                "Slack note"),
@@ -291,20 +292,20 @@ JOBS: dict[str, Job] = {
         "about (first run: the newest 5 only)",
         "nothing: one plain line per card built by code from the action; a code "
         "only for cards on the WhatsApp allowlist", Layer.AUTOMATION,
-        actions=("mmt.notify_card",),
+        actions=("tutorco.notify_card",),
         result="one WhatsApp to the owner per pending card (Tier 1, notify only; "
                "the decision stays on the portal); nothing sent under "
                "ATLAS_WATCH_ONLY; a closed WhatsApp window leaves one Slack note"),
-    "sage_mmt_weekly": Job(
+    "sage_tutorco_weekly": Job(
         "weekly, Monday 10:00 New York; a missed week is skipped",
-        "the TutorSite page's own numbers from the LinkedIn sweep's state file "
+        "the ExampleTutor page's own numbers from the LinkedIn sweep's state file "
         "(UNKNOWN if unreadable, each with its read time), the four public "
-        "tutoring.example pages (robots, wrapped as untrusted)",
-        "code rules and fixed fact-backed angles: up to SAGE_MMT_MAX_POSTS_PER_WEEK "
+        "exampletutor.com pages (robots, wrapped as untrusted)",
+        "code rules and fixed fact-backed angles: up to SAGE_TUTORCO_MAX_POSTS_PER_WEEK "
         "(default 3) post drafts that pass the claim check, and an SEO note of "
-        "three suggested edits; off unless SAGE_MMT_LINKEDIN is on", Layer.AUTOMATION,
-        actions=("sagemmt.draft_week", "sagemmt.draft_seo_note"),
-        result="linkedin.approve_draft cards and one sagemmt.accept_seo_note card "
+        "three suggested edits; off unless SAGE_TUTORCO_LINKEDIN is on", Layer.AUTOMATION,
+        actions=(),
+        result="linkedin.approve_draft cards and one tutorseo.accept_seo_note card "
                "(Tier 2); nothing posted or changed here"),
     "qa_verify_runs": Job(
         "every QA_VERIFY_RUNS_MIN (hourly)", "the scheduled windows of the last day "
@@ -314,6 +315,15 @@ JOBS: dict[str, Job] = {
         actions=("qa.verify_runs",),
         result="a qa_results row; open remediation tasks turn qa.open_remediation "
                "DEGRADED"),
+    "qa_autopilot": Job(
+        "every QA_AUTOPILOT_MIN (15 minutes)", "every check whose newest reading is "
+        "degraded, failing or UNKNOWN, and each agent whose last shift failed or stalled",
+        "nothing: the cause is classified by code from the check's own detail and the "
+        "registry's missing-env reason; a fix is a registered Tier 1 action or none",
+        Layer.AUTOMATION, actions=("qa.autopilot_cycle", "qa.create_remediation"),
+        open_actions="a Tier 2 fix as one card per cause",
+        result="autopilot_log rows, one task for every key or token only Miro has, "
+               "one task per cause it gives up on"),
     "approvals_board": Job(
         "every scheduler cycle when the pending cards changed, else every "
         "APPROVALS_BOARD_REFRESH_MIN", "pending cards: action, params, expiry, link",
@@ -377,14 +387,13 @@ JOBS: dict[str, Job] = {
                  "content.render_video", "content.publish_reel",
                  "content.autopublish_reel"),
         result="the reels digest"),
-    "church": Job(
-        "daily from CHURCH_SHIFT_HOUR New York time", "church_posts (the Mac's "
-        "synced calendar), church_events, church_ideas and the community calendar",
+    "community": Job(
+        "daily from COMMUNITY_SHIFT_HOUR New York time", "community_posts (the Mac's "
+        "synced calendar), community_events, community_ideas and the Coptic calendar",
         "nothing by model: which reviewed posts fit today's YouTube budget and "
         "the Facebook window, by rule", Layer.AUTOMATION,
-        actions=("church.schedule_youtube_shorts", "church.schedule_facebook_reels",
-                 "church.weekly_plan"),
-        result="a shift entry in church_events and at most one batch card per "
+        actions=(),
+        result="a shift entry in community_events and at most one batch card per "
                "platform"),
     "bizops_digest": Job(
         "daily at 08:00 New York time", "agency_deals, bizops_invoices, "
@@ -403,8 +412,8 @@ JOBS: dict[str, Job] = {
         result="bizops.propose_automation cards (Tier 2)"),
     "seo_rank": Job(
         "daily at 07:00 New York time (audits, client reports and Academy "
-        "gaps on Mondays)", "each client site with a domain, agency.example.com "
-        "and agency.example.com (GET only), free search results, the recorded "
+        "gaps on Mondays)", "each client site with a domain, agency.storefront.test "
+        "and agency.storefront.test (GET only), free search results, the recorded "
         "Search Console and PageSpeed readings",
         "nothing by model: code picks the rank, the audit items, the next "
         "actions and the gaps", Layer.AUTOMATION,
@@ -432,7 +441,7 @@ JOBS: dict[str, Job] = {
     "content_weekly": Job(
         "Monday 08:00 New York time", "youtube_videos, academy_tutorial_posts, "
         "academy_content_plan, academy_title_tests, schedule_runs, handoffs, "
-        "church_posts and PostHog store views",
+        "community_posts and PostHog store views",
         "nothing by model: the report, the plan and the title decisions are "
         "code rules", Layer.AUTOMATION,
         actions=("academy.weekly_growth_report", "academy.plan_content",
@@ -491,7 +500,7 @@ JOBS: dict[str, Job] = {
                  "academy.pin_comment", "academy.add_to_lab_playlist",
                  "academy.take_out_of_lab_playlist"),
         result="the next episode on YouTube in its series playlist, or its card"),
-    # the owner, 2026-10-13: two Shorts a day -- the teaching Short has
+    # Miro, 2026-10-13: two Shorts a day -- the teaching Short has
     # its own slot, 23 UTC on alternate New York days, not the tutorial tick.
     "academy_teaching": Job(
         "daily at ACADEMY_TEACHING_HOUR_UTC on alternate New York days",
@@ -509,10 +518,10 @@ JOBS: dict[str, Job] = {
         "tutorials) and the live videos.json", "nothing: the page is built from "
         "catalog and post rows in code", Layer.AUTOMATION,
         actions=("academy.publish_shop",),
-        result="agency.example.com/videos/ listing every public tutorial"),
+        result="agency.storefront.test/videos/ listing every public tutorial"),
     "youtube_learn": Job(
         "daily at YOUTUBE_LEARN_HOUR New York time; a missed day is skipped",
-        "the links the owner pasted (video_lessons, queued) and the Academy channel's "
+        "the links Miro pasted (video_lessons, queued) and the Academy channel's "
         "public videos (academy_tutorial_posts); each transcript is read-only "
         "(UNKNOWN when it has no captions or cannot be read), wrapped as untrusted",
         "nothing: a model only writes the takeaways, which code counts, trims and "
@@ -567,13 +576,13 @@ JOBS: dict[str, Job] = {
                "is deleted after 7 days; never a newsletter"),
     "agency_contact": Job(
         "every minute", "agency_site_messages: messages typed into the website "
-        "contact forms, stored first, then sent to the owner",
+        "contact forms, stored first, then sent to Miro",
         "nothing is decided by a model: the owner email (Reply-To the visitor), the "
         "WhatsApp text and the auto-reply are fixed templates, each channel retried "
         "up to 3 times, all in code",
         Layer.AUTOMATION,
         actions=("agency.deliver_contact",),
-        result="one email and one WhatsApp message to the owner per site message, plus an "
+        result="one email and one WhatsApp message to Miro per site message, plus an "
                "auto-reply to the visitor; a channel that cannot deliver is reported, "
                "never marked sent"),
     "agency_lead_board": Job(
@@ -697,7 +706,7 @@ def action_facts(name: str, spec: Any, tier: int, *,
     if home_for is not None:
         try:
             own = bool(home_for(topic))
-        except Exception:                                   # noqa: BLE001
+        except Exception:  # noqa: BLE001
             own = None
     try:
         verifier = bool(has_verifier(name))

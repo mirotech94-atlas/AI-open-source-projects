@@ -1,6 +1,6 @@
 """The AI flag on the Academy's own Shorts (academy.flag_synthetic_short).
 
-the owner, 2026-10-17: keep the British male AI voice, disclosed, and "yes add
+Miro, 2026-10-17: keep the British male AI voice, disclosed, and "yes add
 the AI flag for Shorts too". A tutorial carries `status.containsSyntheticMedia`
 from its own upload (tutorials.publish_tutorial). The Academy's Shorts --
 teaching Shorts, lesson Shorts, concept Shorts -- go out through Postiz
@@ -16,7 +16,7 @@ sets it afterwards with videos.update on the clips channel.
     means skipped and said, and tried again on the next pass.
   * The write resends every writable status field as just read
     (api.set_synthetic): videos.update deletes an omitted one.
-  * Tier 1 (the owner's approval policy: routine and reversible): the dry run
+  * Tier 1 (Miro's approval policy: routine and reversible): the dry run
     reads the status and says what would change; an UNKNOWN read is a
     refusal, never OK. The rollback sets the flag back to what it was.
   * It runs through the executor only: once after each teaching Short goes
@@ -34,7 +34,7 @@ from typing import Any
 from ...kernel.contracts import ActionResult
 from ..youtube import api
 
-log = logging.getLogger("academy.example.synthetic")
+log = logging.getLogger("atlas.academy.synthetic")
 
 ACTION = "academy.flag_synthetic_short"
 CHANNEL = api.CLIPS_CHANNEL           # the channel Postiz posts the Shorts to
@@ -103,7 +103,7 @@ async def video_id_of(row: dict, posts: list[dict] | None = None
         try:
             posts = await postiz.posts_between(at - timedelta(hours=1),
                                                at + timedelta(days=2))
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return None, f"Postiz could not be read ({type(exc).__name__})"
     for p in posts:
         ident = str((p.get("integration") or {}).get("providerIdentifier") or "")
@@ -212,7 +212,7 @@ async def flag_pass(only: str | None = None) -> list[str]:
     now = datetime.now(UTC)
     try:
         rows = await _recent_rows(now - timedelta(days=LOOKBACK_DAYS))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("academy_promo_posts not read: %s", type(exc).__name__)
         return [(f"UNKNOWN: the Shorts record was not read ({type(exc).__name__}); "
                  f"the AI flag is tried again on the next pass")]
@@ -231,7 +231,7 @@ async def flag_pass(only: str | None = None) -> list[str]:
             try:
                 posts = await postiz.posts_between(
                     now - timedelta(days=LOOKBACK_DAYS + 1), now + timedelta(hours=1))
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 log.warning("Postiz not read: %s", type(exc).__name__)
                 posts, postiz_down = [], f"Postiz could not be read ({type(exc).__name__})"
         vid, why = await video_id_of(row, posts=posts or [])

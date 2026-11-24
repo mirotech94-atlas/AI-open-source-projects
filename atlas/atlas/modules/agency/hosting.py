@@ -1,6 +1,6 @@
 """Preview hosting: client sites published on this box at
-`https://agency.example.com/preview/<slug>/` (path-based: no wildcard DNS, no
-per-slug certificate; the owner 2026-11-14).
+`https://agency.storefront.test/preview/<slug>/` (path-based: no wildcard DNS, no
+per-slug certificate; Miro 2026-11-14).
 
 `agency.deploy_site` (Tier AUTO) has two targets. With `AGENCY_DEPLOY_HOST`
 set to a host it rsyncs over ssh as before. Unset, or `local`, it publishes
@@ -67,7 +67,7 @@ RESERVED = frozenset({
 })
 
 
-DEFAULT_PREVIEW_ORIGIN = "https://agency.example.com"
+DEFAULT_PREVIEW_ORIGIN = "https://agency.storefront.test"
 PREVIEW_PREFIX = "/preview/"
 
 
@@ -125,9 +125,9 @@ def public_url(slug: str) -> str:
 
 
 _ATTR = re.compile(
-    rb"""(\b(?:href|src|action|formaction|poster|data-src)\s*=\s*)(["'])/(?!/)""", re.I)
-_SRCSET = re.compile(rb"""(\bsrcset\s*=\s*)(["'])(.*?)\2""", re.I | re.S)
-_CSS_URL = re.compile(rb"""(\burl\(\s*)(["']?)/(?!/)""", re.I)
+    rb"""(\b(?:href|src|action|formaction|poster|data-src)\s*=\s*)(["'])/(?!/)""", re.IGNORECASE)
+_SRCSET = re.compile(rb"""(\bsrcset\s*=\s*)(["'])(.*?)\2""", re.IGNORECASE | re.DOTALL)
+_CSS_URL = re.compile(rb"""(\burl\(\s*)(["']?)/(?!/)""", re.IGNORECASE)
 
 
 def prefix_html(data: bytes, slug: str) -> bytes:

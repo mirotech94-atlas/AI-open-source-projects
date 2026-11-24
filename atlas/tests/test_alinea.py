@@ -20,7 +20,7 @@ from atlas.modules.mail import alinea
 from atlas.modules.mail.accounts import Account
 from atlas.modules.markets import alinea as reading
 
-SENDER = "Alinea <contact50@example.com>"
+SENDER = "Alinea <notifications@alinea-invest.com>"
 TODAY = datetime.now(UTC).astimezone().date()
 
 
@@ -31,7 +31,7 @@ def _msg(mid: str, subject: str, body: str, sender: str = SENDER,
 
 
 DEPOSIT = _msg("gmail:d1", "Your deposit is complete",
-               "Hi the owner,\nYour deposit of $250.00 has been added to your "
+               "Hi Miro,\nYour deposit of $250.00 has been added to your "
                "Alinea account.\nIt will be invested automatically.")
 BUY = _msg("gmail:b1", "Order filled",
            "Your Automated Investing order was filled.\n"
@@ -72,22 +72,22 @@ def _stub(monkeypatch, replies: dict[str, dict]) -> list:
 # ------------------------------------------------------------------ sender
 
 @pytest.mark.parametrize("sender", [
-    "Alinea <contact50@example.com>",
-    "contact51@example.com",
-    "Alinea <contact52@example.com>",
-    "contact53@example.com",
+    "Alinea <notifications@alinea-invest.com>",
+    "support@drivewealth.com",
+    "Alinea <no-reply@mail.alinea-invest.com>",
+    "x@ALINEA-INVEST.COM",
 ])
 def test_alinea_domains_are_matched(sender):
     assert alinea.is_alinea(sender)
 
 
 @pytest.mark.parametrize("sender", [
-    "Alinea <contact54@example.com>",
-    "Alinea <contact55@example.com>",
-    "Alinea Invest <contact56@example.com>",
+    "Alinea <notifications@alinea-invest.com.evil.io>",
+    "Alinea <security@notalinea-invest.com>",
+    "Alinea Invest <team@alinea.xyz>",
     "alinea-invest.com <phish@example.com>",
-    '"contact51@example.com" <phish@example.com>',
-    "contact57@example.com, contact58@example.com",
+    '"support@example.com" <phish@example.com>',
+    "a@alinea-invest.com, b@evil.io",
     "Alinea Invest",
     "",
 ])
@@ -224,7 +224,7 @@ REPLIES = {
 async def test_the_sweep_reads_alinea_mail_once_on_the_local_model(monkeypatch):
     spoof = _msg("gmail:x1", "Your deposit is complete",
                  "Your deposit of $250.00 has been added.",
-                 sender="Alinea <contact54@example.com>")
+                 sender="Alinea <notifications@alinea-invest.com.evil.io>")
     store = _sweep_env(monkeypatch, [DEPOSIT, BUY, STATEMENT, NO_AMOUNT, spoof])
     seen = _stub(monkeypatch, REPLIES)
 
@@ -397,7 +397,7 @@ def test_amounts_are_never_added_across_currencies():
 async def test_the_markets_module_reads_it_and_nothing_can_trade(monkeypatch):
     names = [c.name for c in markets.MODULE.checks()]
     assert names == ["basket", "alinea", "filings", "tradingview"]
-    # One action sends the owner a message; the two paper ones are card-only
+    # One action sends Miro a message; the two paper ones are card-only
     # (never a model's pick). tests/test_markets_playlist.py / _ideas.py
     # prove they reach no broker. None can trade.
     acts = markets.MODULE.actions()
@@ -654,11 +654,11 @@ def test_a_missing_handbook_is_said_not_dropped(monkeypatch):
 # ------------------------------------------------------------ sender trust
 
 GMAIL_PASS = ("mx.google.com; dkim=pass header.i=@alinea-invest.com header.s=s1 "
-              "header.b=abc; spf=pass smtp.mailfrom=contact59@example.com; "
+              "header.b=abc; spf=pass smtp.mailfrom=bounces@alinea-invest.com; "
               "dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=alinea-invest.com")
 GMAIL_FAIL = ("mx.google.com; dkim=fail header.i=@alinea-invest.com; spf=softfail; "
               "dmarc=fail (p=NONE sp=NONE dis=NONE) header.from=alinea-invest.com")
-DW_SENDER = "DriveWealth <contact60@example.com>"
+DW_SENDER = "DriveWealth <statements@drivewealth.com>"
 DW_PASS = "mx.google.com; dkim=pass header.i=@drivewealth.com header.s=k1"
 
 
@@ -691,7 +691,7 @@ def test_trust():
     assert alinea.trust(_with(other, auth=DW_PASS)) is None
     # Signed by DriveWealth does not make an Alinea From genuine.
     assert alinea.trust(_with(DEPOSIT, auth=DW_PASS)) == "forged"
-    assert alinea.trust(_with(DEPOSIT, sender="contact61@example.com", auth=GMAIL_PASS)) is None
+    assert alinea.trust(_with(DEPOSIT, sender="x@evil.io", auth=GMAIL_PASS)) is None
 
 
 def test_gmails_own_authentication_result_is_the_one_read():

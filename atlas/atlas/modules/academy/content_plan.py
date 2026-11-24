@@ -1,11 +1,11 @@
 """The Academy's content plan (Content agent, six agents phase 8).
 
-the owner, 2026-10-27: Academy topics are always AI-oriented -- learning AI in a
+Miro, 2026-10-27: Academy topics are always AI-oriented -- learning AI in a
 simple way, progressing with it, using it for the future. Every planned
 topic carries one of those three tags, set in code from the series and the
 episode's level, never by a model. `academy.plan_content` picks the next
 episodes no one has posted or planned (held ones are left out: they need a
-recording or the owner); `academy.draft_script` writes an outline draft through
+recording or Miro); `academy.draft_script` writes an outline draft through
 the series rules in `tutorial_series_ai` to our own disk. Neither posts:
 tutorials go public only through the existing render and autopublish gates.
 """

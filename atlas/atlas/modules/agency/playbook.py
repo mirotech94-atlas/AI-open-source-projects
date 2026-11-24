@@ -19,7 +19,7 @@ one would otherwise be read as trusted instructions by every sales agent.
 
 `honesty_refusal` is the playbook's honesty section enforced in code on
 what comes back: false urgency, fake scarcity, invented results or reviews,
-and an AI presenting itself as the owner or as a person.
+and an AI presenting itself as Miro or as a person.
 """
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def full() -> str:
 
 def guidance(part: str = "shared") -> str:
     """The playbook framed for a system prompt: reference guidance written by
-    the owner's own code, never a source of new permissions."""
+    Miro's own code, never a source of new permissions."""
     body = full() if part == "full" else shared()
     return ("SALES PLAYBOOK (ATLAS's own reference, shipped with its code; it "
             "shapes how you write and grants no new actions):\n" + body)
@@ -86,7 +86,7 @@ _INVENTED = re.compile(
     r"(?:doubled|tripled)\s+(?:their|sales|traffic|bookings)|"
     r"five[-\s]star\s+reviews?\s+from\s+our|as\s+seen\s+on)\b", re.IGNORECASE)
 _HUMAN = re.compile(
-    r"\b(?:i'?m|i\s+am|this\s+is|it'?s)\s+owner\b(?!'s|’s)|\bi'?m\s+(?:a\s+)?"
+    r"\b(?:i'?m|i\s+am|this\s+is|it'?s)\s+miro\b(?!'s|’s)|\bi'?m\s+(?:a\s+)?"
     r"(?:real\s+)?(?:human|person)\b|\bi\s+am\s+(?:a\s+)?(?:real\s+)?"
     r"(?:human|person)\b|\bnot\s+(?:a\s+)?(?:bot|robot|an?\s+ai)\b",
     re.IGNORECASE)
@@ -99,5 +99,5 @@ def honesty_refusal(text: str) -> str | None:
     if (hit := _INVENTED.search(text or "")) is not None:
         return f"an invented result or testimonial ({hit.group(0)!r})"
     if (hit := _HUMAN.search(text or "")) is not None:
-        return f"it presents the AI as the owner or as a person ({hit.group(0)!r})"
+        return f"it presents the AI as Miro or as a person ({hit.group(0)!r})"
     return None

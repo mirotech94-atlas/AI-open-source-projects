@@ -314,7 +314,7 @@ async def test_a_missed_call_is_recorded_and_falls_back_to_slack(monkeypatch):
     monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", auth.hash_password("x" * 14))
     monkeypatch.setenv("MESH_ALLOWED_CIDRS", "0.0.0.0/0")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
 
     posted: list = []
 
@@ -334,7 +334,7 @@ async def test_a_missed_call_is_recorded_and_falls_back_to_slack(monkeypatch):
 
     def signed(client, params):
         path = "/webhooks/twilio/voice/status"
-        url = f"https://atlas.example.com{path}"
+        url = f"https://atlas.storefront.test{path}"
         data = url + "".join(f"{k}{params[k]}" for k in sorted(params))
         sig = _b64.b64encode(
             _hm.new(b"twtok", data.encode(), _h.sha1).digest()).decode()
@@ -372,7 +372,7 @@ async def test_a_call_he_placed_never_counts_as_a_decline(monkeypatch):
     monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", auth.hash_password("x" * 14))
     monkeypatch.setenv("MESH_ALLOWED_CIDRS", "0.0.0.0/0")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
     posted: list = []
 
     async def fake_notify(msg):
@@ -389,7 +389,7 @@ async def test_a_call_he_placed_never_counts_as_a_decline(monkeypatch):
     monkeypatch.setattr("atlas.api.main.scheduler.loop", no_boot)
     params = {"CallStatus": "no-answer", "CallSid": "CA7", "Direction": "inbound"}
     path = "/webhooks/twilio/voice/status"
-    data = f"https://atlas.example.com{path}" + "".join(
+    data = f"https://atlas.storefront.test{path}" + "".join(
         f"{k}{params[k]}" for k in sorted(params))
     sig = _b64.b64encode(_hm.new(b"twtok", data.encode(), _h.sha1).digest()).decode()
     with TestClient(app, client=("127.0.0.1", 51000)) as c:
@@ -411,7 +411,7 @@ async def test_an_unsigned_status_callback_is_refused(monkeypatch):
     monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", auth.hash_password("x" * 14))
     monkeypatch.setenv("MESH_ALLOWED_CIDRS", "0.0.0.0/0")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
 
     from atlas.api.main import app
 

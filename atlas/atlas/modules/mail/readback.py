@@ -199,7 +199,7 @@ async def _check_imap_draft(draft_id: str, thread_id: str, ev: dict[str, Any],
     evidence: dict[str, Any] = {"draft_id": draft_id, "thread_id": thread_id}
     try:
         found = await imap_draft.read_draft(draft_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return unknown(f"could not read draft {draft_id}", classify(exc), **evidence)
     if found is None:
         return contradicted(f"draft {draft_id} is not in the Drafts folder", **evidence)

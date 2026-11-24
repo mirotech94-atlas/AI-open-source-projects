@@ -57,12 +57,12 @@ def test_sales_is_in_the_sales_department_with_its_shift():
 # ------------------------------------------------------- places of worship
 
 @pytest.mark.parametrize(("name", "category"), [
-    ("Grace Church", "general_contractor"),
+    ("Grace Community", "general_contractor"),
     ("Beth El", "synagogue"),
     ("Masjid Al-Noor", "store"),
     ("Hope Ministries", "consultant"),
     ("Anything", "place_of_worship"),
-    ("Anything", "church"),
+    ("Anything", "community"),
     ("Anything", "hindu_temple"),
 ])
 def test_places_of_worship_are_excluded_by_type_and_by_name(name, category):
@@ -120,7 +120,7 @@ async def test_a_large_page_is_matched_off_the_event_loop(monkeypatch):
 CSV = """name,category,website,email,city,country
 Joe's Plumbing,plumber,https://joesplumbing.example,office@joesplumbing.example,Newark,US
 Joe's Plumbing,plumber,https://joesplumbing.example,office@joesplumbing.example,Newark,US
-Grace Church,church,https://grace.example,,Newark,US
+Grace Community,community,https://grace.example,,Newark,US
 Maple Cafe,,https://maple.example,,Toronto,US
 Toronto Shop,shop,https://to.example,,Toronto,Canada
 Quiet Coach,coach,,stop@quiet.example,Austin,USA
@@ -187,7 +187,7 @@ async def test_web_leads_get_a_web_place_id(monkeypatch):
     async def search(query, *, agent, limit=10):
         assert agent == "sales"
         return [{"url": "https://coachjane.example/about", "title": "Coach Jane"},
-                {"url": "https://stmarks.example", "title": "St Mark's Church"}], None
+                {"url": "https://stmarks.example", "title": "St Mark's Community"}], None
     monkeypatch.setattr("atlas.modules._scrape.search", search)
     inserted: list[dict] = []
 

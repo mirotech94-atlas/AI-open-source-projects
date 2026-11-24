@@ -1,6 +1,6 @@
 """Three more series: AI Explained, AI Security, Where AI Is Going.
 
-the owner 2026-10-18, video system pack
+Miro 2026-10-18, video system pack
 (docs/academy-video-system/series-ai-explained-and-security.md): the channel
 widens from "how to build" to "how to understand and stay safe". Same system
 as the others: the result or the question in the first three seconds, one
@@ -17,12 +17,12 @@ the channel tags and the series set are added at upload
 
 HOLDS: most of these lessons cannot be made from words, diagrams and code.
 The spec anchors them on a live demonstration, a real bill, a timed run, an
-attack on the owner's own test setup, or the owner himself (a consented clone of his
+attack on Miro's own test setup, or Miro himself (a consented clone of his
 voice). The writer may not write demo scenes and may not invent a number
 (invariant 6), so those episodes are held here, by (series, number), with a
 plain reason. The writer skips them (docs/academy-script-writer.md), and
 render and the daily lineup hold them (tutorial_series.held) until the
-recording exists -- or, for a OWNER hold, until this mapping no longer lists
+recording exists -- or, for a MIRO hold, until this mapping no longer lists
 them. The writable ones are concept lessons whose result is a card or a
 diagram and whose checkpoint is the viewer's own exercise.
 
@@ -34,10 +34,10 @@ from __future__ import annotations
 from .tutorial_series import plan
 
 # The hold kinds. RECORDING lifts once the scripted episode shows a demo
-# scene whose recording is on disk (tutorial_series.held); OWNER lifts only
-# when the owner has recorded it and the entry is removed from HOLDS here.
+# scene whose recording is on disk (tutorial_series.held); MIRO lifts only
+# when Miro has recorded it and the entry is removed from HOLDS here.
 RECORDING = "recording"
-OWNER = "owner"
+MIRO = "miro"
 
 # The series whose every lesson is opinion: labelled so in the description
 # (tutorials.description) and in the scope line (its OPENER_TOPICS).
@@ -185,7 +185,7 @@ SECURITY_PLANNED = (
     plan(1, 1, "prompt-injection-live",
          "Prompt Injection, Live: When an AI Agent Obeys an Email",
          # spec: "It read the email and obeyed" (six words, over the 2-5 the
-         # spec's own thumbnail rule allows): a draft until the owner picks.
+         # spec's own thumbnail rule allows): a draft until Miro picks.
          "It obeyed\nthe email",
          ("A hidden instruction in an email tells an AI agent to forward your mail. "
           "The defense first: content passed as labelled data, and an approval "
@@ -263,7 +263,7 @@ SECURITY_PLANNED = (
           "call back."),
          ("voice clone scam", "family code word", "deepfake call"),
          SECURITY_HASHTAGS,
-         ("Result at 0-3 s: a cloned voice saying your name (the owner's own, consented)",
+         ("Result at 0-3 s: a cloned voice saying your name (Miro's own, consented)",
           ("Attack (own test setup only): walk through the scam script: urgency, "
           "secrecy, irreversible payment; the defense named first"),
           "Fix verified: a family code word; the hang-up-and-call-back drill",
@@ -435,7 +435,7 @@ HOLDS: dict[tuple[str, int], tuple[str, str]] = {
     ("explained", 5): (RECORDING, _REC + "the three approaches doing the same job"),
     ("explained", 8): (RECORDING, _REC + "a local model answering with Wi-Fi off, "
                        "timed against a cloud run"),
-    ("security", 1): (RECORDING, _REC + "the injection on the owner's own test inbox, "
+    ("security", 1): (RECORDING, _REC + "the injection on Miro's own test inbox, "
                       "the approval step stopping it"),
     ("security", 2): (RECORDING, _REC + "a full-scope test key deleting a test "
                       "folder, then the scoped key failing to"),
@@ -445,10 +445,10 @@ HOLDS: dict[tuple[str, int], tuple[str, str]] = {
                       "rotated, on a test account"),
     ("security", 5): (RECORDING, _REC + "the drafted reply and the grounded fix "
                       "verified on camera"),
-    ("security", 6): (OWNER, ("needs the owner: a clone of his own voice, with his "
+    ("security", 6): (MIRO, ("needs Miro: a clone of his own voice, with his "
                       "consent, recorded by him")),
     ("security", 7): (RECORDING, _REC + "the simulated loop and the one-click stop"),
-    ("security", 8): (OWNER, ("needs the owner: his review of real ATLAS actions, each "
+    ("security", 8): (MIRO, ("needs Miro: his review of real ATLAS actions, each "
                       "ticked or fixed on camera")),
     ("future", 1): (RECORDING, _REC + "the same task run on three models"),
     ("future", 2): (RECORDING, _REC + "an agent completing a goal and pausing "
@@ -456,5 +456,5 @@ HOLDS: dict[tuple[str, int], tuple[str, str]] = {
     ("future", 3): (RECORDING, _REC + "the three-skill path built in one session"),
     ("future", 4): (RECORDING, _REC + "the real review of a batch of drafts; no "
                     "count may be guessed"),
-    ("future", 5): (RECORDING, _REC + "Hermes Agent on the owner's DGX Spark"),
+    ("future", 5): (RECORDING, _REC + "Hermes Agent on Miro's DGX Spark"),
 }

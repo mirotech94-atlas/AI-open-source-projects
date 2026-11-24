@@ -15,7 +15,7 @@ set -uo pipefail
 cd /opt/atlas || exit 1
 DIR=/opt/atlas/data/app/backups
 MEDIA=/opt/atlas/data/app/content
-OFFSITE="${ATLAS_BACKUP_OFFSITE:-atlasbak@203.0.113.147}"
+OFFSITE="${ATLAS_BACKUP_OFFSITE:-atlasbak@162.220.52.147}"
 KEY=/root/.ssh/atlas_backup_ed25519
 mkdir -p "$DIR"
 before=$(df --output=avail -B1 / | tail -1)

@@ -7,7 +7,7 @@ slots or accept an allowed price -- read in code, never by a model -- it
 queues a booking or an agreement too. The agency module never imports the
 executor (tests/test_agency.py holds it to that), so every send is driven
 from here, the way `kernel.missions` drives agency work. Drafting, holding
-a calendar slot, replying and calling are Tier 1 under the owner's standing rule
+a calendar slot, replying and calling are Tier 1 under Miro's standing rule
 (2026-09-30, restated 2026-10-06); a refusal is the Tier 2 card with "Held
 for you: <reason>" first. The three sends to a client -- the outreach email,
 the calendar invite and the agreement -- are Tier 2 cards since 2026-10-27
@@ -23,7 +23,7 @@ pass, so the row is tried again on a later tick. A **refusal** (a dry run
 that said no) is an answer: the claim stays, the card carries the reason,
 and the same row is not retried every five minutes. A **success** posts a
 Slack receipt through `kernel.comms.notify`. A queued row more than a day
-old is no longer picked up (the owner has the alert and can answer it himself).
+old is no longer picked up (Miro has the alert and can answer it himself).
 
 The passes, in the order `tick()` runs them:
 
@@ -34,12 +34,12 @@ The passes, in the order `tick()` runs them:
     again at send time, CAN-SPAM, suppression, texting consent, and the
     `AGENCY_REPLY_AUTOSEND` hold). Receipt: "Replied to <lead> by email".
   * **Bookings** (`bookings`). A lead who answered an offered time gets
-    `agency.hold_meeting` (a hold on the owner's own calendar, re-checked free by
+    `agency.hold_meeting` (a hold on Miro's own calendar, re-checked free by
     its dry run) and then the `agency.send_invite` card (Google emails the
-    invitation once the owner approves, past `meetings._invite_guard`).
+    invitation once Miro approves, past `meetings._invite_guard`).
   * **Agreements** (`agreements`). A lead who accepted an allowed price gets
     the `agency.send_agreement` card: the agreement text written by code
-    and the owner's own Stripe payment link for exactly that price (money IN).
+    and Miro's own Stripe payment link for exactly that price (money IN).
   * **After a deploy** (`after_deploys`). A site `agency.deploy_site`
     published in the last day is claimed once (`agency_sites.
     followed_up_at`), and its lead gets, through the executor:
@@ -51,14 +51,14 @@ The passes, in the order `tick()` runs them:
     not a new pitch).
   * **Asked to be called** (`calls_due`). A live call consent from the
     "Have Mapfront call me" form (`web_form`), from ringing the business
-    line (`call`), or recorded by the owner after the lead said yes on HIS call
+    line (`call`), or recorded by Miro after the lead said yes on HIS call
     (`principal`, `agency.record_consent`) gets `agency.call_lead` placed
     through the executor -- only while `consent.contact_guard` passes: the
     consent is the gate, and nothing cold-calls. Outside calling hours the
     consent is left unclaimed until the first tick inside them; blocked for
     any other reason, it is marked with why and nobody is called. The call
     opens with who is calling, the preview, and the offer to put them
-    through to the owner. Receipt: "Calling <lead> at <phone> (they asked on
+    through to Miro. Receipt: "Calling <lead> at <phone> (they asked on
     <how>)".
   * **The one timed follow-up** (`followups`): a first outreach email still
     unanswered after `AGENCY_FOLLOWUP_DAYS` gets its single follow-up, as a
@@ -162,7 +162,7 @@ async def _send_card(action: str, params: dict[str, Any], reason: str,
         held = (None if dry.ok or detail.lower().startswith(HELD)
                 else _hold_reason(detail))
         would = (dry.evidence or {}) if dry.ok else {}
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         held, would = f"the dry run could not run ({type(exc).__name__})", {}
     text = (f"Held for you: {held}. Approving runs every check again and sends "
             f"it only if it passes then.\n{reason}" if held else
@@ -345,7 +345,7 @@ def followup_after() -> timedelta:
 
 
 async def followups() -> int:
-    """the owner, 2026-10-05 (from a reel: an email agent that "schedules smart
+    """Miro, 2026-10-05 (from a reel: an email agent that "schedules smart
     follow-ups, tracks replies, and automatically stops the sequence once
     someone responds"). The tracking and the stop already exist: a reply
     swept from Gmail marks the message `replied` (modules/agency/leads.
@@ -525,7 +525,7 @@ async def follow_site(site: dict[str, Any]) -> str:
 
 # ---------------------------------------------------------- asked to be called
 
-# A consent from the form, from ringing the line, or recorded by the owner after
+# A consent from the form, from ringing the line, or recorded by Miro after
 # the lead said yes on HIS call (`agency.record_consent`, 2026-10-01).
 CALL_SOURCES = ("web_form", "call", "principal")
 CALL_WITHIN = timedelta(days=3)
@@ -608,7 +608,7 @@ async def call_due(consent_id: int, *, now: datetime | None = None) -> str:
         await _store.note_call_card(int(consent_id), f"no card: {hold}")
         return f"no call ({hold}) and no card could be raised"
     await _store.note_call_card(int(consent_id), f"held for you: {hold}")
-    return f"held for you ({hold}): the call card is waiting for the owner (Tier 2)"
+    return f"held for you ({hold}): the call card is waiting for Miro (Tier 2)"
 
 
 async def calls_due() -> int:

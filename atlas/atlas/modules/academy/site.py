@@ -5,8 +5,8 @@
 `render(catalog, now)` is pure: it returns every file of the site as
 {relative path: bytes}. `build` writes them to a directory. Publishing that
 directory is `academy.publish_shop` (Tier 1). The store shares ONE host with
-the agency landing (the owner, 2026-11-14): https://agency.example.com/ is the landing,
-and the whole store is https://agency.example.com/academy/ (2026-11-16): every
+the agency landing (Miro, 2026-11-14): https://agency.storefront.test/ is the landing,
+and the whole store is https://agency.storefront.test/academy/ (2026-11-16): every
 page and asset is written under academy/ (/academy/join/, /academy/blog/,
 /academy/catalog.json, /academy/assets/ ...) by mount.py, which also rewrites
 every link to match. The two files the host serves from its root are 404.html
@@ -14,13 +14,13 @@ and sitemap-academy.xml. The old bare paths are 308-redirected by Caddy. So
 this build writes NO root index.html (the landing owns /), no robots.txt, and
 its sitemap is sitemap-academy.xml; see Caddyfile.public.
 
-The home page follows the owner's design brief of 2026-10-11 ("Learn something
+The home page follows Miro's design brief of 2026-10-11 ("Learn something
 useful. Put it to work.") in the order of the shop master plan of 13 Oct
 (F01, docs/shop-master-plan-status.md): one promise and two actions ("Find
 my starting point", "Explore free lessons") over a product shelf, three
 learning paths, the finder, one featured free lesson, the searchable catalog,
 the comparison, an approval-gate demonstration, the four-title bundle with its
-arithmetic, the owner, buying and access help, and a closing choice. Every old
+arithmetic, Miro, buying and access help, and a closing choice. Every old
 anchor (#catalog, #finder, #compare, #bundle, #about, #buying) still lands.
 
 What the site will not say, by construction:
@@ -87,7 +87,7 @@ CONTACT_ACTION = "/public/agency/contact"   # the API route, same origin (Caddyf
 RECOVER_SLUG = "recover"
 UPDATES_SLUG = "updates"
 SUBSCRIBE_ACTION = "/public/academy/subscribe"   # the API route, same origin
-HOME_SLUG = "academy"          # the store home: https://agency.example.com/academy/
+HOME_SLUG = "academy"          # the store home: https://agency.storefront.test/academy/
 JOIN_SLUG = "join"
 RECOVER_ACTION = "/public/academy/recover"   # the API route, same origin (Caddyfile.public)
 RECOVER_SUBJECT = "Recover my ATLAS Academy purchases"
@@ -95,9 +95,9 @@ RECOVER_BODY = "My Stripe receipt number: \n"
 SUBJECT_MAX = 200
 MESSAGE_MIN, MESSAGE_MAX = 10, 4000
 
-# The free video lessons page (the owner, 2026-10-11) and the channel it links.
+# The free video lessons page (Miro, 2026-10-11) and the channel it links.
 VIDEOS_SLUG = "videos"
-CHANNEL_URL = "https://www.youtube.com/@example_handle"
+CHANNEL_URL = "https://www.youtube.com/@atlasacademyphp"
 YT_EMBED = "https://www.youtube-nocookie.com/embed"
 # The one lesson-to-product mapping (shop master plan F05, 13 Oct 2026):
 # which paid title a free lesson leads to, and why, in words a visitor reads
@@ -105,7 +105,7 @@ YT_EMBED = "https://www.youtube-nocookie.com/embed"
 # reads this table: the home page, the finder, the product pages and the
 # /videos/ cards. ("", "") means "no paid recommendation": the page offers
 # the finder instead. EPISODE_PRODUCTS overrides a series for one episode.
-# A product with nothing on sale is not shown. the owner changes the pairing here.
+# A product with nothing on sale is not shown. Miro changes the pairing here.
 # (Before 15 Oct two tables disagreed: the home page sent the Claude series
 # to AI for Every Age, plan finding [B].)
 LESSON_PRODUCTS: dict[str, tuple[str, str]] = {
@@ -130,8 +130,8 @@ LESSON_PRODUCTS: dict[str, tuple[str, str]] = {
     "local": ("safe-ai-operator",
               ("An agent you build and run yourself, which picks from a closed list "
               "of actions and asks before it acts. Needs some Python.")),
-    # the owner 2026-10-18, video system pack: the three new series lead to no
-    # paid title until the owner pairs one.
+    # Miro 2026-10-18, video system pack: the three new series lead to no
+    # paid title until Miro pairs one.
     "explained": ("", ""),
     "security": ("", ""),
     "future": ("", ""),
@@ -183,7 +183,7 @@ SETUPS = (
 )
 # Editorial order per path (plan F04: "an explicit editorial order"): the
 # gentlest useful start first. A title not listed follows in catalog order.
-# the owner changes the order here.
+# Miro changes the order here.
 FINDER_ORDER: dict[str, tuple[str, ...]] = {
     "work": ("30-business-lessons", "claude-obsidian-vault-kit", "sell-with-ai",
              "local-business-automation-pack", "safe-ai-operator"),
@@ -193,7 +193,7 @@ FINDER_ORDER: dict[str, tuple[str, ...]] = {
 FINDER_ALTERNATIVES = 2
 VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{6,20}$")
 
-# The Grid A0 mark (the owner, 2026-10-16), edged for the dark store: logo.py.
+# The Grid A0 mark (Miro, 2026-10-16), edged for the dark store: logo.py.
 BRAND_SVG = logo.mark_svg(dark=True, inline=True)
 TICK_SVG = (
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" '
@@ -1019,14 +1019,14 @@ def _gallery() -> str:
 
 
 def _founder(cat: Catalog) -> str:
-    """Brief item 33. A real photo only when the owner supplies one: set
+    """Brief item 33. A real photo only when Miro supplies one: set
     store.founder_photo in catalog.json to a path under assets/ (for example
     "founder.jpg") and drop the file in assets/. Until then the emblem
     stands in. No credential, testimonial or count is written here."""
     author, email = _e(cat.store["author"]), _e(cat.contact_email)
     photo = str(cat.store.get("founder_photo") or "")
     if photo and (ASSETS / photo).is_file():
-        portrait = (f'<img class="portrait" src="assets/{_e(photo)}" alt="the owner" width="320" '
+        portrait = (f'<img class="portrait" src="assets/{_e(photo)}" alt="Miro" width="320" '
                     'height="320" loading="lazy">')
     else:
         portrait = f'<div class="portrait monogram" aria-hidden="true">{BRAND_SVG}</div>'
@@ -1038,7 +1038,7 @@ def _founder(cat: Catalog) -> str:
 <div class="about">
 {portrait}
 <div class="about-copy">
-<h2 id="about-h">Meet the owner</h2>
+<h2 id="about-h">Meet Miro</h2>
 <p>I'm {author}, and I write and run {_e(cat.store["name"])}. I run ATLAS, my own AI agent, on the rules I teach in {op_link}: it reads before it acts, picks from a closed list of actions, and stops at the steps marked for review until I decide.</p>
 <p>How I teach: every method is shown on a working example, every title says who it's for and who it isn't, and every one lists its contents before you buy. I read the counts on these pages from the files on {_e(cat.store["facts_checked"])}.</p>
 <p>Questions before you buy? Write to me at <a href="mailto:{email}">{email}</a> or call {_phone_link()}. I read every message myself.</p>
@@ -1143,7 +1143,7 @@ def _home(cat: Catalog, lessons: list[dict] | None = None,
     # root: re-point its relative links one level up (#anchors stay).
     return _page(cat, title=cat.store["name"],
                  description="Learn practical AI and stay in control: courses, templates and "
-                             "guided workflows for everyday life and small business, by the owner.",
+                             "guided workflows for everyday life and small business, by Miro.",
                  body=_one_level_up(body), depth=1,
                  head=_one_level_up(
                      '<link rel="alternate" type="application/rss+xml" '
@@ -1292,7 +1292,7 @@ def meta_description(text: str, limit: int = META_DESCRIPTION_MAX) -> str:
     return head[:cut].rstrip(" ,;:") + "\u2026"
 
 
-# Course-page parts (the owner, 2026-10-12: "include tables and grids and
+# Course-page parts (Miro, 2026-10-12: "include tables and grids and
 # how-tos and videos"). Each is built only from the product's catalog
 # entry and the store facts, like every other line on the page.
 
@@ -1307,7 +1307,7 @@ def _item(x: str) -> str:
     return f'<li><span class="no" aria-hidden="true"></span><span>{_e(x)}</span></li>'
 
 
-# Sneak peeks (the owner, 2026-10-12: "a small demo preview for each course").
+# Sneak peeks (Miro, 2026-10-12: "a small demo preview for each course").
 # Cut from the files a buyer gets by tools/academy_previews.py: the first
 # minute of lesson 0.1, a few real pages, a kit's real file list and README
 # opening. previews.json says what exists; a product without an entry shows
@@ -1474,7 +1474,7 @@ def _before_you_pay(cat: Catalog, p: Product) -> str:
     if costs:
         cost = "".join(f"<p><b>{_e(k)}:</b> {_e(v)}</p>" for k, v in costs)
     else:
-        # the owner, 2026-10-16: every course is one payment for the course itself,
+        # Miro, 2026-10-16: every course is one payment for the course itself,
         # nothing recurring. A third-party tool's own plans are still that
         # company's to price, so the line says so instead of promising "free".
         cost = ("<p>Nothing else from ATLAS Academy: no subscription, no renewal, "
@@ -1611,7 +1611,7 @@ def _product(cat: Catalog, p: Product, reviews: list[dict] | None = None,
 {_reviews_section(p, reviews or [])}
 {pair_html}
 <section id="questions"><div class="wrap two">
-<div><h2>Asked before buying</h2><p class="muted">Something else? <a href="../contact/">Write to the owner</a>.</p></div>
+<div><h2>Asked before buying</h2><p class="muted">Something else? <a href="../contact/">Write to Miro</a>.</p></div>
 <div class="acc">{faq}</div>
 </div></section>
 
@@ -1695,7 +1695,7 @@ def _prose(cat: Catalog, *, slug: str, title: str, description: str, html: str,
 
 # ------------------------------------------------------------------ join
 #
-# the owner, 2026-11-10: a polished join / sign-in screen. The store has no
+# Miro, 2026-11-10: a polished join / sign-in screen. The store has no
 # accounts and no subscriptions (every price is one-time), so this page adds
 # none: "join" is choosing a title and handing over to the same Stripe
 # payment link every product page uses; "sign in" is the existing recover
@@ -1788,10 +1788,10 @@ def _join(cat: Catalog) -> tuple[str, str]:
 
 # ------------------------------------------------------------------ start
 #
-# the owner, 2026-10-12 (the growth plan): a /start/ page for someone arriving
+# Miro, 2026-10-12 (the growth plan): a /start/ page for someone arriving
 # from a Short -- one free lesson, one free worksheet, and three routes by
 # what the visitor does -- and the "Before You Automate" worksheet itself,
-# a page that prints to one sheet. Off until the owner has read the copy
+# a page that prints to one sheet. Off until Miro has read the copy
 # (ACADEMY_START_PAGE); the boot republish would otherwise publish it.
 
 START_SLUG = "start"
@@ -2018,7 +2018,7 @@ replies by email within 2 business days.</p>
 <textarea name="message" required minlength="{MESSAGE_MIN}" maxlength="{MESSAGE_MAX}" rows="7"></textarea></label>
 <div><button class="btn btn-buy" type="submit" data-contact-submit>Send message</button></div>
 <p class="status" role="status" aria-live="polite" data-contact-status></p>
-<p class="note">the owner reads every message himself and replies to your email address. Not
+<p class="note">Miro reads every message himself and replies to your email address. Not
 working? Write to {form_mail}.</p>
 </form>
 <div class="cards-2">
@@ -2104,8 +2104,8 @@ def _not_found(cat: Catalog) -> str:
 
 # ------------------------------------------------------------------ videos
 #
-# the owner, 2026-10-11: "post all the videos in a separate page in
-# agency.example.com so people can buy courses there and also view the videos
+# Miro, 2026-10-11: "post all the videos in a separate page in
+# agency.storefront.test so people can buy courses there and also view the videos
 # on my website". /videos/ lists every tutorial that is public on YouTube
 # and not withdrawn (academy_tutorial_posts, read by publish.public_videos),
 # one section per series in catalog order, with the series' course beside
@@ -2351,7 +2351,7 @@ def _videos(cat: Catalog, videos: Iterable[Video] | None) -> str:
 </div></section>
 {"".join(sections)}
 <section class="close"><div class="wrap"><div class="box">
-<h2>Go deeper: courses at agency.example.com</h2>
+<h2>Go deeper: courses at agency.storefront.test</h2>
 <p>The videos show you how. The courses and kits give you the whole method and the files to keep.</p>
 <div class="hero-ctas"><a class="btn btn-gold" href="../academy/#catalog">Browse the courses</a><a class="btn btn-ghost" href="../{cat.bundle.slug}/">See the bundle</a></div>
 </div></div></section>"""
@@ -2463,7 +2463,7 @@ def public_catalog(cat: Catalog, now: datetime) -> dict[str, object]:
 
 # ------------------------------------------------- search and AI assistants
 #
-# the owner, 2026-10-06 ("is the search engine optimization complete?"): the
+# Miro, 2026-10-06 ("is the search engine optimization complete?"): the
 # store publishes a sitemap, an llms.txt that an AI assistant can read in one
 # fetch, robots rules that name and allow the assistants' crawlers, and
 # schema.org records for the store and each product. Every fact is the
@@ -2599,7 +2599,7 @@ def render_root(cat: Catalog, now: datetime | None = None,
     videos = list(videos or ())
     now = now or datetime.now(UTC)
     files: dict[str, bytes] = {
-        # No root index.html: https://agency.example.com/ is the landing (Caddy).
+        # No root index.html: https://agency.storefront.test/ is the landing (Caddy).
         f"{HOME_SLUG}/index.html": _home(cat, lessons, videos, now).encode(),
         f"{cat.bundle.slug}/index.html": _bundle(cat).encode(),
         "404.html": _not_found(cat).encode(),
@@ -2650,7 +2650,7 @@ def render_root(cat: Catalog, now: datetime | None = None,
     # chat script and style, from the support lane.
     from .support_site import files as help_files
     files.update(help_files(cat))
-    # /blog/ (blog_pages.py): the owner's posts, the feed and the post index; its
+    # /blog/ (blog_pages.py): Miro's posts, the feed and the post index; its
     # "Latest from the channel" is the /videos/ list.
     from .blog_pages import files as blog_files
     files.update(blog_files(cat, videos))

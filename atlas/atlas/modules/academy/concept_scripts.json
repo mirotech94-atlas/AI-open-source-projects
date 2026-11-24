@@ -1,5 +1,5 @@
 {
-  "_about": "Concept Shorts from the growth plan's idea bank (the owner, 2026-10-12). Every line with an `evidence` says only what that exact phrase in the product's catalog entry says; a test checks each phrase is there. Lines with no evidence are questions or plain statements of what the viewer sees. Narrated in ATLAS's voice: no first-person experience. Since 2026-10-12 the lines carry Fish S2 delivery cues in [brackets] (the owner: \"feelings and laughter ... not a robot\"); the voice reads them, captions never show them.",
+  "_about": "Concept Shorts from the growth plan's idea bank (Miro, 2026-10-12). Every line with an `evidence` says only what that exact phrase in the product's catalog entry says; a test checks each phrase is there. Lines with no evidence are questions or plain statements of what the viewer sees. Narrated in ATLAS's voice: no first-person experience. Since 2026-10-12 the lines carry Fish S2 delivery cues in [brackets] (Miro: \"feelings and laughter ... not a robot\"); the voice reads them, captions never show them.",
   "concepts": [
     {
       "id": "reply-ready",
@@ -28,7 +28,7 @@
           "evidence": "There is no sending node in any file."
         }
       ],
-      "close": "[happy] That's one of four workflows in the Local Business Automation Pack, at agency dot one eight d n dot com."
+      "close": "[happy] That's one of four workflows in the Local Business Automation Pack, at agency dot storefront dot test."
     },
     {
       "id": "missed-call",
@@ -52,7 +52,7 @@
           "evidence": "This pack drafts; sending is a step you add later, deliberately"
         }
       ],
-      "close": "[happy] The missed-call workflow is in the Local Business Automation Pack, at agency dot one eight d n dot com."
+      "close": "[happy] The missed-call workflow is in the Local Business Automation Pack, at agency dot storefront dot test."
     },
     {
       "id": "no-send-step",
@@ -81,7 +81,7 @@
           "evidence": "test them with made-up data, and keep the owner in the loop."
         }
       ],
-      "close": "[happy] That's the Local Business Automation Pack, at agency dot one eight d n dot com."
+      "close": "[happy] That's the Local Business Automation Pack, at agency dot storefront dot test."
     },
     {
       "id": "setup-tour",
@@ -118,7 +118,7 @@
           "evidence": "Anyone who wants a tool that texts or emails customers by itself from day one."
         }
       ],
-      "close": "[happy] The Local Business Automation Pack is at agency dot one eight d n dot com."
+      "close": "[happy] The Local Business Automation Pack is at agency dot storefront dot test."
     },
     {
       "id": "five-habits",
@@ -149,7 +149,7 @@
           "evidence": "including a deliberately malicious lead that was escaped correctly"
         }
       ],
-      "close": "[happy] The guide covers all five, in the Local Business Automation Pack, at agency dot one eight d n dot com."
+      "close": "[happy] The guide covers all five, in the Local Business Automation Pack, at agency dot storefront dot test."
     },
     {
       "id": "boundary",
@@ -178,7 +178,7 @@
           "evidence": "moving money, DNS, deleting, revoking keys and changing itself"
         }
       ],
-      "close": "[happy] That's Build a Safe AI Operator. It builds in Python, and it's at agency dot one eight d n dot com."
+      "close": "[happy] That's Build a Safe AI Operator. It builds in Python, and it's at agency dot storefront dot test."
     },
     {
       "id": "nobody-approves",
@@ -207,7 +207,7 @@
           "evidence": "report UNKNOWN when they can't see"
         }
       ],
-      "close": "[happy] That's Build a Safe AI Operator. It builds in Python, and it's at agency dot one eight d n dot com."
+      "close": "[happy] That's Build a Safe AI Operator. It builds in Python, and it's at agency dot storefront dot test."
     }
   ]
 }

@@ -1,7 +1,7 @@
 """The decision log: the only thing the learning layer learns from.
 
 One row per proposal. Written when the proposal is raised (the conditions
-and the prediction), resolved when the owner answers or the proposal expires.
+and the prediction), resolved when Miro answers or the proposal expires.
 Three outcomes, never collapsed: approved, denied, expired.
 
 Trains only on his decisions. There is no other source, and none may be
@@ -46,7 +46,7 @@ def busy_now() -> bool:
         from ..escalation import _CALLS
         now = datetime.now(UTC)
         return any((now - c.at).total_seconds() < 600 for c in _CALLS)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return False
 
 

@@ -1,6 +1,6 @@
 """Live demos for the ATLAS Academy tutorials: real screen recordings.
 
-the owner, 2026-10-11: "if you are doing a live demo or lab -- when talking about
+Miro, 2026-10-11: "if you are doing a live demo or lab -- when talking about
 how to use n8n and Claude hands-on -- switch to a web browser as the
 background to do the live demo and explain step by step how to go through
 it."

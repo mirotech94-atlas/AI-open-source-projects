@@ -67,7 +67,7 @@ async def test_a_tool_call_then_an_answer_with_the_figure_grounded(monkeypatch):
         _completion("17 times 23 is 391."))
     monkeypatch.setattr(loop, "think", script)
 
-    got = await loop.ask("what is 17 * 23?", who="UOWNER")
+    got = await loop.ask("what is 17 * 23?", who="UMIRO")
 
     assert got.text == "17 times 23 is 391."
     assert got.tools_used == ("calculate",)
@@ -80,7 +80,7 @@ async def test_a_tool_call_then_an_answer_with_the_figure_grounded(monkeypatch):
     # Arithmetic is Ask: the calculator, units and the clock, nothing outside.
     assert {t["name"] for t in script.turns[0]["tools"]} == set(modes.ASK_TOOLS)
     assert got.mode == "ask"
-    assert "ATLAS, the owner's assistant" in script.turns[0]["system"]
+    assert "ATLAS, Miro's assistant" in script.turns[0]["system"]
     assert "Never claim" in script.turns[0]["system"]
     assert script.turns[0]["need"] is Need.REASON
     rendered = got.render()
@@ -306,12 +306,12 @@ async def test_every_tool_call_is_audited_by_name_without_its_content(
         _completion("42."))
     monkeypatch.setattr(loop, "think", script)
 
-    await loop.ask("what is 40 + 2?", who="UOWNER")
+    await loop.ask("what is 40 + 2?", who="UMIRO")
 
     rows = [r for r in memory_backend.audit_rows if r.event == EVENT]
     assert len(rows) == 1 and rows[0].subject == "calculate"
     data = json.loads(rows[0].payload)["data"]
-    assert data["params"] == ["expression"] and data["who"] == "UOWNER"
+    assert data["params"] == ["expression"] and data["who"] == "UMIRO"
     assert "40 + 2" not in rows[0].payload
     events = [r.event for r in memory_backend.audit_rows]
     assert events[0] == "assistant.ask" and events[-1] == "assistant.answered"

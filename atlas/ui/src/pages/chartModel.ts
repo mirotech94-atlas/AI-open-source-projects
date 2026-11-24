@@ -1,5 +1,5 @@
 /**
- * Pure shaping for the Command Center's 3D charts and lead grid (the owner
+ * Pure shaping for the Command Center's 3D charts and lead grid (Miro
  * 2026-10-30). No fetching, so every rule is tested (chartModel.test.ts).
  * Invariants 6/7: a source that was not read is "unknown" (never a 0 bar);
  * a real empty result is a real zero with its read time.

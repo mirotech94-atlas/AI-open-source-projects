@@ -4,7 +4,7 @@
 # the backup receiver on the GitLab VM. Idempotent; run as root on the ATLAS
 # host after the files are in /opt/atlas/bootstrap/backup.
 set -euo pipefail
-OFFSITE_HOST="${1:-203.0.113.147}"
+OFFSITE_HOST="${1:-162.220.52.147}"
 KEY=/root/.ssh/atlas_backup_ed25519
 [ -f "$KEY" ] || ssh-keygen -q -t ed25519 -N "" -C "atlas-backup@$(hostname)" -f "$KEY"
 # The receiver: user atlasbak, which may only write under /srv/atlas-backups.

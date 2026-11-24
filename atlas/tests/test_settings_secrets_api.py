@@ -18,7 +18,7 @@ def _app(signed_in: bool = True) -> FastAPI:
     app = FastAPI()
     app.include_router(router)
     if signed_in:
-        app.dependency_overrides[auth.require] = lambda: auth.Session("owner", 0.0)
+        app.dependency_overrides[auth.require] = lambda: auth.Session("miro", 0.0)
     return app
 
 

@@ -10,7 +10,7 @@ What is load-bearing here:
   story's character sheet, beats x 8 s counted up front and the story refused
   as a whole at the cap -- never half-rendered.
 * The local path: Fish narration + stills or typographic cards + ffmpeg, the
-  argv shape the owner proved on production (single-frame inputs, zoompan,
+  argv shape Miro proved on production (single-frame inputs, zoompan,
   drawtext "Made with AI", a PART 1 end card on a cliffhanger), a
   content_media row and a public token like the OpenArt path; "ffmpeg not
   installed" when it is not, before any row exists.
@@ -563,7 +563,7 @@ async def test_the_local_render_refuses_without_ffmpeg(memory_backend, no_ffmpeg
 
 async def test_render_video_dry_never_offers_a_slideshow(memory_backend, no_ffmpeg,
                                                         monkeypatch):
-    """the owner, 2026-09-27: motion, not slides. With no Veo and no OpenArt the
+    """Miro, 2026-09-27: motion, not slides. With no Veo and no OpenArt the
     only backend left is the stills render, and it is refused by name."""
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     monkeypatch.delenv("OPENART_TOKEN", raising=False)
@@ -945,7 +945,7 @@ def test_the_content_package_never_reaches_up_into_the_api_layer():
 
 async def test_veo_out_of_quota_waits_for_tomorrow_never_a_slideshow(
         memory_backend, fake_ffmpeg, monkeypatch):
-    """the owner, 2026-09-27: no slides. Veo's quota gone means no reel today --
+    """Miro, 2026-09-27: no slides. Veo's quota gone means no reel today --
     said so -- never a stills fallback."""
     monkeypatch.setenv("GEMINI_API_KEY", "g-key")
     monkeypatch.setenv("VEO_MONTHLY_SECONDS", "600")
@@ -1143,7 +1143,7 @@ def test_4k_is_an_archive_master_never_the_posted_file(monkeypatch):
     """Instagram's Graph API refuses a Reel wider than 1920 px, so the posted
     file stays 1080x1920 and the 4K is a separate, upscaled master."""
     monkeypatch.delenv("REELS_EXPORT_4K", raising=False)
-    assert ffmpeg.export_4k() is True, "on by default (the owner, 2026-09-27)"
+    assert ffmpeg.export_4k() is True, "on by default (Miro, 2026-09-27)"
     monkeypatch.setenv("REELS_EXPORT_4K", "0")
     assert ffmpeg.export_4k() is False
     delivery = ffmpeg.burn_argv("j.mp4", "c.ass", "o.mp4")
@@ -1184,10 +1184,10 @@ async def test_an_interrupted_render_is_marked_failed_and_its_reservation_kept(
     assert "INSERT INTO veo_usage" not in sql
 
 
-# ============================================ 60 fps (the owner, 2026-09-27)
+# ============================================ 60 fps (Miro, 2026-09-27)
 
 def test_the_delivery_is_60_fps_and_veo_is_motion_interpolated_to_it():
-    assert ffmpeg.FPS == 60, "the Graph API's ceiling, and the owner's ask"
+    assert ffmpeg.FPS == 60, "the Graph API's ceiling, and Miro's ask"
     argv = ffmpeg.smooth_argv("j.mp4", "s.mp4")
     vf = argv[argv.index("-vf") + 1]
     assert "minterpolate=fps=60" in vf and "mi_mode=mci" in vf
@@ -1236,7 +1236,7 @@ def test_a_fake_footage_format_says_parody_on_every_frame():
 
 def test_the_new_formats_have_templates_and_the_right_rules():
     from atlas.modules.content import reels
-    names = [n for n, _, _ in reels.OWNER_IDEAS]
+    names = [n for n, _, _ in reels.MIRO_IDEAS]
     for name in ("animal-led absurd chase, fake footage (labelled)",
                  "Egyptian Arabic street-dog phone call",
                  "top-5 countdown of talking-animal job interviews"):
@@ -1247,7 +1247,7 @@ def test_the_new_formats_have_templates_and_the_right_rules():
 
 async def test_a_dialogue_reel_is_spoken_by_its_characters_with_no_narrator(
         memory_backend, fake_ffmpeg, monkeypatch):
-    """the owner, 2026-09-27: characters talk to each other on camera, everything
+    """Miro, 2026-09-27: characters talk to each other on camera, everything
     moves; no narrator, and no Fish voice laid over them even when one is set."""
     monkeypatch.setenv("GEMINI_API_KEY", "g-key")
     monkeypatch.setenv("VEO_MONTHLY_SECONDS", "600")
@@ -1302,7 +1302,7 @@ def test_each_line_is_said_by_its_named_speaker_and_captioned_in_their_colour():
     assert all(8.0 <= c.start for c in cues if "Race" in c.text)
 
 
-# ========================================= the owner's reference look (09-27)
+# ========================================= Miro's reference look (09-27)
 
 @pytest.mark.parametrize("prompt", [
     "Pixar-style 3D cars arguing", "in the style of Disney", "a DreamWorks look",
@@ -1378,7 +1378,7 @@ def test_a_link_is_an_address_not_a_brand():
     assert g.caught("see https://nike.com/shoes"), "a listed brand in a link is still a brand"
     # Fix round 1: only our own hosts' links are exempt.
     assert g.caught("see https://example.com/PlayStation") == ["PlayStation"]
-    assert g.refusal("https://agency.example.com/free/MyLab") is None
+    assert g.refusal("https://agency.storefront.test/free/MyLab") is None
     # Final review M1: only a video, a Short or a playlist on YouTube -- a
     # creator's handle is a name, not our address.
     assert "SomeCreator" in " ".join(g.caught("see https://www.youtube.com/@SomeCreator"))

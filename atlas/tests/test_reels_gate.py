@@ -1,7 +1,7 @@
 """Task 55 (a) and (b): what each Instagram account may post, and where the
 AI-stories account's cards land.
 
-the owner, relayed from production: @flycheaphp (`main`) posts ONLY FlyCheap /
+Miro, relayed from production: @flycheaphp (`main`) posts ONLY FlyCheap /
 travel / cheap-flight content, never AI story reels; AI reels go ONLY to
 @atlasstories3 (`stories`). Enforced at PROPOSE time, not only in a prompt:
 
@@ -52,10 +52,10 @@ def _publish_action():
 
 # ------------------------------------------------------------- the table
 
-def test_account_kinds_is_exactly_what_owner_ruled():
+def test_account_kinds_is_exactly_what_miro_ruled():
     assert instagram.ACCOUNT_KINDS == {"main": {"flycheap", "travel"},
                                        "stories": {"ai_story"},
-                                       # + the store promo, the owner 2026-10-05
+                                       # + the store promo, Miro 2026-10-05
                                        "clips": {"campaign_clip", "store_promo"}}
     assert set(instagram.ACCOUNT_KINDS) == set(instagram.ACCOUNTS)
 
@@ -235,7 +235,7 @@ async def test_an_action_without_a_vet_is_unaffected(memory_backend, monkeypatch
 # ================================================================== (b)
 # #instagram-reels: the stories account's cards and its overnight report.
 
-REELS_ID = "C0SLACKCH02"
+REELS_ID = "C0C3XH0F6S3"
 
 
 @pytest.fixture
@@ -469,7 +469,7 @@ async def test_an_unset_reels_channel_is_degraded_never_silent(monkeypatch):
     from atlas.kernel.contracts import Health
     from atlas.modules import content
     monkeypatch.delenv("SLACK_INSTAGRAM_REELS_CHANNEL", raising=False)
-    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudhost:CVPS")
     obs = await content.check_reels_channel()
     assert obs.health == Health.DEGRADED
     assert obs.detail == ("SLACK_INSTAGRAM_REELS_CHANNEL unset — cards fall to "
@@ -477,7 +477,7 @@ async def test_an_unset_reels_channel_is_degraded_never_silent(monkeypatch):
     monkeypatch.setenv("SLACK_INSTAGRAM_REELS_CHANNEL", REELS_ID)
     assert (await content.check_reels_channel()).health == Health.OK
     monkeypatch.delenv("SLACK_INSTAGRAM_REELS_CHANNEL")
-    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS,instagram_stories:CX")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudhost:CVPS,instagram_stories:CX")
     assert (await content.check_reels_channel()).health == Health.OK
 
 

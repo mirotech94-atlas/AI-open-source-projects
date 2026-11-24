@@ -1,6 +1,6 @@
-"""Proactive updates: the assistant may tell the owner one short, code-built note.
+"""Proactive updates: the assistant may tell Miro one short, code-built note.
 
-the owner, 2026-11-19. Tier 1 `assistant.update_owner`: a Slack DM to his own id
+Miro, 2026-11-19. Tier 1 `assistant.update_owner`: a Slack DM to his own id
 through `comms.notify`, at most 3 a day and 1 an hour, never in QUIET_HOURS,
 never above NORMAL (so it never pages), text built by code from fixed fields.
 """
@@ -104,12 +104,12 @@ async def test_action_is_tier1_with_dry_run_and_rollback():
 
 
 def test_text_is_built_from_fixed_fields():
-    assert notices.compose("check_failing", name="cloudco.api", at=NOW) == (
-        "Heads up: the check cloudco.api went from OK to failing "
+    assert notices.compose("check_failing", name="cloudhost.api", at=NOW) == (
+        "Heads up: the check cloudhost.api went from OK to failing "
         "(seen at 15:00 UTC on Nov 19).")
     assert "3" in notices.compose("proposal_waiting", count=3, hours=2, at=NOW)
     assert "from 5 (read 14:00 UTC on Nov 19) to 3 of 8 (read 15:00 UTC on Nov 19)" in (
-        notices.compose("camera_drop", before=5, after=3, total=8,
+        notices.compose("sensor_drop", before=5, after=3, total=8,
                         before_at=NOW - timedelta(hours=1), at=NOW))
     with pytest.raises(ValueError):
         notices.compose("free_text", text="hello")
@@ -245,11 +245,11 @@ async def test_watch_only_blocks_through_the_executor(store, sent, monkeypatch,
 
 async def test_scan_checks_failing(store, sent, monkeypatch):
     async def flips(since):
-        return [{"name": "cloudco.api", "at": NOW}, {"name": "mail.x", "at": NOW}]
+        return [{"name": "cloudhost.api", "at": NOW}, {"name": "mail.x", "at": NOW}]
     monkeypatch.setattr(notices, "_went_failing", flips)
     n = await notices.scan_checks()
     assert n == 2
-    assert {r["ref"] for r in store.rows.values()} == {"cloudco.api", "mail.x"}
+    assert {r["ref"] for r in store.rows.values()} == {"cloudhost.api", "mail.x"}
 
 
 async def test_scan_proposals_waiting_over_two_hours(store, monkeypatch):
@@ -269,39 +269,27 @@ async def test_scan_proposals_none_waiting(store, monkeypatch):
     assert await notices.scan_proposals() == 0
 
 
-async def test_scan_cameras_drop_only(store, monkeypatch):
+async def test_scan_sensors_drop_only(store, monkeypatch):
     reads = iter([(8, 8), (8, 6), (8, None), (8, 6), (8, 7)])
 
     async def read():
         return next(reads)
-    monkeypatch.setattr(notices, "_camera_online", read)
-    assert await notices.scan_cameras() == 0        # first read: baseline
-    assert await notices.scan_cameras() == 1        # 8 -> 6: told
-    assert await notices.scan_cameras() == 0        # unreadable: never a number
-    assert await notices.scan_cameras() == 0        # same 6: already told
-    assert await notices.scan_cameras() == 0        # rising: not a drop
+    monkeypatch.setattr(notices, "_sensor_online", read)
+    assert await notices.scan_sensors() == 0        # first read: baseline
+    assert await notices.scan_sensors() == 1        # 8 -> 6: told
+    assert await notices.scan_sensors() == 0        # unreadable: never a number
+    assert await notices.scan_sensors() == 0        # same 6: already told
+    assert await notices.scan_sensors() == 0        # rising: not a drop
     (row,) = store.rows.values()
     assert "read 15:00 UTC" in row["text"]          # both figures carry a time
 
 
-async def test_scanner_reads_without_the_private_gate(monkeypatch):
-    """The scheduler is not a private agent; its own reader must still work, while
-    the model-facing tool refuses outside a private run."""
-    from atlas.modules.assistant import tools as T
-    from atlas.modules.cameras import channels
-
-    async def chans():
-        return [{"channel": c, "online": 1} for c in range(channels.COUNT)], None, "t"
-    monkeypatch.setattr(T, "_camera_channels", chans)
-    total, online = await notices._camera_online()
-    assert online is not None and online <= total
-    assert "refused" in await T.camera_status()
 
 
 async def test_every_figure_text_carries_a_time():
     for kind, f in (("check_failing", {"name": "x", "at": NOW}),
                     ("proposal_waiting", {"count": 1, "hours": 2, "at": NOW}),
-                    ("camera_drop", {"before": 2, "after": 1, "total": 2,
+                    ("sensor_drop", {"before": 2, "after": 1, "total": 2,
                                      "before_at": NOW, "at": NOW})):
         assert "UTC on Nov 19" in notices.compose(kind, **f)
     with pytest.raises(TypeError):

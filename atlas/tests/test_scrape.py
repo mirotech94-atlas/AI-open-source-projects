@@ -253,7 +253,7 @@ async def test_deny_listed_hosts_are_refused_before_any_socket(world, url):
 
 
 def test_ordinary_hosts_are_not_denied():
-    assert _scrape.denied("https://joesplumbing.example/") is None
+    assert _scrape.denied("https://joesplumbing.com/") is None
     assert _scrape.denied("https://googleplumbing.com/") is None
 
 

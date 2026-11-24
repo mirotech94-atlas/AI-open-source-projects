@@ -187,12 +187,12 @@ async def check() -> Observation:
     stamp = f"(read {now:%Y-%m-%d %H:%M} UTC)"
     try:
         sites = await store.targets()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(CHECK, Health.UNKNOWN,
                            detail=f"agency_sites unreadable: {type(exc).__name__}")
     try:
         history = await store.recent_evidence(CHECK)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         history = []                                    # no comparison, said below
     gate = asyncio.Semaphore(PARALLEL)
     read = list(await asyncio.gather(*(read_site(s, history, gate) for s in sites)))

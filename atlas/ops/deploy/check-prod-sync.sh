@@ -5,7 +5,7 @@
 # (the CD key cannot do this: it may run only "deploy <sha>").
 #   ops/deploy/check-prod-sync.sh [user@host]
 set -euo pipefail
-HOST="${1:-root@203.0.113.191}"
+HOST="${1:-root@162.220.52.191}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 drift=0
 while read -r want name; do

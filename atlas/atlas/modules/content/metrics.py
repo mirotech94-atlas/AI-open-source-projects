@@ -24,7 +24,7 @@ from when it was last read, which is always today while a post is in the
 read window and would make a month-old reel score like yesterday's. An
 unread number earns nothing and costs nothing.
 
-Nothing here reads Instagram through the owner's logged-in account; only the
+Nothing here reads Instagram through Miro's logged-in account; only the
 Graph API with the account's own token.
 """
 from __future__ import annotations
@@ -71,7 +71,7 @@ async def _instagram(media_id: str) -> tuple[dict[str, float | None] | None, str
         hint = (" — the stories token needs instagram_manage_insights"
                 if exc.status_code in (400, 403) else "")
         return None, f"{exc}{hint}"
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, instagram._why(exc)
     out: dict[str, float | None] = {k: None for k in IG_METRICS.split(",")}
     for metric in (data or {}).get("data") or []:
@@ -89,7 +89,7 @@ async def check_reel_metrics() -> Observation:
             f"""SELECT platform, post_ref, format_id FROM reel_posts
                  WHERE at > now() - interval '{WINDOW_DAYS} days'
                    AND platform IN ('instagram', 'tiktok')""")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("reel_metrics", Health.UNKNOWN,
                            detail=f"reel_posts unreadable: {exc}")
     if not posts:

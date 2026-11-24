@@ -1,9 +1,9 @@
 """Inbound WhatsApp (`atlas/api/whatsapp.py`): signed, owner-only, read-only.
 
 Proved here:
-  * X-Twilio-Signature over the agency.example.com URL; bad / missing / signed over
+  * X-Twilio-Signature over the agency.storefront.test URL; bad / missing / signed over
     another URL -> 403 and nothing is processed;
-  * only MMT_OWNER_WHATSAPP is answered (`whatsapp:` prefix handled); anyone
+  * only TUTORCO_OWNER_WHATSAPP is answered (`whatsapp:` prefix handled); anyone
     else, or no owner configured, gets empty TwiML and no processing;
   * the question reaches the model only inside wrap_untrusted, with no tools;
   * a long answer is split under 600 characters a message;
@@ -29,7 +29,7 @@ from atlas.api import whatsapp
 from atlas.kernel import agent_activity, agent_report
 
 TOKEN = "t" * 32
-URL = "https://agency.example.com/webhooks/twilio/whatsapp"
+URL = "https://agency.storefront.test/webhooks/twilio/whatsapp"
 OWNER = "+19175550100"
 NOW = datetime(2026, 11, 10, 17, 0, tzinfo=UTC)            # 12:00 in New York
 
@@ -43,7 +43,7 @@ def sign(params: dict, url: str = URL, token: str = TOKEN) -> str:
 @pytest.fixture
 def client(monkeypatch, memory_backend):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", TOKEN)
-    monkeypatch.setenv("MMT_OWNER_WHATSAPP", OWNER)
+    monkeypatch.setenv("TUTORCO_OWNER_WHATSAPP", OWNER)
     monkeypatch.delenv("TWILIO_WHATSAPP_URL", raising=False)
     whatsapp._LIMITER.clear()
     seen: set[str] = set()
@@ -109,7 +109,7 @@ def test_a_missing_signature_is_403(client, said):
 
 
 def test_a_signature_over_another_url_is_refused(client, said):
-    other = "https://atlas.example.com/webhooks/twilio/whatsapp"
+    other = "https://atlas.storefront.test/webhooks/twilio/whatsapp"
     assert post(client, url=other).status_code == 403
     assert said == []
 
@@ -162,15 +162,15 @@ def test_a_stranger_gets_empty_twiml_and_a_log_line_without_the_body(client, sai
 
 
 def test_no_owner_configured_answers_nobody(client, said, monkeypatch):
-    monkeypatch.delenv("MMT_OWNER_WHATSAPP")
+    monkeypatch.delenv("TUTORCO_OWNER_WHATSAPP")
     r = post(client, sender="whatsapp:")
     assert "<Message>" not in r.text and said == []
-    monkeypatch.setenv("MMT_OWNER_WHATSAPP", "not-a-number")
+    monkeypatch.setenv("TUTORCO_OWNER_WHATSAPP", "not-a-number")
     assert "<Message>" not in post(client).text and said == []
 
 
 def test_the_owner_may_be_written_with_or_without_the_prefix(client, said, monkeypatch):
-    monkeypatch.setenv("MMT_OWNER_WHATSAPP", f"whatsapp:{OWNER}")
+    monkeypatch.setenv("TUTORCO_OWNER_WHATSAPP", f"whatsapp:{OWNER}")
     assert "<Message>" in post(client).text
 
 
@@ -193,8 +193,8 @@ def test_a_real_twilio_payload_with_equal_sids_is_answered(client, said):
     message's own sids must not count as a replay of each other."""
     sid = "SM0123456789abcdef0123456789abcdef"
     extra = {"MessageSid": sid, "SmsMessageSid": sid, "SmsSid": sid,
-             "AccountSid": "AC_TEST_ACCOUNT_SID",
-             "WaId": OWNER.removeprefix("+"), "ProfileName": "the owner",
+             "AccountSid": "AC" + "0123456789abcdef" * 2,
+             "WaId": OWNER.removeprefix("+"), "ProfileName": "Miro",
              "NumMedia": "0", "NumSegments": "1", "SmsStatus": "received",
              "ApiVersion": "2010-04-01"}
     assert "<Message>" in post(client, extra=extra).text
@@ -298,7 +298,7 @@ async def test_a_whatsapp_reply_never_approves(no_writes, monkeypatch, text):
 @pytest.mark.asyncio
 async def test_an_order_is_refused_and_nothing_runs(no_writes, monkeypatch):
     monkeypatch.setattr("atlas.kernel.llm.think", _no_model)
-    assert await whatsapp.answer("restart the cloudco server") == whatsapp.CANT_ACT
+    assert await whatsapp.answer("restart the cloudhost server") == whatsapp.CANT_ACT
 
 
 @pytest.mark.asyncio
@@ -352,7 +352,7 @@ async def test_a_model_timeout_says_so(no_writes, monkeypatch):
     monkeypatch.setattr("atlas.kernel.workboard.context_text", ctx)
     monkeypatch.setattr("atlas.kernel.tasks.context_text", ctx)
     monkeypatch.setattr("atlas.kernel.missions.voice_agent", lambda _q: None)
-    assert "slow" in await whatsapp._written_answer("how is cloudco")
+    assert "slow" in await whatsapp._written_answer("how is cloudhost")
 
 
 @pytest.mark.asyncio
@@ -439,7 +439,7 @@ def test_the_report_names_the_six_in_order_and_no_one_else():
 
 def test_the_report_says_what_was_done_and_what_needs_help():
     y = NOW - timedelta(hours=3)
-    card = {"id": 7, "action": "mmt.publish_post", "tier": 2, "reason": "x",
+    card = {"id": 7, "action": "tutorco.publish_post", "tier": 2, "reason": "x",
             "created_at": None, "expires_at": None}
     board = {"agents": [_seat(k, [card] if k == "seo" else None) for k, *_ in ROSTER]}
     runs = [{"agent": "seo", "runs": 4, "failed": 1, "last_at": y, "last_failed_at": y}]
@@ -467,7 +467,7 @@ def test_quiet_agents_say_all_good():
 
 
 def test_a_green_agent_still_says_cards_are_waiting():
-    card = {"id": 7, "action": "mmt.publish_post", "tier": 2, "reason": "x",
+    card = {"id": 7, "action": "tutorco.publish_post", "tier": 2, "reason": "x",
             "created_at": None, "expires_at": None}
     board = {"agents": [_seat(k, [card] if k == "seo" else None) for k, *_ in ROSTER]}
     text = agent_report.compose(_assembled(board=board), NOW, only="Sage")
@@ -567,7 +567,7 @@ def test_a_full_report_fits_the_message_budget():
 
 
 @pytest.mark.asyncio
-async def test_the_window_is_the_last_24_hours_and_sage_gets_mmt(monkeypatch):
+async def test_the_window_is_the_last_24_hours_and_sage_gets_tutorco(monkeypatch):
     got: dict = {}
 
     async def runs(start, end):
@@ -594,7 +594,7 @@ async def test_the_window_is_the_last_24_hours_and_sage_gets_mmt(monkeypatch):
     assert got["runs"] == (NOW - timedelta(hours=24), NOW)
     assert got["events"] == got["runs"]
     sage = next(a for a in data["agents"] if a["name"] == "seo")
-    assert "mmt" in sage["modules"]
+    assert "tutorco" in sage["modules"]
 
 
 async def test_a_greeting_gets_the_fixed_short_reply(no_writes):

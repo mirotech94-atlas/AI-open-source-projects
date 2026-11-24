@@ -3,7 +3,7 @@
 Typed by hand at a shell (`python -m atlas.cli memory-wipe ...`). Nothing in
 chat, the dashboard, a model or the executor reaches it: "forget" in chat only
 hides a note, and this is the separate, deliberate step that destroys it.
-Only the owner's own notes (namespace `owner` or `biz.*`) can be wiped.
+Only Miro's own notes (namespace `owner` or `biz.*`) can be wiped.
 """
 from __future__ import annotations
 

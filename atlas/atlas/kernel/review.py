@@ -95,7 +95,7 @@ async def build(day: date | None = None) -> Review:
                        AND bad.health IN ('failing', 'degraded'))
                 GROUP BY p.name, c.name
                 ORDER BY p.name, c.name""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read recoveries: %s", exc)
         recovered = []
     for row in recovered:
@@ -116,7 +116,7 @@ async def build(day: date | None = None) -> Review:
                   AND (payload::jsonb -> 'data' ->> 'ok') = 'true'
                   AND (payload::jsonb -> 'data' ->> 'approved_by') IS NULL
                 GROUP BY subject ORDER BY subject""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read the action log: %s", exc)
         acted = []
     for row in acted:
@@ -142,7 +142,7 @@ async def build(day: date | None = None) -> Review:
                     SELECT action FROM proposals
                      WHERE status = 'executed' AND decided_at >= $1 AND decided_at < $2)
                 ORDER BY subject""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read live approvals: %s", exc)
         approved_live = []
     for row in approved_live:
@@ -155,7 +155,7 @@ async def build(day: date | None = None) -> Review:
             """SELECT action, decided_at FROM proposals
                 WHERE status = 'executed' AND decided_at >= $1 AND decided_at < $2
                 ORDER BY decided_at""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read proposals: %s", exc)
         done = []
     for row in done:
@@ -169,7 +169,7 @@ async def build(day: date | None = None) -> Review:
                  FROM findings f
                 WHERE f.at >= $1 AND f.at < $2
                 ORDER BY f.check_key, f.at DESC""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read findings: %s", exc)
         latest = []
     for row in latest:
@@ -190,7 +190,7 @@ async def build(day: date | None = None) -> Review:
                        OR (event = 'execute.finish'
                            AND (payload::jsonb -> 'data' ->> 'ok') = 'false'))
                 GROUP BY subject ORDER BY subject""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read failed actions: %s", exc)
         failed = []
     for row in failed:
@@ -203,7 +203,7 @@ async def build(day: date | None = None) -> Review:
             """SELECT action FROM proposals
                 WHERE status = 'expired' AND expires_at >= $1 AND expires_at < $2
                 ORDER BY expires_at""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read expired proposals: %s", exc)
         expired = []
     for row in expired:
@@ -215,7 +215,7 @@ async def build(day: date | None = None) -> Review:
             """SELECT module, action, outcome FROM decision_log
                 WHERE at >= $1 AND at < $2
                 ORDER BY at""", start, end)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("review: could not read the decision log: %s", exc)
         decided = []
     decisions = [f"{row['module']}.{row['action']}: {row['outcome']}"
@@ -282,7 +282,7 @@ async def send(day: date | None = None) -> Review:
             await execute_sql(
                 "UPDATE reviews SET report_id = $2 WHERE id = $1",
                 saved["id"], report["id"])
-    except Exception:                                    # noqa: BLE001
+    except Exception:  # noqa: BLE001
         # A day whose review could not be stored is worse than one whose
         # review was never delivered -- but it was still delivered, so this
         # is not worth failing the send over.

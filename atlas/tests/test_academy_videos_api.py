@@ -324,7 +324,7 @@ def test_the_privacy_page_tells_the_truth_about_the_thumbnails():
 def test_payment_and_recovery_routes_are_untouched():
     """The join, Stripe and recover code is not part of this change."""
     import subprocess
-    out = subprocess.run(["git", "diff", "--stat", "feat/local-agency", "--",
+    out = subprocess.run(["git", "diff", "--stat", "feat/local-agency", "--",  # noqa: PLW1510
                           "atlas/api/academy.py", "atlas/modules/academy/delivery.py",
                           "atlas/modules/academy/stripe_read.py",
                           "atlas/kernel/executor.py"],

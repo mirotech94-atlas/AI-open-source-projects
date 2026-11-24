@@ -1,4 +1,4 @@
-"""Inbound WhatsApp (Twilio sandbox): the owner texts, ATLAS answers like the portal
+"""Inbound WhatsApp (Twilio sandbox): Miro texts, ATLAS answers like the portal
 voice does. `POST /webhooks/twilio/whatsapp`, answered as TwiML.
 
 READ-ONLY, ON PURPOSE (CLAUDE.md invariants 1, 2, 3, 4, 5, 6, 7), with ONE
@@ -37,7 +37,7 @@ narrow door for deciding a card and TWO fixed commands:
 Gates, in order, each before anything is read or answered:
   1. body size cap, 2. X-Twilio-Signature over the public URL (403),
   3. a MessageSid must be present (400), 4. the sender must be
-  MMT_OWNER_WHATSAPP (anyone else: empty TwiML + a log line, no body in the
+  TUTORCO_OWNER_WHATSAPP (anyone else: empty TwiML + a log line, no body in the
   log), 5. each MessageSid is answered once (a signed replay: empty TwiML),
   6. a per-sender rate limit.
 """
@@ -66,7 +66,7 @@ log = logging.getLogger("atlas.whatsapp")
 router = APIRouter()
 
 PATH = "/webhooks/twilio/whatsapp"
-DEFAULT_URL = "https://agency.example.com/webhooks/twilio/whatsapp"
+DEFAULT_URL = "https://agency.storefront.test/webhooks/twilio/whatsapp"
 MAX_BODY_BYTES = 8 * 1024        # Twilio's form is ~1 KB; Caddy caps it too
 PART_CHARS = 600                 # one WhatsApp message, in characters
 MAX_PARTS = 3
@@ -89,7 +89,7 @@ STOP_WORDS = frozenset({"stop", "stopall", "unsubscribe", "cancel", "end", "quit
 GREETINGS = frozenset({"hi", "hello", "hey", "hi atlas", "hello atlas", "hey atlas",
                        "good morning", "good evening", "good afternoon", "yo", "hey there",
                        "hi there", "hello there", "morning", "evening", "sup"})
-GREETING_REPLY = ("Hey the owner! \U0001F44B Good to hear from you. What's on your mind? "
+GREETING_REPLY = ("Hey Miro! \U0001F44B Good to hear from you. What's on your mind? "
                   "Ask me anything, or how the team is doing.")
 STOP_REPLY = ("Okay, stopped. \U0001F910 I won't send anything else unless you "
               "message me.")
@@ -114,13 +114,13 @@ _TODAY = re.compile(r"\b(today|happened|overnight|since|last night|24 ?h)\b",
                     re.IGNORECASE)
 
 _ATLASY = re.compile(
-    r"\b(atlas|academy|atlasacademyphp|agency|18dn|storefront|store|shop|website|site|"
+    r"\b(atlas|academy|atlasacademyphp|agency|storefront|storefront|store|shop|website|site|"
     r"agents?|team|mark|bea|sage|sam|rex|felix|who are you|what are you|what do you do|"
     r"what can you|you guys|your job)\b", re.IGNORECASE)
 _BUSINESS = re.compile(
-    r"\b(cloudco|vipsy|inroots|roots|netbird|fiverr|stripe|exampleco|gitlab|matrix|server|"
+    r"\b(cloudhost|vipsy|attendance|attendance|netbird|fiverr|stripe|mirotech|gitlab|matrix|server|"
     r"servers|system|systems|my business(es)?|my businesses|youtube|channel|videos?|posts?|"
-    r"linkedin|tutorsite|mmt|church|ecc|leads?|clients?|invoices?|cards?|approvals?)\b",
+    r"linkedin|exampletutor|tutorco|community|amsm|leads?|clients?|invoices?|cards?|approvals?)\b",
     re.IGNORECASE)
 _LIVE = re.compile(
     r"\b(how many|how much|how(?:'?s| is| are)|status|health|healthy|numbers?|figures?|"
@@ -132,7 +132,7 @@ _DETAIL_WORDS = re.compile(
     r"more|explain|what happened)$")
 
 PERSONA = (
-    "You are ATLAS, the owner's friendly assistant, chatting with him on WhatsApp. Talk "
+    "You are ATLAS, Miro's friendly assistant, chatting with him on WhatsApp. Talk "
     "like a warm, sharp friend: one to four short sentences, plain everyday words, "
     "contractions, an occasional emoji is fine. No lists unless he asks for one, no "
     "markdown, no headers, no sign-offs. Answer the question first. If he asks "
@@ -169,8 +169,8 @@ def bare(number: str | None) -> str:
 
 
 def owner_number() -> str | None:
-    """MMT_OWNER_WHATSAPP in E.164, or None (unset or malformed: nobody)."""
-    number = bare(os.getenv("MMT_OWNER_WHATSAPP", ""))
+    """TUTORCO_OWNER_WHATSAPP in E.164, or None (unset or malformed: nobody)."""
+    number = bare(os.getenv("TUTORCO_OWNER_WHATSAPP", ""))
     return number if re.fullmatch(r"\+[1-9][0-9]{7,14}", number) else None
 
 
@@ -300,7 +300,7 @@ def fact_sheet() -> str:
         return ""
 
 
-@quota.for_owner
+@quota.for_miro
 async def answer(text: str) -> str:
     """What to say. Reads only; see the module note."""
     low = " ".join(text.lower().split())
@@ -334,16 +334,16 @@ async def answer(text: str) -> str:
         from . import system_check
         try:
             return LiveReply(str((await system_check.build())["line"]))
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("system check unreadable: %s", type(exc).__name__)
             return ("I can't read the checks right now, so I won't guess how "
                     "things are.")
     from ..modules import assistant
     if assistant.door_enabled("whatsapp"):
         try:
-            return await assistant.converse(text, channel="whatsapp", who="owner",
+            return await assistant.converse(text, channel="whatsapp", who="miro",
                                            private_ok=True)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("assistant chat failed, today's answer used: %s",
                         type(exc).__name__)
     return await _written_answer(text)
@@ -376,7 +376,7 @@ async def _live_read(question: str) -> str:
         nonlocal failed
         try:
             text = await coro
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("whatsapp live read part failed: %s", type(exc).__name__)
             failed = True
             return
@@ -532,7 +532,7 @@ async def _owner_turn(form: dict[str, str]) -> Response:
         try:
             said = await wa_approvals.handle_reply(
                 verdict, code, form.get("MessageSid", ""), pid=pid)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("whatsapp card tap failed: %s", type(exc).__name__)
             said = "I couldn't check that just now. Nothing was changed."
         return twiml(split_reply(said))
@@ -550,7 +550,7 @@ async def _owner_turn(form: dict[str, str]) -> Response:
         try:
             said = await wa_approvals.handle_reply(verdict, code,
                                                    form.get("MessageSid", ""))
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("whatsapp card reply failed: %s", type(exc).__name__)
             said = "I couldn't check that just now. Nothing was changed."
         return twiml(split_reply(said))
@@ -560,7 +560,7 @@ async def _owner_turn(form: dict[str, str]) -> Response:
         # A bare "yes" / "no": never a decision. It lists the pending cards.
         try:
             said = await wa_approvals.handle_bare()
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("whatsapp bare reply failed: %s", type(exc).__name__)
             said = "I couldn't check that just now. Nothing was changed."
         return twiml(split_reply(said))
@@ -570,7 +570,7 @@ async def _owner_turn(form: dict[str, str]) -> Response:
         return twiml(split_reply(command))
     try:
         said = await answer(body)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("whatsapp answer failed: %s", type(exc).__name__)
         reply_timing.note(ok=False)
         return twiml(["I couldn't answer that just now. Nothing was changed."])

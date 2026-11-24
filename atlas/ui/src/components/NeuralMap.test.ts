@@ -112,11 +112,11 @@ describe("NeuralMap", () => {
   });
 
   it("at phone width a not-ready agent's reason is still shown, and named to screen readers", () => {
-    const blocked = agent({ name: "commerce", ready: false, reasons: ["module exampleco is switched off"],
+    const blocked = agent({ name: "commerce", ready: false, reasons: ["module mirotech is switched off"],
       persona: { agent: "commerce", name: "Owen", specialty: "buyers", voice: "male" } });
     const markup = render([...roster, blocked], { variant: "compact" });
-    expect(markup).toMatch(/class="nn-blocked"[\s\S]*Owen[\s\S]*module exampleco is switched off/);
-    expect(markup).toMatch(/aria-label="[^"]*: module exampleco is switched off\."/);
+    expect(markup).toMatch(/class="nn-blocked"[\s\S]*Owen[\s\S]*module mirotech is switched off/);
+    expect(markup).toMatch(/aria-label="[^"]*: module mirotech is switched off\."/);
     // A failed read lists no reasons: every neuron is unknown, not blocked.
     expect(render([blocked], { variant: "compact", readFailed: true })).not.toContain("nn-blocked");
   });

@@ -26,7 +26,7 @@ async def _read(**_kw: Any) -> Any:
     return []
 
 
-GMAIL = Tool("gmail_search", "Search the owner's mail.",
+GMAIL = Tool("gmail_search", "Search Miro's mail.",
              {"type": "object", "properties": {"query": {"type": "string"}}},
              read=_read)
 
@@ -261,7 +261,7 @@ async def test_agent_run_says_the_local_model_is_down_when_none_is_configured(
 # ------------------------- recording the run for the fleet card (I1, fix round 1)
 #
 # Until this fix, `Agent.run()` -- what `route()` calls for every chat and
-# voice turn, the surface the owner actually reaches an agent through most of the
+# voice turn, the surface Miro actually reaches an agent through most of the
 # time -- never wrote to `agent_runs`. Only a handoff through
 # `ask_specialist` (`run_agent`) did, so a business agent's fleet card read
 # "not yet run" no matter how much it had actually answered him.
@@ -303,7 +303,7 @@ async def test_agent_run_records_the_model_that_actually_answered(
 
 async def test_a_route_answer_records_the_run_too(monkeypatch, memory_backend):
     """One level up: `route()` classifies, then calls `Agent.run()` for the
-    specialist it picked -- the actual surface the owner's chat and voice turns
+    specialist it picked -- the actual surface Miro's chat and voice turns
     go through."""
     from atlas.kernel import agents as agent_module
     from atlas.kernel.llm import Completion

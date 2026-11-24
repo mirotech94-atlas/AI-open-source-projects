@@ -1,7 +1,7 @@
 """The look of the daily Academy reel: one edition per product, each its
 own palette, type and signature motion, rendered frame by frame from HTML.
 
-the owner, 2026-10-06: "each reel should be different than each other". A
+Miro, 2026-10-06: "each reel should be different than each other". A
 product's reel is drawn in that product's edition (`EDITIONS`, keyed by
 slug), so no two products share a look, and a day variant swaps the beat
 order and the timing so the same product's next reel differs from its
@@ -436,7 +436,7 @@ async def to_thread(fn, *a):
 
 # ------------------------------------------------------------- lesson shorts
 #
-# the owner, 2026-10-11: Shorts about each lesson, "entertaining and animated".
+# Miro, 2026-10-11: Shorts about each lesson, "entertaining and animated".
 # A lesson Short is captions timed to the lesson's own voice, word by word:
 # the words of the line on screen arrive in chunks a reader takes in at a
 # glance, and the word being said lights up as it is said. Six themes, one
@@ -453,7 +453,7 @@ class Theme:
     accent: str      # royal blue: the word being said, the bar, the rule
 
 
-# the owner, 2026-10-12: one brand on every video, and since the store moved to
+# Miro, 2026-10-12: one brand on every video, and since the store moved to
 # it the same day, two colours only: black and royal blue. Text is a cool
 # off-white; blue fills the word being said, the progress bar and the rule,
 # and is text only for the store address (about 5.6:1 on black).

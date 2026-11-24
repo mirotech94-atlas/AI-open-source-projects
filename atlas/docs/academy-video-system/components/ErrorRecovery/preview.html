@@ -1,0 +1,31 @@
+<!-- @dsCard group="Teaching" width=1920 height=1080 subtitle="The real error, its cause, the fix, verified" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1920px;height:1080px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);overflow:hidden}
+.err{position:absolute;left:var(--safe-16-9);top:var(--safe-16-9);width:1000px;background:var(--navy-raised);border:4px solid var(--error);border-radius:var(--radius-card);padding:var(--step-4);box-sizing:border-box;font-family:var(--font-mono)}
+.err .t{display:flex;gap:var(--step-1);align-items:center;color:var(--error);font-family:var(--font-sans);margin-bottom:var(--step-2)}
+.err svg{width:40px;height:40px}
+.card{position:absolute;right:var(--safe-16-9);top:var(--safe-16-9);width:620px;background:var(--navy-raised);border:2px solid var(--navy-line);border-radius:var(--radius-card);box-sizing:border-box;overflow:hidden}
+.card>div{padding:var(--step-3);border-top:2px solid var(--navy-line)}
+.card>div:first-child{border-top:0}
+.card .k{display:block;color:var(--paper-muted);margin-bottom:var(--step-1)}
+.card .fix .k{color:var(--amber)}
+.card .ok{border-top-color:var(--success)}
+.card .ok .k{color:var(--success)}
+.card code{font-family:var(--font-mono)}
+</style></head><body>
+<div class="frame">
+  <div class="err">
+    <div class="t callout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Error · Claude node</div>
+    <div class="code">401 authentication_error:<br>invalid x-api-key</div>
+  </div>
+  <div class="card">
+    <div><span class="k support">Cause</span><span class="callout">The credential was saved with a trailing space.</span></div>
+    <div class="fix"><span class="k support">Fix</span><span class="callout">Re-paste the key in <code>Credentials → Anthropic</code>, save, run again.</span></div>
+    <div class="ok"><span class="k support">Verified</span><span class="callout">Node returns <code>200</code> and the draft appears.</span></div>
+  </div>
+</div>
+</body></html>

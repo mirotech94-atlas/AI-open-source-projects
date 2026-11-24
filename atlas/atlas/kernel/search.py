@@ -1,6 +1,6 @@
 """ATLAS's own search: what it recorded, found by words.
 
-the owner, 2026-10-06: "if I say something in a channel, generic or something,
+Miro, 2026-10-06: "if I say something in a channel, generic or something,
 then he should have its own search engine for me". Before this a question
 in Slack was answered from the live checks alone; anything ATLAS had done,
 proposed, posted or seen earlier was out of reach unless he remembered the
@@ -54,7 +54,7 @@ class Hit:
 def fold(hits: list[Hit]) -> list[Hit]:
     """One line per (source, title): a check that was degraded six times in
     two days is one record six times, not six records. The newest stays,
-    with the count. Read live 2026-10-06: "cloudco balance" was six identical
+    with the count. Read live 2026-10-06: "cloudhost balance" was six identical
     finding lines."""
     seen: dict[tuple[str, str], int] = {}
     out: list[Hit] = []
@@ -172,7 +172,7 @@ async def search(text: str, limit: int = LIMIT) -> list[Hit]:
     for sql, make in _QUERIES.values():
         try:
             rows = await fetch_all(sql, patterns, PER_TABLE)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             # One table unreadable (a migration not yet run) costs its
             # hits, not the search.
             log.debug("records search skipped a table: %s", type(exc).__name__)

@@ -29,8 +29,8 @@ def test_persona_names_are_unique_and_human():
     reserved = {n.lower() for n in _roster()} | {
         v.lower() for v in _DISPLAY_NAME.values()} | {"atlas"}
     for p in personas.PERSONAS.values():
-        # A persona may carry its own agent's key (the owner 2026-11-10: the
-        # TutorSite agent is called "MMT"), never another agent's.
+        # A persona may carry its own agent's key (Miro 2026-11-10: the
+        # ExampleTutor agent is called "TUTORCO"), never another agent's.
         assert p.name.lower() not in reserved - {p.agent}, p
         assert p.name.isalpha() and p.name[0].isupper(), p
 
@@ -43,12 +43,12 @@ def test_each_persona_has_a_one_line_specialty_and_a_known_voice():
 
 
 def test_no_persona_is_female():
-    """the owner, 2026-10-11: "don't use the girl voice, only use the guy voice at
+    """Miro, 2026-10-11: "don't use the girl voice, only use the guy voice at
     all times." "female" stays in the closed set only for old browsers."""
     assert {p.voice for p in personas.PERSONAS.values()} == {"male"}
     assert personas.persona_for("newbie", "Newbie Desk", "x").voice == "male"
     assert "female" in personas.VOICES            # still a 200, spoken as ATLAS
-    assert "the owner, 2026-10-11" in (personas.__doc__ or "")
+    assert "Miro, 2026-10-11" in (personas.__doc__ or "")
 
 
 def test_personas_are_a_fixed_table_not_a_draw():

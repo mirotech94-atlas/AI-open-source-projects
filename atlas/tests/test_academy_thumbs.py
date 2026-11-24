@@ -100,7 +100,7 @@ def test_every_episode_gets_its_own_spec():
     assert len(docs) == len(EPISODES)
 
 
-# ------------------------------------------- batch 7 (the owner, 2026-10-17)
+# ------------------------------------------- batch 7 (Miro, 2026-10-17)
 # "create thumbnails for each video and different as well": a family of
 # compositions per episode, one real image, the result's words.
 

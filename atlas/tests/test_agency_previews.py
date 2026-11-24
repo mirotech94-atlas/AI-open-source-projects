@@ -112,7 +112,7 @@ def test_list_unreadable_is_503_not_empty(client, monkeypatch, tmp_path):
 
 
 # --- token-scoped links: a sandboxed frame has an opaque origin and sends no cookie ---
-import time  # noqa: E402
+import time
 
 SLUG = "joes-barber-7"
 

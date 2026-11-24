@@ -81,7 +81,7 @@ async def capture(said: str, *, via: str) -> int | None:
             """INSERT INTO standing_rules (said, readback, via)
                VALUES ($1, $2, $3) RETURNING id""",
             said, readback(said), via)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not record a standing rule: %s", exc)
         return None
     return int(row["id"]) if row else None
@@ -94,7 +94,7 @@ async def active() -> list[dict[str, Any]]:
         rows = await fetch_all(
             """SELECT id, at, said, via, briefed_at FROM standing_rules
                 WHERE dropped_at IS NULL ORDER BY at DESC""")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not read standing rules: %s", exc)
         return []
     return [dict(r) for r in rows]
@@ -125,7 +125,7 @@ async def drop(phrase: str) -> list[str]:
         await execute_sql(
             "UPDATE standing_rules SET dropped_at = now() WHERE id = ANY($1)",
             [r["id"] for r in rows])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not drop a standing rule: %s", exc)
         return []
     return [str(r["said"]) for r in rows]
@@ -155,5 +155,5 @@ async def mark_briefed() -> None:
         await execute_sql(
             "UPDATE standing_rules SET briefed_at = now() "
             "WHERE dropped_at IS NULL AND briefed_at IS NULL")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not mark standing rules as briefed: %s", exc)

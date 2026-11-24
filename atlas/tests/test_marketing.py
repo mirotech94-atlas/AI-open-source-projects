@@ -452,12 +452,12 @@ async def test_the_plan_drafts_a_standing_rule_and_never_enacts_one(monkeypatch)
 async def test_no_measured_fact_means_no_ideas_and_a_plain_note(monkeypatch):
     monkeypatch.setattr(monetize, "_youtube_facts",
                         _async_return((None, "no YOUTUBE_ACADEMY_CHANNEL_ID set")))
-    monkeypatch.setattr(monetize, "_ownertech_facts",
+    monkeypatch.setattr(monetize, "_mirotech_facts",
                         _async_return((None, "no eBay token")))
     monkeypatch.setattr(monetize, "_agency_facts",
                         _async_return((None, "agency_leads unreadable")))
 
-    result = await monetize.ideas("exampleco")
+    result = await monetize.ideas("mirotech")
     assert result["ideas"] == []
     assert "no measured facts" in result["note"]
     assert "no eBay token" in result["note"]
@@ -467,13 +467,13 @@ async def test_no_measured_fact_means_no_ideas_and_a_plain_note(monkeypatch):
 async def test_every_idea_carries_evidence_with_an_observed_at(monkeypatch):
     read_at = datetime(2026, 9, 24, 9, 12, tzinfo=UTC)
     monkeypatch.setattr(monetize, "_youtube_facts", _async_return((
-        {"channel": "exampleco", "subscribers": 1240,
+        {"channel": "mirotech", "subscribers": 1240,
          "eligible_on_subscribers": True, "observed_at": read_at,
          "detail": "eligible: 1,240 of 1,000 subscribers, read 09:12"}, None)))
-    monkeypatch.setattr(monetize, "_ownertech_facts", _async_return((None, "x")))
+    monkeypatch.setattr(monetize, "_mirotech_facts", _async_return((None, "x")))
     monkeypatch.setattr(monetize, "_agency_facts", _async_return((None, "x")))
 
-    result = await monetize.ideas("exampleco")
+    result = await monetize.ideas("mirotech")
     assert result["ideas"]
     for idea in result["ideas"]:
         assert idea["requires"]
@@ -485,7 +485,7 @@ async def test_every_idea_carries_evidence_with_an_observed_at(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_anything_that_costs_money_is_listed_not_actioned(monkeypatch):
-    for name in ("_youtube_facts", "_ownertech_facts"):
+    for name in ("_youtube_facts", "_mirotech_facts"):
         monkeypatch.setattr(monetize, name, _async_return((None, "unmeasured")))
     monkeypatch.setattr(monetize, "_agency_facts", _async_return((
         {"leads_waiting": 4,
@@ -503,15 +503,15 @@ async def test_anything_that_costs_money_is_listed_not_actioned(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_ownertech_never_claims_a_sold_price_it_did_not_measure(monkeypatch):
+async def test_mirotech_never_claims_a_sold_price_it_did_not_measure(monkeypatch):
     for name in ("_youtube_facts", "_agency_facts"):
         monkeypatch.setattr(monetize, name, _async_return((None, "unmeasured")))
-    monkeypatch.setattr(monetize, "_ownertech_facts", _async_return((
+    monkeypatch.setattr(monetize, "_mirotech_facts", _async_return((
         {"listings": 31, "sold_prices_measured": False,
          "observed_at": datetime(2026, 9, 24, 8, 0, tzinfo=UTC),
          "detail": "31 active listings, read 08:00"}, None)))
 
-    result = await monetize.ideas("exampleco")
+    result = await monetize.ideas("mirotech")
     assert result["ideas"]
     joined = " ".join(i["est_note"] for i in result["ideas"])
     assert "sold" in joined.lower()
@@ -722,7 +722,7 @@ async def test_proposing_an_experiment_writes_a_row_and_a_draft(monkeypatch):
     monkeypatch.setattr(module, "content_draft", fake_draft)
 
     result = await module.propose_experiment(
-        "exampleco", "youtube", "route-deal shorts beat explainers",
+        "mirotech", "youtube", "route-deal shorts beat explainers",
         "route-deal short", draft_kind="short_script", draft_source="weekly")
     assert result.ok
     assert result.rollback_token == "11:5"
@@ -734,7 +734,7 @@ async def test_an_experiment_proposal_refuses_an_unknown_platform(monkeypatch):
     monkeypatch.setattr(module, "fetch_one",
                         _async_fail("must not reach the database"))
     result = await module.propose_experiment(
-        "exampleco", "myspace", "h", "v", draft_kind="short_script",
+        "mirotech", "myspace", "h", "v", draft_kind="short_script",
         draft_source="weekly")
     assert not result.ok
     assert "myspace" in result.detail
@@ -1045,7 +1045,7 @@ async def test_an_experiment_on_a_platform_with_no_hook_is_refused(
     monkeypatch.setattr(module, "fetch_one",
                         _async_fail("must not reach the database"))
     for fn in (module.propose_experiment, module.propose_experiment_dry):
-        result = await fn("exampleco", platform, "h", "v",
+        result = await fn("mirotech", platform, "h", "v",
                           draft_kind="short_script", draft_source="weekly")
         assert not result.ok
         assert (f"{platform} has no experiment hook yet; only youtube can "
@@ -1136,16 +1136,16 @@ def test_a_zero_baseline_is_never_a_win():
 @pytest.mark.asyncio
 async def test_a_source_that_does_not_apply_is_not_listed_as_unreadable(
         monkeypatch):
-    """"agency: not an agency question" in a exampleco note is noise that
+    """"agency: not an agency question" in a mirotech note is noise that
     buries the one line that matters."""
     monkeypatch.setattr(monetize, "_youtube_facts",
                         _async_return((None, "no CHANNEL_ID set")))
-    monkeypatch.setattr(monetize, "_ownertech_facts",
+    monkeypatch.setattr(monetize, "_mirotech_facts",
                         _async_return((None, "no eBay token")))
     monkeypatch.setattr(monetize, "_agency_facts",
                         _async_return((None, monetize.NOT_APPLICABLE)))
 
-    result = await monetize.ideas("exampleco")
+    result = await monetize.ideas("mirotech")
     assert result["ideas"] == []
     assert "no measured facts" in result["note"]
     assert "no eBay token" in result["note"]
@@ -1294,7 +1294,7 @@ async def test_the_scheduler_closes_an_experiment_only_through_the_executor(
 
 
 async def test_an_experiment_on_a_switched_off_platform_is_refused(monkeypatch):
-    """2026-09-27: youtube was off by the owner's word, and twelve YouTube
+    """2026-09-27: youtube was off by Miro's word, and twelve YouTube
     experiments still drafted the weekly report as 'short scripts'."""
     from atlas.kernel.registry import REGISTRY
     from atlas.modules import marketing as module

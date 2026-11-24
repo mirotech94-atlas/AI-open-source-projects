@@ -1,8 +1,8 @@
 """PostHog -- read-only site traffic for the weekly report.
 
-the owner, 2026-09-28, from the "solo startup playbook" reel: PostHog measures
+Miro, 2026-09-28, from the "solo startup playbook" reel: PostHog measures
 the funnel (reel -> bio -> page -> checkout) so the reel mix follows real
-numbers. ATLAS only reads: a HogQL query with the owner's personal key
+numbers. ATLAS only reads: a HogQL query with Miro's personal key
 (POSTHOG_PERSONAL_KEY), never the ingest key the pages carry. A read that
 fails is UNKNOWN; a project that has never received an event says so rather
 than reporting a confident zero.

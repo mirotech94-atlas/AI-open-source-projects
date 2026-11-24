@@ -1,13 +1,13 @@
 """What ATLAS is doing right now, for the portal's HUD (`/hud`).
 
-the owner, 2026-11-10: a live view of ATLAS at work -- the tasks it has, the
+Miro, 2026-11-10: a live view of ATLAS at work -- the tasks it has, the
 surfaces it touches (GitLab, the Mac, the QA browser, NotebookLM...), the
 Tier 2 cards waiting on him, and what is running. `GET /api/hud` serves
 `snapshot()`; the page re-reads it on a stream nudge and on a slow poll.
 
 Where each figure comes from (nothing here is a second bookkeeping):
   * tasks -- the `tasks` table (kernel/tasks.py): source, route, status, time.
-    Never the request's words (the owner: no request text on screen), never the
+    Never the request's words (Miro: no request text on screen), never the
     outcome;
   * waiting -- `proposals`: pending cards and cards that lapsed;
   * surfaces -- `actions_log` over the last 30 min (event name and subject
@@ -54,7 +54,7 @@ HOLD_STATES = {
     "execute.qa_held": "qa_held"}
 SLACK_LABEL = "approved by you in Slack"
 
-# (key, tile label, module prefixes). Static, in code: the owner confirms the list.
+# (key, tile label, module prefixes). Static, in code: Miro confirms the list.
 SURFACES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("gitlab", "GitLab (localhost:8929)", ("gitlab",)),
     ("mac", "Mac", ("mac",)),
@@ -176,7 +176,7 @@ async def _section(name: str, errors: dict[str, str], read: Awaitable[Any]
     """One read, and the time it finished. A failure is `None` + `errors`."""
     try:
         rows = await read
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("hud could not read %s: %s", name, why)
         errors[name] = why

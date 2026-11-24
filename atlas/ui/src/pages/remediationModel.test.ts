@@ -11,7 +11,7 @@ import {
 function task(id: number, over: Partial<RemediationTask> = {}): RemediationTask {
   return {
     id, project_id: null, title: `Fix ${id}`, owner: "qa", status: "todo",
-    evidence: { url: "https://agency.example.com/preview/joes/" }, suggested_fix: "shorten the title",
+    evidence: { url: "https://agency.storefront.test/preview/joes/" }, suggested_fix: "shorten the title",
     source_action: "qa.check_site", source_ref: "site:joes", due_at: null,
     created_at: `2026-10-27T0${id % 10}:00:00Z`, done_at: null, open: true, ...over,
   };

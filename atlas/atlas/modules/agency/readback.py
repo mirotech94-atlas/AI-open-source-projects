@@ -125,7 +125,7 @@ def _search_sent(cfg: tuple[str, int, str, str, str], *, message_id: str = "",
     finally:
         try:
             conn.logout()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.debug("imap logout failed: %s", type(exc).__name__)
 
 

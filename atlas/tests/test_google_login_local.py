@@ -1,6 +1,6 @@
 """bootstrap/google_login.py's local mode (ATLAS_SSH_HOST=local).
 
-The server atlas.example.com is gone; ATLAS runs from this checkout on the Mac.
+The server atlas.storefront.test is gone; ATLAS runs from this checkout on the Mac.
 Every ssh path (read a value, write the GOOGLE_*/MAIL_*/YOUTUBE_* values,
 restart the api, run the checks) gets a local twin, the same way
 bootstrap/set-secret.sh has one. Local is the default when /opt/atlas is

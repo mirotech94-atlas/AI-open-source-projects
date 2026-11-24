@@ -37,12 +37,12 @@ What `execute` returns decides the rest, and the default is the cautious one:
   (terminal, S08): the executor found the action's catalog version, or the
   params hash, changed since the row was recorded (`executor.STALE`). No
   attempt is spent, nothing ran, and a fresh card (approvals.fresh_card)
-  asks the owner about the action as it is now; the row itself never runs.
+  asks Miro about the action as it is now; the row itself never runs.
   Rows queued before versions were recorded carry NULL and are not checked.
 * the provider refused the credential (401/403, a revoked token; R09) ->
   that credential is paused (kernel/pause.block_capability: the module, or
   `module:account` for a module that posts as several accounts; lifted only
-  by the owner) so its other queued rows hold instead of each trying the dead
+  by Miro) so its other queued rows hold instead of each trying the dead
   login, with one short notice. A module whose credential cannot be told
   apart is only told, never paused. A notice ends failed; an effect is
   reconciled as below.
@@ -214,7 +214,7 @@ async def _rehash_stored(oid: int, row: Any, approved_hash: str) -> None:
         await execute_sql(
             "UPDATE outbox SET approved_payload_hash = $2 WHERE id = $1",
             oid, again)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("outbox %s: stored params hash not refreshed", oid)
 
 
@@ -332,7 +332,7 @@ async def _audit(event: str, outbox_id: int, data: dict[str, Any]) -> None:
     from .audit import audit
     try:
         await audit(event, f"outbox:{outbox_id}", data)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("%s for outbox %s not audited", event, outbox_id)
 
 
@@ -348,7 +348,7 @@ async def sweep_lapsed() -> list[int]:
                                           || 'outcome unknown'
                 WHERE status = 'dispatching' AND lease_expiry <= now()
             RETURNING id, action, workflow_id""")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lapsed dispatches not swept (%s)", type(exc).__name__)
         return []
     for r in rows:
@@ -387,7 +387,7 @@ async def _claim(owner: str, lease: timedelta,
                       params_hash, destination, occurrence, catalog_version,
                       approved_payload_hash""",
             owner, lease, only_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("no outbox row claimed (%s); nothing dispatched",
                     type(exc).__name__)
         return None
@@ -406,7 +406,7 @@ async def _fence_for_dispatch(row: dict[str, Any], owner: str) -> bool:
                   AND fencing_token = $3 AND lease_expiry > now()
             RETURNING id""",
             int(row["id"]), owner, int(row["fencing_token"]))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("outbox %s not fenced (%s); not dispatching", row["id"],
                     type(exc).__name__)
         return False
@@ -435,7 +435,7 @@ async def _commit(row: dict[str, Any], owner: str, status: str, detail: str,
             int(row["id"]), owner, int(row["fencing_token"]), status,
             (detail or "")[:1000], json.dumps(evidence or {}, default=str),
             retry_in, from_status, 1 if refund else 0)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("outbox %s outcome not recorded (%s)", row["id"],
                     type(exc).__name__)
         return False
@@ -525,7 +525,7 @@ async def _record_shadowed(row: dict[str, Any], owner: str,
             "occurrence": row.get("occurrence"),
             "reason": str(row.get("reason") or "")[:300],
             "approved_by": row.get("approved_by")})
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("shadow record for outbox %s not audited", oid)
     if row["workflow_id"] is not None and str(row["kind"]) == "effect":
         await _advance(int(row["workflow_id"]), "BLOCKED", f"outbox:{oid}")
@@ -578,7 +578,7 @@ async def dispatch_once(owner: str = OWNER, lease: timedelta = LEASE,
                     approved_by=row["approved_by"],
                     approved_version=row.get("catalog_version"),
                     approved_payload_hash=row.get("approved_payload_hash")))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Raised out of execute, or ran past its budget: it may have reached
         # the provider. Reconcile, never resend.
         status, detail = "reconciling", f"dispatch did not return: {type(exc).__name__}"
@@ -605,7 +605,7 @@ async def dispatch_once(owner: str = OWNER, lease: timedelta = LEASE,
                      else (False, None))
     if refused:
         # R09: block the credential -- pause it (`module:account` where the
-        # module posts as several accounts), or only tell the owner where the
+        # module posts as several accounts), or only tell Miro where the
         # credential cannot be told apart. Once, however many rows fail.
         from . import pause as _pause
         done = await _pause.block_capability(action, params or {}, code)
@@ -696,7 +696,7 @@ async def reconcile_once(owner: str = OWNER,
             RETURNING id, kind, action, params, workflow_id, fencing_token,
                       attempts, max_attempts""",
             owner, lease)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("no reconciling row claimed (%s)", type(exc).__name__)
         return None
     if row is None:
@@ -711,7 +711,7 @@ async def reconcile_once(owner: str = OWNER,
     if lookup is not None:
         try:
             verdict, evidence = await lookup(row)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             verdict, evidence = "unknown", {"error": type(exc).__name__}
     status = {"present": "delivered", "absent": "pending"}.get(verdict,
                                                               "needs_human")

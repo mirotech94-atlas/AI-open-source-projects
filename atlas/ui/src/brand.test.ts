@@ -1,5 +1,5 @@
 /**
- * The portal wears the storefront's brand (the owner, 2026-10-28): the tokens
+ * The portal wears the storefront's brand (Miro, 2026-10-28): the tokens
  * match atlas/modules/academy/assets/style.css (dark), royal blue is never a
  * health colour, and UNKNOWN stays a neutral grey, dashed, never blue/green.
  */

@@ -50,6 +50,6 @@ async def test_a_scoped_pause_is_in_the_weekly_until_resumed(pg):
               if p.startswith("*Paused until you resume*")]
     assert "the instagram module's clips account is paused" in line
     REGISTRY.modules.setdefault("instagram", object())
-    await pause.resume("instagram:clips", "slack:UOWNER")
+    await pause.resume("instagram:clips", "slack:UMIRO")
     assert not [p for p in (await weekly.build()).paragraphs
                 if p.startswith("*Paused until you resume*")]

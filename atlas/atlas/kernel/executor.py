@@ -110,15 +110,15 @@ def stale_of(result: Any) -> str | None:
     return str(what) if what else None
 
 
-# Where a request proves it is the owner (kernel.intent.CAN_APPROVE plus the
+# Where a request proves it is Miro (kernel.intent.CAN_APPROVE plus the
 # principal check each applies). Not "sms" or an inbound call: caller ID.
 # "voice" is set only by kernel.spoken, for the signed-in dashboard, and
-# only reaches principal_only actions (the owner, 2026-09-28).
+# only reaches principal_only actions (Miro, 2026-09-28).
 PRINCIPAL_ORIGINS = frozenset({"slack", "call_out", "voice"})
 
 
 def watch_only() -> bool:
-    """Phase 1: ATLAS watches and tells the owner things. It does not act.
+    """Phase 1: ATLAS watches and tells Miro things. It does not act.
 
     Default ON, and deliberately read at call time rather than captured at
     import, so flipping it is a restart and not a redeploy. It is enforced
@@ -127,7 +127,7 @@ def watch_only() -> bool:
     around it.
 
     Findings are still detected, proposals are still created and still reach
-    the owner — that is how he learns which alerts are noise and which thresholds
+    Miro — that is how he learns which alerts are noise and which thresholds
     are wrong. Nothing executes.
     """
     return os.getenv("ATLAS_WATCH_ONLY", "true").strip().lower() not in (
@@ -156,12 +156,12 @@ class ExecutionRequest:
 # once is the blast radius of a correlated incident. These two bound both.
 MODULE_MAX_PER_HOUR = int(os.getenv("ATLAS_MODULE_MAX_PER_HOUR", "10"))
 GLOBAL_MAX_PER_HOUR = int(os.getenv("ATLAS_GLOBAL_MAX_PER_HOUR", "30"))
-# the owner 2026-11-13: the home cameras sent 75 of ~1,200 alerts in 14 h because the shared
+# Miro 2026-11-13: the home sensors sent 75 of ~1,200 alerts in 14 h because the shared
 # 10-an-hour module ceiling ate them (a car moved on the 2nd driveway and nothing came).
-# Cameras get their own, larger allowance; the per-alert caps in cameras/alerts.py and
+# Sensors get their own, larger allowance; the per-alert caps in sensors/alerts.py and
 # clip_alerts.py still bound it. A rate limit, not a permission: tiers are unchanged.
 MODULE_CEILINGS: dict[str, int] = {
-    "cameras": int(os.getenv("ATLAS_CAMERAS_MAX_PER_HOUR", "60"))}
+    "sensors": int(os.getenv("ATLAS_SENSORS_MAX_PER_HOUR", "60"))}
 
 
 def _module_of(action: str) -> str:
@@ -193,7 +193,7 @@ def _record_run(name: str) -> None:
     whether an action ran."""
     now = time.monotonic()
     module = _module_of(name)
-    # a module with its own ceiling (cameras) does not spend the shared global budget,
+    # a module with its own ceiling (sensors) does not spend the shared global budget,
     # so raising its allowance never lowers or raises anyone else's
     keys = (name, f"module:{module}") if module in MODULE_CEILINGS else (
         name, f"module:{module}", "global:")
@@ -303,7 +303,7 @@ async def execute(req: ExecutionRequest) -> ActionResult:
     if getattr(action, "principal_only", False) and (
             (req.approved_by or "").split(":", 1)[0] not in PRINCIPAL_ORIGINS):
         await audit("execute.refused", req.action, {"why": "principal only"})
-        return ActionResult(False, "refused: only the owner, asking directly, can run this",
+        return ActionResult(False, "refused: only Miro, asking directly, can run this",
                             failure_class=FailureClass.POLICY,
                             dispatched=False)
 
@@ -328,7 +328,7 @@ async def execute(req: ExecutionRequest) -> ActionResult:
     if req.approved_version is not None:
         try:
             current = REGISTRY.action_version(req.action)
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             current = None
         if current != req.approved_version:
             await audit("execute.superseded", req.action, {
@@ -344,7 +344,7 @@ async def execute(req: ExecutionRequest) -> ActionResult:
     if req.approved_payload_hash is not None:
         try:
             now_hash = payload_hash(req.params)
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             now_hash = None
         if now_hash != req.approved_payload_hash:
             await audit("execute.superseded", req.action, {
@@ -384,7 +384,7 @@ async def execute(req: ExecutionRequest) -> ActionResult:
     module = _module_of(req.action)
     # The kill switch (kernel.pause): durable, global, per module, or per
     # account of a module that posts as several (`instagram:clips`), lifted
-    # only by the owner. Unreadable state is a stop, not a go.
+    # only by Miro. Unreadable state is a stop, not a go.
     from . import pause as _pause
     try:
         stopped = await _pause.active_for(
@@ -428,7 +428,7 @@ async def execute(req: ExecutionRequest) -> ActionResult:
     if qa_gate.gated(req.action):
         try:
             await qa_gate.require(req.action, req.params)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             await audit("execute.qa_held", req.action, {"why": str(exc)[:300]})
             return ActionResult(False, f"QA: {exc}", failure_class=FailureClass.QUALITY,
                                 dispatched=False)
@@ -549,7 +549,7 @@ async def _verify_after(req: ExecutionRequest, result: ActionResult) -> None:
 async def preview(action_name: str, params: dict[str, Any]) -> ActionResult:
     """Run an action's dry run and nothing else.
 
-    The approvals page must show the dry-run output BEFORE the owner decides, but
+    The approvals page must show the dry-run output BEFORE Miro decides, but
     `execute` only dry-runs after approval — at display time there was nothing
     to show. This produces that preview.
 

@@ -181,8 +181,8 @@ async def test_the_breaker_pauses_the_module_with_one_line_and_resume_clears_it(
     assert status[0].endswith("paused") and len(await book.trades()) == before
     assert len([m for m in world.sent if m.title == "Futures paper breaker"]) == 1
     assert (await book.state())["halted"]
-    # the owner resumes: the halt clears and the peak restarts from here.
-    assert (await pause.resume("futures", "owner")).startswith("Resumed")
+    # Miro resumes: the halt clears and the peak restarts from here.
+    assert (await pause.resume("futures", "miro")).startswith("Resumed")
     monkeypatch.setattr(book, "FORWARD", Policy(resume_next_session=False))
     await _feed(world, [n])
     st = await book.state()

@@ -57,7 +57,7 @@ def _tier_of(payload: Any) -> int | None:
         data = json.loads(payload) if isinstance(payload, str) else dict(payload)
         tier = (data.get("data") or {}).get("tier")
         return int(tier) if tier is not None else None
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -127,7 +127,7 @@ async def _read_verify(since: datetime) -> list[Any]:
 async def _section(name: str, errors: dict[str, str], coro: Any) -> Any:
     try:
         return await coro
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("the brain could not read %s: %s", name, why)
         errors[name] = why
@@ -143,7 +143,7 @@ def _facts() -> dict[str, ActionFacts]:
     try:
         from ..channels.slack import SlackChannel
         home_for = SlackChannel().home_for
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         home_for = None
     out: dict[str, ActionFacts] = {}
     for name, spec in REGISTRY.actions.items():
@@ -202,7 +202,7 @@ async def build(now: datetime | None = None) -> dict[str, Any]:
     verify_rows = await _section("verify", errors, _read_verify(since))
     try:
         paused = await pause.active()
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         errors["paused"] = explain(exc)
         paused = None
 

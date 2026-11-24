@@ -1,6 +1,6 @@
 """The AI-stories reel's TikTok leg, through the Postiz Public API.
 
-the owner's choice (Task 55, relayed from production): TikTok is reached through
+Miro's choice (Task 55, relayed from production): TikTok is reached through
 Postiz, not ATLAS's own TikTok app, so the `TIKTOK_*` direct-API trio is not
 needed for this leg (the `tiktok` module's reads are untouched).
 
@@ -35,7 +35,7 @@ fails and nothing sent past a failure:
      daily metrics check reports it unread rather than binding anything. The skill
      documents `posts:missing` as answering `[{"id", "url"}]` (a cover URL,
      no text), so in practice no candidate matches and the leg stays "id
-     pending" for the owner to connect by hand: choosing among bare ids would be
+     pending" for Miro to connect by hand: choosing among bare ids would be
      a guess.
 
 **Undo.** While the Postiz post is still queued it is deleted
@@ -50,7 +50,7 @@ shape here is **assumed** from Postiz's public docs until it is seen live
 masked.
 
 **Two TikTok accounts, never crossed** (2026-09-28). The clips lane posts
-brand campaign clips to its own TikTok, @example_handle, through the same
+brand campaign clips to its own TikTok, @atlasclips12, through the same
 Postiz workspace. Which integration is which is never guessed:
 
   * the clips lane uses ONLY the integration `POSTIZ_TIKTOK_CLIPS_INTEGRATION`
@@ -58,7 +58,7 @@ Postiz workspace. Which integration is which is never guessed:
     `post_tiktok_clip`, which takes a lane-minted file (a plain `.mp4` in
     `<CLIPS_DATA_DIR>/<campaign>/out/`) and nothing else -- the same floor
     as the Instagram `clips` account and the YouTube `clips` channel. Unset,
-    the leg is "not configured" and the clip goes to the owner as a hand-off card;
+    the leg is "not configured" and the clip goes to Miro as a hand-off card;
   * the AI-stories lane never picks that integration, nor one named
     `atlasclips12`; and when more than one TikTok integration is left it
     takes the one named `atlasstories7` or refuses -- never "the first".
@@ -68,7 +68,7 @@ AI-made), no library music, and TikTok's branded-content toggle ON, since
 the post is a paid campaign's (its caption carries `#Ad` besides).
 
 **The clips YouTube channel, as Shorts** (2026-09-29). The clips lane also
-posts campaign clips to its YouTube channel AtlasClips (@example_handle) through
+posts campaign clips to its YouTube channel AtlasClips (@miroatlas) through
 the same Postiz workspace, via `post_youtube_clip` only -- the same
 lane-cut-file floor as the TikTok leg -- and ONLY to the integration
 `POSTIZ_YOUTUBE_CLIPS_INTEGRATION` names (its Postiz id or name), which must
@@ -101,12 +101,12 @@ KEY_ENV = "POSTIZ_API_KEY"
 TIKTOK_IDENTIFIERS: tuple[str, ...] = ("tiktok-business", "tiktok")
 # The clips lane's TikTok integration, by Postiz id or name. Never guessed.
 CLIPS_ENV = "POSTIZ_TIKTOK_CLIPS_INTEGRATION"
-CLIPS_HANDLE = "atlasclips12"       # @example_handle, the clips lane's TikTok
+CLIPS_HANDLE = "atlasclips12"       # @atlasclips12, the clips lane's TikTok
 STORIES_HANDLE = "atlasstories7"    # the AI-stories TikTok, as seen live
 # The clips lane's YouTube channel (Shorts), by Postiz id or name. Never
 # guessed, and never a TikTok integration.
 YT_CLIPS_ENV = "POSTIZ_YOUTUBE_CLIPS_INTEGRATION"
-YT_CLIPS_CHANNEL = "AtlasClips (@example_handle)"
+YT_CLIPS_CHANNEL = "AtlasClips (@miroatlas)"
 YOUTUBE_IDENTIFIERS: tuple[str, ...] = ("youtube",)
 YT_ACCOUNT = "clips-youtube"        # the account key `_post` knows it by
 YT_TITLE_MIN, YT_TITLE_MAX = 2, 100
@@ -161,7 +161,7 @@ CLIPS_YOUTUBE_SETTINGS: dict[str, Any] = {
 # A store promo on the clips TikTok (`post_tiktok_promo`) is ATLAS's own
 # AI-made reel, not brand content: these override CLIPS_TIKTOK_SETTINGS.
 PROMO_TIKTOK_FLAGS: dict[str, Any] = {"brand_content_toggle": False,
-                                      # the owner's own products: TikTok's "your
+                                      # Miro's own products: TikTok's "your
                                       # brand" commercial disclosure (the
                                       # growth plan, 2026-10-12), never the
                                       # paid-partnership toggle above.
@@ -515,7 +515,7 @@ def _read_file(path: str) -> bytes:
 
 async def post_tiktok_clip(path: str, caption: str
                            ) -> tuple[str, str, str | None, str | None]:
-    """A campaign clip to @example_handle: `(status, detail, postiz_post_id,
+    """A campaign clip to @atlasclips12: `(status, detail, postiz_post_id,
     post_url)`, the URL only when Postiz itself returned one for that
     account. Takes a PATH, and only one the clips lane cut -- the one way
     onto the clips integration. Never raises."""
@@ -550,7 +550,7 @@ def _promo_file(path: str) -> bool:
 
 async def post_tiktok_promo(path: str, caption: str
                             ) -> tuple[str, str, str | None, str | None]:
-    """The Academy store's promo reel to @example_handle -- the owner, 2026-10-05:
+    """The Academy store's promo reel to @atlasclips12 -- Miro, 2026-10-05:
     "post on clips too". The second and last way onto the clips TikTok
     integration, beside `post_tiktok_clip`: takes a PATH, and only a
     finished render in `content.DATA_DIR`, reached through
@@ -799,7 +799,7 @@ async def posts_between(start: datetime, end: datetime) -> list[dict[str, Any]]:
     `group`, `content`, `settings`, `tags`, `creationMethod` and
     `integration: {id, name, picture, providerIdentifier}`. For every TikTok
     post seen (`tiktok-business`, both accounts) `releaseURL` was the
-    PROFILE (`https://www.tiktok.com/@example_handle`), not the video, and
+    PROFILE (`https://www.tiktok.com/@atlasclips12`), not the video, and
     `releaseId` a `v_pub_url~v2.<n>` publish id, not a video id; a YouTube
     post's `releaseURL` was its `watch?v=` URL with `releaseId` the video id.
     The items' text is untrusted and never reaches a prompt."""
@@ -871,7 +871,7 @@ async def post_metrics(post_id: str) -> tuple[dict[str, float | None] | None, st
 
 # ------------------------------------------------------------- YouTube Shorts
 
-# the owner, 2026-09-29: the AI reels go to YouTube Shorts too, curated (three a
+# Miro, 2026-09-29: the AI reels go to YouTube Shorts too, curated (three a
 # week), through Postiz only -- ATLAS holds no Google token for this. The
 # integration is the one `POSTIZ_YOUTUBE_INTEGRATION` names (its Postiz id,
 # or its name); never guessed, never "the first".

@@ -19,13 +19,13 @@ class Store:
 
     def __init__(self) -> None:
         self.rows = {
-            1: {"id": 1, "namespace": "biz.mmt", "content": "MMT tutor rate is 30",
-                "source": "whatsapp", "business": "mmt",
+            1: {"id": 1, "namespace": "biz.tutorco", "content": "TUTORCO tutor rate is 30",
+                "source": "whatsapp", "business": "tutorco",
                 "at": datetime(2026, 11, 3, tzinfo=UTC), "deleted_at": None},
-            2: {"id": 2, "namespace": "owner", "content": "the owner prefers short replies",
+            2: {"id": 2, "namespace": "owner", "content": "Miro prefers short replies",
                 "source": "portal", "business": None,
                 "at": datetime(2026, 11, 4, tzinfo=UTC), "deleted_at": None},
-            3: {"id": 3, "namespace": "vault", "content": "MMT lease runs to June",
+            3: {"id": 3, "namespace": "vault", "content": "TUTORCO lease runs to June",
                 "source": None, "business": None,
                 "at": datetime(2026, 10, 1, tzinfo=UTC), "deleted_at": None},
         }
@@ -141,12 +141,12 @@ async def test_another_namespace_cannot_be_touched(store):
 
 
 async def test_remember_that_keeps_a_note_with_its_source(store):
-    res = await chat_commands.run("Remember that the MMT invoice day is the 5th",
+    res = await chat_commands.run("Remember that the TUTORCO invoice day is the 5th",
                                   "SM3")
     assert "remember" in res.lower()
     new = max(store.rows)
     assert store.rows[new]["source"] == "whatsapp"
-    assert store.rows[new]["content"] == "the MMT invoice day is the 5th"
+    assert store.rows[new]["content"] == "the TUTORCO invoice day is the 5th"
 
 
 async def test_remember_refuses_a_secret(store):
@@ -155,12 +155,12 @@ async def test_remember_refuses_a_secret(store):
 
 
 async def test_correct_replaces_and_hides_the_old_note(store):
-    res = await chat_commands.run("correct tutor rate: MMT tutor rate is 35", "SM4")
+    res = await chat_commands.run("correct tutor rate: TUTORCO tutor rate is 35", "SM4")
     assert "Corrected" in res
     assert store.rows[1]["deleted_at"] is not None
     new = max(store.rows)
-    assert store.rows[new]["namespace"] == "biz.mmt"
-    assert store.rows[new]["content"] == "MMT tutor rate is 35"
+    assert store.rows[new]["namespace"] == "biz.tutorco"
+    assert store.rows[new]["content"] == "TUTORCO tutor rate is 35"
 
 
 async def test_what_do_you_know_lists_source_and_date_and_is_read_only(
@@ -169,7 +169,7 @@ async def test_what_do_you_know_lists_source_and_date_and_is_read_only(
         raise AssertionError("a read must not call the executor")
     monkeypatch.setattr(owner_memory, "execute", boom)
     res = await chat_commands.run("What do you know about the tutor rate?", "SM5")
-    assert "whatsapp, 2026-11-03" in res and "MMT tutor rate is 30" in res
+    assert "whatsapp, 2026-11-03" in res and "TUTORCO tutor rate is 30" in res
     assert "not live readings" in res
 
 

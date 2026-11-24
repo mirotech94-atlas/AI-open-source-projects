@@ -17,7 +17,7 @@ const Bust = lazy(() =>
 
 /**
  * The companion: ATLAS in its own window (/Applications/ATLAS.app opens
- * this page as a Chrome app). the owner, 2026-09-28: "a downloadable application
+ * this page as a Chrome app). Miro, 2026-09-28: "a downloadable application
  * that shows the humanoid talking to me and a few data and agent modes on
  * the side".
  *

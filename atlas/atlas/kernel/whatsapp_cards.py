@@ -1,15 +1,15 @@
-"""Every pending Tier 2 approval card also reaches the owner's WhatsApp.
+"""Every pending Tier 2 approval card also reaches Miro's WhatsApp.
 
 A card is already copied to WhatsApp the moment it is raised (approvals.propose
 -> `_whatsapp_card`), but that copy is fire-and-forget in one process: a restart,
 a refused send or a card raised before WhatsApp was configured left a pending card
-on the portal that the owner never heard about. This is the catch-up sweep behind it.
+on the portal that Miro never heard about. This is the catch-up sweep behind it.
 
 Off unless `WHATSAPP_CARDS=on` (default off).
 
 How it stays inside CLAUDE.md:
   * read-only scan of `proposals`; the only send is the Tier 1 action
-    `mmt.notify_card`, reached through `executor.execute` (invariant 1);
+    `tutorco.notify_card`, reached through `executor.execute` (invariant 1);
   * the message is built in code from the card (never the reasoner's text). Every
     Tier 2 card `wa_approvals.eligibility` accepts carries a one-time code and Approve /
     Decline buttons (plain YES/NO text if the template is unavailable); a card it refuses
@@ -19,7 +19,7 @@ How it stays inside CLAUDE.md:
   * once per card: the sweep claims `whatsapp.card.try` before it sends and keeps
     it once a message may have gone out; a certain non-send (not configured, a
     refused send) frees it, at most 3 tries per card per process. It skips any card
-    `mmt.notify_card` already claimed (so the at-creation copy and the sweep never
+    `tutorco.notify_card` already claimed (so the at-creation copy and the sweep never
     double up);
   * first run only: of the newest 40 pending cards seen, at most the 5 newest are
     sent, the rest are marked as handled and never messaged (the marker is taken
@@ -43,7 +43,7 @@ from .executor import ExecutionRequest, execute, watch_only
 
 log = logging.getLogger("atlas.whatsapp_cards")
 
-ACTION = "mmt.notify_card"
+ACTION = "tutorco.notify_card"
 TRY_ACTION = "whatsapp.card.try"
 SLACK_ACTION = "whatsapp.card.slack"
 CATCHUP_KEY = ("whatsapp.cards.catchup", "done")
@@ -75,7 +75,7 @@ async def window_state(now: datetime) -> bool | None:
     from .whatsapp_alerts import WINDOW, _last_inbound
     try:
         at = await _last_inbound()
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("cards: last inbound unreadable: %s", type(exc).__name__)
         return None
     return at is not None and now - at <= WINDOW
@@ -83,7 +83,7 @@ async def window_state(now: datetime) -> bool | None:
 
 def setup_problem() -> str | None:
     """Why no card can be sent at all (no owner number or Twilio sender)."""
-    from ..modules.mmt import notify
+    from ..modules.tutorco import notify
     return notify._problem("post_decision_pending", "card")
 
 
@@ -99,7 +99,7 @@ async def _pending(now: datetime) -> list[dict[str, Any]]:
         """SELECT p.id, p.action, p.created_at FROM proposals p
             WHERE p.status = 'pending' AND p.tier >= $1 AND p.expires_at > $2
               AND NOT EXISTS (SELECT 1 FROM effect_claims e
-                               WHERE e.action = 'mmt.notify_card'
+                               WHERE e.action = 'tutorco.notify_card'
                                  AND e.key = 'card:' || p.id::text)
               AND NOT EXISTS (SELECT 1 FROM effect_claims e
                                WHERE e.action = $3 AND e.key = p.id::text)
@@ -159,7 +159,7 @@ async def _slack_note(pid: int, why: str) -> bool:
             title=f"Card #{pid} is waiting",
             body=f"Card #{pid} is waiting for your decision on the portal "
                  f"({why}).", severity=Severity.NORMAL, kind="alert", topic="alerts"))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("cards: the Slack note failed: %s", type(exc).__name__)
         return False
     if used:
@@ -174,7 +174,7 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
     now = now or datetime.now(UTC)
     try:
         cards = await _pending(now)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("cards: proposals unreadable: %s", type(exc).__name__)
         return {"error": "unreadable"}
     if not cards:
@@ -183,7 +183,7 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
     if watch_only():
         if not _watch_logged:
             _watch_logged = True
-            log.info("whatsapp cards: ATLAS_WATCH_ONLY is on, would tell the owner about "
+            log.info("whatsapp cards: ATLAS_WATCH_ONLY is on, would tell Miro about "
                      "%d pending card(s)", len(cards))
         return {"watch_only": True, "would_send": len(cards)}
     _watch_logged = False
@@ -212,7 +212,7 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
                 await _skip_silently(int(old["id"]))
                 skipped += 1
             cards = cards[:CATCHUP_MAX]
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("cards: catch-up marker unreadable: %s", type(exc).__name__)
         return {"error": "unreadable"}
     sent = 0
@@ -222,7 +222,7 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
             if await sent_last_hour() >= per_hour():
                 log.info("whatsapp cards: hourly cap reached")
                 break
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("cards: cap unreadable: %s", type(exc).__name__)
             break
         if not await _claim(TRY_ACTION, str(pid)):

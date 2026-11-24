@@ -1,4 +1,4 @@
-"""Nora markets the owner's course (2026-09-29): organic posts, one card each,
+"""Nora markets Miro's course (2026-09-29): organic posts, one card each,
 honest by rule, priced live, tagged for attribution, capped, measured."""
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ from atlas.modules.content import postiz
 from atlas.modules.course import channels, compose, data, honesty, measure, posts
 from atlas.modules.course import price as live
 
-URL = "https://academy-store.myshopify.example/products/build-a-safe-ai-operator-the-course"
+URL = "https://atlasacademy-ai.myshopify.com/products/build-a-safe-ai-operator-the-course"
 T0 = datetime(2026, 9, 29, 18, 30, tzinfo=UTC)
 PRICE = live.Price(Decimal("20.00"), Decimal("49.00"), T0, available=True)
 WORDS = {lang: PRICE.words(lang) for lang in honesty.LANGUAGES}
@@ -86,7 +86,7 @@ def test_course_is_a_marketing_business():
     from atlas.modules import marketing
     assert "course" in marketing.BUSINESSES
     assert data.BUSINESS == "course"
-    assert data.product()["store"] == "https://academy-store.myshopify.example"
+    assert data.product()["store"] == "https://atlasacademy-ai.myshopify.com"
 
 
 # ------------------------------------------------------------------ honesty
@@ -175,7 +175,7 @@ def test_utm_tags_replace_old_ones_and_refuse_anything_off_the_store():
     link = data.utm_url(URL + "?utm_source=ads&variant=1", "x", 5)
     assert data.utm_of(link)["utm_source"] == "x"
     assert "variant=1" in link
-    for bad in ("https://example.com/p", "http://academy-store.myshopify.example/p"):
+    for bad in ("https://example.com/p", "http://atlasacademy-ai.myshopify.com/p"):
         with pytest.raises(ValueError):
             data.utm_url(bad, "x", 5)
     for platform, exp in (("X Ads", 5), ("x", 0), ("x", True)):
@@ -197,7 +197,7 @@ INTEGRATIONS = [
     {"id": "ig1", "identifier": "instagram", "name": "atlas.clipsdrop"},
     {"id": "x1", "identifier": "x", "name": "atlasacademy"},
     {"id": "x2", "identifier": "x", "name": "atlas_clips"},
-    {"id": "li1", "identifier": "linkedin", "name": "the owner "},
+    {"id": "li1", "identifier": "linkedin", "name": "Miro Mekhael"},
     {"id": "th1", "identifier": "threads", "name": "atlas.clipsdrop"},
     {"id": "bs1", "identifier": "bluesky", "name": "atlas", "disabled": True},
     {"id": "yt1", "identifier": "youtube", "name": "ATLAS"},
@@ -339,7 +339,7 @@ def test_an_unreadable_price_is_unknown_never_guessed(payload):
 async def test_the_reader_reads_only_the_store(monkeypatch):
     p = await live.read_price("https://example.com/products/x.json")
     assert not p.read and "own store" in p.why
-    p = await live.read_price("http://academy-store.myshopify.example/x.json")
+    p = await live.read_price("http://atlasacademy-ai.myshopify.com/x.json")
     assert not p.read and "https" in p.why
 
 
@@ -367,7 +367,7 @@ async def test_approval_refuses_changed_text_and_the_wrong_card_kind(monkeypatch
     why, _ = await posts._approval_refusal(post, 7, "other", handoff=True)
     assert "changed since the card" in why
     why, _ = await posts._approval_refusal(post, 7, "text", handoff=False)
-    assert "handed to the owner" in why
+    assert "handed to Miro" in why
 
 
 # ------------------------------------------------------------------ translations
@@ -581,7 +581,7 @@ async def test_a_store_that_never_sent_posthog_an_event_is_unknown_not_zero(
     monkeypatch.setattr(posthog, "hogql", hogql)
     found, why = await measure.read(42)
     assert found is None and "never sent PostHog an event" in why
-    assert "academy-store.myshopify.example" in asked[0]
+    assert "atlasacademy-ai.myshopify.com" in asked[0]
 
 
 async def test_utm_tagged_store_visits_are_read_with_their_time(monkeypatch):

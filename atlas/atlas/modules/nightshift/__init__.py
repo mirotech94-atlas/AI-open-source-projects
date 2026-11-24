@@ -12,7 +12,7 @@ container and deletes the pushed branch, or fails and says it could not.
 It runs only against a repository listed in `NIGHTSHIFT_REPOS`
 (comma-separated `host/owner/name`); anything else is refused before the
 git token is used, and the URL cloned is rebuilt from the list. `nightshift.merge`
-accepts a GitLab merge request for that branch once the owner has looked at the
+accepts a GitLab merge request for that branch once Miro has looked at the
 diff; merging cannot be undone by anything this module offers, so it is
 Tier ASK and `irreversible=True`. ATLAS's own repository is never on the
 list: an entry naming atlas is dropped from `allowed_repos`, whatever
@@ -29,7 +29,7 @@ that would race the container's own cleanup.
 
 Assumes: docker is installed on the host running ATLAS; a `nightshift`
 docker network with an egress allow-list already exists (a host action for
-the owner — see `bootstrap/nightshift/README.md`, this module never creates
+Miro — see `bootstrap/nightshift/README.md`, this module never creates
 infrastructure); the `atlas-nightshift` image is built from
 `bootstrap/nightshift/Dockerfile`; and, for `nightshift.merge`, a GitLab
 token (GITLAB_TOKEN / GITLAB_WORK_TOKEN, by the repo's host) that may open
@@ -255,7 +255,7 @@ async def run_rollback(token: str) -> ActionResult:
                 False, f"stopped job {job_id}, but could not delete {branch} "
                        f"from {url}: {why}")
         return ActionResult(True, f"stopped nightshift job {job_id}; {why}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return ActionResult(False, f"nightshift rollback failed: {explain(exc)}")
 
@@ -368,7 +368,7 @@ async def merge(job_id: int) -> ActionResult:
 
 
 async def merge_dry(job_id: int) -> ActionResult:
-    """Reads Postgres only. Names the pinned commit, so the card the owner
+    """Reads Postgres only. Names the pinned commit, so the card Miro
     approves says exactly what will be merged."""
     job, why = await _mergeable(int(job_id))
     if job is None:
@@ -382,7 +382,7 @@ async def merge_dry(job_id: int) -> ActionResult:
 # How long after a job finished its pin may still be read, when the read at
 # finish time failed (a GitLab blip, a token missing Repository: Read). Kept
 # short: a later read could capture a push made after the job finished. The
-# card names whatever was pinned, so the owner approves exactly that commit.
+# card names whatever was pinned, so Miro approves exactly that commit.
 PIN_RETRY_WINDOW = timedelta(hours=2)
 
 
@@ -405,7 +405,7 @@ async def _pin_head(job_id: int, repo: str, branch: str) -> bool:
             "UPDATE nightshift_jobs SET head_sha = $1 WHERE id = $2 "
             "AND head_sha IS NULL", sha.lower(), job_id)
         return True
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("nightshift job %s: could not pin %s: %s", job_id, branch,
                     gitlab._gitlab_reason(exc))
         return False
@@ -420,7 +420,7 @@ async def _retry_pins(now: datetime) -> None:
             "SELECT id, repo, branch FROM nightshift_jobs WHERE status = 'done' "
             "AND kind = 'code' AND head_sha IS NULL AND finished_at >= $1",
             now - PIN_RETRY_WINDOW)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("nightshift: could not look for unpinned jobs: %s", exc)
         return
     for row in rows:
@@ -489,7 +489,7 @@ async def _refresh_recent_lines(now: datetime) -> None:
             "SELECT task, repo, branch, status, preview_url, kind "
             "FROM nightshift_jobs WHERE status IN ('done', 'failed') "
             "AND finished_at >= $1", now - timedelta(days=1))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         _recent_lines[:] = [f"Night shift: could not read jobs — {exc}"]
         _recent_at = now
         return
@@ -510,7 +510,7 @@ async def _refresh_recent_lines(now: datetime) -> None:
         else:
             # Never dressed up. A failed overnight run says FAILED, plainly,
             # with nowhere the reasoner could soften it before it reaches
-            # the owner.
+            # Miro.
             lines.append(f"Night shift: {row['task']} FAILED — see log")
     _recent_lines[:] = lines
     _recent_at = now
@@ -529,7 +529,7 @@ async def check_jobs() -> Observation:
         running_rows = await fetch_all(
             "SELECT id, container, at, task, repo, branch "
             "FROM nightshift_jobs WHERE status = 'running'")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("jobs", Health.UNKNOWN,
                            detail=f"could not read nightshift_jobs: {exc}")
 

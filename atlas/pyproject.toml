@@ -15,13 +15,11 @@ dependencies = [
   "numpy>=2.0", "scikit-learn>=1.5",
   # ytlearn: keyless YouTube caption reader, imported only when a video is read.
   "youtube-transcript-api>=1.2.5",
-  # Home cameras, household recognition (atlas/modules/cameras): AES-GCM for the
-  # stored face data, and OpenCV's YuNet + SFace (CPU, local, no cloud model).
-  "cryptography>=44", "opencv-python-headless>=4.10",
+  "cryptography>=44",
 ]
 
 # Not a runtime dependency of the API container, which never opens a browser.
-# The Fiverr login helper does, on the owner's Mac, because Fiverr has no API and
+# The Fiverr login helper does, on Miro's Mac, because Fiverr has no API and
 # the only honest way in is a session a human established. Kept out of the
 # main list so the image does not carry a browser it will never launch.
 [project.optional-dependencies]

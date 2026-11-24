@@ -1,0 +1,88 @@
+# The agency.storefront.test storefront on the Mac, loopback only
+# (docker-compose.local.yml `shop`, published on 127.0.0.1:8081).
+#
+# Plain HTTP on :80 inside the container: no certificates, no ACME, no admin
+# API. Files come from the latest `shop-build` (the `current` symlink inside
+# the build root must be RELATIVE, e.g. current -> 20261027-2100, or it points
+# at a path that does not exist in this container). /public/* goes to the API
+# with Host rewritten to api:8080, the name the API's host allowlist accepts.
+#
+# agency.storefront.test is served only through the `netbird` profile (docker-compose.local.yml),
+# published on the NetBird address of this Mac, never on a public address.
+#
+# Known limit: the store's chat sends `Origin: https://agency.storefront.test`, which
+# the API accepts (ACADEMY_PUBLIC_ORIGIN) but this plain-HTTP page does not use,
+# so the chat only works on https://agency.storefront.test via the `public` profile
+# (Caddyfile.public). The contact forms post to /public/agency/contact.
+# Previews (/preview/<slug>/) are served only by the public listener.
+{
+	admin off
+	auto_https off
+}
+
+http://localhost:8081, http://127.0.0.1:8081, http://agency.storefront.test {
+	handle /public/* {
+		reverse_proxy api:8080 {
+			header_up Host api:8080
+		}
+	}
+
+	# The old bare store paths (2026-11-16): the whole store now lives under
+	# /academy/, but paid, Stripe-return, receipt, recover and unsubscribe links
+	# already sent point at the bare paths. 308 keeps the method and, with {uri},
+	# the query string. Only the store's own top-level names are listed: the
+	# landing's /contact.js, /fonts/*, /thanks, /robots.txt, /sitemap.xml,
+	# /llms.txt, the store's /sitemap-academy.xml, /preview/*, /public/*, /media/*,
+	# /healthz and the webhooks are never redirected. A new store top-level name
+	# needs a line here (tests/test_academy_mount.py fails until it has one).
+	@oldstore {
+		path /catalog.json /assets /assets/* /free /free/* /blog \
+			/blog/* /videos /videos/* /updates /updates/* /lessons \
+			/lessons/* /join /join/* /recover /recover/* /help \
+			/help/* /terms /terms/* /privacy /privacy/* /refunds \
+			/refunds/* /contact /contact/* /all-four /all-four/* /safe-ai-operator \
+			/safe-ai-operator/* /sell-with-ai /sell-with-ai/* /ai-for-every-age /ai-for-every-age/* /30-business-lessons \
+			/30-business-lessons/* /family-ai-scam-defence-workbook /family-ai-scam-defence-workbook/* /local-business-automation-pack /local-business-automation-pack/* /claude-obsidian-vault-kit \
+			/claude-obsidian-vault-kit/*
+	}
+	redir @oldstore /academy{uri} 308
+
+	# The landing at / (no root index in the store build any more; the store
+	# home is /academy/). Same paths, CSP and `templates` as Caddyfile.public;
+	# templates only here, never for the store.
+	# The store home is the whole site (Miro, 2026-11-17): / serves the store's
+	# /academy/ page. The agency offer and its contact form moved to /agency/.
+	@home path / /index.html
+	handle @home {
+		rewrite * /academy/
+		root * /srv/shop/current
+		file_server
+	}
+
+	@landing {
+		path /agency /agency/ /thanks /thanks/ /thanks/* /robots.txt /sitemap.xml /llms.txt /mapfront-icon.png /contact.js /fonts/*
+	}
+	handle @landing {
+		header {
+			X-Frame-Options "DENY"
+			Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; script-src 'self'; connect-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
+		}
+		root * /srv/landing
+		@agencypage path /agency /agency/
+		rewrite @agencypage /index.html
+		templates
+		file_server {
+			hide .*
+		}
+	}
+
+	handle {
+		root * /srv/shop/current
+		file_server
+	}
+}
+
+# Any other Host (DNS rebinding) gets 421.
+http:// {
+	respond "misdirected" 421
+}

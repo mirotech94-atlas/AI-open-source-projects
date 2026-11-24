@@ -80,7 +80,7 @@ describe("Agency radial map", () => {
     const html = map(ok({ agents: nine }));
     expect(count(html, /data-agent="/g)).toBe(9);
     expect(html).toContain("9 agents");
-    expect(html).toContain('data-agent="mmt"');
+    expect(html).toContain('data-agent="tutorco"');
   });
   it("the count follows the read, not a constant", () => {
     const html = map(ok({ agents: nine.slice(0, 3) }));

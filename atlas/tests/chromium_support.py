@@ -18,5 +18,5 @@ def chromium_ready() -> bool:
     try:
         with sync_playwright() as p:
             return os.path.exists(p.chromium.executable_path)
-    except Exception:  # noqa: BLE001 - any failure to start means "not here"
+    except Exception:  # noqa: BLE001
         return False

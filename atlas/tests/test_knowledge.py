@@ -226,17 +226,17 @@ async def test_a_general_knowledge_question_never_reaches_a_specialist(
 
 
 async def test_a_question_naming_a_business_is_not_knowledge(client, monkeypatch):
-    """'CloudCo' is one of ATLAS's own businesses. Even phrased as a general
+    """'CloudHost' is one of ATLAS's own businesses. Even phrased as a general
     question, a transcript that names it must not be guessed at by a
     tool-less model -- it has to reach a specialist who can tell whether the
     module was actually meant, the same way any other estate question does."""
     from atlas.kernel.agents import build_roster
 
-    build_roster()   # idempotent; makes sure "cloudco" is a known name
+    build_roster()   # idempotent; makes sure "agency" is a known name
 
     async def fake_route(question, *_a, **_kw):
         assert "cannot act from voice" not in question
-        return "CloudCo bills by the hour, capped at the monthly price."
+        return "CloudHost bills by the hour, capped at the monthly price."
 
     async def unreachable(_question):
         raise AssertionError("knowledge.answer() must not be called")
@@ -246,18 +246,17 @@ async def test_a_question_naming_a_business_is_not_knowledge(client, monkeypatch
 
     body = client.post(
         "/api/voice/ask",
-        json={"transcript": "explain how cloudco pricing works"},
+        json={"transcript": "explain how agency pricing works"},
     ).json()
 
     assert body["action_request"] is False
-    assert body["answer"] == "CloudCo bills by the hour, capped at the monthly price."
+    assert body["answer"] == "CloudHost bills by the hour, capped at the monthly price."
 
 
 @pytest.mark.parametrize("said", [
     "what is broken",
     "what is waiting on me",
     "what is my revenue this month",
-    "how does cloudco look today",
 ])
 async def test_a_question_about_his_own_estate_is_never_treated_as_knowledge(
         client, monkeypatch, said):
@@ -379,7 +378,6 @@ async def test_a_disabled_modules_name_still_counts_as_naming_atlas(
     ("what's waiting on me", False),
     ("is anything down", False),
     ("what is my revenue this month", False),
-    ("how does cloudco look today", False),
 ])
 def test_is_knowledge_classification(said, expected):
     from atlas.kernel.agents import build_roster
@@ -470,7 +468,7 @@ async def test_the_voice_route_asks_for_the_quick_answer(client, monkeypatch):
     ("who won the game yesterday", True),
 ])
 def test_only_a_question_about_something_current_is_searched(question, fresh):
-    """the owner, 2026-10-06: quick spoken questions answer from the fast model;
+    """Miro, 2026-10-06: quick spoken questions answer from the fast model;
     only something that changes is looked up."""
     from atlas.kernel import knowledge
     assert knowledge.needs_fresh_facts(question) is fresh

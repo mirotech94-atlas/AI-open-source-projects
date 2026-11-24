@@ -26,7 +26,7 @@ def client(monkeypatch, memory_backend):
     monkeypatch.setenv("DASHBOARD_PASSWORD_HASH", auth.hash_password("x" * 14))
     monkeypatch.setenv("MESH_ALLOWED_CIDRS", "0.0.0.0/0")
     monkeypatch.setenv("SLACK_SIGNING_SECRET", SECRET)
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     from atlas.api.main import app
 
@@ -51,10 +51,10 @@ def post(client, payload: dict, *, secret=SECRET, retry: str = ""):
     return client.post("/webhooks/slack/events", content=raw, headers=headers)
 
 
-def message(text: str, user: str = "UOWNER", **extra) -> dict:
+def message(text: str, user: str = "UMIRO", **extra) -> dict:
     return {"type": "event_callback",
             "event": {"type": "message", "text": text, "user": user,
-                      "channel": "C0SLACKCH04", "ts": "1.2", **extra}}
+                      "channel": "C0C3RK8RS2E", "ts": "1.2", **extra}}
 
 
 @pytest.fixture
@@ -129,7 +129,7 @@ def test_atlas_own_cards_are_never_read_as_commands(client, decisions,
 
 
 def test_chatter_is_ignored(client, decisions, memory_backend):
-    decided, replied = decisions
+    decided, replied = decisions  # noqa: RUF059
     memory_backend.responses["SELECT id, action FROM proposals"] = [
         {"id": 82, "action": "gitlab.open_issue"}]
     from atlas.api import slack_events
@@ -165,7 +165,7 @@ def test_a_retry_of_an_event_already_taken_is_dropped(client, decisions,
     r = post(client, event, retry="1")
     settle()
     assert r.json().get("ignored") == "duplicate"
-    assert decided == [(82, "approve", "slack:UOWNER")]
+    assert decided == [(82, "approve", "slack:UMIRO")]
 
 
 def test_a_retry_whose_first_delivery_never_arrived_is_taken(client, decisions,
@@ -179,7 +179,7 @@ def test_a_retry_whose_first_delivery_never_arrived_is_taken(client, decisions,
     r = post(client, message("approve 82") | {"event_id": "EvR2"}, retry="2")
     assert r.status_code == 200
     settle()
-    assert decided == [(82, "approve", "slack:UOWNER")]
+    assert decided == [(82, "approve", "slack:UMIRO")]
 
 
 # --------------------------------------------------------------- approving
@@ -192,7 +192,7 @@ def test_do_it_approves_the_only_pending_proposal(client, decisions,
     r = post(client, message("do it"))
     assert r.status_code == 200
     settle()
-    assert decided == [(82, "approve", "slack:UOWNER")]
+    assert decided == [(82, "approve", "slack:UMIRO")]
     assert replied and replied[0].thread == "1.2"
     assert "#82" in replied[0].body
 
@@ -203,7 +203,7 @@ def test_a_named_proposal_wins_over_the_latest(client, decisions,
                                                 memory_backend, text):
     decided, _ = decisions
     memory_backend.responses["SELECT id, action FROM proposals"] = [
-        {"id": 99, "action": "cloudco.snapshot_all"}]
+        {"id": 99, "action": "cloudhost.snapshot_all"}]
     post(client, message(text))
     settle()
     assert decided and decided[0][0] == 82
@@ -214,7 +214,7 @@ def test_two_pending_and_none_named_asks_rather_than_guesses(
     """Guessing which of two cards he meant is how the wrong thing runs."""
     decided, replied = decisions
     memory_backend.responses["SELECT id, action FROM proposals"] = [
-        {"id": 99, "action": "cloudco.snapshot_all"},
+        {"id": 99, "action": "cloudhost.snapshot_all"},
         {"id": 82, "action": "gitlab.open_issue"}]
     post(client, message("go ahead"))
     settle()
@@ -238,7 +238,7 @@ def test_no_typed_declines_the_latest(client, decisions, memory_backend):
         {"id": 82, "action": "gitlab.open_issue"}]
     post(client, message("leave it"))
     settle()
-    assert decided == [(82, "decline", "slack:UOWNER")]
+    assert decided == [(82, "decline", "slack:UMIRO")]
 
 
 # ---------------------------------------------------------------- requests
@@ -274,8 +274,8 @@ def test_a_typed_request_in_a_dm_is_done(client, requests_made):
     post(client, message("block 30 minutes today at 12:00 to approve the "
                          "flycheap linkedin drafts", channel_type="im"))
     settle()
-    assert asked == [("block 30 minutes today at 12:00 to approve the flycheap "
-                      "linkedin drafts", "slack", "UOWNER")]
+    assert asked == [("block 30 minutes today at 12:00 to approve the flycheap "  # noqa: ISC004
+                      "linkedin drafts", "slack", "UMIRO")]
     assert replied and "Doing it now" in replied[0]
 
 
@@ -287,7 +287,7 @@ def test_a_request_naming_atlas_in_any_channel_is_done(client, requests_made):
 
 
 def test_any_channel_is_a_conversation_with_atlas(client, requests_made):
-    """the owner, 2026-09-27: every channel in ATLAS's workspace should talk
+    """Miro, 2026-09-27: every channel in ATLAS's workspace should talk
     back. An approver's message in any channel ATLAS is in is for ATLAS."""
     asked, _ = requests_made
     post(client, message("block 30 minutes at 12:00 for the flycheap drafts",
@@ -337,7 +337,7 @@ def test_an_action_nothing_can_do_goes_to_the_solver(client, monkeypatch):
 
     async def fake_solve(text, *, who, channel, thread):
         solved.append((text, who, channel, thread))
-        return "CPU isn't reported by Roots. Written up for the coding agent — card #7."
+        return "CPU isn't reported by Attendance. Written up for the coding agent — card #7."
 
     async def fake_notify(msg):
         replied.append(msg.body)
@@ -349,8 +349,8 @@ def test_an_action_nothing_can_do_goes_to_the_solver(client, monkeypatch):
                          channel_type="im"))
     settle()
     assert solved and solved[0][0] == "can you optimize my cpu for attendace bot server"
-    assert solved[0][1] == "UOWNER"
-    assert replied and replied[0].startswith("CPU isn't reported by Roots")
+    assert solved[0][1] == "UMIRO"
+    assert replied and replied[0].startswith("CPU isn't reported by Attendance")
     assert "file it" in replied[0]
 
 
@@ -364,7 +364,7 @@ def test_a_non_approver_request_is_ignored(client, requests_made):
 
 def test_a_knowledge_question_in_slack_is_answered_from_knowledge_not_no_action(
         client, requests_made, monkeypatch):
-    """the owner, 2026-09-25: Perplexity as the model behind Slack answers, so a
+    """Miro, 2026-09-25: Perplexity as the model behind Slack answers, so a
     factual question gets an accurate, sourced answer -- the same knowledge
     route the voice uses -- instead of "I don't have an action that does
     that"."""
@@ -435,7 +435,7 @@ def test_a_request_that_reads_like_a_question_still_runs_as_a_request(
 
 
 def test_the_reply_outbound_carries_the_origin_channel(client, monkeypatch):
-    """Asked in #cloudco, answered in #cloudco, under the question (2026-09-27:
+    """Asked in #cloudhost, answered in #cloudhost, under the question (2026-09-27:
     the answer went to #atlas-decisions instead)."""
     import asyncio as _asyncio
 
@@ -456,8 +456,8 @@ def test_the_reply_outbound_carries_the_origin_channel(client, monkeypatch):
     monkeypatch.setattr("atlas.kernel.comms.notify", fake_notify)
     monkeypatch.setattr(slack_events, "_is_conversation", lambda t: False)
     monkeypatch.setattr(slack_events, "_is_knowledge_question", lambda t: False)
-    _asyncio.run(slack_events._request("how many servers", "UOWNER", "CCLOUDCO", "7.7"))
-    assert got and got[0].channel == "CCLOUDCO" and got[0].thread == "7.7"
+    _asyncio.run(slack_events._request("how many servers", "UMIRO", "CCLOUDHOST", "7.7"))
+    assert got and got[0].channel == "CCLOUDHOST" and got[0].thread == "7.7"
 
 
 # ------------------------------------------------ typed decisions, end to end
@@ -540,7 +540,7 @@ def test_yes_in_the_thread_of_an_atlas_card_approves_that_card(
     _parent_is(monkeypatch, _rendered_card(83, "File an issue"))
     post(client, message("yes", ts="1.5", thread_ts="1.0"))
     settle()
-    assert decided == [(83, "approve", "slack:UOWNER")]
+    assert decided == [(83, "approve", "slack:UMIRO")]
     assert replied[0].thread == "1.0", "the reply goes under the card, not his reply"
 
 
@@ -558,9 +558,9 @@ def test_yes_under_a_message_atlas_did_not_post_decides_nothing(
 def test_ack_in_an_alert_thread_mutes_that_check_and_approves_nothing(
         client, decisions, memory_backend, monkeypatch):
     decided, replied = decisions
-    _parent_is(monkeypatch, {"ts": "1.0", "bot_id": "B1", "text": "cloudco.balance is failing",
+    _parent_is(monkeypatch, {"ts": "1.0", "bot_id": "B1", "text": "cloudhost.balance is failing",
                              "blocks": [{"type": "actions", "elements": [
-                                 {"type": "button", "value": "ack:cloudco.balance"}]}]})
+                                 {"type": "button", "value": "ack:cloudhost.balance"}]}]})
     acked: list = []
 
     async def fake_ack(key, via, **kw):
@@ -570,7 +570,7 @@ def test_ack_in_an_alert_thread_mutes_that_check_and_approves_nothing(
     monkeypatch.setattr("atlas.kernel.acks.ack", fake_ack)
     post(client, message("ack", ts="1.5", thread_ts="1.0"))
     settle()
-    assert decided == [] and acked == [("cloudco.balance", "slack:UOWNER")]
+    assert decided == [] and acked == [("cloudhost.balance", "slack:UMIRO")]
     assert "No action executed" in replied[0].body
 
 
@@ -594,7 +594,7 @@ def test_a_strong_verb_still_takes_the_single_pending_proposal(
     _pending(memory_backend, 82)
     post(client, message("do it"))
     settle()
-    assert decided == [(82, "approve", "slack:UOWNER")]
+    assert decided == [(82, "approve", "slack:UMIRO")]
 
 
 def test_the_same_event_delivered_twice_is_acted_on_once(client, decisions,
@@ -610,7 +610,7 @@ def test_the_same_event_delivered_twice_is_acted_on_once(client, decisions,
     r = post(client, event)
     settle()
     assert r.json().get("ignored") == "duplicate"
-    assert decided == [(82, "approve", "slack:UOWNER")]
+    assert decided == [(82, "approve", "slack:UMIRO")]
 
 
 def test_an_event_already_in_the_audit_log_is_ignored_after_a_restart(
@@ -626,7 +626,7 @@ def test_an_event_already_in_the_audit_log_is_ignored_after_a_restart(
 
 def test_a_decision_typed_elsewhere_is_noted_under_the_card(client, decisions,
                                                           memory_backend, monkeypatch):
-    """Approve #82 from #cloudco: the receipt answers in #cloudco AND lands under
+    """Approve #82 from #cloudhost: the receipt answers in #cloudhost AND lands under
     the card, so the card never looks undecided."""
     from atlas.channels.slack import SlackChannel
     decided, replied = decisions
@@ -636,13 +636,13 @@ def test_a_decision_typed_elsewhere_is_noted_under_the_card(client, decisions,
     monkeypatch.setattr("atlas.kernel.comms.sent_ref",
                         lambda prefix, ch: "123.4" if prefix == "#82 — " else None)
     monkeypatch.setattr(SlackChannel, "channel_for", lambda self, topic: "CINFRA")
-    post(client, message("approve 82", channel="CCLOUDCO", ts="9.1"))
+    post(client, message("approve 82", channel="CCLOUDHOST", ts="9.1"))
     settle()
-    assert decided == [(82, "approve", "slack:UOWNER")]
-    here = [m for m in replied if m.channel == "CCLOUDCO"]
+    assert decided == [(82, "approve", "slack:UMIRO")]
+    here = [m for m in replied if m.channel == "CCLOUDHOST"]
     card = [m for m in replied if m.thread == "123.4"]
     assert here and here[0].thread == "9.1"
-    assert card and "Decided in <#CCLOUDCO>" in card[0].body
+    assert card and "Decided in <#CCLOUDHOST>" in card[0].body
 
 
 def test_a_decision_in_the_cards_own_channel_is_not_echoed(client, decisions,
@@ -799,7 +799,7 @@ async def test_a_thread_parent_counts_only_when_atlas_posted_it(monkeypatch):
                         history({"ts": "1.0", "bot_id": "BOTHER", "text": "x"}))
     assert await slack_events._parent("C1", "1.0") is None
     monkeypatch.setattr("atlas.modules._http.get_json",
-                        history({"ts": "1.0", "user": "UOWNER", "text": "#1 — x"}))
+                        history({"ts": "1.0", "user": "UMIRO", "text": "#1 — x"}))
     assert await slack_events._parent("C1", "1.0") is None
 
 
@@ -815,7 +815,7 @@ def test_atlas_own_posts_never_reach_the_duplicate_lookup(client, monkeypatch):
     post(client, message("[Reels] REVIEW: #180", bot_id="BATLAS") | {"event_id": "Ev9"})
     post(client, {"type": "event_callback", "event_id": "Ev10",
                   "event": {"type": "message", "subtype": "channel_join",
-                            "user": "UOWNER", "channel": "C1", "ts": "1.0"}})
+                            "user": "UMIRO", "channel": "C1", "ts": "1.0"}})
     assert looked == []
 
 
@@ -833,7 +833,7 @@ def test_file_it_opens_an_issue_about_the_request_that_started_the_thread(
     """2026-09-28: 'file it' answered 'I don't see any file or document'. The
     offer 'say atlas, file it' was never wired to the thread."""
     asked, _replied = requests_made
-    _root_is(monkeypatch, {"ts": "5.0", "user": "UOWNER",
+    _root_is(monkeypatch, {"ts": "5.0", "user": "UMIRO",
                            "text": "can you optimize my cpu for the attendance bot server"})
     post(client, message("file it", ts="5.9", thread_ts="5.0"))
     settle()
@@ -904,7 +904,7 @@ def test_file_it_outside_a_thread_is_never_a_request(client, monkeypatch):
 
 def test_search_in_a_channel_lists_his_records_without_a_model(
         client, requests_made, monkeypatch):
-    """the owner, 2026-10-06: his own search engine in Slack."""
+    """Miro, 2026-10-06: his own search engine in Slack."""
     from datetime import UTC, datetime
 
     from atlas.kernel import search

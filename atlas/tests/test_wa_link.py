@@ -11,6 +11,7 @@ from typing import Any
 
 import httpx
 import pytest
+from test_agency_contact import GOOD, SECRET_TOKEN, FakeStore
 
 from atlas.kernel import executor
 from atlas.kernel.contracts import Health
@@ -18,10 +19,8 @@ from atlas.kernel.permissions import classify
 from atlas.kernel.registry import REGISTRY
 from atlas.modules.agency import contact, owner_wa, wa_bridge
 
-from test_agency_contact import GOOD, SECRET_TOKEN, FakeStore
-
 SECRET = "bridge-secret-value-0123456789"
-OWNER = "+1 555 010 0100"
+OWNER = "+15550100142"
 
 
 class FakeBridge:
@@ -38,7 +37,7 @@ class FakeBridge:
                                           reason="the WhatsApp bridge is unreachable (x)")
         reason = "" if self.connected else "WhatsApp is not linked or not connected (scan the QR)"
         return wa_bridge.BridgeStatus(True, True, self.connected, self.owner_match,
-                                      "13412033334", reason)
+                                      "+15550100142", reason)
 
     async def send(self, to: str, text: str) -> tuple[bool, str]:
         self.sent.append((to, text))
@@ -108,7 +107,7 @@ def bridge(monkeypatch):
     monkeypatch.delenv(contact.TWILIO_JOINED_ENV, raising=False)
     monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
     monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
-    monkeypatch.delenv("MMT_WHATSAPP_FROM", raising=False)
+    monkeypatch.delenv("TUTORCO_WHATSAPP_FROM", raising=False)
     monkeypatch.delenv("TWILIO_FROM", raising=False)
     monkeypatch.delenv(contact.OWNER_WA_ENV, raising=False)
     monkeypatch.delenv(contact.WA_CAP_ENV, raising=False)
@@ -173,7 +172,7 @@ async def test_client_sends_the_secret_header_and_owner_only(monkeypatch):
 async def test_client_status_cases(monkeypatch):
     monkeypatch.setenv(wa_bridge.SECRET_ENV, SECRET)
     _mock(lambda r: httpx.Response(200, json={"connected": True, "owner_match": True,
-                                              "number": "13412033334"}), monkeypatch)
+                                              "number": "+15550100142"}), monkeypatch)
     assert (await wa_bridge.status()).usable
     _mock(lambda r: httpx.Response(200, json={"connected": False}), monkeypatch)
     st = await wa_bridge.status()
@@ -241,10 +240,10 @@ async def test_unreachable_falls_back_to_twilio_only_when_the_sandbox_is_joined(
     async def twilio(to, body, media_url=None):
         sent.append(body)
         return True, "SM" + "b" * 32
-    monkeypatch.setattr("atlas.modules.mmt.notify.send_whatsapp", twilio)
+    monkeypatch.setattr("atlas.modules.tutorco.notify.send_whatsapp", twilio)
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", SECRET_TOKEN)
-    monkeypatch.setenv("MMT_WHATSAPP_FROM", "whatsapp:+14155550000")
+    monkeypatch.setenv("TUTORCO_WHATSAPP_FROM", "whatsapp:+14155550000")
     cid = await _row(cs)
     # configured but not joined: failed honestly, nothing sent
     res = await contact.deliver(cid, "whatsapp")
@@ -261,7 +260,7 @@ async def test_reachable_but_unlinked_never_falls_back(installed, stores, bridge
     monkeypatch.setenv(contact.TWILIO_JOINED_ENV, "1")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", SECRET_TOKEN)
-    monkeypatch.setenv("MMT_WHATSAPP_FROM", "whatsapp:+14155550000")
+    monkeypatch.setenv("TUTORCO_WHATSAPP_FROM", "whatsapp:+14155550000")
     assert (await contact.wa_route())[0] is None
 
 

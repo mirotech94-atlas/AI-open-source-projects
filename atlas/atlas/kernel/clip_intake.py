@@ -8,14 +8,14 @@ named, content rule passed, format known, rules reviewed
   1. **Register** -- when its `source/` folder holds a file whose sha256 is
      not on file for that campaign in any state, `clips.register_sources`
      runs. Never otherwise: a Tier 1 run spends the clips module's hourly
-     allowance, which the owner's card approvals share.
+     allowance, which Miro's card approvals share.
   2. **Cut** -- the oldest registered source never cut, while the
      campaign's daily cap (`CLIPS_DAILY_CAP`, clips since midnight UTC) has
      room: `clips.cut` with `max_clips` set to what is left. At most ONE
      cut per tick across all campaigns: a cut is minutes of transcription
      and ffmpeg.
 
-  3. **Post** (the owner, 2026-09-30: clips post themselves, the reels lane's
+  3. **Post** (Miro, 2026-09-30: clips post themselves, the reels lane's
      way) -- the oldest waiting clip per platform whose account ATLAS can
      reach (`posting.ready_to_post`): `clips.publish_clip`,
      `clips.publish_clip_tiktok` or `clips.publish_clip_youtube_postiz`,
@@ -77,7 +77,7 @@ def _ready() -> str | None:
         if name not in REGISTRY.actions or decision is None or not decision.allowed:
             return f"{name} is not in the catalog (clips module not loaded)"
         if decision.tier is not Tier.AUTO:
-            return f"{name} is not Tier 1; the intake runs nothing that needs the owner"
+            return f"{name} is not Tier 1; the intake runs nothing that needs Miro"
     return None
 
 
@@ -97,7 +97,7 @@ async def tick() -> list[str]:
         return [why]
     try:
         found = await campaigns.load_all()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("clips intake: campaigns not read: %s", explain(exc))
         return [f"campaigns not read: {explain(exc)}"]
     cap = intake.daily_cap()
@@ -121,7 +121,7 @@ async def tick() -> list[str]:
                           f"the footage folder {sources.source_dir(slug)} "
                           f"could not be read: {exc.strerror or exc}")
             continue
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             await _record(intake, slug, False,
                           f"the intake could not read its state: {explain(exc)}")
             continue
@@ -164,7 +164,7 @@ async def tick() -> list[str]:
             if not result.ok and cut.BRAND_MISSING in result.detail:
                 # The campaign's rules want its logo or banner on every clip
                 # and the file is not in its brand/ folder. ATLAS never
-                # fetches one: the owner places it and answers the card, which
+                # fetches one: Miro places it and answers the card, which
                 # runs the cut again.
                 lines.append(await _brand_card(campaign, waiting, room,
                                                _held(result.detail)))
@@ -196,7 +196,7 @@ async def _post_ready(found: list[Any]) -> dict[str, tuple[bool, list[str]]]:
 
     try:
         ready = await posting.ready_to_post(found)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("clips intake: waiting clips not read: %s", explain(exc))
         for campaign in found:
             say(campaign.slug, False, f"waiting clips not read: {explain(exc)}")
@@ -214,7 +214,7 @@ async def _post_ready(found: list[Any]) -> dict[str, tuple[bool, list[str]]]:
             continue
         try:
             state = await _card_state(f"{action}@{card.title}")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             say(slug, False, f"clip {cid}: its card could not be looked up "
                              f"({explain(exc)}), so it was not posted")
             continue
@@ -237,7 +237,7 @@ async def _post_ready(found: list[Any]) -> dict[str, tuple[bool, list[str]]]:
         else:
             result = await _run(action, {"clip_id": cid},
                                 f"clip {cid} of {campaign.name} is cut and checked; "
-                                f"it posts itself (the owner, 2026-09-30)")
+                                f"it posts itself (Miro, 2026-09-30)")
             if result.ok:
                 await _receipt(campaign, row, platform, result.detail)
                 say(slug, True, f"clip {cid} posted on {platform}: {result.detail}")
@@ -260,14 +260,14 @@ async def _post_ready(found: list[Any]) -> dict[str, tuple[bool, list[str]]]:
             if _counted(result.detail):
                 # Held by a count, not by the clip: the platform's day is
                 # full (or could not be counted). It waits for tomorrow, the
-                # reels lane's way -- a card would only ask the owner to break the
-                # cap (the owner, 2026-09-30 and 2026-10-12: clips post
+                # reels lane's way -- a card would only ask Miro to break the
+                # cap (Miro, 2026-09-30 and 2026-10-12: clips post
                 # themselves, no cards; memory approval-policy).
                 say(slug, True, f"clip {cid} waits: {hold}")
                 continue
             if not result.detail.startswith("dry run refused"):
                 # The run itself failed: recorded as such, and still a card,
-                # so the owner sees the clip and can try it by hand.
+                # so Miro sees the clip and can try it by hand.
                 say(slug, False, f"clip {cid} not posted: {result.detail}")
         try:
             pid = await _card(card, hold)
@@ -344,7 +344,7 @@ async def _set_aside(clip_id: int, why: str) -> None:
                       draft_note = concat_ws(' | ', NULLIF(draft_note, ''), $2::text)
                 WHERE id = $1 AND status IN ('made', 'draft_approved')""",
             int(clip_id), f"{stamp}: set aside by the intake: {why}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("clip %s could not be set aside: %s", clip_id, type(exc).__name__)
 
 
@@ -419,7 +419,7 @@ async def _receipt(campaign: Any, row: dict[str, Any], platform: str,
                   f"automatic check. CLIPS_AUTOPUBLISH=off goes back to a card "
                   f"per clip; the action's rollback takes it down."),
             topic=TOPIC, severity=Severity.INFO, kind="alert"))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("clips intake: clip %s posted, but the receipt was not sent",
                     row.get("id"))
 
@@ -427,7 +427,7 @@ async def _receipt(campaign: Any, row: dict[str, Any], platform: str,
 async def _record(intake, slug: str, ok: bool, detail: str) -> None:
     try:
         await intake.record_run(slug, ok, detail)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         log.warning("clips intake: outcome for %s not recorded: %s", slug,
                     explain(exc))

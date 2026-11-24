@@ -51,7 +51,7 @@ export interface DeskProps {
 }
 
 /** Rows a board column or a calendar series shows before "+n more"
- *  (the owner 2026-10-29: each section scannable at a glance). */
+ *  (Miro 2026-10-29: each section scannable at a glance). */
 const COL_SHOWN = 8;
 const POSTED_SHOWN = 3;
 

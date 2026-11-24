@@ -28,7 +28,7 @@ from atlas.kernel import reply_timing
 from atlas.kernel.llm import Completion
 
 TOKEN = "t" * 32
-URL = "https://agency.example.com/webhooks/twilio/whatsapp"
+URL = "https://agency.storefront.test/webhooks/twilio/whatsapp"
 OWNER = "+19175550100"
 PASSWORD = "a-long-enough-password"
 
@@ -61,7 +61,7 @@ def _app(monkeypatch):
 @pytest.fixture
 def wa_client(monkeypatch, memory_backend):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", TOKEN)
-    monkeypatch.setenv("MMT_OWNER_WHATSAPP", OWNER)
+    monkeypatch.setenv("TUTORCO_OWNER_WHATSAPP", OWNER)
     monkeypatch.delenv("TWILIO_WHATSAPP_URL", raising=False)
     whatsapp._LIMITER.clear()
     seen: set[str] = set()
@@ -84,7 +84,7 @@ def portal(monkeypatch, memory_backend):
     monkeypatch.setenv("MESH_ALLOWED_CIDRS", "127.0.0.0/8")
     auth._attempts.clear()
     fresh = datetime.now(UTC) - timedelta(minutes=1)
-    rows = [{"module": "cloudco", "check": "balance", "interval_s": 300,
+    rows = [{"module": "cloudhost", "check": "balance", "interval_s": 300,
              "health": "ok", "detail": "fine", "at": fresh}]
 
     async def fetch_all(sql, *a):
@@ -192,19 +192,19 @@ def test_a_non_owner_whatsapp_message_writes_no_row(writes, wa_client):
 
 def test_a_portal_ask_writes_one_row_and_the_reply_is_unchanged(writes, portal):
     body = portal.post("/api/voice/ask",
-                       json={"transcript": "how is cloudco looking"}).json()
+                       json={"transcript": "how is cloudhost looking"}).json()
     assert body["answer"] == "Fine, as of 7:52."
     asyncio.run(reply_timing.drain())
     rows = [w for w in writes if "reply_timings" in w[0]]
     assert len(rows) == 1 and rows[0][1][0] == "portal"
-    assert "cloudco" not in repr(rows[0][1])
+    assert "cloudhost" not in repr(rows[0][1])
 
 
 def test_a_failing_timing_write_leaves_the_portal_reply_alone(monkeypatch, portal):
     async def boom(*_a):
         raise RuntimeError("db down")
     monkeypatch.setattr(reply_timing, "execute_sql", boom)
-    r = portal.post("/api/voice/ask", json={"transcript": "how is cloudco looking"})
+    r = portal.post("/api/voice/ask", json={"transcript": "how is cloudhost looking"})
     assert r.status_code == 200 and r.json()["answer"] == "Fine, as of 7:52."
     asyncio.run(reply_timing.drain())
 

@@ -86,7 +86,7 @@ def test_free_only_keeps_private_on_the_local_model(monkeypatch):
 @pytest.mark.parametrize("url", [
     "http://127.0.0.1:18000/v1", "http://localhost:18000/v1",
     "http://[::1]:18000/v1", "http://host.docker.internal:18000/v1",
-    "http://192.0.2.1:18000/v1", "http://10.0.0.9:8000/v1",
+    "http://192.168.215.1:18000/v1", "http://10.2.6.9:8000/v1",
     "http://172.17.0.1:8000/v1", "http://[::ffff:127.0.0.1]:18000/v1",
     "http://HOST.DOCKER.INTERNAL:18000/v1",
 ])
@@ -98,7 +98,7 @@ def test_private_hosts_are_accepted(url):
     "https://api.openai.com/v1", "https://openrouter.ai/api/v1",
     "http://8.8.8.8:8000/v1", "http://host.docker.internal.evil.com/v1",
     "http://localhost.evil.com/v1", "ftp://127.0.0.1/v1", "", "not a url",
-    "http://contact72@example.com/v1",
+    "http://user@api.groq.com/v1",
     # bare single-label names: DNS decides where they go
     "http://spark:8000/v1", "http://ollama:11434/v1",
     "http://host.orb.internal:18000/v1",
@@ -360,8 +360,8 @@ async def test_mail_classify_check_is_unknown_when_private_is_refused(monkeypatc
 
 
 # ------------------------------------- free-only DRAFT falls back to the Spark
-# the owner, 2026-10-29: background shift drafts failed every afternoon with
-# ReservedForOwner / "all providers failed for draft". Under ATLAS_FREE_ONLY the
+# Miro, 2026-10-29: background shift drafts failed every afternoon with
+# ReservedForMiro / "all providers failed for draft". Under ATLAS_FREE_ONLY the
 # local qwen3.8 on the Spark (free, no quota) is the LAST entry of the DRAFT
 # chain -- never a paid model.
 
@@ -388,8 +388,8 @@ def test_free_only_draft_without_a_local_url_is_unchanged(monkeypatch):
 
 
 async def test_a_drained_free_bench_reaches_the_local_model(monkeypatch):
-    """Background work with every free deployment spent or kept for the owner
-    still gets an answer from the Spark instead of ReservedForOwner."""
+    """Background work with every free deployment spent or kept for Miro
+    still gets an answer from the Spark instead of ReservedForMiro."""
     from atlas.kernel import quota
     _env(monkeypatch, LOCAL_LLM_BASE_URL=BASE, ANTHROPIC_API_KEY="sk-test",
          GROQ_API_KEY="gsk-test", ATLAS_FREE_ONLY="true")

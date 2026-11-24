@@ -1,4 +1,4 @@
-"""NotebookLM Shorts (academy/notebooklm_shorts.py; the owner 2026-10-19: a
+"""NotebookLM Shorts (academy/notebooklm_shorts.py; Miro 2026-10-19: a
 NotebookLM Short may run 60-90 s, the 20-40 s rule stays for the Shorts
 ATLAS renders itself): what the Mac runner makes next, the text it pastes,
 the Shorts inbox ingest with its holds and refusals, the relaxed length on
@@ -537,7 +537,7 @@ async def test_the_next_shorts_command_prints_json(lessons, capsys):
     assert [r["episode"] for r in got] == [1]
 
 
-# ------------------------------------------------ the pace (the owner, 2026-10-20)
+# ------------------------------------------------ the pace (Miro, 2026-10-20)
 
 def test_a_short_is_slowed_but_stays_at_the_gates_frame():
     argv = nls.transcode_argv("in.mp4", "out.mp4", 0.9)

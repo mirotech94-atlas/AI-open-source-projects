@@ -2,9 +2,9 @@
 recorded, from the primary calendar, compared with what was approved --
 start and end, attendee scope, and the timezone the times resolved in.
 
-  * `calendar.create_block`: the owner's own block, no other attendee;
-  * `calendar.book_with`: exactly the approved attendee (plus the owner);
-  * `calendar.decline_invite`: the owner's own attendee row reads declined;
+  * `calendar.create_block`: Miro's own block, no other attendee;
+  * `calendar.book_with`: exactly the approved attendee (plus Miro);
+  * `calendar.decline_invite`: Miro's own attendee row reads declined;
   * `calendar.offer_slots`: the sent Gmail message, by id, addressed to the
     approved recipient (metadata only).
 
@@ -47,7 +47,7 @@ async def _read(path: str, **params) -> Any:
 async def _calendar_zone() -> str | None:
     try:
         cal = await _read("/calendars/primary")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     if not isinstance(cal, dict):
         return None
@@ -204,7 +204,7 @@ async def verify_decline(params: dict[str, Any], result: ActionResult) -> Verifi
     if me is None:
         return contradicted("the event has no attendee marked self", **evidence)
     if me.get("responseStatus") != "declined":
-        return contradicted(f"the owner's response reads {me.get('responseStatus')!r}",
+        return contradicted(f"Miro's response reads {me.get('responseStatus')!r}",
                             **evidence)
     return verified(**evidence)
 

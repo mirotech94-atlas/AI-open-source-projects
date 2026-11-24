@@ -245,7 +245,7 @@ export interface WaitingCard extends BoardCard {
   who: string;
 }
 
-/** Every card waiting on the owner, the soonest to expire first, already-expired
+/** Every card waiting on Miro, the soonest to expire first, already-expired
  *  last (they cannot run: silence expired them). Null: unknown. */
 export function waitingCards(board: Board | null, now: number): WaitingCard[] | null {
   if (!board || board.totals.waiting_on_you === null) return null;

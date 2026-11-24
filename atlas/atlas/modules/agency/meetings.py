@@ -1,36 +1,36 @@
-"""agency.meetings -- a lead wants to talk to the owner: book it, on a call or by email.
+"""agency.meetings -- a lead wants to talk to Miro: book it, on a call or by email.
 
-the owner, 2026-09-30. When a call goes well, ATLAS offers the lead two or three
-real free half-hours on the owner's calendar, holds the one they pick, and
-invites them. Since 2026-10-06 (the owner: "schedule meetings with them via
+Miro, 2026-09-30. When a call goes well, ATLAS offers the lead two or three
+real free half-hours on Miro's calendar, holds the one they pick, and
+invites them. Since 2026-10-06 (Miro: "schedule meetings with them via
 email as well") the same happens by email: a reply to an interested lead
 offers the same real slots (`replies.draft_reply`), their answer is matched
 to one slot in code (`match_slot`, never a model), and
 `kernel.lead_followup.bookings` holds and invites.
 
-  * **Real slots only.** `free_times` reads the owner's Google Calendar live
+  * **Real slots only.** `free_times` reads Miro's Google Calendar live
     (the calendar module's `_upcoming`, the same GOOGLE_* token) and offers
     only slots inside business hours -- `AGENCY_MEETING_HOURS`, default
     "Mon-Fri 10:00-17:00" in `AGENCY_MEETING_TZ` (America/New_York) --
     `AGENCY_MEETING_MINUTES` long (30), at least `AGENCY_MEETING_NOTICE_MIN`
     (120) from now, clear of every event that is not marked free. If the
     calendar cannot be read there are no slots, and the call or the email
-    says the owner will send times -- a slot is never invented. A drafted reply
+    says Miro will send times -- a slot is never invented. A drafted reply
     that names any time outside the slots it was given is refused
     (`slot_refusal`).
-  * **The hold** (`agency.hold_meeting`, Tier AUTO): an event on the owner's own
+  * **The hold** (`agency.hold_meeting`, Tier AUTO): an event on Miro's own
     calendar with no attendee, so nobody outside is told anything. Its dry
     run reads the calendar again and refuses a slot that is no longer free
     (never double-booked), outside hours, or in the past. Rollback deletes
     the hold.
   * **The invite** (`agency.send_invite`, Tier ASK since 2026-10-27: every
-    send to a client is a card, sent only when the owner approves): adds the
+    send to a client is a card, sent only when Miro approves): adds the
     lead as an attendee with a short agenda -- their site preview link and
     what the call covers -- and lets Google send the invitation, past
     `_invite_guard` (a held meeting, an email on record and not suppressed,
     a verified lead, a time still ahead); a refusal is on the card. Its rollback is the hold's: the event is deleted and Google
     tells the attendee. A lead with no email gets no invite (the summary
-    says so, and the owner books it himself).
+    says so, and Miro books it himself).
   * **The reminder**: one Slack message an hour before (`remind`, claimed
     once per meeting in the same UPDATE), through the ordinary notify path.
 """
@@ -65,7 +65,7 @@ def tz() -> ZoneInfo:
     try:
         return ZoneInfo(os.getenv("AGENCY_MEETING_TZ", "America/New_York").strip()
                         or "America/New_York")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ZoneInfo("America/New_York")
 
 
@@ -166,9 +166,9 @@ async def free_times(now: datetime | None = None
     now = now or datetime.now(UTC)
     try:
         events = await _upcoming(days=lookahead_days() + 1)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
-        return None, f"the owner's calendar could not be read: {explain(exc)}"
+        return None, f"Miro's calendar could not be read: {explain(exc)}"
     return open_slots(busy_from(events), now), None
 
 
@@ -361,7 +361,7 @@ async def _hold_guard(lead_id: int, start: str
         return None, str(why)
     if when not in slots:
         return None, (f"{when.astimezone(tz()):%a %d %b %H:%M} is not an open "
-                      "business-hours slot on the owner's calendar (taken, past or "
+                      "business-hours slot on Miro's calendar (taken, past or "
                       "outside hours)")
     return (lead, when), None
 
@@ -372,8 +372,8 @@ def _contact() -> str:
 
 
 def agenda(lead: dict[str, Any], links: dict[str, Any]) -> str:
-    preview = sms.site_url(links) or "the preview the owner built (he'll share it on the call)"
-    return (f"A {minutes()}-minute call with the owner about {lead.get('name')}'s website.\n\n"
+    preview = sms.site_url(links) or "the preview Miro built (he'll share it on the call)"
+    return (f"A {minutes()}-minute call with Miro about {lead.get('name')}'s website.\n\n"
             f"Site preview: {preview}\n\n"
             "What we'll cover:\n"
             "- what your current site is costing you, from our review\n"
@@ -383,7 +383,7 @@ def agenda(lead: dict[str, Any], links: dict[str, Any]) -> str:
 
 
 async def hold_meeting(lead_id: int, start: str, call_sid: str = "") -> ActionResult:
-    """Tier AUTO: an event on the owner's own calendar with no attendee."""
+    """Tier AUTO: an event on Miro's own calendar with no attendee."""
     ready, why = await _hold_guard(int(lead_id), start)
     if ready is None:
         return ActionResult(False, f"refused: {why}")
@@ -392,7 +392,7 @@ async def hold_meeting(lead_id: int, start: str, call_sid: str = "") -> ActionRe
     zone = str(tz())
     from ..calendar import _token
     tok = await _token()
-    body = {"summary": f"Hold: {lead.get('name')} x the owner (website call)",
+    body = {"summary": f"Hold: {lead.get('name')} x Miro (website call)",
             "description": agenda(lead, await _store.lead_links(int(lead_id)))
                            + "\nHeld by ATLAS on a call; the lead is not invited yet.",
             "start": {"dateTime": when.isoformat(), "timeZone": zone},
@@ -419,7 +419,7 @@ async def hold_meeting_dry(lead_id: int, start: str, call_sid: str = "") -> Acti
         return ActionResult(False, str(why))
     lead, when = ready
     return ActionResult(True, f"would hold {when.astimezone(tz()):%a %d %b %H:%M %Z} "
-                              f"on the owner's calendar for {lead.get('name')}")
+                              f"on Miro's calendar for {lead.get('name')}")
 
 
 async def release_hold(event_id: str) -> ActionResult:
@@ -476,13 +476,13 @@ async def send_invite(meeting_id: int) -> ActionResult:
         r = await c.patch(
             f"{API}/calendars/primary/events/{meeting['event_id']}",
             headers={"Authorization": f"Bearer {tok}"}, params={"sendUpdates": "all"},
-            json={"summary": f"{agency_name() or 'Website'} call with the owner: "
+            json={"summary": f"{agency_name() or 'Website'} call with Miro: "
                              f"{lead.get('name')}",
                   "description": text,
                   "attendees": [{"email": meeting["email"]}]})
         r.raise_for_status()
     await _store.mark_meeting_invited(int(meeting_id))
-    return ActionResult(True, f"invited {meeting['email']} to the call with the owner",
+    return ActionResult(True, f"invited {meeting['email']} to the call with Miro",
                         evidence={"event_id": meeting["event_id"],
                                   "to": meeting["email"], "agenda": text,
                                   "start": meeting["start_at"].isoformat()

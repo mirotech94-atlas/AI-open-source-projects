@@ -1,6 +1,6 @@
 # ATLAS Academy: the motion guide, applied
 
-The owner, 2026-10-15, sent two files. The first is *Atlas Academy Video Motion and
+Miro, 2026-10-15, sent two files. The first is *Atlas Academy Video Motion and
 Editing Guide* (PDF, dated 2026-10-14). The second is
 *Atlas-Academy-Motion-Style-Sample-v2.mp4*: 30 s, 1920×1080, 30 fps, silent.
 He asked: "apply this motion and editing style to the ATLAS Academy YouTube
@@ -24,7 +24,7 @@ presenter parts are rebuilt too.
 | 6–8 s | Brand sting | The scene dissolves to a drawn "A" mark, then ATLAS / Academy, then a blue underline drawn left to right, then the tagline. |
 | 9–19 s | "One step at a time." | Same title rise. One card is lit at a time. The dot moves one connector per step. Ticks fill in. A checkpoint bar fades in and holds about 3 s. |
 | 19–22 s | Focus | The scene fades. The Review card alone moves and zooms to the centre, then crossfades to a "Ready for your review" card whose tick draws itself. |
-| 22–30 s | End card | Headline rises. A next-lesson card settles with a tilt. The ATLAS block and agency.example.com/academy/ appear. It holds about 7 s, still. |
+| 22–30 s | End card | Headline rises. A next-lesson card settles with a tilt. The ATLAS block and agency.storefront.test/academy/ appear. It holds about 7 s, still. |
 
 The fixed parts never move: the wordmark top left, a tag top right, the store
 bottom right. The background is a navy radial with no motion in it. Only one
@@ -43,8 +43,8 @@ wipe.
 | **Checkpoint tag** 8-frame fade, hold 2–4 s | Checklist ticks, the quiz answer line and the payoff result **fade in over 8 frames without travel**. A motion only plays when the segment can still hold the result at least 1 s afterwards (`motion.fits`). Otherwise the slide is drawn whole from the first frame. | `CHECK_FRAMES`, `HOLD_AFTER` |
 | **Use a cut for precise software-state changes** | A demo step after a demo step has **no fade**: the recording cuts. | render loop (`cut`) |
 | **Focus zoom** 9–12 frames, 100→115% of a prepared crop | When the region shown changes from one demo step to the next, the step **pushes in from 115% of its box to the box over 11 frames** (`zoompan` on those frames only, then the exact rule-18 crop). Coming in from a slide, the crossfade is the only motion. It never runs on a timer. | `motion.focus_filter`, `segment_argv(focus=)` |
-| **Lower-third label** 8-frame in, ~3 s hold, 8-frame out | the owner's name plate on his intro clip **rises in over 8 frames, holds 3 s and fades out over 8.** The ending plate (store + Subscribe) rises in and **stays**, so the next step stays visible. | `presenter_argv(moving=)` |
-| **Outro fade** 8–12 frames; keep the final card visible | The 3D end card **fades in over the owner's held last frame in 10 frames** and then holds to the last frame. The part keeps the same length, so the minutes gate doesn't move. | `presenter_argv(card=)` |
+| **Lower-third label** 8-frame in, ~3 s hold, 8-frame out | Miro's name plate on his intro clip **rises in over 8 frames, holds 3 s and fades out over 8.** The ending plate (store + Subscribe) rises in and **stays**, so the next step stays visible. | `presenter_argv(moving=)` |
+| **Outro fade** 8–12 frames; keep the final card visible | The 3D end card **fades in over Miro's held last frame in 10 frames** and then holds to the last frame. The part keeps the same length, so the minutes gate doesn't move. | `presenter_argv(card=)` |
 | Topic / intro / ending cards | The one-line promise ("Today" + topic) rises, then the "Under N minutes" clock. The same applies to the welcome and the narrated ending. | `TOPIC_/INTRO_/OUTRO_MOTION` |
 | "Avoid automatic zooms or transitions on a fixed timer" | Nothing moves without a change in content. The old `code_focus` push-in was never wired, and none was added. | — |
 | Brand sting ≤ ~1 s, blue line under the wordmark | Kept: the 1 s 3D sting (rule 17). | unchanged |
@@ -54,16 +54,16 @@ wipe.
 
 ## Not done, and why
 
-- **The guide's palette** (navy #101B30, blue #526DE6, near-white #F6F8FF) and **amber/green state colours**. The owner's 2026-10-12 brand rule is black + royal blue only, and the brand tests enforce it. The sample's teal checkpoint shows as the blue tick and the words. The new dot is in `TEXT_PAIRS`.
+- **The guide's palette** (navy #101B30, blue #526DE6, near-white #F6F8FF) and **amber/green state colours**. Miro's 2026-10-12 brand rule is black + royal blue only, and the brand tests enforce it. The sample's teal checkpoint shows as the blue tick and the words. The new dot is in `TEXT_PAIRS`.
 - **Payoff before the brand sting.** `bookends_refusal` requires the cached intro as the first part, and `heard_refusal` checks the opener inside the first 30 s. Rule 17 already puts the payoff right after the opener, and the sting stays at 1 s.
 - **Re-cutting the sting with a drawn underline.** The sting is the pre-rendered 3D kit (`tools/tutorial3d/build.py`). Changing it means re-rendering the kit on the Mac, which is outside this change.
 - **Cursor emphasis timing** (6-frame ring in, hold, 6-frame out). The cursor and the royal-blue ring are baked into the demo recordings by `tools/tutorial_demos/record.py`. Retiming them means re-recording against local n8n and the Inspector.
 - **Card tilt that settles flat; the mask-clipped line reveal.** These need a fresh still per frame, which means Chromium per frame on a one-CPU server. Rise + fade gives the same eased entrance for one extra screenshot per element.
 - **The "focus" move on slides** (one card flying to centre). On a teaching slide it would be a second focal point and cost a full-frame scale. Push-ins are kept for demos, where the region really changes.
-- **End card with a reserved next-video slot.** End screens are set by the owner in Studio (rule 20, no API), and nothing in the video fakes a clickable card. The 3D Subscribe button and the mirrored store label fill the card's right side, so in Studio the next-video element has to go over or beside that button. Freeing that slot means changing the 3D kit's end-card loop.
+- **End card with a reserved next-video slot.** End screens are set by Miro in Studio (rule 20, no API), and nothing in the video fakes a clickable card. The 3D Subscribe button and the mirrored store label fill the card's right side, so in Studio the next-video element has to go over or beside that button. Freeing that slot means changing the 3D kit's end-card loop.
 - **One type family on the Shorts captions.** They are set in DejaVu Sans, not the brand's Atkinson Hyperlegible. libass needs a TTF or OTF file, and `assets/fonts` only has Atkinson as a web `.woff`. Adding the TTF and a `fontsdir=` to the `ass` filter would fix it.
 - **Recomposing the active panel for 9:16.** The Short still sets the 16:9 lesson over a blur. A per-scene crop would need per-segment geometry in the manifest. Captions now use the free band.
-- **The four-video A/B test and the Studio retention review.** These are a review process for the owner, not render code. Rule 21's Monday table already carries average view duration and percentage.
+- **The four-video A/B test and the Studio retention review.** These are a review process for Miro, not render code. Rule 21's Monday table already carries average view duration and percentage.
 
 ## Render cost (n8n #1, the same Mac and script, `say -v Daniel` preview)
 

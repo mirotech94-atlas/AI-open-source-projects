@@ -49,11 +49,11 @@ CHECK_ROWS = [
                  "/api/admin/alerts/canary/verify — credentials rejected")),
     ("guardian", "agent_checkins", ago(2), NOW + timedelta(minutes=28), 1800,
      "unknown", "/api/admin/agents/summary: timed out"),
-    ("inroots", "attendance_submitted", ago(31), NOW + timedelta(minutes=29), 3600,
+    ("attendance", "attendance_submitted", ago(31), NOW + timedelta(minutes=29), 3600,
      "degraded", "18/21 recorded, 3 missing"),
-    ("inroots", "standup_bot", ago(31), NOW + timedelta(minutes=29), 3600,
+    ("attendance", "standup_bot", ago(31), NOW + timedelta(minutes=29), 3600,
      "ok", "last bot message 12 min ago"),
-    ("cloudco", "instances", ago(14), NOW + timedelta(minutes=46), 3600,
+    ("cloudhost", "instances", ago(14), NOW + timedelta(minutes=46), 3600,
      "ok", "7 running, 0 stopped"),
 ]
 
@@ -67,8 +67,8 @@ FINDINGS = [
      ("canary could not be verified: HTTP 401 from "
       "/api/admin/alerts/canary/verify — credentials rejected"),
      None, None, ago(2), None),
-    (3, "inroots.attendance_submitted", "inroots", 1, "rule", "degraded",
-     "inroots.attendance_submitted is degraded", "18/21 recorded, 3 missing",
+    (3, "attendance.attendance_submitted", "attendance", 1, "rule", "degraded",
+     "attendance.attendance_submitted is degraded", "18/21 recorded, 3 missing",
      18.0, "people", ago(31), None),
     (4, "flycheap.price_freshness", "flycheap", 1, "baseline", "ok",
      "flycheap.price_freshness is 3.4σ above its baseline",
@@ -84,7 +84,7 @@ PROPOSAL = {
               "clicks are not being attributed.",
     "evidence": json.dumps({
         "clicks": 412, "bookings": 0,
-        "broken": ["https://flycheap.example/go/abc (marker missing from redirect)"],
+        "broken": ["https://flycheap.example.com/go/abc (marker missing from redirect)"],
     }),
     "rollback_plan": "Restore the link table from snapshot "
                      "snap-2026-09-22T03-40Z, which is taken before any write.",
@@ -92,12 +92,12 @@ PROPOSAL = {
     "created_at": ago(6), "expires_at": NOW + timedelta(hours=3, minutes=54),
     "dry_run": "would regenerate the link table; 6 sampled link(s) are "
                "currently broken\n\n"
-               "  flycheap.example/go/abc   marker missing   -> would rewrite\n"
-               "  flycheap.example/go/def   marker missing   -> would rewrite\n"
-               "  flycheap.example/go/ghi   HTTP 404         -> would rewrite\n"
-               "  flycheap.example/go/jkl   marker missing   -> would rewrite\n"
-               "  flycheap.example/go/mno   marker missing   -> would rewrite\n"
-               "  flycheap.example/go/pqr   marker missing   -> would rewrite\n\n"
+               "  flycheap.example.com/go/abc   marker missing   -> would rewrite\n"
+               "  flycheap.example.com/go/def   marker missing   -> would rewrite\n"
+               "  flycheap.example.com/go/ghi   HTTP 404         -> would rewrite\n"
+               "  flycheap.example.com/go/jkl   marker missing   -> would rewrite\n"
+               "  flycheap.example.com/go/mno   marker missing   -> would rewrite\n"
+               "  flycheap.example.com/go/pqr   marker missing   -> would rewrite\n\n"
                "snapshot snap-2026-09-22T03-40Z would be taken first\n"
                "no other table is touched",
     "dry_run_ok": True, "dry_run_at": ago(6),
@@ -256,12 +256,12 @@ def _register_modules() -> None:
     for name, title, line in (
         ("flycheap", "flycheap", "412 clicks, 0 bookings"),
         ("guardian", "Guardian", "canary unverified"),
-        ("inroots", "InRoots", "18/21 recorded"),
-        ("cloudco", "CloudCo", "7 running"),
+        ("attendance", "Attendance", "18/21 recorded"),
+        ("cloudhost", "CloudHost", "7 running"),
     ):
         REGISTRY.modules[name] = FakeModule(name, title, line)
     for name in ("calendar", "mail", "gitlab", "instagram", "tiktok",
-                 "linkedin", "netbird", "stripe_billing", "exampleco", "fiverr"):
+                 "linkedin", "netbird", "stripe_billing", "mirotech", "fiverr"):
         REGISTRY.disabled[name] = f"missing env: {name.upper()}_TOKEN"
 
 

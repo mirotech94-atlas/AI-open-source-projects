@@ -18,7 +18,7 @@ import { isRetiredText, safeText, visible } from "./retired";
 
 export const WORDMARK = "ATLAS Agency";
 
-/** The Command Center's sections, in page order (the owner, 2026-10-28: what
+/** The Command Center's sections, in page order (Miro, 2026-10-28: what
  *  needs him and health first, then each agent, then calendar, reports and
  *  projects, settings last). Their ids are the page anchors (`/#clients`)
  *  and the only entries of the cmd-K palette. `decisions` and `activity`

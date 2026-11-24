@@ -117,7 +117,7 @@ async def diagnose(finding: Finding) -> Proposal | None:
     }
 
     # Compact JSON, and the evidence capped at EVIDENCE_CHARS: the free tiers
-    # the owner wants ATLAS on (2026-10-05) take 8,000 tokens a request (Groq),
+    # Miro wants ATLAS on (2026-10-05) take 8,000 tokens a request (Groq),
     # and this prompt ran 8,700-9,100 -- 7,100 of them the pretty-printed
     # catalog. Nothing the model reads is lost; the whitespace is.
     catalog = _catalog_for(finding)
@@ -129,7 +129,7 @@ async def diagnose(finding: Finding) -> Proposal | None:
     )
 
     # Anything irreversible gets two models. If they disagree, no proposal is
-    # made and the finding escalates to the owner as-is.
+    # made and the finding escalates to Miro as-is.
     action_names = {a["name"] for a in catalog}
     try:
         if finding.severity >= 3:
@@ -146,14 +146,14 @@ async def diagnose(finding: Finding) -> Proposal | None:
     except RuntimeError as exc:
         # No provider is configured. During watch-only phase 1 that is the
         # normal state, not a failure: the finding is still detected, recorded
-        # and reported to the owner — there is simply no proposal to attach to it.
+        # and reported to Miro — there is simply no proposal to attach to it.
         log.info("%s recorded without a proposal: %s", finding.check, exc)
         return None
 
     try:
         start, end = text.find("{"), text.rfind("}")
         data = json.loads(text[start:end + 1])
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("reasoner returned unparseable output for %s", finding.check)
         return None
 

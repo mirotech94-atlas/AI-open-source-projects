@@ -1,6 +1,6 @@
 """agency.replies -- answering a lead: drafted with the playbook, sent by itself.
 
-the owner, 2026-10-06: "make the lead replies send themselves too -- approve
+Miro, 2026-10-06: "make the lead replies send themselves too -- approve
 invoices too and schedule meetings with them via email as well". Under his
 standing rule (2026-09-30) that anything not urgent runs without a card,
 the reply and the agreement are Tier AUTO with every rule in code; a hold
@@ -11,7 +11,7 @@ or a refusal is the Tier 2 card with "Held for you: <reason>"
     model gets the sales playbook (`playbook.full()`) and the price terms in
     its SYSTEM prompt, and the lead's words, audit findings and what we
     built in the user turn inside `wrap_untrusted()`. For an interested lead
-    it is also given two or three REAL free slots read from the owner's calendar
+    it is also given two or three REAL free slots read from Miro's calendar
     just now (`meetings.free_times`, `meetings.choose`) and told to offer
     exactly those; they are stored on the draft (`offered_slots`) so the
     lead's answer can be matched to one in code (`leads.take_in`). What
@@ -34,13 +34,13 @@ or a refusal is the Tier 2 card with "Held for you: <reason>"
   * `agency.send_agreement` (Tier ASK, a card): the agreement and the payment link,
     composed here from the configured scope and price, never by a model.
     Proposed when a lead agrees -- at their price on a call, or in words
-    read in code from their email (`pricing.accepted_price`); the owner approves. The link is
-    the owner's own Stripe Payment Link for that exact price
+    read in code from their email (`pricing.accepted_price`); Miro approves. The link is
+    Miro's own Stripe Payment Link for that exact price
     (`AGENCY_PAYMENT_LINKS`, "500=https://buy.stripe.com/..,300=.."):
     ATLAS creates nothing at Stripe, and no link for the price means no
-    send. This is money IN to the owner's account, never money out, so it is not
+    send. This is money IN to Miro's account, never money out, so it is not
     Tier 3. Its rollback is as honest as the reply's.
-  * `agency.record_deal` (Tier AUTO, principal_only): the owner records a deal as
+  * `agency.record_deal` (Tier AUTO, principal_only): Miro records a deal as
     won, paid or lost. Only his own word reaches it -- a won or paid row
     makes that lead a returning client at $300, so it is not a thing an email
     or a model should be able to write.
@@ -64,12 +64,12 @@ CHANNELS = ("email", "sms")
 DEAL_STATUSES = ("won", "paid", "lost")
 
 REPLY_SYSTEM = (
-    "You write the reply from the owner's AI assistant to a small business owner "
-    "who answered the owner's message about a website he built for them. Follow "
+    "You write the reply from Miro's AI assistant to a small business owner "
+    "who answered Miro's message about a website he built for them. Follow "
     "the playbook below. Answer what they actually said, in their words, "
     "tie value to their own audit findings, and end with one clear next "
     "step. {length} Plain text only: no markdown, no subject line, no "
-    "signature (one is added). Never claim to be the owner or a person.\n\n"
+    "signature (one is added). Never claim to be Miro or a person.\n\n"
     + EMAIL_STYLE + "\n\n"
     "{playbook}\n\n{prices}\n\n{deliverables}"
 )
@@ -110,7 +110,7 @@ def refusal(text: str, terms: pricing.Terms, *,
 
 def _email_finish(body: str) -> str:
     """Where to call for more (ATLAS Agency's line, answered by the AI) and for
-    the owner himself (the owner, 2026-09-30: a reply always carries both; a first
+    Miro himself (Miro, 2026-09-30: a reply always carries both; a first
     cold email never carries his number), then the same CAN-SPAM lines and
     assistant trailer outreach carries. Written by code, never the model."""
     extra = [line for line in (outreach.more_info_line(), outreach.escalation_line())
@@ -159,13 +159,13 @@ async def _recipient(lead_id: int, channel: str) -> tuple[str | None, str | None
     row = await _store.consent_for_lead(lead_id, "sms")
     if row is None:
         return None, ("no consent on record to text this lead; draft an email, or "
-                      "use agency.call_brief for the owner to call")
+                      "use agency.call_brief for Miro to call")
     return str(row["phone"]), None
 
 
 # ------------------------------------------------------------- draft_reply
 
-NO_TIMES = ("Offer NO day or time for a call: say the owner will send a couple of times "
+NO_TIMES = ("Offer NO day or time for a call: say Miro will send a couple of times "
             "himself.")
 
 
@@ -177,13 +177,13 @@ async def _times_block(intent: str | None) -> tuple[list[datetime], str]:
         return [], ""
     slots, why = await meetings.free_times()
     if slots is None:
-        return [], f"the owner's calendar could not be read ({why}). {NO_TIMES}"
+        return [], f"Miro's calendar could not be read ({why}). {NO_TIMES}"
     offered = meetings.choose(slots)
     if not offered:
-        return [], f"the owner has no free business-hours slot this week. {NO_TIMES}"
+        return [], f"Miro has no free business-hours slot this week. {NO_TIMES}"
     listed = "\n".join(f"{i}) {meetings.offered_line(s)}" for i, s in enumerate(offered, 1))
     return offered, (
-        f"Times the owner can do a {meetings.minutes()}-minute call, read from his "
+        f"Times Miro can do a {meetings.minutes()}-minute call, read from his "
         f"calendar just now ({meetings.tz().key}). Offer EXACTLY these, written with the "
         f"weekday, date and time as listed, and no other day or time:\n{listed}")
 
@@ -197,15 +197,15 @@ async def _material(ctx: dict[str, Any], times: str = "") -> str:
     if await shared(int(lead["id"])):
         built = sms.site_url(links) or ("a mockup" if links.get("mockup") else "nothing yet")
     else:
-        # the owner, 2026-10-28: the preview link reaches the owner only on the
+        # Miro, 2026-10-28: the preview link reaches the owner only on the
         # email card he approves, never in an automatic reply.
-        built = ("a free preview; the owner sends the link himself, so do not give one"
+        built = ("a free preview; Miro sends the link himself, so do not give one"
                  if sms.site_url(links) else
                  "a mockup" if links.get("mockup") else "nothing yet")
     message = ctx["message"] or {}
     return (f"Business: {lead.get('name')} ({lead.get('category')})\n"
             f"Their current site's audit findings:\n{findings}\n"
-            f"What the owner built for them: {built}\n"
+            f"What Miro built for them: {built}\n"
             + (f"{times}\n" if times else "")
             + f"Their latest message ({message.get('channel', 'unknown')}):\n"
             f"{message.get('body') or '(none on record)'}")
@@ -327,7 +327,7 @@ async def _guard_reply(draft_id: int) -> tuple[dict[str, Any] | None, str | None
         if not consent.discloses(body):
             return None, "the text does not open with the AI disclosure"
     # Last, the hold -- after every rule of the draft itself, and never of
-    # an approved card: the owner's approval is the answer to a hold.
+    # an approved card: Miro's approval is the answer to a hold.
     if not outreach.answered_by_card() and not autosend_enabled():
         return None, f"{outreach.HELD}: automatic replies are off (AGENCY_REPLY_AUTOSEND)"
     return draft, None
@@ -404,7 +404,7 @@ async def send_reply_dry(draft_id: int) -> ActionResult:
 # ---------------------------------------------------------- send_agreement
 
 def payment_url(lead_id: int, price: int) -> str | None:
-    """The link sent to this lead: the owner's Payment Link for the price, with
+    """The link sent to this lead: Miro's Payment Link for the price, with
     `client_reference_id=lead_<id>` so the paid Checkout Session names the
     lead back to ATLAS (`payments._match`)."""
     link = payment_link(price)
@@ -415,7 +415,7 @@ def payment_url(lead_id: int, price: int) -> str | None:
 
 
 def payment_link(price: int) -> str | None:
-    """the owner's own Payment Link for exactly this price, or None."""
+    """Miro's own Payment Link for exactly this price, or None."""
     for item in os.getenv("AGENCY_PAYMENT_LINKS", "").split(","):
         amount, _, url = item.partition("=")
         try:
@@ -431,7 +431,7 @@ def agreement_text(business: str, price: int, link: str) -> str:
     return (f"Here is the agreement for {business}'s website, as discussed.\n\n"
             f"What's included:\n{scope}\n\n"
             f"Price: ${price}, paid through this secure link: {link}\n\n"
-            "the owner starts work once payment is in and will confirm the timeline "
+            "Miro starts work once payment is in and will confirm the timeline "
             "with you in writing. Reply to this message with any question before "
             "you pay.")
 
@@ -479,7 +479,7 @@ async def _guard_agreement(lead_id: int, price: int, channel: str
 
 async def send_agreement(lead_id: int, price: int, channel: str) -> ActionResult:
     """Tier AUTO (2026-10-06), only past `_guard_agreement`: the agreement
-    and the owner's payment link for exactly this price, to a verified lead."""
+    and Miro's payment link for exactly this price, to a verified lead."""
     lead_id, price = int(lead_id), int(price)
     ready, why = await _guard_agreement(lead_id, price, channel)
     if ready is None:
@@ -504,7 +504,7 @@ async def send_agreement(lead_id: int, price: int, channel: str) -> ActionResult
 
 
 async def send_agreement_rollback(token: str) -> ActionResult:
-    """A delivered agreement is not unsent, and the payment link is the owner's
+    """A delivered agreement is not unsent, and the payment link is Miro's
     own at Stripe (ATLAS touches nothing there). It suppresses the address
     and records the fact on the lead."""
     if not token:
@@ -547,7 +547,7 @@ async def record_deal(lead_id: int, status: str, amount: int | None = None) -> A
     lid, value = parsed
     if await _store.get_lead(lid) is None:
         return ActionResult(False, f"no such lead: {lid}")
-    deal_id = await _store.insert_deal(lid, status, value, "recorded by the owner")
+    deal_id = await _store.insert_deal(lid, status, value, "recorded by Miro")
     if deal_id is None:
         return ActionResult(False, "failed to record the deal")
     return ActionResult(True, f"recorded lead {lid} as {status}"

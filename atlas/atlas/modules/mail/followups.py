@@ -2,7 +2,7 @@
 
 Two behaviours live here:
 
-1. **Follow-ups.** A thread where the owner sent the last message and it reads as
+1. **Follow-ups.** A thread where Miro sent the last message and it reads as
    an ask (a question, or a stock asking phrase) is recorded in
    `mail_followups`. It clears the moment anyone else's message lands in the
    thread. One that has sat unanswered for `min_days` business days (default
@@ -253,7 +253,7 @@ async def check_followups() -> Observation:
                 return await _api(f"/threads/{tid}", format="full")
 
         fulls = await asyncio.gather(*(_one(t["id"]) for t in threads))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import redact
         return Observation("followups", Health.UNKNOWN,
                            detail=f"Gmail unreachable: {redact(exc)}")

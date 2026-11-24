@@ -4,7 +4,7 @@ STATUS, 2026-09-22: BLOCKED BY FIVERR, and this is a finding, not a bug.
 
 Fiverr fronts its seller pages with PerimeterX. A headless Chromium hits the
 challenge page ("It needs a human touch", PXCR10002539) at every seller URL
--- from the server AND from the owner's own Mac with his own live session, so
+-- from the server AND from Miro's own Mac with his own live session, so
 it is the automated browser being fingerprinted, not the IP. There is no
 selector to fix. The same ruling LinkedIn reached applies here: driving a
 site that actively blocks automation is how a seller account gets
@@ -30,7 +30,7 @@ from mail.
 Two rules this module was built around still hold:
 
 1. **Be gentle.** Human-paced, a few times a day, never a scraping cadence.
-2. **Never send.** Buyer messages are drafted and shown to the owner. A bot reply
+2. **Never send.** Buyer messages are drafted and shown to Miro. A bot reply
    to a buyer is both a policy risk and a reputation risk on the thing his
    gig ranking depends on.
 """
@@ -154,7 +154,7 @@ async def _landed(page, expected: str) -> None:
     # its own title; read that rather than the zeros.
     try:
         title = (await page.title()) or ""
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         title = ""
     if "human touch" in title.lower() or "px-captcha" in (await page.content()):
         _record_wall()
@@ -172,7 +172,7 @@ async def check_session() -> Observation:
         return Observation("session", Health.UNKNOWN, detail=why)
     try:
         pw, browser, ctx = await _browser()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Not being able to START a browser is a check that could not run, not
         # evidence that the Fiverr session is dead. Reporting FAILING here
         # turned a missing dependency into a business alert.
@@ -196,7 +196,7 @@ async def check_session() -> Observation:
         except BotWall as exc:
             return Observation("session", Health.UNKNOWN, detail=str(exc))
         return Observation("session", Health.OK, detail="session valid")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("session", Health.UNKNOWN, detail=redact(exc))
     finally:
         await browser.close()
@@ -208,7 +208,7 @@ async def check_unanswered_messages() -> Observation:
         return Observation("unanswered_messages", Health.UNKNOWN, detail=why)
     try:
         pw, browser, ctx = await _browser()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("unanswered_messages", Health.UNKNOWN, detail=str(exc))
     try:
         page = await ctx.new_page()
@@ -250,7 +250,7 @@ async def check_unanswered_messages() -> Observation:
         return Observation("unanswered_messages", Health.FAILING, detail=str(exc))
     except BotWall as exc:
         return Observation("unanswered_messages", Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("unanswered_messages", Health.UNKNOWN, detail=redact(exc))
     finally:
         await browser.close()
@@ -262,7 +262,7 @@ async def check_active_orders() -> Observation:
         return Observation("active_orders", Health.UNKNOWN, detail=why)
     try:
         pw, browser, ctx = await _browser()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("active_orders", Health.UNKNOWN, detail=str(exc))
     try:
         page = await ctx.new_page()
@@ -293,7 +293,7 @@ async def check_active_orders() -> Observation:
         return Observation("active_orders", Health.FAILING, detail=str(exc))
     except BotWall as exc:
         return Observation("active_orders", Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("active_orders", Health.UNKNOWN, detail=redact(exc))
     finally:
         await browser.close()
@@ -305,7 +305,7 @@ async def check_gig_stats() -> Observation:
         return Observation("gig_stats", Health.UNKNOWN, detail=why)
     try:
         pw, browser, ctx = await _browser()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("gig_stats", Health.UNKNOWN, detail=str(exc))
     try:
         page = await ctx.new_page()
@@ -347,7 +347,7 @@ async def check_gig_stats() -> Observation:
         return Observation("gig_stats", Health.FAILING, detail=str(exc))
     except BotWall as exc:
         return Observation("gig_stats", Health.UNKNOWN, detail=str(exc))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("gig_stats", Health.UNKNOWN, detail=redact(exc))
     finally:
         await browser.close()
@@ -355,7 +355,7 @@ async def check_gig_stats() -> Observation:
 
 
 async def draft_buyer_reply(conversation: str, body: str) -> ActionResult:
-    """Stores the draft for the owner. Deliberately does NOT type it into Fiverr:
+    """Stores the draft for Miro. Deliberately does NOT type it into Fiverr:
     a draft sitting in a text box is one misclick from being sent."""
     import hashlib
 
@@ -425,7 +425,7 @@ class FiverrModule:
             Action(
                 name="fiverr.draft_buyer_reply",
                 tier=Tier.AUTO,     # it only stores a draft; nothing is sent
-                summary="Prepare a reply to a Fiverr buyer for the owner to send",
+                summary="Prepare a reply to a Fiverr buyer for Miro to send",
                 run=draft_buyer_reply, dry_run=draft_dry,
                 rollback=lambda t: draft_dry(t, "x"),
                 params={"conversation": "buyer username or conversation id",

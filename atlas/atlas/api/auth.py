@@ -37,7 +37,7 @@ _hasher = PasswordHasher()
 # single-user dashboard on a private mesh, so the threat is a mesh device
 # guessing, not a botnet -- a small sliding window is proportionate and needs
 # no storage. Per address, not global: one guessing device must not be able
-# to lock the owner himself out of the dashboard (audit #20). The address is the
+# to lock Miro himself out of the dashboard (audit #20). The address is the
 # one the mesh guard judges (peers.effective_client), not Caddy's.
 MAX_ATTEMPTS = 8
 WINDOW = 300.0
@@ -76,7 +76,7 @@ def _stored_hash() -> str:
     if encoded:
         try:
             return base64.b64decode(encoded).decode().strip()
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             log.error("DASHBOARD_PASSWORD_HASH_B64 is not valid base64")
             return ""
     return os.getenv("DASHBOARD_PASSWORD_HASH", "").strip()
@@ -131,7 +131,7 @@ def verify_password(supplied: str, client: str = "") -> bool:
     return True
 
 
-def issue(user: str = "owner") -> str:
+def issue(user: str = "miro") -> str:
     return _serializer().dumps({"u": user, "n": secrets.token_hex(8)})
 
 
@@ -145,7 +145,7 @@ def read(token: str | None) -> Session | None:
     except BadSignature:
         log.warning("rejected a session cookie with a bad signature")
         return None
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     payload, issued = data
     if not isinstance(payload, dict) or "u" not in payload:
@@ -174,7 +174,7 @@ def cookie_secure(request: Request) -> bool:
     """Whether the session cookie carries `Secure` (audit #16).
 
     The dashboard is served two ways: over HTTPS by Caddy on 443
-    (atlas.example.com, mesh and device clients) and over plain HTTP on the
+    (atlas.storefront.test, mesh and device clients) and over plain HTTP on the
     mesh address's :8080. A `Secure` cookie over plain HTTP is dropped by the
     browser, so one fixed answer breaks one of them. DASHBOARD_HTTPS decides:
 
@@ -225,7 +225,7 @@ def constant_time_equals(a: str, b: str) -> bool:
     return hmac.compare_digest(a or "", b or "")
 
 
-# --- CSRF for the GUI decision route (the owner 2026-10-29: GUI decisions) -------
+# --- CSRF for the GUI decision route (Miro 2026-10-29: GUI decisions) -------
 # The session cookie is HttpOnly and SameSite=Lax; the decision route also
 # wants proof that the page making the request read /api/session itself. The
 # token is an HMAC of the cookie value, which already carries a per-login

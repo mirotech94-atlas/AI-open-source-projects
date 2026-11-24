@@ -1,8 +1,8 @@
 """Best-price lookup across eBay for supply items (SSDs, RAM, boxes, labels).
 
 This copies the minimal token-exchange-and-search shape from
-`atlas/modules/exampleco/__init__.py` (`_token` / `_api`) rather than
-importing it. ExampleCo's `requires_env` makes the whole reselling module
+`atlas/modules/mirotech/__init__.py` (`_token` / `_api`) rather than
+importing it. Mirotech's `requires_env` makes the whole reselling module
 refuse to load without `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` /
 `EBAY_REFRESH_TOKEN` — correct for a module whose only job is eBay. This
 module also uses those names (`optional_env`, not `requires_env`): flight
@@ -85,14 +85,14 @@ async def find_prices(items: list[str]) -> tuple[list[dict], str | None]:
 
     try:
         token = await _token()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return [], f"eBay token request failed: {explain(exc)}"
 
     results: list[dict] = []
     for item in items:
         try:
             found = await _search_one(token, item)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return [], f"eBay search failed for {item!r}: {explain(exc)}"
         if found is not None:
             results.append(found)

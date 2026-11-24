@@ -3,7 +3,7 @@
 Three honest states sit beside OK / DEGRADED / FAILING / UNKNOWN, and none of
 them may look like OK or like each other (invariants 3 and 7):
 
-  * **parked** -- the owner (or a committed decision) knows this check is not
+  * **parked** -- Miro (or a committed decision) knows this check is not
     right and has said why and until when. A committed list, `PARKED`, in
     code: name, reason, expiry date. No UI toggle, no runtime write, nothing
     reads a database to decide. It un-parks on its date by itself: on the
@@ -36,34 +36,34 @@ class Parked:
 # Checks parked on purpose. Add a line here (by commit) to park one; remove
 # it, or let the date pass, to un-park. Every line needs a reason and a date.
 PARKED: tuple[Parked, ...] = (
-    Parked("agency.getlayers_auth", "the owner, 2026-11-17: GetLayers is not used",
+    Parked("agency.getlayers_auth", "Miro, 2026-11-17: GetLayers is not used",
            date(2027, 12, 31)),
-    Parked("content.reel_legs", "the owner, 2026-11-17: no Instagram or Facebook, "
+    Parked("content.reel_legs", "Miro, 2026-11-17: no Instagram or Facebook, "
            "the content focus is YouTube", date(2027, 12, 31)),
-    Parked("content.shorts_lane", "the owner, 2026-11-17: Postiz is not set up on "
+    Parked("content.shorts_lane", "Miro, 2026-11-17: Postiz is not set up on "
            "purpose", date(2027, 12, 31)),
-    Parked("youtube.ecc_latest_videos", "the owner, 2026-11-17: the ecc channel "
+    Parked("youtube.amsm_latest_videos", "Miro, 2026-11-17: the amsm channel "
            "is dropped from the board", date(2027, 12, 31)),
-    Parked("youtube.ecc_stats", "the owner, 2026-11-17: the ecc channel is "
+    Parked("youtube.amsm_stats", "Miro, 2026-11-17: the amsm channel is "
            "dropped from the board", date(2027, 12, 31)),
-    Parked("youtube.ecc_token", "the owner, 2026-11-17: the ecc channel is "
+    Parked("youtube.amsm_token", "Miro, 2026-11-17: the amsm channel is "
            "dropped from the board", date(2027, 12, 31)),
-    Parked("calendar.focus_invites", "the owner, 2026-11-18: not essential, no "
+    Parked("calendar.focus_invites", "Miro, 2026-11-18: not essential, no "
            "focus blocks to guard", date(2027, 12, 31)),
-    Parked("academy.runway", "the owner, 2026-11-18: not essential, the Academy "
+    Parked("academy.runway", "Miro, 2026-11-18: not essential, the Academy "
            "content runway is not tracked on the board", date(2027, 12, 31)),
-    Parked("academy.posting_health", "the owner, 2026-11-18: not essential, the Academy "
+    Parked("academy.posting_health", "Miro, 2026-11-18: not essential, the Academy "
            "tutorial pipeline (NotebookLM runner) is paused; last post 30 Oct",
            date(2027, 12, 31)),
 )
 
 # Modules switched off by a committed decision, merged by the registry with
 # `ATLAS_DISABLED_MODULES` (the env list still wins on the reason it prints).
-# name -> why. the owner, 2026-11-14: he uses the NotebookLM voice, so no paid
+# name -> why. Miro, 2026-11-14: he uses the NotebookLM voice, so no paid
 # Fish Audio key; the `voice` module and its `fish_credit` check are off.
 SWITCHED_OFF: dict[str, str] = {
-    "voice": "the owner uses the NotebookLM voice, so no paid Fish Audio key",
-    "reddit": "the owner, 2026-11-17: Reddit is not used",
+    "voice": "Miro uses the NotebookLM voice, so no paid Fish Audio key",
+    "reddit": "Miro, 2026-11-17: Reddit is not used",
 }
 
 

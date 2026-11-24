@@ -1,6 +1,6 @@
 """The kill switch: pause everything, or one module, durably.
 
-the owner's reliability plan (2026-09-27), Phase C: "global and per-module pause
+Miro's reliability plan (2026-09-27), Phase C: "global and per-module pause
 controls enforced near every dispatch, plus a durable watch-only mode.
 Pausing prevents new effects but cannot erase an already submitted external
 request... Resume must be explicit and scoped. Do not auto-disable the kill
@@ -12,13 +12,13 @@ switch after a restart or when a model suggests recovery."
 * Stored in Postgres (`pauses`), so a restart keeps it. A row is never
   deleted; resuming stamps `resumed_at`, which keeps the history.
 * Fails closed: if the pause state cannot be read, nothing dispatches.
-* Set and lifted only by the owner -- the `/atlas pause|resume` slash command
+* Set and lifted only by Miro -- the `/atlas pause|resume` slash command
   (signed, approver-checked, parsed here, never by a model) or the CLI on
   the server. Nothing in the catalog can resume, and no model can.
 * One automatic SET, never a lift (R09, `block_capability`): when a provider
   refuses a credential (401/403, a revoked token), the outbox pauses THAT
   credential, so its queued rows hold instead of each trying the dead login.
-  Stopping is the fail-closed direction; resuming stays the owner's.
+  Stopping is the fail-closed direction; resuming stays Miro's.
 * A scope is `all`, a module (`instagram`), or one credential of a module
   that holds several, `module:account` (`instagram:clips`), for the modules
   in CREDENTIAL_PARAM. A `module:account` pause stops only the actions whose
@@ -45,7 +45,7 @@ CREDENTIAL_PARAM: dict[str, tuple[str, str | None]] = {
 # one a call used (content's publisher posts through Instagram, Facebook
 # and Postiz in one run; clips posts through three platforms; gitlab has
 # two instances; mail has a token per mailbox; ...). A refused login there
-# is TOLD to the owner and never auto-paused: pausing the whole module would
+# is TOLD to Miro and never auto-paused: pausing the whole module would
 # stop work on credentials that are fine.
 NOTIFY_ONLY = frozenset({
     "content", "clips", "gitlab", "mail", "messages", "comms", "messaging",
@@ -121,7 +121,7 @@ def account_of(action: str, params: dict[str, Any] | None) -> str | None:
     module. Pure; never raises."""
     try:
         spec = CREDENTIAL_PARAM.get(action.split(".", 1)[0])
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     if spec is None:
         return None
@@ -132,7 +132,7 @@ def account_of(action: str, params: dict[str, Any] | None) -> str | None:
             return ANY_ACCOUNT                          # a list, a number, ...
         account = (value or default or "").strip().lower()
         return account if _ACCOUNT.fullmatch(account) else ANY_ACCOUNT
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ANY_ACCOUNT
 
 
@@ -217,7 +217,7 @@ AUTH_REFUSED_BY = "atlas:auth-refused"
 async def block_capability(action: str, params: dict[str, Any] | None,
                            status: int | None) -> str | None:
     """A provider refused `action`'s login (R09). Pause that credential --
-    `credential_scope` -- and tell the owner once. Returns "paused" when this
+    `credential_scope` -- and tell Miro once. Returns "paused" when this
     call set the pause, "notified" when the credential cannot be told apart
     (NOTIFY_ONLY, or an unknown account) and he was told instead, None when
     it was already paused or already told recently, or nothing could be
@@ -245,7 +245,7 @@ async def block_capability(action: str, params: dict[str, Any] | None,
                 return None
             await audit("capability.auth_refused", action,
                         {"status": status, "paused": False})
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("%s: login refused, not recorded (%s)", action,
                         type(exc).__name__)
             return None
@@ -260,7 +260,7 @@ async def block_capability(action: str, params: dict[str, Any] | None,
                ON CONFLICT (scope) WHERE resumed_at IS NULL DO NOTHING
                RETURNING id""",
             scope, AUTH_REFUSED_BY, reason)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s: login refused, but the pause was not written (%s)",
                     scope, type(exc).__name__)
         return None
@@ -268,7 +268,7 @@ async def block_capability(action: str, params: dict[str, Any] | None,
         return None                                     # already paused
     try:
         await audit("pause.set", scope, {"by": AUTH_REFUSED_BY, "reason": reason})
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("pause of %s not audited", scope)
     await _tell(module, f"Paused {scope}: {action}'s login was refused. "
                         f"Reconnect it, then `/atlas resume {scope}`.")
@@ -276,7 +276,7 @@ async def block_capability(action: str, params: dict[str, Any] | None,
 
 
 async def _tell(topic: str, body: str) -> None:
-    """One line to the owner. Best effort."""
+    """One line to Miro. Best effort."""
     import logging
     try:
         from . import comms
@@ -284,7 +284,7 @@ async def _tell(topic: str, body: str) -> None:
         await comms.notify(comms.Outbound(
             title="A login was refused", body=body, severity=Severity.HIGH,
             topic=topic))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         logging.getLogger("atlas.pause").warning("notice for %s not sent", topic)
 
 

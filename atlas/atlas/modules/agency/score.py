@@ -1,7 +1,7 @@
 """agency.rank — which leads are worth the time.
 
 AGENCY.md 2.3 sends this to the judgment layer eventually: features in,
-labels (did the owner pursue it, did it close) out, and within a few dozen
+labels (did Miro pursue it, did it close) out, and within a few dozen
 leads it learns what a real pitch looks like. That needs history this
 module does not have yet, so the score here is a heuristic — deliberately
 simple, deliberately named `heuristic_score` rather than `predict`, so

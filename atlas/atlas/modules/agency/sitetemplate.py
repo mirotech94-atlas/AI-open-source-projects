@@ -41,7 +41,7 @@ under `templates/`; at run time ATLAS only fills its slots.
   nowhere, said plainly). The contact section keeps an empty
   `data-atlas="callme"` slot for the call-me widget.
 
-* **A marketing site, not a brochure (2026-09-30, the owner's desktop review:
+* **A marketing site, not a brochure (2026-09-30, Miro's desktop review:
   "very poor design -- make sure it's a frontend marketing website for each
   one").** Every family's home page now runs hero (a GetLayers background
   loop behind the copy, a photograph of the trade in a plate) → an honest
@@ -52,7 +52,7 @@ under `templates/`; at run time ATLAS only fills its slots.
   print. The imagery is `sitemedia`: self-hosted, generic, captioned as
   illustrative, never presented as the business's own.
 
-* **The Lovable port (2026-10-01, v4).** the owner's rule: every client site's
+* **The Lovable port (2026-10-01, v4).** Miro's rule: every client site's
   design goes frontend-design → GetLayers → Webild → Lovable, and the best
   of each is ported into these templates. From the trades reference
   ("Bright Spark Site", recorded in `templates/getlayers.json`): a
@@ -95,9 +95,9 @@ FAMILIES = ("trades", "beauty", "food")
 FAMILY_BRAND = {"trades": "#133153", "beauty": "#1b0095", "food": "#275a47"}
 FONT_FILE = sitemedia.FONT_FILE
 ASSET_FILES = sitemedia.FONT_FILES
-# the owner, 2026-10-30: the brand is ATLAS Agency, its public link the storefront.
+# Miro, 2026-10-30: the brand is ATLAS Agency, its public link the storefront.
 PREVIEW_LINE = "Preview made by ATLAS Agency for"
-AGENCY_URL = "https://agency.example.com/"
+AGENCY_URL = "https://agency.storefront.test/"
 
 INDEX, CONTACT, PRIVACY, TERMS = "index.html", "contact.html", "privacy.html", "terms.html"
 
@@ -183,7 +183,7 @@ def wordmark(name: str) -> str:
 
 
 def place_of(address: str | None) -> str | None:
-    """The town from a one-line address ('885 6th Ave, New York, NY 10001'
+    """The town from a one-line address ('100 Example Ave, New York, NY 10001'
     -> 'New York'), or None when the address does not say."""
     parts = [p.strip() for p in (address or "").split(",") if p.strip()]
     if parts and parts[-1].lower() in ("usa", "us", "united states"):

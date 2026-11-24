@@ -1,6 +1,6 @@
 """The AI chat assistant on a Mapfront client site ($500 and $300 packages).
 
-A visitor on `https://agency.example.com/preview/<slug>/` opens the chat bubble
+A visitor on `https://agency.storefront.test/preview/<slug>/` opens the chat bubble
 (`sitechat_widget.js`, written into the site as `mapfront-chat.js` by
 `launch.finish_site`) and asks a question. The widget posts it to ATLAS,
 `POST /public/site-chat/<slug>` (atlas/api/site_chat.py), and shows the
@@ -81,7 +81,7 @@ RATE_OUT_ENV = "SITE_CHAT_USD_PER_MTOK_OUT"
 PER_IP_ENV = "SITE_CHAT_PER_IP_PER_MIN"
 PER_SITE_ENV = "SITE_CHAT_PER_SITE_PER_DAY"
 
-# atlas.example.com is deleted (2026-10-29); the store host proxies /public/*.
+# atlas.storefront.test is deleted (2026-10-29); the store host proxies /public/*.
 DEFAULT_API_BASE = store_origin.origin()
 DEFAULT_CAP_USD = Decimal(5)
 # Claude Haiku 4.5's list price per million tokens, the paid end of the
@@ -614,13 +614,13 @@ async def _reserve(slug: str, usd: Decimal) -> tuple[int | None, str | None]:
     async with _CAP_LOCK:
         try:
             used = await spent_this_month()
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return None, f"spend unreadable ({type(exc).__name__})"
         if used + usd > cap:
             return None, f"monthly cap reached (${used:.2f} of ${cap:.2f})"
         try:
             row_id = await book(slug, usd, "reserved")
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return None, f"spend not recordable ({type(exc).__name__})"
     if row_id is None:
         return None, "spend not recordable"
@@ -641,7 +641,7 @@ async def converse(facts: Facts, message: str, history: list[Turn], *,
     if any(sensitive(t) for t in [message] + [t.text for t in history]):
         try:
             await book(slug, Decimal(0), "refused")
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             # A count, not a gate: the refusal costs nothing either way.
             log.warning("site chat %s: refusal not counted (%s)", slug,
                         type(exc).__name__)
@@ -651,7 +651,7 @@ async def converse(facts: Facts, message: str, history: list[Turn], *,
     if per_site_limit:
         try:
             today = await requests_today(slug)
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return _resting(f"usage unreadable ({type(exc).__name__})")
         if today >= per_site_per_day():
             return Reply(429, None, "busy", f"{today} questions today")
@@ -666,7 +666,7 @@ async def converse(facts: Facts, message: str, history: list[Turn], *,
             think(Need.TRIVIAL, SYSTEM, [Message("user", user)], max_tokens=MAX_TOKENS,
                   answer=True),
             THINK_TIMEOUT_S)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Nothing answered: the provider charged nothing we can know of.
         await _settle_quietly(row_id, Decimal(0), "error", None, None, 0, 0)
         return _resting(f"no model answered ({type(exc).__name__})")
@@ -686,7 +686,7 @@ async def _settle_quietly(row_id: int, usd: Decimal, outcome: str, provider: str
     try:
         await settle(row_id, usd, outcome, provider=provider, model=model,
                      input_tokens=tin, output_tokens=tout)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # The reservation stays booked at worst case: over-counted, never under.
         log.warning("site chat: could not settle usage row %s (%s)", row_id,
                     type(exc).__name__)
@@ -701,7 +701,7 @@ async def status(facts: Facts) -> tuple[int, str]:
         return 503, "no model configured"
     try:
         used = await spent_this_month()
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return 503, f"spend unreadable ({type(exc).__name__})"
     if used >= monthly_cap():
         return 503, "monthly cap reached"
@@ -742,7 +742,7 @@ async def check_site_chat() -> Observation:
     cap = monthly_cap()
     try:
         used = await spent_this_month()
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN, detail=f"site_chat_usage unreadable "
                            f"({type(exc).__name__}); chats rest until it reads")
     at = datetime.now(UTC)

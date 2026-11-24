@@ -1,4 +1,4 @@
-"""Spoken replies are short (the owner, 2026-09-29: "Not too chatty -- simple and
+"""Spoken replies are short (Miro, 2026-09-29: "Not too chatty -- simple and
 straight to the point").
 
 Pinned here: every canned line voice can say is at most two sentences and 35
@@ -80,7 +80,7 @@ def test_what_is_said_leaves_out_switches_and_the_more_section(typed, said):
 
 
 def test_nothing_to_leave_out_means_say_it_all():
-    assert voice.for_speech("CloudCo is unknown right now.") is None
+    assert voice.for_speech("CloudHost is unknown right now.") is None
     assert voice.for_speech(None) is None
 
 
@@ -95,7 +95,7 @@ def test_a_medical_answer_still_says_see_a_professional():
 
 def test_the_self_model_is_said_in_two_sentences():
     full = ("I'm running. Up 3 hours, 0 errors since deploy, 38 of 41 checks fine. "
-            "Did 2 things. Where you are: home (owner on 203.0.113.7).")
+            "Did 2 things. Where you are: home (miro on 203.0.113.7).")
     assert voice.first_sentences(full, 2) == (
         "I'm running. Up 3 hours, 0 errors since deploy, 38 of 41 checks fine.")
 

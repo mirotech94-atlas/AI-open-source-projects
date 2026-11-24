@@ -4,10 +4,10 @@ from atlas.modules.agency import outreach
 
 
 def test_render_is_branded_and_escapes():
-    html = mail_template.render("Hi", "Hello <b>x</b>,\n\nhttps://agency.example.com/academy/confirm/abc\n\nBye")
+    html = mail_template.render("Hi", "Hello <b>x</b>,\n\nhttps://agency.storefront.test/academy/confirm/abc\n\nBye")
     assert "#0A0D14" in html and "#5B8CFF" in html and "ATLAS" in html
     assert "<b>x</b>" not in html and "&lt;b&gt;x&lt;/b&gt;" in html
-    assert 'href="https://agency.example.com/academy/confirm/abc"' in html
+    assert 'href="https://agency.storefront.test/academy/confirm/abc"' in html
     assert "Confirm my email" in html and "owner@example.com" in html
 
 

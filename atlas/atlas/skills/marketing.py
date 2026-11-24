@@ -38,7 +38,7 @@ Three honest outcomes and one dishonest one:
   acceptable. It reads as a result and is not one. If the read failed, the
   answer is that the read failed.
 
-Publishing is never yours. The draft is written, the card goes to the owner, and
+Publishing is never yours. The draft is written, the card goes to Miro, and
 nothing reaches a feed until he answers it. That is true however good the
 hypothesis is and however strong the approval record looks. If the approval
 record is strong enough that the judgment layer drafted a standing rule, show
@@ -65,7 +65,7 @@ mechanism and what would have to be true instead.
 
 Know what is actually measured before leaning on it:
 
-- ExampleCo's price check returns eBay active asks. Sold prices are the market
+- Mirotech's price check returns eBay active asks. Sold prices are the market
   and they are not measured; quote the caveat or quote nothing.
 - YouTube partner eligibility here compares subscribers only. The watch-hours
   and Shorts-views paths are measured channel-wide by academy.ypp_progress

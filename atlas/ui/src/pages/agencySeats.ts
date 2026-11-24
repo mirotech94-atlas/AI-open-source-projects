@@ -47,11 +47,11 @@ export const SEATS: readonly Seat[] = [
     rosterAgents: ["inbox"], slack: "#agency-alerts",
   },
   {
-    key: "academy", title: "Content", role: "YouTube, the church channel and Reddit",
-    brief: "Publishes the daily Atlas Academy tutorial, schedules the church channel's Shorts "
+    key: "academy", title: "Content", role: "YouTube, the community channel and Reddit",
+    brief: "Publishes the daily Atlas Academy tutorial, schedules the community channel's Shorts "
       + "and drafts the Reddit showcase posts. Every publish passes QA first.",
-    checks: ["academy.*", "youtube.clips_*", "youtube.ecc_*", "church.*", "reddit.*"],
-    actionPrefix: ["academy.", "youtube.", "church.", "reddit."],
+    checks: ["academy.*", "youtube.clips_*", "youtube.amsm_*", "community.*", "reddit.*"],
+    actionPrefix: ["academy.", "youtube.", "community.", "reddit."],
     rosterAgents: ["content"], slack: "#agency-decisions",
   },
   {
@@ -140,7 +140,7 @@ export function seatChecks(seat: Seat, modules: readonly ModuleTile[] | null): S
     for (const c of tile.checks.filter((x) => nameMatches(name, x.name))) {
       const health = checkHealth(c);
       const label = /clips_/i.test(c.name) ? channelCheckLabel(c.name)
-        : /ecc_/i.test(c.name) ? `Church ${channelCheckLabel(c.name, "ecc").toLowerCase()}`
+        : /amsm_/i.test(c.name) ? `Community ${channelCheckLabel(c.name, "amsm").toLowerCase()}`
         : safeText(c.name.replace(/_/g, " "));
       const why = c.state?.label ?? (c.stale ? "too old to count" : c.detail);
       out.push({
@@ -213,7 +213,7 @@ export function seatRoster(seat: Seat, roster: readonly AgentSummary[] | null): 
 /** Cards waiting on an answer that belong to the seat. */
 export function seatWaiting(seat: Seat, decisions: readonly DecisionRow[]): DecisionRow[] {
   return seat.key === "academy"
-    ? decisions.filter((d) => d.kind === "YouTube post" || d.kind === "Church post"
+    ? decisions.filter((d) => d.kind === "YouTube post" || d.kind === "Community post"
         || d.kind === "Reddit post")
     : decisions.filter((d) => seat.actionPrefix.some((p) => d.action.startsWith(p)));
 }

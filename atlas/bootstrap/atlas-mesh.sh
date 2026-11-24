@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Point atlas.example.com at the ATLAS box's mesh address, permanently.
+# Point atlas.storefront.test at the ATLAS box's mesh address, permanently.
 #
 #   sudo bash atlas-mesh.sh
 #
@@ -8,12 +8,12 @@
 # and the certificate is the real one because the hostname is unchanged.
 #
 # It also replaces the temporary entry atlas-tunnel.sh used to add, which
-# pointed the name at this laptop and made `ssh atlas.example.com` warn about a
+# pointed the name at this laptop and made `ssh atlas.storefront.test` warn about a
 # changed host key.
 set -euo pipefail
 
-MESH_IP="${ATLAS_MESH_IP:-100.64.0.14}"
-NAME="${ATLAS_NAME:-atlas.example.com}"
+MESH_IP="${ATLAS_MESH_IP:-100.114.123.14}"
+NAME="${ATLAS_NAME:-atlas.storefront.test}"
 HOSTS=/etc/hosts
 
 [[ $EUID -eq 0 ]] || { echo "run with sudo — editing ${HOSTS} needs root"; exit 1; }

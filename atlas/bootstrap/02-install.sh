@@ -5,11 +5,11 @@ set -euo pipefail
 log() { printf '\n\033[1;34m==>\033[0m %s\n' "$*"; }
 [[ $EUID -eq 0 ]] || { echo "run as root"; exit 1; }
 
-ADMIN_USER="${ADMIN_USER:-owner}"
+ADMIN_USER="${ADMIN_USER:-miro}"
 APP_DIR="${APP_DIR:-/opt/atlas}"
 
 log "Docker"
-# The distro is read from os-release rather than assumed. atlas.example.com ships
+# The distro is read from os-release rather than assumed. atlas.storefront.test ships
 # as Debian 13 (trixie), and download.docker.com/linux/ubuntu has no trixie
 # suite — hardcoding "ubuntu" here makes apt-get update fail on this host.
 . /etc/os-release

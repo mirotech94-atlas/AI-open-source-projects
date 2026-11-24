@@ -1,8 +1,8 @@
-"""Focus guard — declared blocks where an invite needs the owner's own decision.
+"""Focus guard — declared blocks where an invite needs Miro's own decision.
 
 Reads `FOCUS_BLOCKS` (a string like "Mon-Fri 08:00-11:00 school and deep
 work; Sat 09:00-12:00 family") and flags any PENDING invite -- someone else
-on it, the owner's own attendee entry still `needsAction` -- that lands inside one
+on it, Miro's own attendee entry still `needsAction` -- that lands inside one
 of those blocks. Declining is Tier ASK: the organizer sees it happen, and it
 carries alternative times in the same RSVP so it is worth something rather
 than just a "no". No `FOCUS_BLOCKS` set means there is nothing to guard
@@ -45,7 +45,7 @@ class Block:
 def _parse_time(token: str) -> time:
     # Deliberately naive: FOCUS_BLOCKS times are local wall-clock, not any
     # particular zone, so there is no offset to attach.
-    return datetime.strptime(token.strip(), "%H:%M").time()  # noqa: DTZ007
+    return datetime.strptime(token.strip(), "%H:%M").time()
 
 
 def _parse_days(token: str) -> frozenset[int]:
@@ -158,7 +158,7 @@ def alternatives(start: datetime, blocks: list[Block], minutes: int) -> list[dat
 
 
 async def check_focus_invites() -> Observation:
-    """Pending invites -- someone else on the guest list, the owner's own RSVP
+    """Pending invites -- someone else on the guest list, Miro's own RSVP
     still `needsAction` -- landing inside a declared focus block."""
     spec = os.getenv("FOCUS_BLOCKS")
     if not spec:
@@ -169,7 +169,7 @@ async def check_focus_invites() -> Observation:
     from . import _start, _upcoming  # lazy: avoid the init cycle
     try:
         events = await _upcoming(14)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("focus_invites", Health.UNKNOWN, detail=str(exc))
 
     hits: list[dict] = []
@@ -198,7 +198,7 @@ async def check_focus_invites() -> Observation:
 
 
 async def decline_invite(event_id: str, alternatives: str) -> ActionResult:
-    """Decline on the owner's behalf and hand the organizer alternative times in
+    """Decline on Miro's behalf and hand the organizer alternative times in
     the same RSVP comment. Tier ASK and irreversible -- it is visible to
     them, and cannot be made to look like it never happened.
 

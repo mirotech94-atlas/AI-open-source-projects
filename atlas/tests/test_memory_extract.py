@@ -1,4 +1,4 @@
-"""What ATLAS learns from the owner's words, and what it must never learn."""
+"""What ATLAS learns from Miro's words, and what it must never learn."""
 from __future__ import annotations
 
 import json
@@ -37,17 +37,17 @@ def _model(monkeypatch, answer):
     return calls
 
 
-TURN = "MMT tutor rate is going up to 35 euros an hour from January."
+TURN = "TUTORCO tutor rate is going up to 35 euros an hour from January."
 
 
 async def test_a_turn_becomes_a_memory_row_with_its_source(monkeypatch, learned):
-    _model(monkeypatch, json.dumps([{"kind": "fact", "business": "mmt",
-                                     "text": "MMT tutor rate goes up in January."}]))
+    _model(monkeypatch, json.dumps([{"kind": "fact", "business": "tutorco",
+                                     "text": "TUTORCO tutor rate goes up in January."}]))
     n = await memory_extract.distill(TURN, "Noted.", "whatsapp")
     assert n == 1
-    assert learned == [{"namespace": "biz.mmt",
-                        "fact": "MMT tutor rate goes up in January.",
-                        "source": "whatsapp", "business": "mmt"}]
+    assert learned == [{"namespace": "biz.tutorco",
+                        "fact": "TUTORCO tutor rate goes up in January.",
+                        "source": "whatsapp", "business": "tutorco"}]
 
 
 async def test_a_personal_fact_goes_to_the_owner_namespace(monkeypatch, learned):
@@ -137,7 +137,7 @@ async def test_quoted_material_alone_yields_no_rows(monkeypatch, learned):
 
 async def test_a_candidate_not_in_his_words_is_dropped(monkeypatch, learned):
     _model(monkeypatch, json.dumps([{"kind": "fact", "business": None,
-                                     "text": "the owner owns a yacht in Monaco harbour."}]))
+                                     "text": "Miro owns a yacht in Monaco harbour."}]))
     await memory_extract.distill(TURN, "ok", "whatsapp")
     assert learned == []
 
@@ -145,10 +145,10 @@ async def test_a_candidate_not_in_his_words_is_dropped(monkeypatch, learned):
 async def test_with_the_mac_model_down_the_rules_still_learn(monkeypatch, learned):
     _model(monkeypatch, None)
     n = await memory_extract.distill(
-        "Remember that the MMT invoice day is the 5th. How is the weather?",
+        "Remember that the TUTORCO invoice day is the 5th. How is the weather?",
         "ok", "whatsapp")
     assert n == 1
-    assert learned[0]["business"] == "mmt" and learned[0]["source"] == "whatsapp"
+    assert learned[0]["business"] == "tutorco" and learned[0]["source"] == "whatsapp"
 
 
 async def test_the_rules_skip_questions_and_requests(monkeypatch, learned):
@@ -176,7 +176,7 @@ async def test_the_private_route_is_used_only_when_switched_on(monkeypatch, lear
         seen.append(need)
         return llm.Completion(text=json.dumps([{
             "kind": "preference", "business": None,
-            "text": "the owner prefers plain words in updates."}]),
+            "text": "Miro prefers plain words in updates."}]),
             provider="local", model="q")
     monkeypatch.setattr(llm, "think", think)
     await memory_extract.distill("I prefer plain words in updates.", "ok", "whatsapp")
@@ -211,7 +211,7 @@ async def test_scheduled_learning_never_raises_into_the_reply(monkeypatch):
         raise RuntimeError("db down")
     monkeypatch.setattr(memory, "learn_fact", boom)
     _model(monkeypatch, json.dumps([{"kind": "fact", "business": None,
-                                     "text": "MMT tutor rate goes up."}]))
+                                     "text": "TUTORCO tutor rate goes up."}]))
     memory_extract.schedule(TURN, "ok", "whatsapp")
     await memory_extract.drain()
 
@@ -219,7 +219,7 @@ async def test_scheduled_learning_never_raises_into_the_reply(monkeypatch):
 async def test_my_password_is_never_kept_even_with_the_model_down(monkeypatch, learned):
     _model(monkeypatch, None)
     for turn in ("my password is hunter2hunter2", "my pin = 4821 for the card",
-                 "My API key is abc and my iban is DE00 1234", "my login is owner1"):
+                 "My API key is abc and my iban is DE00 1234", "my login is miro1"):
         assert await memory_extract.distill(turn, "ok", "whatsapp") == 0
     assert learned == []
 
@@ -227,14 +227,14 @@ async def test_my_password_is_never_kept_even_with_the_model_down(monkeypatch, l
 async def test_a_credential_word_in_a_model_candidate_is_dropped(monkeypatch, learned):
     _model(monkeypatch, json.dumps([{"kind": "fact", "business": None,
                                      "text": "The wifi passcode is hello."}]))
-    await memory_extract.distill("The wifi is called hello at the MMT office", "ok",
+    await memory_extract.distill("The wifi is called hello at the TUTORCO office", "ok",
                                  "whatsapp")
     assert learned == []
 
 
 async def test_a_long_candidate_cannot_pass_on_its_first_words(monkeypatch, learned):
-    long = ("MMT tutor rate " + " ".join(f"invented{i}" for i in range(25)))
-    _model(monkeypatch, json.dumps([{"kind": "fact", "business": "mmt", "text": long}]))
+    long = ("TUTORCO tutor rate " + " ".join(f"invented{i}" for i in range(25)))
+    _model(monkeypatch, json.dumps([{"kind": "fact", "business": "tutorco", "text": long}]))
     await memory_extract.distill(TURN, "ok", "whatsapp")
     assert learned == []
     assert memory_extract._grounded("tutor rate euros January", TURN) is True
@@ -265,7 +265,7 @@ async def test_text_aimed_at_a_model_is_never_kept(monkeypatch, learned, planted
 
 def test_a_plain_preference_is_not_mistaken_for_an_instruction():
     assert not memory_extract.instruction_shaped("I prefer short replies in English")
-    assert not memory_extract.instruction_shaped("We decided MMT invoices go out on the 5th")
+    assert not memory_extract.instruction_shaped("We decided TUTORCO invoices go out on the 5th")
 
 
 async def test_background_learning_does_not_carry_the_reply_timer(monkeypatch, learned):

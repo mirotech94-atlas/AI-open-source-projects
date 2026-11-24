@@ -1,5 +1,5 @@
 """The ambient bed under every Academy tutorial (academy/tutorial_music.py;
-the owner, 2026-10-13: "add background music in the intro and the ending clip
+Miro, 2026-10-13: "add background music in the intro and the ending clip
 and in between; make sure it isn't too loud")."""
 from __future__ import annotations
 
@@ -119,7 +119,7 @@ def test_a_short_file_never_ramps_past_its_ends():
 
 def test_the_ducking_arithmetic_lands_near_the_level_under_speech():
     """Inside a window: -16 dB open, about -24 dB under a narrated voice
-    (the owner 10-13 "isn't too loud": the in-window level stays at the open one)."""
+    (Miro 10-13 "isn't too loud": the in-window level stays at the open one)."""
     assert tm.BED_DB_OPEN == -16.0 and tm.BED_DB == -24.0
     assert abs(tm.ducked_db() - tm.BED_DB) < 1.0
     # the comment states the same numbers the code uses
@@ -204,7 +204,7 @@ def _level(path: Path, a: float, b: float) -> tuple[float, float]:
 @pytest.mark.skipif(not HAVE_FFMPEG, reason="ffmpeg not installed")
 async def test_a_real_mix_is_silent_under_explanations_and_sounds_in_its_windows(
         tmp_path, monkeypatch):
-    """Rule 22 (the owner, 2026-10-17): "ducked to nothing beneath explanations".
+    """Rule 22 (Miro, 2026-10-17): "ducked to nothing beneath explanations".
     A silent 20 s render, the sting at 0-1 s and the end card at 15-20 s."""
     monkeypatch.setenv("ACADEMY_TUTORIALS_DIR", str(tmp_path / "root"))
     video = tmp_path / "dry.mp4"
@@ -233,7 +233,7 @@ async def test_the_windows_land_on_the_render_clock_not_the_sample_count(
     """A render is a copy-concat of many AAC parts; each part's priming frame
     overlaps the part before at the same timestamp. Mixed by sample count,
     the end-card bed came about 1.8 s early on n8n #1 (2026-10-17), under
-    the owner's last words. Forty 0.5 s parts here: about 0.9 s of overlap."""
+    Miro's last words. Forty 0.5 s parts here: about 0.9 s of overlap."""
     monkeypatch.setenv("ACADEMY_TUTORIALS_DIR", str(tmp_path / "root"))
     part = tmp_path / "part.mp4"
     await ffmpeg.run(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",

@@ -1,4 +1,4 @@
-"""The agent on the owner's Mac (bootstrap/mac/mac_agent.py), without a Mac.
+"""The agent on Miro's Mac (bootstrap/mac/mac_agent.py), without a Mac.
 
 `subprocess.run` is replaced, so nothing here opens, sends or runs anything.
 What is asserted is the argv each operation would hand to macOS: a value

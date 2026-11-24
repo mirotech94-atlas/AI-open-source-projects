@@ -6,7 +6,7 @@
 // added from disk by nothing but its file name; the data panels by the
 // numbers they just read (data.ts).
 //
-// ATLAS Academy: the store's catalog (https://agency.example.com/catalog.json)
+// ATLAS Academy: the store's catalog (https://agency.storefront.test/catalog.json)
 // is cross-origin and the dashboard's CSP is connect-src 'self', and no
 // same-origin endpoint serves it. So the catalog and the covers are bundled
 // from the repository at build time (atlas/modules/academy/catalog.json and

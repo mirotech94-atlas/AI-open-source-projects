@@ -9,7 +9,7 @@ and to nothing else.
 1. `chrome://extensions` → enable **Developer mode** → **Load unpacked** →
    select this `extension/` directory.
 2. Open the extension's options page and set:
-   - **Ingest endpoint** — `https://atlas.example.com/ingest/browser`
+   - **Ingest endpoint** — `https://atlas.storefront.test/ingest/browser`
      (over the mesh; the API itself stays on loopback and Caddy is the
      only door, so the traffic is TLS the whole way)
    - **Ingest token** — the `BROWSER_INGEST_TOKEN` from your ATLAS `.env`

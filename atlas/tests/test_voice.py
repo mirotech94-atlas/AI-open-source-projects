@@ -80,7 +80,7 @@ async def test_an_action_request_with_no_catalog_action_is_only_described(
 
 async def test_an_action_request_becomes_an_approval_not_an_execution(
         client, memory_backend, monkeypatch):
-    """the owner asked for voice to send email and book things. The standing rule
+    """Miro asked for voice to send email and book things. The standing rule
     is that there is no path from talking to ATLAS to changing anything.
 
     Both hold: the spoken request becomes a Tier 2 proposal he approves
@@ -377,7 +377,7 @@ async def test_a_question_gets_a_plain_answer(client, monkeypatch):
 
 async def test_the_transcript_is_delimited_as_his_request(client, monkeypatch):
     """The dashboard microphone sits behind the login on the mesh, so what it
-    hears is the owner's request -- the same ruling `_queue_steps` already makes for
+    hears is Miro's request -- the same ruling `_queue_steps` already makes for
     the riskier action path. Wrapped as outside data, the model "summarised
     and classified" his questions instead of answering them (prod,
     2026-09-28). The delimiters and the marker scrub are unchanged."""
@@ -890,7 +890,7 @@ async def test_speak_uses_the_named_voice_from_env(
 
 
 async def test_female_is_answered_in_atlas_s_own_voice(client, monkeypatch):
-    """the owner, 2026-10-11: "don't use the girl voice, only use the guy voice at
+    """Miro, 2026-10-11: "don't use the girl voice, only use the guy voice at
     all times." "female" is still accepted (a 200, the closed set kept) but
     speaks as ATLAS, even with FISH_VOICE_FEMALE set."""
     from atlas.kernel.personas import ATLAS_VOICE
@@ -1175,21 +1175,21 @@ def test_a_system_check_never_swallows_an_action_or_an_unrelated_phrase(said):
 
 
 def test_resolve_focus_names_the_business_he_asked_about():
-    assert voice.resolve_focus("how is cloudco doing", "…") == {
-        "screen": "/status", "module": "cloudco"}
+    assert voice.resolve_focus("how is cloudhost doing", "…") == {
+        "screen": "/status", "module": "cloudhost"}
     assert voice.resolve_focus("how's net bird doing", "…") == {
         "screen": "/status", "module": "netbird"}
 
 
 def test_resolve_focus_prefers_the_transcript_then_the_answer(monkeypatch):
     from atlas.kernel.registry import REGISTRY
-    monkeypatch.setattr(REGISTRY, "modules", {"exampleco": object(), "netbird": object()})
+    monkeypatch.setattr(REGISTRY, "modules", {"mirotech": object(), "netbird": object()})
     monkeypatch.setattr(REGISTRY, "disabled", {})
-    assert voice.resolve_focus("is cloudco ok", "NetBird is fine too") == {
-        "screen": "/status", "module": "cloudco"}
+    assert voice.resolve_focus("is cloudhost ok", "NetBird is fine too") == {
+        "screen": "/status", "module": "cloudhost"}
     assert voice.resolve_focus("what is waiting on me",
-                               "ExampleCo has two listings to review.") == {
-        "screen": "/status", "module": "exampleco"}
+                               "Mirotech has two listings to review.") == {
+        "screen": "/status", "module": "mirotech"}
 
 
 def test_resolve_focus_system_check_is_the_fleet():
@@ -1197,8 +1197,8 @@ def test_resolve_focus_system_check_is_the_fleet():
 
 
 def test_an_action_naming_a_business_focuses_the_business_not_the_fleet():
-    assert voice.resolve_focus("system check and restart cloudco", "I would.") == {
-        "screen": "/status", "module": "cloudco"}
+    assert voice.resolve_focus("system check and restart cloudhost", "I would.") == {
+        "screen": "/status", "module": "cloudhost"}
 
 
 def test_an_answer_saying_an_ordinary_word_in_passing_is_not_a_focus(monkeypatch):
@@ -1218,7 +1218,7 @@ def test_an_answer_names_only_modules_the_registry_knows(monkeypatch):
     from atlas.kernel.registry import REGISTRY
     monkeypatch.setattr(REGISTRY, "modules", {})
     monkeypatch.setattr(REGISTRY, "disabled", {})
-    assert voice.resolve_focus("what is waiting on me", "ExampleCo has two.") is None
+    assert voice.resolve_focus("what is waiting on me", "Mirotech has two.") is None
 
 
 def test_resolve_focus_is_none_when_nothing_is_named():
@@ -1307,13 +1307,13 @@ async def test_how_are_you_is_still_the_self_model(client, monkeypatch):
 
 async def test_a_status_question_focuses_the_business_it_names(client, monkeypatch):
     async def fake_route(question, *_a, **_k):
-        return "CloudCo: 4 of 5 checks OK, last read 21:12; signups unmeasured."
+        return "CloudHost: 4 of 5 checks OK, last read 21:12; signups unmeasured."
 
     monkeypatch.setattr("atlas.kernel.agents.route", fake_route)
     body = client.post("/api/voice/ask",
-                       json={"transcript": "how is cloudco doing"}).json()
+                       json={"transcript": "how is cloudhost doing"}).json()
     assert body["kind"] == "question"
-    assert body["focus"] == {"screen": "/status", "module": "cloudco"}
+    assert body["focus"] == {"screen": "/status", "module": "cloudhost"}
 
 
 async def test_an_ordinary_question_has_no_focus(client, monkeypatch):
@@ -1669,7 +1669,7 @@ async def test_open_the_build_report_is_a_view(client, monkeypatch):
 
 async def test_the_dashboard_is_him_so_its_words_reach_the_picker_as_his(
         client, memory_backend, monkeypatch):
-    """A signed-in session on the mesh IS the owner. Wrapped as outside data, the
+    """A signed-in session on the mesh IS Miro. Wrapped as outside data, the
     picker's JSON prompt was refused every time ({"action": null})."""
     seen: list = []
 
@@ -1724,15 +1724,15 @@ async def test_live_context_hands_the_model_every_check_and_the_names(monkeypatc
     async def rows(sql, *a):
         if "FROM proposals" in sql:
             return [{"action": "gitlab.open_issue"}]
-        return [{"module": "cloudco", "check": "balance", "health": "failing",
+        return [{"module": "cloudhost", "check": "balance", "health": "failing",
                  "detail": "0.6 months of runway", "at": fresh,
                  "interval_s": 300},
-                {"module": "cloudco", "check": "instances", "health": "ok",
+                {"module": "cloudhost", "check": "instances", "health": "ok",
                  "detail": "9 up", "at": fresh, "interval_s": 300}]
     monkeypatch.setattr(voice, "fetch_all", rows)
     ctx = await voice.live_context()
-    assert "cloudco.balance: failing — 0.6 months of runway" in ctx
-    assert "cloudco.instances: ok — 9 up" in ctx
+    assert "cloudhost.balance: failing — 0.6 months of runway" in ctx
+    assert "cloudhost.instances: ok — 9 up" in ctx
     assert "1 decision(s) waiting" in ctx
     assert "Vipsy" in ctx                      # the mishearing is named
 
@@ -1758,7 +1758,7 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
     from atlas.kernel import agents
     if not agents.ROSTER:
         agents.build_roster()       # boot does this; the test client skips boot
-    said = "how is cloudco looking"
+    said = "how is cloudhost looking"
     assert not voice.is_system_check(said)
     assert not voice.is_knowledge(said)
     assert voice.view_target(said) is None
@@ -1770,14 +1770,14 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
             return []
         if "FROM checks" in sql:
             return [
-                {"module": "cloudco", "check": "balance", "health": "failing",
+                {"module": "cloudhost", "check": "balance", "health": "failing",
                  "detail": "0.6 months of runway",
                  "at": now - timedelta(minutes=2), "interval_s": 300},
                 # OK, but two days old on a five-minute check.
-                {"module": "cloudco", "check": "instances", "health": "ok",
+                {"module": "cloudhost", "check": "instances", "health": "ok",
                  "detail": "9 up", "at": now - timedelta(days=2),
                  "interval_s": 300},
-                {"module": "cloudco", "check": "backups", "health": None,
+                {"module": "cloudhost", "check": "backups", "health": None,
                  "detail": None, "at": None, "interval_s": 300},
             ]
         return []
@@ -1788,7 +1788,7 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
     async def fake_think(need, system, messages, *a, **k):
         from atlas.kernel.llm import Completion
         prompts.append(system)
-        return Completion(text="CloudCo billing is failing; instances are "
+        return Completion(text="CloudHost billing is failing; instances are "
                                "not known right now.",
                           provider="fake", model="fake")
 
@@ -1802,21 +1802,21 @@ async def test_a_status_question_takes_the_fast_path_focuses_and_reads_stale_as_
 
     assert len(prompts) == 1, "one grounded call, not the agent loop"
     ctx = prompts[0]
-    assert "cloudco.balance: failing — 0.6 months of runway (read " in ctx
-    assert "cloudco.instances: unknown" in ctx
-    assert "cloudco.instances: ok" not in ctx
+    assert "cloudhost.balance: failing — 0.6 months of runway (read " in ctx
+    assert "cloudhost.instances: unknown" in ctx
+    assert "cloudhost.instances: ok" not in ctx
     assert "9 up" not in ctx, "a stale reading's number is not today's"
-    assert "cloudco.backups: unknown — never measured" in ctx
+    assert "cloudhost.backups: unknown — never measured" in ctx
     # The rows are what the far end said: quoted, never instructions.
     rows_at = ctx.index("<untrusted_data source='checks'>")
-    assert rows_at < ctx.index("cloudco.balance: failing") < ctx.index(
+    assert rows_at < ctx.index("cloudhost.balance: failing") < ctx.index(
         "</untrusted_data>")
-    # CloudCo's agent left the roster on 2026-10-28: ATLAS answers in its own
+    # CloudHost's agent left the roster on 2026-10-28: ATLAS answers in its own
     # voice from the same one grounded call.
-    assert body["answer"].startswith("CloudCo billing is failing")
-    assert body["agent"] != "cloudco"
-    assert body["focus"] == {"screen": voice.BUSINESS_FOCUS["cloudco"],
-                             "module": "cloudco"}
+    assert body["answer"].startswith("CloudHost billing is failing")
+    assert body["agent"] != "cloudhost"
+    assert body["focus"] == {"screen": voice.BUSINESS_FOCUS["cloudhost"],
+                             "module": "cloudhost"}
 
 
 async def test_groq_whisper_hears_the_microphone(monkeypatch):
@@ -1875,7 +1875,7 @@ def test_a_refusal_says_why_when_it_is_known(monkeypatch):
 
 # ------------------------------------------------ the host's way of speaking
 #
-# the owner, 2026-11-10: every spoken answer is a short summary, like the
+# Miro, 2026-11-10: every spoken answer is a short summary, like the
 # NotebookLM host -- the answer first, one to three short sentences, plain
 # warm words, a number always with the time it was read, nothing read out as
 # a list or spelled letter by letter. The screen keeps the detail.
@@ -1891,12 +1891,12 @@ def _sentences(said: str) -> list[str]:
 
 
 def test_a_long_answer_is_said_as_its_first_three_sentences():
-    text = ("CloudCo is fine as of 7:52. Billing is the one thing to watch. "
+    text = ("CloudHost is fine as of 7:52. Billing is the one thing to watch. "
             "A card failed twice. The retry runs at nine. Then it runs again. "
             "More sentences follow here.")
     said = ear.for_ear(text)
     assert said is not None
-    assert _sentences(said)[0].startswith("CloudCo is fine as of 7:52")
+    assert _sentences(said)[0].startswith("CloudHost is fine as of 7:52")
     assert len(_sentences(said)) <= 3
     assert "retry runs at nine" not in said
 
@@ -1941,7 +1941,7 @@ def test_one_module_name_is_still_said():
 
 def test_ids_and_long_tokens_are_not_spelled_out():
     text = ("Proposal 6f0c9a1be2d34c57a8b9 is waiting. The token "
-            "sk_FAKE_placeholder is not shown. "
+            "sk_" "live_abcdefghijklmnopqrstuvwxyz1234 is not shown. "
             "See https://x.example/a/b?c=1.")
     said = ear.for_ear(text)
     assert said is not None
@@ -1962,7 +1962,7 @@ def test_an_unknown_in_a_later_sentence_is_never_cut_away():
 
 
 def test_what_is_short_already_is_said_unchanged():
-    assert ear.for_ear("CloudCo is unknown right now.") == "CloudCo is unknown right now."
+    assert ear.for_ear("CloudHost is unknown right now.") == "CloudHost is unknown right now."
     assert ear.for_ear(None) is None and ear.for_ear("   ") is None
 
 

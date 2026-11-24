@@ -1,12 +1,12 @@
 """The deterministic words check every outgoing draft passes before QA lets
 it go: no network, no model, the same answer every time.
 
-Rules (the owner, 2026-10-27, the six-agents plan):
+Rules (Miro, 2026-10-27, the six-agents plan):
 - never "$100" (the retired cheap tier), "guaranteed" or "#1";
 - a percentage, an "Nx" multiplier, or a dollar amount other than the two
   prices ($500 / $300) only on a line that names its source;
 - emails are signed by the assistant (outreach.TRAILER, or "ATLAS, assistant
-  to the owner at Mapfront"), never as the owner, and carry the CAN-SPAM lines;
+  to Miro at Mapfront"), never as Miro, and carry the CAN-SPAM lines;
 - texts carry STOP; a Reddit draft carries a line starting "Disclosure:".
 """
 from __future__ import annotations
@@ -14,14 +14,14 @@ from __future__ import annotations
 import os
 import re
 
-TRAILER = "— sent by the owner's assistant"          # agency.outreach.TRAILER
-SIGNATURE = "ATLAS, assistant to the owner at Mapfront"
+TRAILER = "— sent by Miro's assistant"          # agency.outreach.TRAILER
+SIGNATURE = "ATLAS, assistant to Miro at Mapfront"
 SIGNATURES = (TRAILER, SIGNATURE)
 PRICES = frozenset({500, 300})
 
 # kind -> what that channel must carry
-# "outreach": the agency's cold email to a lead. the owner signs it himself
-# (the owner 2026-10-31); every other rule, CAN-SPAM included, still applies.
+# "outreach": the agency's cold email to a lead. Miro signs it himself
+# (Miro 2026-10-31); every other rule, CAN-SPAM included, still applies.
 KINDS = ("email", "sms", "invite", "post", "reddit", "report", "outreach")
 SIGNED = frozenset({"email", "report"})
 
@@ -33,9 +33,9 @@ _PERCENT = re.compile(r"\d+(?:[.,]\d+)?\s?(?:%|percent\b)", re.IGNORECASE)
 _MULTIPLIER = re.compile(r"\b\d+(?:\.\d+)?\s?[x×](?![a-z0-9])", re.IGNORECASE)
 _DOLLARS = re.compile(r"\$\s?(\d[\d,]*(?:\.\d+)?)\s?([kKmM])?\b")
 _SOURCED = re.compile(r"\bsource[sd]?\s*:|\baccording\s+to\b|https?://", re.IGNORECASE)
-_SIGNED_AS_OWNER = re.compile(
+_SIGNED_AS_MIRO = re.compile(
     r"^[\s\-—–]*(?:(?:best|thanks|thank\s+you|regards|cheers|sincerely|warmly)"
-    r"[\s,]*)?owner[\s.!]*$", re.IGNORECASE)
+    r"[\s,]*)?miro(?:\s+mekhael)?[\s.!]*$", re.IGNORECASE)
 _STOP = re.compile(r"\bSTOP\b")
 _DISCLOSURE = re.compile(r"^\s*Disclosure:", re.IGNORECASE | re.MULTILINE)
 
@@ -95,9 +95,9 @@ def refusals(text: str, kind: str) -> list[str]:
         out.append('says "$100"')
     out += [why for pattern, why in _BANNED if pattern.search(text)]
     out += _unsourced_numbers(text)
-    if kind != "outreach" and any(_SIGNED_AS_OWNER.match(line)
+    if kind != "outreach" and any(_SIGNED_AS_MIRO.match(line)
                                   for line in text.splitlines()):
-        out.append("it is signed as the owner; the assistant signs, never the owner")
+        out.append("it is signed as Miro; the assistant signs, never Miro")
     if kind in SIGNED and not any(sig in text for sig in SIGNATURES):
         out.append("no assistant signature (the trailer or "
                    f"{SIGNATURE!r})")

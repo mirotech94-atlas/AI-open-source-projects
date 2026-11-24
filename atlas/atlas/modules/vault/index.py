@@ -94,7 +94,7 @@ async def extract_text(path: Path) -> tuple[str | None, str | None]:
 
         try:
             text = await asyncio.to_thread(_read)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return None, f"could not read pdf: {exc}"
         return text, None
 
@@ -256,14 +256,14 @@ async def check_index() -> Observation:
                            detail=f"vault directory not found: {directory}")
     try:
         row = await fetch_one("SELECT count(*) AS n FROM vault_documents")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("index", Health.UNKNOWN,
                            detail=f"could not read vault_documents: {exc}")
     n = int(row["n"]) if row else 0
     docs = f"{n} document(s) indexed from {directory}"
     try:
         missing = await _unembedded()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("index", Health.UNKNOWN,
                            detail=f"{docs}; could not count chunks without an "
                                   f"embedding: {exc}")
@@ -298,7 +298,7 @@ async def _to_embed() -> int | None:
         return 0
     try:
         return await _unembedded()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("vault: could not count memories to embed: %s", exc)
         return None
 

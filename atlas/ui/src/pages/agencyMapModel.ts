@@ -1,5 +1,5 @@
 /**
- * The Agency tab's pure model: the map alone (the owner, 2026-10-28), and the
+ * The Agency tab's pure model: the map alone (Miro, 2026-10-28), and the
  * one count it carries -- the previews waiting on his card, on the `sites`
  * neuron (the website-clients agent owns the preview -> card -> email flow).
  */
@@ -13,12 +13,12 @@ export const PREVIEW_AGENT = "sites";
 
 /** Cards that put a client preview in front of its owner: the email that
  *  links it (`agency.send_outreach`) and a demo's publish
- *  (`agency.deploy_demo`). Each waits for the owner in #agency-decisions. */
+ *  (`agency.deploy_demo`). Each waits for Miro in #agency-decisions. */
 export const PREVIEW_ACTIONS: ReadonlySet<string> = new Set([
   "agency.send_outreach", "agency.deploy_demo",
 ]);
 
-/** The `sites` node's badge: how many preview cards wait on the owner, read now.
+/** The `sites` node's badge: how many preview cards wait on Miro, read now.
  *  A read that failed is Unknown (grey, dashed, the word), never 0; a read
  *  not back yet says so. An expired card is not counted: it will not run. */
 export function previewBadge(approvals: Read<Approvals>, now: number): NodeBadge {

@@ -1,5 +1,5 @@
 """Slack. The best of the channels for approvals: real buttons, threads,
-and the owner is already in it during the workday."""
+and Miro is already in it during the workday."""
 from __future__ import annotations
 
 import os
@@ -23,7 +23,7 @@ COLOR = {
 # one purpose. #reels (renamed from #instagram-reels on 2026-09-27; the id
 # did not change, so neither did the variable) holds every short-video
 # card: the AI-stories account's (`instagram_stories`) and TikTok's
-# (`tiktok`). the owner: "both the instagram reels and tiktok one both go to a
+# (`tiktok`). Miro: "both the instagram reels and tiktok one both go to a
 # reels channel". Before this, TikTok's upload card had no home and fell to
 # the default channel. The main Instagram account (`instagram`) is not a
 # reels account and stays where it was. The id is in CONFIGURE.md, not here.
@@ -32,7 +32,7 @@ REELS_ENV = "SLACK_INSTAGRAM_REELS_CHANNEL"
 # message an approver types there is a question for the assistant. Unset,
 # the topic has no home and the assistant answers only to `ask <question>`.
 ASSISTANT_ENV = "SLACK_ASSISTANT_CHANNEL"
-# ATLAS Academy's YouTube tutorials (the owner, 2026-10-10): every rendered
+# ATLAS Academy's YouTube tutorials (Miro, 2026-10-10): every rendered
 # video is a draft card in #atlas-academy-videos, watched there before it
 # is approved for YouTube (`academy.tutorials.review_tutorial`).
 ACADEMY_VIDEOS_ENV = "ACADEMY_TUTORIALS_SLACK_CHANNEL"
@@ -53,19 +53,19 @@ TOPIC_CHANNEL_ENV: dict[str, str] = {
 # the id, not the name, because conversations.info and file uploads take
 # only ids. CONFIGURE.md says the same.
 TOPIC_CHANNEL_DEFAULT: dict[str, str] = {
-    "academy_videos": "C0SLACKCH03",
-    "agency_decisions": "C0SLACKCH00",
-    "agency_alerts": "C0SLACKCH01",
+    "academy_videos": "C0C89V8RNQJ",
+    "agency_decisions": "C0C3NHNKNSJ",
+    "agency_alerts": "C0CCHC6DWMT",
 }
 
 
 # The project a message is about, from its topic, for the "[Project] TYPE:"
 # header. An unknown topic is title-cased; no topic is ATLAS itself.
 PROJECT: dict[str, str] = {
-    "cloudco": "CloudCo", "guardian": "Guardian", "flycheap": "FlyCheap",
-    "inroots": "K9", "instagram_stories": "Reels", "tiktok": "Reels",
+    "cloudhost": "CloudHost", "guardian": "Guardian", "flycheap": "FlyCheap",
+    "attendance": "K9", "instagram_stories": "Reels", "tiktok": "Reels",
     "content": "Reels", "instagram": "Instagram", "linkedin": "LinkedIn",
-    "exampleco": "ExampleCo", "gitlab": "GitLab", "netbird": "NetBird",
+    "mirotech": "Mirotech", "gitlab": "GitLab", "netbird": "NetBird",
     "mail": "Mail", "calendar": "Calendar", "decisions": "Atlas",
     "brief": "Atlas", "comms": "Atlas", "assistant": "Atlas", "fiverr": "Fiverr",
     "stripe": "Stripe", "youtube": "YouTube", "academy_videos": "Academy",
@@ -90,7 +90,7 @@ _SALUTATION = re.compile(r"^(hi|hey|hello|morning|good (morning|afternoon|"
 
 
 def _first_line(text: str) -> str:
-    """The first line worth a notification: "Hey the owner," says nothing."""
+    """The first line worth a notification: "Hey Miro," says nothing."""
     lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
     for line in lines:
         if not _SALUTATION.match(line):
@@ -126,7 +126,7 @@ _HEADING = re.compile(r"(?m)^#{1,6}\s+(.+?)\s*#*\s*$")
 def slack_text(text: str) -> str:
     """Markdown as models and humans write it, made into Slack mrkdwn, and
     made unable to ping everyone. `**bold**` renders as literal asterisks in
-    Slack (2026-09-27, the #cloudco server-count answer); `<!channel>` in text
+    Slack (2026-09-27, the #cloudhost server-count answer); `<!channel>` in text
     from a buyer, a web page or a model would notify the whole channel."""
     text = _BROADCAST.sub(lambda m: "@" + m.group(1).lower(), text or "")
     text = _GROUP.sub(lambda m: (m.group(1) or "@group").strip() or "@group", text)
@@ -204,7 +204,7 @@ class SlackChannel:
 
         SLACK_CHANNELS maps a module to a channel:
 
-            SLACK_CHANNELS=cloudco:C01,flycheap:C02,guardian:C03,mail:C04,calendar:C04
+            SLACK_CHANNELS=cloudhost:C01,flycheap:C02,guardian:C03,mail:C04,calendar:C04
 
         Two modules can share a channel by naming the same id, which is how
         "everything day-to-day in one place" is expressed -- mail and
@@ -311,7 +311,7 @@ class SlackChannel:
     def _title_repeats_body(msg: Outbound) -> bool:
         """The title is just the start of the body -- the typed-reply case,
         whose title is `body[:150]`. A header then showed every reply twice
-        (2026-09-27, #cloudco)."""
+        (2026-09-27, #cloudhost)."""
         title = " ".join(msg.title.split()).rstrip("…. ")
         return bool(title) and " ".join(msg.body.split()).startswith(title)
 
@@ -394,7 +394,7 @@ class SlackChannel:
 
 
 def escape(text: str) -> str:
-    """Outside text (a visitor's, a camera's) made literal in Slack mrkdwn: `&`, `<`
+    """Outside text (a visitor's, a sensor's) made literal in Slack mrkdwn: `&`, `<`
     and `>` are the only characters Slack parses, so a pasted `<@U123>`, `<!channel>`
     or `<https://x|click>` shows as typed and notifies nobody."""
     return (text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -423,7 +423,7 @@ async def post_notice(*, topic: str, title: str, body: str,
     try:
         ts = await SlackChannel().send(Outbound(
             title=title, body=body, severity=severity, topic=topic, kind="alert"))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return None, explain(exc)[:200]
     return str(ts or "sent"), None

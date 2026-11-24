@@ -1,5 +1,5 @@
 """ATLAS Academy labs and the reference-video rules (docs/academy-youtube-plan.md
-rules 9-13, docs/academy-reference-learnings.md, the owner 2026-10-11: "learn from
+rules 9-13, docs/academy-reference-learnings.md, Miro 2026-10-11: "learn from
 them, add improvements to your own"): a hands-on lab ending every n8n lesson,
 its file a free download from the store, a "what you need" line, and the first
 hands-on step within 90 s of a build episode."""
@@ -29,7 +29,7 @@ SLOW_WPS = tut.FISH_WORDS_PER_SECOND * 0.9
 LAB_NODE_TYPES = {"n8n-nodes-base.manualTrigger", "n8n-nodes-base.webhook",
                   "n8n-nodes-base.scheduleTrigger", "n8n-nodes-base.httpRequest",
                   "n8n-nodes-base.set"}
-# 2026-10-25 (the owner): the silent-failure watch is a watcher, not an exercise
+# 2026-10-25 (Miro): the silent-failure watch is a watcher, not an exercise
 # that runs on import: it needs the n8n API and a Slack credential picked
 # after import (neither is embedded -- the checks below still hold), so it
 # may also use these. Named per file: every other lab stays credential-free.
@@ -70,9 +70,9 @@ def test_a_lab_slide_reveals_one_beat_per_step_and_names_the_download():
     sc = next(sc for _s, e, sc in LABS if e.slug == "n8n-first-workflow")
     first = design.slide(sc, 0, mark="m", chapter=0, chapters=1)
     assert first.count('class="hidden"') == len(sc.items) - 1
-    assert "agency.example.com/academy/free/n8n-city-info.json" in first
+    assert "agency.storefront.test/academy/free/n8n-city-info.json" in first
     assert "Stuck?" in first and design.STORE_SHOWN in first
-    assert design.TAG not in first        # the owner 2026-10-17: off screen; disclosed via containsSyntheticMedia + description
+    assert design.TAG not in first        # Miro 2026-10-17: off screen; disclosed via containsSyntheticMedia + description
     last = design.slide(sc, len(sc.items) - 1, mark="m", chapter=0, chapters=1)
     assert 'class="hidden"' not in last and "Challenge" in last
 

@@ -1,4 +1,4 @@
-"""academy.flag_synthetic_short (the owner, 2026-10-17: "yes add the AI flag for
+"""academy.flag_synthetic_short (Miro, 2026-10-17: "yes add the AI flag for
 Shorts too"): status.containsSyntheticMedia on the Academy's own Shorts,
 which go out through Postiz and so cannot carry it on upload."""
 from __future__ import annotations
@@ -19,7 +19,7 @@ from atlas.modules.youtube import api
 VID = "iRyhxkLk-Yo"
 AT = datetime(2026, 10, 16, 23, 5, tzinfo=UTC)
 SLUG = "tutorial:claude:1:payoff"
-WITH_ID = ("render 7: TikTok @example_handle: posted — Postiz post tt1, TikTok id "
+WITH_ID = ("render 7: TikTok @atlasclips12: posted — Postiz post tt1, TikTok id "
            "v_pub~1, public (DIRECT_POST) · YouTube clips (Short): posted — Postiz "
            f"post yt1, YouTube id {VID}, a public Short at "
            f"https://www.youtube.com/shorts/{VID}")
@@ -84,7 +84,7 @@ async def test_the_id_comes_from_the_recorded_youtube_leg():
 
 
 async def test_a_tiktok_id_is_never_taken_for_the_youtube_one():
-    detail = ("render 7: TikTok @example_handle: posted — Postiz post tt1, TikTok id "
+    detail = ("render 7: TikTok @atlasclips12: posted — Postiz post tt1, TikTok id "
               "AAAAAAAAAAA, public · YouTube clips (Short): refused — 401")
     vid, why = await syn.video_id_of(_row(detail=detail), posts=[])
     assert vid is None and why
@@ -362,7 +362,7 @@ async def test_an_older_row_with_the_youtube_leg_still_proves_the_id(yt, monkeyp
     """A render re-run for one leg records a newer row with no YouTube leg
     (clips.promo.recently_posted); the id on the older row still counts."""
     from atlas.modules.academy import synthetic as mod
-    rows = [_row(), _row(detail="render 7: TikTok @example_handle: posted — Postiz "
+    rows = [_row(), _row(detail="render 7: TikTok @atlasclips12: posted — Postiz "
                                 "post tt9, public", at=AT + timedelta(hours=2))]
 
     async def slug_rows(slug):

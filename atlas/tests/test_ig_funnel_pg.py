@@ -31,7 +31,7 @@ pytestmark = needs_pg
 TOKEN = "EAAB-main-token-SECRET-0123456789"
 IG = "17841400000000001"
 TABLES = ("ig_funnels", "ig_funnel_cursors", "ig_funnel_sends")
-DM = "Here's the free roadmap: https://academy-store.myshopify.example/roadmap"
+DM = "Here's the free roadmap: https://atlasacademy-ai.myshopify.com/roadmap"
 PUBLIC = "Sent you a DM \U0001f4e9"
 NOON_NY = datetime(2026, 9, 30, 16, 0, tzinfo=UTC)      # 12:00 New York (EDT)
 NIGHT_NY = datetime(2026, 9, 30, 3, 0, tzinfo=UTC)      # 23:00 New York
@@ -169,7 +169,7 @@ async def set_funnel(**over: Any) -> int:
               "dm_text": DM, **over}
     result = await executor.execute(executor.ExecutionRequest(
         action=funnel.SET, params=params, reason="test",
-        approved_by="slack:UOWNER"))
+        approved_by="slack:UMIRO"))
     assert result.ok, result.detail
     fid = int(result.evidence["funnel_id"])
     # The approval is stamped by the module clock (held at NOON_NY by the
@@ -211,7 +211,7 @@ async def test_a_card_with_a_link_in_the_public_reply_is_never_raised(pg, sent):
     from atlas.kernel.approvals import Unrunnable, propose
     with pytest.raises(Unrunnable):
         await propose(funnel.SET, {"account": "main", "keyword": "asset",
-                                   "public_reply": "get it at flycheap.example",
+                                   "public_reply": "get it at flycheap.example.com",
                                    "dm_text": DM}, reason="test")
     assert not sent
 
@@ -449,7 +449,7 @@ async def test_a_401_pauses_the_accounts_credential(pg, graph, sent, clock):
     assert summary["sent"] == 0 and summary["stopped"][str(fid)].startswith("held: not run")
 
 
-async def test_a_policy_error_stops_the_funnel_and_tells_owner(pg, graph, sent, clock):
+async def test_a_policy_error_stops_the_funnel_and_tells_miro(pg, graph, sent, clock):
     fid = await set_funnel()
     graph.comments["m1"] = [[comment("c1", "asset"),
                              comment("c2", "asset", who="u2", username="bob")]]
@@ -561,29 +561,29 @@ async def test_the_weekly_paragraph_counts_sends_people_errors_and_says_unknown(
 
 async def test_the_slack_command_raises_the_card_and_pause_runs(pg, sent):
     line = ('funnel main asset "Sent you a DM \U0001f4e9" '
-            '"Here’s the free roadmap: https://academy-store.myshopify.example/r" '
+            '"Here’s the free roadmap: https://atlasacademy-ai.myshopify.com/r" '
             'cap=100')
-    out = await intent.act(line, channel="slack", who="UOWNER")
+    out = await intent.act(line, channel="slack", who="UMIRO")
     assert out.ok and not out.ran and out.proposal_id and out.action == funnel.SET
     card = sent[-1]
     assert "Sent you a DM \U0001f4e9" in card.body
-    assert "Here's the free roadmap: https://academy-store.myshopify.example/r" in card.body
+    assert "Here's the free roadmap: https://atlasacademy-ai.myshopify.com/r" in card.body
     assert "100 DMs a day" in card.body
     row = await state.fetch_one("SELECT action, params, status FROM proposals WHERE id = $1",
                                 out.proposal_id)
     assert row["action"] == funnel.SET and row["status"] == "pending"
     assert json.loads(row["params"])["daily_cap"] == "100"
     # The same line again returns the pending card, not a second one.
-    again = await intent.act(line, channel="slack", who="UOWNER")
+    again = await intent.act(line, channel="slack", who="UMIRO")
     assert again.proposal_id == out.proposal_id
     # A public reply with a link never becomes a card.
-    bad = await intent.act('funnel main asset "see flycheap.example" "x"',
-                           channel="slack", who="UOWNER")
+    bad = await intent.act('funnel main asset "see flycheap.example.com" "x"',
+                           channel="slack", who="UMIRO")
     assert not bad.ok and "must not carry a link" in bad.spoken
     fid = await set_funnel()
-    listed = await intent.act("funnel list", channel="slack", who="UOWNER")
+    listed = await intent.act("funnel list", channel="slack", who="UMIRO")
     assert f"#{fid} main “asset”" in listed.spoken and "active" in listed.spoken
-    paused = await intent.act(f"funnel pause {fid}", channel="slack", who="UOWNER")
+    paused = await intent.act(f"funnel pause {fid}", channel="slack", who="UMIRO")
     assert paused.ran and not (await funnel.get_funnel(fid))["active"]
     # Not from a channel that cannot prove it is him.
     refused = await intent.act("funnel list", channel="sms", who="+1555")
@@ -600,13 +600,13 @@ async def test_the_dashboard_api_lists_and_raises_the_same_card(pg, sent):
 
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[auth.require] = lambda: auth.Session("owner", 0.0)
+    app.dependency_overrides[auth.require] = lambda: auth.Session("miro", 0.0)
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
                                  base_url="http://atlas") as c:
         assert (await c.post("/api/instagram/funnels", data={"x": "y"})).status_code == 415
         bad = await c.post("/api/instagram/funnels",
                            json={"account": "main", "keyword": "asset",
-                                 "public_reply": "www.flycheap.example", "dm_text": DM})
+                                 "public_reply": "www.flycheap.example.com", "dm_text": DM})
         assert bad.status_code == 422 and "must not carry a link" in bad.json()["detail"]
         r = await c.post("/api/instagram/funnels",
                          json={"account": "main", "keyword": "asset",

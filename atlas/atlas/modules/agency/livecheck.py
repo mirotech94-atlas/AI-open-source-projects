@@ -75,7 +75,7 @@ async def _get(client: httpx.AsyncClient, url: str) -> tuple[Any, str | None]:
     try:
         response, reason = await get_public(client, url,
                                             headers={"user-agent": USER_AGENT})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, explain(exc)
     if response is None:
         return None, reason
@@ -236,7 +236,7 @@ async def live_launch_audit(url: str, provenance: dict[str, Any] | None, *,
     """Fetch `url` and run the 20 items over it."""
     try:
         site = await fetch_site(url, allowed_host=allowed_host, client=client)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return unreadable(url, f"{url} could not be read: {explain(exc)}",
                           datetime.now(UTC))
     return await asyncio.to_thread(live_audit, site, provenance)

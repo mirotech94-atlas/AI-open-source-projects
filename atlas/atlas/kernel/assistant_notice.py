@@ -14,7 +14,7 @@ async def send_notice(notice_id: int) -> bool:
     from .executor import ExecutionRequest, execute
     result = await execute(ExecutionRequest(
         notices.ACTION, {"notice_id": notice_id},
-        reason="a short update the owner asked to hear about"))
+        reason="a short update Miro asked to hear about"))
     if not result.ok:
         log.info("owner notice #%s not sent: %s", notice_id, result.detail[:120])
     return result.ok

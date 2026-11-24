@@ -1,8 +1,8 @@
-"""A phone call to the owner, only when something serious went unanswered or he asks.
+"""A phone call to Miro, only when something serious went unanswered or he asks.
 
 Off unless `OWNER_CALLS=on` (the kill switch; default off). The call is the Tier 1
-action `mmt.call_owner`, reached only through `executor.execute` (invariant 1). It
-rings ONE number, `MMT_OWNER_WHATSAPP`, which the action cannot override: it takes
+action `tutorco.call_owner`, reached only through `executor.execute` (invariant 1). It
+rings ONE number, `TUTORCO_OWNER_WHATSAPP`, which the action cannot override: it takes
 no number and no text, only a reason from the closed list below and an event id.
 
 Two triggers:
@@ -14,11 +14,11 @@ Two triggers:
     regex (no model) turns that into the same executor call. Quiet hours do not
     stop it, because he asked.
 
-  * camera (`camera_serious`): a home-camera event rated level 3 (an unknown person or a
+  * sensor (`sensor_serious`): a home-sensor event rated level 3 (an unknown person or a
     repeat visitor in any mode; a vehicle or any unknown person when away) whose WhatsApp
-    alert was sent at least `CALL_CAMERA_GRACE_MINUTES` (2) ago and at most 20 minutes
+    alert was sent at least `CALL_SENSOR_GRACE_MINUTES` (2) ago and at most 20 minutes
     ago, with no message from the owner since; or whose WhatsApp send was refused
-    or never confirmed (then he is called whatever he wrote). Quiet hours do not hold it (the owner wants
+    or never confirmed (then he is called whatever he wrote). Quiet hours do not hold it (Miro wants
     these at every hour); every other guard, the daily cap and the OWNER_CALLS switch
     included, is the same.
 
@@ -43,11 +43,11 @@ from .executor import ExecutionRequest, execute, preview, watch_only
 
 log = logging.getLogger("atlas.owner_calls")
 
-ACTION = "mmt.call_owner"
+ACTION = "tutorco.call_owner"
 DEFAULT_MAX_PER_DAY = 3
 DEFAULT_ESCALATE_MINUTES = 15
-CAMERA_WINDOW = timedelta(minutes=20)  # a camera event older than this is not news
-DEFAULT_CAMERA_GRACE_MINUTES = 2
+SENSOR_WINDOW = timedelta(minutes=20)  # a sensor event older than this is not news
+DEFAULT_SENSOR_GRACE_MINUTES = 2
 LOOKBACK = timedelta(hours=3)        # an event older than this is no longer news
 
 # The only things the phone ever says. Keyed by reason; a caller picks a key and
@@ -59,8 +59,8 @@ SCRIPTS: dict[str, str] = {
     "escalation_card": (
         "This is Atlas. An urgent approval is waiting and I have had no reply to my "
         "message. Please check your messages."),
-    "camera_serious": (
-        "ATLAS: the house cameras raised a serious alert. "
+    "sensor_serious": (
+        "ATLAS: the house sensors raised a serious alert. "
         "Check your WhatsApp or the portal."),
     "requested": (
         "This is Atlas. You asked me to call. I have nothing more to read out. "
@@ -92,12 +92,12 @@ def escalate_minutes() -> int:
         return DEFAULT_ESCALATE_MINUTES
 
 
-def camera_grace_minutes() -> int:
+def sensor_grace_minutes() -> int:
     try:
-        return max(0, int(os.getenv("CALL_CAMERA_GRACE_MINUTES",
-                                    str(DEFAULT_CAMERA_GRACE_MINUTES))))
+        return max(0, int(os.getenv("CALL_SENSOR_GRACE_MINUTES",
+                                    str(DEFAULT_SENSOR_GRACE_MINUTES))))
     except ValueError:
-        return DEFAULT_CAMERA_GRACE_MINUTES
+        return DEFAULT_SENSOR_GRACE_MINUTES
 
 
 def quiet_now() -> bool:
@@ -129,14 +129,14 @@ async def _unacked_alerts(now: datetime) -> list[str]:
     lookback, with no message from the owner since and the check still failing."""
     from .state import fetch_all
     rows = await fetch_all(
-        """SELECT o.ref FROM mmt_owner_outbox o
+        """SELECT o.ref FROM tutorco_owner_outbox o
             WHERE o.kind = 'alert' AND o.status = 'sent'
               AND o.created_at <= $1 AND o.created_at > $2
               AND NOT EXISTS (SELECT 1 FROM effect_claims e
                                WHERE e.action = 'whatsapp.inbound'
                                  AND e.claimed_at > o.created_at)
               AND NOT EXISTS (SELECT 1 FROM effect_claims k
-                               WHERE k.action = 'mmt.call_owner' AND k.key = o.ref)
+                               WHERE k.action = 'tutorco.call_owner' AND k.key = o.ref)
             ORDER BY o.created_at""",
         now - timedelta(minutes=escalate_minutes()), now - LOOKBACK)
     out: list[str] = []
@@ -153,7 +153,7 @@ async def _unacked_cards(now: datetime) -> list[str]:
     from .state import fetch_all
     rows = await fetch_all(
         """SELECT p.id FROM proposals p
-             JOIN effect_claims c ON c.action = 'mmt.notify_card'
+             JOIN effect_claims c ON c.action = 'tutorco.notify_card'
                                  AND c.key = 'card:' || p.id::text
             WHERE p.status = 'pending' AND p.expires_at > now()
               AND p.evidence->>'urgent' = 'true' AND c.status = 'sent'
@@ -162,7 +162,7 @@ async def _unacked_cards(now: datetime) -> list[str]:
                                WHERE e.action = 'whatsapp.inbound'
                                  AND e.claimed_at > c.claimed_at)
               AND NOT EXISTS (SELECT 1 FROM effect_claims k
-                               WHERE k.action = 'mmt.call_owner'
+                               WHERE k.action = 'tutorco.call_owner'
                                  AND k.key = 'card' || p.id::text)
             ORDER BY c.claimed_at""",
         now - timedelta(minutes=escalate_minutes()), now - LOOKBACK)
@@ -176,8 +176,8 @@ async def _last_inbound() -> datetime | None:
     return None if row is None else row["at"]
 
 
-async def _unacked_camera(now: datetime) -> list[str]:
-    """Event ids ("cam<id>") of level 3 camera alerts not yet called about, within
+async def _unacked_sensor(now: datetime) -> list[str]:
+    """Event ids ("cam<id>") of level 3 sensor alerts not yet called about, within
     the last 20 minutes:
 
     * sent: past the grace, with no message from the owner since (he wrote back =
@@ -189,24 +189,24 @@ async def _unacked_camera(now: datetime) -> list[str]:
     from .state import fetch_all
     rows = await fetch_all(
         """SELECT e.id, o.created_at AS sent_at, o.status
-             FROM camera_events e
-             JOIN mmt_owner_outbox o ON o.kind = 'camera_alert'
+             FROM sensor_events e
+             JOIN tutorco_owner_outbox o ON o.kind = 'sensor_alert'
                                     AND o.ref = 'cam' || e.id::text
             WHERE e.alert_level = 3 AND o.status IN ('sent', 'sending', 'failed')
               AND o.created_at <= $1 AND o.created_at > $2
               AND NOT EXISTS (SELECT 1 FROM effect_claims k
-                               WHERE k.action = 'mmt.call_owner'
+                               WHERE k.action = 'tutorco.call_owner'
                                  AND k.key = 'cam' || e.id::text)
             ORDER BY o.created_at""",
-        now, now - CAMERA_WINDOW)
-    grace = timedelta(minutes=camera_grace_minutes())
-    rows = [r for r in rows or [] if now - r["sent_at"] <= CAMERA_WINDOW]
+        now, now - SENSOR_WINDOW)
+    grace = timedelta(minutes=sensor_grace_minutes())
+    rows = [r for r in rows or [] if now - r["sent_at"] <= SENSOR_WINDOW]
     sent = [r for r in rows if r.get("status", "sent") == "sent"]
     wrote: datetime | None = None
     if sent:
         try:
             wrote = await _last_inbound()
-        except Exception as exc:                            # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("owner calls: last inbound unreadable: %s", type(exc).__name__)
     out: list[str] = []
     for r in rows:
@@ -235,7 +235,7 @@ async def _slack_note(event: str, why: str) -> bool:
             title="I could not phone you",
             body=f"I tried to call you ({event}) and could not: {why}",
             severity=Severity.HIGH, kind="alert", topic="alerts"))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("owner call: the Slack note failed: %s", type(exc).__name__)
         return False
     return bool(used)
@@ -259,13 +259,13 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
     try:
         events = [("escalation_alert", e) for e in await _unacked_alerts(now)]
         events += [("escalation_card", e) for e in await _unacked_cards(now)]
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("owner calls: events unreadable: %s", type(exc).__name__)
         unreadable, events = True, []
-    try:                                # a camera call never waits on the other reads
-        events += [("camera_serious", e) for e in await _unacked_camera(now)]
-    except Exception as exc:                                # noqa: BLE001
-        log.warning("owner calls: camera events unreadable: %s", type(exc).__name__)
+    try:                                # a sensor call never waits on the other reads
+        events += [("sensor_serious", e) for e in await _unacked_sensor(now)]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("owner calls: sensor events unreadable: %s", type(exc).__name__)
     if not events:
         return {"error": "unreadable"} if unreadable else {"called": 0}
     if watch_only():
@@ -274,9 +274,9 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
         return {"watch_only": True, "would_call": len(events)}
     held = 0
     if quiet_now():
-        # Camera alerts are never held (any hour); the rest wait for the morning.
-        held = sum(1 for reason, _ in events if reason != "camera_serious")
-        events = [(r, e) for r, e in events if r == "camera_serious"]
+        # Sensor alerts are never held (any hour); the rest wait for the morning.
+        held = sum(1 for reason, _ in events if reason != "sensor_serious")
+        events = [(r, e) for r, e in events if r == "sensor_serious"]
         if not events:
             log.info("owner calls: quiet hours, holding %d escalation(s)", held)
             return {"quiet": True, "held": held}
@@ -324,7 +324,7 @@ async def handle_call_request(message_sid: str) -> str:
     params = {"reason": "requested", "event": event}
     try:
         pre = await preview(ACTION, params)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("owner call: preview failed: %s", type(exc).__name__)
         return "I can't call you right now: I couldn't check. Nothing was done."
     if not pre.ok:

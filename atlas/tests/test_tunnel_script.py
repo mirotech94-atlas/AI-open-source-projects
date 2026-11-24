@@ -16,7 +16,7 @@ import pytest
 SCRIPT = pathlib.Path(__file__).resolve().parent.parent / "bootstrap/mac/spark-vllm-tunnel.sh"
 FWD = "-L 18000:127.0.0.1:8000"
 OTHER = [
-    "ssh -N -L 9050:127.0.0.1:9050 spark",  # com.owner.spark-tunnel style
+    "ssh -N -L 9050:127.0.0.1:9050 spark",  # com.miro.spark-tunnel style
     "ssh -N -D 1080 spark",  # spark-socks
     "ssh -N -L 18000:127.0.0.1:80001 spark",  # near miss
     "ssh -N -L 18000:127x0x0x1:8000 spark",  # an unescaped dot would match this

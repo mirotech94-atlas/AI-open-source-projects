@@ -29,7 +29,7 @@ from atlas.modules.agency import (
 TOKEN = "dummy-vercel-token-0123456789"
 TEAM = "team_dummy0123456789"
 SLUG = "joes-7"
-HOST = "demo-site.vercel.example"
+HOST = "atlas-agency-joes-7.vercel.app"
 
 
 def _page(body: str = "", *, noindex: bool = True) -> str:
@@ -304,10 +304,10 @@ async def test_a_deployment_that_never_gets_ready_times_out(world, monkeypatch):
 
 
 async def test_a_host_vercel_did_not_assign_is_not_recorded(world):
-    world.install(FakeVercel(project=None, alias=["demo-site.vercel.example"]))
+    world.install(FakeVercel(project=None, alias=["atlas-agency-joes-7-team.vercel.app"]))
     result = await vercel.publish_vercel(SLUG)
     assert not result.ok
-    assert "demo-site.vercel.example" in result.detail
+    assert "atlas-agency-joes-7-team.vercel.app" in result.detail
     assert not any(s[0] in ("deployed", "domain") for s in world.store)
 
 
@@ -454,7 +454,7 @@ def test_publish_vercel_is_a_card_with_a_dry_run_and_a_rollback():
     assert set(action.params) == {"slug"}
     assert action.runs_in_background
     assert action.topic_for({"slug": SLUG}) == "agency_decisions"
-    assert "demo-site.vercel.example" in action.card_detail({"slug": SLUG})
+    assert "atlas-agency-joes-7.vercel.app" in action.card_detail({"slug": SLUG})
     decision = classify(action)
     assert decision.allowed and decision.tier is Tier.ASK
 

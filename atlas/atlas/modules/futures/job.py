@@ -24,7 +24,7 @@ never runs a window twice and a missed one is 'skipped' with its reason.
 The breaker (−$2,000 from the book's peak) pauses the `futures` module
 through `kernel/pause.py` and sends one line. While paused, ticks still
 read data and let open paper positions exit by their rules, but book
-nothing new. Only the owner resumes it.
+nothing new. Only Miro resumes it.
 """
 from __future__ import annotations
 
@@ -185,7 +185,7 @@ async def _already(kind: str, title: str) -> bool | None:
     try:
         row = await fetch_one("SELECT 1 AS x FROM reports WHERE kind = $1 AND title = $2 "
                               "LIMIT 1", kind, title)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("futures: reports unreadable (%s)", type(exc).__name__)
         return None
     return row is not None
@@ -197,7 +197,7 @@ async def _record(kind: str, title: str, body: str, used: list[str]) -> None:
         await execute_sql(
             "INSERT INTO reports (kind, title, body, delivered_via) VALUES ($1, $2, $3, $4)",
             kind, title, body, ",".join(used) or None)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("futures: %s went out but was not stored: %s", kind, exc)
 
 

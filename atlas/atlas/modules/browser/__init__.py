@@ -1,6 +1,6 @@
 """browser — eyes on the web.
 
-When the owner says "look it up on Google" he means "search the web and find me the
+When Miro says "look it up on Google" he means "search the web and find me the
 best thing". This is how ATLAS does that: a server-side headless Chromium that
 reads public pages, and a search that goes through Brave (`BRAVE_API_KEY`) or
 DuckDuckGo's HTML endpoint. Google's own results page blocks headless browsers
@@ -26,9 +26,9 @@ resolve to public addresses (`modules._netguard`); page text is wrapped as
 untrusted; text and screenshots are kept under `data/browser/` for 24 h.
 
 `browser.submit_form` is registered as the `browser_submit` tool but held by
-no agent: it stays unreachable until the owner names who may ask for it.
+no agent: it stays unreachable until Miro names who may ask for it.
 
-For the owner — what the code cannot close. The checks above keep a private page
+For Miro — what the code cannot close. The checks above keep a private page
 out of the prompt and out of the kept files; they cannot keep a request off
 the network. Two things are closed only by an egress rule on the box (deny
 RFC 1918, loopback, link-local, CGNAT/mesh and metadata to the browser and
@@ -83,7 +83,7 @@ class BrowserModule:
                 "url": "the page holding the form (public http/https, not denied "
                        "by policy)",
                 "fields": "selector=value pairs separated by ';', e.g. "
-                          "#name=the owner;#message=Table for four at 8?",
+                          "#name=Miro;#message=Table for four at 8?",
             },
             max_per_hour=3,
         ),)

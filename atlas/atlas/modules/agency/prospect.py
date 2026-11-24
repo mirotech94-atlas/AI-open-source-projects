@@ -145,7 +145,7 @@ LOCATE_FIELD_MASK = "places.location,places.formattedAddress,places.displayName"
 async def locate(
     area: str, *, near: tuple[float, float, int] | None = None,
 ) -> tuple[dict | None, str | None]:
-    """Where a place the owner NAMED is, read from Places -- never a coordinate a
+    """Where a place Miro NAMED is, read from Places -- never a coordinate a
     model wrote. One Text Search for the area itself ("Astoria"), biased
     toward `near` (AGENCY_HOME_AREA) when there is one, so "Astoria" is the
     one near him. Charged against the same monthly cap as a prospect call.
@@ -157,7 +157,7 @@ async def locate(
         return None, "GOOGLE_PLACES_API_KEY not set"
     try:
         used = await spend_this_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"could not read this month's Places spend: {explain(exc)}"
     if used >= cap():
         return None, f"Places budget exhausted: {used}/{cap()} requests this month"
@@ -190,7 +190,7 @@ async def locate(
 async def check_prospect_budget() -> Observation:
     try:
         used = await spend_this_month()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Unread is unknown, never a zero that reads as "budget untouched".
         return Observation(
             "prospect_budget", Health.UNKNOWN, None, "requests",

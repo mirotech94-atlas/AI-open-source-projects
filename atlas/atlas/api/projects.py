@@ -32,7 +32,7 @@ async def projects(_s: SignedIn) -> dict[str, Any]:
     from ..modules.projects import store
     try:
         rows = await store.projects()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         raise _unreadable(exc) from None
     return {"served_at": datetime.now(UTC).isoformat(), "projects": rows}
 
@@ -43,7 +43,7 @@ async def project_tasks(project_id: int, _s: SignedIn) -> dict[str, Any]:
     try:
         head = await store.project(project_id)
         rows = await store.tasks(project_id) if head is not None else []
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         raise _unreadable(exc) from None
     if head is None:
         raise HTTPException(404, f"no project {project_id}")
@@ -56,7 +56,7 @@ async def remediation(_s: SignedIn) -> dict[str, Any]:
     from ..modules.projects import store
     try:
         rows = await store.remediation()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         raise _unreadable(exc) from None
     keep = ("id", "project_id", "title", "owner", "status", "evidence", "suggested_fix",
             "source_action", "source_ref", "due_at", "created_at", "done_at")

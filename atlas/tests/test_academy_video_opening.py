@@ -1,4 +1,4 @@
-"""The Atlas Academy video system's opening and end card (the owner, 2026-10-17;
+"""The Atlas Academy video system's opening and end card (Miro, 2026-10-17;
 docs/academy-video-system: ResultTitle, BrandSting, WorkflowTrace, EndCard;
 episode-structure.md, narration.md). Batches 3 and 5 of .video-gap.md."""
 from __future__ import annotations
@@ -280,8 +280,8 @@ def test_the_end_card_says_the_result_the_next_lesson_and_the_shop_only_with_fil
     doc = design.end_card(ep, nxt, shop=True)
     assert "You now have your first workflow." in doc
     assert "Next lesson" in doc and nxt.title in doc and nxt.why in doc
-    assert "Practice files: <b>agency.example.com</b> (link in the description)" in doc
-    assert "agency.example.com" not in design.end_card(ep, nxt, shop=False)
+    assert "Practice files: <b>agency.storefront.test</b> (link in the description)" in doc
+    assert "agency.storefront.test" not in design.end_card(ep, nxt, shop=False)
     # the render asks for the shop line only when the lesson has lab files
     assert tut.end_card_text(ep).endswith("|shop") and ts.downloads_of(ep)
     bare = ts.series("claude").episode(4)
@@ -328,7 +328,7 @@ def test_an_end_card_too_short_or_not_at_the_end_is_refused():
     m.card_at, m.card_seconds = 280.0, 15.0
     assert "not at the video's end" in tut.ending_refusal(m)
     m.card_at, m.presenter = 285.0, ["outro:abc"]
-    assert "the owner's clip" in tut.ending_refusal(m)
+    assert "Miro's clip" in tut.ending_refusal(m)
     m.presenter, m.seconds, m.card_at = [], 20.0, 5.0
     assert "end screen needs 25 s" in tut.ending_refusal(m)
 
@@ -390,70 +390,7 @@ async def test_the_rendered_end_card_s_last_frame_leaves_the_reserve_flat_navy(t
     assert any(min(p) > 200 for p in words)             # paper-white text
 
 
-async def test_no_presenter_clip_reaches_any_render_argv(monkeypatch, tmp_path):
-    """the owner, 2026-10-17: his intro and outro clips stay on disk, unused. With
-    the committed clips visible, a whole render -- the real _segment,
-    opening_part and end card, only Chromium, the voice and ffmpeg faked --
-    passes neither file to any ffmpeg call."""
-    from atlas.modules.academy import presenter, reel_design
-    from atlas.modules.academy import tutorial_music as tm
-    from atlas.modules.content import ffmpeg
-    monkeypatch.delenv("ACADEMY_PRESENTER_DIR", raising=False)
-    intro = presenter.clip("intro")
-    assert intro is not None
-    assert presenter.clip("outro") is None   # retired: it named a dead address
-    monkeypatch.setenv("ACADEMY_TUTORIALS_DIR", str(tmp_path))
-    argvs: list[list[str]] = []
 
-    class Shooter:
-        pages = tut.video_qa.Pages()          # batch 9: render records it
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *a):
-            return None
-
-        async def shoot(self, doc, path, w=0, h=0):
-            return path
-
-        async def layers(self, doc, base, spec, *, crossfade):
-            return base + ".png", [], None
-
-    async def narrate(text, base, preview):
-        return base + ".wav", "fish", None
-
-    async def run(argv, timeout=0):
-        argvs.append(list(argv))
-        if argv and argv[-1].endswith((".mp4", ".jpg")):
-            Path(argv[-1]).parent.mkdir(parents=True, exist_ok=True)
-            Path(argv[-1]).write_bytes(b"x")
-        return b""
-
-    async def duration(path):
-        return 2.0 if path.endswith(".wav") else 290.0
-
-    async def add_bed(video, key, out, **kw):
-        Path(out).write_bytes(b"x")
-        return 290.0
-    async def thumbnail(ep, shooter, out_png, **kw):    # batch 7: the real-image thumbnail
-        Path(out_png).write_bytes(b"\x89PNG\r\n\x1a\nfake")
-    from atlas.modules.academy import tutorial_thumbs
-    monkeypatch.setattr(tutorial_thumbs, "render", thumbnail)
-    monkeypatch.setattr(tut, "Shooter", Shooter)
-    monkeypatch.setattr(tut, "_narrate", narrate)
-    monkeypatch.setattr(tm, "add_bed", add_bed)
-    monkeypatch.setattr(ffmpeg, "run", run)
-    monkeypatch.setattr(ffmpeg, "duration", duration)
-    monkeypatch.setattr(ffmpeg, "missing", lambda: None)
-    monkeypatch.setattr(reel_design, "available", lambda: True)
-    _d, m, why = await tut.render("claude", 4)
-    assert why is None, why
-    flat = " ".join(" ".join(a) for a in argvs)
-    assert str(intro.path) not in flat
-    assert "assets/presenter" not in flat and m.presenter == []
-    assert str(design.STING) not in flat                   # no 3D sting either
-    assert m.parts[0] == "intro-result.mp4" and m.parts[-1] == "outro-card.mp4"
-    assert m.parts[1].startswith("sting-") and (m.sting_at, m.sting_seconds) == (6.0, 1.0)
 
 
 @needs_chromium

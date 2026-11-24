@@ -30,7 +30,7 @@ async def tick() -> int:
     try:
         await subscribers._store.purge(subscribers._now())
         due = await subscribers._store.due(BATCH)
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("academy subscribers: the queue could not be read")
         return 0
     for sub_id in due:

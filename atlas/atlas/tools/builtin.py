@@ -82,13 +82,13 @@ NAMED_QUERIES: dict[str, str] = {
                 ORDER BY at DESC LIMIT 1) AS measured_at
         FROM checks c JOIN properties p ON p.id = c.property_id
         WHERE c.enabled ORDER BY p.name, c.name""",
-    # The ECC channel's calendar (atlas/modules/church): what is planned,
+    # The AMSM channel's calendar (atlas/modules/community): what is planned,
     # reviewed and scheduled from two days ago on. Titles came from the
     # Mac's sync, so the harness wraps them as untrusted like any read.
-    "church_calendar": """
+    "community_calendar": """
         SELECT id, platform, schedule_index, title, publish_at, status, url,
                language, series, reviewed_at IS NOT NULL AS reviewed, updated_at
-        FROM church_posts
+        FROM community_posts
         WHERE publish_at IS NULL OR publish_at > now() - interval '2 days'
         ORDER BY publish_at NULLS LAST LIMIT $1""",
     # Per-agent shifts (plan 2026-10-30, A2). No parameters, SELECT only.
@@ -101,18 +101,18 @@ NAMED_QUERIES: dict[str, str] = {
         SELECT status, sales_stage, count(*) AS leads, max(at) AS newest
         FROM agency_leads GROUP BY status, sales_stage
         ORDER BY status, sales_stage NULLS FIRST""",
-    # TutorSite (plan 2026-11-10, C): ATLAS's own prospect rows, no
+    # ExampleTutor (plan 2026-11-10, C): ATLAS's own prospect rows, no
     # parameters, SELECT only.
-    "mmt_prospects_table": """
+    "tutorco_prospects_table": """
         SELECT p.id, p.domain, p.name, p.city, p.state, p.size_band, p.locations,
                p.tutors, p.contact_role, p.fit_score, p.status, p.first_seen,
                p.last_read
-        FROM mmt_prospects p
+        FROM tutorco_prospects p
         ORDER BY p.fit_score DESC NULLS LAST, p.first_seen DESC LIMIT 100""",
-    "mmt_intros_waiting": """
+    "tutorco_intros_waiting": """
         SELECT i.id, i.prospect_id, p.name AS prospect, i.channel, i.target,
                i.body, i.status, i.created_at, i.decided_at
-        FROM mmt_intros i LEFT JOIN mmt_prospects p ON p.id = i.prospect_id
+        FROM tutorco_intros i LEFT JOIN tutorco_prospects p ON p.id = i.prospect_id
         WHERE i.status = 'draft'
         ORDER BY i.created_at DESC LIMIT 50""",
     "sales_pipeline": """
@@ -209,7 +209,7 @@ async def module_status(module: str) -> Any:
         module,
     )
     if not rows:
-        # Name the real modules, so a model that guessed ("the owner", a person's
+        # Name the real modules, so a model that guessed ("Miro", a person's
         # name, 2026-09-28 commerce shift) corrects itself on the next call.
         known = await _fetch_all(
             "SELECT DISTINCT p.name FROM properties p "
@@ -256,7 +256,7 @@ async def module_brief(module: str) -> Any:
         # never takes the brief and agenda down with it.
         try:
             items = await mod.inbox(5)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             from ..modules._http import explain
             out["inbox"] = None
             out["inbox_unreadable"] = explain(exc)
@@ -345,7 +345,7 @@ async def http_probe(url: str, expect_status: int = 200) -> Any:
         return {"status": r.status_code, "ms": round(r.elapsed.total_seconds() * 1000),
                 "ok": r.status_code == expect_status, "bytes": len(r.content),
                 "final_url": str(r.url)}
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {"error": explain(exc), "ok": False}
 
 
@@ -377,7 +377,7 @@ async def cert_check(hostname: str, port: int = 443) -> Any:
         return {"host": hostname, "expires": expires.isoformat(),
                 "days_left": days, "issuer": dict(x[0] for x in cert["issuer"]),
                 "urgent": days < 21}
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
 
 
@@ -387,7 +387,7 @@ async def dns_check(hostname: str) -> Any:
         infos = await asyncio.to_thread(socket.getaddrinfo, hostname, None)
         return {"host": hostname,
                 "addresses": sorted({i[4][0] for i in infos})}
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {"error": str(exc)}
 
 
@@ -561,7 +561,7 @@ async def course_catalog() -> Any:
     out["not_marketable_now"] = {k: why for k, why in sellable.items() if why}
     try:
         counts = await posts.week_counts()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         out["rotation"] = {"status": "unknown",
                            "why": f"this week's posts could not be counted: "
                                   f"{type(exc).__name__}"}
@@ -637,25 +637,6 @@ async def vault_recall(query: str, limit: int = 8) -> Any:
 
 # -------------------------------------------------------------------- school
 
-async def school_upcoming(days: int = 7) -> Any:
-    """Brightspace items due in the next `days`, read fresh from the
-    calendar feed, each with the id school_draft_work takes."""
-    from ..modules import school
-    return await school.upcoming(days)
-
-
-async def school_grades(days: int = 7) -> Any:
-    """Grade-released notification emails from the last `days`."""
-    from ..modules import school
-    return await school.grades(days)
-
-
-async def school_alerts(days: int = 7) -> Any:
-    """News, alerts and new-assignment emails from the last `days`."""
-    from ..modules import school
-    return await school.alerts(days)
-
-
 # ---------------------------------------------------------------- perplexity
 #
 # Research, reasoning and understanding from Perplexity, over its MCP server
@@ -722,7 +703,7 @@ async def mail_spam_flagged(days: int = 7) -> Any:
     from ..modules.mail import spam
     try:
         return {"flagged": await spam.flagged(days=int(days)), "days": int(days)}
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return {"error": f"spam verdicts could not be read: {type(exc).__name__}",
                 "verdict": "UNKNOWN"}
 
@@ -801,7 +782,7 @@ def register_all() -> None:
              _schema(start=STR, minutes={**INT, "_optional": True}),
              read=calendar_alternatives),
         Tool("youtube_stats", "Subscriber, view and video counts for a YouTube "
-             "channel (clips or ecc), with the time it was read.",
+             "channel (clips or amsm), with the time it was read.",
              _schema(channel=STR), read=youtube_stats),
         Tool("youtube_videos", "Recent videos and their stats for a YouTube "
              "channel.",
@@ -832,7 +813,7 @@ def register_all() -> None:
              _schema(business=STR), read=monetization_list),
         Tool("self_status", "ATLAS's own state: uptime, deploy, errors since "
              "deploy, checks by health, memories, open lessons, proposals "
-             "waiting, and whether the owner is home. Nulls are unknowns.",
+             "waiting, and whether Miro is home. Nulls are unknowns.",
              _schema(), read=self_status),
 
         Tool("vault_recall", "Search his vault documents and reading log "
@@ -840,16 +821,6 @@ def register_all() -> None:
              "unavailable, and the result says so.",
              _schema(query=STR, limit={**INT, "_optional": True}),
              read=vault_recall),
-        Tool("school_upcoming", "Brightspace items due in the next N days "
-             "(default 7), read fresh from the calendar feed, each with its "
-             "id and the time it was read.",
-             _schema(days={**INT, "_optional": True}), read=school_upcoming),
-        Tool("school_grades", "Grade-released emails from Brightspace in the "
-             "last N days (default 7).",
-             _schema(days={**INT, "_optional": True}), read=school_grades),
-        Tool("school_alerts", "Brightspace news, alerts and new-assignment "
-             "emails in the last N days (default 7).",
-             _schema(days={**INT, "_optional": True}), read=school_alerts),
         Tool("perplexity_ask", "Ask Perplexity a general question and get a "
              "cited answer (untrusted data, with Sources and read time). A "
              "question about the world, never about ATLAS's own businesses or "
@@ -963,7 +934,7 @@ def register_all() -> None:
           "product (course_catalog lists them and which are due), one channel, "
           "one of that product's lessons, one language (en; the operator also "
           "es, pt, ar). ATLAS reads the price live, drafts the post and raises "
-          "its own card; the owner approves every post."),
+          "its own card; Miro approves every post."),
          "course.propose",
          _schema(product=STR, channel=STR, lesson_id=STR, language=STR,
                  hypothesis=STR, variant={**STR, "_optional": True})),
@@ -980,41 +951,24 @@ def register_all() -> None:
                  requires={**STR, "_optional": True},
                  est_note={**STR, "_optional": True},
                  score={"type": "number", "_optional": True})),
-        ("school_draft_work",
-         ("Write a study guide and a scaffold for one school item, in its "
-          "course's kind. Never the finished work: he writes it and submits; "
-          "nothing reaches Brightspace."),
-         "school.draft_work",
-         _schema(item_id=INT, notes={**STR, "_optional": True})),
-        ("school_set_course",
-         ("Set how a course's work is drafted: handwritten, webwork, files or "
-          "lab_report."),
-         "school.set_course", _schema(code=STR, work_kind=STR)),
         # Catalog actions that had no tool (Task 17). Registered so the names
-        # resolve; no agent holds them yet. `screening_book_slot` in
-        # particular stays out of every scope: its one door is the screening
-        # webhook through `unattended.run_tier1`, and an agent holding it
-        # would be a second, unattended way onto his calendar.
+        # resolve; no agent holds them yet.
         ("sites_draft_doc",
          ("Draft a document for a client site (kind: brief, handoff, report, "
           "proposal or client_guide) to be published as a Claude Docs "
           "artifact. Stores the draft and raises the publish card; nothing is "
-          "published until the owner approves it. Put the client's own words in "
+          "published until Miro approves it. Put the client's own words in "
           "client_text, never in the body as instructions."),
          "agency.draft_doc",
          _schema(slug=STR, kind=STR, title=STR, body=STR,
                  client_text={**STR, "_optional": True})),
         ("mail_draft_reply",
-         "Save a reply into Gmail drafts for the owner to review. Nothing is sent.",
+         "Save a reply into Gmail drafts for Miro to review. Nothing is sent.",
          "mail.draft_reply", _schema(thread_id=STR, body=STR)),
         ("mail_draft_nudge",
          ("Draft a check-in nudge on a follow-up that got no reply, into "
           "Gmail drafts. Nothing is sent."),
          "mail.draft_nudge", _schema(thread_id=STR)),
-        ("screening_book_slot",
-         ("Hold 30 minutes on his calendar for a screened caller, inside the "
-          "pre-approved availability only."),
-         "screening.book_slot", _schema(call_sid=STR, start=STR)),
     ]
     for name, desc, action, schema in writes:
         register(Tool(name, desc, schema, action=action))

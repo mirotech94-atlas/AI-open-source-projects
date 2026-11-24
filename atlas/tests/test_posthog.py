@@ -36,11 +36,11 @@ async def test_traffic_is_reported_per_site_with_its_read_time(monkeypatch):
     async def q(sql):
         calls.append(sql)
         if "group by" in sql.lower():
-            return [["vault.example", 30, 12], ["flycheap.example", 20, 9]], None
+            return [["guarder.example.com", 30, 12], ["flycheap.example.com", 20, 9]], None
         return [[50, 21, 400]], None
 
     monkeypatch.setattr(posthog, "hogql", q)
     obs = await posthog.check_traffic()
     assert obs.health.value == "ok" and obs.value == 50
-    assert "vault.example 30" in obs.detail and "flycheap.example 20" in obs.detail
+    assert "guarder.example.com 30" in obs.detail and "flycheap.example.com 20" in obs.detail
     assert "UTC" in obs.detail

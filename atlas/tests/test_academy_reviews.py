@@ -171,7 +171,7 @@ def test_the_plain_render_carries_no_review_and_an_approved_one_shows():
     assert "From buyers" not in shown["safe-ai-operator/index.html"].decode()
 
 
-# the owner, 2026-10-06: a clean verified-buyer review shows itself.
+# Miro, 2026-10-06: a clean verified-buyer review shows itself.
 
 @pytest.mark.parametrize(("stars", "text", "name", "why"), [
     (5, "Clear, short lessons and the starter agent ran first time.", "Dana", None),
@@ -179,7 +179,7 @@ def test_the_plain_render_carries_no_review_and_an_approved_one_shows():
     (5, "great", "Dana", "too short"),
     (5, "Loved it, see my site www.example.com for more", "Dana", "link"),
     (5, "Email me at dana@example.com if you want the notes.", "Dana", "contact"),
-    (1, "This is a scam and I want a refund now.", "Dana", "the owner should read"),
+    (1, "This is a scam and I want a refund now.", "Dana", "Miro should read"),
     (5, "GREAT COURSE EVERYONE SHOULD BUY IT NOW TODAY", "Dana", "shouting"),
     (5, "Good value for the price and easy to follow.", "Dana 2024", "plain name"),
     (6, "Good value for the price and easy to follow.", "Dana", "stars"),

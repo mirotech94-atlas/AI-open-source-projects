@@ -16,7 +16,7 @@ wrapped by `wrap_untrusted`), and then decides everything else in code:
   two services of the same kind; and "not seen used" -- only from real
   browsing data (`browser_rollup`), and "usage unknown" when there is none.
 
-It NEVER cancels anything and has no action: the report is for the owner to
+It NEVER cancels anything and has no action: the report is for Miro to
 decide. It lands as a monthly report (`reports`, kind `money_leaks`), which
 the vault export turns into a note, and as one plain Signal.
 """
@@ -63,7 +63,7 @@ PASSES = 3
 USAGE_DAYS = 45
 
 SYSTEM = (
-    "This is a receipt, invoice or renewal email of the owner's. Reply with JSON only:\n"
+    "This is a receipt, invoice or renewal email of Miro's. Reply with JSON only:\n"
     '{"merchant": the company charging, exactly as written, or null, '
     '"amount": the amount charged exactly as written, with its currency symbol '
     'or code (e.g. "€9.99"), or null, '
@@ -223,7 +223,7 @@ async def sweep(accounts=None, *, cap: int = CAP_PER_PASS) -> SweepResult:
             messages = await find(account, gmail_query=GMAIL_QUERY,
                                   imap_subjects=IMAP_SUBJECTS, days=SEARCH_DAYS,
                                   limit=SEARCH_LIMIT)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             result.unreadable.append(f"{who}: {redact(exc)}"[:160])
             continue
         result.accounts.append(who)
@@ -422,7 +422,7 @@ async def usage_by_domain(now: datetime) -> tuple[dict[str, int] | None, str]:
             """SELECT domain, sum(visits) AS visits FROM browser_rollup
                 WHERE day >= $1 GROUP BY domain""",
             (now - timedelta(days=USAGE_DAYS)).date())
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"usage unknown: browser history unreadable ({type(exc).__name__})"
     if not rows:
         return None, "usage unknown: no browsing data in the last 45 days"
@@ -507,7 +507,7 @@ async def _run_claimed(window: str) -> None:
     from ...kernel import occurrence
     try:
         got = await run(window)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import redact
         log.warning("money-leak run failed: %s", redact(exc))
         _state.update(at=datetime.now(UTC), error=redact(exc)[:200])

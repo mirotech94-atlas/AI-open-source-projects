@@ -361,7 +361,7 @@ async def test_a_long_running_failure_says_how_long(monkeypatch, memory_backend)
         if "DISTINCT ON" in sql:
             return [{"health": "failing",
                      "detail": "no snapshots and no backups exist",
-                     "check_name": "protection", "property": "cloudco"}]
+                     "check_name": "protection", "property": "cloudhost"}]
         if "min(o.at)" in sql:
             return [{"since": datetime.now(UTC) - timedelta(days=7)}]
         return []

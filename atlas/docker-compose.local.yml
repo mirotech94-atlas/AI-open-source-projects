@@ -1,0 +1,187 @@
+# ATLAS on Miro's Mac (OrbStack). Always run with both files, from the repo
+# root, so every caller lands in the same compose project:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#
+# What this override changes, and nothing else:
+#   - caddy (80/443 on every interface) only starts with --profile server,
+#     which is never used on the Mac. Nothing public runs here.
+#   - Postgres keeps its state under ATLAS_STATE_DIR, which .env must set to
+#     an absolute path (compose does not expand ~). Unset, compose refuses to
+#     start rather than writing a database to /pg.
+#   - No Ollama: the local model is qwen3.8 on the Spark's vLLM, reached from
+#     the api at LOCAL_LLM_BASE_URL (host.docker.internal:18000, the Mac's
+#     `spark-vllm.sh up` tunnel; OrbStack forwards it to the Mac's loopback).
+#   - shop: the storefront build served on 127.0.0.1:8081, opt-in with
+#     --profile shop.
+#   - qa-browser: screenshots and PDFs for QA (modules/qa/browser_service.py),
+#     opt-in with --profile qa-browser. No TCP port at all: it answers on a
+#     Unix socket in the qa_sock volume, which only the api also mounts, and
+#     it sits on its own internal network (qa_egress, exit only via the
+#     allowlisting qa-proxy), so it has no route to the
+#     api, Postgres, Redis or the mesh. No env file, no secret. Turn it on by
+#     also setting QA_BROWSER_URL=unix:/run/qa/qa-browser.sock in .env; unset,
+#     every screenshot reads UNKNOWN ("not rendered").
+# The api keeps the base file's 127.0.0.1:8080 (ports are concatenated
+# across files, so it is deliberately not repeated here). Postgres and Redis
+# stay unpublished.
+services:
+  caddy:
+    profiles: ["server"]
+
+  api:
+    # OrbStack SNATs the published loopback port to its gateway (192.168.x.1),
+    # which the default mesh list refuses (every page 404). The port is bound
+    # to 127.0.0.1 only, so trusting the container networks adds no exposure.
+    # Host allowlist on: only localhost:8080 / 127.0.0.1:8080 / api:8080 (anti DNS rebinding).
+    environment:
+      MESH_ALLOWED_CIDRS: "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+      ATLAS_ALLOWED_HOSTS: "localhost:8080"
+      # Empty unless .env sets it (with --profile qa-browser on).
+      QA_BROWSER_URL: ${QA_BROWSER_URL:-}
+    volumes:
+      # The qa-browser socket only; the browser has no network path here.
+      - qa_sock:/run/qa:ro
+
+  postgres:
+    volumes:
+      - ${ATLAS_STATE_DIR:?set ATLAS_STATE_DIR in .env to an absolute path}/pg:/var/lib/postgresql/data
+
+  shop:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["shop"]
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - ./atlas/modules/agency/landing:/srv/landing:ro
+      # `shop-build` output; `current` is a relative symlink to one build.
+      - ./data/app/academy/build:/srv/shop:ro
+    depends_on: [api]
+
+  shop-netbird:
+    # agency.storefront.test for the NetBird mesh only: published on this Mac's NetBird
+    # address (NETBIRD_IP), never on 0.0.0.0 or a public address. Reach it from a
+    # laptop outside the mesh with a hosts-file line pointing the name at NETBIRD_IP.
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["netbird"]
+    ports:
+      - "${NETBIRD_IP:-100.116.120.116}:80:80"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - ./atlas/modules/agency/landing:/srv/landing:ro
+      - ./data/app/academy/build:/srv/shop:ro
+    depends_on: [api]
+
+  shop-public:
+    # agency.storefront.test on the public internet: Caddy with automatic HTTPS on the
+    # Mac's 80 and 443 (router forwards both here). Only the storefront and
+    # /public/academy/* are served; see Caddyfile.public. Certificates live in
+    # the shop_public_caddy volume. Opt-in: --profile public.
+    # Bound to the Mac's LAN address (PUBLIC_BIND_IP), not 0.0.0.0: a wildcard
+    # bind on 80 clashes with shop-netbird's 100.116.120.116:80 in Docker.
+    # Host port 80 is also held by OrbStack's own listener (a container
+    # published on LAN:80 gets "connection reset"), so plain HTTP is published
+    # on PUBLIC_HTTP_PORT (8080); the router maps WAN 80 -> Mac 8080 and WAN 443
+    # -> Mac 443. 443 works as is.
+    image: caddy:2-alpine
+    restart: unless-stopped
+    profiles: ["public"]
+    # OrbStack's resolver (0.250.250.200) can go unreachable; ACME needs DNS.
+    dns: [1.1.1.1, 1.0.0.1]
+    ports:
+      # PUBLIC_BIND_IP defaults to loopback, never empty (an empty host IP
+      # would publish on 0.0.0.0). No `:?` check: compose interpolates every
+      # service, so a required variable would break `up` without the profile.
+      # Plain HTTP only, loopback: philo-leads' Caddy owns the router's 80/443
+      # and proxies agency.storefront.test here (Caddyfile.public).
+      - "127.0.0.1:${PUBLIC_HTTP_PORT:-18082}:80"
+    environment:
+      PUBLIC_CADDY_EXTRA: ${PUBLIC_CADDY_EXTRA:-}
+    volumes:
+      - ./Caddyfile.public:/etc/caddy/Caddyfile:ro
+      - ./data/app/academy/build:/srv/shop:ro
+      - ./atlas/modules/agency/landing:/srv/landing:ro
+      # Prospect previews: the api writes them under /app/data/sites. Read-only:
+      # Caddy serves /preview/<slug>/ from here and never writes.
+      - ./data/app/sites:/srv/sites:ro
+      - shop_public_caddy:/data
+    read_only: true
+    tmpfs:
+      - /config
+      - /tmp
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt:
+      - no-new-privileges:true
+    depends_on: [api]
+
+  qa-browser:
+    image: mcr.microsoft.com/playwright/python:v1.48.0-noble
+    restart: unless-stopped
+    profiles: ["qa-browser"]
+    user: pwuser
+    init: true
+    ipc: host
+    # The script only, read-only; stdlib + Playwright, no ATLAS code.
+    volumes:
+      - ./atlas/modules/qa/browser_service.py:/qa/browser_service.py:ro
+      - qa_sock:/run/qa
+    command: ["python3", "/qa/browser_service.py", "/run/qa/qa-browser.sock"]
+    environment:
+      # Every connection goes through qa-proxy; the network has no other exit.
+      QA_PROXY: "http://qa-proxy:3128"
+    depends_on: [qa-proxy]
+    # qa_egress is internal: no route off the host. Only qa-proxy is on it.
+    networks: [qa_egress]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/pwuser
+    security_opt:
+      - no-new-privileges:true
+
+  # The qa-browser's only exit: CONNECT to allowlisted public hosts on 443,
+  # private/loopback/link-local/CGNAT addresses refused after one pinned
+  # lookup. Standard library only, no ATLAS code, no env file, no port.
+  qa-proxy:
+    image: python:3.12-slim
+    restart: unless-stopped
+    profiles: ["qa-browser"]
+    user: "65534:65534"
+    init: true
+    volumes:
+      - ./atlas/modules/qa/egress_proxy.py:/qa/egress_proxy.py:ro
+    command: ["python3", "/qa/egress_proxy.py", "3128"]
+    networks: [qa_egress, qa_out]
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  # The qa-browser's own network: internal (no gateway off the host), shared
+  # only with qa-proxy. A fixed bridge name for host-side checks.
+  qa_egress:
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.name: atlas-qa
+  # qa-proxy's way out. Nothing else joins it.
+  qa_out:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: atlas-qa-out
+
+volumes:
+  # Caddy's certificates and ACME account for shop-public.
+  shop_public_caddy:
+  # The qa-browser Unix socket, shared with the api only. tmpfs, world
+  # writable dir (sticky) so the browser's uid can create the socket.
+  qa_sock:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: "mode=1777,size=1m"

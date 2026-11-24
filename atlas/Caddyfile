@@ -2,7 +2,7 @@
 # token-gated media route (atlas/api/media.py) -- nothing else.
 #
 # TLS is automatic: Caddy provisions and renews a Let's Encrypt certificate for
-# atlas.example.com over the HTTP-01 challenge, which needs port 80 reachable.
+# atlas.storefront.test over the HTTP-01 challenge, which needs port 80 reachable.
 # Everything else about this host lives on the NetBird mesh.
 {
 	# No ACME contact address is set. Let's Encrypt does not require one; the
@@ -22,10 +22,10 @@
 	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 }
 
-atlas.example.com {
+atlas.storefront.test {
 	encode zstd gzip
 
-	# 2026-10-26 (the owner): the dashboard is no longer served from this host.
+	# 2026-10-26 (Miro): the dashboard is no longer served from this host.
 	# It listens on the server's loopback only (docker-compose.yml,
 	# 127.0.0.1:8080) and is reached over `ssh -L 8080:127.0.0.1:8080` as
 	# http://localhost:8080. The mesh rule and the device-certificate route are
@@ -67,7 +67,7 @@ atlas.example.com {
 		}
 	}
 
-	# the owner's TradingView alerts (atlas/api/tradingview.py). TradingView can
+	# Miro's TradingView alerts (atlas/api/tradingview.py). TradingView can
 	# neither sign a request nor present a certificate, so the gate is the
 	# long random secret in the alert's JSON body, checked by the API; the
 	# API also rate-limits per address (this X-Forwarded-For) and, with
@@ -221,7 +221,7 @@ atlas.example.com {
 # relative link to the live release (atlas/modules/agency/demo_host.py).
 # One explicit site block per hostname, each `import demo_site <slug>`: an
 # ordinary certificate for exactly that name, never on_demand -- there is no
-# ask gate for these zones. Adding a hostname is a CD change after the owner's DNS
+# ask gate for these zones. Adding a hostname is a CD change after Miro's DNS
 # record exists (docs/client-sites.md). Demos are never indexed: every
 # response, the 404 included, says noindex. No directory listing, no
 # dotfiles, no templates, no proxy.
@@ -248,13 +248,13 @@ atlas.example.com {
 	}
 }
 
-# examplehair concept demo (not the official site). DNS: the owner's A record.
-client-site.example.com {
-	import demo_site examplehair
+# Example Salon concept demo (not the official site). DNS: Miro's A record.
+examplesalon.storefront.test {
+	import demo_site examplesalon
 }
 
 # ------------------------------------------------------------------ agency
-# 2026-11-14 (the owner): the agency lives on ONE host, https://agency.example.com,
+# 2026-11-14 (Miro): the agency lives on ONE host, https://agency.storefront.test,
 # served by the public listener (Caddyfile.public, service shop-public):
 # the landing at /, the store at /academy/ and its old paths, prospect
 # previews at /preview/<slug>/. Nothing agency-related is served from this file,

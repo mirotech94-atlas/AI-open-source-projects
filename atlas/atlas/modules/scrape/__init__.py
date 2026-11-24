@@ -21,7 +21,7 @@ async def check_budget() -> Observation:
     now = datetime.now(UTC)
     try:
         used = await _scrape._count_today()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return Observation("budget", Health.UNKNOWN, at=now,
                            detail=f"scrape count unreadable: {explain(exc)}")
@@ -29,7 +29,7 @@ async def check_budget() -> Observation:
     health = Health.DEGRADED if used >= cap else Health.OK
     try:
         await _scrape.prune()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("scrape prune skipped: %s", type(exc).__name__)
     return Observation("budget", health, value=float(used), unit="requests",
                        detail=f"{used}/{cap} scrape requests today "

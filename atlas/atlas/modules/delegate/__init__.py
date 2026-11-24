@@ -1,4 +1,4 @@
-"""Delegate — hand a piece of work to the coding agent on the owner's Mac.
+"""Delegate — hand a piece of work to the coding agent on Miro's Mac.
 
 What it watches: the handoff queue itself. A task approved but never claimed
 means the agent's scheduled run is not running, and that is worth saying
@@ -84,7 +84,7 @@ async def queue_dry(handoff_id: str = "", topic: str = "") -> ActionResult:
     try:
         row = await fetch_one(
             "SELECT status, created_at, target FROM handoffs WHERE id = $1", hid)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"cannot read the handoff queue: {type(exc).__name__}")
     if row is None:
         return ActionResult(False, f"there is no handoff #{hid}")
@@ -95,7 +95,7 @@ async def queue_dry(handoff_id: str = "", topic: str = "") -> ActionResult:
                                    f"ago; ask again so it is written from today")
     return ActionResult(
         True, f"would queue handoff #{hid} ({row['target']}) for the coding agent "
-              f"on the owner's Mac; it is claimed on the agent's next scheduled run or "
+              f"on Miro's Mac; it is claimed on the agent's next scheduled run or "
               f"expires unclaimed in {int(CLAIM_TTL.total_seconds() // 3600)}h")
 
 
@@ -155,7 +155,7 @@ async def check_queue() -> Observation:
                  count(*) FILTER (WHERE status = 'expired'
                                   AND expires_at > now() - interval '1 day') AS expired
                FROM handoffs""", REPORT_TTL)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("queue", Health.UNKNOWN,
                            detail=f"cannot read the handoff queue: {type(exc).__name__}")
     queued, silent, expired = int(row["queued"]), int(row["silent"]), int(row["expired"])
@@ -198,7 +198,7 @@ class DelegateModule:
             Action(
                 name="delegate.claude_code",
                 tier=Tier.ASK,
-                summary="Hand this to the coding agent on the owner's Mac",
+                summary="Hand this to the coding agent on Miro's Mac",
                 run=queue, dry_run=queue_dry, rollback=cancel,
                 params={"handoff_id": "the id of the brief ATLAS drafted",
                         "topic": "the estate it concerns; where the card lands"},

@@ -11,7 +11,7 @@
  *
  *   porcupine    On-device, nothing leaves the machine. Needs a Picovoice
  *                access key AND a keyword file trained for "atlas" in the
- *                Picovoice console. Both belong to the owner's account.
+ *                Picovoice console. Both belong to Miro's account.
  *
  *   local-whisper  On-device speech, no cloud key. whisper-tiny.en runs in
  *                a Web Worker in this tab (`localWake.ts`), reading two-second

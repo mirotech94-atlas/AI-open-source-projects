@@ -1,4 +1,4 @@
-"""`notify_owner(kind, text)`: ATLAS texts the owner on the one WhatsApp chat.
+"""`notify_owner(kind, text)`: ATLAS texts Miro on the one WhatsApp chat.
 
 The linked device can message only the owner's own number, so there is ONE chat; a
 short tag at the start of each message keeps the sources apart:
@@ -7,7 +7,7 @@ short tag at the start of each message keeps the sources apart:
   [Portal]   agency events: payments, a lead asking to be called or replying
   [Alert]    delivery failures and health problems
 
-How it stays calm (the owner's chatter policy):
+How it stays calm (Miro's chatter policy):
   * `notify_owner` only writes a row and asks the executor (`agency.notify_owner`,
     Tier 1, recipient fixed to the owner by `contact.owner_whatsapp`). It never
     raises into its caller: an event must not break because WhatsApp is down.
@@ -166,7 +166,7 @@ async def sent_in_last_hour(now: datetime) -> int:
 # ------------------------------------------------------------------ the helper
 
 async def notify_owner(kind: str, text: str) -> int | None:
-    """Queue one message to the owner and, unless it is digest or quiet, send it now
+    """Queue one message to Miro and, unless it is digest or quiet, send it now
     through the executor. Returns the row id (None: duplicate, bad input or error).
     Never raises."""
     try:
@@ -182,7 +182,7 @@ async def notify_owner(kind: str, text: str) -> int | None:
             return msg_id
         await _run(msg_id)
         return msg_id
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("owner_wa: not queued (%s)", type(exc).__name__)
         return None
 
@@ -258,7 +258,7 @@ async def run(msg_id: int = 0) -> ActionResult:
         return ActionResult(False, "refused: this attempt is already taken")
     try:
         ok, got = await contact._send_wa(body_for(taken["kind"], taken["text"]))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         ok, got = False, explain(exc)
     if not ok:
         await _store.failed(int(msg_id), str(got), _now())

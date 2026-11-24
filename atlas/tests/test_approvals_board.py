@@ -1,6 +1,6 @@
 """The approvals board (kernel/board.py) and the card's new face.
 
-the owner, 2026-10-11: "organize Slack approval messages, as I don't know which
+Miro, 2026-10-11: "organize Slack approval messages, as I don't know which
 one is which and where they all are." One pinned board in #approvals, edited
 in place, grouped by area; every card headed "[Area] #id · what approving
 does". The board lists; it can never approve or decline anything.

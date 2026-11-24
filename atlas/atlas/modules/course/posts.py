@@ -486,14 +486,14 @@ def reason_for(post: dict[str, Any], target_name: str) -> str:
     rec = live.from_record(_as_dict(post.get("price")))
     price_line = (rec.card_line(product) if rec and found
                   else "Price: UNKNOWN (no read recorded)")
-    how = ("the owner posts this by hand; approving marks it handed off and starts "
+    how = ("Miro posts this by hand; approving marks it handed off and starts "
            "its measurement." if post["channel"] in channels.HANDOFF
            else "Approving posts it now through Postiz.")
     where = (f"Course post #{post['id']} -- {short}, lesson {post['lesson_id']} "
              f"for {target_name}, experiment #{post['experiment_id']}.")
     link = (f"Link: {post['link']} (utm_source={post['platform']}, "
             f"utm_medium=organic, utm_campaign={post['experiment_id']})")
-    rules = ("the owner's own product; no income, grades, accuracy or accreditation "
+    rules = ("Miro's own product; no income, grades, accuracy or accreditation "
              "claims, no reviews, countdowns or discounts, never Claude for kids "
              "(checked in code).")
     lines = [head, where, price_line, link, rules, how]
@@ -549,7 +549,7 @@ async def _approval_refusal(post: dict[str, Any] | None, post_id: Any, text: str
                 f"nothing was sent"), None
     if handoff != (post["channel"] in channels.HANDOFF):
         return (f"course post #{post_id} is for {post['channel']}, which is "
-                f"{'posted by ATLAS' if handoff else 'handed to the owner'}"), None
+                f"{'posted by ATLAS' if handoff else 'handed to Miro'}"), None
     product = str(post.get("product") or OPERATOR)
     if (why := catalog.product_refusal(product)) is not None:
         return why, None
@@ -661,12 +661,12 @@ async def hand_off_dry(post_id: int, text: str) -> ActionResult:
     why, _ = await _approval_refusal(post, post_id, text, handoff=True)
     if why is not None:
         return ActionResult(False, why)
-    return ActionResult(True, f"would mark course post #{post_id} handed to the owner "
+    return ActionResult(True, f"would mark course post #{post_id} handed to Miro "
                               f"to post on {post['channel']}")   # type: ignore[index]
 
 
 async def hand_off(post_id: int, text: str) -> ActionResult:
-    """Mark a LinkedIn or blog post as handed to the owner, who posts it himself;
+    """Mark a LinkedIn or blog post as handed to Miro, who posts it himself;
     its measurement clock starts now. Nothing leaves ATLAS."""
     post = await _post(post_id)
     why, _ = await _approval_refusal(post, post_id, text, handoff=True)

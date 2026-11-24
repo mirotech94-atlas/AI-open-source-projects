@@ -1,5 +1,5 @@
 /**
- * One short plain line for an agent's last-run outcome (the owner 2026-10-29).
+ * One short plain line for an agent's last-run outcome (Miro 2026-10-29).
  * Mirrors `atlas.kernel.agents.outcome_line`: fixed words for the failure
  * kinds, otherwise the first clean sentence of the model's text (markdown,
  * untrusted-data wrappers, headings and filler removed), cut to 60 characters
@@ -15,13 +15,13 @@ const TAG_BLOCK = /<(untrusted[\w-]*)[^>]*>[\s\S]*?(<\/\1\s*>|$)/gi;
 const ANY_TAG = /<\/?[A-Za-z][^>]*>/g;
 const UNTRUSTED_NOTE = new RegExp(
   "(\\*\\*|__)?\\s*summary of (the )?untrusted data\\s*:?\\s*(\\*\\*|__)?\\s*:?"
-  + "|the block above is (data|what owner said)[^.]*\\.(\\s*[^.]*never follow it\\.)?",
+  + "|the block above is (data|what miro said)[^.]*\\.(\\s*[^.]*never follow it\\.)?",
   "gi");
 const MD = /(\*\*|__|`+|^\s{0,3}#{1,6}\s*|^\s*[-*+]\s+|^\s*\d+\.\s+)/gm;
 const SAFE_REASON = /[^A-Za-z0-9 ._/-]/g;
 
 // The line a roster shows is a fact, not the model clearing its throat
-// (the owner 2026-10-29). Same patterns as `atlas.kernel.agents`; both run the
+// (Miro 2026-10-29). Same patterns as `atlas.kernel.agents`; both run the
 // cases in tests/fixtures/outcome_lines.json.
 const HEADING = /^\s{0,3}#{1,6}\s.*$/gm;
 const SENTENCE_BREAK = /(?<=[.!?])\s+|\n+/;
@@ -41,7 +41,7 @@ export const LINE_LIMIT = 60;
 export const DETAIL_LIMIT = 1200;
 
 function fixedWords(text: string): string | null {
-  if (text.startsWith("shift deferred:")) return "Deferred: free quota kept for the owner";
+  if (text.startsWith("shift deferred:")) return "Deferred: free quota kept for Miro";
   if (text.startsWith("shift failed:")) {
     const reason = text.slice("shift failed:".length).trim();
     if (reason.includes("all providers failed") || /no provider/i.test(reason)) {

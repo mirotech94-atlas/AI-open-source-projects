@@ -9,7 +9,7 @@ const Bust = lazy(() =>
 
 /**
  * The pocket: ATLAS in the Mac menu bar (bootstrap/mac/menubar, "ATLAS
- * Menu"). the owner, 2026-09-29: "make it simple and fit to screen, no need to
+ * Menu"). Miro, 2026-09-29: "make it simple and fit to screen, no need to
  * scroll, just the humanoid and that's it, with chat available, and voice
  * of course."
  *

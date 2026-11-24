@@ -73,12 +73,12 @@ def _json(payload: dict, status: int) -> JSONResponse:
 def _received(request: Request, source: str) -> Response:
     """The one answer to every accepted post: new, duplicate, throttled or bot."""
     if _wants_json(request):
-        return _json({"ok": True, "message": "Got it. the owner will reply to your email "
+        return _json({"ok": True, "message": "Got it. Miro will reply to your email "
                       "soon."}, 200)
     target = THANKS.get(source)
     if target:
         return RedirectResponse(target, status_code=303, headers=NO_STORE)
-    return _page("Message received", "<p>Thank you. the owner will reply to the email "
+    return _page("Message received", "<p>Thank you. Miro will reply to the email "
                  "address you gave, usually within a day.</p>", 200)
 
 
@@ -125,7 +125,7 @@ async def post_contact(request: Request) -> Response:
         return _received(request, sub["source"])
     try:
         await contact.submit(sub, _hash(effective_client(request)))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("agency contact: a message could not be stored (%s)", type(exc).__name__)
         return _problem(request, f"We could not save that right now. Nothing was sent. "
                                  f"Please email {MAIL} instead.", "", 503)

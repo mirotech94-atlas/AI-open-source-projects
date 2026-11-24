@@ -1,17 +1,17 @@
 {
   "store": {
     "name": "ATLAS Academy",
-    "domain": "agency.example.com",
-    "author": "the owner (the author)",
+    "domain": "agency.storefront.test",
+    "author": "Miro (Myron Mekhael)",
     "contact_email": "owner@example.com",
-    "contact_email_note": "the owner's personal contact address (the contact page, the footer, Write to the owner).",
-    "support_email": "owner@example.com",
-    "support_email_note": "The store's support contact (the owner, 2026-10-11). Since 2026-11-14 it is the owner's own Gmail; the support mailbox reader (ACADEMY_SUPPORT_MAILBOX) only sees it if that Gmail forwards into the mailbox it reads.",
+    "contact_email_note": "Miro's personal contact address (the contact page, the footer, Write to Miro).",
+    "support_email": "agency.sender@gmail.com",
+    "support_email_note": "The store's support contact (Miro, 2026-10-11). Since 2026-11-14 it is Miro's own Gmail; the support mailbox reader (ACADEMY_SUPPORT_MAILBOX) only sees it if that Gmail forwards into the mailbox it reads.",
     "currency": "usd",
     "facts_checked": "14 Nov 2026",
     "facts_note": "Every count on the site was read from the built files (pdfinfo, unzip -l, ls) on the date above. Re-check after any file changes.",
     "access_valid_days": null,
-    "access_valid_days_note": "the owner sets. null: the access page keeps working for as long as Stripe says the checkout is paid and not refunded; every visit asks Stripe again.",
+    "access_valid_days_note": "Miro sets. null: the access page keeps working for as long as Stripe says the checkout is paid and not refunded; every visit asks Stripe again.",
     "download_link_days": 7,
     "audiences": {
       "local-service": {
@@ -23,7 +23,7 @@
         "description": "A freelancer or consultant who keeps clients, projects, proposals and a weekly review in one place, with Claude drafting and the freelancer checking and deciding."
       }
     },
-    "audiences_note": "Competitor report improvement 05 (11 Oct 2026): two narrow audiences. The examples come from the Automation Pack's Chapter 0 and the Vault Kit's own audience lines. the owner can rename or replace them.",
+    "audiences_note": "Competitor report improvement 05 (11 Oct 2026): two narrow audiences. The examples come from the Automation Pack's Chapter 0 and the Vault Kit's own audience lines. Miro can rename or replace them.",
     "support": {
       "access_help": [
         "A lost access page: write from the address you paid with and the link is sent to that address.",
@@ -46,12 +46,12 @@
         "Say what you did, what the guide says you should see, and what you saw instead. Paste the exact error text.",
         "Never send passwords, API keys or a real customer's details. Use the guide's made-up test data."
       ],
-      "response_time": "the owner replies by email within 2 business days.",
-      "response_time_note": "DECIDED (the owner, 2026-10-11): within 2 business days, the same promise as the contact page's sent message (site.py, contact/sent).",
+      "response_time": "Miro replies by email within 2 business days.",
+      "response_time_note": "DECIDED (Miro, 2026-10-11): within 2 business days, the same promise as the contact page's sent message (site.py, contact/sent).",
       "updates": null,
-      "updates_note": "TO DECIDE (the owner): an update policy, e.g. whether buyers get corrected files free, for how long, and how they hear about them. Until then no panel states one. Today each guide dates its tool-dependent pages instead.",
+      "updates_note": "TO DECIDE (Miro): an update policy, e.g. whether buyers get corrected files free, for how long, and how they hear about them. Until then no panel states one. Today each guide dates its tool-dependent pages instead.",
       "implementation_services": null,
-      "implementation_services_note": "TO DECIDE (the owner): whether to point buyers who want setup done for them to a paid service (for example Mapfront) and on what terms. Until then the support text says only that implementation is not part of a purchase."
+      "implementation_services_note": "TO DECIDE (Miro): whether to point buyers who want setup done for them to a paid service (for example Mapfront) and on what terms. Until then the support text says only that implementation is not part of a purchase."
     }
   },
   "products": [
@@ -67,7 +67,7 @@
       "cover": "covers/safe-ai-operator.jpg",
       "cover_alt": "Cover of Build a Safe AI Operator: a shield with a check mark.",
       "summary": "Build an AI agent for your business that picks actions from a closed list you define, waits for your approval on anything you haven't cleared to run alone, and refuses five kinds of action in code: moving money, DNS, deleting, revoking keys and changing itself.",
-      "intro": "A video course with a written guide (PDF) and a Python starter agent, by the owner, on the eight rules his own agent, ATLAS, runs on. You build a small operator that watches first, picks actions from a closed list, asks before any action you haven't cleared to run on its own, and says \"unknown\" instead of guessing. Each lesson ends with one exercise on the starter agent.",
+      "intro": "A video course with a written guide (PDF) and a Python starter agent, by Miro, on the eight rules his own agent, ATLAS, runs on. You build a small operator that watches first, picks actions from a closed list, asks before any action you haven't cleared to run on its own, and says \"unknown\" instead of guessing. Each lesson ends with one exercise on the starter agent.",
       "benefits": [
         "Write checks that only read, and that report UNKNOWN when they can't see, never \"fine\".",
         "Give the model a closed menu of actions, with every argument validated, so it picks a name from your list instead of writing code or commands.",
@@ -221,9 +221,9 @@
           "id": "safe-ai-operator",
           "name": "Build a Safe AI Operator",
           "price_usd": 20,
-          "price_note": "the owner, 2026-10-01: $20 (matches the Shopify price read 2026-09-29). Live Stripe link plink_1ULlC4AZE7Rk74vY6x9Ep7I2.",
+          "price_note": "Miro, 2026-10-01: $20 (matches the Shopify price read 2026-09-29). Live Stripe link plink_1ULlC4AZE7Rk74vY6x9Ep7I2.",
           "payment_link": "https://buy.stripe.com/dRm00icmberw2d63SJgnK08",
-          "stripe_price_id": "price_EXAMPLE_00",
+          "stripe_price_id": "price_1ULlC3AZE7Rk74vY4CfIBYa5",
           "files": [
             {
               "key": "operator-video-0-1",
@@ -450,7 +450,7 @@
           "tool": "safe-operator starter agent",
           "version": "Python 3.14.7, pytest 9.1.1, httpx 0.28.1",
           "checked_on": "2026-10-11",
-          "by": "An automated run on the starter zip in the owner's vault",
+          "by": "An automated run on the starter zip in Miro's vault",
           "what": "All 82 tests passed. The README's propose, pending, approve and watch commands printed what the README describes."
         }
       ],
@@ -458,14 +458,14 @@
         {
           "kind": "expected",
           "problem": "approve says watch-only mode is on",
-          "example_input": "python -m safe_operator approve 1 --by owner",
+          "example_input": "python -m safe_operator approve 1 --by miro",
           "expected_output": "refused: watch-only mode is on; nothing may act",
           "recovery": "This is the default, on purpose. For one test, run the command with WATCH_ONLY=false. Only false, 0, no or off turn it off; a typo leaves it on."
         },
         {
           "kind": "expected",
           "problem": "The same approval is refused the second time",
-          "example_input": "WATCH_ONLY=false python -m safe_operator approve 1 --by owner, twice",
+          "example_input": "WATCH_ONLY=false python -m safe_operator approve 1 --by miro, twice",
           "expected_output": "cannot approve #1: it is claimed",
           "recovery": "An approval runs once. Propose the action again if you need it again."
         },
@@ -495,7 +495,7 @@
         "request": "A customer asked when their order ships. The operator proposes reply_to_customer for thread t1, with the reason \"customer asked when it ships\" and a one-hour expiry.",
         "draft": "dry run: would reply on thread t1 with: Thanks, it ships Monday.",
         "review_step": "The proposal waits in the pending list with its reason and expiry. Nothing has run. While watch-only mode is on, even an approval is refused.",
-        "on_approve": "With watch-only off: \"approved #1 by owner; handing it to the executor\", then \"done: (demo) replied on thread t1\". A second approval is refused: it is claimed.",
+        "on_approve": "With watch-only off: \"approved #1 by miro; handing it to the executor\", then \"done: (demo) replied on thread t1\". A second approval is refused: it is claimed.",
         "on_silence": "expires in 3600s. If nobody answers, it simply does not run.",
         "limits": "The demo actions describe what they would do and touch nothing. The gate covers actions that go through the executor; it doesn't check whether the reply says the right thing. You read the dry run before you approve."
       },
@@ -522,7 +522,7 @@
         "tested: the README asks for Python 3.11 or newer; only 3.14.7 was run.",
         "troubleshooting: the course has no troubleshooting chapter that was found; the preview uses the starter's own refusals, captured on 11 Oct 2026.",
         "evidence: no finished learner project exists yet. Add one only from a real learner, with permission.",
-        "TO DECIDE (the owner): the cover's printed tagline (an absolute claim that the AI won't burn your business; it is printed on the image, and the alt text no longer repeats it) and the Module 5 title \"Approvals that can't be faked\" are absolute; they describe what buyers receive, so they were left as they are. Re-render the cover or retitle the module if you want them gone too."
+        "TO DECIDE (Miro): the cover's printed tagline (an absolute claim that the AI won't burn your business; it is printed on the image, and the alt text no longer repeats it) and the Module 5 title \"Approvals that can't be faked\" are absolute; they describe what buyers receive, so they were left as they are. Re-render the cover or retitle the module if you want them gone too."
       ]
     },
     {
@@ -652,7 +652,7 @@
           "price_usd": 9,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/3cIbJ085V3MSeZSfBrgnK00",
-          "stripe_price_id": "price_EXAMPLE_01",
+          "stripe_price_id": "price_1ULVPaAZE7Rk74vYuljEoMst",
           "files": [
             {
               "key": "lessons-pdf",
@@ -847,7 +847,7 @@
           "price_usd": 19,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/fZu6oG4TJabg2d60GxgnK01",
-          "stripe_price_id": "price_EXAMPLE_02",
+          "stripe_price_id": "price_1ULVTcAZE7Rk74vYMQbRoMgt",
           "files": [
             {
               "key": "vault-kit-zip",
@@ -925,7 +925,7 @@
           "tool": "Links between the kit's notes",
           "version": "",
           "checked_on": "2026-10-11",
-          "by": "An automated check of the kit's zip in the owner's vault",
+          "by": "An automated check of the kit's zip in Miro's vault",
           "what": "All 17 links between the notes open a note inside the kit."
         }
       ],
@@ -1185,7 +1185,7 @@
           "price_usd": 29,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/aFa00ieuj838cRKblbgnK02",
-          "stripe_price_id": "price_EXAMPLE_03",
+          "stripe_price_id": "price_1ULVWAAZE7Rk74vYKfrrBpTE",
           "files": [
             {
               "key": "aiea-adults-video-0-1",
@@ -1525,7 +1525,7 @@
           "price_usd": 19,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/dRm4gy4TJbfk8Bu88ZgnK03",
-          "stripe_price_id": "price_EXAMPLE_04",
+          "stripe_price_id": "price_1ULVXtAZE7Rk74vY7aJxyRNo",
           "files": [
             {
               "key": "aiea-60plus-video-0-1",
@@ -1640,7 +1640,7 @@
           "price_usd": 39,
           "price_note": "",
           "payment_link": "https://buy.stripe.com/bJe7sK3PF6Z4eZS9d3gnK04",
-          "stripe_price_id": "price_EXAMPLE_05",
+          "stripe_price_id": "price_1ULVZZAZE7Rk74vYGWRAWNEd",
           "files": [
             {
               "key": "aiea-adults-video-0-1",
@@ -2180,7 +2180,7 @@
       ],
       "testimonials": [],
       "unverified": [
-        "TO DECIDE (the owner): the benefit and audience line said the first automation \"asks before it acts\". No build waits for a yes (Build 2 emails you to double-check after adding the row; Build 4 logs with review_needed), so both now say it leaves the decision to a person. Restore the old wording only if a lesson adds an approval step.",
+        "TO DECIDE (Miro): the benefit and audience line said the first automation \"asks before it acts\". No build waits for a yes (Build 2 emails you to double-check after adding the row; Build 4 logs with review_needed), so both now say it leaves the decision to a person. Restore the old wording only if a lesson adds an approval step.",
         "tested: the Google steps of Builds 2 to 4 have not been run (they need a real Google login); the review demo shows the lesson's recorded output of the step before the Sheet write."
       ],
       "review_demo": {
@@ -2204,7 +2204,7 @@
       "cover": "covers/local-business-automation-pack.jpg",
       "cover_alt": "Cover of the Local Business Automation Pack: white type on black with royal-blue concentric arcs, and the flow Webhook, Validate, Draft (sent: false).",
       "summary": "Four n8n automations for a local business that prepare drafts for you to check and send yourself: a site health check, a lead-form reply, a missed-call text-back and a review request, with a guide that explains every node.",
-      "intro": "A written guide and four importable n8n workflow files, by the owner. Each workflow checks its input, writes the lead, call, job or site status to a plain text file on your own machine, and drafts the reply for you to send. Nothing is sent by the files, and nothing needs an account, a key or a password. Import them in an afternoon, test them with made-up data, and keep the owner in the loop.",
+      "intro": "A written guide and four importable n8n workflow files, by Miro. Each workflow checks its input, writes the lead, call, job or site status to a plain text file on your own machine, and drafts the reply for you to send. Nothing is sent by the files, and nothing needs an account, a key or a password. Import them in an afternoon, test them with made-up data, and keep the owner in the loop.",
       "benefits": [
         "Know within 15 minutes when your website or booking page goes down, with a log that says OK, DOWN or UNKNOWN and never calls an unreadable site \"fine\".",
         "Catch every contact-form lead the moment it arrives, with a reply already drafted in your words.",
@@ -2303,7 +2303,7 @@
       "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
       "refund_note": "The store's standard 14-day terms, as on the other four titles.",
       "licence": "One purchase covers one business: the buyer and the people who work in that business may use the guide and the workflow files, including on the n8n they run for it. Please don't resell or share the files publicly. The buyer must be an adult.",
-      "licence_note": "Proposed 1 Oct 2026 (a business pack, so per business rather than per household). the owner to confirm.",
+      "licence_note": "Proposed 1 Oct 2026 (a business pack, so per business rather than per household). Miro to confirm.",
       "pairs_with": "safe-ai-operator",
       "pairs_reason": "The same rules, draft before send and unknown is never OK, taken further: an agent that picks actions from a closed list and asks before it acts.",
       "offers": [
@@ -2311,9 +2311,9 @@
           "id": "local-business-automation-pack",
           "name": "Local Business Automation Pack",
           "price_usd": 29,
-          "price_note": "Proposed from the market research of 30 Sep 2026 (Products/Roadmap.md): documented single n8n workflows sell at $29-45 and vertical kits at $35-59; Gumroad's $30-49 band converts best. the owner can change it.",
+          "price_note": "Proposed from the market research of 30 Sep 2026 (Products/Roadmap.md): documented single n8n workflows sell at $29-45 and vertical kits at $35-59; Gumroad's $30-49 band converts best. Miro can change it.",
           "payment_link": "https://buy.stripe.com/9B64gyae30AG3ha2OFgnK0b",
-          "stripe_price_id": "price_EXAMPLE_06",
+          "stripe_price_id": "price_1ULlaRAZE7Rk74vYRsTnkkEa",
           "files": [
             {
               "key": "lbap-zip",
@@ -2499,7 +2499,7 @@
       "unverified": [
         "tested: the verify log marks three items 'check before publishing': a lawyer to read Chapter 5's paragraph on US text-message consent; Docker Desktop's terms for small businesses (not fetched); n8n's 422 for a non-JSON body (carried over, not re-tested).",
         "tested: n8n's docs listed 2.41.5 as current stable on 1 Oct 2026; the pack pins and was tested on 2.40.7. Re-test before stating a newer version.",
-        "journey: the owner to decide whether the free episode shows the pack's own workflow file or builds a smaller one on screen."
+        "journey: Miro to decide whether the free episode shows the pack's own workflow file or builds a smaller one on screen."
       ]
     },
     {
@@ -2513,7 +2513,7 @@
       "cover": "covers/family-ai-scam-defence-workbook.jpg",
       "cover_alt": "Cover of The Family AI-Scam Defense Workbook: white type on black with royal-blue concentric arcs, and three labels: Safe word, Callback rule, By the phone.",
       "summary": "A household plan you make in one sitting: a family safe word, a callback rule, a never-paste list, practice drills, and the pages you keep by the phone. A plan before the phone rings.",
-      "intro": "A printable workbook, by the owner. AI tools can now copy a voice, make up a video and write a message with no mistakes in it, so the old clues are not much help. This workbook does not try to teach you to spot fakes. It gives your family a few simple moves that still work when the fake is perfect: stop, hang up, call back on a number you already know. You read it together at the kitchen table, fill in the boxes with a pen, practise twice, and put the cards up.",
+      "intro": "A printable workbook, by Miro. AI tools can now copy a voice, make up a video and write a message with no mistakes in it, so the old clues are not much help. This workbook does not try to teach you to spot fakes. It gives your family a few simple moves that still work when the fake is perfect: stop, hang up, call back on a number you already know. You read it together at the kitchen table, fill in the boxes with a pen, practise twice, and put the cards up.",
       "benefits": [
         "Choose a family safe word the right way, and agree that asking for it is never rude.",
         "Hang up on any call that asks for money, a code or personal details, and call back on a number you wrote down while you were calm.",
@@ -2616,7 +2616,7 @@
       "refund": "14-day money-back guarantee: if it isn't useful, email us within 14 days of purchase for a full refund, no questions asked.",
       "refund_note": "The store's standard 14-day terms, as on the other titles.",
       "licence": "One purchase covers one household, including the relatives in that household's plan, so you can print pages for a parent who lives elsewhere. Please don't resell or share the file publicly. The buyer must be an adult.",
-      "licence_note": "Proposed 5 Oct 2026 (a household plan, so per household). the owner to confirm.",
+      "licence_note": "Proposed 5 Oct 2026 (a household plan, so per household). Miro to confirm.",
       "pairs_with": "ai-for-every-age",
       "pairs_reason": "The course teaches the app; the workbook is the household plan around it.",
       "offers": [
@@ -2624,9 +2624,9 @@
           "id": "family-ai-scam-defence-workbook",
           "name": "The Family AI-Scam Defense Workbook",
           "price_usd": 19,
-          "price_note": "Proposed in Products/Roadmap.md (1 Oct 2026): the one comparable workbook launched at CA$19.99; Etsy scam posters and senior guides sell at $1-6. the owner can change it. Live Stripe link plink_1UNJrRAZE7Rk74vYRlEwCe97, made 5 Oct 2026 at his word.",
+          "price_note": "Proposed in Products/Roadmap.md (1 Oct 2026): the one comparable workbook launched at CA$19.99; Etsy scam posters and senior guides sell at $1-6. Miro can change it. Live Stripe link plink_1UNJrRAZE7Rk74vYRlEwCe97, made 5 Oct 2026 at his word.",
           "payment_link": "https://buy.stripe.com/00w9ASfyn97cg3WdtjgnK0f",
-          "stripe_price_id": "price_EXAMPLE_07",
+          "stripe_price_id": "price_1UNJqwAZE7Rk74vYgEGY7rHp",
           "files": [
             {
               "key": "fasdw-pdf",
@@ -2722,7 +2722,7 @@
       "testimonials": [],
       "unverified": [
         "review_demo: not applicable; the workbook teaches no AI tool.",
-        "TO DECIDE (the owner): the verify log asks the owner to read Part 6's \"When memory is a worry\" and \"If something has already happened\" for tone before publishing."
+        "TO DECIDE (Miro): the verify log asks Miro to read Part 6's \"When memory is a worry\" and \"If something has already happened\" for tone before publishing."
       ]
     },
     {
@@ -2737,7 +2737,7 @@
       "cover": "covers/sell-with-ai.jpg",
       "cover_alt": "Cover of Sell With AI: white type on black with a faint grid and a royal-blue glow, and the line \"Clips, digital products and an online store\".",
       "summary": "Three ways one person sells with AI doing the repetitive work: clipping with permission, one digital product, and a small online store. The method, with no income promises.",
-      "intro": "A course by the owner on the three lanes he runs himself, with his own agent, ATLAS, doing the repetitive parts. You learn to cut clips only from footage you're allowed to use, to build and sell one product from something you already know, and to open a one-product store with a supplier you've tested. Each lesson ends with one thing to do. No figure for what you'll earn appears anywhere in it.",
+      "intro": "A course by Miro on the three lanes he runs himself, with his own agent, ATLAS, doing the repetitive parts. You learn to cut clips only from footage you're allowed to use, to build and sell one product from something you already know, and to open a one-product store with a supplier you've tested. Each lesson ends with one thing to do. No figure for what you'll earn appears anywhere in it.",
       "benefits": [
         "Join a clipping campaign that supplies its footage, read its rules as a checklist, and find, cut and caption the moments worth posting.",
         "Turn something you've actually done into one guide, kit or short course, with the model as your editor, and test it as a stranger would.",
@@ -2870,9 +2870,9 @@
           "cover": "",
           "blurb": "All 27 lessons as one PDF.",
           "price_usd": 19,
-          "price_note": "Proposed 4 Oct 2026 from the Roadmap's market read (ebooks $9-19; a full course text sits at the top of that band). the owner can change it.",
+          "price_note": "Proposed 4 Oct 2026 from the Roadmap's market read (ebooks $9-19; a full course text sits at the top of that band). Miro can change it.",
           "payment_link": "https://buy.stripe.com/eVqaEW2LB2IO5pi9d3gnK0c",
-          "stripe_price_id": "price_EXAMPLE_08",
+          "stripe_price_id": "price_1UN1J8AZE7Rk74vYkSMrnylg",
           "files": [
             {
               "key": "sell-ebook-pdf",
@@ -2896,7 +2896,7 @@
           "price_usd": 39,
           "price_note": "Set 4 Oct 2026 (the $30-49 band). Live since the 27 videos landed on the server, 5 Oct 2026.",
           "payment_link": "https://buy.stripe.com/00wdR8gCr0AGdVO88ZgnK0d",
-          "stripe_price_id": "price_EXAMPLE_09",
+          "stripe_price_id": "price_1UN1J9AZE7Rk74vYWTgu8L7J",
           "files": [
             {
               "key": "sell-video-0-1",
@@ -3051,7 +3051,7 @@
           "price_usd": 49,
           "price_note": "Set 4 Oct 2026. Live since the videos landed, 5 Oct 2026.",
           "payment_link": "https://buy.stripe.com/9B628q71R5V0g3WdtjgnK0e",
-          "stripe_price_id": "price_EXAMPLE_10",
+          "stripe_price_id": "price_1UN1JAAZE7Rk74vY3kmR016y",
           "files": [
             {
               "key": "sell-video-0-1",
@@ -3272,9 +3272,9 @@
       "ai-for-every-age-both"
     ],
     "price_usd": 79,
-    "price_note": "the owner, 2026-10-01: $79 (the four titles alone are $87). Live Stripe link plink_1ULlC4AZE7Rk74vY1ALQIYqt.",
+    "price_note": "Miro, 2026-10-01: $79 (the four titles alone are $87). Live Stripe link plink_1ULlC4AZE7Rk74vY1ALQIYqt.",
     "payment_link": "https://buy.stripe.com/7sYdR8cmb4QWcRKdtjgnK09",
-    "stripe_price_id": "price_EXAMPLE_11",
+    "stripe_price_id": "price_1ULlC4AZE7Rk74vY6P2VtkMu",
     "terms_note": "Each title keeps its own refund terms and licence."
   },
   "routes": [
@@ -3338,8 +3338,8 @@
       ],
       "overlap": "Some safety advice appears in both, from the same official sources. If you have the course, the new material in the workbook is Parts 6, 7 and 9 and the fuller reporting steps in Part 8.",
       "unverified": [
-        "TO DECIDE (the owner): sell the workbook and Safe and Simple AI 60+ together as one offer, and at what price. No combined price exists; the route only names the two titles.",
-        "TO DECIDE (the owner): Safe and Simple AI 60+ Lesson 6.2's 'Try it' sends the reader to the free Family Scam-Safety Kit's callback card, which the store doesn't list. The workbook's Page A is the sold equivalent."
+        "TO DECIDE (Miro): sell the workbook and Safe and Simple AI 60+ together as one offer, and at what price. No combined price exists; the route only names the two titles.",
+        "TO DECIDE (Miro): Safe and Simple AI 60+ Lesson 6.2's 'Try it' sends the reader to the free Family Scam-Safety Kit's callback card, which the store doesn't list. The workbook's Page A is the sold equivalent."
       ]
     }
   ]

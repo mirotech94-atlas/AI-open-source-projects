@@ -8,7 +8,7 @@ The watchdog reads one public URL and posts to its own Slack webhook. It shares
 no credential with ATLAS. The webhook is a secret: it lives only in the Spark's
 env file (mode 0600), never in this repo, a chat or a log.
 
-## What the owner provides first
+## What Miro provides first
 
 1. A Slack **incoming webhook** made for this purpose
    (`https://hooks.slack.com/services/...`). Not ATLAS's bot token: bot-token
@@ -34,7 +34,7 @@ scp ops/watchdog/watchdog.env.example        spark:.config/atlas-watchdog/watchd
 ssh spark
 chmod 600 ~/.config/atlas-watchdog/watchdog.env
 ${EDITOR:-nano} ~/.config/atlas-watchdog/watchdog.env   # set ATLAS_WATCHDOG_WEBHOOK=
-#   ATLAS_WATCHDOG_URL=https://agency.example.com/healthz is already set.
+#   ATLAS_WATCHDOG_URL=https://agency.storefront.test/healthz is already set.
 
 # A3. One manual run before the timer exists (still on the Spark)
 systemctl --user daemon-reload
@@ -82,7 +82,7 @@ Optional env for `disk_status.sh`: `ATLAS_DISK_PATH`, `ATLAS_DISK_ROOTS`,
 `ATLAS_DISK_WARN_GIB` (10) in the api's environment.
 
 The off-box copy target (`ATLAS_OFFBOX_TARGET`, used by `ops/offbox/`) is this
-same Spark: `backup-host:atlas-offbox/` through the Mac's `spark` ssh alias. Create the
+same Spark: `spark:atlas-offbox/` through the Mac's `spark` ssh alias. Create the
 directory once on the Spark (`ssh spark 'mkdir -p ~/atlas-offbox'`).
 
 ## Part C: the public route (one Caddyfile.public change)
@@ -97,8 +97,8 @@ step; this change does not touch it.
 
 ## The alternate-route drill (separately authorised)
 
-With the owner present, set `ATLAS_WATCHDOG_URL` in the Spark's env file to a path
-that answers 404 (for example `https://agency.example.com/healthz-drill`) and run
+With Miro present, set `ATLAS_WATCHDOG_URL` in the Spark's env file to a path
+that answers 404 (for example `https://agency.storefront.test/healthz-drill`) and run
 the service once. It should post one "PROBLEM healthz FAIL: HTTP 404" message.
 Restore the URL and run again; it should post one "recovered" message.
 

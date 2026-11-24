@@ -53,7 +53,7 @@ async def test_the_version_it_was_approved_at_runs():
     ran: list = []
     install(ran)
     got = await execute(ExecutionRequest(
-        NAME, {"target": "a"}, "approved", approved_by="slack:UOWNER",
+        NAME, {"target": "a"}, "approved", approved_by="slack:UMIRO",
         approved_version=REGISTRY.action_version(NAME)))
     assert got.ok and ran == [("a", "s")]
 
@@ -65,7 +65,7 @@ async def test_a_changed_action_is_refused_before_anything_runs(armed):
     # The deploy: the action now takes one more parameter.
     install(ran, params={"target": "which", "size": "how big", "zone": "where"})
     got = await execute(ExecutionRequest(
-        NAME, {"target": "a"}, "approved", approved_by="slack:UOWNER",
+        NAME, {"target": "a"}, "approved", approved_by="slack:UMIRO",
         approved_version=approved_at))
     assert not got.ok and ran == []
     assert got.dispatched is False
@@ -84,7 +84,7 @@ async def test_a_stale_request_is_refused_even_in_watch_only(monkeypatch, armed)
     ran: list = []
     install(ran)
     got = await execute(ExecutionRequest(
-        NAME, {"target": "a"}, "queued", approved_by="slack:UOWNER",
+        NAME, {"target": "a"}, "queued", approved_by="slack:UMIRO",
         approved_version="av1:0000"))
     assert got.evidence == {STALE: "version"} and ran == []
     assert "execute.watch_only" not in _events(armed)
@@ -99,7 +99,7 @@ async def test_a_version_that_cannot_be_computed_is_a_mismatch(monkeypatch):
 
     monkeypatch.setattr(REGISTRY, "action_version", broken)
     got = await execute(ExecutionRequest(
-        NAME, {"target": "a"}, "approved", approved_by="slack:UOWNER",
+        NAME, {"target": "a"}, "approved", approved_by="slack:UMIRO",
         approved_version="av1:whatever"))
     assert not got.ok and got.evidence == {STALE: "version"} and ran == []
 
@@ -109,7 +109,7 @@ async def test_nothing_recorded_is_checked_exactly_as_before():
     ran: list = []
     install(ran)
     got = await execute(ExecutionRequest(NAME, {"target": "a"}, "legacy",
-                                         approved_by="slack:UOWNER"))
+                                         approved_by="slack:UMIRO"))
     assert got.ok and ran == [("a", "s")]
 
 
@@ -131,7 +131,7 @@ async def test_the_params_it_was_approved_with_run():
     install(ran)
     params = {"target": "a", "size": "l"}
     got = await execute(ExecutionRequest(
-        NAME, params, "approved", approved_by="slack:UOWNER",
+        NAME, params, "approved", approved_by="slack:UMIRO",
         approved_version=REGISTRY.action_version(NAME),
         approved_payload_hash=payload_hash(params)))
     assert got.ok and ran == [("a", "l")]
@@ -142,7 +142,7 @@ async def test_changed_params_are_refused_before_anything_runs(armed):
     ran: list = []
     install(ran)
     got = await execute(ExecutionRequest(
-        NAME, {"target": "a", "size": "xl"}, "approved", approved_by="slack:UOWNER",
+        NAME, {"target": "a", "size": "xl"}, "approved", approved_by="slack:UMIRO",
         approved_version=REGISTRY.action_version(NAME),
         approved_payload_hash=payload_hash({"target": "a", "size": "l"})))
     assert not got.ok and ran == []
@@ -160,7 +160,7 @@ async def test_a_legacy_hash_of_none_is_not_checked():
     ran: list = []
     install(ran)
     got = await execute(ExecutionRequest(
-        NAME, {"target": "b"}, "legacy", approved_by="slack:UOWNER",
+        NAME, {"target": "b"}, "legacy", approved_by="slack:UMIRO",
         approved_version=REGISTRY.action_version(NAME)))
     assert got.ok and ran == [("b", "s")]
 

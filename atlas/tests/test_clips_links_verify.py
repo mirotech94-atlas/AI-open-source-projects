@@ -5,7 +5,7 @@ What these pin down (`atlas/modules/clips/links.py::record_tiktok_link`,
 `POST /clips/links/{clip_id}` in `atlas/api/clips.py`):
   * the route takes the HANDOFF_TOKEN bearer and is mesh-only, answering
     exactly as the /clips/whop routes do without it;
-  * only `https://www.tiktok.com/@example_handle/video/<id>` is accepted: a
+  * only `https://www.tiktok.com/@atlasclips12/video/<id>` is accepted: a
     short link, another host, another handle, the profile, a query string
     are 400 and nothing is read or written;
   * TikTok's public oEmbed is the ONE TikTok endpoint read (`GET /oembed`,
@@ -42,12 +42,12 @@ VIDEO_ID = 7691384068834954509
 VIDEO = f"https://www.tiktok.com/@{HANDLE}/video/{VIDEO_ID}"
 MINTED = datetime(2026, 9, 30, 17, 38, 23, tzinfo=UTC)          # VIDEO_ID >> 32
 POSTED = datetime(2026, 9, 30, 17, 38, 27, 718721, tzinfo=UTC)  # clip 8, live
-REF = "postiz_example_id_05"
-CAPTION = ("Best moments from @example_handle live on Twitch\n\n#Ad\n"
+REF = "cmuoe2o0b059mql0yn4tmy3g9"
+CAPTION = ("Best moments from @irubyana live on Twitch\n\n#Ad\n"
            "#irubyana #irubyanaclips #twitch\n@irubyana")
 # oEmbed's title for it, seen live: the caption whole, line breaks as spaces.
-TITLE = ("Best moments from @example_handle live on Twitch #Ad #irubyana "
-         "#irubyanaclips #twitch @example_handle")
+TITLE = ("Best moments from @irubyana live on Twitch #Ad #irubyana "
+         "#irubyanaclips #twitch @irubyana")
 
 
 def _oembed(**changes) -> dict:
@@ -208,7 +208,7 @@ def test_the_title_is_the_caption_with_whitespace_collapsed():
     assert links.title_matches(TITLE[:links.TITLE_MIN_PREFIX], CAPTION)
     # A short prefix is not the caption.
     assert not links.title_matches(TITLE[:links.TITLE_MIN_PREFIX - 1], CAPTION)
-    assert not links.title_matches("Best moments from @example_handle live on Twitch",
+    assert not links.title_matches("Best moments from @irubyana live on Twitch",
                                    CAPTION)
 
 
@@ -246,7 +246,7 @@ def test_a_video_minted_outside_the_window_is_409_before_tiktok_is_read(
         api, monkeypatch, db):
     # Clip 6 has the same caption as clip 8 and posted 29 minutes earlier
     # (live): only the minting time tells them apart.
-    rows = db(_row(6, post_ref="postiz_example_id_06",
+    rows = db(_row(6, post_ref="cmuod13dg04pqql0y0dd6hb0x",
                    posted_at=datetime(2026, 9, 30, 17, 9, 14, tzinfo=UTC)))
     seen = _tiktok(monkeypatch)
     r = _post(api, cid=6)
@@ -317,7 +317,7 @@ def test_no_such_clip_is_404(api, monkeypatch, db):
 
 def test_a_url_already_on_another_row_is_409(api, monkeypatch, db):
     rows = db(_row(6, post_url=VIDEO, post_url_source="tiktok",
-                   post_ref="postiz_example_id_06"),
+                   post_ref="cmuod13dg04pqql0y0dd6hb0x"),
               _row(8))
     seen = _tiktok(monkeypatch)
     r = _post(api, cid=8)

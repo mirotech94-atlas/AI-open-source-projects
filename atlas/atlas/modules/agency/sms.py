@@ -72,7 +72,7 @@ async def send_sms(to: str, body: str) -> tuple[bool, str]:
         async with httpx.AsyncClient(timeout=20, auth=(sid, token)) as client:
             r = await client.post(f"{API}/{sid}/Messages.json",
                                   data={"From": frm, "To": to, "Body": body[:MAX_SMS]})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, explain(exc)
     try:
         data = r.json()

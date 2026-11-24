@@ -10,13 +10,12 @@ previous good file, and every write also appends a line to the run log.
 """
 from __future__ import annotations
 
-import re
-
 import asyncio
 import contextlib
 import fcntl
 import json
 import os
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -118,22 +117,22 @@ async def file_lock(timeout_s: float = 900.0):
 
 
 # Links a post may never carry: the lab hosts (any other example.com name) and
-# the demo/guarder apps. The one public host, agency.example.com, is the agency
+# the demo/guarder apps. The one public host, agency.storefront.test, is the agency
 # and Academy home and is the only example.com name a post may link to.
-BANNED_LINKS = ("example.com", "pulsedemo", "my.vault.example", "admin.vault.example")
-PUBLIC_HOST = "agency.example.com"
+BANNED_LINKS = ("storefront.test", "pulsedemo", "my.guarder.example.com", "admin.guarder.example.com")
+PUBLIC_HOST = "agency.storefront.test"
 
 
 _HOST = re.compile(r"(?:[a-z0-9-]+\.)+[a-z]{2,}")
 
 
 def has_banned_link(text: str) -> bool:
-    """True when a post names a banned app or any example.com host other than the
+    """True when a post names a banned app or any storefront.test host other than the
     one public host. Host names are read out whole and compared exactly, so
-    `evil.agency.example.com` and `agency.example.com.evil.io` are not the public host."""
+    `evil.agency.storefront.test` and `agency.storefront.test.evil.io` are not the public host."""
     low = text.lower()
     for host in _HOST.findall(low):
-        if host != PUBLIC_HOST and "example.com" in host:
+        if host != PUBLIC_HOST and "storefront.test" in host:
             return True
     rest = low.replace(PUBLIC_HOST, " ")
-    return any(b in rest for b in BANNED_LINKS if b != "example.com")
+    return any(b in rest for b in BANNED_LINKS if b != "storefront.test")

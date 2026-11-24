@@ -19,7 +19,7 @@ only the rows the database lacks:
   measured minutes, `TITLE_PATTERNS`) with this episode's hook and
   benefit; one match exactly, never a best guess. The channel welcome (no
   playlist) maps by title alone, only when it is in no series playlist.
-  Anything else is listed for the owner, never inserted;
+  Anything else is listed for Miro, never inserted;
 * private uploads are listed, never inserted (plan step 5.1); `lineup`
   treats their episodes as not posted;
 * comments: commentThreads.list under every mapped public video, only
@@ -163,7 +163,7 @@ async def run(apply: bool, channel: str | None = None) -> Report:
             "SELECT video_id, series, episode FROM academy_tutorial_posts")}
         have_comments = {str(r["comment_id"]) for r in await state.fetch_all(
             "SELECT comment_id FROM academy_tutorial_comments")}
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return refuse(f"the database could not be read ({type(exc).__name__})")
     db_read = datetime.now(UTC)
 

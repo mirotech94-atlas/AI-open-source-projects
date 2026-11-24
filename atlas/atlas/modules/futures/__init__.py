@@ -1,7 +1,7 @@
 """Futures -- a paper strategy engine that measures whether "14 Orderflow +
 SMC + ICT strategies" work on MNQ, on real price data, with no money in it.
 
-the owner, 2026-09-29, after a reel ("We coded 14 Orderflow+SMC+ICT strategies
+Miro, 2026-09-29, after a reel ("We coded 14 Orderflow+SMC+ICT strategies
 into a single algorithm that beats prop firms" -- NinjaTrader 8, MNQ, VWAP
 signals, an equity curve per engine and combined, a live P&L, unverified):
 "build this for me". ATLAS never trades or moves money (Tier 3, permanently
@@ -35,7 +35,7 @@ advice. So this is the honest version:
   bars through the same step function as the backtest. $50,000 paper, 1
   contract a signal, at most 3 open, −$1,000 daily stop, −$2,000 trailing
   breaker that pauses this module (`kernel/pause.py`) with one line to
-  the owner. Every entry and exit is a row with its bar, price, slippage and
+  Miro. Every entry and exit is a row with its bar, price, slippage and
   reason. The forward book is the real test; the backtest is context.
 * **Reporting** (`report.py`), topic `markets` (#trades): one daily close
   summary and one weekly scoreboard (`weekly_section()` for the weekly
@@ -88,7 +88,7 @@ async def check_futures(now: datetime | None = None) -> Observation:
     try:
         read = await data.last_read(sym, _job.INTERVAL)
         st = await book.state()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(NAME, Health.UNKNOWN,
                            detail=f"futures tables unreadable ({type(exc).__name__})")
     if read is None:
@@ -125,7 +125,7 @@ async def check_futures(now: datetime | None = None) -> Observation:
         parts.append(f"paper equity ${eq:,.2f}, {len(st.get('positions') or [])} open")
         if st.get("halted"):
             health = Health.DEGRADED
-            parts.append("breaker tripped: paused until the owner resumes")
+            parts.append("breaker tripped: paused until Miro resumes")
     if paused is not None and not (st or {}).get("halted"):
         parts.append(f"paused ({paused.paused_by})")
     return Observation(

@@ -27,7 +27,7 @@ def fish_request(
     `speed` (None = the field is left out, Fish's normal pace) is sent as
     `"prosody": {"speed": speed, "volume": 0}` -- docs.fish.audio, the TTS
     endpoint, read 2026-10-11: prosody speed 0.5 to 2.0, default 1; volume
-    in dB, default 0. Only the Academy tutorials pass one (the owner, 2026-10-11:
+    in dB, default 0. Only the Academy tutorials pass one (Miro, 2026-10-11:
     "make him talk slower, no rush"); the phone and menu voices never do.
 
     `model` (None = FISH_AUDIO_MODEL, else "s1") is the `model` header

@@ -4,7 +4,7 @@ The site is built from the checked-in catalog inside the api container and
 published like a client site (agency/hosting.py): copied
 into `<publish root>/.releases/shop/<stamp>/`, then `<publish root>/shop`
 is swapped to point at it. The store is served at ACADEMY_PUBLIC_ORIGIN
-(agency.example.com).
+(agency.storefront.test).
 
 The build goes to `data/academy/build/`, never under the publish root
 (`hosting.root_problem`), so nothing is public until the approved publish
@@ -28,7 +28,7 @@ from ..agency import hosting
 from . import site
 from .catalog import CatalogError, load
 
-log = logging.getLogger("academy.example.publish")
+log = logging.getLogger("atlas.academy.publish")
 
 SLUG = "shop"
 THUMB_MAX = 2_000_000                 # bytes: a YouTube thumbnail is under 2 MB
@@ -135,7 +135,7 @@ async def public_videos() -> list[site.Video] | None:
                FROM academy_tutorial_posts
                WHERE public AND NOT withdrawn
                ORDER BY series, episode, id DESC""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     out = []
     for r in rows:
@@ -285,7 +285,7 @@ async def refresh_videos() -> str:
                     "public on YouTube")))
         log.info("videos page republish: %s", done.detail[:200])
         return done.detail
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("videos page refresh failed: %s", type(exc).__name__)
         return f"failed: {type(exc).__name__}"
 
@@ -296,7 +296,7 @@ async def _approved_reviews() -> list[dict]:
     from .reviews import approved
     try:
         return await approved()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return []
 
 
@@ -311,7 +311,7 @@ async def published_lessons() -> list[dict]:
         rows = await fetch_all(
             """SELECT series, episode, video_id FROM academy_tutorial_posts
                WHERE public AND NOT withdrawn ORDER BY at DESC, id DESC LIMIT 40""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return []
     out: list[dict] = []
     seen: set[str] = set()
@@ -458,7 +458,7 @@ async def republish_if_changed() -> str:
     differs from the live release, publish through the executor. Returns
     one line for the log. Never raises."""
     import logging
-    log = logging.getLogger("academy.example.publish")
+    log = logging.getLogger("atlas.academy.publish")
     try:
         dry = await publish_shop_dry()
         if not dry.ok:
@@ -473,6 +473,6 @@ async def republish_if_changed() -> str:
             reason=f"{changed} file(s) differ from the live store after a deploy"))
         log.info("store republish: %s", done.detail[:200])
         return done.detail
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("store self-republish failed: %s", type(exc).__name__)
         return f"failed: {type(exc).__name__}"

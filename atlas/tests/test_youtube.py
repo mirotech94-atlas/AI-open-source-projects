@@ -45,16 +45,16 @@ CREDENTIAL_ENV = (
     "YOUTUBE_GUARDIAN_REFRESH_TOKEN", "YOUTUBE_GUARDIAN_CHANNEL_ID",
     "YOUTUBE_CLIPS_CLIENT_ID", "YOUTUBE_CLIPS_CLIENT_SECRET",
     "YOUTUBE_CLIPS_REFRESH_TOKEN", "YOUTUBE_CLIPS_CHANNEL_ID",
-    "YOUTUBE_ECC_CLIENT_ID", "YOUTUBE_ECC_CLIENT_SECRET",
-    "YOUTUBE_ECC_REFRESH_TOKEN", "YOUTUBE_ECC_CHANNEL_ID",
-    "YOUTUBE_MMT_CLIENT_ID", "YOUTUBE_MMT_CLIENT_SECRET",
-    "YOUTUBE_MMT_REFRESH_TOKEN", "YOUTUBE_MMT_CHANNEL_ID",
+    "YOUTUBE_AMSM_CLIENT_ID", "YOUTUBE_AMSM_CLIENT_SECRET",
+    "YOUTUBE_AMSM_REFRESH_TOKEN", "YOUTUBE_AMSM_CHANNEL_ID",
+    "YOUTUBE_TUTORCO_CLIENT_ID", "YOUTUBE_TUTORCO_CLIENT_SECRET",
+    "YOUTUBE_TUTORCO_REFRESH_TOKEN", "YOUTUBE_TUTORCO_CHANNEL_ID",
 )
 
 
 # FlyCheap and Guardian were removed on 2026-10-29. The upload, token and
 # stats mechanics are channel-generic, so these tests keep two stand-in
-# channels under the old names; the real map is only clips and ecc.
+# channels under the old names; the real map is only clips and amsm.
 _REAL_CHANNELS = dict(api.CHANNELS)
 
 
@@ -545,7 +545,7 @@ async def test_a_default_upload_carries_no_category_or_language(monkeypatch, tmp
 
 
 async def test_a_synthetic_upload_declares_contains_synthetic_media(monkeypatch, tmp_path):
-    """the owner 2026-10-17: Academy uploads set status.containsSyntheticMedia
+    """Miro 2026-10-17: Academy uploads set status.containsSyntheticMedia
     (developers.google.com/youtube/v3/docs/videos, read 2026-10-17)."""
     seen = _capture_upload_body(monkeypatch, tmp_path)
     _result, reason = await api.upload("flycheap", seen["path"], "T", "D", ["a"],
@@ -576,7 +576,7 @@ async def test_set_privacy_resends_the_synthetic_flag_when_asked(monkeypatch):
 async def test_set_privacy_keeps_every_other_writable_status_field(monkeypatch):
     """videos.update deletes an omitted status field (docs/videos/update, read
     2026-10-17): a visibility change resends licence, embeddable and stats
-    as read, for every caller (clips, church, the Academy)."""
+    as read, for every caller (clips, community, the Academy)."""
     seen = _status_api(monkeypatch, {**LIVE_STATUS, "privacyStatus": "private",
                                      "license": "creativeCommon", "embeddable": False,
                                      "publicStatsViewable": False})
@@ -589,7 +589,7 @@ async def test_set_privacy_keeps_every_other_writable_status_field(monkeypatch):
 
 async def test_set_privacy_clears_a_schedule_as_it_always_did(monkeypatch):
     """A visibility change is a decision now: a pending publishAt is not
-    resent (church's rollback sets a scheduled Short private for good)."""
+    resent (community's rollback sets a scheduled Short private for good)."""
     seen = _status_api(monkeypatch, {"privacyStatus": "private",
                                      "publishAt": "2026-10-20T16:00:00Z"})
     await api.set_privacy("clips", "abcdefghijk", "private")
@@ -681,7 +681,7 @@ async def test_set_synthetic_can_set_the_flag_back_to_false(monkeypatch):
 
 async def test_a_scheduled_upload_still_lands_private_with_publish_at(
         monkeypatch, tmp_path):
-    """The church lane's scheduled Short: private now, YouTube's publishAt
+    """The community lane's scheduled Short: private now, YouTube's publishAt
     makes it public later. Nothing about the privacy gate changes."""
     from datetime import UTC, datetime, timedelta
     seen = _capture_upload_body(monkeypatch, tmp_path)
@@ -1026,15 +1026,15 @@ async def test_upload_rollback_confirms_private_never_deletes(monkeypatch):
 
 # ------------------------------------------------------ the clips channel
 
-def test_the_channels_are_exactly_clips_ecc_and_mmt():
+def test_the_channels_are_exactly_clips_amsm_and_tutorco():
     assert _REAL_CHANNELS == {"clips": "YOUTUBE_CLIPS_",
-                            "ecc": "YOUTUBE_ECC_",
-                            "mmt": "YOUTUBE_MMT_"}
+                            "amsm": "YOUTUBE_AMSM_",
+                            "tutorco": "YOUTUBE_TUTORCO_"}
 
 
-def test_the_generic_upload_never_reaches_the_ecc_channel():
-    """The church channel posts only reviewed videos, through its own card."""
-    assert youtube.vet_upload({"channel": "ecc"}) == youtube.CHURCH_ONLY
+def test_the_generic_upload_never_reaches_the_amsm_channel():
+    """The community channel posts only reviewed videos, through its own card."""
+    assert youtube.vet_upload({"channel": "amsm"}) == youtube.COMMUNITY_ONLY
     assert youtube.vet_upload({"channel": "flycheap"}) is None
 
 
@@ -1065,7 +1065,7 @@ async def test_the_generic_upload_never_reaches_the_clips_channel(monkeypatch,
 
 
 async def test_a_clips_video_goes_public_only_if_it_is_an_academy_upload(monkeypatch):
-    """the owner 2026-11-14: unlisted is open on the clips channel; public needs the
+    """Miro 2026-11-14: unlisted is open on the clips channel; public needs the
     video to be one this module uploaded for the Academy."""
     seen = []
 
@@ -1094,7 +1094,7 @@ async def test_a_clips_video_goes_public_only_if_it_is_an_academy_upload(monkeyp
     assert seen == ["read", "read"]         # an Academy upload may go unlisted or public
     vet = {a.name: a for a in youtube.MODULE.actions()}["youtube.set_visibility"].vet
     assert vet({"channel": "clips", "privacy": "public"}) is None   # the card is raised
-    assert vet({"channel": "mmt", "privacy": "public"}) is not None
+    assert vet({"channel": "tutorco", "privacy": "public"}) is not None
 
 
 async def test_the_academy_staging_folder_may_use_the_generic_upload(monkeypatch,
@@ -1525,10 +1525,10 @@ def test_checks_cover_every_channel_with_expected_baselines():
               if c.name.split("_")[0] in _REAL_CHANNELS}
     assert set(checks) == {
         "clips_token", "clips_stats", "clips_latest_videos",
-        "ecc_token", "ecc_stats", "ecc_latest_videos",
-        "mmt_token", "mmt_stats", "mmt_latest_videos",
+        "amsm_token", "amsm_stats", "amsm_latest_videos",
+        "tutorco_token", "tutorco_stats", "tutorco_latest_videos",
     }
-    for channel in ("clips", "ecc", "mmt"):
+    for channel in ("clips", "amsm", "tutorco"):
         assert checks[f"{channel}_token"].baseline_sigma is None
         assert checks[f"{channel}_stats"].baseline_sigma == 3.0
         assert checks[f"{channel}_latest_videos"].baseline_sigma is None
@@ -1948,7 +1948,7 @@ async def test_a_failed_read_or_put_says_why_and_a_failed_read_writes_nothing(sn
     assert got is None and "quotaExceeded" in why
 
 
-def test_the_mmt_channel_is_watch_only():
-    assert youtube.vet_upload({"channel": "mmt"}) == youtube.MONITOR_ONLY
-    assert youtube.vet_visibility({"channel": "mmt", "privacy": "public"}) == youtube.MONITOR_ONLY
-    assert youtube.vet_visibility({"channel": "mmt", "privacy": "private"}) is None
+def test_the_tutorco_channel_is_watch_only():
+    assert youtube.vet_upload({"channel": "tutorco"}) == youtube.MONITOR_ONLY
+    assert youtube.vet_visibility({"channel": "tutorco", "privacy": "public"}) == youtube.MONITOR_ONLY
+    assert youtube.vet_visibility({"channel": "tutorco", "privacy": "private"}) is None

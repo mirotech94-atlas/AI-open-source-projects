@@ -1,7 +1,7 @@
 """The numbers a lead is given, and the links outreach carries (2026-09-30).
 
 Mapfront's line (TWILIO_FROM, answered by the AI) goes in every outreach
-email and reply while RECEPTION_ENABLED is on; the owner's own number
+email and reply while RECEPTION_ENABLED is on; Miro's own number
 (AGENCY_ESCALATION_PHONE, else TWILIO_TO) only in replies, never in a first
 cold email. Every number here is a fake 555 one.
 """
@@ -14,10 +14,10 @@ from atlas.modules.agency import _store, contacts, outreach, pricing, replies
 from atlas.modules.agency.audit import Audit
 
 LINE = "+17185550000"
-OWNER = "+19175550199"
+MIRO = "+19175550199"
 LEAD = {"id": 7, "name": "Joe's Plumbing", "category": "plumber",
         "website": "https://joesplumbing.example", "phone": "(718) 555-0101"}
-LIVE = {"domain": "demo-site.vercel.example", "slug": "joes-plumbing-7",
+LIVE = {"domain": "atlas-agency-joes-plumbing-7.vercel.app", "slug": "joes-plumbing-7",
         "deployed": True,
         "webild_url": None, "mockup": None}
 
@@ -34,7 +34,7 @@ def _env(monkeypatch):
     monkeypatch.setattr(verify, "contact_refusal", _returns(None))
     monkeypatch.setenv("RECEPTION_ENABLED", "1")
     monkeypatch.setenv("TWILIO_FROM", LINE)
-    monkeypatch.setenv("TWILIO_TO", OWNER)
+    monkeypatch.setenv("TWILIO_TO", MIRO)
     monkeypatch.delenv("AGENCY_ESCALATION_PHONE", raising=False)
     monkeypatch.delenv("AGENCY_SITES_DOMAIN", raising=False)
     monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "1 Test Ave, Staten Island, NY 10312")
@@ -60,7 +60,7 @@ def test_lines_name_atlas_agency_and_only_while_the_line_answers(monkeypatch):
 
 
 def test_the_escalation_number_prefers_its_own_setting(monkeypatch):
-    assert outreach.escalation_line() == "To speak to the owner directly, call (917) 555-0199."
+    assert outreach.escalation_line() == "To speak to Miro directly, call (917) 555-0199."
     monkeypatch.setenv("AGENCY_ESCALATION_PHONE", "+12125550123")
     assert outreach.escalation_phone() == "(212) 555-0123"
     monkeypatch.delenv("AGENCY_ESCALATION_PHONE")
@@ -72,7 +72,7 @@ def test_links_only_once_live():
     assert outreach.site_lines({**LIVE, "deployed": False}) == []
     # Vercel previews carry no call-me form (2026-10-30).
     assert outreach.site_lines(LIVE) == [
-        "See the site we built for you: https://demo-site.vercel.example/"]
+        "See the site we built for you: https://atlas-agency-joes-plumbing-7.vercel.app/"]
 
 
 def _outreach_fakes(monkeypatch, *, email=None, links=LIVE):
@@ -102,11 +102,11 @@ async def test_outreach_carries_the_preview_and_the_agency_number(monkeypatch):
     result = await outreach.draft_outreach(7, "email")
     assert result.ok
     body = seen["body"]
-    assert "https://demo-site.vercel.example/" in body
+    assert "https://atlas-agency-joes-plumbing-7.vercel.app/" in body
     assert "#call-me" not in body and "mapfront" not in body.lower()
     assert "1 Test Ave, Staten Island, NY 10312" in body and "reply stop" in body
     assert outreach.can_spam_ok(body, "1 Test Ave, Staten Island, NY 10312") == []
-    # the owner's own number is for escalation only, never a cold email.
+    # Miro's own number is for escalation only, never a cold email.
     assert "555-0199" not in body
     assert seen["to"] == "office@joesplumbing.example"
     assert result.evidence["to"] == "office@joesplumbing.example"
@@ -139,7 +139,7 @@ async def test_a_reply_always_gives_both_numbers(monkeypatch):
     body = result.evidence["text"]
     assert ("For more information, call or text ATLAS Agency at (718) 555-0000; our AI "
             "assistant answers any time.") in body
-    assert "To speak to the owner directly, call (917) 555-0199." in body
+    assert "To speak to Miro directly, call (917) 555-0199." in body
     assert body.rstrip().endswith(outreach.TRAILER)
     # The numbers are not read as prices.
     assert set(pricing.find_prices(body)) == {500}

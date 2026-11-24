@@ -44,7 +44,7 @@ log = logging.getLogger("atlas.qa_gate")
 GATED_NAMES: frozenset[str] = frozenset({
     "agency.send_outreach", "agency.send_agreement", "agency.send_invite",
     "agency.deploy_site", "agency.deploy_demo", "agency.publish_vercel",
-    "church.schedule_youtube_shorts", "church.schedule_facebook_reels",
+    "community.schedule_youtube_shorts", "community.schedule_facebook_reels",
     "bizops.send_onboarding_email", "bizops.send_invoice",
     "bizops.send_payment_reminder",
     "seo.publish_blog_post", "seo.apply_change",
@@ -147,18 +147,18 @@ async def _invite(params: dict[str, Any]) -> Subject | None:
     return _text_subject(f"agency_meeting:{params['meeting_id']}", "invite", str(text))
 
 
-async def _church(params: dict[str, Any]) -> Subject | None:
+async def _community(params: dict[str, Any]) -> Subject | None:
     from .state import fetch_all
     ids = [int(i) for i in params.get("post_ids") or []]
     if not ids:
         return None
     rows = await fetch_all(
-        """SELECT id, platform, title, description FROM church_posts
+        """SELECT id, platform, title, description FROM community_posts
             WHERE id = ANY($1::bigint[]) ORDER BY id""", ids)
     if len(rows) != len(set(ids)):
         return None
     text = "\n\n".join(f"{r['title'] or ''}\n{r['description'] or ''}" for r in rows)
-    return _text_subject("church_posts:" + ",".join(map(str, sorted(ids))), "post", text)
+    return _text_subject("community_posts:" + ",".join(map(str, sorted(ids))), "post", text)
 
 
 async def _reddit(params: dict[str, Any]) -> Subject | None:
@@ -251,8 +251,8 @@ RESOLVERS: dict[str, Resolver] = {
     "agency.deploy_site": _site,
     "agency.deploy_demo": _site,
     "agency.publish_vercel": _site,
-    "church.schedule_youtube_shorts": _church,
-    "church.schedule_facebook_reels": _church,
+    "community.schedule_youtube_shorts": _community,
+    "community.schedule_facebook_reels": _community,
     "academy.send_comment_reply": _comment_reply,
     "reddit.submit_post": _reddit,
     "reddit.submit_comment": _reddit,
@@ -294,7 +294,7 @@ async def require(action: str, params: dict[str, Any]) -> int:
                                  "so it is held")
     try:
         subject = await resolver(dict(params or {}))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("qa subject for %s unreadable: %s", action, exc)
         subject = None
     if subject is None:

@@ -25,7 +25,7 @@ Anything outside that list needs browser automation, which for Instagram is a
 reliable way to lose the account. This module does not do it.
 
 **Accounts.** `ACCOUNTS` maps a short name to its env prefix: `main` is
-the owner's own account, `stories` is the AI-stories account added in Phase 18 —
+Miro's own account, `stories` is the AI-stories account added in Phase 18 —
 labelled AI-made short stories, under a monthly render-credit cap enforced
 in `content.render_video`, nothing else. It is not a content farm of fake
 people: every caption it posts says "Made with AI" (Meta's own disclosure
@@ -37,7 +37,7 @@ Adding a third account is a new prefix in `ACCOUNTS`, not new code; every
 check and action below takes `account` and resolves its own env rather than
 assuming which one.
 
-**The clips account** (2026-09-28): `clips` is @example_handle, where the
+**The clips account** (2026-09-28): `clips` is @atlas.clipsdrop, where the
 clips lane posts brand campaign clips cut from the brand's own footage
 (`INSTAGRAM_CLIPS_ACCOUNT_ID`, `INSTAGRAM_CLIPS_TOKEN`). It takes one kind,
 `campaign_clip`, and its caption rule is the FTC one the campaigns set, not
@@ -50,7 +50,7 @@ And it posts only a Reel from a `clip.` link on ATLAS's own host, which only
 lane's registration, sha256 and content checks. Every clip post is Tier
 ASK, one card per clip.
 
-**What each account may post** (the owner, 2026-09-24, Task 55): `main`
+**What each account may post** (Miro, 2026-09-24, Task 55): `main`
 (@flycheaphp) posts only FlyCheap / travel / cheap-flight content and never
 an AI story reel; AI story reels go only to `stories` (@atlasstories3).
 `ACCOUNT_KINDS` is that ruling as data, and `instagram.publish` carries a
@@ -100,13 +100,13 @@ GRAPH = "https://graph.facebook.com/v21.0"
 ACCOUNTS: dict[str, str] = {"main": "INSTAGRAM_", "stories": "INSTAGRAM_STORIES_",
                             "clips": "INSTAGRAM_CLIPS_"}
 
-# What each account may post, by content kind (the owner's ruling, Task 55). An
+# What each account may post, by content kind (Miro's ruling, Task 55). An
 # account missing here takes nothing -- a new account is refused until its
 # kinds are written down, never waved through.
 ACCOUNT_KINDS: dict[str, set[str]] = {
     "main": {"flycheap", "travel"},
     "stories": {"ai_story"},
-    # the owner, 2026-10-05 ("post on clips too"): the clips account also takes
+    # Miro, 2026-10-05 ("post on clips too"): the clips account also takes
     # the Academy store's own promo reels, through clips.publish_promo only.
     "clips": {"campaign_clip", "store_promo"},
 }
@@ -189,7 +189,7 @@ def _why(exc: BaseException) -> str:
 
 
 def switched_off() -> bool:
-    """the owner, 2026-10-11: "delete everything containing Instagram, only keep
+    """Miro, 2026-10-11: "delete everything containing Instagram, only keep
     YouTube and TikTok". Instagram is off when the module is named in
     ATLAS_DISABLED_MODULES. Every reader and poster in ATLAS gets its token
     through `_cfg` (and the DM reader through `messages.instagram_dm`, which
@@ -292,7 +292,7 @@ async def _latest_messages_observation() -> dict | None:
                 WHERE p.name = 'messages' AND c.name = 'unanswered'
                 ORDER BY o.at DESC
                 LIMIT 1""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -348,7 +348,7 @@ async def _since_last_brief() -> datetime:
         row = await _fetch_one(
             "SELECT max(at) AS at FROM reports WHERE kind = 'brief'")
         at = row["at"] if row else None
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return fallback
     return at or fallback
 
@@ -390,7 +390,7 @@ async def check_overnight(account: str) -> Observation:
                  AND subject IN ('instagram.hide_comment', 'instagram.reply_comment')
                  AND at >= $1
                ORDER BY at""", since)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         obs = Observation(name, Health.UNKNOWN, detail=f"not read — {exc}")
         _overnight_cache[account] = obs
         return obs
@@ -425,7 +425,7 @@ async def check_overnight(account: str) -> Observation:
                  AND action = 'instagram.hide_comment'
                  AND params->>'account' = $1""", account)
         moderation_pending = int(pending_row["n"]) if pending_row else 0
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         moderation_pending = None
 
     parts = [
@@ -495,7 +495,7 @@ async def check_token(account: str = "main") -> Observation:
                    "Long-lived tokens last 60 days and must be refreshed.",
             evidence={"status": exc.status_code},
         )
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(check=name, health=Health.UNKNOWN, detail=_why(exc))
 
 
@@ -534,7 +534,7 @@ async def check_engagement(account: str = "main") -> Observation:
     try:
         data = await _get(f"{ig_id}/insights", account=account,
                           metric="reach,profile_views", **ACCOUNT_INSIGHT_PARAMS)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN, detail=_why(exc))
     # Graph answered, but a reach it did not report is not a reach of zero.
     reach: float | None = None
@@ -589,7 +589,7 @@ async def check_comments_pending(account: str = "main") -> Observation:
                     detail=f"Graph /comments for post {item['id']} carried no "
                            f"list; the count would be a guess")
             pending += sum(1 for c in listed if not c.get("replies"))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(name, Health.UNKNOWN, detail=_why(exc))
     return Observation(
         check=name,
@@ -660,7 +660,7 @@ def _label_refusal(account: str, caption: str,
                    content_kind: str = "") -> ActionResult | None:
     """Meta requires AI-made content to say so. `stories` posts nothing
     without that label already on the caption — enforced here, in code,
-    rather than trusted to whoever wrote it, so the card the owner approves
+    rather than trusted to whoever wrote it, so the card Miro approves
     visibly carries the label rather than a promise that it will.
 
     `clips` posts a brand's own footage, so its rule is the campaigns' FTC
@@ -683,7 +683,7 @@ def _label_refusal(account: str, caption: str,
 
 
 def _kind_refusal(account: str, content_kind: str) -> str | None:
-    """the owner's ruling: `main` posts only FlyCheap / travel content, `stories`
+    """Miro's ruling: `main` posts only FlyCheap / travel content, `stories`
     only AI story reels. A reason when this account does not take this
     kind, None when it does."""
     allowed = ACCOUNT_KINDS.get(account, set())
@@ -981,7 +981,7 @@ class InstagramModule:
                 name=funnel.SET,
                 tier=Tier.ASK,      # the texts a stranger will read; once
                 summary="Set a comment-keyword → DM funnel (the exact public "
-                        "reply and DM text on the card); the owner approves once",
+                        "reply and DM text on the card); Miro approves once",
                 run=funnel.funnel_set, dry_run=funnel.funnel_set_dry,
                 rollback=funnel.funnel_set_rollback,
                 params=dict(funnel.PARAMS_SET), max_per_hour=6,

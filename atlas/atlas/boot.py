@@ -16,7 +16,7 @@ CHANNEL_MODULES = ("slack", "matrix", "twilio")
 def load_channels() -> None:
     """Import every channel so `register()` fills the routing table.
 
-    Split out of `boot()` because anything that asks "can ATLAS reach the owner"
+    Split out of `boot()` because anything that asks "can ATLAS reach Miro"
     needs this to have happened first. `atlas.cli connect comms` did not call
     it, so the reachability check answered "no channels are registered at
     all" -- which reads as a broken reporting path when the real answer was
@@ -26,7 +26,7 @@ def load_channels() -> None:
     for name in CHANNEL_MODULES:
         try:
             importlib.import_module(f"atlas.channels.{name}")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("channel %s unavailable: %s", name, exc)
 
 
@@ -68,7 +68,7 @@ async def boot() -> None:
     from .skills import load_all as load_skills
     load_skills()
 
-    # The agents' own playbooks count as knowledge too (Task 60, the owner:
+    # The agents' own playbooks count as knowledge too (Task 60, Miro:
     # "there should also be some stuff on there based on his previous
     # skills from agents that he has as well.") -- idempotent, so this runs
     # at every boot rather than once.
@@ -77,7 +77,7 @@ async def boot() -> None:
         seeded = await index_into_library()
         if seeded:
             log.info("skill library: %d playbook(s) written or updated", seeded)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("skill library seed skipped: %s", exc)
 
     agents.build_roster()
@@ -88,7 +88,7 @@ async def boot() -> None:
     try:
         from .kernel.judgment.log import backfill
         await backfill()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("decision log backfill skipped: %s", exc)
 
     log.info("ATLAS up — %d modules, %d checks, %d actions, %d tools, %d agents",

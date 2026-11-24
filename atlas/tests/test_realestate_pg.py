@@ -89,7 +89,7 @@ async def pg(monkeypatch):
 
 @pytest.fixture
 def sent(monkeypatch):
-    """The cards sent to the owner, instead of Slack."""
+    """The cards sent to Miro, instead of Slack."""
     out: list[comms.Outbound] = []
 
     async def notify(msg):
@@ -181,7 +181,7 @@ async def test_through_the_executor_the_audit_never_holds_the_key(pg, sent,
         action="realestate.check_deal",
         params={"address": ADDRESS, "list_price": "$250k", "repair_level": "medium",
                 "notes": "cash only"},
-        reason="test", approved_by="slack:UOWNER")
+        reason="test", approved_by="slack:UMIRO")
     res = await executor.execute(req)
     assert res.ok, res.detail
     deal_id = res.evidence["deal_id"]
@@ -195,11 +195,11 @@ async def test_through_the_executor_the_audit_never_holds_the_key(pg, sent,
     assert undone.ok
     assert (await state.fetch_one("SELECT count(*) AS n FROM realestate_deals"))["n"] == 1
     assert (await readback.verify_deal({}, res)).state.value == "contradicted"
-    # only the owner asking directly: an agent or the reasoner is refused
+    # only Miro asking directly: an agent or the reasoner is refused
     other = await executor.execute(executor.ExecutionRequest(
         action="realestate.check_deal", params={"address": ADDRESS},
         reason="test", approved_by="agent:ivan"))
-    assert not other.ok and "only the owner" in other.detail
+    assert not other.ok and "only Miro" in other.detail
 
 
 async def test_a_refused_key_is_unknown_and_masked(pg, sent, monkeypatch):
@@ -297,7 +297,7 @@ async def test_the_dashboard_form_and_api_go_through_the_executor(pg, sent):
 
     app = FastAPI()
     app.include_router(router)
-    app.dependency_overrides[auth.require] = lambda: auth.Session("owner", 0.0)
+    app.dependency_overrides[auth.require] = lambda: auth.Session("miro", 0.0)
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app),
                                  base_url="http://atlas") as c:
         page = await c.get("/api/realestate/form")
@@ -318,7 +318,7 @@ async def test_the_dashboard_form_and_api_go_through_the_executor(pg, sent):
         assert listed[0]["address"] == ADDRESS and listed[0]["mao"] == 180_000
     log = await state.fetch_all(
         "SELECT payload FROM actions_log WHERE subject = 'realestate.check_deal'")
-    assert any("voice:dashboard:owner" in json.dumps(dict(r), default=str) for r in log)
+    assert any("voice:dashboard:miro" in json.dumps(dict(r), default=str) for r in log)
 
 
 async def test_the_slack_command_reaches_the_action_with_the_line_verbatim(
@@ -340,7 +340,7 @@ async def test_the_slack_command_reaches_the_action_with_the_line_verbatim(
             "params": {"line": said}}))
 
     monkeypatch.setattr(llm, "think", think)
-    out = await intent.act(said, channel="slack", who="UOWNER")
+    out = await intent.act(said, channel="slack", who="UMIRO")
     assert out.ran and out.action == "realestate.check_deal", out.spoken
     assert "Numbers work at list" in out.spoken
     assert "realestate.check_deal" in prompts[0][0]        # offered to /atlas
@@ -365,7 +365,7 @@ async def test_a_price_in_the_pasted_blurb_never_becomes_the_arv(pg, sent,
             "params": {"line": said, "arv": "400k", "repair_level": "light"}}))
 
     monkeypatch.setattr(llm, "think", think)
-    out = await intent.act(said, channel="slack", who="UOWNER")
+    out = await intent.act(said, channel="slack", who="UMIRO")
     assert out.ran, out.spoken
     card = sent[0].body
     assert "$400,000 — entered" not in card

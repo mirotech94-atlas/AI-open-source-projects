@@ -38,7 +38,7 @@ class Fake:
         self.sites = {
             "joes": {"slug": "joes", "domain": "joes.example", "path": str(site),
                      "client": "Joe's Bakery"},
-            SHOP: {"slug": SHOP, "domain": "agency.example.com", "path": None,
+            SHOP: {"slug": SHOP, "domain": "agency.storefront.test", "path": None,
                    "client": "ATLAS Academy"},
         }
         self.audits: dict[int, dict[str, Any]] = {}
@@ -195,8 +195,8 @@ def test_the_four_tables_exist():
 
 async def test_an_unfetchable_page_is_never_ok(fake, monkeypatch):
     monkeypatch.setattr(livecheck, "fetch_site", _returns(launchcheck.LiveSite(
-        "https://agency.example.com/", {}, {}, "was not probed",
-        ("https://agency.example.com/: timed out",))))
+        "https://agency.storefront.test/", {}, {}, "was not probed",
+        ("https://agency.storefront.test/: timed out",))))
     got = await audit.audit_site(SHOP)
     row = fake.audits[got.evidence["audit_id"]]
     assert row["status"] == "unknown" and "timed out" in row["summary"]
@@ -208,7 +208,7 @@ async def test_an_unfetchable_page_is_never_ok(fake, monkeypatch):
 
 async def test_a_read_page_is_audited_and_stamped(fake, monkeypatch):
     monkeypatch.setattr(livecheck, "fetch_site", _returns(launchcheck.LiveSite(
-        "https://agency.example.com/", {"index.html": _page()}, {}, "404")))
+        "https://agency.storefront.test/", {"index.html": _page()}, {}, "404")))
     got = await audit.audit_site(SHOP)
     assert got.ok and "(read 20" in got.detail
     assert fake.audits[1]["status"] in ("ok", "issues")
@@ -496,14 +496,14 @@ async def test_search_console_an_unverified_property_is_unknown(fake, google_env
     monkeypatch.setattr(_http, "get_json", g.get)
     obs = await gsc.check()
     assert obs.health is Health.UNKNOWN
-    assert "agency.example.com" in obs.detail and "joes.example" in obs.detail
+    assert "agency.storefront.test" in obs.detail and "joes.example" in obs.detail
 
 
 async def test_search_console_all_verified_reads_clicks_with_the_time(
         fake, google_env, monkeypatch):
     g = StubGoogle(gsc.SCOPE, [
         {"siteUrl": "sc-domain:joes.example", "permissionLevel": "siteOwner"},
-        {"siteUrl": "https://agency.example.com/", "permissionLevel": "siteFullUser"}])
+        {"siteUrl": "https://agency.storefront.test/", "permissionLevel": "siteFullUser"}])
     monkeypatch.setattr(_http, "post_json", g.post)
     monkeypatch.setattr(_http, "get_json", g.get)
     obs = await gsc.check()

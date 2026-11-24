@@ -1,6 +1,6 @@
 """A small Markdown subset to HTML, standard library only, for the blog.
 
-Ported from the site pack's tools/build_blog.py (the owner, 2026-10-18), typed:
+Ported from the site pack's tools/build_blog.py (Miro, 2026-10-18), typed:
 
 * `#`, `##`, `###` headings (a post's `#` becomes <h2>: the page's <h1> is
   the post title), paragraphs, `-` and `1.` lists, `- [ ]` checklist items,

@@ -1,8 +1,8 @@
 """The assistant's voice, and when it should keep its tools out of a chat.
 
-the owner, 2026-11-19: the assistant talks like a calm, close friend. In casual
+Miro, 2026-11-19: the assistant talks like a calm, close friend. In casual
 chat it uses no tool and brings up no status (live bug: an answer about an
-octopus added the camera count from earlier turns). Facts and figures still
+octopus added the sensor count from earlier turns). Facts and figures still
 come only from a tool (invariant 6); this module changes the tone and which
 prompt notes and tools a turn is offered, never what a tool may read or what
 tier an action has (invariants 2 and 3).
@@ -17,7 +17,7 @@ import re
 
 # The tone, said once. Facts rule stays in IDENTITY; this only shapes speech.
 PERSONA = (
-    "Talk like the owner's calm, warm best friend: plain words, short sentences, "
+    "Talk like Miro's calm, warm best friend: plain words, short sentences, "
     "contractions. Plain prose only: no bullet lists, no headers, no 'As an "
     "AI', no sign-off. Remember what he told you earlier in this chat and "
     "pick it up. When it fits, end with one gentle question about him, not "
@@ -30,7 +30,7 @@ PERSONA = (
 CASUAL_NOTE = (
     "This is casual talk, not a question about his systems. You have no tools "
     "here and nothing to look up. Answer only his latest message. Do not "
-    "bring up cameras, mail, checks, status, counts, searches or older topics "
+    "bring up sensors, mail, checks, status, counts, searches or older topics "
     "from earlier turns unless he does. If he asks for a figure or a live "
     "fact, say plainly you would need to check it."
 )
@@ -38,10 +38,10 @@ CASUAL_NOTE = (
 # Anything about his own systems, figures, the clock or a conversion.
 _SYSTEMS = re.compile(
     r"\b(?:atlas|modules?|checks?|status|health\w*|uptime|errors?|alerts?|"
-    r"incidents?|camera|cameras|cctv|nvr|footage|e-?mails?|inbox|mail|calendar|"
+    r"incidents?|sensor|sensors|cctv|nvr|footage|e-?mails?|inbox|mail|calendar|"
     r"meetings?|schedule|board|proposals?|cards?|approv\w*|queue\w*|server|"
     r"servers|down|offline|online|broken|failing|failed|deploy\w*|backups?|"
-    r"cloudco|flycheap|fiverr|linkedin|nexus|tiktok|instagram|stripe|revenue|"
+    r"cloudhost|flycheap|fiverr|linkedin|nexus|tiktok|instagram|stripe|revenue|"
     r"sales|orders?|subscribers?|followers?|views|traffic|balance|spark|slack|"
     r"whatsapp|dashboard|how\s+many|how\s+much|numbers?|figures?|stats|"
     r"time|date|clock|convert|calculate|percent|"

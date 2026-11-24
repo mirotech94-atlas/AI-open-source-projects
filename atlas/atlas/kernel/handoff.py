@@ -1,7 +1,7 @@
 """Handing a piece of work to the external coding agent.
 
 See `CLAUDE_CODE_AGENT.md`. ATLAS cannot call that agent — it is a desktop
-session on the owner's Mac with no inbound API — so a handoff is a *document*, and
+session on Miro's Mac with no inbound API — so a handoff is a *document*, and
 this module is the only thing that writes one.
 
 Three rules are enforced here rather than left to whoever calls it, because
@@ -16,7 +16,7 @@ allows. So `DELEGATION_FLOOR` is `Tier.ASK` and `delegate()` raises below it.
 **A Tier 3 finding never becomes a delegation.** Money, DNS, deletion,
 credential revocation and self-modification are permanently denied, and
 "denied" has to mean denied no matter who would carry it out. `surface()`
-exists so those findings still reach the owner — with the exact remedy written
+exists so those findings still reach Miro — with the exact remedy written
 out — without ATLAS proposing that anything execute it.
 
 **The evidence is quoted, never asserted.** What ATLAS observed came from
@@ -55,7 +55,7 @@ class Handoff:
     """One piece of work, written for a fresh agent with no context.
 
     `delegation` is False for a Tier 3 finding: the same facts, rendered as
-    something for the owner to read rather than something for an agent to do.
+    something for Miro to read rather than something for an agent to do.
     """
 
     what_changed: str
@@ -148,14 +148,14 @@ def delegate(
     """A task document for the coding agent.
 
     Raises below `DELEGATION_FLOOR`, and on `Tier.NEVER` — the first because
-    nothing may reach that agent without the owner seeing the task text, the second
+    nothing may reach that agent without Miro seeing the task text, the second
     because a denied action stays denied whoever would run it. Use `surface()`
     for the latter.
     """
     if tier is Tier.NEVER:
         raise ValueError(
             "Tier 3 is permanently denied and may not be delegated; "
-            "use surface() so the finding still reaches the owner."
+            "use surface() so the finding still reaches Miro."
         )
     if tier < DELEGATION_FLOOR:
         raise ValueError(
@@ -190,7 +190,7 @@ def surface(
     read_at: datetime,
     remedy: str = "",
 ) -> Handoff:
-    """A Tier 3 finding, written for the owner rather than for an agent.
+    """A Tier 3 finding, written for Miro rather than for an agent.
 
     `remedy` is the exact thing to do by hand — the DNS record to paste, the
     invoice to settle. Naming it is the whole value: a denial that does not say

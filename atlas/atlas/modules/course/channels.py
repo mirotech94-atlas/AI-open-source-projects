@@ -5,7 +5,7 @@ The channels, a closed list:
   `linkedin`      -- HAND-OFF. ATLAS's LinkedIn publish (`linkedin.publish_post`)
                      reaches only the FlyCheap and Vault company pages, and its
                      gate refuses a post linking anywhere but that page's own
-                     site. the owner's course belongs on his own profile, which ATLAS
+                     site. Miro's course belongs on his own profile, which ATLAS
                      cannot post to, so the card carries the exact text and he
                      posts it.
   `shopify_blog`  -- HAND-OFF. ATLAS holds no Shopify Admin API credential (it
@@ -18,14 +18,14 @@ The channels, a closed list:
                      not a clips account.
   YouTube         -- NOT A CHANNEL. The YouTube Data API has no endpoint for
                      community posts, a Short needs a video, and the youtube
-                     module is switched off by the owner ("we don't need YouTube",
+                     module is switched off by Miro ("we don't need YouTube",
                      2026-09-27).
   Instagram/TikTok -- NOT TEXT CHANNELS. Both take media only; the course-reels
                      lane (`content/course.py`) already covers them on the
                      AI-stories accounts.
 
-**The clips accounts are never a course channel.** @example_handle and
-@example_handle are campaign-only. An integration is excluded when its id is
+**The clips accounts are never a course channel.** @atlas.clipsdrop and
+@atlasclips12 are campaign-only. An integration is excluded when its id is
 the one `POSTIZ_TIKTOK_CLIPS_INTEGRATION` or `POSTIZ_YOUTUBE_CLIPS_INTEGRATION`
 names, or its name (lowercased, with
 everything but letters and digits removed) contains `clips` -- checked when a
@@ -85,7 +85,7 @@ HANDOFF: dict[str, Provider] = {
 
 NOT_CHANNELS: dict[str, str] = {
     "youtube": ("the YouTube Data API has no community-post endpoint, a Short "
-                "needs a video, and the youtube module is switched off by the owner"),
+                "needs a video, and the youtube module is switched off by Miro"),
     "instagram": ("media only; the course reels already post to the AI-stories "
                   "account"),
     "tiktok": "video only; the course reels already post to @atlasstories7",
@@ -146,7 +146,7 @@ async def listing() -> dict[str, Any]:
         "read_at": at.isoformat(timespec="seconds"),
         "handoff": [{"channel": LINKEDIN, "why": (
                         "ATLAS's LinkedIn publish reaches only the FlyCheap and "
-                        "Vault company pages; the card carries the text for the owner's "
+                        "Vault company pages; the card carries the text for Miro's "
                         "profile")},
                     {"channel": SHOPIFY_BLOG, "why": (
                         "no Shopify Admin API credential; the card carries the "
@@ -193,7 +193,7 @@ class Target:
 def static(channel: str) -> Target | None:
     """A hand-off channel, resolved without the network; None otherwise."""
     if channel in HANDOFF:
-        name = ("the owner's LinkedIn profile (by hand)" if channel == LINKEDIN
+        name = ("Miro's LinkedIn profile (by hand)" if channel == LINKEDIN
                 else "the Shopify blog (by hand, as a hidden draft)")
         return Target(channel, HANDOFF[channel], name, True)
     return None

@@ -30,7 +30,7 @@ DESCRIPTION_MAX = 5000
 TAGS_MAX = 15
 
 # The site link appended to a business's description. FlyCheap and Guardian
-# were removed on 2026-10-29 (the owner: "we don't use them anymore"); a business
+# were removed on 2026-10-29 (Miro: "we don't use them anymore"); a business
 # added here gets its link on every draft.
 BUSINESS_LINKS: dict[str, str] = {}
 
@@ -45,7 +45,7 @@ _AFFILIATE_MARKERS = re.compile(
     r"affiliate|\bref=|\baffid=|\baff_id=|\bpartner link\b", re.IGNORECASE)
 
 SYSTEM = (
-    "You write YouTube upload metadata for the owner's channel, from the source "
+    "You write YouTube upload metadata for Miro's channel, from the source "
     "material below (a script, a voice note, a call, a thread). Reply with "
     "exactly four lines, in this order, and nothing else:\n"
     "TITLE: <at most 100 characters>\n"

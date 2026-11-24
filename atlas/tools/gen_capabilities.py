@@ -45,7 +45,7 @@ def collect() -> dict[str, dict]:
             continue
         try:
             mod = importlib.import_module(f"atlas.modules.{info.name}")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             print(f"skip {info.name}: import failed: {exc}", file=sys.stderr)
             continue
         instance = getattr(mod, "MODULE", None)
@@ -55,7 +55,7 @@ def collect() -> dict[str, dict]:
             os.environ.setdefault(var, "placeholder")
         try:
             actions = instance.actions()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             print(f"skip {info.name}: actions() failed: {exc}", file=sys.stderr)
             continue
         for a in actions:

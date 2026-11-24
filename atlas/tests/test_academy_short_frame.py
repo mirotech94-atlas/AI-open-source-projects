@@ -1,5 +1,5 @@
 """The teaching Short's portrait frame (academy/short_frame.py, ShortsFrame,
-the owner 2026-10-17): the hook from frame 0, each scene recomposed natively at
+Miro 2026-10-17): the hook from frame 0, each scene recomposed natively at
 1080x1920 in the Short's type scale, the demo as its prepared crop, the
 closing card naming the longer lesson -- every text box inside the safe
 area and nothing under shorts-caption (60 px)."""
@@ -105,7 +105,7 @@ def test_the_closing_card_names_the_lesson_by_its_title_and_promises_no_link():
 
 
 def test_no_frame_says_made_with_ai():
-    """the owner, 2026-10-17: disclosed in the post and the platform flag, never
+    """Miro, 2026-10-17: disclosed in the post and the platform flag, never
     on screen."""
     for doc in (sf.shot(None, 0, "Three short words"),
                 sf.close_shot("Three short words", "A title")):

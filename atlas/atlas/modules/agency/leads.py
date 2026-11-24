@@ -1,4 +1,4 @@
-"""agency.leads -- a lead wrote back: take it in, read it, tell the owner.
+"""agency.leads -- a lead wrote back: take it in, read it, tell Miro.
 
 Before this, nothing recorded a reply at all: `agency_outreach.status` had a
 'replied' value and no writer, and `AGENCY_IMAP_*` only read the Sent folder
@@ -12,7 +12,7 @@ for `send_outreach`'s read-back. The three doors a lead can reply through:
     outreach went to. Consent from an email needs Gmail's DKIM/DMARC pass.
     Run from `agency.signals()`.
   * **Text** -- the business line's `/webhooks/twilio/sms` hands a text from
-    anyone but the owner to `intake_sms()` before the reception gate, so a lead's
+    anyone but Miro to `intake_sms()` before the reception gate, so a lead's
     reply (and a STOP) is taken in whether or not the voice line is on.
   * **Call** -- a call a lead made to the business line is filed by
     `reception.finish`, which hands it to `intake_call()`.
@@ -31,12 +31,12 @@ Each message, once, keyed by its provider id:
   4. its intent is classified by the cheap model into the closed set
      `INTENTS` -- anything else it says is `other`; an unreachable model
      leaves it unclassified and the alert says so, never a guess;
-  5. an emergency (`escalate.emergency_kind`) rings the owner; everything else is
+  5. an emergency (`escalate.emergency_kind`) rings Miro; everything else is
      a Slack alert in the agency channel: business, what we built, their
      words quoted, intent, consent, and a suggested next step;
   6. for an EMAIL reading as interested, a question or about price, what
      their words ask for is read IN CODE, never by a model (`_requests`,
-     2026-10-06; the owner: "approve invoices too and schedule meetings with them
+     2026-10-06; Miro: "approve invoices too and schedule meetings with them
      via email"), and only against what our last SENT reply put to them: if
      it offered calendar slots and their words pick exactly one with no
      "can't"/"doesn't work" (`meetings.match_slot`: "Tuesday at 2", "the
@@ -90,7 +90,7 @@ CLASSIFY_SYSTEM = (
 
 NEXT_STEP = {
     "interested": "Answer with one clear next step: two or three real times for a "
-                  "short call with the owner, or the site link. A reply is drafted and "
+                  "short call with Miro, or the site link. A reply is drafted and "
                   "sent (your rule); a refusal becomes a card.",
     "question": "Answer from their audit and the site we built. A reply is drafted "
                 "and sent (your rule); a refusal becomes a card.",
@@ -130,7 +130,7 @@ async def classify(text: str) -> str | None:
             Need.TRIVIAL, CLASSIFY_SYSTEM,
             [Message("user", wrap_untrusted(text[:3000], "agency-lead-reply"))],
             max_tokens=8)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("agency: intent model unreachable: %s", type(exc).__name__)
         return None
     return _parse_intent(completion.text)
@@ -163,7 +163,7 @@ async def _consent_line(lead_id: int) -> str:
             parts.append(f"{'texts' if scope == 'sms' else 'calls'} on {row['phone']}")
     if not parts:
         return ("none: ATLAS will not text or call them (agency.call_brief gives "
-                "the owner a brief to dial himself)")
+                "Miro a brief to dial himself)")
     return "yes, " + " and ".join(parts)
 
 
@@ -284,9 +284,9 @@ async def take_in(lead: dict[str, Any] | None, channel: str, source_id: str,
     # something ("Tuesday at 2 works. Is hosting included?"): then the
     # drafted reply answers the question too.
     if draft and intent in DRAFT_INTENTS and (not asked or "?" in body):
-        # Texting leads is off unless AGENCY_SMS_ENABLED (the owner, 2026-09-30):
+        # Texting leads is off unless AGENCY_SMS_ENABLED (Miro, 2026-09-30):
         # a text or a call is answered by email when there is an address,
-        # and left to the owner when there is not.
+        # and left to Miro when there is not.
         # `answered`: the business line's AI already texted them back in the
         # webhook (`api.reception.text_reply`), so no second text is drafted.
         texts = consent.sms_enabled() and not answered and bool(
@@ -357,7 +357,7 @@ def _asked_step(asked: dict[str, Any]) -> str:
 
 async def intake_sms(frm: str, body: str, *, sid: str,
                      opt_out_type: str = "", answered: bool = False) -> bool:
-    """A text to the business line from anyone but the owner. True when it was a
+    """A text to the business line from anyone but Miro. True when it was a
     lead's (or an opt-out, which is honoured from anyone); False hands it to
     the reception relay as before. Never raises."""
     try:
@@ -385,7 +385,7 @@ async def intake_call(sid: str, frm: str, lead: dict[str, Any] | None,
                       caller_words: list[str]) -> dict[str, Any]:
     """A call a lead made to the business line, after `reception` filed it
     and posted the transcript. Records consent to be called back, honours a
-    "don't call me", and rings the owner only for an emergency. No second Slack
+    "don't call me", and rings Miro only for an emergency. No second Slack
     post: reception's is the alert."""
     try:
         phone = consent.normalize(frm) or frm
@@ -406,13 +406,13 @@ async def intake_call(sid: str, frm: str, lead: dict[str, Any] | None,
 
 # ------------------------------------------------------------- email
 
-# the owner, 2026-10-30: outreach goes out from owner@example.com through
+# Miro, 2026-10-30: outreach goes out from owner@example.com through
 # Gmail SMTP (ATLAS Agency). Replies land in that mailbox.
 # The reader uses AGENCY_REPLY_ACCOUNT, which must be able to read it.
 
 def reply_addresses() -> list[str]:
     """The addresses leads reply to: AGENCY_REPLY_ADDRESS, else the agency
-    sender (owner@example.com)."""
+    sender (agency.sender@gmail.com)."""
     from .outreach import agency_sender
     first = (os.getenv("AGENCY_REPLY_ADDRESS", "").strip()
              or agency_sender()).lower()
@@ -421,9 +421,9 @@ def reply_addresses() -> list[str]:
 
 def reply_account():
     """The mail account the replies are forwarded into (AGENCY_REPLY_ACCOUNT,
-    default "owner"), when it is a configured Gmail account; else None."""
+    default "myron"), when it is a configured Gmail account; else None."""
     from ..mail.accounts import all_accounts
-    name = os.getenv("AGENCY_REPLY_ACCOUNT", "owner").strip().lower()
+    name = os.getenv("AGENCY_REPLY_ACCOUNT", "myron").strip().lower()
     for account in all_accounts():
         if account.name == name and account.kind == "google" and account.configured:
             return account
@@ -443,7 +443,7 @@ def their_words(text: str) -> str:
 
 def authenticated(auth_results: str) -> bool:
     """Gmail's own verdict on the sender (Authentication-Results): DKIM or
-    DMARC passed. A forged From can still be taken in and shown to the owner,
+    DMARC passed. A forged From can still be taken in and shown to Miro,
     but it never grants consent to ring or text a number -- a spoofed
     "call me at <someone else's mobile>" must not make ATLAS dial it."""
     low = (auth_results or "").lower()
@@ -451,7 +451,7 @@ def authenticated(auth_results: str) -> bool:
 
 
 # Gmail ids already looked at that answer nothing of ours (spam, a vendor
-# writing to owner@). Process memory: a restart looks at them once more.
+# writing to miro@). Process memory: a restart looks at them once more.
 _NOT_OURS: set[str] = set()
 
 
@@ -505,7 +505,7 @@ async def board_text() -> str:
     read_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     try:
         board = await _store.lead_board()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return (f"The lead board could not be read ({type(exc).__name__}) at "
                 f"{read_at}; no counts are shown rather than old ones.")
     terms = await pricing.terms()

@@ -1,4 +1,4 @@
-"""Backups and disk (the owner, 2026-09-28): a backup that never happened, or
+"""Backups and disk (Miro, 2026-09-28): a backup that never happened, or
 never left the box, is FAILING; one ATLAS cannot read is UNKNOWN."""
 from __future__ import annotations
 
@@ -137,7 +137,7 @@ async def test_disk_just_above_the_floor_is_degraded_not_failing(tmp_path, monke
 
 
 async def test_disk_fraction_is_secondary_it_warns_but_never_fails(tmp_path, monkeypatch):
-    """the owner 2026-11-15: a 96 %-full disk with ~17 GiB free reads WARN, not FAILING."""
+    """Miro 2026-11-15: a 96 %-full disk with ~17 GiB free reads WARN, not FAILING."""
     _disk(tmp_path, monkeypatch, free_gib=40, total_gib=1000)     # 4 % free
     monkeypatch.setattr(backups, "DISK_FLOOR_GIB", 1.0)
     monkeypatch.setattr(backups, "DISK_WARN_GIB", 2.0)
@@ -269,7 +269,7 @@ async def test_watchdog_seen_watchdog_itself_silent_is_unknown(tmp_path, monkeyp
 
 
 async def test_watchdog_seen_with_no_route_is_unknown_never_ok(tmp_path, monkeypatch):
-    """The watchdog reads /healthz but cannot tell the owner: that is not seeing."""
+    """The watchdog reads /healthz but cannot tell Miro: that is not seeing."""
     _seen(tmp_path, monkeypatch, route=False)
     obs = await backups.check_watchdog_seen()
     assert obs.health is Health.UNKNOWN and "no alert route" in obs.detail
@@ -518,7 +518,7 @@ def test_healthz_proxy_forwards_only_get_healthz():
             self.end_headers()
             self.wfile.write(b'{"ok":true} ')
 
-        log_message = lambda *a: None  # noqa: E731
+        log_message = lambda *a: None
 
     up = HTTPServer(("127.0.0.1", 0), Up)
     spec = importlib.util.spec_from_file_location("hp", _HOST / "healthz_proxy.py")

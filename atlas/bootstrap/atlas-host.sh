@@ -9,7 +9,7 @@
 #      overridable with ATLAS_OPT_DIR for tests) and this checkout runs
 #      ATLAS itself (docker-compose.local.yml);
 #   3. otherwise the old server's ssh target.
-# The server (atlas.example.com) was deleted on 2026-10-27, so on the Mac the
+# The server (atlas.storefront.test) was deleted on 2026-10-27, so on the Mac the
 # answer is "local" and no script reaches for a host that is not there.
 
 ATLAS_REMOTE_HOST="root@atlas.example.com"

@@ -1,14 +1,14 @@
 """Twilio ConversationRelay for a call ATLAS places: he can cut in, and the
 opening is ready the moment he answers.
 
-the owner's voice-partner brief (2026-10-04) asks for real interruption. The
+Miro's voice-partner brief (2026-10-04) asks for real interruption. The
 `<Gather>` line (`api/phone.py`) is one turn at a time: ATLAS speaks, then
 listens. ConversationRelay holds one WebSocket for the call; Twilio does
 the speech both ways at its edge and stops ATLAS's audio the instant he
 talks. ATLAS sends and receives text.
 
 **Off unless `PHONE_RELAY=on`.** It needs ConversationRelay enabled on the
-Twilio account (an addendum the owner accepts in the Twilio console), and the
+Twilio account (an addendum Miro accepts in the Twilio console), and the
 voice is one Twilio provides, not the Fish voice the Gather line uses. Off,
 nothing here is reached and every call is the Gather line as before.
 
@@ -151,7 +151,7 @@ async def turn(session: Session, said: str, digit: str) -> tuple[str, bool]:
         last = next((what for who, what in reversed(phone.history(call)) if who == "ATLAS"), "")
         return last or "There's nothing to repeat yet.", False
     if phone.confirming(call):
-        phone.remember(call, "the owner", f"(pressed {digit})" if digit else said or "(said nothing)")
+        phone.remember(call, "Miro", f"(pressed {digit})" if digit else said or "(said nothing)")
         reply = await phone.finish_confirm(call, digit, said)
         phone.remember(call, "ATLAS", reply)
         return reply, False
@@ -166,10 +166,10 @@ async def turn(session: Session, said: str, digit: str) -> tuple[str, bool]:
         from ..kernel import briefing
         ask = phone.question(call) or briefing.question("")
         reply = f"Let me finish the question. {ask} {briefing.KEYPAD_HINT}"
-        phone.remember(call, "the owner", text)
+        phone.remember(call, "Miro", text)
         phone.remember(call, "ATLAS", reply)
         return reply, False
-    phone.remember(call, "the owner", f"(pressed {digit}) {text}" if digit in keypad else text)
+    phone.remember(call, "Miro", f"(pressed {digit}) {text}" if digit in keypad else text)
     reply = await phone.respond(text, call, phone.begin_turn(call), keypad=digit in keypad)
     phone.remember(call, "ATLAS", reply)
     return reply, phone.machine(call)
@@ -181,7 +181,7 @@ async def handle(ws) -> None:
     await ws.accept()
     try:
         first = json.loads(await asyncio.wait_for(ws.receive_text(), SETUP_TIMEOUT_S))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         await ws.close(code=1008)
         return
     call = str(first.get("callSid") or "")
@@ -247,7 +247,7 @@ async def handle(ws) -> None:
             elif kind == "error":
                 log.warning("relay reported an error: %s", str(msg.get("description"))[:200])
                 break
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # A dropped socket is how every call ends; Twilio falls back to
         # AFTER_PATH when it was not ATLAS that ended it.
         log.info("relay socket closed: %s", type(exc).__name__)

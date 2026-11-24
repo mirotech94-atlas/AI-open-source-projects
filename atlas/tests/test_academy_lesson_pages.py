@@ -1,4 +1,4 @@
-"""Individual lesson pages, agency.example.com/lessons/<series>-<n>/ (shop
+"""Individual lesson pages, agency.storefront.test/lessons/<series>-<n>/ (shop
 master plan F11, F12, F15): one per public tutorial and none for anything
 else, built from the script and the published render's manifest only --
 nothing invented, nothing loaded from YouTube before play, and no link to a
@@ -68,7 +68,7 @@ def test_the_page_has_a_title_description_and_canonical():
     assert f"<title>{site._e(ep.title)} | " in page
     assert (f'<meta name="description" content="{site._e(site.meta_description(ep.summary))}">'
             in page)
-    assert '<link rel="canonical" href="https://agency.example.com/lessons/n8n-1/">' in page
+    assert '<link rel="canonical" href="https://agency.storefront.test/lessons/n8n-1/">' in page
     assert site._e(ep.summary) in page
     assert ep.level_label in page
     for need in ep.needs:
@@ -147,7 +147,7 @@ def test_shown_turns_spoken_dots_into_the_address():
 def test_the_opener_is_included_only_with_its_measured_minutes():
     ep = ts.series("n8n").episode(1)
     assert not any("in under" in x for x in lp.transcript(ep, opener=""))
-    voiced = "[happy] Welcome back, guys! My name is the owner, and today in under six minutes."
+    voiced = "[happy] Welcome back, guys! My name is Myron, and today in under six minutes."
     assert lp.transcript(ep, opener=voiced)[0] == ts.plain(voiced)
     # The channel welcome's opener names no minutes: always there.
     welcome = ts.series("channel").episode(1)
@@ -247,7 +247,7 @@ def test_the_sitemap_lists_the_lesson_pages():
     files = _render()
     sitemap = files["sitemap-academy.xml"].decode()
     for v in ALL:
-        assert f"<loc>https://agency.example.com/lessons/{v.series}-{v.episode}/</loc>" in sitemap
+        assert f"<loc>https://agency.storefront.test/lessons/{v.series}-{v.episode}/</loc>" in sitemap
     assert "lessons/n8n-3/" not in sitemap
     assert "/lessons/" not in _render([])["sitemap-academy.xml"].decode()
 
@@ -287,13 +287,13 @@ def test_the_transcript_is_what_the_published_video_says():
     """Script and manifest disagree: the page shows the manifest's lines."""
     said = ((0.0, 4.0, "[happy] Welcome back, guys! Today, in under seven minutes."),
             (4.0, 9.0, "A line the video says that the script no longer has."),
-            (9.0, 12.0, "Go to agency dot one eight d n dot com [chuckling] for the file."))
+            (9.0, 12.0, "Go to agency dot storefront dot test [chuckling] for the file."))
     v = site.Video("n8n", 1, "AbCdEfGhIj1", N8N1.uploaded, seconds=412.0, timings=said)
     page = _lesson(_render([v]), "n8n-1")
     assert '<h2 id="transcript">Transcript</h2>' in page and lp.SAID_NOTE in page
     assert "Welcome back, guys! Today, in under seven minutes." in page
     assert "A line the video says that the script no longer has." in page
-    assert "Go to agency.example.com for the file." in page
+    assert "Go to agency.storefront.test for the file." in page
     assert "[happy]" not in page and "[chuckling]" not in page
     script_only = site._e(tutorials.shown(ts.series("n8n").episode(1).scenes[0].said[0]))
     assert script_only not in page.split('id="transcript"', 1)[1]

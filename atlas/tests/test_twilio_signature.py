@@ -32,14 +32,14 @@ class FakeRequest:
 
 @pytest.fixture(autouse=True)
 def host(monkeypatch):
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
 
 
 def test_the_signed_url_is_https_on_the_public_host():
     """The whole bug in one assertion: uvicorn saw http, Twilio signed
     https."""
     url = main._public_url(FakeRequest("/webhooks/twilio/voice"))
-    assert url == "https://atlas.example.com/webhooks/twilio/voice"
+    assert url == "https://atlas.storefront.test/webhooks/twilio/voice"
 
 
 def test_a_query_string_is_preserved_exactly():
@@ -47,7 +47,7 @@ def test_a_query_string_is_preserved_exactly():
     fetched, query included."""
     url = main._public_url(
         FakeRequest("/webhooks/twilio/voice", "pid=41&say=Atlas%20alert"))
-    assert url == ("https://atlas.example.com/webhooks/twilio/voice"
+    assert url == ("https://atlas.storefront.test/webhooks/twilio/voice"
                    "?pid=41&say=Atlas%20alert")
 
 
@@ -55,7 +55,7 @@ def test_no_query_means_no_trailing_question_mark():
     """A trailing "?" with nothing after it is a different string, and a
     different string is a failed HMAC."""
     assert main._public_url(FakeRequest("/webhooks/twilio/voice", "")) == (
-        "https://atlas.example.com/webhooks/twilio/voice")
+        "https://atlas.storefront.test/webhooks/twilio/voice")
 
 
 def test_an_unset_host_fails_closed(monkeypatch):
@@ -72,14 +72,14 @@ def test_the_header_scheme_cannot_be_forged(monkeypatch):
     request = FakeRequest("/webhooks/twilio/voice")
     request.headers = {"X-Forwarded-Proto": "http", "Host": "evil.example"}
     assert main._public_url(request) == (
-        "https://atlas.example.com/webhooks/twilio/voice")
+        "https://atlas.storefront.test/webhooks/twilio/voice")
 
 
 def test_a_real_twilio_signature_over_the_public_url_verifies(monkeypatch):
     """End to end against Twilio's documented scheme: HMAC-SHA1 over the full
     URL with POST params appended sorted by key."""
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "the-auth-token")
-    url = "https://atlas.example.com/webhooks/twilio/voice"
+    url = "https://atlas.storefront.test/webhooks/twilio/voice"
     params = {"From": "+15550002222", "Body": "status"}
 
     data = url + "".join(f"{k}{params[k]}" for k in sorted(params))
@@ -90,4 +90,4 @@ def test_a_real_twilio_signature_over_the_public_url_verifies(monkeypatch):
     assert main._verify_twilio(url, params, signature) is True
     # The pre-fix URL, which is what the handler used to pass in.
     assert main._verify_twilio(
-        "http://atlas.example.com/webhooks/twilio/voice", params, signature) is False
+        "http://atlas.storefront.test/webhooks/twilio/voice", params, signature) is False

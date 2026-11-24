@@ -1,4 +1,4 @@
-"""The 30-day reels calendar (the owner, 2026-09-27): the plan, the dates, the
+"""The 30-day reels calendar (Miro, 2026-09-27): the plan, the dates, the
 captions, and the gates -- a sequel waits for its episode to PUBLISH."""
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def test_every_beat_fits_veo_and_the_month_is_258_clips():
 
 
 def test_only_characters_speak_and_a_line_is_never_cut_across_two_clips():
-    """the owner, 2026-09-27: no narrator -- a narrator line is never spoken."""
+    """Miro, 2026-09-27: no narrator -- a narrator line is never spoken."""
     for j in cal.jobs():
         for beat in j["scenes"]:
             said = [d["text_ar"] for d in beat.get("dialogue_lines") or []
@@ -62,7 +62,7 @@ def test_the_month_shifts_together_in_new_york_time(monkeypatch):
 
 
 def test_no_dates_gate_anything_two_stories_then_a_lesson():
-    """the owner, 2026-09-27: don't follow the 30-day calendar literally -- do
+    """Miro, 2026-09-27: don't follow the 30-day calendar literally -- do
     everything now. Order only: two stories, one lesson, each package in
     its own order (so a sequel still follows its episode)."""
     order = [j["job_id"] for j in cal.scheduled()]
@@ -89,7 +89,7 @@ async def test_the_rotation_stands_aside_while_packaged_reels_remain(
 
 
 def test_arabic_voice_gets_the_scripts_own_english_captions_in_order():
-    """the owner, 2026-09-27: Arabic voice, English captions."""
+    """Miro, 2026-09-27: Arabic voice, English captions."""
     j = cal.jobs()[0]
     parts = cal.plan(j)
     cues = cal.cues(parts, [p.length for p in parts])
@@ -240,7 +240,7 @@ async def test_the_daily_allowance_counts_from_pacific_midnight(memory_backend):
 
 async def test_nothing_packaged_ready_gets_a_short_veo_backup(
         memory_backend, monkeypatch):
-    """the owner, 2026-09-27: a post every day, never a slideshow. Day 1 is a day
+    """Miro, 2026-09-27: a post every day, never a slideshow. Day 1 is a day
     late, so Sep 28 gets one short backup on Veo -- only from clips left over."""
     from atlas.kernel import reels
     from atlas.kernel.contracts import ActionResult
@@ -313,7 +313,7 @@ def test_calendar_captions_are_coloured_per_speaker():
 
 
 def test_only_series_reels_are_captioned():
-    """the owner, 2026-09-27: captions on series only."""
+    """Miro, 2026-09-27: captions on series only."""
     assert all(cal.is_series(j) for j in cal.jobs())
     assert not any(cal.is_series(j) for j in cal.jobs("business"))
     assert render_style_in(cal.clip_prompt(cal.plan(cal.jobs()[0])[0]))
@@ -373,7 +373,7 @@ async def test_a_clip_that_banks_clears_an_earlier_strike(memory_backend, monkey
 
 
 def test_short_reels_are_not_held_behind_day_1_and_sequels_wait(monkeypatch):
-    """the owner, 2026-09-28: continue with other days, don't wait for day 1."""
+    """Miro, 2026-09-28: continue with other days, don't wait for day 1."""
     from atlas.kernel import reels
     jobs = cal.jobs()
     state = {j["job_id"]: {"status": "draft"} for j in cal.scheduled()}

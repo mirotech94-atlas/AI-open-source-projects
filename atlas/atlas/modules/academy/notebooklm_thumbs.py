@@ -1,6 +1,6 @@
 """Academy thumbnails made in Google NotebookLM (a Studio Infographic).
 
-the owner, 2026-10-20: a creative thumbnail for every video, made in NotebookLM
+Miro, 2026-10-20: a creative thumbnail for every video, made in NotebookLM
 by the Mac runner and dropped the way the videos are.
 
   * A new lesson: the lesson drop may carry `thumb.png`. The ingest
@@ -61,7 +61,7 @@ from ...kernel.contracts import ActionResult
 from . import notebooklm as nlm
 from . import tutorial_series as ts
 
-log = logging.getLogger("academy.example.notebooklm_thumbs")
+log = logging.getLogger("atlas.academy.notebooklm_thumbs")
 
 ACTION = "academy.apply_notebooklm_thumbnail"
 THUMBS = nlm.THUMBS                  # the thumbs inbox, under notebooklm-inbox/
@@ -366,7 +366,7 @@ async def _target(series: str, episode: int
         return None, why, True
     try:
         row = await tut.posted(s.key, ep.number)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"the posts record could not be read ({type(exc).__name__})", False
     if not row or not row.get("public"):
         return None, f"{s.key} #{ep.number} is not a public lesson on record", True
@@ -687,7 +687,7 @@ async def frame_thumbnail(ep: ts.Episode, video: Path, out_dir: Path, badge: str
         await asyncio.to_thread(os.utime, png)      # never older than the JPG
     except ffmpeg.FfmpegError as exc:
         return None, f"ffmpeg: {exc}"
-    except Exception as exc:                            # noqa: BLE001  (Chromium)
+    except Exception as exc:  # noqa: BLE001
         return None, f"the thumbnail could not be drawn ({type(exc).__name__})"
     th = await vf.image_dhash(png)
     got_meta: dict[str, Any] = {"source": FRAME_SOURCE, "frame_dhash": vf.hash_hex(best.dhash),

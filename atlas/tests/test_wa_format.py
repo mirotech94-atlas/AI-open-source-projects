@@ -16,11 +16,11 @@ def test_every_category_has_a_distinct_emoji_tag():
 
 
 def test_the_named_categories_exist_with_the_agreed_labels():
-    assert wf.TAGS[Category.HOME_CAMERAS] == "\U0001F3E0 Home cameras"
-    assert wf.TAGS[Category.MMT] == "\U0001F4DA MMT"
+    assert wf.TAGS[Category.HOME_SENSORS] == "\U0001F3E0 Home sensors"
+    assert wf.TAGS[Category.TUTORCO] == "\U0001F4DA TUTORCO"
     assert wf.TAGS[Category.AGENCY] == "\U0001F3E2 Agency"
     assert wf.TAGS[Category.ACADEMY] == "\U0001F393 Academy"
-    assert wf.TAGS[Category.CHURCH] == "⛪ ECC Church"
+    assert wf.TAGS[Category.COMMUNITY] == "📣 AMSM Community"
     assert wf.TAGS[Category.MAIL] == "\U0001F4E7 Mail"
     assert wf.TAGS[Category.MONEY] == "\U0001F4B3 Money/Stripe"
     assert wf.TAGS[Category.SYSTEM] == "\U0001F6E0️ System health"
@@ -30,8 +30,8 @@ def test_the_named_categories_exist_with_the_agreed_labels():
 
 
 def test_tag_puts_the_category_first():
-    out = wf.tag(Category.HOME_CAMERAS, "hello")
-    assert out == "\U0001F3E0 Home cameras · hello"
+    out = wf.tag(Category.HOME_SENSORS, "hello")
+    assert out == "\U0001F3E0 Home sensors · hello"
 
 
 def test_ensure_tags_untagged_text_and_defaults_to_general():
@@ -40,7 +40,7 @@ def test_ensure_tags_untagged_text_and_defaults_to_general():
 
 
 def test_ensure_never_double_tags_and_never_retags():
-    once = wf.tag(Category.MMT, "x")
+    once = wf.tag(Category.TUTORCO, "x")
     assert wf.ensure(once, Category.AGENCY) == once
     assert wf.ensure(wf.ensure("x", Category.MAIL), Category.MONEY).count("·") == 1
 
@@ -67,7 +67,7 @@ def test_a_short_message_is_not_changed_beyond_the_tag():
 
 
 @pytest.mark.parametrize("agent,want", [
-    ("mmt", Category.MMT), ("qa", Category.SYSTEM), ("content", Category.CONTENT),
+    ("tutorco", Category.TUTORCO), ("qa", Category.SYSTEM), ("content", Category.CONTENT),
     ("seo", Category.CONTENT), ("sales", Category.AGENCY), ("bizops", Category.AGENCY),
     ("sites", Category.AGENCY), ("research", Category.GENERAL),
     ("nobody", Category.GENERAL), (None, Category.GENERAL)])
@@ -76,8 +76,8 @@ def test_an_agent_maps_to_its_category_in_code(agent, want):
 
 
 @pytest.mark.parametrize("module,want", [
-    ("cameras", Category.HOME_CAMERAS), ("mmt", Category.MMT),
-    ("church", Category.CHURCH), ("academy", Category.ACADEMY),
+    ("sensors", Category.HOME_SENSORS), ("tutorco", Category.TUTORCO),
+    ("community", Category.COMMUNITY), ("academy", Category.ACADEMY),
     ("mail", Category.MAIL), ("stripe_billing", Category.MONEY),
     ("youtube", Category.CONTENT), ("whatever", Category.SYSTEM)])
 def test_a_module_maps_to_its_category_in_code(module, want):
@@ -85,12 +85,12 @@ def test_a_module_maps_to_its_category_in_code(module, want):
 
 
 @pytest.mark.parametrize("text,want", [
-    ("did the front camera see anyone", Category.HOME_CAMERAS),
+    ("did the front sensor see anyone", Category.HOME_SENSORS),
     ("any new email today", Category.MAIL),
     ("how much did stripe pay out", Category.MONEY),
-    ("how's the church channel", Category.CHURCH),
+    ("how's the community channel", Category.COMMUNITY),
     ("how are academy sales", Category.ACADEMY),
-    ("anything on mmt", Category.MMT),
+    ("anything on tutorco", Category.TUTORCO),
     ("how did my youtube video do", Category.CONTENT),
     ("what is the capital of France", Category.GENERAL)])
 def test_a_question_topic_is_picked_by_code_never_by_a_model(text, want):
@@ -100,7 +100,7 @@ def test_a_question_topic_is_picked_by_code_never_by_a_model(text, want):
 def test_the_reply_category_is_per_task_and_defaults_to_general():
     wf.reset_reply_category()
     assert wf.reply_category() is Category.GENERAL
-    wf.set_reply_category(Category.MMT)
-    assert wf.reply_category() is Category.MMT
+    wf.set_reply_category(Category.TUTORCO)
+    assert wf.reply_category() is Category.TUTORCO
     wf.reset_reply_category()
     assert wf.reply_category() is Category.GENERAL

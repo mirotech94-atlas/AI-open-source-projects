@@ -38,9 +38,9 @@ def _tile(client, module):
 
 def _live(monkeypatch, *names):
     from atlas.kernel.registry import REGISTRY
-    monkeypatch.setitem(REGISTRY.modules, "cloudco", object())
+    monkeypatch.setitem(REGISTRY.modules, "cloudhost", object())
     for n in names:
-        monkeypatch.setitem(REGISTRY.checks, f"cloudco.{n}", object())
+        monkeypatch.setitem(REGISTRY.checks, f"cloudhost.{n}", object())
 
 
 # ------------------------------------------------------------- pure rules
@@ -123,9 +123,9 @@ def test_voice_is_switched_off_by_the_committed_list(monkeypatch):
 
 def test_a_retired_row_is_listed_as_retired_never_ok(signed_in, memory_backend,
                                                      monkeypatch):
-    _serve(memory_backend, [_row("cloudco", "protection"), _row("cloudco", "snapshots")])
+    _serve(memory_backend, [_row("cloudhost", "protection"), _row("cloudhost", "snapshots")])
     _live(monkeypatch, "protection")
-    body, tile = _tile(signed_in, "cloudco")
+    body, tile = _tile(signed_in, "cloudhost")
     old = next(c for c in tile["checks"] if c["name"] == "snapshots")
     assert old["state"]["kind"] == "retired"
     assert tile["health"] == "ok"
@@ -133,7 +133,7 @@ def test_a_retired_row_is_listed_as_retired_never_ok(signed_in, memory_backend,
 
 
 def test_a_gone_module_shows_retired(signed_in, memory_backend, monkeypatch):
-    _serve(memory_backend, [_row("a2p", "registration"), _row("cloudco", "protection")])
+    _serve(memory_backend, [_row("a2p", "registration"), _row("cloudhost", "protection")])
     _live(monkeypatch, "protection")
     body = signed_in.get("/api/overview").json()
     gone = [m for m in body["modules"] if m["module"] == "a2p"]
@@ -145,29 +145,29 @@ def test_a_stale_reading_is_unknown_with_last_read_at(signed_in, memory_backend,
                                                       monkeypatch):
     age = board_state.reads_unknown_within(timedelta(seconds=300)) \
         + timedelta(minutes=1)
-    _serve(memory_backend, [_row("cloudco", "protection", age=age)])
+    _serve(memory_backend, [_row("cloudhost", "protection", age=age)])
     _live(monkeypatch, "protection")
-    _, tile = _tile(signed_in, "cloudco")
+    _, tile = _tile(signed_in, "cloudhost")
     c = tile["checks"][0]
     assert c["health"] == "unknown"
     assert c["last_read_at"]
 
 
 def test_a_fresh_reading_stays_ok(signed_in, memory_backend, monkeypatch):
-    _serve(memory_backend, [_row("cloudco", "protection")])
+    _serve(memory_backend, [_row("cloudhost", "protection")])
     _live(monkeypatch, "protection")
-    _, tile = _tile(signed_in, "cloudco")
+    _, tile = _tile(signed_in, "cloudhost")
     assert tile["checks"][0]["health"] == "ok"
 
 
 def test_a_parked_check_has_its_own_state_and_does_not_colour_the_tile(
         signed_in, memory_backend, monkeypatch):
-    entry = Parked("cloudco.protection", "waiting on a vendor", date(2099, 1, 1))
+    entry = Parked("cloudhost.protection", "waiting on a vendor", date(2099, 1, 1))
     monkeypatch.setattr(board_state, "PARKED", (entry,))
-    _serve(memory_backend, [_row("cloudco", "protection", health="failing"),
-                            _row("cloudco", "other")])
+    _serve(memory_backend, [_row("cloudhost", "protection", health="failing"),
+                            _row("cloudhost", "other")])
     _live(monkeypatch, "protection", "other")
-    body, tile = _tile(signed_in, "cloudco")
+    body, tile = _tile(signed_in, "cloudhost")
     p = next(c for c in tile["checks"] if c["name"] == "protection")
     assert p["state"]["kind"] == "parked"
     assert "waiting on a vendor" in p["state"]["label"]
@@ -177,20 +177,20 @@ def test_a_parked_check_has_its_own_state_and_does_not_colour_the_tile(
 
 def test_a_parking_whose_date_has_come_is_judged_on_its_reading(
         signed_in, memory_backend, monkeypatch):
-    entry = Parked("cloudco.protection", "old", date(2020, 1, 1))
+    entry = Parked("cloudhost.protection", "old", date(2020, 1, 1))
     monkeypatch.setattr(board_state, "PARKED", (entry,))
-    _serve(memory_backend, [_row("cloudco", "protection", health="failing")])
+    _serve(memory_backend, [_row("cloudhost", "protection", health="failing")])
     _live(monkeypatch, "protection")
-    _, tile = _tile(signed_in, "cloudco")
+    _, tile = _tile(signed_in, "cloudhost")
     assert tile["checks"][0]["health"] == "failing"
     assert (tile["checks"][0].get("state") or {}).get("kind") != "parked"
 
 
 def test_a_registered_check_never_read_is_unknown(signed_in, memory_backend,
                                                   monkeypatch):
-    _serve(memory_backend, [_row("cloudco", "protection")])
+    _serve(memory_backend, [_row("cloudhost", "protection")])
     _live(monkeypatch, "protection", "newcheck")
-    body, tile = _tile(signed_in, "cloudco")
+    body, tile = _tile(signed_in, "cloudhost")
     new = next(c for c in tile["checks"] if c["name"] == "newcheck")
     assert new["health"] == "unknown"
     assert tile["health"] == "unknown"

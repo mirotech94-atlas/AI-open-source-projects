@@ -28,7 +28,7 @@ async def tick() -> int:
     made = 0
     try:
         due = await contact._store.due(BATCH, contact._now())
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("agency contact: the queue could not be read")
         return 0
     for contact_id, channel in due:
@@ -42,12 +42,12 @@ async def tick() -> int:
                      result.detail[:120])
     try:
         await contact.poll_whatsapp()
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("agency contact: WhatsApp statuses could not be read")
     try:
         from ..modules.agency import owner_wa
         await owner_wa.drain()
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("agency contact: owner WhatsApp queue could not be drained")
     return made
 
@@ -58,7 +58,7 @@ async def send_owner_notice(msg_id: int) -> bool:
     from .executor import ExecutionRequest, execute
     result = await execute(ExecutionRequest(
         owner_wa.ACTION, {"msg_id": msg_id},
-        reason="an agency event the owner asked to hear about"))
+        reason="an agency event Miro asked to hear about"))
     if not result.ok:
         log.info("owner WhatsApp #%s not sent: %s", msg_id, result.detail[:120])
     return result.ok

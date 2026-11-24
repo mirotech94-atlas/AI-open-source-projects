@@ -1,5 +1,5 @@
 """The Monday "Monetisation progress" section (academy/ypp.py), 2026-10-16:
-where @example_handle stands against the YouTube Partner Program bar, from
+where @atlasacademyphp stands against the YouTube Partner Program bar, from
 fresh reads only. A figure not read is UNKNOWN with its reason, never 0;
 every figure carries its read time; no pace is projected from an UNKNOWN."""
 from __future__ import annotations

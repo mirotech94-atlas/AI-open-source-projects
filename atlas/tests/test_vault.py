@@ -173,7 +173,7 @@ async def test_index_all_kinds_a_file_under_skills_as_skill_not_by_content(
     monkeypatch.setattr(index, "vault_dir", lambda: tmp_path)
     skills_dir = tmp_path / "skills"
     skills_dir.mkdir()
-    (skills_dir / "cloudco.md").write_text(
+    (skills_dir / "cloudhost.md").write_text(
         "the parties hereby agree to the lease and insurance policy",
         encoding="utf-8")
 
@@ -199,7 +199,7 @@ async def test_index_all_kinds_a_file_under_skills_as_skill_not_by_content(
     assert problems == []
     assert remembered[0][2]["kind"] == "skill"
 
-    doc_args = stored[str(skills_dir / "cloudco.md")]
+    doc_args = stored[str(skills_dir / "cloudhost.md")]
     assert doc_args[3] == "skill"          # (path, sha256, title, kind, chunks)
 
 
@@ -593,13 +593,13 @@ async def test_seed_skill_inserts_when_the_source_is_new(monkeypatch):
     monkeypatch.setattr(library, "fetch_one", fake_fetch_one)
     monkeypatch.setattr(library, "execute_sql", fake_execute_sql)
 
-    changed = await library.seed_skill("ExampleCo", "atlas/skills/exampleco.py",
+    changed = await library.seed_skill("Mirotech", "atlas/skills/mirotech.py",
                                        "pricing playbook")
 
     assert changed is True
     assert "INSERT INTO library_entries" in calls["write"][0]
     assert "'skill'" in calls["write"][0]
-    assert calls["write"][1] == ("ExampleCo", "atlas/skills/exampleco.py",
+    assert calls["write"][1] == ("Mirotech", "atlas/skills/mirotech.py",
                                  "pricing playbook")
 
 
@@ -608,7 +608,7 @@ async def test_seed_skill_updates_in_place_when_the_source_matches_and_changed(
     calls: dict = {}
 
     async def fake_fetch_one(sql, *args):
-        return {"id": 3, "title": "ExampleCo", "notes": "old playbook"}
+        return {"id": 3, "title": "Mirotech", "notes": "old playbook"}
 
     async def fake_execute_sql(sql, *args):
         calls["write"] = (sql, args)
@@ -616,17 +616,17 @@ async def test_seed_skill_updates_in_place_when_the_source_matches_and_changed(
     monkeypatch.setattr(library, "fetch_one", fake_fetch_one)
     monkeypatch.setattr(library, "execute_sql", fake_execute_sql)
 
-    changed = await library.seed_skill("ExampleCo", "atlas/skills/exampleco.py",
+    changed = await library.seed_skill("Mirotech", "atlas/skills/mirotech.py",
                                        "new playbook")
 
     assert changed is True
     assert "UPDATE library_entries" in calls["write"][0]
-    assert calls["write"][1] == (3, "ExampleCo", "new playbook")
+    assert calls["write"][1] == (3, "Mirotech", "new playbook")
 
 
 async def test_seed_skill_is_a_no_op_when_nothing_changed(monkeypatch):
     async def fake_fetch_one(sql, *args):
-        return {"id": 3, "title": "ExampleCo", "notes": "same playbook"}
+        return {"id": 3, "title": "Mirotech", "notes": "same playbook"}
 
     async def fake_execute_sql(sql, *args):
         raise AssertionError("no write should happen when nothing changed")
@@ -634,7 +634,7 @@ async def test_seed_skill_is_a_no_op_when_nothing_changed(monkeypatch):
     monkeypatch.setattr(library, "fetch_one", fake_fetch_one)
     monkeypatch.setattr(library, "execute_sql", fake_execute_sql)
 
-    changed = await library.seed_skill("ExampleCo", "atlas/skills/exampleco.py",
+    changed = await library.seed_skill("Mirotech", "atlas/skills/mirotech.py",
                                        "same playbook")
 
     assert changed is False

@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from atlas.api import peers
 
 ROOT = Path(__file__).resolve().parents[1]
-BRIDGE = ("192.0.2.1", 4000)   # a docker-bridge peer, as the API sees Caddy
+BRIDGE = ("192.168.107.1", 4000)   # a docker-bridge peer, as the API sees Caddy
 
 
 def _req(peer, headers):
@@ -60,12 +60,12 @@ def test_a_public_request_is_refused_on_a_mesh_only_path(memory_backend):
 
 def test_orbstack_subnet_caddy_is_refused_on_a_mesh_only_path(memory_backend,
                                                              monkeypatch):
-    # OrbStack's compose network is 192.0.2.0/24 (outside PROXY_NETWORK)
+    # OrbStack's compose network is 192.168.107.0/24 (outside PROXY_NETWORK)
     # and compose lists 192.168.0.0/16 as mesh: the marker must still win.
     monkeypatch.setenv("MESH_ALLOWED_CIDRS",
                        "127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16")
     from atlas.api.main import app
-    c = TestClient(app, client=("192.0.2.5", 4000))
+    c = TestClient(app, client=("192.168.107.5", 4000))
     assert c.get("/api/session").status_code != 404
     r = c.get("/api/session", headers={"X-Atlas-Public": "1"})
     assert r.status_code == 404 and r.text == "not here"

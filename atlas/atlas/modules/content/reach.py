@@ -1,4 +1,4 @@
-"""Reach without paid promotion (the owner, 2026-09-29): which AI-stories reel
+"""Reach without paid promotion (Miro, 2026-09-29): which AI-stories reel
 deserves a boost, and when in the day a reel should post.
 
 **Promote candidates** (`candidates`, the `promote_candidates` check, and
@@ -249,7 +249,7 @@ async def check_promote_candidates() -> Observation:
     """Reads only; the cards are `kernel.reels.promote_lines`."""
     try:
         found, unknown, at = await read_candidates()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return Observation("promote_candidates", Health.UNKNOWN,
                            detail=f"reel metrics unreadable: {explain(exc)}")
@@ -296,7 +296,7 @@ async def reel_link(platform: str, post_ref: str) -> str | None:
                 if isinstance(item, dict) and str(item.get("id")) == post_ref:
                     url = str(item.get("releaseURL") or item.get("releaseUrl") or "")
                     return url if postiz.TIKTOK_URL.match(url) else None
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     return None
 
@@ -420,7 +420,7 @@ async def best_hour_hold(media_id: int | None = None,
     ready = _ready_at(media_id, now)
     try:
         tables, _ = await read_tables()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     hour, why = hold_until(tables, now, ready)
     return why if hour is not None else None
@@ -440,7 +440,7 @@ async def check_best_hours() -> Observation:
     hours with enough posts: then the schedule is left as it is."""
     try:
         tables, at = await read_tables()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return Observation("best_hours", Health.UNKNOWN,
                            detail=f"reel metrics unreadable: {explain(exc)}")

@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS proposals (
     decided_at  TIMESTAMPTZ,
     decided_via TEXT,                        -- slack | sms | matrix | imessage
     always      BOOLEAN NOT NULL DEFAULT FALSE,  -- "approve + always do this"
-    -- The dry run as it stood when the proposal was raised. the owner must be able
+    -- The dry run as it stood when the proposal was raised. Miro must be able
     -- to read what WOULD happen before deciding; execute() runs its own dry
     -- run again at approval time, because the world may have moved since.
     dry_run     TEXT,
@@ -154,7 +154,7 @@ CREATE TABLE IF NOT EXISTS runbooks (
     rollback_plan TEXT,
     successes   INT NOT NULL DEFAULT 0,
     failures    INT NOT NULL DEFAULT 0,
-    promoted    BOOLEAN NOT NULL DEFAULT FALSE,   -- promoted to Tier 1 by the owner
+    promoted    BOOLEAN NOT NULL DEFAULT FALSE,   -- promoted to Tier 1 by Miro
     last_used   TIMESTAMPTZ,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS messages (
     received_at TIMESTAMPTZ,
     body        TEXT,
     draft       TEXT,
-    sent_body   TEXT,                 -- what the owner actually sent, after editing
+    sent_body   TEXT,                 -- what Miro actually sent, after editing
     status      TEXT NOT NULL DEFAULT 'drafted',
     embedding   vector(1024)
 );
@@ -312,7 +312,7 @@ CREATE TABLE IF NOT EXISTS browser_rollup (
 CREATE INDEX IF NOT EXISTS browser_rollup_day ON browser_rollup (day DESC);
 
 
--- Standing rules: things the owner said once that should hold from then on.
+-- Standing rules: things Miro said once that should hold from then on.
 --
 -- "From now on, whenever any node hits 80% disk, just prune and tell me
 -- after."
@@ -341,10 +341,10 @@ CREATE INDEX IF NOT EXISTS standing_rules_live
 
 -- ---------------------------------------------------------------------------
 -- The decision log (JUDGMENT.md §5). One row per proposal: the conditions
--- it was raised under, what ATLAS predicted, and what the owner answered.
+-- it was raised under, what ATLAS predicted, and what Miro answered.
 -- Written only by kernel/approvals.py; read only by kernel/judgment/.
 -- Starts filling in Phase 4, during watch-only, so by the time ATLAS can act
--- there is already a history of "what would the owner have said".
+-- there is already a history of "what would Miro have said".
 --
 -- outcome is THREE classes. Expiry is never a denial: deny means the wrong
 -- action, expiry means it was wrong to ask.
@@ -682,7 +682,7 @@ CREATE TABLE IF NOT EXISTS youtube_videos (
 CREATE TABLE IF NOT EXISTS marketing_experiments (
     id          BIGSERIAL PRIMARY KEY,
     at          TIMESTAMPTZ NOT NULL DEFAULT now(),
-    business    TEXT NOT NULL,                  -- flycheap | guardian | exampleco | agency
+    business    TEXT NOT NULL,                  -- flycheap | guardian | mirotech | agency
     platform    TEXT NOT NULL,                  -- youtube | instagram | tiktok | linkedin
     hypothesis  TEXT NOT NULL,                  -- "route-deal shorts beat explainer shorts on views/48h"
     variant     TEXT NOT NULL,                  -- the concrete post kind / hook / format
@@ -702,7 +702,7 @@ CREATE TABLE IF NOT EXISTS monetization_ideas (
     idea        TEXT NOT NULL,
     mechanism   TEXT NOT NULL,                  -- affiliate | sponsorship | ads | product | service | partner_program
     evidence    JSONB NOT NULL DEFAULT '{}',    -- the measured facts it rests on, each with observed_at
-    requires    TEXT,                           -- what the owner must do (sign up, enable, decide)
+    requires    TEXT,                           -- what Miro must do (sign up, enable, decide)
     est_note    TEXT,                           -- prose only; no invented revenue figures
     score       REAL,
     status      TEXT NOT NULL DEFAULT 'proposed' -- proposed | pursuing | done | dropped
@@ -779,7 +779,7 @@ ALTER TABLE nightshift_jobs ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 
 -- RA-D1 (2026-09-29): the commit a finished code job's branch pointed at,
 -- read from GitLab when check_jobs marks the job done. nightshift.merge
 -- merges only this commit, so nothing pushed after the job finished can be
--- merged under the card the owner approved.
+-- merged under the card Miro approved.
 ALTER TABLE nightshift_jobs ADD COLUMN IF NOT EXISTS head_sha TEXT;
 
 -- Phase 20 (2026-09-24): a rendered video reachable by a publish proposal.
@@ -801,13 +801,13 @@ ALTER TABLE content_media ADD COLUMN IF NOT EXISTS media_token_expires_at TIMEST
 -- read back, so the reel quality gate reads this record.
 ALTER TABLE content_media ADD COLUMN IF NOT EXISTS captions BOOLEAN;
 
--- "I know. Stop telling me." One row per check the owner acknowledged from a
+-- "I know. Stop telling me." One row per check Miro acknowledged from a
 -- Slack alert. While it stands, the check neither pages nor raises a card.
 -- It lapses after `until`, or as soon as the check's health differs from the
 -- health he acknowledged (degraded -> failing is news), or when the check
 -- reads OK again (a later failure is a new problem, not the one he knew).
 CREATE TABLE IF NOT EXISTS acks (
-    key     TEXT PRIMARY KEY,            -- module.check, e.g. cloudco.balance
+    key     TEXT PRIMARY KEY,            -- module.check, e.g. cloudhost.balance
     at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     until   TIMESTAMPTZ NOT NULL,
     health  TEXT NOT NULL,               -- the state he acknowledged
@@ -827,7 +827,7 @@ CREATE TABLE IF NOT EXISTS veo_usage (
 );
 CREATE INDEX IF NOT EXISTS veo_usage_at ON veo_usage (at);
 
--- the owner, 2026-09-29: Higgsfield renders the calendar clips Veo's daily
+-- Miro, 2026-09-29: Higgsfield renders the calendar clips Veo's daily
 -- allowance cannot, under HIGGSFIELD_MONTHLY_USD. Its own ledger, never
 -- veo_usage (which Veo's allowance and seconds cap read). One positive row
 -- reserved per clip BEFORE the request, a negative row when Higgsfield
@@ -849,8 +849,8 @@ ALTER TABLE higgsfield_usage ADD COLUMN IF NOT EXISTS seconds INT;
 ALTER TABLE higgsfield_usage ADD COLUMN IF NOT EXISTS resolution TEXT;
 ALTER TABLE higgsfield_usage ADD COLUMN IF NOT EXISTS price_read BOOLEAN;
 
--- Task 55 (2026-09-24): the AI-stories account's format playbook. the owner's
--- seeds (source 'owner') and what the daily research found (source
+-- Task 55 (2026-09-24): the AI-stories account's format playbook. Miro's
+-- seeds (source 'miro') and what the daily research found (source
 -- 'perplexity'). `score` is a RANKING WEIGHT, never a measurement: 2 for a
 -- format he chose, 1 per research mention in the trailing 30 days. Rows are
 -- retired (retired_at), never deleted -- content.reel_research's rollback.
@@ -859,7 +859,7 @@ CREATE TABLE IF NOT EXISTS reel_formats (
     at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     format      TEXT NOT NULL,
     evidence    TEXT NOT NULL,                -- why it is here, with its read time and sources
-    source      TEXT NOT NULL,                -- owner | perplexity
+    source      TEXT NOT NULL,                -- miro | perplexity
     score       REAL NOT NULL,
     max_scenes  INT NOT NULL DEFAULT 4,       -- beats a reel in this format gets
     retired_at  TIMESTAMPTZ
@@ -892,11 +892,11 @@ CREATE TABLE IF NOT EXISTS reel_metrics (
 );
 CREATE INDEX IF NOT EXISTS reel_metrics_at ON reel_metrics (at);
 
--- 2026-09-27: the 30-day reels calendar the owner supplied
+-- 2026-09-27: the 30-day reels calendar Miro supplied
 -- (atlas/modules/content/calendars/*.json). One row per job; the job itself
 -- is read from the package file. status: draft | rendering | rendered |
 -- carded | published | declined | blocked. The business package stays 'draft' until
--- the owner picks its account, language and start date.
+-- Miro picks its account, language and start date.
 CREATE TABLE IF NOT EXISTS reel_calendar (
     job_id      TEXT PRIMARY KEY,
     package     TEXT NOT NULL,                 -- stories | business
@@ -954,9 +954,9 @@ ALTER TABLE reel_series ADD COLUMN IF NOT EXISTS scripts JSONB;  -- a series wri
 ALTER TABLE reel_calendar ADD COLUMN IF NOT EXISTS redos INT NOT NULL DEFAULT 0;      -- remade after a failed check
 ALTER TABLE reel_series_parts ADD COLUMN IF NOT EXISTS redos INT NOT NULL DEFAULT 0;  -- rendered again after a failed check
 
--- Work ATLAS hands to the coding agent on the owner's Mac (CLAUDE_CODE_AGENT.md
+-- Work ATLAS hands to the coding agent on Miro's Mac (CLAUDE_CODE_AGENT.md
 -- §9 option b). ATLAS writes the brief and never runs it: a row is `draft`
--- until the owner approves its card (`delegate.claude_code`), `queued` until the
+-- until Miro approves its card (`delegate.claude_code`), `queued` until the
 -- scheduled agent claims it, and expires unclaimed -- silence is never
 -- consent. The report comes back as untrusted text.
 CREATE TABLE IF NOT EXISTS handoffs (
@@ -968,7 +968,7 @@ CREATE TABLE IF NOT EXISTS handoffs (
     topic       TEXT NOT NULL DEFAULT 'decisions',
     channel     TEXT NOT NULL DEFAULT '',      -- where he asked (Slack channel id)
     thread      TEXT NOT NULL DEFAULT '',      -- the thread the report goes back to
-    status      TEXT NOT NULL DEFAULT 'draft', -- draft | queued | claimed | done | failed | needs_owner | expired | cancelled
+    status      TEXT NOT NULL DEFAULT 'draft', -- draft | queued | claimed | done | failed | needs_miro | expired | cancelled
     queued_at   TIMESTAMPTZ,
     expires_at  TIMESTAMPTZ,
     claimed_at  TIMESTAMPTZ,
@@ -979,7 +979,7 @@ CREATE TABLE IF NOT EXISTS handoffs (
 CREATE INDEX IF NOT EXISTS handoffs_status ON handoffs (status, id);
 
 -- The kill switch (kernel/pause.py): a pause stops new dispatch through
--- executor.execute for everything ('all') or one module, until the owner
+-- executor.execute for everything ('all') or one module, until Miro
 -- resumes it. Rows are never deleted; resuming stamps resumed_at.
 CREATE TABLE IF NOT EXISTS pauses (
     id          BIGSERIAL PRIMARY KEY,
@@ -1010,7 +1010,7 @@ CREATE TABLE IF NOT EXISTS schedule_runs (
 ALTER TABLE schedule_runs ADD COLUMN IF NOT EXISTS scheduled_for TIMESTAMPTZ;
 ALTER TABLE schedule_runs ADD COLUMN IF NOT EXISTS detail TEXT;
 
--- The agent on the owner's Mac (modules/mac, api/mac_agent.py). A job expires 60 s
+-- The agent on Miro's Mac (modules/mac, api/mac_agent.py). A job expires 60 s
 -- after it is queued, checked inside the claim; 'unknown' is a job the Mac
 -- claimed and never answered.
 CREATE TABLE IF NOT EXISTS mac_jobs (
@@ -1032,7 +1032,7 @@ CREATE TABLE IF NOT EXISTS mac_agent (
 );
 
 -- The shop (modules/shop): one product per reel type, sold through a Stripe
--- payment link the owner approved. file_path is what /deliver hands over after a
+-- payment link Miro approved. file_path is what /deliver hands over after a
 -- paid checkout, under data/products/.
 CREATE TABLE IF NOT EXISTS shop_products (
     key              TEXT PRIMARY KEY,
@@ -1051,7 +1051,7 @@ INSERT INTO shop_products (key, name, reel_type, status, payment_link_url, file_
     ('vault_kit', 'Claude + Obsidian Vault Kit', 'tech', 'draft', NULL,
      'data/products/claude-obsidian-vault-kit.zip'),
     ('flycheap_pro', 'FlyCheap Pro', 'travel', 'live',
-     'https://flycheap.example/pricing', NULL)
+     'https://flycheap.example.com/pricing', NULL)
 ON CONFLICT (key) DO NOTHING;
 
 -- Money per reel (kernel/reel_money.py): the Improver's reel-type mix, in
@@ -1088,7 +1088,7 @@ CREATE TABLE IF NOT EXISTS markets_paper (
     started_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- the owner's own TradingView alerts, as TradingView sent them to
+-- Miro's own TradingView alerts, as TradingView sent them to
 -- POST /hooks/tradingview (atlas/api/tradingview.py). Read only: nothing
 -- here is ever traded on (money out is Tier 3). `name` and `message` are
 -- untrusted text and reach a prompt only through wrap_untrusted();
@@ -1224,7 +1224,7 @@ CREATE TABLE IF NOT EXISTS workflows (
     workflow_type         TEXT NOT NULL,
     workflow_version      INT NOT NULL DEFAULT 1,
     correlation_id        TEXT NOT NULL,
-    tenant                TEXT NOT NULL DEFAULT 'owner',
+    tenant                TEXT NOT NULL DEFAULT 'miro',
     originating_actor     TEXT NOT NULL DEFAULT '',
     originating_channel   TEXT NOT NULL DEFAULT '',
     thread_id             TEXT NOT NULL DEFAULT '',
@@ -1386,7 +1386,7 @@ CREATE TABLE IF NOT EXISTS money_charges (
     at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS money_charges_seen ON money_charges (seen_on);
--- One row per event in an Alinea Invest email (the owner's auto-investing app;
+-- One row per event in an Alinea Invest email (Miro's auto-investing app;
 -- it trades on its own, ATLAS only reads its emails). Every figure is the one written in
 -- the email; one the email does not state is NULL, shown as unknown -- never
 -- 0, never estimated (invariant 6). One row per event: an email listing
@@ -1428,9 +1428,9 @@ CREATE TABLE IF NOT EXISTS clip_campaigns (
     category        TEXT NOT NULL,                  -- gaming | trends | business | streamer
     status          TEXT NOT NULL DEFAULT 'paused'
                     CHECK (status IN ('active', 'paused', 'ended')),
-    whop_url        TEXT,                           -- NULL until the owner gives it
+    whop_url        TEXT,                           -- NULL until Miro gives it
     rules_doc_id    TEXT,                           -- NULL = rules pending; never clipped
-    source_folder   TEXT,                           -- the official folder, for the owner; never scraped
+    source_folder   TEXT,                           -- the official folder, for Miro; never scraped
     platforms       JSONB NOT NULL DEFAULT '[]',    -- ["instagram", "tiktok", ...]
     rates           JSONB NOT NULL DEFAULT '{}',    -- {platform: USD per 1,000 views}
     tag_handles     JSONB NOT NULL DEFAULT '{}',    -- {platform: "@handle"}
@@ -1451,7 +1451,7 @@ CREATE TABLE IF NOT EXISTS clip_campaigns (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- One official source file, placed by the owner (or a Mac-side step) in
+-- One official source file, placed by Miro (or a Mac-side step) in
 -- data/clips/<slug>/source/. Nothing that is not registered here, to this
 -- campaign, with this sha256, is ever clipped. Retired, never deleted.
 CREATE TABLE IF NOT EXISTS clip_sources (
@@ -1465,7 +1465,7 @@ CREATE TABLE IF NOT EXISTS clip_sources (
     UNIQUE (campaign, sha256)
 );
 
--- One cut clip. made -> posted (by the Tier 2 post card, or by the owner by
+-- One cut clip. made -> posted (by the Tier 2 post card, or by Miro by
 -- hand from the ready-to-post card: handed_off, then his URL) -> submitted
 -- (to the campaign on Whop). A rollback
 -- marks it rolled_back and moves its files to .trash/; the row stays.
@@ -1513,7 +1513,7 @@ ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS preset TEXT NOT NULL DEFAULT
 ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS presets_allowed JSONB NOT NULL
     DEFAULT '["blur", "crop", "split"]';
 -- The account a clip went to on its platform ('instagram:clips',
--- 'youtube:clips'), set when ATLAS posts it or hands it to the owner to post:
+-- 'youtube:clips'), set when ATLAS posts it or hands it to Miro to post:
 -- what the max_accounts guard counts. One row per clip per platform, so
 -- a clip posts at most once on each.
 ALTER TABLE clip_outputs ADD COLUMN IF NOT EXISTS post_account TEXT;
@@ -1537,7 +1537,7 @@ CREATE TABLE IF NOT EXISTS effect_claims (
 -- account? Read from the reviewed rules doc by hand; FALSE unless it says
 -- so. Both live docs forbid it ("do not copy the same video across
 -- multiple accounts"), so each of their clips is cut for the one platform
--- that pays the most. The TikTok account is @example_handle ('tiktok:clips').
+-- that pays the most. The TikTok account is @atlasclips12 ('tiktok:clips').
 ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS cross_post_allowed BOOLEAN
     NOT NULL DEFAULT FALSE;
 -- Clips, 2026-09-28 (unattended intake, kernel.clip_intake). On each
@@ -1557,7 +1557,7 @@ CREATE TABLE IF NOT EXISTS clip_intake (
     detail      TEXT NOT NULL DEFAULT ''
 );
 
--- The football (soccer) reels lane, the owner 2026-09-29: every number on screen
+-- The football (soccer) reels lane, Miro 2026-09-29: every number on screen
 -- comes from API-Football (v3, api-sports.io), read by the read-only
 -- collector in atlas/modules/football. Each read is kept with the time it
 -- was read (invariant 6) and served from here while fresh, so the free
@@ -1595,15 +1595,15 @@ CREATE TABLE IF NOT EXISTS football_draft_facts (
 CREATE INDEX IF NOT EXISTS football_draft_facts_draft ON football_draft_facts (draft_id);
 -- Clips, 2026-09-29 (Whop through the Mac agent). post_url_source: where a
 -- clip's post_url came from -- 'instagram' / 'youtube' / 'tiktok' (the
--- platform's own publish response) or 'record_link' (the owner's word); NULL =
+-- platform's own publish response) or 'record_link' (Miro's word); NULL =
 -- not recorded, and such a row is never offered to the agent.
 -- submitted_by: who recorded it submitted -- 'mac-agent' (POST
--- /clips/whop/{id}/submitted) or 'owner' (his clips.submit_to_whop card).
+-- /clips/whop/{id}/submitted) or 'miro' (his clips.submit_to_whop card).
 ALTER TABLE clip_outputs ADD COLUMN IF NOT EXISTS post_url_source TEXT;
 -- Clips, 2026-10-01 (Irubyana: "include brand logo", "twitch banner in the
 -- background"). brand_assets on a campaign: which of logo | banner its rules
 -- require on every clip, composited by the cut from data/clips/<slug>/brand/
--- (files the owner placed; never fetched); NULL = never set, so the seed's apply.
+-- (files Miro placed; never fetched); NULL = never set, so the seed's apply.
 -- brand_assets on a clip: the ones it was cut with -- a clip cut without
 -- the campaign's is never posted.
 ALTER TABLE clip_campaigns ADD COLUMN IF NOT EXISTS brand_assets JSONB;
@@ -1758,9 +1758,9 @@ ALTER TABLE clip_sources ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 
 -- agency.webild_brief -> agency.build_with_webild -> agency.record_webild_site
 -- (2026-09-29): a Webild prompt drafted from the lead's own data, queued by
--- the owner's card for the agent on his Mac, and the site it published with its
+-- Miro's card for the agent on his Mac, and the site it published with its
 -- live launch check. drafted | queued | claimed | published | failed |
--- needs_owner | expired | cancelled. A queued or claimed row past expires_at
+-- needs_miro | expired | cancelled. A queued or claimed row past expires_at
 -- is never handed out or recorded (the UPDATEs test it), whatever its
 -- status still says.
 CREATE TABLE IF NOT EXISTS agency_webild (
@@ -1788,7 +1788,7 @@ CREATE INDEX IF NOT EXISTS agency_webild_lead ON agency_webild (lead_id, status)
 -- Missions, 2026-09-29 (kernel/missions.py): a job bigger than one catalog
 -- action, handed to the roster agent that owns it -- "find 50 local
 -- businesses with a poor or no website and make them one" goes to agency.
--- `request` is the owner's words verbatim, wrapped as untrusted before any
+-- `request` is Miro's words verbatim, wrapped as untrusted before any
 -- prompt. `slots` is what the recipe was filled with (n, business, area --
 -- never coordinates from a model). `state` is the runner's bookkeeping: the
 -- area as read (AGENCY_HOME_AREA or Places, with read_at), the searches
@@ -1822,7 +1822,7 @@ CREATE TABLE IF NOT EXISTS missions (
 CREATE INDEX IF NOT EXISTS missions_status ON missions (status, created_at);
 
 -- Real estate deal checker, 2026-09-29 (atlas/modules/realestate). One row
--- per deal the owner asked ATLAS to check: what he gave (address, list price,
+-- per deal Miro asked ATLAS to check: what he gave (address, list price,
 -- the listing blurb he pasted -- untrusted, wrapped before any prompt) and
 -- what was worked out, each estimate with its source and read time. A NULL
 -- figure is unknown, never 0. `card` is the text sent to him. Withdrawn by
@@ -1879,7 +1879,7 @@ CREATE TABLE IF NOT EXISTS realestate_rentcast_quota (
 -- Instagram comment-keyword -> DM funnels, 2026-09-30
 -- (atlas/modules/instagram/funnel.py). One row per funnel: the account,
 -- the keyword, the media scope, and the EXACT public reply and private
--- reply the owner approved on the instagram.funnel_set card. `text_hash` is
+-- reply Miro approved on the instagram.funnel_set card. `text_hash` is
 -- sha256 over both texts as approved; the sender recomputes it from the
 -- row before every send and refuses on a mismatch, so a text edited
 -- behind the card never reaches anyone. Deactivating is a flag, never a
@@ -2058,7 +2058,7 @@ CREATE TABLE IF NOT EXISTS futures_backtests (
 -- 2026-09-29: agency lead follow-up (atlas/modules/agency/leads.py,
 -- consent.py, replies.py, sms.py, calls.py). What a lead said back, the
 -- consent that alone lets ATLAS text or ring them, every contact ATLAS made,
--- the replies it drafted, and the deals the owner recorded.
+-- the replies it drafted, and the deals Miro recorded.
 --
 -- The Message-ID `send_outreach` stamps, kept on the row so a reply's
 -- In-Reply-To / References can be matched to it.
@@ -2155,7 +2155,7 @@ CREATE INDEX IF NOT EXISTS agency_reply_drafts_lead
 -- other time. NULL: no times were offered in this reply.
 ALTER TABLE agency_reply_drafts ADD COLUMN IF NOT EXISTS offered_slots JSONB;
 
--- 2026-10-06 (the owner: "schedule meetings with them via email ... approve
+-- 2026-10-06 (Miro: "schedule meetings with them via email ... approve
 -- invoices too"): what a lead's own words asked for, decided in code when
 -- the message came in. `booking_slot` is the one offered slot their words
 -- matched (held and invited by kernel.lead_followup.bookings, claimed once
@@ -2167,7 +2167,7 @@ ALTER TABLE agency_lead_messages ADD COLUMN IF NOT EXISTS booked_at TIMESTAMPTZ;
 ALTER TABLE agency_lead_messages ADD COLUMN IF NOT EXISTS agreement_price INTEGER;
 ALTER TABLE agency_lead_messages ADD COLUMN IF NOT EXISTS agreed_at TIMESTAMPTZ;
 
--- Deals the owner recorded (agency.record_deal, his word only). The first-sale
+-- Deals Miro recorded (agency.record_deal, his word only). The first-sale
 -- price is offered only while no row here is won or paid -- read fresh, and
 -- an unreadable table means the regular floor.
 CREATE TABLE IF NOT EXISTS agency_deals (
@@ -2187,7 +2187,7 @@ CREATE TABLE IF NOT EXISTS agency_deals (
 -- on anything but a live 'verified' row.
 ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS business_status TEXT;
 -- 2026-10-27 (six agents, phase 6): the Sales agent's pipeline columns, and
--- the link that makes a lead a returning client ($300). Set by the owner only.
+-- the link that makes a lead a returning client ($300). Set by Miro only.
 ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS sales_stage TEXT;
 ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS source TEXT;
 ALTER TABLE agency_leads ADD COLUMN IF NOT EXISTS segment TEXT;
@@ -2209,8 +2209,8 @@ CREATE TABLE IF NOT EXISTS agency_verifications (
 CREATE INDEX IF NOT EXISTS agency_verifications_lead
     ON agency_verifications (lead_id, at DESC);
 
--- 2026-09-30: a meeting with the owner booked on a lead call (agency.hold_meeting,
--- agency.send_invite). The hold is on the owner's own calendar with no attendee;
+-- 2026-09-30: a meeting with Miro booked on a lead call (agency.hold_meeting,
+-- agency.send_invite). The hold is on Miro's own calendar with no attendee;
 -- the invite goes to the lead only on his yes. `reminded_at` claims the
 -- one-hour reminder once.
 CREATE TABLE IF NOT EXISTS agency_lead_meetings (
@@ -2310,7 +2310,7 @@ ALTER TABLE agency_lead_consent ADD COLUMN IF NOT EXISTS call_card_note TEXT;
 ALTER TABLE agency_sites ADD COLUMN IF NOT EXISTS followed_up_at TIMESTAMPTZ;
 
 -- 2026-09-30: ATLAS Academy purchases (atlas/modules/academy/delivery.py),
--- one row per Stripe Checkout Session, for the owner's dashboard. Written only
+-- one row per Stripe Checkout Session, for Miro's dashboard. Written only
 -- from what Stripe answered when the session was read (the access page, the
 -- signed webhook): never a guessed amount. The first INSERT of a session is
 -- what posts the purchase to Slack, so a session posts once. `offers` are
@@ -2339,7 +2339,7 @@ CREATE INDEX IF NOT EXISTS academy_purchases_seen ON academy_purchases (first_se
 ALTER TABLE tradingview_alerts ADD COLUMN IF NOT EXISTS ivan_checked_at TIMESTAMPTZ;
 ALTER TABLE tradingview_alerts ADD COLUMN IF NOT EXISTS ivan_note TEXT;
 
--- 2026-10-01: the outreach email sends itself (the owner: non-urgent work runs
+-- 2026-10-01: the outreach email sends itself (Miro: non-urgent work runs
 -- without a card; only emergencies reach him) -- but only a draft
 -- `draft_outreach` wrote. Its body's SHA-256 is stored with the row and
 -- checked before every unattended send (`outreach.auto_hold`); a body
@@ -2353,7 +2353,7 @@ ALTER TABLE agency_outreach ADD COLUMN IF NOT EXISTS followup_claimed_at TIMESTA
 -- wrote, kept so a message survives a failed Slack post. Untrusted text.
 -- The daily Academy reel on the clips accounts (clips.autopublish_promo):
 -- one row per automatic post, read for the daily cap and the rotation.
--- Tracked requests (kernel/tasks.py): everything the owner asks ATLAS to do
+-- Tracked requests (kernel/tasks.py): everything Miro asks ATLAS to do
 -- from Slack or the phone, where it went and how it ended.
 CREATE TABLE IF NOT EXISTS tasks (
     id        BIGSERIAL PRIMARY KEY,
@@ -2436,7 +2436,7 @@ CREATE TABLE IF NOT EXISTS academy_tutorial_comments (
 );
 CREATE INDEX IF NOT EXISTS academy_tutorial_comments_ep
     ON academy_tutorial_comments (series, episode);
--- One row per tutorial draft sent to #atlas-academy-videos for the owner to
+-- One row per tutorial draft sent to #atlas-academy-videos for Miro to
 -- watch before he approves it for YouTube (academy/tutorials.py). The
 -- token is the public `/media/tut.<token>` watch link (atlas/api/media.py),
 -- never written into the card's reason.
@@ -2534,7 +2534,7 @@ ALTER TABLE agency_site_messages ADD COLUMN IF NOT EXISTS slack_attempts INT NOT
 ALTER TABLE agency_site_messages ADD COLUMN IF NOT EXISTS slack_at TIMESTAMPTZ;
 ALTER TABLE agency_site_messages ADD COLUMN IF NOT EXISTS slack_error TEXT;
 
--- The "ask for a free preview" form on agency.example.com (atlas/api/preview_request.py):
+-- The "ask for a free preview" form on agency.storefront.test (atlas/api/preview_request.py):
 -- who asked and how to reach them, kept so a request survives a failed Slack
 -- post. Untrusted text; nothing reads it back into a prompt unwrapped.
 CREATE TABLE IF NOT EXISTS agency_preview_requests (
@@ -2552,7 +2552,7 @@ CREATE INDEX IF NOT EXISTS agency_preview_requests_received
     ON agency_preview_requests (received_at);
 
 -- Verified-buyer reviews (modules/academy/reviews.py): written on the paid
--- access page, shown only once the owner approves (academy.approve_review).
+-- access page, shown only once Miro approves (academy.approve_review).
 CREATE TABLE IF NOT EXISTS academy_reviews (
     id              BIGSERIAL PRIMARY KEY,
     session_id      TEXT NOT NULL,                  -- the paid checkout it came from
@@ -2681,12 +2681,12 @@ CREATE TABLE IF NOT EXISTS linkedin_request_drafts (
 );
 
 -- 2026-10-11: ATLAS Academy support (modules/academy/support*.py, kernel/
--- academy_support.py). the owner, via Q&A: "everything auto unless unsure". One
+-- academy_support.py). Miro, via Q&A: "everything auto unless unsure". One
 -- row per thing a customer asked: the Help page form, an email to the
 -- support address, or a chat question the visitor chose to send on. The
 -- words are untrusted and reach a prompt only inside wrap_untrusted. A chat
 -- that is never sent on is never stored. `route` is decided in code from
--- their words (refund, legal, money, complaint, custom work go to the owner).
+-- their words (refund, legal, money, complaint, custom work go to Miro).
 CREATE TABLE IF NOT EXISTS academy_support_tickets (
     id              BIGSERIAL PRIMARY KEY,
     source          TEXT NOT NULL CHECK (source IN ('form', 'email', 'chat')),
@@ -2720,7 +2720,7 @@ CREATE TABLE IF NOT EXISTS academy_support_drafts (
     body              TEXT NOT NULL,
     body_sha          TEXT NOT NULL,
     sources           JSONB NOT NULL DEFAULT '[]',  -- the KB chunk ids it cites
-    holds             JSONB NOT NULL DEFAULT '[]',  -- why the owner must see it first
+    holds             JSONB NOT NULL DEFAULT '[]',  -- why Miro must see it first
     confidence        REAL NOT NULL DEFAULT 0,
     status            TEXT NOT NULL DEFAULT 'draft'
                       CHECK (status IN ('draft', 'sent', 'discarded', 'rolled_back')),
@@ -2745,17 +2745,17 @@ CREATE TABLE IF NOT EXISTS academy_support_settings (
     at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- ------------------------------------------------------------------ church
--- The ECC Channel Agent (atlas/modules/church, docs/church-agent.md): the
--- posting calendar of the Example Community & Example community
--- Church bookstore on YouTube (@example_handle) and its Facebook Page. Rows are
--- written by the Mac's sync (`POST /api/church/progress`, bearer
--- CHURCH_PROGRESS_TOKEN) and by the church actions through the executor.
+-- ------------------------------------------------------------------ community
+-- The AMSM Channel Agent (atlas/modules/community, docs/community-agent.md): the
+-- posting calendar of the Archangel Michael & St. Mena Coptic Orthodox
+-- Community bookstore on YouTube (@amsmlibrary) and its Facebook Page. Rows are
+-- written by the Mac's sync (`POST /api/community/progress`, bearer
+-- COMMUNITY_PROGRESS_TOKEN) and by the community actions through the executor.
 -- What the sync sends is the Mac's account, not ATLAS's: it is stored as
 -- data and wrapped as untrusted before any prompt reads it.
 -- `reviewed_at` is the owner's review of the rendered video: the posting
 -- actions refuse a row without it (every video is seen before it posts).
-CREATE TABLE IF NOT EXISTS church_posts (
+CREATE TABLE IF NOT EXISTS community_posts (
     id              BIGSERIAL PRIMARY KEY,
     platform        TEXT NOT NULL CHECK (platform IN ('youtube', 'facebook')),
     schedule_index  INT NOT NULL CHECK (schedule_index >= 0),
@@ -2777,19 +2777,19 @@ CREATE TABLE IF NOT EXISTS church_posts (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (platform, schedule_index)
 );
-CREATE INDEX IF NOT EXISTS church_posts_publish_at
-    ON church_posts (platform, publish_at);
-CREATE TABLE IF NOT EXISTS church_events (
+CREATE INDEX IF NOT EXISTS community_posts_publish_at
+    ON community_posts (platform, publish_at);
+CREATE TABLE IF NOT EXISTS community_events (
     id      BIGSERIAL PRIMARY KEY,
     at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     kind    TEXT NOT NULL,                          -- sync | note | feast | gap | scheduled ...
     message TEXT NOT NULL,
     data    JSONB NOT NULL DEFAULT '{}'
 );
-CREATE INDEX IF NOT EXISTS church_events_at ON church_events (at DESC);
+CREATE INDEX IF NOT EXISTS community_events_at ON community_events (at DESC);
 -- The content bank from the owner's growth plan (2026-10-12): 30 ideas,
 -- seeded once below; the sync or the shift moves their status.
-CREATE TABLE IF NOT EXISTS church_ideas (
+CREATE TABLE IF NOT EXISTS community_ideas (
     id          BIGSERIAL PRIMARY KEY,
     code        INT NOT NULL UNIQUE,
     title       TEXT NOT NULL,
@@ -2806,9 +2806,9 @@ CREATE TABLE IF NOT EXISTS church_ideas (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 -- One row per post per day, as the platform reported it (never estimated).
-CREATE TABLE IF NOT EXISTS church_metrics (
+CREATE TABLE IF NOT EXISTS community_metrics (
     id             BIGSERIAL PRIMARY KEY,
-    post_id        BIGINT NOT NULL REFERENCES church_posts (id),
+    post_id        BIGINT NOT NULL REFERENCES community_posts (id),
     day            DATE NOT NULL,
     views          INT,
     engaged_views  INT,
@@ -2818,7 +2818,7 @@ CREATE TABLE IF NOT EXISTS church_metrics (
     read_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
     UNIQUE (post_id, day)
 );
-INSERT INTO church_ideas (code, title, series, category, format, language) VALUES
+INSERT INTO community_ideas (code, title, series, category, format, language) VALUES
     (1, 'How to choose your next spiritual book', 'Choose With Us', 'guide', 'long', 'both'),
     (2, 'Inside one English edition', 'Inside This Book', 'book', 'short', 'en'),
     (3, 'Inside one Arabic edition', 'Inside This Book', 'book', 'short', 'ar'),
@@ -2833,7 +2833,7 @@ INSERT INTO church_ideas (code, title, series, category, format, language) VALUE
     (12, 'Choosing a book for a parent', 'Choose With Us', 'guide', 'short', 'both'),
     (13, 'Choosing a book as an adult beginner', 'Choose With Us', 'guide', 'short', 'both'),
     (14, 'A volunteer''s book recommendation', 'From Our Bookstore', 'store', 'short', 'both'),
-    (15, 'A reading list for a church season', 'Choose With Us', 'guide', 'short', 'both'),
+    (15, 'A reading list for a community season', 'Choose With Us', 'guide', 'short', 'both'),
     (16, 'A closer look at an icon of Christ', 'A Closer Look', 'icon', 'short', 'both'),
     (17, 'A closer look at an icon of the Theotokos', 'A Closer Look', 'icon', 'short', 'both'),
     (18, 'A saint depicted in an item on our shelf', 'A Closer Look', 'icon', 'short', 'both'),
@@ -2872,7 +2872,7 @@ CREATE TABLE IF NOT EXISTS agency_site_events (
 CREATE INDEX IF NOT EXISTS agency_site_events_slug_at
     ON agency_site_events (slug, at DESC);
 
--- Client-sites skill book (2026-10-27): text guidance the owner approved on an
+-- Client-sites skill book (2026-10-27): text guidance Miro approved on an
 -- agency.add_skill card. Text only; HTML/JS templates arrive through the repo.
 CREATE TABLE IF NOT EXISTS agency_skills (
     id           BIGSERIAL PRIMARY KEY,
@@ -3195,7 +3195,7 @@ CREATE TABLE IF NOT EXISTS seo_reports (
 CREATE INDEX IF NOT EXISTS seo_reports_slug ON seo_reports (slug, kind, at DESC);
 
 -- 2026-10-29: the old shop host is gone (the store is ACADEMY_PUBLIC_ORIGIN,
--- agency.example.com). Its SEO rows (slug 'mapfront-shop') are withdrawn, not
+-- agency.storefront.test). Its SEO rows (slug 'mapfront-shop') are withdrawn, not
 -- deleted, and only those; idempotent, every schema apply.
 UPDATE seo_audits   SET status = 'withdrawn' WHERE slug = 'mapfront-shop' AND status <> 'withdrawn';
 UPDATE seo_keywords SET status = 'withdrawn' WHERE slug = 'mapfront-shop' AND status <> 'withdrawn';
@@ -3304,7 +3304,7 @@ CREATE TABLE IF NOT EXISTS research_client_reports (
                    CHECK (status IN ('drafted', 'sent', 'withdrawn'))
 );
 
--- 2026-10-29: client-site documents are Claude Docs artifacts (the owner's rule).
+-- 2026-10-29: client-site documents are Claude Docs artifacts (Miro's rule).
 -- The sites agent drafts a brief, handoff, report, proposal or client guide
 -- here (agency.draft_doc); agency.publish_doc hands it to the coding agent
 -- on the Mac, which creates the artifact and reports the link through
@@ -3331,9 +3331,9 @@ CREATE INDEX IF NOT EXISTS agency_site_docs_slug
 CREATE INDEX IF NOT EXISTS agency_site_docs_handoff
     ON agency_site_docs (handoff_id) WHERE handoff_id IS NOT NULL;
 
--- MMT agent (TutorSite): US tutoring-centre discovery and intros. Business-level
+-- TUTORCO agent (ExampleTutor): US tutoring-centre discovery and intros. Business-level
 -- data only; ATLAS's own rows. Nothing here is ever deleted: rollback marks dropped.
-CREATE TABLE IF NOT EXISTS mmt_prospects (
+CREATE TABLE IF NOT EXISTS tutorco_prospects (
     id            BIGSERIAL PRIMARY KEY,
     domain        TEXT UNIQUE NOT NULL,
     name          TEXT NOT NULL,
@@ -3355,19 +3355,19 @@ CREATE TABLE IF NOT EXISTS mmt_prospects (
     first_seen    TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_read     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE TABLE IF NOT EXISTS mmt_facts (
+CREATE TABLE IF NOT EXISTS tutorco_facts (
     id          BIGSERIAL PRIMARY KEY,
-    prospect_id BIGINT NOT NULL REFERENCES mmt_prospects(id),
+    prospect_id BIGINT NOT NULL REFERENCES tutorco_prospects(id),
     kind        TEXT NOT NULL,
     value       TEXT NOT NULL,
     quote       TEXT NOT NULL,
     source_url  TEXT NOT NULL,
     read_at     TIMESTAMPTZ NOT NULL
 );
-CREATE INDEX IF NOT EXISTS mmt_facts_prospect ON mmt_facts (prospect_id, read_at DESC);
-CREATE TABLE IF NOT EXISTS mmt_intros (
+CREATE INDEX IF NOT EXISTS tutorco_facts_prospect ON tutorco_facts (prospect_id, read_at DESC);
+CREATE TABLE IF NOT EXISTS tutorco_intros (
     id          BIGSERIAL PRIMARY KEY,
-    prospect_id BIGINT UNIQUE NOT NULL REFERENCES mmt_prospects(id),
+    prospect_id BIGINT UNIQUE NOT NULL REFERENCES tutorco_prospects(id),
     channel     TEXT NOT NULL,
     target      TEXT NOT NULL,
     body        TEXT NOT NULL,
@@ -3379,15 +3379,15 @@ CREATE TABLE IF NOT EXISTS mmt_intros (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     decided_at  TIMESTAMPTZ
 );
-CREATE TABLE IF NOT EXISTS mmt_suppression (
+CREATE TABLE IF NOT EXISTS tutorco_suppression (
     id     BIGSERIAL PRIMARY KEY,
     key    TEXT UNIQUE NOT NULL,                 -- a domain or a profile URL
     reason TEXT NOT NULL,
     at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
--- MMT owner notifications: what ATLAS told the owner on his own WhatsApp, and what he
+-- TUTORCO owner notifications: what ATLAS told Miro on his own WhatsApp, and what he
 -- said back. The outbox holds templated text only; a reply is a note, never an approval.
-CREATE TABLE IF NOT EXISTS mmt_owner_outbox (
+CREATE TABLE IF NOT EXISTS tutorco_owner_outbox (
     id         BIGSERIAL PRIMARY KEY,
     kind       TEXT NOT NULL,
     ref        TEXT NOT NULL,
@@ -3397,9 +3397,9 @@ CREATE TABLE IF NOT EXISTS mmt_owner_outbox (
     sid        TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS mmt_owner_outbox_dedupe
-    ON mmt_owner_outbox (kind, ref) WHERE status IN ('sending', 'sent');
-CREATE TABLE IF NOT EXISTS mmt_owner_notes (
+CREATE UNIQUE INDEX IF NOT EXISTS tutorco_owner_outbox_dedupe
+    ON tutorco_owner_outbox (kind, ref) WHERE status IN ('sending', 'sent');
+CREATE TABLE IF NOT EXISTS tutorco_owner_notes (
     id         BIGSERIAL PRIMARY KEY,
     body       TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -3453,7 +3453,7 @@ CREATE INDEX IF NOT EXISTS whatsapp_chat_memory_channel_at ON whatsapp_chat_memo
 -- One row per video, ever: UNIQUE video_id is the second dedupe layer behind the
 -- card's dedup_key, so a video that was drafted, approved or left unread is never
 -- drafted twice. `status`: queued (waiting for the daily job) -> drafted (a Tier 2
--- card holds the lessons) -> approved (the owner said yes: the note is saved knowledge
+-- card holds the lessons) -> approved (Miro said yes: the note is saved knowledge
 -- for him to use; nothing reads it back into a prompt, rule or setting) or
 -- unreadable (no captions, rate-limited, could not draft). `queued_at` drives the
 -- per-day intake caps. Additive.
@@ -3476,13 +3476,13 @@ CREATE TABLE IF NOT EXISTS video_lessons (
 );
 CREATE INDEX IF NOT EXISTS video_lessons_status ON video_lessons (status, queued_at);
 
--- Home camera watch (atlas/modules/cameras), Phase A: motion/AI events the
--- read-only watcher saw on the NVR, and ATLAS-side camera settings. Nothing
--- here is written to the NVR. `snapshot_path` points under data/cameras and
+-- Home sensor watch (atlas/modules/sensors), Phase A: motion/AI events the
+-- read-only watcher saw on the NVR, and ATLAS-side sensor settings. Nothing
+-- here is written to the NVR. `snapshot_path` points under data/sensors and
 -- is blanked by the retention sweep (14 days). cluster_id / person_id stay
 -- NULL until Phase B (household recognition). Additive and idempotent;
--- `db/rollback-cameras.sql` drops these by hand after a pg_dump.
-CREATE TABLE IF NOT EXISTS camera_events (
+-- `db/rollback-sensors.sql` drops these by hand after a pg_dump.
+CREATE TABLE IF NOT EXISTS sensor_events (
     id            BIGSERIAL PRIMARY KEY,
     at            TIMESTAMPTZ NOT NULL DEFAULT now(),
     channel       SMALLINT NOT NULL CHECK (channel BETWEEN 0 AND 11),
@@ -3494,37 +3494,37 @@ CREATE TABLE IF NOT EXISTS camera_events (
     person_id     INT,
     alert_level   SMALLINT NOT NULL DEFAULT 0
 );
-CREATE INDEX IF NOT EXISTS camera_events_channel_at ON camera_events (channel, at DESC);
-CREATE INDEX IF NOT EXISTS camera_events_at ON camera_events (at DESC);
+CREATE INDEX IF NOT EXISTS sensor_events_channel_at ON sensor_events (channel, at DESC);
+CREATE INDEX IF NOT EXISTS sensor_events_at ON sensor_events (at DESC);
 
 -- ATLAS-side settings: the mode (home / away / night), the day the daily
--- summary was last sent, per-camera ignore flags. Key/value, one row each.
-CREATE TABLE IF NOT EXISTS camera_state (
+-- summary was last sent, per-sensor ignore flags. Key/value, one row each.
+CREATE TABLE IF NOT EXISTS sensor_state (
     key        TEXT PRIMARY KEY,
     value      JSONB NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Home camera watch, Phase B: household face recognition (atlas/modules/cameras).
--- Face vectors are AES-GCM ciphertext (key CAMERA_FACE_KEY, never stored here);
+-- Home sensor watch, Phase B: household matching (atlas/modules/sensors).
+-- Face vectors are AES-GCM ciphertext (key SENSOR_FACE_KEY, never stored here);
 -- no picture of a face is kept in these tables. A cluster is one unfamiliar
--- face the cameras keep seeing; the owner's approval card turns it into a household
+-- face the sensors keep seeing; Miro's approval card turns it into a household
 -- cluster. Unknown clusters and their vectors are purged 72 h after the last
--- sighting; household ones stay until the owner deletes them (portal button or
--- `python -m atlas.cli cameras-forget`). `camera_events.cluster_id` holds the
+-- sighting; household ones stay until Miro deletes them (portal button or
+-- `python -m atlas.cli sensors-forget`). `sensor_events.cluster_id` holds the
 -- cluster's number as text, `person_id` the person slot. Additive, idempotent;
--- `db/rollback-cameras.sql` drops these by hand after a pg_dump.
-CREATE TABLE IF NOT EXISTS camera_people (
+-- `db/rollback-sensors.sql` drops these by hand after a pg_dump.
+CREATE TABLE IF NOT EXISTS sensor_people (
     slot         SMALLINT PRIMARY KEY CHECK (slot BETWEEN 1 AND 5),
     display_name TEXT CHECK (display_name IS NULL OR char_length(display_name) BETWEEN 1 AND 40),
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-INSERT INTO camera_people (slot) VALUES (1), (2), (3), (4), (5) ON CONFLICT DO NOTHING;
+INSERT INTO sensor_people (slot) VALUES (1), (2), (3), (4), (5) ON CONFLICT DO NOTHING;
 
-CREATE TABLE IF NOT EXISTS camera_clusters (
+CREATE TABLE IF NOT EXISTS sensor_clusters (
     id             BIGSERIAL PRIMARY KEY,
     status         TEXT NOT NULL DEFAULT 'unknown' CHECK (status IN ('unknown', 'household')),
-    slot           SMALLINT REFERENCES camera_people (slot) ON DELETE SET NULL,
+    slot           SMALLINT REFERENCES sensor_people (slot) ON DELETE SET NULL,
     sightings      INT NOT NULL DEFAULT 1,
     first_seen     TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_seen      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -3533,16 +3533,16 @@ CREATE TABLE IF NOT EXISTS camera_clusters (
     proposal_id    BIGINT,
     purge_after    TIMESTAMPTZ
 );
-CREATE INDEX IF NOT EXISTS camera_clusters_status ON camera_clusters (status, purge_after);
+CREATE INDEX IF NOT EXISTS sensor_clusters_status ON sensor_clusters (status, purge_after);
 
-CREATE TABLE IF NOT EXISTS camera_faces (
+CREATE TABLE IF NOT EXISTS sensor_faces (
     id         BIGSERIAL PRIMARY KEY,
-    cluster_id BIGINT NOT NULL REFERENCES camera_clusters (id) ON DELETE CASCADE,
+    cluster_id BIGINT NOT NULL REFERENCES sensor_clusters (id) ON DELETE CASCADE,
     ciphertext BYTEA NOT NULL,
     nonce      BYTEA NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS camera_faces_cluster ON camera_faces (cluster_id);
+CREATE INDEX IF NOT EXISTS sensor_faces_cluster ON sensor_faces (cluster_id);
 
 -- Local-agency upgrades, Part 0 (2026-11-12). Additive only: nothing is dropped
 -- or rewritten. Rollback by hand: db/rollback-local-agency-upgrades.sql.
@@ -3563,7 +3563,7 @@ CREATE INDEX IF NOT EXISTS reply_timings_channel_at ON reply_timings (channel, a
 
 -- Durable memory (Part A): where a memory came from, a soft "forget" (hidden,
 -- undoable; the row stays until the hard wipe command), and the business it
--- belongs to (mmt | agency | ...).
+-- belongs to (tutorco | agency | ...).
 ALTER TABLE memories ADD COLUMN IF NOT EXISTS source TEXT;
 ALTER TABLE memories ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 ALTER TABLE memories ADD COLUMN IF NOT EXISTS business TEXT;
@@ -3633,13 +3633,13 @@ ALTER TABLE academy_lesson_youtube
     ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'full'
     CHECK (kind IN ('full', 'preview', 'short'));
 
--- Every upload the Academy made to the clips channel (@example_handle), of any
+-- Every upload the Academy made to the clips channel (@atlasacademyphp), of any
 -- kind; written on upload, read by the public-visibility gate and the daily cap.
 CREATE TABLE IF NOT EXISTS academy_youtube_uploads (
     video_id text PRIMARY KEY,
     at       timestamptz NOT NULL DEFAULT now()
 );
--- Messages ATLAS sends to the owner's own WhatsApp (the linked-device chat), other than
+-- Messages ATLAS sends to Miro's own WhatsApp (the linked-device chat), other than
 -- website contact rows (agency_site_messages): [Portal] events, [Alert] problems.
 -- `digest` rows are low-value items folded into one message later; `sent` rows count
 -- toward the one shared hourly cap. Text is composed by ATLAS code from existing
@@ -3666,24 +3666,24 @@ CREATE TABLE IF NOT EXISTS draft_notice_mark (k int PRIMARY KEY, last_id bigint 
 CREATE TABLE IF NOT EXISTS academy_youtube_uploads (
     video_id text PRIMARY KEY, at timestamptz NOT NULL DEFAULT now());
 
--- Phase 2 (camera alerts you can count): durable debounce, dispatch failure rows,
+-- Phase 2 (sensor alerts you can count): durable debounce, dispatch failure rows,
 -- Twilio delivery status, and a marker for the canary's synthetic event.
 -- Additive and safe to apply twice. No message text is stored in the failure table.
-CREATE TABLE IF NOT EXISTS camera_alert_debounce (
+CREATE TABLE IF NOT EXISTS sensor_alert_debounce (
     key        TEXT PRIMARY KEY,
     alerted_at TIMESTAMPTZ NOT NULL,
     level      INT NOT NULL
 );
-CREATE TABLE IF NOT EXISTS camera_alert_failures (
+CREATE TABLE IF NOT EXISTS sensor_alert_failures (
     id          BIGSERIAL PRIMARY KEY,
     event_id    BIGINT,
     at          TIMESTAMPTZ NOT NULL DEFAULT now(),
     error_class TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS camera_alert_failures_at ON camera_alert_failures (at DESC);
-ALTER TABLE mmt_owner_outbox ADD COLUMN IF NOT EXISTS delivery_status TEXT;
-ALTER TABLE mmt_owner_outbox ADD COLUMN IF NOT EXISTS delivery_checked_at TIMESTAMPTZ;
-ALTER TABLE camera_events ADD COLUMN IF NOT EXISTS synthetic BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS sensor_alert_failures_at ON sensor_alert_failures (at DESC);
+ALTER TABLE tutorco_owner_outbox ADD COLUMN IF NOT EXISTS delivery_status TEXT;
+ALTER TABLE tutorco_owner_outbox ADD COLUMN IF NOT EXISTS delivery_checked_at TIMESTAMPTZ;
+ALTER TABLE sensor_events ADD COLUMN IF NOT EXISTS synthetic BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Proactive owner updates (atlas/modules/assistant/notices.py): one short note,
 -- built by code, sent as a Slack DM through the executor action
@@ -3708,3 +3708,32 @@ CREATE TABLE IF NOT EXISTS assistant_notice_state (
     value       TEXT NOT NULL,
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 2026-11-24 QA autopilot: one row per cycle and one per diagnosis. Own
+-- tables only; a rollback supersedes a cycle, nothing is deleted.
+CREATE TABLE IF NOT EXISTS autopilot_cycles (
+    id            BIGSERIAL PRIMARY KEY,
+    at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+    total         INT NOT NULL DEFAULT 0,
+    fixed         INT NOT NULL DEFAULT 0,
+    waiting       INT NOT NULL DEFAULT 0,      -- waiting on Miro
+    held          INT NOT NULL DEFAULT 0,      -- watch-only hold
+    tasks         INT NOT NULL DEFAULT 0,
+    superseded_at TIMESTAMPTZ
+);
+CREATE TABLE IF NOT EXISTS autopilot_log (
+    id          BIGSERIAL PRIMARY KEY,
+    cycle_id    BIGINT NOT NULL REFERENCES autopilot_cycles(id),
+    at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    subject     TEXT NOT NULL,                 -- research.scan_freshness | agent:qa
+    cause_key   TEXT NOT NULL,                 -- subject:cause_class
+    cause_class TEXT NOT NULL,
+    cause       TEXT NOT NULL,
+    fix         TEXT NOT NULL,
+    who         TEXT NOT NULL,
+    outcome     TEXT NOT NULL,
+    action      TEXT,
+    detail      TEXT NOT NULL DEFAULT '',
+    env_missing JSONB NOT NULL DEFAULT '[]'::jsonb
+);
+CREATE INDEX IF NOT EXISTS autopilot_log_cause ON autopilot_log (cause_key, at DESC);

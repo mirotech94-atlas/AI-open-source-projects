@@ -5,7 +5,7 @@ to be improved (kernel/improve.py):
 
 * ATLAS itself -- its code, voice, reels, prompts, tiers -- is never queued
   to run anything. Self-modification is Tier 3 whoever would carry it out.
-  It is written up as a note for the owner's supervised coding session.
+  It is written up as a note for Miro's supervised coding session.
 * FlyCheap and Vault become a `nightshift.run` proposal: a card that waits
   for his yes, on a repository taken from NIGHTSHIFT_REPOS, never from what
   was said.
@@ -26,7 +26,7 @@ from atlas.kernel import improve
 
 SECRET = "v" * 40
 PASSWORD = "a-long-enough-password"
-REPOS = "aicode.example.com/root/flycheap-tracker,aicode.example.com/root/guardian"
+REPOS = "aicode.storefront.test/root/flycheap-tracker,aicode.storefront.test/root/guardian"
 
 
 @pytest.fixture(autouse=True)
@@ -120,7 +120,7 @@ def test_improving_atlas_itself_is_recognised_as_atlas(said):
     ("atlas, improve flycheap's search", "flycheap"),
     ("make the fly cheap search results better", "flycheap"),
     ("improve vault's alerts", "guardian"),
-    ("improve the attendance bot", "roots"),
+    ("improve the attendance bot", "attendance"),
 ])
 def test_improving_something_else_names_it(said, key):
     place = improve.target(said)
@@ -207,7 +207,7 @@ async def test_improving_flycheap_is_a_nightshift_proposal_not_an_execution(
     action, params, _reason, kw = guarded["proposed"][0]
     assert action == "nightshift.run"
     # The repository comes from NIGHTSHIFT_REPOS, never from the words.
-    assert params["repo"] == "https://aicode.example.com/root/flycheap-tracker"
+    assert params["repo"] == "https://aicode.storefront.test/root/flycheap-tracker"
     # His words reach the sandbox quoted, never as its instructions.
     assert "<request source='voice'>" in params["task"]
     assert "improve FlyCheap's search" in params["task"]
@@ -222,12 +222,12 @@ async def test_improving_flycheap_is_a_nightshift_proposal_not_an_execution(
 async def test_vault_goes_to_its_own_repository(memory_backend, guarded):
     got = await improve.handle("improve vault's alerts", source="voice")
     assert got is not None and got.proposal_id == 41
-    assert guarded["proposed"][0][1]["repo"] == "https://aicode.example.com/root/guardian"
+    assert guarded["proposed"][0][1]["repo"] == "https://aicode.storefront.test/root/guardian"
 
 
 async def test_a_repo_not_on_the_list_is_a_note_not_a_card(
         memory_backend, guarded, monkeypatch):
-    monkeypatch.setenv("NIGHTSHIFT_REPOS", "aicode.example.com/root/guardian")
+    monkeypatch.setenv("NIGHTSHIFT_REPOS", "aicode.storefront.test/root/guardian")
     got = await improve.handle("improve FlyCheap's search", source="voice")
     assert got is not None and got.proposal_id is None and got.noted
     assert guarded["proposed"] == []
@@ -236,7 +236,7 @@ async def test_a_repo_not_on_the_list_is_a_note_not_a_card(
 
 async def test_an_atlas_repo_on_the_list_is_never_handed_to_the_night_shift(
         memory_backend, guarded, monkeypatch):
-    monkeypatch.setenv("NIGHTSHIFT_REPOS", "aicode.example.com/root/atlas-flycheap")
+    monkeypatch.setenv("NIGHTSHIFT_REPOS", "aicode.storefront.test/root/atlas-flycheap")
     assert improve.nightshift_repo(improve.target("improve flycheap")) is None
 
 

@@ -23,8 +23,8 @@ async def test_intact_chain_verifies(memory_backend):
 
 @pytest.mark.asyncio
 async def test_tampered_payload_is_detected(memory_backend):
-    await audit("execute.start", "cloudco.reboot", {"host": "a"})
-    await audit("execute.finish", "cloudco.reboot", {"ok": True})
+    await audit("execute.start", "cloudhost.reboot", {"host": "a"})
+    await audit("execute.finish", "cloudhost.reboot", {"ok": True})
 
     # Someone edits the record to hide what actually happened.
     rows = memory_backend.audit_rows

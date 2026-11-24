@@ -146,7 +146,7 @@ async def draft(transcript: Transcript, think: Think | None = None
             material = wrap_untrusted("\n".join(f"- {n}" for n in notes),
                                       f"{source} notes")
         reply = await ask(SYSTEM_FINAL, material, 900)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"could not draft lessons ({type(exc).__name__})"
     got = parse(reply)
     if got is None:

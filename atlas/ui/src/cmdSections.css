@@ -45,7 +45,7 @@
 .cs-search > li { grid-template-columns: minmax(80px, 11em) minmax(0, 1fr) auto; }
 .cs-k { color: var(--text-hot); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Every row one line: the value is cut with an ellipsis, never wrapped
-   into a paragraph (the owner 2026-10-29). */
+   into a paragraph (Miro 2026-10-29). */
 .cs-v {
   color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap;
@@ -67,7 +67,7 @@
   .cs-search > li > .cs-v, .cs-cards > li > .cs-v { grid-column: 1 / -1; order: 1; }
 }
 
-/* ---------------------------------------------- ops floor (the owner 2026-10-29)
+/* ---------------------------------------------- ops floor (Miro 2026-10-29)
    Black ground, royal blue #5b8cff for chrome only. Health keeps its own:
    FAILING red, UNKNOWN grey dashed with the word and no glow, OK green.
    Three columns from 1280 px (ring in the middle), two columns on tablets,
@@ -184,7 +184,7 @@ li.cmd-failing, li.cmd-unknown { border-width: 0 0 0 2px; padding-left: 8px; }
   overflow-wrap: anywhere;
 }
 /* Last shift: one line (<= 60 chars from the server), the whole text behind
-   the expand (the owner 2026-10-29). */
+   the expand (Miro 2026-10-29). */
 .cmd-roster-t td.cmd-shift { max-width: 30ch; }
 .cmd-roster-t td small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cmd-outcome { display: inline; }
@@ -232,7 +232,7 @@ li.cmd-failing, li.cmd-unknown { border-width: 0 0 0 2px; padding-left: 8px; }
 @keyframes iso-rise { from { transform: scaleY(.02); } to { transform: scaleY(1); } }
 @keyframes iso-fade { from { opacity: 0; } to { opacity: 1; } }
 
-/* ------------------------------------------- flanks (the owner 2026-11-12)
+/* ------------------------------------------- flanks (Miro 2026-11-12)
    "Every section on the left and right of the ATLAS animation, so he is in
    between of everything." The ring is the middle column; the sections are
    split left/right by flankLayout.ts. DOM order is ring, left, right, so

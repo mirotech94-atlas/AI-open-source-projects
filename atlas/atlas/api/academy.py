@@ -17,11 +17,11 @@ unreachable, the page says exactly that.
 The session id and the download token are secrets in the URL: Caddy does
 not log /public/academy/*, and main.py's access-log filter redacts both.
 Rate-limited per address (the X-Forwarded-For Caddy sets). The page is
-served under atlas.example.com's strict CSP, so it is one HTML document with
+served under atlas.storefront.test's strict CSP, so it is one HTML document with
 inline styles and nothing else.
 
 Nothing here writes to the outside world. The webhook reads and records,
-and posts the purchase to the owner's Slack, like /webhooks/stripe-mapfront.
+and posts the purchase to Miro's Slack, like /webhooks/stripe-mapfront.
 """
 from __future__ import annotations
 
@@ -99,7 +99,7 @@ _files = PerAddressLimiter(30, 600.0)
 _session_files = PerAddressLimiter(_SESSION_FILES_LIMIT, 600.0)
 
 # A confirmed payment is remembered this long, so playing and seeking a video
-# does not ask Stripe for every chunk (the owner, 2026-11-14). A refund or dispute
+# does not ask Stripe for every chunk (Miro, 2026-11-14). A refund or dispute
 # therefore stops a video at most this much later; only a paid verdict is
 # ever remembered.
 PAID_MEMORY_SECONDS = 120.0
@@ -399,14 +399,14 @@ async def access(request: Request, session_id: str = "") -> HTMLResponse:
     if v.recordable:
         try:
             await delivery.record(v, "access")
-        except Exception as exc:                        # noqa: BLE001
-            # The buyer still gets their page; the record is the owner's, not theirs.
+        except Exception as exc:  # noqa: BLE001
+            # The buyer still gets their page; the record is Miro's, not theirs.
             log.error("academy: purchase not recorded (%s)", type(exc).__name__)
     if not v.paid:
         return _verdict_page(cat, v)
     try:
         written = await reviews.pending_for(session_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("academy: reviews not read (%s)", type(exc).__name__)
         written = {}
     return _paid_page(cat, v, written, await lesson_youtube.embed_ids(),
@@ -459,7 +459,7 @@ async def download(token: str, request: Request, view: int = 0) -> Response:
 async def stripe_academy(request: Request) -> Response:
     """Stripe's signed checkout event: read the session back with the read
     key (the event body is only a pointer) and record it, so a buyer who
-    closed the tab before the redirect still reaches the owner's Slack."""
+    closed the tab before the redirect still reaches Miro's Slack."""
     secret = os.getenv(WEBHOOK_SECRET_ENV, "").strip()
     if not secret:
         return PlainTextResponse("not configured", status_code=503)
@@ -508,7 +508,7 @@ async def stripe_academy(request: Request) -> Response:
         return PlainTextResponse(v.status, status_code=503)
     try:
         new = await delivery.record(v, "webhook")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("academy webhook not recorded (%s)", type(exc).__name__)
         return PlainTextResponse("not recorded", status_code=500)
     return PlainTextResponse("recorded" if new else v.status, status_code=200)
@@ -538,7 +538,7 @@ _reviews = PerAddressLimiter(10, 3600.0)
 @router.post(REVIEW_PATH)
 async def review(request: Request) -> Response:
     """A verified buyer's review from their access page: checked against
-    Stripe again, stored pending, carded to the owner (reviews.py). The buyer is
+    Stripe again, stored pending, carded to Miro (reviews.py). The buyer is
     sent back to their access page, which shows the review's state."""
     cat = _catalog()
     if not _reviews.allow(effective_client(request)):
@@ -577,7 +577,7 @@ async def review(request: Request) -> Response:
     try:
         ok, why = await reviews.submit(session_id, offer_id, stars, text, name,
                                        effective_client(request))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("academy: review not stored (%s)", type(exc).__name__)
         return _problem(cat, "We couldn't take your review right now",
                         "Please try again in a few minutes.", 503)
@@ -689,7 +689,7 @@ async def _recover(request: Request) -> Response:
                 # A paid purchase whose webhook never arrived is recorded now
                 # (without a Slack post: see delivery.record).
                 await delivery.record(v, "recover")
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 log.error("academy: recovered purchase not recorded (%s)",
                           type(exc).__name__)
         if v.paid:
@@ -771,7 +771,7 @@ async def subscribe(request: Request) -> Response:
         return _thanks()
     try:
         await subscribers.signup(email, (form.get("source") or [""])[0])
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("academy: a signup could not be stored (%s)", type(exc).__name__)
         return _sub_page("Try again in a few minutes", "<h1>We couldn't save that "
                          f'right now</h1><p>Nothing was signed up. <a href="{UPDATES_PAGE_URL}">'
@@ -810,7 +810,7 @@ async def subscribe_confirm_page(t: str = "") -> Response:
 async def subscribe_confirm(request: Request, t: str = "") -> Response:
     try:
         ok = await subscribers.confirm(t)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("academy: a confirmation could not be read (%s)", type(exc).__name__)
         return _sub_page("Try again", "<h1>We couldn't check that link right now</h1>"
                          "<p>Please open it again in a few minutes.</p>", 503)
@@ -842,7 +842,7 @@ async def _unsubscribe(t: str) -> Response:
                          f"{_contact(_catalog())} and we will remove you.</p>", 400)
     try:
         await subscribers.unsubscribe(t)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.error("academy: an unsubscribe could not be stored (%s)", type(exc).__name__)
         return _sub_page("Try again", "<h1>We couldn't do that right now</h1><p>Please "
                          "open the link again in a few minutes, or email "
@@ -923,7 +923,7 @@ async def library(request: Request, t: str = "") -> HTMLResponse:
     try:
         rows = await delivery.purchases_for(owner)
         listed = [r["session_id"] for r in rows if valid_session_id(r.get("session_id"))]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("academy: library purchases not read (%s)", type(exc).__name__)
         listed = []
         note = ("<p class=\"off\">UNKNOWN: our purchase record couldn't be read just "
@@ -978,7 +978,7 @@ async def calendar(_s: SignedIn) -> dict[str, Any]:
                 WHERE NOT withdrawn
                 ORDER BY at DESC, id DESC""")
         done, today, last, month = await tutorials._done()
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         why = explain(exc)
         log.warning("academy calendar not read: %s", why)
         raise HTTPException(

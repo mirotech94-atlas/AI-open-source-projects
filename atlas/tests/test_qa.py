@@ -18,10 +18,11 @@ def inserts(fake, table):
     return [(s, a) for s, a in fake.sql_log if f"INSERT INTO {table}" in s]
 
 
-def test_all_five_actions_are_tier_1_with_dry_run_and_rollback():
+def test_all_six_actions_are_tier_1_with_dry_run_and_rollback():
     acts = {a.name: a for a in qa.MODULE.actions()}
     assert set(acts) == {"qa.check_draft", "qa.check_site", "qa.security_scan",
-                         "qa.verify_runs", "qa.create_remediation"}
+                         "qa.verify_runs", "qa.create_remediation",
+                         "qa.autopilot_cycle"}
     for a in acts.values():
         assert a.tier is Tier.AUTO and a.dry_run and a.rollback
 
@@ -38,7 +39,7 @@ def postal(monkeypatch):
     monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "1 Main St, Newark NJ")
 
 
-SIGNED = "\n\nATLAS, assistant to the owner at Mapfront\n1 Main St, Newark NJ\nReply STOP"
+SIGNED = "\n\nATLAS, assistant to Miro at Mapfront\n1 Main St, Newark NJ\nReply STOP"
 
 
 def test_words_refuse_the_old_price_and_promises(postal):
@@ -56,7 +57,7 @@ def test_words_refuse_an_unsourced_number_but_not_a_sourced_one(postal):
 
 def test_words_need_the_signature_stop_and_disclosure(postal, monkeypatch):
     assert words.refusals("Hello there.", "email")
-    assert words.refusals("Hello there.\nOwner", "sms")
+    assert words.refusals("Hello there.\nMiro", "sms")
     assert words.refusals("Hello. Reply STOP to opt out.", "sms") == []
     assert words.refusals("A post about sites.", "reddit")
     assert words.refusals("A post about sites.\nDisclosure: I run Mapfront.",
@@ -70,7 +71,7 @@ def test_words_need_the_signature_stop_and_disclosure(postal, monkeypatch):
 
 async def test_screenshots_are_unknown_without_the_service(monkeypatch):
     monkeypatch.delenv("QA_BROWSER_URL", raising=False)
-    shot = await browser.shot("https://agency.example.com/", browser.DESKTOP)
+    shot = await browser.shot("https://agency.storefront.test/", browser.DESKTOP)
     assert not shot.ok and "UNKNOWN" in shot.detail and shot.data == b""
 
 
@@ -81,7 +82,7 @@ async def test_screenshots_are_unknown_when_the_service_is_down(monkeypatch):
         raise httpx.ConnectError("refused")
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(refuse))
-    shot = await browser.shot("https://agency.example.com/", browser.IPHONE, client)
+    shot = await browser.shot("https://agency.storefront.test/", browser.IPHONE, client)
     assert not shot.ok and "UNKNOWN" in shot.detail
 
 
@@ -89,7 +90,7 @@ async def test_a_tcp_browser_url_is_not_used(monkeypatch):
     """The service has no TCP port: an http:// value is never dialled."""
     monkeypatch.setenv("QA_BROWSER_URL", "http://qa-browser:8091")
     assert browser.socket_path() is None
-    shot = await browser.shot("https://agency.example.com/", browser.DESKTOP)
+    shot = await browser.shot("https://agency.storefront.test/", browser.DESKTOP)
     assert not shot.ok and "UNKNOWN" in shot.detail
     monkeypatch.setenv("QA_BROWSER_URL", "unix:/run/qa/../etc/x")
     assert browser.socket_path() is None
@@ -99,13 +100,13 @@ async def test_a_tcp_browser_url_is_not_used(monkeypatch):
 
 def test_the_service_allowlist_is_public_https_only():
     from atlas.modules.qa import browser_service as svc
-    assert svc.allowed("https://agency.example.com/preview/joes/")
+    assert svc.allowed("https://agency.storefront.test/preview/joes/")
     for internal in ("http://api/x", "https://api/x", "http://shop/", "https://shop/",
                      "http://api:8080/api/health", "https://postgres/",
-                     "https://10.0.0.5/", "https://agency.example.com:8443/"):
+                     "https://10.0.0.5/", "https://agency.storefront.test:8443/"):
         assert not svc.allowed(internal), internal
     assert not hasattr(svc, "INTERNAL")
-    assert not svc.allowed("http://agency.example.com/")
+    assert not svc.allowed("http://agency.storefront.test/")
     assert not svc.allowed("https://evil.example/")
     assert not svc.allowed("https://user:pw@agency.example.com/")
     assert not svc.allowed("http://169.254.169.254/")
@@ -114,9 +115,9 @@ def test_the_service_allowlist_is_public_https_only():
 
 def test_the_service_refuses_redirects_off_the_allowlist():
     from atlas.modules.qa import browser_service as svc
-    base = "https://agency.example.com/preview/joes/"
+    base = "https://agency.storefront.test/preview/joes/"
     assert svc.redirect_allowed(base, 302, "/menu")
-    assert svc.redirect_allowed(base, 301, "https://agency.example.com/")
+    assert svc.redirect_allowed(base, 301, "https://agency.storefront.test/")
     assert not svc.redirect_allowed(base, 302, "http://api:8080/api/session")
     assert not svc.redirect_allowed(base, 307, "https://169.254.169.254/")
     assert not svc.redirect_allowed(base, 302, None)
@@ -170,8 +171,8 @@ def test_the_browser_rules_sit_on_the_context_before_any_page():
         fn(main)
         fn(popup)
     assert not main.closed and popup.closed
-    assert "popup" in guard.verdict("https://agency.example.com/preview/joes/",
-                                    ["https://agency.example.com/preview/joes/"])
+    assert "popup" in guard.verdict("https://agency.storefront.test/preview/joes/",
+                                    ["https://agency.storefront.test/preview/joes/"])
 
 
 def test_no_websocket_is_ever_connected():
@@ -191,7 +192,7 @@ def test_no_websocket_is_ever_connected():
     ws = WS()
     ctx.ws_routes[0][1](ws)
     assert ws.closed and not ws.connected
-    assert "WebSocket" in guard.verdict("https://agency.example.com/preview/joes/", [])
+    assert "WebSocket" in guard.verdict("https://agency.storefront.test/preview/joes/", [])
 
 
 def test_webrtc_udp_is_disabled_and_a_proxy_always_applies(monkeypatch):
@@ -221,14 +222,14 @@ def test_the_proxy_and_the_browser_share_one_allowlist():
 
 def test_the_proxy_forwards_only_connect_to_allowed_hosts_on_443():
     from atlas.modules.qa import egress_proxy as px
-    assert px.target("CONNECT agency.example.com:443 HTTP/1.1") == ("agency.example.com", 443)
-    for line in ("CONNECT agency.example.com:80 HTTP/1.1",
+    assert px.target("CONNECT agency.storefront.test:443 HTTP/1.1") == ("agency.storefront.test", 443)
+    for line in ("CONNECT agency.storefront.test:80 HTTP/1.1",
                  "CONNECT turn.example.com:443 HTTP/1.1",
                  "CONNECT 10.0.0.5:443 HTTP/1.1",
                  "CONNECT [::1]:443 HTTP/1.1",
-                 "GET http://agency.example.com/ HTTP/1.1",
-                 "CONNECT evilagency.example.com:443 HTTP/1.1",
-                 "CONNECT agency.example.com:443"):
+                 "GET http://agency.storefront.test/ HTTP/1.1",
+                 "CONNECT evilagency.storefront.test:443 HTTP/1.1",
+                 "CONNECT agency.storefront.test:443"):
         assert px.target(line) is None, line
 
 
@@ -258,7 +259,7 @@ async def test_the_proxy_refuses_a_private_answer_without_dialling(monkeypatch):
     server = await asyncio.start_server(px.handle, "127.0.0.1", 0)
     port = server.sockets[0].getsockname()[1]
     try:
-        for line in (b"CONNECT agency.example.com:443 HTTP/1.1\r\n\r\n",
+        for line in (b"CONNECT agency.storefront.test:443 HTTP/1.1\r\n\r\n",
                      b"GET http://10.0.0.5/ HTTP/1.1\r\n\r\n"):
             reader, writer = await dial("127.0.0.1", port)
             writer.write(line)
@@ -300,9 +301,9 @@ def test_the_route_gate_aborts_off_allowlist_and_redirects_off_it():
     for url, resp, want in (
             ("http://api:8080/api/session", None, "abort"),
             ("data:image/png;base64,AA", None, "continue"),
-            ("https://agency.example.com/preview/joes/", Resp(200), "fulfill"),
-            ("https://agency.example.com/preview/joes/", Resp(302, "http://10.0.0.5/"), "abort"),
-            ("https://agency.example.com/preview/joes/", Resp(302, "/menu"), "fulfill")):
+            ("https://agency.storefront.test/preview/joes/", Resp(200), "fulfill"),
+            ("https://agency.storefront.test/preview/joes/", Resp(302, "http://10.0.0.5/"), "abort"),
+            ("https://agency.storefront.test/preview/joes/", Resp(302, "/menu"), "fulfill")):
         route = Route(url, resp)
         guard.gate(route)
         assert route.did == want, url
@@ -390,8 +391,8 @@ async def test_a_scan_keeps_no_body_in_the_row_or_the_logs(memory_backend, monke
 
     def answer(request):
         assert request.url.host == "93.184.216.34"
-        assert request.headers["host"] == "agency.example.com"
-        assert request.extensions["sni_hostname"] == "agency.example.com"
+        assert request.headers["host"] == "agency.storefront.test"
+        assert request.extensions["sni_hostname"] == "agency.storefront.test"
         if request.url.path == "/":
             return httpx.Response(200, headers={"content-type": "text/html"},
                                   text=f"<html>{secret}<script src='/jquery-1.12.4.min.js'>"
@@ -452,7 +453,7 @@ async def test_a_scan_resolves_once_and_dials_only_the_pinned_address(
     client = httpx.AsyncClient(transport=httpx.MockTransport(answer))
     result = await security.scan("shop", client=client)
     await client.aclose()
-    assert lookups == ["agency.example.com"]
+    assert lookups == ["agency.storefront.test"]
     assert dialled and {ip for _k, ip in dialled} == {"93.184.216.34"}
     assert result.requests == 1 + len(security.EXPOSED_PATHS)
 

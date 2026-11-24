@@ -211,7 +211,7 @@ def test_a_mesh_client_proxied_by_caddy_is_allowed(monkeypatch, memory_backend):
     """Caddy sits on the Docker bridge and forwards the real mesh address."""
     with TestClient(_app(monkeypatch), client=("172.18.0.5", 40000)) as c:
         response = c.get("/api/session",
-                         headers={"X-Forwarded-For": "100.64.0.7"})
+                         headers={"X-Forwarded-For": "100.84.1.7"})
         assert response.status_code == 200
 
 
@@ -223,7 +223,7 @@ def test_a_public_client_cannot_forge_a_mesh_address(monkeypatch, memory_backend
     """
     with TestClient(_app(monkeypatch), client=("203.0.113.9", 40000)) as c:
         response = c.get("/api/session",
-                         headers={"X-Forwarded-For": "100.64.0.7"})
+                         headers={"X-Forwarded-For": "100.84.1.7"})
         assert response.status_code == 404
 
 
@@ -247,7 +247,7 @@ def test_a_chain_of_forwarded_addresses_uses_the_originator(
     """X-Forwarded-For is a list; the first entry is the original client."""
     with TestClient(_app(monkeypatch), client=("172.18.0.5", 40000)) as c:
         assert c.get("/api/session",
-                     headers={"X-Forwarded-For": "203.0.113.9, 100.64.0.7"}
+                     headers={"X-Forwarded-For": "203.0.113.9, 100.84.1.7"}
                      ).status_code == 404
 
 
@@ -274,7 +274,7 @@ def test_the_dashboard_exposes_no_write_endpoint(client):
         if getattr(route, "methods", None)
         and {"POST", "PUT", "PATCH", "DELETE"} & set(route.methods)
     ]
-    # the owner 2026-10-29: GUI decisions. The decision route answers a Tier 2
+    # Miro 2026-10-29: GUI decisions. The decision route answers a Tier 2
     # card through approvals.decide, the same door Slack and the phone use.
     assert sorted(path for path, _ in writes) == [
         "/api/agents/warm", "/api/approvals/{pid}/decision", "/api/login",
@@ -317,7 +317,7 @@ def test_no_route_anywhere_can_reach_the_executor():
                 elif name in ("run_mac_action", "run_spoken_commands",
                               "run_chain") and path.name != "voice.py":
                     # kernel.spoken: Mac actions said on the signed-in
-                    # dashboard (the owner, 2026-09-28) and from the menu-bar
+                    # dashboard (Miro, 2026-09-28) and from the menu-bar
                     # hotkey (2026-10-06). Voice only.
                     offenders.append(f"{path.name}:{node.lineno} {name}()")
                 elif name == "run_chain":
@@ -326,7 +326,7 @@ def test_no_route_anywhere_can_reach_the_executor():
                     offenders.append(f"{path.name}:{node.lineno} {name}()")
                 elif name == "decide" and path.name not in (
                         "main.py", "slack_events.py", "phone.py", "dashboard.py"):
-                    # the owner 2026-10-29: GUI decisions. decide() answers a card
+                    # Miro 2026-10-29: GUI decisions. decide() answers a card
                     # by its stored action and params; only these four doors.
                     offenders.append(f"{path.name}:{node.lineno} {name}()")
     assert offenders == [], f"an API module calls the executor: {offenders}"
@@ -362,7 +362,7 @@ def test_a_module_tile_takes_the_worst_state_it_actually_saw(
     """
     from datetime import datetime
     now = datetime.now(UTC)
-    rows = [{"property": "cloudco", "check_name": f"c{i}", "last_run_at": now,
+    rows = [{"property": "cloudhost", "check_name": f"c{i}", "last_run_at": now,
              "next_run_at": now, "interval_s": 300, "health": h,
              "detail": "", "observed_at": now}
             for i, h in enumerate(healths)]
@@ -380,7 +380,7 @@ def test_a_module_tile_takes_the_worst_state_it_actually_saw(
     memory_backend.fetchrow = fetchrow
 
     body = signed_in.get("/api/overview").json()
-    tile = next((m for m in body["modules"] if m["module"] == "cloudco"), None)
+    tile = next((m for m in body["modules"] if m["module"] == "cloudhost"), None)
     if not healths:
         assert tile is None or tile["health"] == "unknown"
     else:
@@ -398,10 +398,10 @@ def test_a_stale_ok_is_unknown_on_the_board_as_it_is_spoken(
     from atlas.api import system_check
     now = datetime.now(UTC)
     rows = [
-        {"property": "cloudco", "check_name": "fresh", "last_run_at": now,
+        {"property": "cloudhost", "check_name": "fresh", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "ok", "detail": "",
          "observed_at": now - timedelta(minutes=2)},
-        {"property": "cloudco", "check_name": "old", "last_run_at": now,
+        {"property": "cloudhost", "check_name": "old", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "ok", "detail": "",
          "observed_at": now - timedelta(minutes=26)},
     ]
@@ -415,7 +415,7 @@ def test_a_stale_ok_is_unknown_on_the_board_as_it_is_spoken(
     memory_backend.fetch = fetch
     memory_backend.fetchrow = fetchrow
     body = signed_in.get("/api/overview").json()
-    tile = next(m for m in body["modules"] if m["module"] == "cloudco")
+    tile = next(m for m in body["modules"] if m["module"] == "cloudhost")
     checks = {c["name"]: c for c in tile["checks"]}
     assert checks["fresh"]["health"] == "ok" and checks["fresh"]["stale"] is False
     assert checks["old"]["health"] == "unknown" and checks["old"]["stale"] is True
@@ -628,11 +628,11 @@ def test_the_module_detail_badges_the_current_health_not_the_raw_one(
     async def probe() -> Observation:
         return Observation("x", Health.UNKNOWN)
 
-    monkeypatch.setattr(REGISTRY, "modules", {"cloudco": type("M", (), {
-        "title": "CloudCo", "brief": lambda self: ""})()})
+    monkeypatch.setattr(REGISTRY, "modules", {"cloudhost": type("M", (), {
+        "title": "CloudHost", "brief": lambda self: ""})()})
     monkeypatch.setattr(REGISTRY, "checks", {
-        "cloudco.api": Check("api", probe, timedelta(minutes=5)),
-        "cloudco.db": Check("db", probe, timedelta(minutes=5)),
+        "cloudhost.api": Check("api", probe, timedelta(minutes=5)),
+        "cloudhost.db": Check("db", probe, timedelta(minutes=5)),
     })
     now = datetime.now(UTC)
 
@@ -642,7 +642,7 @@ def test_the_module_detail_badges_the_current_health_not_the_raw_one(
         return [{"at": now - timedelta(minutes=1), "value": 2.0, "health": "ok"}]
 
     memory_backend.fetch = fetch
-    body = signed_in.get("/api/modules/cloudco").json()
+    body = signed_in.get("/api/modules/cloudhost").json()
     current = {c["name"]: c["current"] for c in body["checks"]}
     assert current["api"]["health"] == "unknown" and current["api"]["stale"] is True
     assert current["db"]["health"] == "ok" and current["db"]["stale"] is False
@@ -809,7 +809,7 @@ async def test_the_details_button_is_a_read_not_a_verdict(
     the wildcard {verdict} route that once swallowed /approvals/1/why: a read
     sent down the only write path."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     decided = []
 
@@ -833,7 +833,7 @@ async def test_the_details_button_is_a_read_not_a_verdict(
 
     monkeypatch.setattr("atlas.api.main._slack_reply", fake_reply)
     response = _slack_post(client, {
-        "user": {"id": "UOWNER"}, "response_url": "https://hooks.slack/x",
+        "user": {"id": "UMIRO"}, "response_url": "https://hooks.slack/x",
         "actions": [{"value": "detail:7"}]})
     assert response.status_code == 200
     assert decided == []
@@ -847,9 +847,9 @@ async def test_the_details_button_is_a_read_not_a_verdict(
 
 async def test_a_non_approver_click_is_refused(client, monkeypatch, memory_backend):
     """A valid Slack signature proves the request came from Slack, not that
-    it came from the owner."""
+    it came from Miro."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def fake_decide(*a, **k):
         raise AssertionError("a stranger's click must never reach decide()")
@@ -878,7 +878,7 @@ async def test_a_replayed_slack_request_is_rejected(client, monkeypatch):
 
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
     body = urllib.parse.urlencode(
-        {"payload": _json.dumps({"user": {"id": "UOWNER"},
+        {"payload": _json.dumps({"user": {"id": "UMIRO"},
                                  "actions": [{"value": "approve:7"}]})})
     ts = str(int(_time.time()) - 1200)           # twenty minutes ago
     sig = "v0=" + hmac.new(b"s3cret", f"v0:{ts}:{body}".encode(),
@@ -893,7 +893,7 @@ async def test_a_replayed_slack_request_is_rejected(client, monkeypatch):
 # --------------------------------------------------- the inbound phone line
 
 def _twilio_post(client, path: str, params: dict, token: str = "twtok",
-                 host: str = "atlas.example.com"):
+                 host: str = "atlas.storefront.test"):
     import base64
     import hashlib
     import hmac
@@ -913,20 +913,20 @@ async def test_an_unrecognised_caller_is_told_nothing(client, monkeypatch):
     no login, no workspace, and caller ID is spoofable. A stranger must not
     learn a status, a business name, or whether something exists."""
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
     monkeypatch.setenv("TWILIO_TO", "+15551112222")
 
     body = _twilio_post(client, "/webhooks/twilio/voice/inbound",
                         {"From": "+15559998888", "CallSid": "CA1"}).text
     assert "private line" in body
-    for leak in ("flycheap", "guardian", "cloudco", "roots", "failing",
+    for leak in ("flycheap", "guardian", "cloudhost", "attendance", "failing",
                  "degraded", "snapshot", "balance"):
         assert leak not in body.lower(), f"leaked {leak!r} to a stranger"
 
 
 async def test_a_call_with_no_twilio_signature_is_rejected(client, monkeypatch):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
     response = client.post("/webhooks/twilio/voice/inbound",
                            content="From=%2B15551112222",
                            headers={"Content-Type":
@@ -934,18 +934,18 @@ async def test_a_call_with_no_twilio_signature_is_rejected(client, monkeypatch):
     assert response.status_code == 401
 
 
-async def test_owner_is_greeted_and_told_what_needs_him(
+async def test_miro_is_greeted_and_told_what_needs_him(
         client, monkeypatch, memory_backend):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
     monkeypatch.setenv("TWILIO_TO", "+15551112222")
 
     async def fake_rows(_sql, *a):
         # Fresh readings: the staleness rule would make an old one unknown.
         at = datetime.now(UTC)
-        return [{"health": "failing", "name": "protection", "prop": "cloudco",
+        return [{"health": "failing", "name": "protection", "prop": "cloudhost",
                  "at": at, "interval_s": 300},
-                {"health": "degraded", "name": "open_errors", "prop": "inroots",
+                {"health": "degraded", "name": "open_errors", "prop": "attendance",
                  "at": at, "interval_s": 300},
                 {"health": "unknown", "name": "peers", "prop": "netbird",
                  "at": at, "interval_s": 300},
@@ -960,7 +960,7 @@ async def test_owner_is_greeted_and_told_what_needs_him(
     assert 'input="speech dtmf"' in body and "<Hangup/>" not in body.split("</Gather>")[0]
     assert "2 things need you" in body
     # The loudest is named, and it is the FAILING one rather than the first.
-    assert "cloudco protection" in body
+    assert "cloudhost protection" in body
     # An unmeasured check is said as unmeasured, never folded into "fine".
     assert "couldn't run" in body
 
@@ -969,13 +969,13 @@ async def test_the_greeting_counts_a_stale_ok_as_unmeasured(
         client, monkeypatch, memory_backend):
     """The staleness rule reaches the phone greeting too."""
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
     monkeypatch.setenv("TWILIO_TO", "+15551112222")
 
     async def stale(_sql, *a):
         # One fresh failure (so the board is offered at all) and one OK read
         # 26 minutes ago on a 5-minute check.
-        return [{"health": "failing", "name": "protection", "prop": "cloudco",
+        return [{"health": "failing", "name": "protection", "prop": "cloudhost",
                  "at": datetime.now(UTC), "interval_s": 300},
                 {"health": "ok", "name": "api", "prop": "flycheap",
                  "at": datetime.now(UTC) - timedelta(minutes=26),
@@ -992,7 +992,7 @@ async def test_the_greeting_never_guesses_when_it_cannot_read(
         client, monkeypatch, memory_backend):
     """A wrong number said confidently down a phone is worse than none."""
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "twtok")
-    monkeypatch.setenv("ATLAS_HOST", "atlas.example.com")
+    monkeypatch.setenv("ATLAS_HOST", "atlas.storefront.test")
     monkeypatch.setenv("TWILIO_TO", "+15551112222")
 
     async def boom(_sql, *a):
@@ -1015,7 +1015,7 @@ async def test_an_outcome_is_posted_to_response_url_not_the_body(
     a void: the button worked, decide() ran, and the channel showed nothing.
     That is exactly what "the approve buttons aren't working" looked like."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     posted = []
 
@@ -1037,7 +1037,7 @@ async def test_an_outcome_is_posted_to_response_url_not_the_body(
     monkeypatch.setattr("atlas.api.main._slack_reply", fake_reply)
 
     response = _slack_post(client, {
-        "user": {"id": "UOWNER"},
+        "user": {"id": "UMIRO"},
         "response_url": "https://hooks.slack.com/actions/T1/B2/xyz",
         "actions": [{"value": "approve:7"}]})
 
@@ -1055,7 +1055,7 @@ async def test_a_missing_response_url_does_not_break_the_decision(
     """Narrating the outcome is not the outcome. If Slack sends no
     response_url, the decision still stands and the handler still 200s."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     ran = []
 
@@ -1071,7 +1071,7 @@ async def test_a_missing_response_url_does_not_break_the_decision(
         return FakeVerdict()
 
     monkeypatch.setattr("atlas.api.main.decide", fake_decide)
-    response = _slack_post(client, {"user": {"id": "UOWNER"},
+    response = _slack_post(client, {"user": {"id": "UMIRO"},
                                     "actions": [{"value": "approve:7"}]})
     assert response.status_code == 200
     assert ran == [7]
@@ -1079,7 +1079,7 @@ async def test_a_missing_response_url_does_not_break_the_decision(
 
 # ------------------------------------------------------ the slash command
 
-def _slash(client, text: str, user: str = "UOWNER", secret: str = "s3cret"):
+def _slash(client, text: str, user: str = "UMIRO", secret: str = "s3cret"):
     import hashlib
     import hmac
     import time as _time
@@ -1098,9 +1098,9 @@ def _slash(client, text: str, user: str = "UOWNER", secret: str = "s3cret"):
 
 
 async def test_a_command_from_a_non_approver_does_nothing(client, monkeypatch):
-    """Being in the workspace is not being the owner."""
+    """Being in the workspace is not being Miro."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def should_not_run(*a, **k):
         raise AssertionError("a stranger's command must not reach intent")
@@ -1118,7 +1118,7 @@ async def test_a_command_with_a_bad_signature_is_rejected(client, monkeypatch):
 
 async def test_an_empty_command_asks_for_one(client, monkeypatch):
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
     body = _slash(client, "   ").json()
     assert "Tell me what to do" in body["text"]
 
@@ -1128,7 +1128,7 @@ async def test_a_command_acknowledges_inside_the_window(client, monkeypatch):
     Slack has already told the user timed out, so the work happens after the
     acknowledgement and the outcome follows on response_url."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     started = []
 
@@ -1373,7 +1373,7 @@ def test_agents_reports_next_shift_at_and_null_when_not_ready(
     assert by_name["sales"]["next_shift_at"] is None
 
 
-# ------------------------------------- roster read model (the owner 2026-10-29)
+# ------------------------------------- roster read model (Miro 2026-10-29)
 
 ROSTER_STATUS = {"ok", "failing", "idle", "unknown"}
 SHIFT_STATES = {"done", "due", "overdue", "failed", "off"}
@@ -1467,7 +1467,7 @@ def test_agents_a_failed_shift_reads_failing_with_its_attempts(
 
 def test_agents_an_unanswered_shift_is_not_ok_and_its_text_is_one_clean_line(
         signed_in, memory_backend, monkeypatch):
-    """the owner 2026-10-29: QA's shift ended "No answer" and read OK. The SQL now
+    """Miro 2026-10-29: QA's shift ended "No answer" and read OK. The SQL now
     counts it as a failed attempt (not `last_shift`); a retry is pending, so
     the row reads failing, never ok, and its outcome is fixed words."""
     from atlas.kernel import agents as agent_module
@@ -1729,7 +1729,7 @@ def test_agenda_returns_structured_items_split_into_today_and_the_horizon(
             AgendaItem(when=today_at, title="Daily standup", kind="event",
                        detail="the whole crew", minutes=30, source="calendar"),
             AgendaItem(when=later, title="Invoice due", kind="deadline",
-                       source="exampleco"),
+                       source="mirotech"),
         ]
 
     monkeypatch.setattr(brief_mod, "agenda_items", items)
@@ -3015,7 +3015,7 @@ def test_marketing_channel_tiles_carry_the_time_each_figure_was_read(
     _mk_db(
         memory_backend,
         latest={"clips_stats": _mk_obs(read, 52_000.0, 1_240),
-                "ecc_stats": None},
+                "amsm_stats": None},
         base={"clips_stats": _mk_obs(then, 40_000.0, 1_100)},
     )
     body = signed_in.get("/api/marketing").json()
@@ -3039,7 +3039,7 @@ def test_marketing_channel_tiles_carry_the_time_each_figure_was_read(
     assert "not measured" in fly["partner"]["line"]
 
     # No reading at all is UNKNOWN with a reason — never a zero.
-    gua = tiles["ecc"]
+    gua = tiles["amsm"]
     assert gua["health"] == "unknown"
     assert gua["subscribers"] is None and gua["views_28d"] is None
     assert gua["read_at"] is None
@@ -3576,7 +3576,7 @@ async def test_the_acknowledge_button_mutes_and_confirms_never_decides(
     """Acknowledge on an alert records the ack and says so in the channel.
     It is not a decision about any action and must never reach decide()."""
     monkeypatch.setenv("SLACK_SIGNING_SECRET", "s3cret")
-    monkeypatch.setenv("SLACK_APPROVER_IDS", "UOWNER")
+    monkeypatch.setenv("SLACK_APPROVER_IDS", "UMIRO")
 
     async def fake_decide(*a, **k):
         raise AssertionError("Acknowledge must never reach decide()")
@@ -3596,20 +3596,20 @@ async def test_the_acknowledge_button_mutes_and_confirms_never_decides(
     monkeypatch.setattr("atlas.api.main._slack_reply", fake_reply)
 
     r = _slack_post(client, {
-        "user": {"id": "UOWNER"}, "response_url": "https://hooks.slack/x",
-        "actions": [{"value": "ack:cloudco.balance"}]})
+        "user": {"id": "UMIRO"}, "response_url": "https://hooks.slack/x",
+        "actions": [{"value": "ack:cloudhost.balance"}]})
     assert r.status_code == 200
-    assert acked == [("cloudco.balance", "slack:UOWNER")]
-    assert "Acknowledged cloudco.balance (failing)" in posted[0]
+    assert acked == [("cloudhost.balance", "slack:UMIRO")]
+    assert "Acknowledged cloudhost.balance (failing)" in posted[0]
 
 
 
 def test_marketing_channels_include_instagram_and_tiktok(signed_in, memory_backend):
-    """the owner, 2026-09-27: "include Instagram channels and TikTok as well"."""
+    """Miro, 2026-09-27: "include Instagram channels and TikTok as well"."""
     read = MK_NOW - timedelta(hours=1)
     _mk_db(memory_backend, social={
         ("instagram", "main_token"): {"at": read, "health": "ok", "value": 412.0,
-                                      "detail": "@flycheap.example 412 followers",
+                                      "detail": "@flycheap.example.com 412 followers",
                                       "evidence": "{}"},
         ("instagram", "main_engagement"): {
             "at": read, "health": "ok", "value": 57.0,
@@ -3622,7 +3622,7 @@ def test_marketing_channels_include_instagram_and_tiktok(signed_in, memory_backe
     body = signed_in.get("/api/marketing").json()
     tiles = [t for t in body["channels"] if t.get("platform") != "YouTube"]
     ig_main, ig_stories, tiktok = tiles
-    assert ig_main["platform"] == "Instagram" and ig_main["channel"] == "@flycheap.example"
+    assert ig_main["platform"] == "Instagram" and ig_main["channel"] == "@flycheap.example.com"
     assert ig_main["health"] == "ok"
     assert {f["label"]: f["value"] for f in ig_main["figures"]} == {
         "followers": 412.0, "reach / day": 57.0, "profile views / day": 23}
@@ -3650,18 +3650,18 @@ def test_a_check_that_is_not_set_up_or_paused_is_set_aside_not_ok():
 
 def test_a_retired_check_does_not_paint_a_live_module_unknown(
         signed_in, memory_backend, monkeypatch):
-    """cloudco 'snapshots' was replaced by 'protection' but its rows stayed; its
-    last reading (six days old) turned a healthy CloudCo tile UNKNOWN. A live
+    """cloudhost 'snapshots' was replaced by 'protection' but its rows stayed; its
+    last reading (six days old) turned a healthy CloudHost tile UNKNOWN. A live
     module shows only the checks it still registers."""
     from datetime import datetime, timedelta
 
     from atlas.kernel.registry import REGISTRY
     now = datetime.now(UTC)
     rows = [
-        {"property": "cloudco", "check_name": "protection", "last_run_at": now,
+        {"property": "cloudhost", "check_name": "protection", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "ok", "detail": "",
          "observed_at": now},
-        {"property": "cloudco", "check_name": "snapshots", "last_run_at": now,
+        {"property": "cloudhost", "check_name": "snapshots", "last_run_at": now,
          "next_run_at": now, "interval_s": 300, "health": "degraded",
          "detail": "", "observed_at": now - timedelta(days=6)},
     ]
@@ -3674,10 +3674,10 @@ def test_a_retired_check_does_not_paint_a_live_module_unknown(
 
     memory_backend.fetch = fetch
     memory_backend.fetchrow = fetchrow
-    monkeypatch.setitem(REGISTRY.modules, "cloudco", object())
-    monkeypatch.setitem(REGISTRY.checks, "cloudco.protection", object())
+    monkeypatch.setitem(REGISTRY.modules, "cloudhost", object())
+    monkeypatch.setitem(REGISTRY.checks, "cloudhost.protection", object())
     body = signed_in.get("/api/overview").json()
-    tile = next(m for m in body["modules"] if m["module"] == "cloudco")
+    tile = next(m for m in body["modules"] if m["module"] == "cloudhost")
     # Phase 4: the old row is shown, as retired, never OK; it does not decide
     # the module colour.
     by_name = {c["name"]: c for c in tile["checks"]}
@@ -3686,7 +3686,7 @@ def test_a_retired_check_does_not_paint_a_live_module_unknown(
     assert tile["health"] == "ok"
 
 
-# ------------------------------- the owner's own device, off the mesh, by cert
+# ------------------------------- Miro's own device, off the mesh, by cert
 
 FP = "ab" * 32
 
@@ -3723,7 +3723,7 @@ def test_no_pinned_devices_means_mesh_only(monkeypatch, memory_backend):
         assert response.status_code == 404
 
 
-# --- Command Center: pipeline and money read models (the owner 2026-10-29) ------
+# --- Command Center: pipeline and money read models (Miro 2026-10-29) ------
 
 def _stub_sites(monkeypatch, sites=None, exc: Exception | None = None) -> None:
     from atlas.modules.agency import sites_view
@@ -3828,7 +3828,7 @@ def test_money_places_unreadable_is_unknown_not_zero(signed_in, monkeypatch):
     assert places["reason"] and places["read_at"]
 
 
-# --- GUI decision route (the owner 2026-10-29: GUI decisions) ---------------------
+# --- GUI decision route (Miro 2026-10-29: GUI decisions) ---------------------
 # POST /api/approvals/{pid}/decision. Every check fails closed, in this order:
 # session 401, Origin 403, CSRF 403, body 422, rate 429, card 409/403, decide.
 
@@ -4058,7 +4058,7 @@ def test_decision_with_extra_body_fields_is_422(decision_env, executed):
 
 def test_refused_watch_only_approves_never_block_a_decline(
         decision_env, executed, monkeypatch):
-    """Regression, the owner 2026-10-29: ten watch-only approves (each refused,
+    """Regression, Miro 2026-10-29: ten watch-only approves (each refused,
     nothing changed) used up the shared per-address bucket, and the Decline
     that followed answered 429 on its first click."""
     monkeypatch.setenv("ATLAS_WATCH_ONLY", "true")
@@ -4183,7 +4183,7 @@ def test_the_csp_middleware_sets_the_caddy_policy_on_html(client):
         main.app.router.routes[:] = before
 
 
-# --- the roster's "Today" is New York's day (the owner 2026-10-29) ----------------
+# --- the roster's "Today" is New York's day (Miro 2026-10-29) ----------------
 # At 20:15 EDT (00:15 UTC) every agent read 0: the count started at UTC
 # midnight, four hours into his evening.
 

@@ -404,7 +404,7 @@ def make_turn(name: str, agent: Any, data: Mapping[str, Mapping[str, Any]],
         "persona": as_dict(persona),
         "voice": persona.voice,
         "ready": ready,
-        # Its work is the owner's own data: kept off a model and out of Slack.
+        # Its work is Miro's own data: kept off a model and out of Slack.
         "private": getattr(getattr(agent, "need", None), "value", None) == "private",
         "status": status,
         "did": {"runs_24h": runs, "shifts_24h": shifts, "self_tests_24h": self_tests,
@@ -645,7 +645,7 @@ async def build(*, polish: bool = False, now: datetime | None = None) -> dict[st
              for name, agent in agents_module.ROSTER.items()]
     try:
         seated = seats()
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # No modules, no agent-to-agent threads -- ATLAS's own follow-ups
         # still come from the turns. Never a guessed dependency.
         log.warning("the meeting could not read the roster's modules: %s",
@@ -732,7 +732,7 @@ async def polish_meeting(meeting: dict[str, Any],
                   max_tokens=4000),
             timeout=POLISH_TIMEOUT_S)
         answers = _parse(completion.text)
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("meeting polish unavailable, keeping the record's own "
                     "words: %s", explain(exc))
         meeting["polish_note"] = "no model rewording: the record's own words"
@@ -814,7 +814,7 @@ BLOCKED_REASONS = 3
 
 
 def private_agents(meeting: Mapping[str, Any]) -> set[str]:
-    """The agents whose work is the owner's own data (`Need.PRIVATE`: inbox,
+    """The agents whose work is Miro's own data (`Need.PRIVATE`: inbox,
     school): flagged on their turn when it was built, and read from the
     roster too, so a meeting built before the flag existed is covered."""
     from .llm import Need
@@ -898,6 +898,6 @@ async def run_daily() -> dict[str, Any]:
             topic="brief",
         ))
         log.info("agency meeting posted via %s", ",".join(used) or "nothing")
-    except Exception as exc:                                  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("the agency meeting was stored but not posted: %s", explain(exc))
     return meeting

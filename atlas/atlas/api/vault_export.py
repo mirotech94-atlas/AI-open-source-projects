@@ -1,6 +1,6 @@
-"""ATLAS's knowledge as Markdown, for the Obsidian vault on the owner's Mac.
+"""ATLAS's knowledge as Markdown, for the Obsidian vault on Miro's Mac.
 
-the owner, 2026-09-28: "combine Claude and Obsidian". The Mac agent pulls this
+Miro, 2026-09-28: "combine Claude and Obsidian". The Mac agent pulls this
 every 10 minutes (GET /mac/vault, the agent's bearer token) and writes it
 under ATLAS/ in ~/Documents/ATLAS Vault, where Obsidian shows it as notes
 and a graph and Claude Code reads it as files. Read-only: nothing here
@@ -105,7 +105,7 @@ async def _trips(docs: list[dict]) -> str:
     from ..modules.mail import travel
     try:
         trips, undated = travel.trips(await fetch_all(travel.BOOKINGS_SQL))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("vault: trips unreadable: %s", type(exc).__name__)
         return f"- Trips: could not be read this time ({type(exc).__name__})"
     cutoff = datetime.now(UTC).date() - TRIPS_KEPT
@@ -131,7 +131,7 @@ async def _money(docs: list[dict]) -> str:
         row = await fetch_one(
             "SELECT at, title, body FROM reports WHERE kind = $1 "
             "ORDER BY at DESC LIMIT 1", money.KIND)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("vault: money report unreadable: %s", type(exc).__name__)
         return f"- Money: could not be read this time ({type(exc).__name__})"
     if row is None:

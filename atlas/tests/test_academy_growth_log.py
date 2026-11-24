@@ -1,5 +1,5 @@
 """The weekly 7-day log of the Academy's Shorts (academy/growth_log.py):
-the owner, 2026-10-12. Numbers only where they were read; never invented."""
+Miro, 2026-10-12. Numbers only where they were read; never invented."""
 from __future__ import annotations
 
 import re
@@ -26,7 +26,7 @@ async def test_rows_join_postiz_links_and_youtube_stats(monkeypatch):
     monkeypatch.setattr("atlas.kernel.state.fetch_all", fetch_all)
 
     async def urls(since, now):
-        return {"tt1": ("TikTok", "https://www.tiktok.com/@example_handle"),
+        return {"tt1": ("TikTok", "https://www.tiktok.com/@atlasclips12"),
                 "yt1": ("YouTube", "https://www.youtube.com/watch?v=abc123def")}, None
     monkeypatch.setattr(growth_log, "_postiz_urls", urls)
     found, gaps = await growth_log.rows(7, NOW)
@@ -124,7 +124,7 @@ async def test_a_token_missing_scopes_is_named_never_guessed(monkeypatch):
     _rows, gaps = await growth_log.tutorial_rows(7, NOW)
     joined = " ".join(gaps)
     assert "yt-analytics.readonly" in joined and "youtube.force-ssl" in joined
-    assert "the owner must re-consent the token" in joined
+    assert "Miro must re-consent the token" in joined
 
     async def unreadable(_ch):
         return None, "clips: tokeninfo: timed out"
@@ -226,7 +226,7 @@ async def test_an_unread_runway_is_unknown_in_the_section(monkeypatch):
     assert " 0" not in last.split("): ", 1)[1]
 
 
-# ------------------------------------- end screens to add (the owner 2026-10-17)
+# ------------------------------------- end screens to add (Miro 2026-10-17)
 
 def _end_posts(monkeypatch, found):
     async def posts(since):

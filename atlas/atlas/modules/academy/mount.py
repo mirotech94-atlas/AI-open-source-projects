@@ -1,6 +1,6 @@
-"""Move the whole storefront under /academy/ (the owner, 2026-11-16).
+"""Move the whole storefront under /academy/ (Miro, 2026-11-16).
 
-https://agency.example.com/academy/ is the ATLAS Academy website, not one page:
+https://agency.storefront.test/academy/ is the ATLAS Academy website, not one page:
 every store page lives at /academy/<path> (/academy/blog/, /academy/join/,
 /academy/safe-ai-operator/, /academy/assets/style.css ...). The page builders
 in site.py, blog_pages.py, lesson_pages.py and support_site.py still write the
@@ -103,7 +103,7 @@ def _text(path: str, html: str, host: str, tops: frozenset[str]) -> str:
 
 def relocate(files: dict[str, bytes], host: str) -> dict[str, bytes]:
     """The old-layout `files` ({path: bytes}) in the new layout. `host` is the
-    store's host name (agency.example.com): absolute URLs on it are rewritten."""
+    store's host name (agency.storefront.test): absolute URLs on it are rewritten."""
     tops = moved_tops(list(files))
     out: dict[str, bytes] = {}
     for path, data in files.items():

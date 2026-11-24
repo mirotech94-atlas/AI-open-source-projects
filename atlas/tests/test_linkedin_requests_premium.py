@@ -37,7 +37,7 @@ from tests.test_linkedin_requests import (
 
 @pytest.fixture(autouse=True)
 def _guardian_as_fixture_page(monkeypatch):
-    """Guardian is the example page here. It is retired by default (the owner,
+    """Guardian is the example page here. It is retired by default (Miro,
     2026-10-29); that default is pinned in test_linkedin_retired.py."""
     monkeypatch.setitem(linkedin.PAGES, "guardian", linkedin.KNOWN_PAGES["guardian"])
 
@@ -362,7 +362,7 @@ async def test_an_unlocked_request_takes_the_existing_path(world, monkeypatch,
                                                            tmp_path):
     """Premium back on: the lock box is gone. The request reopens and the
     draft and card path runs as for any service request (its tiers
-    unchanged: the send is refused, the draft goes to the owner on a card)."""
+    unchanged: the send is refused, the draft goes to Miro on a card)."""
     from atlas.kernel import linkedin_replies
     db, alerts = world
     fake_browser(monkeypatch, PremiumPage(premium()), tmp_path)

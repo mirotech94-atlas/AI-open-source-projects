@@ -3,7 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const { makeApi } = require('../server');
 
-const OWNER = '13412033334';
+const OWNER = '+1 555 010 0142';
 const SECRET = 'unit-secret-value';
 
 function fakeLink(over = {}) {
@@ -44,7 +44,7 @@ test('send reaches only the owner and reports the message id', async () => {
   const link = fakeLink(); const s = await boot(link);
   const bad = await call(s, 'POST', '/send', { to: '+19175550100', text: 'hi' });
   assert.equal(bad.status, 403); assert.equal(link.sent.length, 0);
-  const ok = await call(s, 'POST', '/send', { to: '+1 555 010 0100', text: 'hi' });
+  const ok = await call(s, 'POST', '/send', { to: '+1 555 010 0142', text: 'hi' });
   assert.equal(ok.status, 200); assert.equal(ok.body.id, 'ID1');
   assert.deepEqual(link.sent, [[OWNER, 'hi']]);
   assert.equal((await call(s, 'GET', '/message/ID1')).body.status, 'delivered');

@@ -23,6 +23,8 @@ export function healthMini(o: Overall, readFailed: boolean): { failed: boolean; 
 
 /** The topbar crumb: the label of the tab the path belongs to. */
 export function crumbOf(pathname: string): string {
+  // The HUD has no tab; it opens when ATLAS is called and is still named.
+  if (pathname === "/hud" || pathname.startsWith("/hud/")) return "HUD";
   const hit = TABS.find((t) => t.to !== "/" && (pathname === t.to || pathname.startsWith(`${t.to}/`)));
   return (hit ?? TABS[0]).label;
 }

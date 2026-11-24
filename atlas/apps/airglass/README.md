@@ -13,7 +13,7 @@ Since 2026-10-06 Air Glass lives in the ATLAS dashboard at **`/airglass`**
 window (right-click the menu-bar mark, or say "open Air Glass"). That version is the
 one to use. It differs from this folder in these ways:
 
-- **One gesture: pinch and slide, either hand** (2026-10-06, after the owner tried it with
+- **One gesture: pinch and slide, either hand** (2026-10-06, after Miro tried it with
   his real camera and his forefinger could not pick a model). Pinch a model in the tray
   and slide it up: it comes out, held. Pinch the model and slide: it follows your
   fingers and turns like a ball under them. Let go: it stays and settles. Let go over
@@ -114,7 +114,7 @@ MediaPipe and the model download only when the camera starts. Demo mode fetches
 nothing beyond three.js. Models opened from disk are read through `blob:` URLs,
 and any URL a model points at outside the picked files resolves to nothing.
 
-ATLAS's lines show as captions only, and nothing is spoken. The owner wants ATLAS to
+ATLAS's lines show as captions only, and nothing is spoken. Miro wants ATLAS to
 speak only in his chosen Fish Audio voice. This page has no ATLAS session, so it
 can reach neither Fish Audio nor ATLAS's offline pack of Fish clips, and it does not
 use the browser's `speechSynthesis` (the Mac's system voices). The Air Glass inside

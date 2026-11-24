@@ -1,6 +1,6 @@
 """Read-back for `linkedin.publish_post` (RA-D1), and the reconciler for its
 unfinished starts (three in prod with no finish, FINDINGS F §7.2). Also
-`linkedin.reshare_post` (the owner's recent activity) and
+`linkedin.reshare_post` (Miro's recent activity) and
 `linkedin.update_page_identity` (the page's public name; the logo cannot be
 compared, so a logo change reads unknown).
 `linkedin.approve_draft` reads only the post-bank entry in the state file:
@@ -53,7 +53,7 @@ async def published_text(page: str) -> str:
 
 
 async def activity_text() -> str:
-    """the owner's recent activity, as text: where a reshare shows. Read only."""
+    """Miro's recent activity, as text: where a reshare shows. Read only."""
     from .publish import PROFILE_ACTIVITY
     return await _read(PROFILE_ACTIVITY)
 
@@ -143,7 +143,7 @@ async def verify_publish(params: dict[str, Any], result: ActionResult) -> Verifi
         return unknown("the run recorded no page and entry")
     try:
         entry = _entry(page, entry_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return unknown(f"the post bank could not be read: {explain(exc)}")
     if entry is None:
@@ -175,7 +175,7 @@ async def reconcile_publish(params: dict[str, Any], started: datetime) -> Verifi
     try:
         from .store import bank, load
         entries, _, _ = bank(load(), page)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return unknown(f"the post bank could not be read: {explain(exc)}")
     entry_id = str(params.get("entry_id") or "")
@@ -195,7 +195,7 @@ async def reconcile_publish(params: dict[str, Any], started: datetime) -> Verifi
 @verifier("linkedin.reshare_post")
 async def verify_reshare(params: dict[str, Any], result: ActionResult) -> Verification:
     """The bank must record the reshare as verified, and the post's first
-    40 characters must be on the owner's recent activity. One read, not the
+    40 characters must be on Miro's recent activity. One read, not the
     run's three looks: the run only returns ok after it saw it there."""
     page = str(params.get("page") or (result.evidence or {}).get("page") or "")
     entry_id = str(params.get("entry_id") or (result.evidence or {}).get("entry") or "")
@@ -203,7 +203,7 @@ async def verify_reshare(params: dict[str, Any], result: ActionResult) -> Verifi
         return unknown("the run names no page and entry", FailureClass.VALIDATION)
     try:
         entry = _entry(page, entry_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return unknown(f"the post bank could not be read: {explain(exc)}")
     if entry is None:
@@ -222,8 +222,8 @@ async def verify_reshare(params: dict[str, Any], result: ActionResult) -> Verifi
     except Unreadable as exc:
         return unknown(str(exc), exc.failure_class, **evidence)
     if needle in (listed or "").lower():
-        return verified(on_the_owners_activity=True, **evidence)
-    return contradicted(f"{entry_id} is not on the owner's recent activity", **evidence)
+        return verified(on_miros_activity=True, **evidence)
+    return contradicted(f"{entry_id} is not on Miro's recent activity", **evidence)
 
 
 # --------------------------------------------------------------- identity
@@ -286,7 +286,7 @@ async def _approved(page: str, entry_id: str, text_sha256: str) -> Verification:
     from .publish import payload_sha256
     try:
         entry = _entry(page, entry_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return unknown(f"the post bank could not be read: {explain(exc)}")
     if entry is None:

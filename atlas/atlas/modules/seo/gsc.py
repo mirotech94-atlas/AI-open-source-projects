@@ -1,6 +1,6 @@
 """Google Search Console, read only (six agents phase 10; widened 2026-10-29).
 
-It needs the owner's Google OAuth client with the `webmasters.readonly` scope
+It needs Miro's Google OAuth client with the `webmasters.readonly` scope
 consented and each site verified as a property. Until then the check reads
 UNKNOWN and says which of those is missing: a site we cannot read is never
 OK. Calls go through `_http` (reasons redacted, never raises); the access
@@ -212,13 +212,26 @@ async def _sitemaps(prop: str, auth: dict[str, str]
 async def _inspect(prop: str, auth: dict[str, str], urls: list[str]
                    ) -> tuple[dict[str, Any] | None, str | None]:
     """URL inspection (a POST, read only). None when not one answer came."""
-    n, indexed, bad, why_last = 0, 0, [], None
-    for url in urls[:INSPECT]:
+    n, indexed, bad, why_last, failed = 0, 0, [], None, 0
+    queue, seen, followed = list(urls[:INSPECT]), set(urls[:INSPECT]), []
+    while queue:
+        url = queue.pop(0)
         got, why = await _http.post_json(INSPECT_URL, headers=auth, json_body={
             "inspectionUrl": url, "siteUrl": prop})
         res = ((got or {}).get("inspectionResult") or {}).get("indexStatusResult")
         if why is not None or not isinstance(res, dict):
             why_last = forbidden(why) if why else "no indexStatusResult in the answer"
+            failed += 1
+            continue
+        canon = str(res.get("userCanonical") or "")
+        if canon and canon != url and str(res.get("verdict")) != "PASS":
+            # The page names another URL as its canonical: Google rightly does not
+            # index this copy, so it is not a fault. The canonical decides (read
+            # next); if that read fails the page counts as unread, never as fine.
+            if canon not in seen:
+                seen.add(canon)
+                followed.append(canon)
+                queue.append(canon)
             continue
         n += 1
         if str(res.get("verdict")) == "PASS":
@@ -227,9 +240,8 @@ async def _inspect(prop: str, auth: dict[str, str], urls: list[str]
             bad.append({"url": url, "state": str(res.get("coverageState") or "")})
     if n == 0:
         return None, why_last or "nothing to inspect"
-    return {"n": n, "indexed": indexed, "not_indexed": bad,
-            "unread": len(urls[:INSPECT]) - n}, (why_last if n < len(urls[:INSPECT])
-                                                 else None)
+    return {"n": n, "indexed": indexed, "not_indexed": bad, "unread": failed,
+            "canonical_followed": followed}, (why_last if failed else None)
 
 
 async def read_site(site: dict[str, Any], prop: str, auth: dict[str, str],
@@ -317,7 +329,7 @@ async def check() -> Observation:
     entries = list((data or {}).get("siteEntry") or [])
     try:
         sites = await store.targets()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("search_console", Health.UNKNOWN,
                            detail=f"agency_sites unreadable: {type(exc).__name__}")
     read: list[dict[str, Any]] = []

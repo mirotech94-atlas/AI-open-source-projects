@@ -1,6 +1,6 @@
 """What each free model has left today, and who may spend it.
 
-the owner, 2026-10-06: "ATLAS has nothing to respond with when talking with
+Miro, 2026-10-06: "ATLAS has nothing to respond with when talking with
 him." Prod that afternoon: every free deployment answered 429 within three
 hours -- Groq's 200,000-token day spent on gpt-oss-120b, gpt-oss-20b and
 qwen3.8-27b, OpenRouter's 50 free requests for the key gone -- and nearly
@@ -10,7 +10,7 @@ while he was not talking at all. Then he spoke, and there was nothing left.
 So each free quota pool's remaining daily allowance is tracked from what
 the providers themselves report, and the last part of it is kept for him:
 
-  * A call is INTERACTIVE when the owner is waiting on it: a voice turn, a
+  * A call is INTERACTIVE when Miro is waiting on it: a voice turn, a
     Slack message he typed, the assistant. Everything else is background.
     The flag is a context variable (`interactive()`), so a caller marks
     its whole turn once and every `think()` beneath it inherits it;
@@ -19,7 +19,7 @@ the providers themselves report, and the last part of it is kept for him:
   * When a pool's known remaining allowance falls under the reserve, only
     interactive calls may use it. Background calls skip it and fall
     through to the next deployment; when every deployment is reserved,
-    `think()` raises `ReservedForOwner` without asking anyone, and the job
+    `think()` raises `ReservedForMiro` without asking anyone, and the job
     waits for its next cycle.
   * A pool the provider says is spent (a daily-cap 429 with its own "try
     again in", or zero requests left with a reset time) is skipped by
@@ -91,9 +91,9 @@ Pool = tuple[str, str]
 OK, RESERVED, EXHAUSTED = "ok", "reserved", "exhausted"
 
 
-class ReservedForOwner(RuntimeError):
+class ReservedForMiro(RuntimeError):
     """Background work found only deployments whose remaining allowance is
-    kept for the owner. Nothing was asked; the job waits for its next cycle.
+    kept for Miro. Nothing was asked; the job waits for its next cycle.
     A RuntimeError, so callers that treat "no model" as a skip keep doing
     so."""
 
@@ -110,7 +110,7 @@ def is_interactive() -> bool:
 
 @contextlib.contextmanager
 def interactive(value: bool = True) -> Iterator[None]:
-    """Mark everything awaited inside as the owner waiting on it (or, with
+    """Mark everything awaited inside as Miro waiting on it (or, with
     False, as background)."""
     token = _INTERACTIVE.set(value)
     try:
@@ -119,8 +119,8 @@ def interactive(value: bool = True) -> Iterator[None]:
         _INTERACTIVE.reset(token)
 
 
-def for_owner[**P, R](fn: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
-    """Decorate a coroutine function that IS one of the owner's turns (a voice
+def for_miro[**P, R](fn: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+    """Decorate a coroutine function that IS one of Miro's turns (a voice
     turn, a Slack message he typed, an assistant question): every model
     call beneath it is interactive. The signature is kept, so a FastAPI
     route may wear it."""
@@ -149,7 +149,7 @@ def _num(name: str, default: float) -> float:
 
 
 def reserve_tokens(limit: int) -> int:
-    """Tokens kept for the owner in a pool of `limit` a day:
+    """Tokens kept for Miro in a pool of `limit` a day:
     ATLAS_FREE_RESERVE_TOKENS (40,000) or ATLAS_FREE_RESERVE_FRACTION
     (20%) of the day, whichever is larger -- but never more than half the
     pool, so a small one is not reserved whole."""
@@ -159,7 +159,7 @@ def reserve_tokens(limit: int) -> int:
 
 
 def reserve_requests(limit: int) -> int:
-    """Requests kept for the owner: ATLAS_FREE_RESERVE_FRACTION of the day's
+    """Requests kept for Miro: ATLAS_FREE_RESERVE_FRACTION of the day's
     requests, at least one."""
     return max(1, round(_num("ATLAS_FREE_RESERVE_FRACTION", 0.2) * limit))
 
@@ -261,7 +261,7 @@ def _headers(response: Any) -> Any:
 def _text(response: Any) -> str:
     try:
         return str(getattr(response, "text", "") or "")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ""
 
 
@@ -271,7 +271,7 @@ def observe(provider: object, response: Any) -> None:
     figure not known, not an error."""
     try:
         _observe(provider, response)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("quota headers unreadable: %s", type(exc).__name__)
 
 
@@ -404,7 +404,7 @@ async def refresh_openrouter(force: bool = False) -> bool:
                             headers={"Authorization": f"Bearer {key}"})
             r.raise_for_status()
             return read_openrouter_key(r.json())
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.info("openrouter allowance unread (%s)", type(exc).__name__)
         return False
 
@@ -450,7 +450,7 @@ def requests_left(provider: object) -> int | None:
 
 
 def verdict(provider: object) -> str:
-    """OK, RESERVED (only the owner may use it) or EXHAUSTED (nobody, until the
+    """OK, RESERVED (only Miro may use it) or EXHAUSTED (nobody, until the
     provider's own reset)."""
     pool = pool_of(provider)
     st = _STATES.get(pool)

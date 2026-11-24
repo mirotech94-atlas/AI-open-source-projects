@@ -190,7 +190,7 @@ async def test_seats_that_ran_and_a_pause_on_its_department(world):
            VALUES ('playlist', '2026-W39', 'done', now()),
                   ('ideas', '2026-09-28', 'failed', now())""")
     await state.execute_sql(
-        "INSERT INTO pauses (scope, paused_by, reason) VALUES ('markets', 'owner', 'test')")
+        "INSERT INTO pauses (scope, paused_by, reason) VALUES ('markets', 'miro', 'test')")
 
     out = await brain.build()
     money = _dept(out, "money")

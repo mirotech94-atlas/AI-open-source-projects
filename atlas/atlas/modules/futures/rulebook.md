@@ -1,6 +1,6 @@
 # The futures rulebook — 14 paper engines over MNQ/NQ bars
 
-The owner sent a reel (2026-09-29): "We coded 14 Orderflow+SMC+ICT strategies into
+Miro sent a reel (2026-09-29): "We coded 14 Orderflow+SMC+ICT strategies into
 a single algorithm that beats prop firms" — NinjaTrader 8, MNQ, VWAP signals,
 an equity curve per engine and combined, a live P&L (unverified). This is
 the honest version: the same *kinds* of rules, written down so they can be
@@ -94,7 +94,7 @@ identical by construction (a test proves it).
 $50,000 paper, 1 contract per signal, at most 3 open, a daily loss stop of
 −$1,000 (flat, and no entries for the rest of the session), and a breaker
 at −$2,000 from the book's peak: flat, and the `futures` module is paused
-through `kernel/pause.py` with one line to the owner. Only he resumes it.
+through `kernel/pause.py` with one line to Miro. Only he resumes it.
 
 ## The prop-firm check
 

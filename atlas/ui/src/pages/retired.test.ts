@@ -16,8 +16,8 @@ describe("retired", () => {
     }
     expect(isRetiredText("YOUTUBE_CLIPS_CHANNEL_ID unset")).toBe(false);
     expect(isRetiredText("Atlas Academy")).toBe(false);
-    // Church came back inside Content (2026-10-27): its cards read [Content · ECC].
-    expect(isRetiredText("[Content · ECC] #4 · Post the Sunday notice")).toBe(false);
+    // Community came back inside Content (2026-10-27): its cards read [Content · AMSM].
+    expect(isRetiredText("[Content · AMSM] #4 · Post the Sunday notice")).toBe(false);
     expect(isRetiredText("mail.draft_reply")).toBe(false);
   });
 

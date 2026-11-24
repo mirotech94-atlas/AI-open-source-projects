@@ -6,7 +6,7 @@ this file can reach a public feed, a buyer, or a follower — that is a
 different, Tier ASK decision made elsewhere:
 
   * `instagram.publish` and `tiktok.upload_draft` already exist for that,
-    both Tier ASK, because a post under the owner's name needs his yes.
+    both Tier ASK, because a post under Miro's name needs his yes.
   * LinkedIn has no publish action anywhere in ATLAS, by design.
     `atlas.modules.linkedin` mirrors the state of a separate agent driving
     a human-authenticated browser; the drafted row here is the text he
@@ -54,7 +54,7 @@ MATERIAL_NOTE = ("Material recalled from his vault, library and playbooks follow
 
 SYSTEM: dict[str, str] = {
     "linkedin_post": (
-        "You write LinkedIn posts for the owner, drawn from the material below: a "
+        "You write LinkedIn posts for Miro, drawn from the material below: a "
         "voice note, a call, or a Slack thread. Write in first person, as if "
         "he is telling a colleague, not marketing to a crowd. Concrete, "
         "specific to what is in the material -- no numbers or facts that are "
@@ -63,8 +63,8 @@ SYSTEM: dict[str, str] = {
         "material, match its tone. Output the post text only, nothing else."
     ),
     "ebay_listing": (
-        "You write eBay listing descriptions for ExampleCo, reselling used "
-        "enterprise IT and networking hardware, from the owner's own spoken notes "
+        "You write eBay listing descriptions for Mirotech, reselling used "
+        "enterprise IT and networking hardware, from Miro's own spoken notes "
         "on a specific unit. Structure: condition (be exact -- scuffs, "
         "missing parts, tested or untested), what's included, what's not, "
         "and any caveat he mentioned. No invented specs or claims he did not "
@@ -148,18 +148,18 @@ _REFUSAL = re.compile(
 
 
 def _agent_note(source: str) -> str | None:
-    """A `note:` source is the owner dictating a note. An agent passing one is a
-    note nobody wrote (2026-09-27: 'the the owner board' drafts), so an agent's
-    call is refused; the owner's own path (voice, CLI, Slack) is not an agent."""
+    """A `note:` source is Miro dictating a note. An agent passing one is a
+    note nobody wrote (2026-09-27: 'the Miro board' drafts), so an agent's
+    call is refused; Miro's own path (voice, CLI, Slack) is not an agent."""
     from ...kernel.tools import CURRENT_AGENT
     agent = CURRENT_AGENT.get()
     if agent and source.strip().lower().startswith("note:"):
         return (f"the {agent} agent may not draft from a note: source -- only "
-                f"the owner writes notes; use weekly, voice:<n> or slack:<thread>")
+                f"Miro writes notes; use weekly, voice:<n> or slack:<thread>")
     return None
 
 
-# RA-F3, backpressure. A review backlog is a queue the owner has to read; a
+# RA-F3, backpressure. A review backlog is a queue Miro has to read; a
 # bigger one is not more automation. Drafts ATLAS starts by itself stop at
 # the cap; one he asked for (a voice or Slack source) is never held back.
 def backlog_cap() -> int:
@@ -178,7 +178,7 @@ async def _backlog_full(source: str) -> str | None:
         row = await fetch_one(
             """SELECT count(*) AS n FROM content_drafts
                 WHERE status = 'draft' AND kind <> 'story_script'""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     n = int((row or {}).get("n") or 0)
     if n >= backlog_cap():

@@ -1,0 +1,35 @@
+<!-- @dsCard group="Teaching" width=1920 height=1080 subtitle="“You should now see…” beside the real output; pause variant" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1920px;height:1080px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);overflow:hidden}
+.out{position:absolute;left:var(--safe-16-9);top:var(--safe-16-9);width:1000px;background:var(--navy-raised);border:2px solid var(--navy-line);border-radius:var(--radius-card);padding:var(--step-4);box-sizing:border-box;font-family:var(--font-mono)}
+.out .k{color:var(--blue-text)}
+.tag{position:absolute;right:var(--safe-16-9);top:var(--safe-16-9);width:600px;display:flex;gap:var(--step-2);align-items:flex-start;background:var(--navy-raised);border:2px solid var(--success);border-radius:var(--radius-card);padding:var(--step-3);box-sizing:border-box;opacity:0;transform:translateY(16px);animation:rise var(--title-rise) var(--settle) .4s forwards}
+.tag svg{flex:none;width:44px;height:44px;color:var(--success);margin-top:4px}
+.tag .h{display:block;color:var(--success)}
+.pause{position:absolute;left:var(--safe-16-9);bottom:var(--safe-16-9);display:flex;align-items:center;gap:var(--step-2);background:var(--blue-tint);border:2px solid var(--blue);border-radius:var(--radius-card);padding:var(--step-3) var(--step-4);box-sizing:border-box}
+.pause svg{width:44px;height:44px;color:var(--blue)}
+.pause .k{color:var(--paper-muted)}
+@keyframes rise{to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.tag{animation:none;opacity:1;transform:none}}
+</style></head><body>
+<div class="frame">
+  <pre class="out code">{
+  <span class="k">"status"</span>: "ready",
+  <span class="k">"to"</span>: "dana@example.com",
+  <span class="k">"draft"</span>: "Hi Dana, yes — annual billing…",
+  <span class="k">"review_required"</span>: true
+}</pre>
+  <div class="tag">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 7"/></svg>
+    <div><span class="h support">Checkpoint</span><span class="callout">You should now see <code>status: ready</code> and a draft under 120 words.</span></div>
+  </div>
+  <div class="pause">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M8 5v14M16 5v14"/></svg>
+    <div><span class="callout">Pause and try it: change the tone to formal.</span><br><span class="k support">Answer in the next shot</span></div>
+  </div>
+</div>
+</body></html>

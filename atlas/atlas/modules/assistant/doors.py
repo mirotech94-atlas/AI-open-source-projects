@@ -6,7 +6,7 @@ door: every door runs exactly the code it ran before. A name not in the list is
 a door that stays as it was. An unknown name opens nothing.
 
 `ASSISTANT_PROPOSE` (default off) lets a fixed phrase, parsed in code, hand
-the owner's own earlier message to the action picker as a card; see
+Miro's own earlier message to the action picker as a card; see
 `assistant.propose`.
 """
 from __future__ import annotations

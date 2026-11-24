@@ -60,7 +60,7 @@ async def test_matrix_is_used_when_slack_is_down():
 
 @pytest.mark.parametrize("removed", ["imessage", "whatsapp"])
 async def test_a_removed_channel_is_no_longer_routed(removed):
-    """Removed at the owner's request, 2026-09-28. Even a stray channel registered
+    """Removed at Miro's request, 2026-09-28. Even a stray channel registered
     under that name is never chosen."""
     assert all(removed not in route for route in comms.ROUTING.values())
     stray, _slack = install(FakeChannel(removed), FakeChannel("slack"))
@@ -123,7 +123,7 @@ def test_quiet_window_arithmetic(monkeypatch, window, now, expected):
     hh, mm = now.split(":")
 
     # Quiet hours are deliberately local wall-clock time: they are about when
-    # the owner is asleep, not about UTC. Freeze the clock in the local zone so
+    # Miro is asleep, not about UTC. Freeze the clock in the local zone so
     # `datetime.now().astimezone().time()` reads the intended wall time.
     local_tz = datetime.now().astimezone().tzinfo
 
@@ -170,7 +170,7 @@ async def test_critical_with_buttons_still_reaches_the_phone():
     then voice and every other buttonless channel were dropped.
 
     That silently removed the phone call: the one channel that works when
-    the owner is away from a screen, on the one severity that is allowed to ring
+    Miro is away from a screen, on the one severity that is allowed to ring
     it. The channels with no buttons were never tested together with a
     message that had buttons, which is why this survived.
 
@@ -260,7 +260,7 @@ async def test_a_named_slack_channel_gets_the_full_card():
 async def test_an_unnamed_topic_takes_the_default_route():
     slack, matrix = install(HomedSlack({"instagram_stories": "C0REELS"}),
                             FakeChannel("matrix"))
-    used = await notify(Outbound("t", "b", Severity.NORMAL, topic="cloudco"))
+    used = await notify(Outbound("t", "b", Severity.NORMAL, topic="cloudhost"))
     assert used == ["slack"] and slack.sent and matrix.sent == []
 
 
@@ -274,10 +274,10 @@ async def test_a_named_channel_with_slack_down_falls_back_to_matrix():
 async def test_the_real_slack_channel_names_its_homes(monkeypatch):
     from atlas.channels.slack import SlackChannel
     monkeypatch.setenv("SLACK_CHANNEL", "CDEFAULT")
-    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudhost:CVPS")
     monkeypatch.setenv("SLACK_INSTAGRAM_REELS_CHANNEL", "C0REELS")
     ch = SlackChannel()
-    assert ch.home_for("cloudco") == "CVPS"
+    assert ch.home_for("cloudhost") == "CVPS"
     assert ch.home_for("instagram_stories") == "C0REELS"
     assert ch.home_for("mail") is None and ch.channel_for("mail") == "CDEFAULT"
 
@@ -297,10 +297,10 @@ async def test_a_critical_page_rings_first_even_on_a_named_topic(monkeypatch):
             order.append(self.name)
             return await super().send(msg)
 
-    install(Recording("voice"), RecordingSlack({"cloudco": "CVPS"}),
+    install(Recording("voice"), RecordingSlack({"cloudhost": "CVPS"}),
             Recording("matrix"))
-    used = await notify(Outbound("cloudco is down", "b", Severity.CRITICAL,
-                                 topic="cloudco"))
+    used = await notify(Outbound("cloudhost is down", "b", Severity.CRITICAL,
+                                 topic="cloudhost"))
     assert order[0] == "voice"
     assert order == ["voice", "slack", "matrix"]
     assert set(used) == {"voice", "slack", "matrix"}
@@ -376,17 +376,17 @@ async def test_a_critical_named_channel_page_is_unaffected_by_the_bypass(
 
 
 async def test_tiktok_and_the_stories_account_share_the_reels_channel(monkeypatch):
-    """the owner, 2026-09-27: Instagram reels and TikTok both go to #reels. TikTok's
+    """Miro, 2026-09-27: Instagram reels and TikTok both go to #reels. TikTok's
     upload card used to have no home and fell to the default channel. The
     main Instagram account is not a reels account and keeps the default."""
     from atlas.channels.slack import SlackChannel
     monkeypatch.setenv("SLACK_CHANNEL", "CDEFAULT")
-    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudhost:CVPS")
     monkeypatch.setenv("SLACK_INSTAGRAM_REELS_CHANNEL", "C0REELS")
     ch = SlackChannel()
     for topic in ("instagram_stories", "tiktok"):
         assert ch.home_for(topic) == "C0REELS", topic
     assert ch.home_for("instagram") is None
     # An explicit SLACK_CHANNELS entry still wins.
-    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS,tiktok:CTT")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudhost:CVPS,tiktok:CTT")
     assert ch.home_for("tiktok") == "CTT"

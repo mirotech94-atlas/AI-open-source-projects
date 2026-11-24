@@ -1,5 +1,5 @@
 {
- "_doc": "One short outcome line (<= 60 chars) per raw agent outcome. Read by tests/test_agent_shifts.py AND ui/src/pages/outcomeText.test.ts so atlas.kernel.agents.outcome_line and outcomeLine never drift (the owner 2026-10-29).",
+ "_doc": "One short outcome line (<= 60 chars) per raw agent outcome. Read by tests/test_agent_shifts.py AND ui/src/pages/outcomeText.test.ts so atlas.kernel.agents.outcome_line and outcomeLine never drift (Miro 2026-10-29).",
  "limit": 60,
  "cases": [
   {
@@ -32,7 +32,7 @@
   },
   {
    "raw": "shift deferred: quota",
-   "line": "Deferred: free quota kept for the owner"
+   "line": "Deferred: free quota kept for Miro"
   },
   {
    "raw": "shift failed: all providers failed: x",

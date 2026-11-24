@@ -7,7 +7,7 @@ numbers, so the rules are strict and the tests enforce them:
   time it was read (invariant 6). No fact, no idea.
 * **When nothing is measured, the answer is zero ideas and a note saying so.**
   Not one hedged idea, not a plausible-sounding list. The note names each
-  source and why it could not be read, which is the thing that tells the owner
+  source and why it could not be read, which is the thing that tells Miro
   what to fix.
 * **No revenue figures.** `est_note` is prose about the mechanism and what
   would have to be true. A number nobody measured would be an estimate
@@ -24,12 +24,12 @@ What each source actually measures — read from the modules, not assumed:
             are measured channel-wide by `academy.ypp.ypp_progress` (Analytics),
             not by `partner_eligibility`, so nothing here claims them; Studio →
             Earn is the authority.
-  exampleco  `price_check` returns eBay *active asks*, and its own result text
+  mirotech  `price_check` returns eBay *active asks*, and its own result text
             says these are not sold prices. Any spread quoted here carries
             that caveat verbatim.
   agency    `agency_leads` gives the pipeline: how many leads are waiting.
 
-Ranking is evidence strength times how little the idea needs from the owner. An
+Ranking is evidence strength times how little the idea needs from Miro. An
 idea resting on two measured facts that he can act on in one click outranks a
 single-fact idea that needs him to negotiate a contract.
 
@@ -52,9 +52,9 @@ from ..state import fetch_one
 
 log = logging.getLogger("atlas.marketing")
 
-BUSINESSES: tuple[str, ...] = ("exampleco", "agency")
+BUSINESSES: tuple[str, ...] = ("mirotech", "agency")
 
-# How much a requirement costs the owner, as a multiplier on evidence strength. A
+# How much a requirement costs Miro, as a multiplier on evidence strength. A
 # toggle in a console he already owns is cheap; a signature is not.
 EFFORT: dict[str, float] = {
     "toggle": 1.0,        # flip something in a console he already has
@@ -76,7 +76,7 @@ NOT_APPLICABLE = "not applicable to this business"
 # check of ATLAS's own — so the question passes Perplexity's name rule and
 # asks about the world, not about him.
 DESCRIPTIONS: dict[str, str] = {
-    "exampleco": "a used enterprise IT and networking hardware reseller on eBay",
+    "mirotech": "a used enterprise IT and networking hardware reseller on eBay",
     "agency": "a one-person web design studio selling new websites to local shops",
 }
 
@@ -101,7 +101,7 @@ async def _background(business: str) -> tuple[dict | None, str | None]:
     business. `(None, None)` when Perplexity is not configured at all."""
     try:
         from ...modules import _perplexity
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"perplexity unavailable: {exc}"
     if not _perplexity.configured():
         return None, None
@@ -142,13 +142,13 @@ async def _youtube_facts(business: str) -> tuple[dict | None, str | None]:
     """
     try:
         from ...modules.youtube import CHANNELS, partner_eligibility
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"youtube module unavailable: {exc}"
     if business not in CHANNELS:
         return None, NOT_APPLICABLE
     try:
         data = await partner_eligibility(business)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"youtube: {exc}"
     if data.get("read_at") is None or data.get("subscribers") is None:
         return None, data.get("detail", "youtube: subscriber count not read")
@@ -157,19 +157,19 @@ async def _youtube_facts(business: str) -> tuple[dict | None, str | None]:
             "observed_at": data["read_at"], "detail": data["detail"]}, None
 
 
-async def _ownertech_facts(business: str) -> tuple[dict | None, str | None]:
+async def _mirotech_facts(business: str) -> tuple[dict | None, str | None]:
     """Active listings. eBay *sold* prices are not measured by the module —
-    `exampleco.price_check` returns active asks and says so in its own text."""
-    if business != "exampleco":
+    `mirotech.price_check` returns active asks and says so in its own text."""
+    if business != "mirotech":
         return None, NOT_APPLICABLE
     try:
-        from ...modules.exampleco import check_listings
+        from ...modules.mirotech import check_listings
         obs = await check_listings()
-    except Exception as exc:                            # noqa: BLE001
-        return None, f"exampleco: {exc}"
+    except Exception as exc:  # noqa: BLE001
+        return None, f"mirotech: {exc}"
     from ..contracts import Health
     if obs.health is Health.UNKNOWN or obs.value is None:
-        return None, f"exampleco: {obs.detail or 'listings not read'}"
+        return None, f"mirotech: {obs.detail or 'listings not read'}"
     at = obs.at or datetime.now(UTC)
     return {"listings": obs.value, "sold_prices_measured": False,
             "observed_at": at, "detail": obs.detail}, None
@@ -182,7 +182,7 @@ async def _agency_facts(business: str) -> tuple[dict | None, str | None]:
     try:
         row = await fetch_one(
             "SELECT count(*) AS n FROM agency_leads WHERE status = 'new'")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"agency_leads unreadable: {exc}"
     if row is None:
         return None, "agency_leads count query returned nothing"
@@ -219,17 +219,17 @@ def _youtube_ideas(facts: dict) -> list[dict]:
     }]
 
 
-def _ownertech_ideas(facts: dict) -> list[dict]:
+def _mirotech_ideas(facts: dict) -> list[dict]:
     at = facts["observed_at"]
     evidence = {"listings": _fact(facts["listings"], at, facts["detail"])}
     return [{
-        "business": "exampleco",
+        "business": "mirotech",
         "idea": "Reprice the slowest listings against completed sales",
         "mechanism": "product",
         "evidence": evidence,
         "requires": "set the prices — changing what buyers pay is yours",
         "est_note": ("Rests on the measured listing count above. Sold prices "
-                     "are not measured: `exampleco.price_check` returns eBay "
+                     "are not measured: `mirotech.price_check` returns eBay "
                      "active asks and says so in its own result, so no spread "
                      "is quoted here."),
         "effort": "decide",
@@ -266,7 +266,7 @@ def _sources():
     """
     return (
         ("youtube", _youtube_facts, _youtube_ideas),
-        ("exampleco", _ownertech_facts, _ownertech_ideas),
+        ("mirotech", _mirotech_facts, _mirotech_ideas),
         ("agency", _agency_facts, _agency_ideas),
     )
 
@@ -276,7 +276,7 @@ async def ideas(business: str, *, limit: int = 3) -> dict:
 
     Nothing here writes a row or runs anything. `cycle.weekly()` hands what
     comes back to `marketing.propose_idea`, the Tier AUTO action that records
-    it, and the owner reads it in the brief.
+    it, and Miro reads it in the brief.
     """
     found: list[dict] = []
     unmeasured: list[str] = []
@@ -284,7 +284,7 @@ async def ideas(business: str, *, limit: int = 3) -> dict:
     for name, read_facts, compose in _sources():
         try:
             facts, reason = await read_facts(business)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             facts, reason = None, f"{name}: {type(exc).__name__}: {exc}"
         if facts is None:
             if reason != NOT_APPLICABLE:

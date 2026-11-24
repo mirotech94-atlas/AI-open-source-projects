@@ -23,7 +23,8 @@ import re
 import sys
 from typing import Any
 
-from . import KNOWN_PAGES, PAGES
+from . import COMPANY_PAGES as PAGES
+from . import KNOWN_PAGES
 from .browser import (
     HardStop,
     NoSession,
@@ -49,7 +50,7 @@ from .store import (
 
 log = logging.getLogger("atlas.linkedin.sweep")
 
-PROFILE = "https://www.linkedin.com/in/example-profile/"
+PROFILE = "https://www.linkedin.com/in/myron-mekhael-841196242/"
 BUDGET_S = 600
 
 
@@ -151,7 +152,7 @@ async def pending_draft_ids(key: str) -> set[str] | None:
                WHERE status = 'pending' AND expires_at > now()
                  AND action = 'linkedin.approve_draft'
                  AND params->>'page' = $1""", key)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     return {str(row["entry_id"]) for row in rows if row["entry_id"]}
 
@@ -184,7 +185,7 @@ class Sweep:
             self.unread.append(label)
             self.bounced.append(label)
             self.note(f"{label}: LinkedIn asked to sign in again ({str(exc)[:100]})")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             shot = await snapshot(page, label)
             self.unread.append(label)
             self.note(f"{label}: could not read ({type(exc).__name__}: "
@@ -311,7 +312,7 @@ class Sweep:
 
     async def page_notifications(self, page, key: str) -> None:
         """The company page's own admin notifications (read-only). Reactions,
-        comments, mentions and new followers on the page, not on the owner's
+        comments, mentions and new followers on the page, not on Miro's
         profile. Only the count and what is new are kept."""
         spec = PAGES[key]
         text = await goto(page, f"https://www.linkedin.com/company/{spec['id']}"
@@ -355,9 +356,9 @@ class Sweep:
     # -------------------------------------------------------------- refill
 
     async def refill(self, key: str) -> None:
-        if key == "mmt":
-            # A fresh MMT bank holder is stored in state, and its posts are
-            # never reshared to the owner's profile unless he turns that on.
+        if key == "tutorco":
+            # A fresh TUTORCO bank holder is stored in state, and its posts are
+            # never reshared to Miro's profile unless he turns that on.
             hold = self.state.setdefault(KNOWN_PAGES[key]["bank_key"], {})
             hold.setdefault("post_bank", [])
             post = hold.setdefault("posting", {})
@@ -400,15 +401,19 @@ class Sweep:
                       f"already wait on approval or media; more would add "
                       f"nothing publishable")
             return
-        if key == "mmt":
-            from ..sagemmt.weekly import enabled as sage_owns_calendar
+        if key == "tutorco":
+            try:
+                from ..tutorseo.weekly import enabled as sage_owns_calendar
+            except ImportError:       # the SEO drafter is not part of this build
+                def sage_owns_calendar() -> bool:
+                    return False
             if sage_owns_calendar():
-                # Sage owns the page calendar while SAGE_MMT_LINKEDIN is on;
+                # Sage owns the page calendar while SAGE_TUTORCO_LINKEDIN is on;
                 # her weekly job drafts, the sweep does not refill the series.
                 self.note(f"{PAGES[key]['name']}: calendar is Sage's, no series refill")
                 return
             # The fixed fact-backed series, never the model (invariant 6).
-            from .mmt_series import series_due
+            from .tutorco_series import series_due
             new = series_due(self.state, live_ok=None)[:3]
             if not new:
                 self.note(f"{PAGES[key]['name']}: series complete, nothing to draft")
@@ -428,7 +433,7 @@ class Sweep:
             return
         try:
             new = await draft_posts(self.state, key, 3)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             self.note(f"{PAGES[key]['name']}: refill failed: {exc}")
             return
         prefix = {"flycheap": "B", "guardian": "G"}.get(key, "A")   # A: Academy
@@ -506,7 +511,7 @@ def _new_entry(entry_id: str, item: dict[str, Any]) -> dict[str, Any]:
 
 
 # The short text every image/video post is limited to -- "about a third of
-# today's [text-only] length" (the owner, Task 64): a hook, at most 2 more short
+# today's [text-only] length" (Miro, Task 64): a hook, at most 2 more short
 # lines, the link, 1-2 hashtags. Enforced in code, not only asked of the
 # model: clamped rather than trusted.
 MAX_SHORT_CHARS = 280
@@ -643,21 +648,21 @@ async def draft_posts(state: dict[str, Any], key: str, count: int) -> list[dict[
     """
     from ...kernel.llm import Message, Need, think
 
-    if key == "mmt":
-        return []          # a second lock: MMT posts come only from mmt_series
+    if key == "tutorco":
+        return []          # a second lock: TUTORCO posts come only from tutorco_series
     spec = PAGES[key]
     entries, _, _ = bank(state, key)
     recent = [str(e.get("text") or (e.get("poll") or {}).get("question", ""))[:200]
              for e in entries[-6:]]
     framing = {
-        "flycheap": "the owner is co-founder and developer of FlyCheap",
-        "academy": ("the owner built ATLAS Academy: practical AI courses for work and "
+        "flycheap": "Myron is co-founder and developer of FlyCheap",
+        "academy": ("Myron built ATLAS Academy: practical AI courses for work and "
                     "everyday life, written from running his own AI agent. Name "
                     "one course or lesson idea per post (Build a Safe AI Operator, "
                     "Sell With AI, AI for Every Age), teach one concrete thing, "
                     "and point to the store. Never an income or earnings claim, "
                     "never a price, never a guarantee"),
-    }.get(key, "the owner founded and owns Vault")
+    }.get(key, "Myron founded and owns Vault")
     rules = (
         f"Write exactly 3 LinkedIn posts for the {spec['name']} company page, "
         f"one of each kind in this order: image, video, poll. Pictures speak "

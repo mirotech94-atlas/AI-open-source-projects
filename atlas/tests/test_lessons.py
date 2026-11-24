@@ -1,6 +1,6 @@
 """The lessons ledger and the never-repeat guard.
 
-the owner's rule: "mistakes are okay, permanent mistakes unacceptable." Two things
+Miro's rule: "mistakes are okay, permanent mistakes unacceptable." Two things
 have to be true for that to mean anything, and both are tested here:
 
   * a mistake is remembered once and reinforced, not re-filed;
@@ -195,19 +195,19 @@ def test_different_parameters_are_a_different_question():
 # ---------------------------------------------------------------- record
 
 async def test_a_new_lesson_is_written_once_and_remembered(ledger):
-    lid = await lessons.record("failed_action", "cloudco.restart failed: HTTP 500",
-                               action="cloudco.restart", params={"id": 7})
+    lid = await lessons.record("failed_action", "cloudhost.restart failed: HTTP 500",
+                               action="cloudhost.restart", params={"id": 7})
     assert lid == 1
     assert len(ledger.rows) == 1
     assert ledger.rows[0]["times"] == 1
     assert ledger.memories == [
-        (Kind.PROCEDURAL, "lessons", "cloudco.restart failed: HTTP 500")]
+        (Kind.PROCEDURAL, "lessons", "cloudhost.restart failed: HTTP 500")]
 
 
 async def test_the_same_mistake_is_reinforced_not_re_filed(ledger):
     for _ in range(3):
-        await lessons.record("failed_action", "cloudco.restart failed: HTTP 500",
-                             action="cloudco.restart", params={"id": 7})
+        await lessons.record("failed_action", "cloudhost.restart failed: HTTP 500",
+                             action="cloudhost.restart", params={"id": 7})
     assert len(ledger.rows) == 1, "three failures, one lesson"
     assert ledger.rows[0]["times"] == 3
     assert len(ledger.memories) == 1, "memory is written once, not per repeat"
@@ -365,7 +365,7 @@ async def test_for_task_is_capped_and_deduplicated(ledger, monkeypatch):
 
 
 async def test_a_clearance_is_never_injected_as_guidance(ledger):
-    """A `told` row is bookkeeping for `clear()`. "He said cloudco.restart is
+    """A `told` row is bookkeeping for `clear()`. "He said cloudhost.restart is
     different now" in a system prompt reads as permission, and a lesson must
     never be the thing that permits something."""
     await lessons.record("failed_action", "it 500ed", action="a.b", agent="ops")
@@ -655,7 +655,7 @@ if not decision.allowed:
     return ActionResult(False, f'refused: {decision.reason}', failure_class=FailureClass.POLICY, dispatched=False)
 if getattr(action, 'principal_only', False) and (req.approved_by or '').split(':', 1)[0] not in PRINCIPAL_ORIGINS:
     await audit('execute.refused', req.action, {'why': 'principal only'})
-    return ActionResult(False, 'refused: only the owner, asking directly, can run this', failure_class=FailureClass.POLICY, dispatched=False)
+    return ActionResult(False, 'refused: only Miro, asking directly, can run this', failure_class=FailureClass.POLICY, dispatched=False)
 if decision.tier is Tier.ASK and (req.approved_by or '').split(':', 1)[0] == 'voice':
     await audit('execute.refused', req.action, {'why': 'tier 2 by voice door'})
     return ActionResult(False, 'refused: a Tier 2 action needs its card approved', failure_class=FailureClass.POLICY, dispatched=False)
@@ -880,7 +880,7 @@ def test_the_ledger_has_no_path_to_the_executor(path: pathlib.Path):
 # --------------------------------------------------------------- the module
 
 def test_clear_is_tier_two_with_a_dry_run_and_a_rollback():
-    """The block is the owner's to lift. As Tier 1 it sat in the catalog the
+    """The block is Miro's to lift. As Tier 1 it sat in the catalog the
     unattended `diagnose` picks from, and the model could clear its own
     guard with a "why" it wrote itself."""
     action, = LESSONS_MODULE.actions()

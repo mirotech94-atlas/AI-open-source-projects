@@ -1,9 +1,9 @@
-"""A won or prevented dispute restores access (the owner, 2026-10-16).
+"""A won or prevented dispute restores access (Miro, 2026-10-16).
 
 Stripe keeps a charge's `disputed` flag true after a dispute closes, so when
 it is set the reader lists the charge's disputes (GET /v1/disputes?charge=,
 read-only). Access returns only when every dispute is `won`,
-`warning_closed` or `prevented` (the owner, 2026-10-16) and the charge is not
+`warning_closed` or `prevented` (Miro, 2026-10-16) and the charge is not
 refunded; any other status stays disputed; a dispute read that fails is "can't check", never paid.
 """
 from __future__ import annotations

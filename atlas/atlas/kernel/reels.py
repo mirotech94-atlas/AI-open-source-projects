@@ -17,8 +17,8 @@ default, and the digest says so):
      drafted today): `content.draft_reel`, then `content.render_video`,
      then a dry run of `content.publish_reel` for its per-platform status,
      then ONE Tier 2 card for that reel. Nothing is posted: the card waits
-     for the owner, and silence lets it expire.
-  3. The preview, so he can WATCH it in Slack before he decides (the owner,
+     for Miro, and silence lets it expire.
+  3. The preview, so he can WATCH it in Slack before he decides (Miro,
      2026-09-25): the MP4 is uploaded into the card's own thread in
      #instagram-reels (`SlackChannel.upload`, the external-upload flow,
      which needs `files:write`). On `missing_scope` or any other upload
@@ -87,7 +87,7 @@ async def already_sent_today(now: datetime | None = None,
     try:
         row = await fetch_one(
             "SELECT max(at) AS at FROM reports WHERE kind = $1", kind)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reels: reports unreadable, not running today: %s", exc)
         return None
     at = row["at"] if row else None
@@ -103,7 +103,7 @@ async def overnight_lines() -> list[str]:
     from ..modules import instagram
     try:
         obs = await instagram.check_overnight("stories")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Overnight on the stories account: not read — {explain(exc)}"]
     line = f"Overnight on the stories account (read {obs.at:%H:%M} UTC): {obs.detail}"
@@ -140,7 +140,7 @@ DIGEST_ENV = "REELS_DIGEST"
 
 
 def digest_cadence() -> str:
-    """the owner, 2026-10-06 ("yes" to content running with no card, reported in
+    """Miro, 2026-10-06 ("yes" to content running with no card, reported in
     the weekly): the day's content digest is stored every day but said in
     Slack only in the weekly summary. REELS_DIGEST=daily brings the daily
     #reels message back."""
@@ -163,7 +163,7 @@ async def send_digest(lines: list[str]) -> list[str]:
             """INSERT INTO reports (kind, title, body, delivered_via)
                VALUES ($1, $2, $3, $4)""",
             REPORT_KIND, TITLE, body, ",".join(used) or "weekly")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reels: the digest went out but was not stored: %s", exc)
     return used
 
@@ -280,7 +280,7 @@ async def preview_under_card(pid: int, media_id: int) -> str:
             why = "the rendered file is no longer on disk"
         else:
             try:
-                # Into the channel itself, not the card's thread: the owner
+                # Into the channel itself, not the card's thread: Miro
                 # (2026-09-27) wants #instagram-reels to show the video, and a
                 # file in a thread is invisible from the channel.
                 why = await slack.upload(
@@ -288,7 +288,7 @@ async def preview_under_card(pid: int, media_id: int) -> str:
                     filename=f"reel-{media_id}.mp4", data=await _read(path),
                     title=f"#{pid} preview",
                     comment=f"#{pid} — approve or skip on the card above. Link: {link}")
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 from ..modules._http import explain
                 why = f"Slack upload failed: {explain(exc)}"
             if why is None:
@@ -300,7 +300,7 @@ async def preview_under_card(pid: int, media_id: int) -> str:
             title=f"#{pid} — watch the reel before you decide",
             body=f"{note}\n{link}", topic=TOPIC, thread=thread,
             severity=Severity.NORMAL, kind="receipt"))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reels: the preview link for #%s was not sent: %s", pid, exc)
     return f"link in its place: {why}"
 
@@ -310,7 +310,7 @@ async def preview_under_card(pid: int, media_id: int) -> str:
 CALENDAR_ROLLBACK = ("deletes the Instagram and Facebook posts, and the TikTok "
                      "post while Postiz still has it queued; a published TikTok "
                      "post gets a MANUAL note")
-# Only the owner's explicit no holds the story. An expired card (nobody answered)
+# Only Miro's explicit no holds the story. An expired card (nobody answered)
 # or a failed one (a platform hiccup) goes back to 'rendered' and is offered
 # again the next New York day -- never the same day, so a failing platform
 # cannot turn into a card every half hour.
@@ -332,8 +332,8 @@ async def post_or_card(params: dict, reason: str, *, dedup: str, media_id: int,
                        seconds: tuple[float, float] | None = None,
                        best_hour: bool = False
                        ) -> tuple[str, int | None, str]:
-    """the owner, 2026-09-27: fully automated. The reel posts itself through
-    `content.autopublish_reel` (Tier AUTO, its checks in code). the owner,
+    """Miro, 2026-09-27: fully automated. The reel posts itself through
+    `content.autopublish_reel` (Tier AUTO, its checks in code). Miro,
     2026-09-28: "no need for me to meddle" -- so a reel held only by the
     day's cap WAITS for tomorrow (no card), and a reel that failed a quality
     check is handed back to the caller (`on_fail`): 'redo' to be made again
@@ -350,7 +350,7 @@ async def post_or_card(params: dict, reason: str, *, dedup: str, media_id: int,
     without automatic posting: made again once ('redo'), dropped ('skip'),
     or a card whose first line is the exception.
 
-    Reach (the owner, 2026-09-29): the caption gets its lane's niche hashtags
+    Reach (Miro, 2026-09-29): the caption gets its lane's niche hashtags
     (`content.hashtags`, closed lists), and with `best_hour` -- only for a
     caller that retries within the day, the calendar tick and the series --
     a reel ready now may WAIT for a better posting hour today
@@ -364,7 +364,7 @@ async def post_or_card(params: dict, reason: str, *, dedup: str, media_id: int,
         from ..modules.shop import caption_with_cta
         params = {**params, "caption": await caption_with_cta(
             media_id, str(params.get("caption") or ""))}
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("reels: no call to action added to media %s", media_id)
     from ..modules.content import hashtags
     params = {**params, "caption": await hashtags.with_lane_tags(
@@ -414,7 +414,7 @@ async def post_or_card(params: dict, reason: str, *, dedup: str, media_id: int,
                           f"a card per reel; the action's rollback deletes the "
                           f"posts."),
                     topic=TOPIC, severity=Severity.INFO, kind="alert"))
-            except Exception:                           # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 log.warning("reels: posted, but the receipt was not sent")
             return "posted", None, posted.detail
         held = posted.detail
@@ -464,7 +464,7 @@ async def _best_hour_hold(media_id: int) -> str | None:
     from ..modules.content import reach
     try:
         return await reach.best_hour_hold(media_id)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None                 # a nudge, never a gate
 
 
@@ -526,7 +526,7 @@ async def _leg_sync() -> list[str]:
 
 
 async def leg_sync() -> list[str]:
-    """the owner, 2026-09-29: an AI reel is on every configured platform. Each
+    """Miro, 2026-09-29: an AI reel is on every configured platform. Each
     missing leg `content.legsync.due()` names -- a retryable refusal of a
     reel posted in the last 96 h, oldest first, one per platform a tick --
     goes through the executor as `content.post_missing_leg` (Tier 1, its
@@ -536,7 +536,7 @@ async def leg_sync() -> list[str]:
     from ..modules.content.crosspost import NAMES
     try:
         todo = await legsync.due()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return [f"Leg sync: the posted reels could not be read ({explain(exc)})"]
     lines = []
     for gap in todo:
@@ -580,7 +580,7 @@ async def _calendar_tick(now: datetime | None = None) -> list[str]:
         lines += await course_waiting_lines()
     except Exception:
         log.exception("reels: posting a waiting course reel failed")
-    # The series being made goes first (the owner: the hospital comedy is next);
+    # The series being made goes first (Miro: the hospital comedy is next);
     # while its part waits for a whole day's clips, the packages hold off.
     try:
         said, hold = await series_step()
@@ -677,12 +677,12 @@ async def series_step() -> tuple[list[str], bool]:
     if current is None:
         formats = [f for f in await playbook.top_formats(200)
                    if playbook.bucket_of(f["format"]) == "serial"]
-        # the owner's priority first; within a rank, the format whose earlier
+        # Miro's priority first; within a rank, the format whose earlier
         # series earned more (series.format_bonus). Unreadable results rank
         # as before -- never a penalty.
         try:
             earned = series.format_bonus(await series.results_digest())
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("series results unreadable, choosing the format "
                         "without them: %s", exc)
             earned = {}
@@ -792,7 +792,7 @@ async def _sync_series_cards() -> None:
 
 
 def _render_order(cal, state: dict[str, dict]) -> list[dict]:
-    """Which packaged reel gets today's clips first. the owner, 2026-09-28:
+    """Which packaged reel gets today's clips first. Miro, 2026-09-28:
     "continue with other days, don't wait for day 1". A reel whose sequel
     rule is not met yet (its episode has not posted) waits; among the rest,
     the one closest to finished goes first -- so a short reel is not held
@@ -833,7 +833,7 @@ async def no_platform_line() -> str | None:
     from ..modules.content import crosspost
     try:
         ready, legs = await crosspost.legs_ready()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Unreadable is UNKNOWN, not "no platform": the reels go on, and the
         # card's own dry run still says where each one could go.
         log.warning("reels: platform readiness unreadable: %s", type(exc).__name__)
@@ -846,12 +846,12 @@ async def no_platform_line() -> str | None:
 
 
 async def calendar_covers_today(now: datetime | None = None) -> tuple[bool, str]:
-    """Whether a packaged reel is waiting for the owner right now (a card up, or a
+    """Whether a packaged reel is waiting for Miro right now (a card up, or a
     finished render about to get one) -- and, when not, why, in words."""
     from ..modules.content import calendar as cal
     try:
         state = await _calendar_state(cal)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return False, f"the packages are unreadable: {explain(exc)}"
     ready = [r for r in state.values()
@@ -888,7 +888,7 @@ async def calendar_lines() -> list[str]:
             if r["status"] in ("blocked", "declined") or (
                     r["status"] == "rendered" and r.get("note")):
                 lines.append(f"  day {r['day']} {r['status']}: "
-                             f"{r.get('note') or 'declined by the owner; its sequels wait'}")
+                             f"{r.get('note') or 'declined by Miro; its sequels wait'}")
     return lines
 
 
@@ -904,7 +904,7 @@ async def reel_lines() -> list[str]:
         if covered:
             return [("Reels rotation paused: today's post is the calendar's "
                      "(REELS_CALENDAR=off resumes the rotation)")]
-        # the owner, 2026-09-27: a post every day, and never a slideshow. The
+        # Miro, 2026-09-27: a post every day, and never a slideshow. The
         # calendar has nothing ready for today, so ONE backup reel is drafted
         # on Veo -- but only from clips left over today, so the calendar's
         # own days never fall behind for it.
@@ -916,7 +916,7 @@ async def reel_lines() -> list[str]:
                      f"clips are left (a backup needs {need}). A higher Veo tier "
                      f"would cover days like this.")]
         backup = f"backup reel, the calendar has none today ({why})"
-    # the owner, 2026-09-27: a post every day -- unless no platform can take one.
+    # Miro, 2026-09-27: a post every day -- unless no platform can take one.
     # Then nothing is drafted or rendered, and the line says which accounts
     # need fixing, rather than raising cards nothing could post.
     if (stopped := await no_platform_line()) is not None:
@@ -924,7 +924,7 @@ async def reel_lines() -> list[str]:
     try:
         await playbook.ensure_seeds()
         done = await playbook.drafted_today()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Reels: not drafted — the playbook is unreadable: {explain(exc)}"]
     limit = 1 if backup else playbook.per_day()
@@ -1071,7 +1071,7 @@ async def course_waiting_lines() -> list[str]:
 
 
 async def course_lines(now: datetime | None = None) -> list[str]:
-    """The course-promo lane (the owner, 2026-09-29): `COURSE_REELS_PER_WEEK`
+    """The course-promo lane (Miro, 2026-09-29): `COURSE_REELS_PER_WEEK`
     (default 2, Tuesday and Friday New York) reels for his course, on the
     AI-stories accounts. Runs before the football step, so a course day's
     reel takes the day's third automatic post; when the cap is already
@@ -1088,7 +1088,7 @@ async def course_lines(now: datetime | None = None) -> list[str]:
         format_id = await course.ensure_format()
         done = await course.done_this_week(format_id, today)
         tried = await course.attempted_today(format_id, today)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Course: not run — unreadable: {explain(exc)}"]
     owed = course.entitled(today, wanted)
@@ -1100,7 +1100,7 @@ async def course_lines(now: datetime | None = None) -> list[str]:
     if crosspost.autopublish_enabled():
         try:
             posted = await crosspost.posted_today()
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             return ["Course: not made — today's posts could not be counted"]
         if posted >= crosspost.autopublish_per_day():
             return [(f"Course: due, skipped today — {posted} of "
@@ -1115,7 +1115,7 @@ async def course_lines(now: datetime | None = None) -> list[str]:
         return [f"Course: already tried today ({done} of {owed} this week)"]
     try:
         left = cal.daily_clips() - await cal.clips_today()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Course: not made — Veo clips unreadable: {explain(exc)}"]
     if left < course.MIN_BEATS:
@@ -1140,7 +1140,7 @@ async def course_lines(now: datetime | None = None) -> list[str]:
 
 
 async def shorts_lines(now: datetime | None = None) -> list[str]:
-    """YouTube Shorts (the owner, 2026-09-29): `SHORTS_PER_WEEK` (default 3,
+    """YouTube Shorts (Miro, 2026-09-29): `SHORTS_PER_WEEK` (default 3,
     Monday/Wednesday/Friday New York) a week, each the best AI reel of the
     last seven days not on YouTube yet (`content.shorts`), posted through
     the executor as `content.publish_short`. A slot with nothing eligible
@@ -1155,7 +1155,7 @@ async def shorts_lines(now: datetime | None = None) -> list[str]:
     today = course.local_today(now)
     try:
         done = await shorts.done_this_week(today)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Shorts: not run — unreadable: {explain(exc)}"]
     read = datetime.now(UTC)
@@ -1165,7 +1165,7 @@ async def shorts_lines(now: datetime | None = None) -> list[str]:
                  f"{read:%H:%M} UTC)")]
     try:
         short, note, skipped = await shorts.pick()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Shorts: not run — the week's reels unreadable: {explain(exc)}"]
     if short is None:
@@ -1184,7 +1184,7 @@ FOOTBALL_ROLLBACK = CALENDAR_ROLLBACK
 
 
 async def football_lines() -> list[str]:
-    """The football (soccer) lane (the owner, 2026-09-29): at most
+    """The football (soccer) lane (Miro, 2026-09-29): at most
     `FOOTBALL_REELS_PER_DAY` stat reels a day, after the day's stories and
     only from Veo clips left over, drafted from API-Football's numbers,
     rendered with every number verified, and posted on the AI reels path
@@ -1202,7 +1202,7 @@ async def football_lines() -> list[str]:
     try:
         done = await lane.drafted_today()
         left = cal.daily_clips() - await cal.clips_today()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Football: not drafted — unreadable: {explain(exc)}"]
     if done >= wanted:
@@ -1215,7 +1215,7 @@ async def football_lines() -> list[str]:
         # post later: its API requests and Veo clips would be wasted.
         try:
             posted = await crosspost.posted_today()
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             posted = None
         if posted is None:
             return ["Football: not drafted — today's posts could not be counted"]
@@ -1271,7 +1271,7 @@ async def promote_lines() -> list[str]:
     from ..modules.content import reach
     try:
         found, unknown, at = await reach.read_candidates()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         return [f"Promote: not judged — reel metrics unreadable ({explain(exc)})"]
     th = reach.Thresholds.from_env()
@@ -1281,7 +1281,7 @@ async def promote_lines() -> list[str]:
         try:
             prior = await fetch_one(
                 "SELECT count(*) AS n FROM reports WHERE kind = $1", kind)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             # Cannot tell whether it went: send nothing.
             log.warning("reels: promote card for %s not sent: %s", kind,
                         type(exc).__name__)
@@ -1294,7 +1294,7 @@ async def promote_lines() -> list[str]:
             await execute_sql(
                 """INSERT INTO reports (kind, title, body, delivered_via)
                    VALUES ($1, $2, $3, $4)""", kind, title, body, "notify")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             # Unclaimed: never risk a second card.
             log.warning("reels: promote card for %s not claimed: %s", kind,
                         type(exc).__name__)
@@ -1330,7 +1330,7 @@ async def nudge(now: datetime | None = None) -> bool:
             """SELECT count(*) AS n FROM proposals
                 WHERE action = 'content.publish_reel' AND status = 'pending'
                   AND expires_at > now()""")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reels: proposals unreadable, no nudge: %s", exc)
         return False
     if approved and int(approved["n"]) > 0:
@@ -1339,7 +1339,7 @@ async def nudge(now: datetime | None = None) -> bool:
         from ..modules.content import crosspost
         if await crosspost.posted_today() > 0:
             return False                # a reel went out on its own today
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reels: today's posts unreadable for the nudge: %s",
                     type(exc).__name__)
     n = int(waiting["n"]) if waiting else 0
@@ -1349,14 +1349,14 @@ async def nudge(now: datetime | None = None) -> bool:
                  f"keep today's post")
     else:
         title = "No reel is waiting and none was approved today"
-    # the owner, 2026-09-27: at least every other day. Two days with nothing out
+    # Miro, 2026-09-27: at least every other day. Two days with nothing out
     # is said first, in the title -- still a message, never a post.
     try:
         posted = await fetch_one(
             """SELECT count(*) AS n FROM reel_posts
                 WHERE at >= now() - interval '48 hours'
                   AND platform <> 'youtube'""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         posted = None
     if posted is not None and int(posted["n"]) == 0:
         title = f"Nothing has posted for 2 days. {title}"
@@ -1373,7 +1373,7 @@ async def nudge(now: datetime | None = None) -> bool:
         await execute_sql(
             """INSERT INTO reports (kind, title, body, delivered_via)
                VALUES ($1, $2, $3, $4)""", NUDGE_KIND, title, body, "notify")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reels: the nudge went out but was not stored: %s", exc)
     return True
 
@@ -1395,7 +1395,7 @@ async def daily(now: datetime | None = None) -> None:
         return
     lines = await overnight_lines()
     # The course step before football: on a course day it takes the day's
-    # third automatic post (the owner's 2+1 split gives way twice a week).
+    # third automatic post (Miro's 2+1 split gives way twice a week).
     for part in (tiktok_lines, research_lines, calendar_lines, reel_lines,
                  course_lines, football_lines, shorts_lines, promote_lines):
         try:

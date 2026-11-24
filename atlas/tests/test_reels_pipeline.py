@@ -5,7 +5,7 @@ What is load-bearing here:
 
 * `content.reel_research` (Tier AUTO) asks Perplexity the fixed question
   under the marketing pass's 90 s deadline, files what it found in
-  `reel_formats` with its read time and sources, keeps the owner's seeds there,
+  `reel_formats` with its read time and sources, keeps Miro's seeds there,
   and reads the stories account's own insights only when the token allows --
   UNKNOWN, said in words, when it does not (no instagram_manage_insights).
 * Research text is untrusted: it reaches the model wrapped, as data.
@@ -26,7 +26,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _daily_digest(monkeypatch):
-    """These tests read the day's digest message. the owner, 2026-10-06: the
+    """These tests read the day's digest message. Miro, 2026-10-06: the
     digest is stored daily and said weekly; REELS_DIGEST=daily keeps the
     daily message for the tests that inspect it."""
     monkeypatch.setenv("REELS_DIGEST", "daily")
@@ -88,7 +88,7 @@ def _completion(payload) -> Completion:
 
 # ============================================================ the playbook
 
-def test_the_seeds_are_the_owners_four_formats_and_five_genres():
+def test_the_seeds_are_miros_four_formats_and_five_genres():
     names = [name for name, _ in playbook.SEED_FORMATS]
     for wanted in ("before/after transformation timelapse",
                    'cliffhanger "Part 1" story',
@@ -104,12 +104,12 @@ async def test_seeding_is_idempotent_and_marked_by_source(memory_backend):
     inserts = [(sql, args) for sql, args in memory_backend.sql_log
                if "INSERT INTO reel_formats" in sql]
     assert len(inserts) == (len(playbook.SEED_FORMATS)
-                            + len(playbook.OWNER_IDEAS) + 6)
+                            + len(playbook.MIRO_IDEAS) + 6)
     assert all("WHERE NOT EXISTS" in sql for sql, _ in inserts)
-    owner = inserts[:len(playbook.SEED_FORMATS)]
+    miro = inserts[:len(playbook.SEED_FORMATS)]
     measured = inserts[len(playbook.SEED_FORMATS)
-                       + len(playbook.OWNER_IDEAS):]
-    assert all(args[2] == "owner" for _, args in owner)
+                       + len(playbook.MIRO_IDEAS):]
+    assert all(args[2] == "miro" for _, args in miro)
     from datetime import date
     assert all(args[0] == date(2026, 9, 25) and args[3] == "vidiq_outliers"
                for _, args in measured)
@@ -149,7 +149,7 @@ def test_the_script_rules_are_in_the_prompt():
 
 
 def test_research_never_scrapes_instagram_through_his_account():
-    assert "never does:** read Instagram through the owner's logged-in account" \
+    assert "never does:** read Instagram through Miro's logged-in account" \
         in playbook.__doc__
 
 
@@ -345,11 +345,11 @@ async def test_top_formats_rank_by_weight_then_rotate_by_last_drafted(
         memory_backend):
     memory_backend.responses["GROUP BY lower(f.format)"] = [
         {"id": 1, "format": "mystery hook", "weight": 2.0, "max_scenes": 3,
-         "source": "owner"},
+         "source": "miro"},
         {"id": 2, "format": "love story", "weight": 2.0, "max_scenes": 4,
-         "source": "owner"},
+         "source": "miro"},
         {"id": 3, "format": 'cliffhanger "Part 1" story', "weight": 3.0,
-         "max_scenes": 4, "source": "owner"},
+         "max_scenes": 4, "source": "miro"},
         {"id": 9, "format": "talking vegetables", "weight": 1.0, "max_scenes": 4,
          "source": "perplexity"},
     ]
@@ -364,11 +364,11 @@ async def test_top_formats_rank_by_weight_then_rotate_by_last_drafted(
 @pytest.fixture
 def drafting(memory_backend, monkeypatch):
     # The drafting tests are about the script's shape; the length rule has
-    # its own tests (test_reel_lengths_follow_the_owners_rule).
+    # its own tests (test_reel_lengths_follow_miros_rule).
     monkeypatch.setattr(playbook, "beat_range", lambda name: (1, 4))
     memory_backend.responses["FROM reel_formats WHERE id"] = {
-        "id": 3, "format": 'cliffhanger "Part 1" story', "evidence": "the owner chose it",
-        "source": "owner", "max_scenes": 4}
+        "id": 3, "format": 'cliffhanger "Part 1" story', "evidence": "Miro chose it",
+        "source": "miro", "max_scenes": 4}
     memory_backend.responses["INSERT INTO content_drafts"] = {"id": 77}
     return memory_backend
 
@@ -498,7 +498,7 @@ async def test_narration_still_bad_after_the_reask_fails_the_draft(
 async def test_a_seeded_formats_template_reaches_the_prompt(drafting, monkeypatch):
     drafting.responses["FROM reel_formats WHERE id"] = {
         "id": 5, "format": "clever pet outsmarts human", "evidence": "vidIQ says so",
-        "source": "owner", "max_scenes": 2}
+        "source": "miro", "max_scenes": 2}
     seen = {}
 
     async def fake_think(need, system, messages, max_tokens=2048, **kw):
@@ -520,11 +520,11 @@ async def test_a_seeded_formats_template_reaches_the_prompt(drafting, monkeypatc
 
 FORMATS = [
     {"id": 3, "format": 'cliffhanger "Part 1" story', "weight": 3.0, "max_scenes": 4,
-     "source": "owner"},
+     "source": "miro"},
     {"id": 2, "format": "love story", "weight": 2.0, "max_scenes": 4,
-     "source": "owner"},
+     "source": "miro"},
     {"id": 1, "format": "mystery hook", "weight": 2.0, "max_scenes": 3,
-     "source": "owner"},
+     "source": "miro"},
 ]
 
 
@@ -919,12 +919,12 @@ def test_the_extract_budget_leaves_room_for_a_reasoning_model():
 
 
 
-def test_the_owners_second_round_is_seeded_with_its_template_and_no_film_named():
+def test_miros_second_round_is_seeded_with_its_template_and_no_film_named():
     """2026-09-27: his revenge story, the two film archetypes and the TikTok
     formats. A film is an archetype only: its title never reaches a prompt."""
-    names = [n for n, _, _ in playbook.OWNER_IDEAS]
+    names = [n for n, _, _ in playbook.MIRO_IDEAS]
     assert "wronged-man revenge saga" in names
-    for name, scenes, evidence in playbook.OWNER_IDEAS:
+    for name, scenes, evidence in playbook.MIRO_IDEAS:
         assert 1 <= scenes <= 4
         for film in ("أمير الانتقام", "الجلسة سرية", "إرهابي", "Monte Cristo is"):
             assert film not in evidence
@@ -937,7 +937,7 @@ def test_the_owners_second_round_is_seeded_with_its_template_and_no_film_named()
 
 def _fmt(i, name, weight=2.0):
     return {"id": i, "format": name, "weight": weight, "max_scenes": 4,
-            "source": "owner", "results": 0.0}
+            "source": "miro", "results": 0.0}
 
 
 MIX = [_fmt(1, "wronged-man revenge saga", 2.5),
@@ -1012,7 +1012,7 @@ async def test_the_fill_takes_the_bucket_drafted_longest_ago(monkeypatch):
 
 
 async def test_two_days_without_a_post_is_said_first_and_still_posts_nothing(nudging):
-    """the owner, 2026-09-27: at least every other day. The reminder gets louder;
+    """Miro, 2026-09-27: at least every other day. The reminder gets louder;
     nothing is ever posted on silence (invariant 5)."""
     backend, sent = nudging
     backend.responses["interval '48 hours'"] = {"n": 0}
@@ -1029,7 +1029,7 @@ async def test_a_post_yesterday_keeps_the_ordinary_reminder(nudging):
 
 
 async def test_no_reel_is_made_when_no_platform_can_take_one(monkeypatch):
-    """the owner, 2026-09-27: every day -- unless no platform can take a post.
+    """Miro, 2026-09-27: every day -- unless no platform can take a post.
     Then nothing is drafted, and the line says which accounts to fix."""
     from atlas.modules.content import crosspost
 
@@ -1065,7 +1065,7 @@ async def test_the_nudge_says_the_accounts_need_fixing(nudging, monkeypatch):
     assert "token expired" in sent[0].body
 
 
-def test_reel_lengths_follow_the_owners_rule(monkeypatch):
+def test_reel_lengths_follow_miros_rule(monkeypatch):
     """Relayed 2026-09-27: a series episode 60-90 s (8-11 beats), everything
     else 30-60 s (4-8), held to what Veo can make in one day."""
     monkeypatch.setenv("VEO_DAILY_CLIPS", "50")
@@ -1076,7 +1076,7 @@ def test_reel_lengths_follow_the_owners_rule(monkeypatch):
     assert playbook.beat_range("wronged-man revenge saga") == (8, 10)
 
 
-def test_the_owners_priority_order():
+def test_miros_priority_order():
     order = ["Egyptian Arabic comedy series", "rival cars family drama",
              "hospital ER comedy series", "wronged-man revenge saga",
              "clever pet outsmarts human"]
@@ -1135,7 +1135,7 @@ async def test_a_good_reel_may_post_itself(a_good_render):
     ({"seconds": 3.0}, "under 5 s"),
     ({"volume": float("-inf")}, "silent"),
 ])
-async def test_a_bad_render_is_held_for_owner(a_good_render, change, why):
+async def test_a_bad_render_is_held_for_miro(a_good_render, change, why):
     _backend, info, crosspost = a_good_render
     info.update(change)
     assert why in await crosspost.autopublish_check(7, "A story.\n\nMade with AI")
@@ -1187,7 +1187,7 @@ async def test_a_reel_that_fails_a_check_becomes_a_card_with_the_reason_first(
                                    "render has no sound")
 
 
-async def test_a_reel_that_passes_posts_and_owner_gets_a_receipt(monkeypatch):
+async def test_a_reel_that_passes_posts_and_miro_gets_a_receipt(monkeypatch):
     monkeypatch.delenv("REELS_AUTOPUBLISH", raising=False)
     sent = []
 
@@ -1217,16 +1217,16 @@ async def test_a_reel_that_passes_posts_and_owner_gets_a_receipt(monkeypatch):
     ("not posted automatically: the render's sound is silent (-91 dB)", "redo", "redo"),
     ("not posted automatically: the render has no sound", "skip", "skip"),
 ])
-async def test_owner_is_not_asked_when_the_pipeline_can_handle_it(
+async def test_miro_is_not_asked_when_the_pipeline_can_handle_it(
         monkeypatch, detail, on_fail, outcome):
-    """the owner, 2026-09-28: "no need for me to meddle"."""
+    """Miro, 2026-09-28: "no need for me to meddle"."""
     monkeypatch.delenv("REELS_AUTOPUBLISH", raising=False)
 
     async def execute(req):
         return ActionResult(False, detail)
 
     async def never(*a, **k):
-        raise AssertionError("no card for the owner")
+        raise AssertionError("no card for Miro")
 
     monkeypatch.setattr(day, "execute", execute)
     monkeypatch.setattr(day, "propose", never)

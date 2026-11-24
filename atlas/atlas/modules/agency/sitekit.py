@@ -1,4 +1,4 @@
-"""The 20 launch items, rendered (the owner, 2026-09-29, reel DdH5iyOzkZH).
+"""The 20 launch items, rendered (Miro, 2026-09-29, reel DdH5iyOzkZH).
 
 Every client site ATLAS builds — a brochure from a GetLayers mockup or a
 one-product store page — leaves `agency.build_site` with the same set of
@@ -705,7 +705,7 @@ def not_found_page(client: ClientData, analytics: Analytics | None) -> str:
                 body=body, analytics=analytics, noindex=True, prefix="/")
 
 
-# The AI assistants' crawlers (the owner, 2026-10-06, from a reel on "AI search
+# The AI assistants' crawlers (Miro, 2026-10-06, from a reel on "AI search
 # visibility": customers ask ChatGPT and friends for "best roofer near me").
 # A sold site names them and allows them explicitly, so a stricter default
 # somewhere upstream never shuts them out; a preview stays noindex and gets

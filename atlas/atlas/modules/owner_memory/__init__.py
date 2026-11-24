@@ -1,9 +1,9 @@
-"""owner_memory -- the owner tells ATLAS to remember, forget, restore or correct.
+"""owner_memory -- Miro tells ATLAS to remember, forget, restore or correct.
 
 Everything here changes ATLAS's own `memories` table and nothing outside it.
 Forget is a HIDE, not a delete: `deleted_at` is set, every read leaves the row
 out, and `restore` (or the action's rollback) clears it. Nothing in this module
-removes a row; the hard wipe is a separate command the owner types himself
+removes a row; the hard wipe is a separate command Miro types himself
 (`python -m atlas.cli memory-wipe`, kernel/memory_wipe.py) and no action,
 agent or model can reach it.
 
@@ -12,7 +12,7 @@ The ids come from a search the CODE ran over the owner's own namespaces
 security) cannot be touched from here.
 
 Tier 1: a dry run lists the rows, a rollback undoes it. Not `principal_only`:
-the owner asks over WhatsApp, which is not a principal origin, and these actions can
+Miro asks over WhatsApp, which is not a principal origin, and these actions can
 only hide or restore his own notes. Under ATLAS_WATCH_ONLY the executor runs
 nothing.
 """
@@ -241,7 +241,7 @@ async def undo_correct(token: str) -> ActionResult:
 
 class OwnerMemoryModule:
     name = "owner_memory"
-    title = "the owner's own notes: remember, forget, restore, correct"
+    title = "Miro's own notes: remember, forget, restore, correct"
     requires_env = ()
     optional_env = ("ATLAS_MEMORY_WRITE", "ATLAS_BUSINESSES")
     setup_note = "Changes only ATLAS's own notes table; forget hides, never deletes."
@@ -255,13 +255,13 @@ class OwnerMemoryModule:
     def actions(self) -> tuple[Action, ...]:
         return (
             Action(REMEMBER, Tier.AUTO,
-                   "Keep one note the owner asked ATLAS to remember (own table only)",
+                   "Keep one note Miro asked ATLAS to remember (own table only)",
                    run=remember_note, dry_run=remember_dry, rollback=undo_remember,
                    params={"text": "the note, at most 300 characters",
                            "source": "whatsapp, portal or voice"},
                    max_per_hour=10, vet=_vet_remember, card_only=True),
             Action(FORGET, Tier.AUTO,
-                   "Hide notes from ATLAS's memory at the owner's request (undoable; "
+                   "Hide notes from ATLAS's memory at Miro's request (undoable; "
                    "nothing is deleted)",
                    run=forget, dry_run=forget_dry, rollback=undo_forget,
                    params=dict(IDS), max_per_hour=10, vet=_vet_ids, card_only=True),
@@ -270,7 +270,7 @@ class OwnerMemoryModule:
                    dry_run=restore_dry, rollback=undo_restore, params=dict(IDS),
                    max_per_hour=10, vet=_vet_ids, card_only=True),
             Action(CORRECT, Tier.AUTO,
-                   "Replace one note with the owner's corrected wording (the old one "
+                   "Replace one note with Miro's corrected wording (the old one "
                    "is hidden, not deleted)",
                    run=correct, dry_run=correct_dry, rollback=undo_correct,
                    params={**IDS, "new_text": "the corrected note",

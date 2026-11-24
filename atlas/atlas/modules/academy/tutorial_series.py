@@ -1,16 +1,16 @@
 """The ATLAS Academy tutorial series: what each YouTube episode shows and says.
 
-the owner, 2026-10-09: "post YouTube videos on demos and how it works and
+Miro, 2026-10-09: "post YouTube videos on demos and how it works and
 actually teaching people how to use n8n workflows ... same with Claude: how
 to use MCP and what it is", every video with the same intro and ending, the
 videos in playlist series, 4-10 minutes, beginner language, and
 the store (ACADEMY_PUBLIC_ORIGIN) in every description and on the end card.
 
-the owner, 2026-10-10: "look at other videos and check the tags and hashtags they
+Miro, 2026-10-10: "look at other videos and check the tags and hashtags they
 use and the titles, improve ours, and the thumbnail and the content as well
 -- don't make it boring, make it interactive". And a channel welcome video
 (about two minutes) that goes out before either series. And the intro is a
-fixed opener ("... My name is the owner, and welcome to ATLAS Academy.") plus a
+fixed opener ("... My name is Myron, and welcome to ATLAS Academy.") plus a
 per-episode topic line said right after it.
 
 Everything said here is code-held copy. Nothing is generated at run time, so
@@ -73,7 +73,7 @@ says the answer (`answer` is the right item; -1 is a poll with no right
 answer and no countdown). A pause scene ends with a silent hold so the
 viewer can stop the video and try.
 
-the owner, 2026-10-11: "if you are doing a live demo or lab ... switch to a web
+Miro, 2026-10-11: "if you are doing a live demo or lab ... switch to a web
 browser as the background to do the live demo and explain step by step". A
 "demo" scene's picture is a real screen recording (`demo` names it in
 tutorial_demos.DEMOS: n8n in a local container, the official MCP
@@ -102,7 +102,7 @@ PAUSE_HOLD = 4.0               # seconds of silence after "pause and try this"
 UNDER_FIVE = re.compile(r"\bunder (five|5) minutes\b", re.IGNORECASE)
 UNDER_FIVE_SECONDS = 300.0
 
-# the owner, 2026-10-12: "the voice should have feelings and laughter and make
+# Miro, 2026-10-12: "the voice should have feelings and laughter and make
 # jokes ... don't make him sound like a robot". The narration may carry Fish
 # S2 delivery cues in square brackets (docs.fish.audio core-features/emotions,
 # read 2026-10-12: "[excited]", "[chuckling]", "[sighing]", "[emphasis]",
@@ -130,15 +130,15 @@ def cues(text: str) -> list[str]:
     """The delivery cues in `text`, in order."""
     return [m.strip().strip("[]") for m in CUE.findall(text)]
 
-# The open and close. the owner, 2026-10-10: the opener word for word. the owner,
+# The open and close. Miro, 2026-10-10: the opener word for word. Miro,
 # 2026-10-12: "welcome to my new channel intro is only for intro video not
 # all the other ones" -- INTRO_SAID opens the channel welcome only. Since
-# 2026-10-17 (the owner; the Atlas Academy video system, narration.md) a lesson
+# 2026-10-17 (Miro; the Atlas Academy video system, narration.md) a lesson
 # opens on its result, never a welcome: opening_lines().
-INTRO_SAID = ("Welcome, guys, to my new channel! My name is the owner, and welcome to "
+INTRO_SAID = ("Welcome, guys, to my new channel! My name is Myron, and welcome to "
               "ATLAS Academy.")
 INTRO_SHOWN = "Welcome to ATLAS Academy"
-INTRO_BYLINE = "the owner · ATLAS Academy"
+INTRO_BYLINE = "Myron · ATLAS Academy"
 
 LEVEL_NAMES = {0: "Basics", 1: "Beginner", 2: "Intermediate", 3: "Advanced"}
 LEVEL_TAGS = {0: "beginner", 1: "beginner", 2: "intermediate", 3: "advanced"}
@@ -155,7 +155,7 @@ class Scene:
     caption: str = ""            # a small line under a code panel / a quiz's answer
     marks: tuple[tuple[int, int], ...] = ()   # code: lines [a, b) lit on step k
     answer: int = -1             # quiz: the right item; -1 a poll
-    # 2026-10-11, the owner: "change background depending on what you are talking
+    # 2026-10-11, Miro: "change background depending on what you are talking
     # about". The 3D loop under this scene, by topic (tutorial_design.TOPICS);
     # "" = derived from the kind and the words (tutorial_design.backdrops).
     backdrop: str = ""
@@ -165,7 +165,7 @@ class Scene:
     # A "lab" scene: the file (a key of LAB_FILES) the viewer downloads from
     # STORE_URL/free/<resource> to do the exercise.
     resource: str = ""
-    # The teaching components (the owner, 2026-10-17; docs/academy-video-system
+    # The teaching components (Miro, 2026-10-17; docs/academy-video-system
     # components, .video-gap.md batch 4). Each is drawn only where the script
     # fills it in: the defaults draw nothing, and the renderer never invents
     # one. In repr, so in tutorials.script_key (they were kept out until the
@@ -222,7 +222,7 @@ def error_scene(chapter: str, heading: str, card: ErrorCard,
                  verified=verified, backdrop=backdrop)
 
 
-# docs/academy-reference-learnings.md (the owner, 2026-10-11, "learn from them"):
+# docs/academy-reference-learnings.md (Miro, 2026-10-11, "learn from them"):
 # the lab videos follow every build with a hands-on exercise and a file to
 # import; we end every n8n lesson with one, and add what we found nowhere:
 # the common error and its fix, and a challenge with no answer shown.
@@ -244,7 +244,7 @@ def lab_scene(chapter: str, heading: str, resource: str, *, do: str, expect: str
                  resource=resource, backdrop=backdrop)
 
 
-# docs/academy-youtube-plan.md rule 17 (the owner, 2026-10-13): a lesson's first
+# docs/academy-youtube-plan.md rule 17 (Miro, 2026-10-13): a lesson's first
 # scene after the opener is its payoff, in a chapter of this name. (A later
 # task cuts a Short from the payoff beat's timings in the manifest.)
 PAYOFF_CHAPTER = "Here's what you'll have"
@@ -276,7 +276,7 @@ class Episode:
     thumb_title: str             # two short lines, "\n" between; the 2nd is highlighted
     summary: str                 # the description's opening paragraph
     scenes: tuple[Scene, ...]
-    # the owner, 2026-10-10: "teach the basics first and then advanced, 0 to
+    # Miro, 2026-10-10: "teach the basics first and then advanced, 0 to
     # advanced". 0 Basics (assumes nothing) · 1 Beginner · 2 Intermediate ·
     # 3 Advanced. Required, never defaulted: a forgotten level must not
     # quietly read as "Basics".
@@ -293,17 +293,17 @@ class Episode:
     topic_shown: str = ""
     # The finished result, shown first, right after the topic line.
     hook: Scene | None = None
-    # docs/academy-youtube-plan.md rule 17 (the owner, 2026-10-13): "the first
+    # docs/academy-youtube-plan.md rule 17 (Miro, 2026-10-13): "the first
     # seconds are the payoff". One line, said right after the opener and
     # before the hook: what the viewer will have at the end, its result in
     # the bubble from the first frame. None = the channel welcome.
     payoff: Scene | None = None
-    min_seconds: float = 240.0   # the owner: 4 to 10 minutes; the welcome 90-180 s
+    min_seconds: float = 240.0   # Miro: 4 to 10 minutes; the welcome 90-180 s
     max_seconds: float = 600.0
     # A planned episode has an outline and no scenes yet: the scheduler skips
     # it ("script not written") and nothing half-made is ever rendered.
     outline: tuple[str, ...] = ()
-    # docs/academy-youtube-plan.md (the owner, 2026-10-11): the title is the
+    # docs/academy-youtube-plan.md (Miro, 2026-10-11): the title is the
     # level's formula filled with this hook (and, at Level 3, the benefit)
     # and the measured minutes -- title_for(). "" keeps `title` as written
     # (the welcome; a planned episode until it is scripted).
@@ -320,11 +320,11 @@ class Episode:
     # Lab files (keys of LAB_FILES) linked in the description besides the
     # ones a lab scene names (downloads_of).
     downloads: tuple[str, ...] = ()
-    # the owner, 2026-10-12: what OPENER_SAID says "today we'll be learning about"
+    # Miro, 2026-10-12: what OPENER_SAID says "today we'll be learning about"
     # -- a short plain phrase, filled from OPENER_TOPICS by titled(). "" =
     # the channel welcome, which opens with INTRO_SAID instead.
     opener_topic: str = ""
-    # The Atlas Academy video system (the owner, 2026-10-17; docs/academy-video-
+    # The Atlas Academy video system (Miro, 2026-10-17; docs/academy-video-
     # system, ResultTitle and EndCard): the finished result as a noun phrase
     # of RESULT_WORDS_MAX words or fewer, sentence case ("A proofreader
     # subagent"). The opening's badge, "Here is the result: ..." and the end
@@ -491,7 +491,7 @@ WELCOME = Episode(
 
 # ------------------------------------------------- Level 0: the basics first
 #
-# the owner, 2026-10-10: "teach the basics first and then advanced, 0 to
+# Miro, 2026-10-10: "teach the basics first and then advanced, 0 to
 # advanced, for all series". Each series now opens with a Level 0 episode
 # that assumes nothing. They are numbered 0 so no episode already drafted
 # or posted changes its (series, number) -- that pair keys the posts, the
@@ -544,7 +544,7 @@ CLAUDE_EP0 = Episode(
            ("What are Projects?",
             "https://support.claude.com/en/articles/9517075-what-are-projects"),
            ("Claude Code overview", "https://code.claude.com/docs/en/overview")),
-    # Beginner phrases first (the owner's 0-to-advanced ask), then the researched
+    # Beginner phrases first (Miro's 0-to-advanced ask), then the researched
     # head terms the Claude videos tag ("claude ai", "claude ai tutorial",
     # "how to use claude", "claude code").
     tags=("claude for beginners", "how to use claude", "what is claude ai",
@@ -1840,7 +1840,7 @@ BUSINESS_EP1 = Episode(
 
 # ------------------------------------------------------------ the roadmap
 #
-# the owner, 2026-10-10: the channel as a series roadmap. The scripted entries are
+# Miro, 2026-10-10: the channel as a series roadmap. The scripted entries are
 # those with scenes; every other entry is PLANNED -- title,
 # thumbnail words, summary, tags, hashtags and an outline -- and the
 # scheduler skips it with "script not written" until its scenes exist.
@@ -2493,7 +2493,7 @@ LOCAL_PLANNED = (
 
 # ------------------------------- scripted 2026-10-11: one a day per series
 #
-# the owner, 2026-10-11: "we need one video for each series each day". Each
+# Miro, 2026-10-11: "we need one video for each series each day". Each
 # series' next rung is scripted here, filled into its planned entry (the
 # title, thumbnail words, summary, tags and hashtags stay as researched).
 # Facts read on the official pages on 2026-10-11:
@@ -2557,7 +2557,7 @@ def extend(planned: tuple[Episode, ...], *eps: Episode) -> tuple[Episode, ...]:
 
 def from_scripts(key: str, planned: tuple[Episode, ...], eps: tuple[Episode, ...],
                  inline: tuple[Episode, ...] = ()) -> tuple[Episode, ...]:
-    """`planned` with the episodes written in tutorial_scripts/ (the owner,
+    """`planned` with the episodes written in tutorial_scripts/ (Miro,
     2026-10-15: a scheduled writer adds them). Each either lands on a
     planned, still unscripted entry (fill), or -- once the plan is used up
     (2026-10-16) -- is a new entry past the series' last number, planned and
@@ -3820,7 +3820,7 @@ AGENTS_PLANNED = from_scripts("agents", AGENTS_PLANNED,
                               tutorial_scripts.for_series("agents"), (AGENTS_EP1,))
 LOCAL_PLANNED = from_scripts("local", LOCAL_PLANNED, tutorial_scripts.for_series("local"),
                              (LOCAL_LEVEL0,))
-# the owner 2026-10-18, video system pack: three more series, planned in
+# Miro 2026-10-18, video system pack: three more series, planned in
 # tutorial_series_ai (outlines, holds, thumbnail words), written like the rest.
 EXPLAINED_PLANNED = from_scripts("explained", tutorial_series_ai.EXPLAINED_PLANNED,
                                  tutorial_scripts.for_series("explained"))
@@ -3863,7 +3863,7 @@ def downloads_of(ep: Episode) -> tuple[str, ...]:
 
 # ------------------------------------------------- titles, tags, hashtags
 #
-# docs/academy-youtube-plan.md, the owner 2026-10-11 (from the YouTube Data API
+# docs/academy-youtube-plan.md, Miro 2026-10-11 (from the YouTube Data API
 # read of the top videos in our topics, .claude/competitors-2026-10-11.json):
 # every title states its time, and the time is true -- the whole video's
 # measured length rounded UP to the next minute, filled in after the render
@@ -3877,7 +3877,7 @@ TITLE_FORMULAS = {
     3: "{x} Explained in {min} Minutes: {benefit}",
 }
 # The level 0/1 formulas' closing aside is dropped when the title would run
-# past TITLE_SHOWN_MAX (the owner 2026-10-18): the aside is the only part of a
+# past TITLE_SHOWN_MAX (Miro 2026-10-18): the aside is the only part of a
 # formula title that carries no search term.
 TITLE_ASIDES = {0: " (for total beginners)", 1: " (step by step)"}
 TITLE_PATTERNS = {
@@ -3913,7 +3913,7 @@ TITLE_HOOKS: dict[tuple[str, int], tuple[str, str]] = {
 
 # Explainers at a level whose formula promises a build (Level 1's "Build
 # Your First ..."): they explain and build nothing, so they take the Learn
-# formula (docs/academy-youtube-plan.md rule 2, the owner 2026-10-11).
+# formula (docs/academy-youtube-plan.md rule 2, Miro 2026-10-11).
 EXPLAINER_FORMULA = 2
 EXPLAINERS: frozenset[tuple[str, int]] = frozenset({
     ("project", 1),   # plans the project; the build starts at #2
@@ -3923,7 +3923,7 @@ EXPLAINERS: frozenset[tuple[str, int]] = frozenset({
 
 
 # (series, episode) -> what the opener says "today we'll be learning about"
-# (the owner, 2026-10-12). Every episode of every series but the channel welcome,
+# (Miro, 2026-10-12). Every episode of every series but the channel welcome,
 # planned ones too, in simple words; no numbers (the opener's only number is
 # its measured minutes). Each replaces the episode's old "Today ..." topic
 # line, which said the same thing: the topic is said once.
@@ -4060,7 +4060,7 @@ def lead_lower(text: str) -> str:
         return text
     return text[0].lower() + text[1:]
 
-# The opener's minutes, said as a word (the owner: "five"). Every lesson runs
+# The opener's minutes, said as a word (Miro: "five"). Every lesson runs
 # 4-10 minutes (Episode.max_seconds); a number outside this table is
 # refused, never said as a guess.
 NUMBER_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
@@ -4074,7 +4074,7 @@ def number_word(n: int) -> str:
     return NUMBER_WORDS[n]
 
 
-# The spoken opening (the owner, 2026-10-17; docs/academy-video-system
+# The spoken opening (Miro, 2026-10-17; docs/academy-video-system
 # narration.md "A scripted sample", README "The reusable opening line"):
 # "Here is the result: <result>." over the result, before the sting at 6 s;
 # then the scope, what you need and where we start, over the scope line.
@@ -4178,7 +4178,7 @@ LAST_SAID = "That's the whole series."
 # None = the next topic up to its first comma; a string = the topic to say,
 # where the next topic has no comma (n8n #2 says the words of its own old
 # line, "Next: managing your workflows once they're running."). None of
-# the owner's lines is cut.
+# Miro's lines is cut.
 SHORT_NEXT: dict[tuple[str, int], str | None] = {
     ("claude", 1): None,
     ("n8n", 0): None,
@@ -4228,7 +4228,7 @@ POINTS_AHEAD = re.compile(r"\bnext\b", re.IGNORECASE)
 def _closing(said: str, line: str) -> str:
     """`said` closing on `line`: in place of its own pointing-ahead sentence
     ("Next ...", "See you in the next one.") and anything after it, else
-    after its last sentence -- the owner's closing lines stay. Run twice, the same."""
+    after its last sentence -- Miro's closing lines stay. Run twice, the same."""
     if plain(said).endswith(line):
         return said
     parts = SENTENCE_END.split(said.strip())
@@ -4285,7 +4285,7 @@ def title_for(ep: Episode, minutes: int | None) -> str:
     return full
 
 
-# The end card's next lesson (the owner, 2026-10-17; docs/academy-video-system
+# The end card's next lesson (Miro, 2026-10-17; docs/academy-video-system
 # EndCard: "the exact title of an existing next video"). A formula title's
 # minutes exist only once that episode is rendered and measured, so the card
 # shows the title up to its time clause -- the words the viewer will see
@@ -4360,12 +4360,12 @@ FILLER_TAGS = ("guide", "walkthrough", "tutorial", "step by step", "explained",
                "ai for beginners", "how to")
 LEVEL_WORDS = ("beginner", "intermediate", "advanced")
 
-# the owner 2026-10-18, video system pack (docs/academy-video-system/
+# Miro 2026-10-18, video system pack (docs/academy-video-system/
 # tags-and-hashtags.md; docs/academy-youtube-plan.md rules 27-30): every upload
 # carries the five channel tags, its series' set in the spec's exact phrases,
 # then 3-5 tags specific to the lesson, under 500 characters as YouTube counts
 # them. Supersedes rule 5's 20-25 head-term tags and its three hashtags.
-CHANNEL_TAGS = ("atlas academy", "atlasacademyphp", "owner atlas academy",
+CHANNEL_TAGS = ("atlas academy", "atlasacademyphp", "miro atlas academy",
                 "practical ai tutorial", "ai automation for beginners")
 _CLAUDE_SET = ("claude ai tutorial", "claude tutorial for beginners", "claude mcp tutorial",
                "mcp server tutorial", "model context protocol explained",
@@ -4379,7 +4379,7 @@ SERIES_TAGS: dict[str, tuple[str, ...]] = {
             "how to build ai agents in n8n", "n8n ai automation", "ai automation n8n",
             "n8n workflow tutorial", "n8n automation tutorial", "automation for beginners"),
     # The spec names no set for the Claude + n8n project: it takes the
-    # Claude / MCP / Skills set, the one its lessons are built on (the owner to
+    # Claude / MCP / Skills set, the one its lessons are built on (Miro to
     # confirm).
     "project": _CLAUDE_SET,
     "business": ("ai for small business", "small business automation",
@@ -4410,7 +4410,7 @@ SERIES_TAGS: dict[str, tuple[str, ...]] = {
 # 3-5 per description, at its end, the strongest three first (they show above
 # the title); a Short adds #shorts fourth, never first. All lower case, as the
 # spec writes them. The channel welcome and the project take the closest
-# spec sets (the owner to confirm).
+# spec sets (Miro to confirm).
 SERIES_HASHTAGS: dict[str, tuple[str, ...]] = {
     "channel": ("#aiautomation", "#n8n", "#claudeai"),
     "claude": ("#claudeai", "#mcp", "#aiagents", "#anthropic", "#aitools"),
@@ -4427,7 +4427,7 @@ SERIES_HASHTAGS: dict[str, tuple[str, ...]] = {
 }
 SHORTS_HASHTAG = "#shorts"
 
-# Titles (the owner 2026-10-18, tags-and-hashtags.md): at most 60 characters, the
+# Titles (Miro 2026-10-18, tags-and-hashtags.md): at most 60 characters, the
 # tool name first. Read with the level formulas (rule 2), which open "What
 # is", "Build Your First" or "Learn": the formula's subject -- the hook {x},
 # after an article -- should open with the tool or subject term. Only the
@@ -4643,7 +4643,7 @@ SERIES: tuple[Series, ...] = (
 
 # ------------------------------------------- the one lab / live-build playlist
 #
-# the owner, 2026-10-22: every hands-on lab and live demo (an MCP server, an n8n
+# Miro, 2026-10-22: every hands-on lab and live demo (an MCP server, an n8n
 # workflow, an AI agent ...) stays in its own course playlist AND is added to
 # one more playlist, grouped by course so a viewer sees which lab is whose.
 # The list is reviewed code, never inferred: an explainer never belongs here
@@ -4723,7 +4723,7 @@ def lab_playlist_description() -> str:
 
 # --------------------------------------------------------- Series 6: Shorts
 #
-# the owner, 2026-10-10: one vertical 9:16 Short (30-60 s) per long episode, a
+# Miro, 2026-10-10: one vertical 9:16 Short (30-60 s) per long episode, a
 # single quick tip cut from it, linking to the full video. PLAN ONLY: the
 # catalog entry and the cut (tutorials.short_window / short_argv); no action
 # posts a Short yet. When one does, it goes through the same Slack review
@@ -4743,7 +4743,7 @@ SHORTS: tuple[Short, ...] = (
     Short("n8n", 1, "Manage it",
           "How to manage an n8n workflow after you build it #Shorts"),
 )
-# the owner, 2026-10-17 (the video system, episode-structure.md): a Short runs
+# Miro, 2026-10-17 (the video system, episode-structure.md): a Short runs
 # 20-40 s, its closing card included (tutorial_short.CUT_MAX).
 SHORT_MIN, SHORT_MAX = 20.0, 40.0
 
@@ -4754,10 +4754,10 @@ def series(key: str) -> Series | None:
 
 
 def held(series_key: str, ep: Episode) -> str | None:
-    """Why `ep` may not be rendered or posted yet, or None (the owner 2026-10-18,
+    """Why `ep` may not be rendered or posted yet, or None (Miro 2026-10-18,
     video system pack). An episode in tutorial_series_ai.HOLDS needs a
-    recording or the owner himself: a RECORDING hold lifts once its script shows a
-    demo scene and every demo's recording is on disk; a OWNER hold lifts only
+    recording or Miro himself: a RECORDING hold lifts once its script shows a
+    demo scene and every demo's recording is on disk; a MIRO hold lifts only
     when the entry is taken out of HOLDS. The writer skips held episodes
     (docs/academy-script-writer.md); render, the lineup and the runway hold
     them. Blocking (a stat per demo)."""
@@ -4790,7 +4790,7 @@ def chapters_of(ep: Episode) -> list[int]:
 
 
 def claim_refusal(ep: Episode, body_seconds: float) -> str | None:
-    """the owner, 2026-10-10: a topic line may say "under five minutes" only while
+    """Miro, 2026-10-10: a topic line may say "under five minutes" only while
     the episode's teaching body -- everything but the intro, the topic line,
     the hook and the ending -- measures under 300 s. Only a line that is
     said (topic_line): a lesson's topic_said is not spoken since 2026-10-12,

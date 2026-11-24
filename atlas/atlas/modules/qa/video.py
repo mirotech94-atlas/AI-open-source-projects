@@ -10,7 +10,7 @@ this has not passed:
   host is the store, Mapfront, YouTube, or a host the episode itself links;
 - a title whose formula carries minutes says them (the time promise);
 - the description discloses the AI narration;
-- the narration is not a female voice (the owner 2026-10-11: male voice only).
+- the narration is not a female voice (Miro 2026-10-11: male voice only).
 """
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ def refusal(series: Any, episode: Any, d: Path, m: Any, text: str) -> str | None
     if seconds <= 0:
         return "the manifest has no length"
     if _FEMALE.search(str(getattr(m, "voice_note", "") or "")):
-        return "the narration is a female voice; the owner's rule is a male voice only"
+        return "the narration is a female voice; Miro's rule is a male voice only"
     if not _DISCLOSED.search(text or ""):
         return "the description does not say the narration is an AI voice"
     if (why := link_refusal(text, _episode_hosts(episode))) is not None:

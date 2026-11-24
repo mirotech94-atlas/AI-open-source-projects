@@ -29,9 +29,9 @@ GSC = {"health": "degraded", "at": AT,
             "striking": [{"query": "secret query text", "position": 12}],
             "losing": [{"page": "https://joes.example/", "clicks": 2, "prior": 9}],
             "unread": [], "issues": ["no sitemap submitted"]},
-           {"slug": "academy-store", "domain": "agency.example.com", "status": "unknown",
+           {"slug": "academy-store", "domain": "agency.storefront.test", "status": "unknown",
             "read_at": AT.isoformat(), "totals": None, "striking": None, "losing": None,
-            "unread": ["agency.example.com is not verified in Search Console"],
+            "unread": ["agency.storefront.test is not verified in Search Console"],
             "issues": []}]}}
 CWV = {"health": "ok", "at": AT, "detail": "mobile score 41 at worst",
        "evidence": {"sites": [

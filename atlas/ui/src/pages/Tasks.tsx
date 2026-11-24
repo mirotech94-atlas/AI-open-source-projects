@@ -140,7 +140,7 @@ function InFlight({ a }: { a: BoardAgent }): JSX.Element {
 function Waiting({ a, now }: { a: BoardAgent; now: number }): JSX.Element {
   return (
     <div className="wb-block">
-      <h4 className="k">Waiting on the owner <Count n={a.counts.waiting} /></h4>
+      <h4 className="k">Waiting on Miro <Count n={a.counts.waiting} /></h4>
       {a.waiting === null ? <p className="stamp">could not read: proposals</p>
         : a.waiting.length === 0 ? <p className="empty">Nothing waiting.</p> : (
           <ul className="wb-rows">

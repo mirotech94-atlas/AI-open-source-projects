@@ -20,11 +20,11 @@ import numpy as np
 # a proposal from a module added next year must still be scoreable.
 MODULES: tuple[str, ...] = (
     "calendar", "comms", "fiverr", "flycheap", "gitlab", "guardian",
-    "inroots", "instagram", "linkedin", "mail", "matrix_rooms", "exampleco",
-    "netbird", "stripe", "tiktok", "cloudco", "other",
+    "attendance", "instagram", "linkedin", "mail", "matrix_rooms", "mirotech",
+    "netbird", "stripe", "tiktok", "cloudhost", "other",
 )
 
-# Action VERB families. The verb half of "cloudco.snapshot_all" is
+# Action VERB families. The verb half of "cloudhost.snapshot_all" is
 # "snapshot_all"; it belongs to the family whose keyword it contains. Families
 # rather than exact names because "draft_reply" and "draft_buyer_reply" should
 # share what he thinks about drafts, and an exact one-hot would give a new

@@ -1,4 +1,4 @@
-"""the owner 2026-10-30: ATLAS Agency brand, Gmail SMTP for agency mail, Vercel only
+"""Miro 2026-10-30: ATLAS Agency brand, Gmail SMTP for agency mail, Vercel only
 for demos. No socket, no real mail: SMTP is faked and fails the test if it
 is reached when it must not be."""
 from __future__ import annotations
@@ -9,7 +9,7 @@ import pytest
 
 from atlas.modules.agency import _store, demo_host, deploy, outreach, vercel
 
-SENDER = "owner@example.com"
+SENDER = "agency.sender@gmail.com"
 
 
 def _async_returns(value):
@@ -71,7 +71,7 @@ def _guard_env(monkeypatch, password: str = "app-pass-for-test"):
 # ------------------------------------------------------------------ sender
 
 def test_agency_sender_is_fixed_and_ignores_old_env(monkeypatch):
-    monkeypatch.setenv("AGENCY_SEND_FROM", "owner@old.example")
+    monkeypatch.setenv("AGENCY_SEND_FROM", "miro@old.example")
     monkeypatch.setenv("AGENCY_SMTP_USER", "relay@old.example")
     assert outreach.agency_sender() == SENDER
     assert outreach.BRAND == "ATLAS Agency"
@@ -138,12 +138,12 @@ async def test_an_old_mapfront_draft_is_refused(monkeypatch):
 def test_email_body_is_atlas_agency_with_the_public_link(monkeypatch):
     monkeypatch.setenv("AGENCY_POSTAL_ADDRESS", "123 Main St, Springfield")
     monkeypatch.delenv("RECEPTION_ENABLED", raising=False)
-    links = {"deployed": True, "domain": "demo-site.vercel.example", "slug": "joe"}
+    links = {"deployed": True, "domain": "atlas-agency-joe.vercel.app", "slug": "joe"}
     body = outreach.email_body({"name": "Joe's", "website": None},
-                               "https://demo-site.vercel.example/", links)
-    assert body.startswith("Hi,") and "I'm the owner, I run an agency called ATLAS Agency." in body
+                               "https://atlas-agency-joe.vercel.app/", links)
+    assert body.startswith("Hi,") and "I'm Miro, I run an agency called ATLAS Agency." in body
     assert "doesn't have a website yet" in body and "$300" in body
-    assert "https://agency.example.com" in body
+    assert "https://agency.storefront.test" in body
     assert "mapfront" not in body.lower() and outreach.TRAILER not in body
     assert outreach.can_spam_ok(body, "123 Main St, Springfield") == []
 
@@ -152,8 +152,8 @@ def test_email_body_is_atlas_agency_with_the_public_link(monkeypatch):
 
 def test_preview_url_never_falls_back_to_mapfront():
     assert outreach.preview_url({"deployed": True, "slug": "joe"}) is None
-    links = {"deployed": True, "domain": "demo-site.vercel.example", "slug": "joe"}
-    assert outreach.preview_url(links) == "https://demo-site.vercel.example/"
+    links = {"deployed": True, "domain": "atlas-agency-joe.vercel.app", "slug": "joe"}
+    assert outreach.preview_url(links) == "https://atlas-agency-joe.vercel.app/"
     assert outreach.call_me_url({"deployed": True, "slug": "joe"}) is None
 
 
@@ -174,14 +174,14 @@ def test_a_box_deployed_site_gives_a_lead_no_link(monkeypatch):
     assert outreach.preview_url(old) is None
     vercel_links = {"slug": "joe", "domain": "a.vercel.app"}
     assert deploy.published_domain(vercel_links) == "a.vercel.app"
-    assert demo_host.hostname_of({"slug": "joe"}) == "demo-site.vercel.example"
+    assert demo_host.hostname_of({"slug": "joe"}) == "atlas-agency-joe.vercel.app"
 
 
-def test_sender_problem_refuses_18dn(monkeypatch):
+def test_sender_problem_refuses_storefront(monkeypatch):
     monkeypatch.setenv("GMAIL_APP_PASSWORD", "app-pass-for-test")
     assert outreach.sender_problem() is None
-    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@agency.example.com")
-    assert "example.com" in outreach.sender_problem()
+    monkeypatch.setattr(outreach, "AGENCY_SENDER", "hello@agency.storefront.test")
+    assert "storefront.test" in outreach.sender_problem()
 
 
 async def test_a_gmail_error_never_shows_the_app_password(monkeypatch):
@@ -243,7 +243,7 @@ async def test_without_aiosmtplib_stdlib_smtp_does_starttls_and_scrubs(monkeypat
 
 
 def test_vercel_project_is_atlas_agency():
-    assert vercel.public_host("joe") == "demo-site.vercel.example"
+    assert vercel.public_host("joe") == "atlas-agency-joe.vercel.app"
 
 
 def test_banner_texts_are_atlas_agency():

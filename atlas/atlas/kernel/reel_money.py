@@ -1,6 +1,6 @@
 """Money per reel: the Analyst and the Improver.
 
-Stages 6 and 7 of the owner's plan (vault: Plans/Money per reel.md, 2026-09-28).
+Stages 6 and 7 of Miro's plan (vault: Plans/Money per reel.md, 2026-09-28).
 They pass work through ATLAS's own records -- `reel_mix_log` holds the
 Analyst's table and the Improver's decision -- never through free text.
 
@@ -251,7 +251,7 @@ async def _sales(table: Table) -> None:
         return
     try:
         sales, why = await shop.sales_since(since=table.since, until=table.until)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         sales, why = {}, explain(exc)
     table.sales_read_at = datetime.now(UTC)
@@ -306,7 +306,7 @@ async def _traffic(table: Table) -> None:
     from ..modules import posthog
     try:
         got, why = await posthog.pageviews_between(table.since, table.until)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         got, why = None, explain(exc)
     at = datetime.now(UTC)
@@ -326,7 +326,7 @@ async def analyse(now: datetime | None = None, days: int = 7) -> Table:
     rows = {t: TypeRow(t) for t in _types()}
     try:
         until, read = await _window_end(now)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         until, read = now, False
         for row in rows.values():
@@ -336,19 +336,19 @@ async def analyse(now: datetime | None = None, days: int = 7) -> Table:
     posts: list[dict[str, Any]] = []
     try:
         posts = await _views(table)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         for row in rows.values():
             row.views_problems.append(f"reel views unreadable: {explain(exc)}")
     try:
         await _sales(table)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         for row in rows.values():
             row.sales_problem = f"the shop is unreadable: {explain(exc)}"
     try:
         await _followers(table, posts)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         table.followers = f"Followers gained per reel: not available — {explain(exc)}"
     await _traffic(table)
@@ -433,7 +433,7 @@ async def stories_per_lesson(today: date | None = None,
     two to one) when there is no mix or it cannot be read."""
     try:
         mix = await current_mix(today or datetime.now().astimezone().date())
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reel_mix unreadable, keeping %s stories a lesson: %s",
                     default, type(exc).__name__)
         return default
@@ -625,7 +625,7 @@ async def section(w: Week | None = None, now: datetime | None = None,
         table = await analyse(now, days)
         try:
             decision = await recorded(next_week_start(now))
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             from ..modules._http import explain
             return render(Week(table, None, f"the mix record is unreadable: "
                                             f"{explain(exc)}"))

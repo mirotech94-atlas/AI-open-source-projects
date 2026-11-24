@@ -1,5 +1,5 @@
 /**
- * The Command Center's six sections as pure functions (the owner, 2026-10-29:
+ * The Command Center's six sections as pure functions (Miro, 2026-10-29:
  * "clear heading, brief statements"). Reads only. Every line keeps the time
  * it was read (invariant 6); anything not read is Unknown and never 0 or OK
  * (invariant 7).
@@ -105,7 +105,7 @@ export function healthLines(modules: ModuleTile[] | null): HealthLine[] {
     .sort((a, b) => RANK[a.health] - RANK[b.health] || a.module.localeCompare(b.module));
 }
 
-/** The short Command Center's Health lines (the owner 2026-10-29): FAILING and
+/** The short Command Center's Health lines (Miro 2026-10-29): FAILING and
  *  DEGRADED only, worst first. UNKNOWN is shown as a count chip beside them,
  *  never dropped and never as OK. */
 export function alarmLines(modules: ModuleTile[] | null): HealthLine[] {

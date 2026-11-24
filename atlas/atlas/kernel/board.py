@@ -1,6 +1,6 @@
 """The "Waiting for you" board: every pending card, in one place.
 
-the owner, 2026-10-11: "organize Slack approval messages, as I don't know which
+Miro, 2026-10-11: "organize Slack approval messages, as I don't know which
 one is which and where they all are." Thirteen cards sat in eight topic
 channels, each headed "#357 — Post a rendered tutorial…" over a paragraph.
 
@@ -136,9 +136,9 @@ def _entry(params: dict) -> str:
 
 Render = Callable[[dict], str]
 WHAT: dict[str, Render] = {
-    "cameras.mark_household": lambda p: (
+    "sensors.mark_household": lambda p: (
         f"Do you know this person? Treat Person {safe(p.get('cluster'), 12)}, an "
-        f"unfamiliar face the home cameras saw, as someone in your household"),
+        f"unfamiliar face the home sensors saw, as someone in your household"),
     "linkedin.publish_post": lambda p: (
         f"Post {_entry(p)} on the {_page(p)} LinkedIn page, then reshare it to "
         f"your profile"),
@@ -159,9 +159,9 @@ WHAT: dict[str, Render] = {
         f"Open a GitLab issue in {safe(p.get('project'), 40)}: "
         f"{safe(p.get('title'), 60)}"),
     "clips.publish_clip_tiktok": lambda p: (
-        f"Post clip {safe(p.get('clip_id'))} to TikTok @example_handle, public"),
+        f"Post clip {safe(p.get('clip_id'))} to TikTok @atlasclips12, public"),
     "clips.publish_clip": lambda p: (
-        f"Post clip {safe(p.get('clip_id'))} to Instagram @example_handle, public"),
+        f"Post clip {safe(p.get('clip_id'))} to Instagram @atlas.clipsdrop, public"),
     "clips.publish_clip_youtube": lambda p: (
         f"Post clip {safe(p.get('clip_id'))} as a public YouTube Short"),
     "clips.publish_clip_youtube_postiz": lambda p: (
@@ -224,7 +224,7 @@ WHAT: dict[str, Render] = {
     "stripe.retry_invoice": lambda p: (
         f"Retry charging invoice {safe(p.get('invoice_id'))} "
         f"({safe(p.get('business'))})"),
-    "cloudco.snapshot_all": lambda p: "Snapshot every CloudCo instance",
+    "cloudhost.snapshot_all": lambda p: "Snapshot every CloudHost instance",
     "markets.paper_idea": lambda p: (
         f"Book a paper trade: {safe(p.get('side'))} {safe(p.get('shares'))} "
         f"{safe(p.get('ticker'))} (paper only)"),
@@ -249,17 +249,17 @@ def what_of(action: str, params: dict | None, spec: object | None = None) -> str
             line = " ".join(render(params).split())
             if line:
                 return line
-        except Exception:                               # noqa: BLE001
+        except Exception:  # noqa: BLE001
             log.debug("what_of(%s) failed; using the summary", action)
     summary = getattr(spec, "summary", "") if spec is not None else ""
     return _summary_line(summary) if summary else safe(action, 90)
 
 
-# The six agency agents (the owner, 2026-10-27): every card names the owning agent
+# The six agency agents (Miro, 2026-10-27): every card names the owning agent
 # AND the client, so he knows what belongs to what. By namespace, like AREAS.
 AGENT_OF_NAMESPACE: dict[str, str] = {
     "sales": "Sales",
-    "academy": "Content", "youtube": "Content", "church": "Content",
+    "academy": "Content", "youtube": "Content", "community": "Content",
     "reddit": "Content",
     "bizops": "BizOps", "projects": "BizOps",
     "seo": "SEO",
@@ -269,7 +269,7 @@ AGENT_OF_NAMESPACE: dict[str, str] = {
 }
 # Whose card it is when nothing in the params or evidence names a client.
 CLIENT_DEFAULT: dict[str, str] = {
-    "academy": "Atlas Academy", "youtube": "Atlas Academy", "church": "ECC",
+    "academy": "Atlas Academy", "youtube": "Atlas Academy", "community": "AMSM",
     "reddit": "Atlas Agency", "research": "Mapfront", "qa": "Mapfront",
     "sales": "Mapfront", "bizops": "Mapfront", "projects": "Mapfront",
     "seo": "Mapfront", "agency": "Mapfront",
@@ -310,7 +310,7 @@ def card_header(pid: int, action: str, params: dict | None, spec: object | None,
     return f"[{area_of(action)}] #{pid} · {what}"
 
 
-# Why an action that stays Tier 2 is still a card (the owner, 2026-10-12: only
+# Why an action that stays Tier 2 is still a card (Miro, 2026-10-12: only
 # what really needs him should reach him; memory approval-policy). Shown
 # under the card's first line; display only, it decides nothing.
 WHY_A_CARD: dict[str, str] = {
@@ -777,7 +777,7 @@ async def refresh(now: datetime | None = None, *, force: bool = False) -> bool:
     async with _get_lock():
         try:
             rows = await pending()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             _last_error = f"the queue could not be read ({type(exc).__name__})"
             log.warning("approvals board not redrawn: %s", _last_error)
             return False
@@ -797,7 +797,7 @@ async def refresh(now: datetime | None = None, *, force: bool = False) -> bool:
         sections = render(rows, now)
         try:
             await publish_board(where, fallback_text(len(rows)), blocks_of(sections))
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             _last_error = str(exc)[:200]
             log.warning("approvals board not written: %s", _last_error)
             return False

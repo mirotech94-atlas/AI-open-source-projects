@@ -3,7 +3,7 @@ import type {
   MarketingSection,
 } from "../api";
 
-/** The kanban, left to right: what the loop drafted, what waits on the owner's
+/** The kanban, left to right: what the loop drafted, what waits on Miro's
  *  word, what is public and being measured, and what has closed. */
 export const LANES: ReadonlyArray<{ stage: ExperimentStage; title: string }> = [
   { stage: "draft", title: "Drafts" },

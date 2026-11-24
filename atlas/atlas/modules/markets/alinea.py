@@ -1,4 +1,4 @@
-"""Alinea: what the owner's Alinea Invest emails say, read back -- watch only.
+"""Alinea: what Miro's Alinea Invest emails say, read back -- watch only.
 
 Alinea trades on its own, inside its app, with his money; ATLAS only reads
 its emails (`mail/alinea.py` stores them in `alinea_events`). Nothing here
@@ -417,7 +417,7 @@ async def check_alinea() -> Observation:
     now = datetime.now(UTC)
     try:
         s = await read()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         _state.update(at=now, summary=None, error=type(exc).__name__)
         return Observation("alinea", Health.UNKNOWN,
                            detail=f"Alinea readings could not be read "

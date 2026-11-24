@@ -1,4 +1,4 @@
-"""Meetings booked on a lead call (the owner, 2026-09-30): real free slots read
+"""Meetings booked on a lead call (Miro, 2026-09-30): real free slots read
 from his calendar, a Tier 1 hold, a Tier 2 invite card, and a reminder."""
 from __future__ import annotations
 
@@ -182,7 +182,7 @@ async def test_the_invite_carries_the_agenda(monkeypatch):
     assert kw["json"]["attendees"] == [{"email": "joe@example.com"}]
     assert "https://joes.example" in kw["json"]["description"]
     assert "What we'll cover" in kw["json"]["description"]
-    assert "Questions before the call: owner@example.com" in kw["json"]["description"]
+    assert "Questions before the call: agency.sender@gmail.com" in kw["json"]["description"]
 
 
 async def test_reminders_go_to_slack_once(monkeypatch):

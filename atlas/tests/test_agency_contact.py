@@ -118,7 +118,7 @@ def store(monkeypatch):
     monkeypatch.setenv("GMAIL_APP_PASSWORD", SECRET_PASS)
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACtest")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", SECRET_TOKEN)
-    monkeypatch.setenv("MMT_WHATSAPP_FROM", "whatsapp:+14155550000")
+    monkeypatch.setenv("TUTORCO_WHATSAPP_FROM", "whatsapp:+14155550000")
     monkeypatch.delenv(contact.OWNER_WA_ENV, raising=False)
     monkeypatch.setenv(contact.WA_ENABLE_ENV, "1")      # the legacy tests cover WhatsApp
     yield fake
@@ -160,7 +160,7 @@ def out(monkeypatch):
         return True, "SM" + "a" * 32
 
     monkeypatch.setattr("atlas.modules.agency.outreach._deliver", deliver)
-    monkeypatch.setattr("atlas.modules.mmt.notify.send_whatsapp", send_wa)
+    monkeypatch.setattr("atlas.modules.tutorco.notify.send_whatsapp", send_wa)
     return box
 
 
@@ -360,7 +360,7 @@ async def test_the_email_goes_to_the_owner_with_reply_to_the_visitor(store, out)
 async def test_the_whatsapp_goes_to_the_owner_number_and_waits_for_delivery(store, out):
     cid = await _submit()
     res = await contact.deliver(cid, "whatsapp")
-    assert res.ok and out.wa[0][0] == "+1 555 010 0100"
+    assert res.ok and out.wa[0][0] == "+15550100142"
     assert store.rows[cid]["whatsapp_status"] == "sent"          # accepted, not delivered
     assert store.rows[cid]["whatsapp_sid"].startswith("SM")
 

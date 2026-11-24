@@ -6,7 +6,7 @@ summary: I run infrastructure for a cloud host by day and a handful of small bus
 tags: [about, how-i-work]
 ---
 
-I'm the owner — the author if you're reading the receipt. I live in New York City. For my day job I do infrastructure, server administration and network engineering at a cloud VPS hosting company, which means that when a rack, a router or a customer's server misbehaves at 3 a.m., I'm one of the people who gets paged. I'm also still a student taking college courses, so I know what it's like to learn something new with almost no spare time.
+I'm Miro — Myron Mekhael if you're reading the receipt. I live in New York City. For my day job I do infrastructure, server administration and network engineering at a cloud VPS hosting company, which means that when a rack, a router or a customer's server misbehaves at 3 a.m., I'm one of the people who gets paged. I'm also still a student taking college courses, so I know what it's like to learn something new with almost no spare time.
 
 ATLAS Academy is the other thing I do. It's not a studio or a team. It's me, the same tools I use every day, and an automated pipeline I designed that turns a lesson script into a finished video.
 

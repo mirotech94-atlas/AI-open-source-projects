@@ -23,7 +23,7 @@ touches an outside party:
 
 **Publishing is deliberately not an action here.** `youtube.upload`,
 `youtube.set_visibility`, `instagram.publish` and `tiktok.upload_draft`
-already exist, all Tier ASK, because a post under the owner's name is his decision
+already exist, all Tier ASK, because a post under Miro's name is his decision
 every time. Nothing in this module can reach a feed, and nothing in
 `atlas/kernel/marketing` can either.
 
@@ -34,7 +34,7 @@ reads, never an action anything can run.
 Endpoints this assumes: none. It reads and writes Postgres
 (`marketing_experiments`, `monetization_ideas`, `content_drafts`, `memories`)
 and calls `content.draft`, which calls an LLM. There is no third-party API
-here for the owner to correct.
+here for Miro to correct.
 """
 from __future__ import annotations
 
@@ -61,10 +61,10 @@ from ..content.drafts import draft as content_draft
 
 log = logging.getLogger("atlas.marketing")
 
-# `course` is the owner's own course (atlas/modules/course): its experiments are
+# `course` is Miro's own course (atlas/modules/course): its experiments are
 # filed by `course.propose_post`, one per post, and closed by `record_outcome`
 # like every other; an idea for it is recorded here like any business's.
-BUSINESSES: tuple[str, ...] = ("exampleco", "agency", "course")
+BUSINESSES: tuple[str, ...] = ("mirotech", "agency", "course")
 OUTCOMES: tuple[str, ...] = ("won", "lost", "flat", "unmeasured")
 IMPORTANCE: dict[str, float] = {
     "won": 0.75, "lost": 0.75, "flat": 0.5, "unmeasured": 0.2,
@@ -123,7 +123,7 @@ async def check_experiments_overdue() -> Observation:
                  AND (outcome IS NULL
                       OR (outcome = 'unmeasured' AND measured_at >= $2))""",
             now, now - UNMEASURED_LIVE_FOR)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("experiments_overdue", Health.UNKNOWN,
                            detail=f"could not count experiments: {exc}")
     live = [r for r in rows if _still_live(r, now)]
@@ -150,7 +150,7 @@ async def check_playbook_size() -> Observation:
         row = await fetch_one(
             "SELECT count(*) AS n FROM memories WHERE namespace = $1",
             PLAYBOOK)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("playbook_size", Health.UNKNOWN,
                            detail=f"could not count playbook lessons: {exc}")
     if row is None:
@@ -173,7 +173,7 @@ def _reject(business: str, platform: str, draft_kind: str) -> str | None:
     from ...kernel.registry import REGISTRY
     if platform not in REGISTRY.modules:
         # Switched off (ATLAS_DISABLED_MODULES) or never set up: nothing
-        # would ever post it. 2026-09-27, youtube off by the owner's word ("we
+        # would ever post it. 2026-09-27, youtube off by Miro's word ("we
         # don't need YouTube"), the marketing agent still filed twelve
         # YouTube experiments overnight, each drafting a "short script"
         # that was the weekly ops report reworded.
@@ -198,7 +198,7 @@ async def propose_experiment(business: str, platform: str, hypothesis: str,
 
     The draft is written by `content.draft`'s own function rather than a copy
     of it, so there is exactly one place that decides what a draft looks like.
-    Nothing here publishes: the draft sits in `content_drafts` until the owner
+    Nothing here publishes: the draft sits in `content_drafts` until Miro
     answers a Tier ASK card on the platform module.
     """
     bad = _reject(business, platform, draft_kind)
@@ -491,7 +491,7 @@ class MarketingModule:
                     "mechanism": "affiliate | sponsorship | ads | product | "
                                  "service | partner_program | paid_acquisition",
                     "evidence": "measured facts, each with observed_at",
-                    "requires": "what only the owner can do — or 'money out — "
+                    "requires": "what only Miro can do — or 'money out — "
                                 "Tier 3, you decide'",
                     "est_note": "prose only; never an invented revenue figure",
                     "score": "evidence strength times how little it needs "

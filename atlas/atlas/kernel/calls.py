@@ -40,7 +40,7 @@ def _flatten(transcript: list[Any]) -> str:
     for turn in transcript[-MAX_TURNS:]:
         if not isinstance(turn, dict):
             continue
-        who = "the owner" if turn.get("role") == "user" else "ATLAS"
+        who = "Miro" if turn.get("role") == "user" else "ATLAS"
         said = " ".join(str(turn.get("message") or "").split())
         if said and said.strip(". …"):
             lines.append(f"{who}: {said}")
@@ -60,7 +60,7 @@ async def summarise(transcript: list[Any]) -> str | None:
     try:
         completion = await think(
             Need.DRAFT,
-            "Summarise this phone call between the owner and ATLAS in at most "
+            "Summarise this phone call between Miro and ATLAS in at most "
             "three short lines, plain text, no headings:\n"
             "  discussed: <what>\n"
             "  decided: <what, or 'nothing'>\n"
@@ -71,7 +71,7 @@ async def summarise(transcript: list[Any]) -> str | None:
             [Message("user", wrap_untrusted(text, "phone"))],
             max_tokens=160,
         )
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not summarise the call: %s", exc)
         return None
     note = " ".join((getattr(completion, "text", "") or "").split())
@@ -94,7 +94,7 @@ async def note_call(transcript: list[Any], *, direction: str,
                              meta={"direction": direction,
                                    "conversation_id": conversation_id},
                              importance=0.7)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not keep the call note: %s", exc)
         return None
     log.info("kept a note of the call (%s)", direction)
@@ -111,7 +111,7 @@ async def recent(limit: int = KEEP) -> list[tuple[datetime, str]]:
             """SELECT at, content FROM memories
                 WHERE namespace = $1 AND kind = 'episodic'
                 ORDER BY at DESC LIMIT $2""", NAMESPACE, limit)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("could not read call notes: %s", exc)
         return []
     return [(r["at"], str(r["content"])) for r in rows]

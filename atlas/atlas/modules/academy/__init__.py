@@ -1,4 +1,4 @@
-"""ATLAS Academy: the owner's own store at https://agency.example.com/.
+"""ATLAS Academy: Miro's own store at https://agency.storefront.test/.
 
 Replaces the Shopify store. Four products (Build a Safe AI Operator, 30
 Business Lessons, the Claude + Obsidian Vault Kit, AI for Every Age) and an
@@ -6,7 +6,7 @@ Business Lessons, the Claude + Obsidian Vault Kit, AI for Every Age) and an
 Stripe Payment Links on the ATLAS Academy Stripe account.
 
 * `catalog.json` is the one source for what is sold. A price, a payment
-  link or a refund term the owner hasn't set stays null or empty, and the item
+  link or a refund term Miro hasn't set stays null or empty, and the item
   is not on sale.
 * `site.py` generates the storefront from it; `academy.publish_shop`
   (Tier 2) puts it live as a Mapfront release under the slug `shop`. Agency
@@ -17,14 +17,14 @@ Stripe Payment Links on the ATLAS Academy Stripe account.
   download links to files in a private directory. Nothing is emailed and
   nothing is written to Stripe.
 * `academy.resend_access` (Tier 2, irreversible) emails a buyer who lost
-  their link the same page, to the address Stripe holds, on the owner's tap.
+  their link the same page, to the address Stripe holds, on Miro's tap.
 * A buyer who lost it can also recover it themselves (2026-10-16): the
   store's recover/ form posts their email and Stripe receipt number to
   `/public/academy/recover`, which checks both against Stripe (read-only)
   and opens a one-hour library of their purchases. No email is sent.
 
 Money comes in here. Nothing refunds, pays out or changes a price: those
-stay Tier 3 or the owner's own, in the Stripe dashboard.
+stay Tier 3 or Miro's own, in the Stripe dashboard.
 """
 from __future__ import annotations
 
@@ -118,7 +118,7 @@ class AcademyModule:
     requires_env: tuple[str, ...] = ()
 
     async def setup(self) -> None:
-        # the owner, 2026-10-06 (store ops, no card): a deploy that changed what
+        # Miro, 2026-10-06 (store ops, no card): a deploy that changed what
         # the store would render republishes it by itself, through the
         # executor (academy.publish_shop is Tier 1). Off the loop; a failure
         # is logged and the next deploy tries again.
@@ -142,7 +142,7 @@ class AcademyModule:
     def actions(self):
         return (
             Action(name="academy.auto_approve_review", tier=Tier.AUTO,
-                   # the owner, 2026-10-06: buyer reviews show themselves when they
+                   # Miro, 2026-10-06: buyer reviews show themselves when they
                    # pass reviews.clean_refusal (no link, no contact, plain
                    # opinion); anything else stays his card. Same rollback.
                    summary="Show a clean verified-buyer review on its product page",
@@ -151,7 +151,7 @@ class AcademyModule:
                    params={"review_id": "the stored review's id"},
                    max_per_hour=20),
             Action(name="academy.render_promo_reel", tier=Tier.AUTO,
-                   # the owner, 2026-10-06: a daily reel about the Academy for the
+                   # Miro, 2026-10-06: a daily reel about the Academy for the
                    # clips accounts, made here from the catalog (reel.py). It
                    # writes a file and a content_media row; posting is
                    # clips.autopublish_promo's, gated there.
@@ -161,7 +161,7 @@ class AcademyModule:
                    rollback=reel.unrender_promo_reel,
                    params={"slug": "the product's catalog slug"},
                    runs_in_background=True, max_per_hour=2),
-            # the owner, 2026-10-09: long-form tutorials (n8n, Claude & MCP) on
+            # Miro, 2026-10-09: long-form tutorials (n8n, Claude & MCP) on
             # YouTube in playlist series (tutorials.py). The same shape as
             # the reel: render is Tier 1 (files on our own disk), posting is
             # Tier 1 only past tutorials.autopublish_check, and anything
@@ -175,7 +175,7 @@ class AcademyModule:
                                      "'project', 'business', 'agents' or 'local'",
                            "episode": "the episode number in that series"},
                    runs_in_background=True, max_per_hour=2),
-            # the owner, 2026-10-19: lessons are rendered in NotebookLM on the Mac
+            # Miro, 2026-10-19: lessons are rendered in NotebookLM on the Mac
             # and dropped into the tutorials inbox; the ingest checks a drop
             # and moves it into its episode directory (files on our own disk,
             # nothing leaves the box). Its rollback puts the drop back.
@@ -189,7 +189,7 @@ class AcademyModule:
                                      "'project', 'business', 'agents' or 'local'",
                            "episode": "the episode number in that series"},
                    runs_in_background=True, max_per_hour=8),
-            # the owner, 2026-10-19: NotebookLM Shorts (60-90 s) from the Mac runner,
+            # Miro, 2026-10-19: NotebookLM Shorts (60-90 s) from the Mac runner,
             # in the Shorts inbox. Tier 1 as the teaching Short's render: a
             # file on our own disk and a content_media row; the post is
             # clips.autopublish_promo's, gated there. Its rollback withdraws
@@ -204,7 +204,7 @@ class AcademyModule:
                                      "'project', 'business', 'agents' or 'local'",
                            "episode": "the episode number in that series"},
                    runs_in_background=True, max_per_hour=4),
-            # the owner, 2026-10-20: a NotebookLM thumbnail for every video,
+            # Miro, 2026-10-20: a NotebookLM thumbnail for every video,
             # posted ones too. Tier 1 by his approval policy, the shape of
             # academy.refresh_video_metadata (routine, reversible): one
             # thumbnails.set on ATLAS's own public lesson (the id on record,
@@ -234,18 +234,18 @@ class AcademyModule:
                    # One daily run posts one per series (2026-10-15): the
                    # hourly ceiling matches the daily cap held in code.
                    runs_in_background=True, max_per_hour=tutorials.PER_DAY_DEFAULT),
-            # 2026-10-13 (growth plan, task 6): Tier 1 by the owner's standing
+            # 2026-10-13 (growth plan, task 6): Tier 1 by Miro's standing
             # policy; its rollback edits the comment, never deletes it.
             Action(name="academy.pin_comment", tier=Tier.AUTO,
                    summary="Post the quiz + free lab-file comment under a public "
-                           "tutorial (the owner pins it in Studio)",
+                           "tutorial (Miro pins it in Studio)",
                    run=tutorials.pin_comment, dry_run=tutorials.pin_comment_dry,
                    rollback=tutorials.unpin_comment, vet=tutorials.vet,
                    params={"series": "the tutorial series key: 'channel', 'claude', 'n8n', "
                                      "'project', 'business', 'agents' or 'local'",
                            "episode": "the episode number in that series"},
                    max_per_hour=4),
-            # the owner, 2026-10-17: "yes add the AI flag for Shorts too". Tier 1 by
+            # Miro, 2026-10-17: "yes add the AI flag for Shorts too". Tier 1 by
             # his approval policy (routine, reversible): status.containsSynthetic
             # Media on an Academy Short Postiz posted, every other status field
             # resent as read; the rollback sets the flag back.
@@ -258,7 +258,7 @@ class AcademyModule:
                                    "concept:)",
                            "video_id": "the Short's YouTube video id, as recorded"},
                    max_per_hour=synthetic.MAX_PER_HOUR),
-            # the owner, 2026-10-18: the already-public lessons and teaching Shorts
+            # Miro, 2026-10-18: the already-public lessons and teaching Shorts
             # brought up to the current tags, hashtags and description. Tier 1
             # by his approval policy (routine, reversible): tags and
             # description only, the title resent as read; the rollback writes
@@ -289,7 +289,7 @@ class AcademyModule:
                            "episode": "the episode number in that series",
                            "kind": "the cut: 'payoff', 'stuck' or 'quiz'"},
                    runs_in_background=True, max_per_hour=3),
-            # the owner, 2026-11-14: lesson videos on YouTube. Free previews public,
+            # Miro, 2026-11-14: lesson videos on YouTube. Free previews public,
             # paid lessons unlisted and embedded on the buyer's page only. One
             # card per lesson; the audience and the source are decided in
             # code (lesson_youtube), the rollback sets it private.
@@ -317,7 +317,7 @@ class AcademyModule:
                                      "'project', 'business', 'agents' or 'local'",
                            "episode": "the episode number in that series"},
                    card_only=True, verbose_card=True, runs_in_background=True,
-                   # the owner, 2026-10-10: every draft is reviewed in
+                   # Miro, 2026-10-10: every draft is reviewed in
                    # #atlas-academy-videos before it reaches YouTube.
                    topic_for=lambda _p: tutorials.REVIEW_TOPIC,
                    # Two: the first day's two drafts may be approved together.
@@ -349,7 +349,7 @@ class AcademyModule:
                            "episode": "the episode number the video is",
                            "video_id": "the 11-character YouTube video id"},
                    max_per_hour=6),
-            # the owner, 2026-10-22: every lab / live build also in one "Hands-On
+            # Miro, 2026-10-22: every lab / live build also in one "Hands-On
             # Labs & Live Builds" playlist, grouped by course. Tier 1 by his
             # approval policy (promotions are made in code, never at runtime):
             # routine and reversible -- one playlist item on ATLAS's own
@@ -400,10 +400,10 @@ class AcademyModule:
                    params={"session_id": "the Stripe checkout session id, "
                                          "cs_live_... (from the purchases list)"},
                    max_per_hour=6),
-            # Tier AUTO since 2026-09-30 (the owner: "anything that is not urgent,
+            # Tier AUTO since 2026-09-30 (Miro: "anything that is not urgent,
             # you approve it"): the release is a symlink swap with the previous
             # release kept, so the rollback restores it.
-            # A real buyer's words, shown only on the owner's tap (reviews.py).
+            # A real buyer's words, shown only on Miro's tap (reviews.py).
             Action(name="academy.approve_review", tier=Tier.ASK,
                    summary="Show a verified buyer's review on its product page at "
                            "the next publish of the ATLAS Academy store",
@@ -413,12 +413,12 @@ class AcademyModule:
                    max_per_hour=20),
             Action(name="academy.publish_shop", tier=Tier.AUTO,
                    summary="Publish the ATLAS Academy storefront at "
-                           "agency.example.com from the checked-in catalog",
+                           "agency.storefront.test from the checked-in catalog",
                    run=publish_shop, dry_run=publish_shop_dry,
                    rollback=publish_shop_rollback, params={}, max_per_hour=3),
             # 2026-10-27 (plan 4.3): ATLAS runs on the Mac; the storefront is
             # the one public surface, static files on the store VM. Tier 2:
-            # the owner approves every push of the `shop-build` output; the
+            # Miro approves every push of the `shop-build` output; the
             # rollback re-points the release that was live before.
             Action(name="academy.publish_shop_remote", tier=Tier.ASK,
                    summary="Push the built ATLAS Academy storefront (shop-build) "

@@ -111,7 +111,7 @@ async def record(timer: Timer | None) -> None:
     timer.recorded = True
     try:
         await _write(_row(timer))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reply timing not saved: %s", type(exc).__name__)
 
 
@@ -120,7 +120,7 @@ async def _write(row: tuple) -> None:
         await asyncio.wait_for(execute_sql(
             "INSERT INTO reply_timings (channel, route, total_ms, stages, model, ok) "
             "VALUES ($1,$2,$3,$4::jsonb,$5,$6)", *row), WRITE_TIMEOUT_S)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reply timing not saved: %s", type(exc).__name__)
 
 
@@ -135,7 +135,7 @@ def schedule(timer: Timer | None) -> None:
         row = _row(timer)
         timer.recorded = True
         task = asyncio.get_running_loop().create_task(_write(row))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("reply timing not scheduled: %s", type(exc).__name__)
         return
     _PENDING.add(task)

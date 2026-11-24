@@ -90,7 +90,7 @@ async def _night_shift() -> str:
         rows = await fetch_all(
             """SELECT task, status FROM nightshift_jobs
                WHERE status IN ('queued', 'running') ORDER BY at""")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tonight: night-shift queue unreadable: %s", exc)
         return "I couldn't read the night-shift queue."
     running = [str(r["task"]).strip() for r in rows or [] if r["status"] == "running"]
@@ -107,7 +107,7 @@ async def _research() -> str:
     try:
         rows = await fetch_all(
             "SELECT question FROM research_reports WHERE status = 'queued' ORDER BY at")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tonight: research queue unreadable: %s", exc)
         return "I couldn't read the research queue."
     n = len(rows or [])
@@ -125,7 +125,7 @@ async def _brief_channel() -> bool:
 
     try:
         return bool(await candidates(Severity.NORMAL))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tonight: channel availability unreadable: %s", exc)
         return False
 
@@ -151,7 +151,7 @@ async def _agenda(now: datetime) -> tuple[list[AgendaItem], list[str]]:
         try:
             got = await asyncio.wait_for(
                 REGISTRY.modules[name].agenda(AGENDA_WINDOW), AGENDA_TIMEOUT_S)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("tonight: %s agenda unreadable: %s", name, exc)
             return None
         return [AgendaItem(when=i.when, title=i.title, kind=i.kind, detail=i.detail,
@@ -203,7 +203,7 @@ async def _proposals() -> str:
         row = await fetch_one(
             """SELECT count(*) AS n FROM proposals
                WHERE status = 'pending' AND expires_at > now()""")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("tonight: proposals unreadable: %s", exc)
         return "I couldn't read the proposals waiting on you."
     n = int(row["n"]) if row else 0

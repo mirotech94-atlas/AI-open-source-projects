@@ -25,7 +25,7 @@ def proposing(monkeypatch, memory_backend):
 
     class A:
         summary = "File an issue"
-        params = {"title": "the title"}
+        params = {"title": "the title"}  # noqa: RUF012
 
     class D:
         tier = Tier.ASK

@@ -101,7 +101,7 @@ async def allowance(tool: str) -> Allowance:
         return Allowance(True)
     try:
         used = await used_today(tool)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Allowance(False, f"{tool}: the daily budget could not be read "
                                 f"({type(exc).__name__}), so nothing was spent",
                          None, cap)

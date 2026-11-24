@@ -7,7 +7,7 @@ Reads `reply_timings` (WhatsApp and portal, kept apart) and, as a SEPARATE
 historical series, `voice_turns.ms` for the portal before timing existed. The
 two are never mixed.
 
-target = round(0.28 * baseline p50), the typical reply (the owner, 2026-11-12).
+target = round(0.28 * baseline p50), the typical reply (Miro, 2026-11-12).
 With fewer than MIN_SAMPLES rows on a channel it says UNKNOWN and exits 2: an
 estimate is never used (invariants 6 and 7). Read-only: it only runs SELECTs.
 """
@@ -93,7 +93,7 @@ def doc_text(report: dict[str, Any]) -> str:
     return ("# Reply-time baseline\n\n"
             "Numbers come only from a real run of `ops/latency_report.py` on the live "
             "ATLAS. Target = round(0.28 x baseline p50) per channel (the typical "
-            "reply, the owner 2026-11-12).\n\n```\n" + render(report) + "\n```\n\n"
+            "reply, Miro 2026-11-12).\n\n```\n" + render(report) + "\n```\n\n"
             f"Query: `{QUERY}` and, for history, `{HISTORY_QUERY}`.\n")
 
 
@@ -113,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     try:
         series, history = asyncio.run(_read(args.days))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         print(f"Reply-time baseline: UNKNOWN (could not read the database: "
               f"{type(exc).__name__})")
         return 2

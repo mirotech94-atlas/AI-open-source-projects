@@ -119,7 +119,7 @@
   "notes": "One Style for the whole system; each family is a re-tint (paletteId), its own hero composition and its own GetLayers Background, so the three read as one studio's work without looking alike. The loop is desktop-only; a phone gets the poster.",
   "interaction": {
     "made": "2026-09-30",
-    "ask": "the owner, from the phone review: \"design it better with buttons, reservations if it's a restaurant or booking system ... make GetLayers use interactive website design for all the clients\".",
+    "ask": "Miro, from the phone review: \"design it better with buttons, reservations if it's a restaurant or booking system ... make GetLayers use interactive website design for all the clients\".",
     "route": "enhance-project (mode 5) on the committed build: read the checked-in templates first, then add motion and interaction. Same Style (ridgeline-style), same palettes, same Archivo type; nothing materialized, nothing called at run time.",
     "principle": "One moment per family, and each one answers the visitor's own input inside the booking flow; nothing ambient, no loader. Everything else is the controls' own state changes (hover, focus-visible, active, disabled, loading, error, done).",
     "moments": {
@@ -181,7 +181,7 @@
   },
   "media": {
     "made": "2026-09-30",
-    "ask": "the owner, from the desktop review: \"very poor design -- make sure it's a frontend marketing website for each one\".",
+    "ask": "Miro, from the desktop review: \"very poor design -- make sure it's a frontend marketing website for each one\".",
     "route": "wire-video (mode 4) + browse-pull (mode 3) on the committed build, same Style (ridgeline-style): one GetLayers Background per family behind the hero, materialized with styleId ridgeline-style and downloaded from the signed links (never hotlinked), re-encoded for the web in templates/media/ and copied beside every page by sitemedia.copy_assets. Photographs are Unsplash, under the Unsplash License, self-hosted the same way.",
     "backgrounds": {
       "trades": {
@@ -237,7 +237,7 @@
   },
   "lovable": {
     "made": "2026-10-01",
-    "rule": "the owner: every client site's design goes frontend-design -> GetLayers -> Webild -> Lovable, and the best of each is ported into these static templates. A Lovable project is a design reference only; its React app is never deployed as a client site, and its photographs (rights unknown) are never copied -- the templates use sitemedia.PHOTOS.",
+    "rule": "Miro: every client site's design goes frontend-design -> GetLayers -> Webild -> Lovable, and the best of each is ported into these static templates. A Lovable project is a design reference only; its React app is never deployed as a client site, and its photographs (rights unknown) are never copied -- the templates use sitemedia.PHOTOS.",
     "trades": {
       "project": "Bright Spark Site",
       "projectId": "1d613626-2177-490b-8e33-242910df26ec",
@@ -265,7 +265,7 @@
     },
     "beauty": {
       "project": null,
-      "note": "no Lovable project yet (the owner's account and credits); the shared structure above was applied over the v3 look in the family's own mark colour (--mark #5b3df5, --mark-on-deep #c7bfff)"
+      "note": "no Lovable project yet (Miro's account and credits); the shared structure above was applied over the v3 look in the family's own mark colour (--mark #5b3df5, --mark-on-deep #c7bfff)"
     },
     "food": {
       "project": null,

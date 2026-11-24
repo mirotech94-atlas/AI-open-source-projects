@@ -17,7 +17,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-FROM_ADDRESSES = ("txt.voice.google.com", "contact77@example.com")
+FROM_ADDRESSES = ("txt.voice.google.com", "voice-noreply@google.com")
 
 SMS_RE = re.compile(r"^(?P<body>.*?)\n+YOUR ACCOUNT", re.DOTALL)
 NUMBER_RE = re.compile(r"(\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})")

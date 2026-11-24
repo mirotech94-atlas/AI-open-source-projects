@@ -1,7 +1,7 @@
 """sales -- the Sales & Lead Gen agent (six agents, 2026-10-27).
 
 Finds leads (Places or OpenStreetMap for New York, a free web search for
-coaches and shops, CSV files the owner drops in `data/sales/inbox/`), never a
+coaches and shops, CSV files Miro drops in `data/sales/inbox/`), never a
 place of worship; researches and qualifies them in code; drafts a proposal
 at the lead's own price. Every action writes only ATLAS's own tables and
 files, so each is Tier 1 with a dry run and a rollback. It never sends: the
@@ -187,7 +187,7 @@ async def _overpass() -> tuple[list[dict[str, Any]], str | None]:
                                         headers={"User-Agent": _scrape.user_agent()})
                 got.raise_for_status()
                 elements = got.json().get("elements", [])
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return [], f"OpenStreetMap could not be read: {explain(exc)}"
     rows = []
     for el in elements if isinstance(elements, list) else []:
@@ -421,7 +421,7 @@ async def check_pipeline() -> Observation:
     try:
         stages = await sstore.pipeline()
         due = await sstore.followups_due()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("pipeline", Health.UNKNOWN, at=now,
                            detail=f"sales pipeline unreadable: {explain(exc)}")
     total = sum(stages.values())
@@ -438,7 +438,7 @@ async def check_followups_due() -> Observation:
     now = datetime.now(UTC)
     try:
         due = await sstore.followups_due()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("followups_due", Health.UNKNOWN, at=now,
                            detail=f"follow-ups unreadable: {explain(exc)}")
     return Observation("followups_due", Health.OK, value=float(due), unit="follow-ups",
@@ -451,7 +451,7 @@ async def check_cap_left() -> Observation:
     now = datetime.now(UTC)
     try:
         used = await sstore.cards_today()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("cap_left", Health.UNKNOWN, at=now,
                            detail=f"today's Sales cards unreadable: {explain(exc)}")
     left = max(0, daily_cards() - used)

@@ -1,4 +1,4 @@
-"""Where the agent on the owner's Mac collects jobs and answers (modules/mac).
+"""Where the agent on Miro's Mac collects jobs and answers (modules/mac).
 
     GET  /mac/next                 long-poll, up to 25 s: 204, or one job
     POST /mac/jobs/{id}/result     {"ok", "detail", "token"}

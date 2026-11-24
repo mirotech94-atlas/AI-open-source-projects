@@ -76,7 +76,7 @@ def _doc(d: dict) -> dict[str, Any]:
 async def _docs(slugs: list[str]) -> tuple[dict[str, list] | None, str | None]:
     try:
         found = await sitedocs.docs_by_site(slugs)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"the documents could not be read: {explain(exc)}"[:300]
     return {s: [_doc(d) for d in found.get(s, [])] for s in slugs}, None
 
@@ -87,7 +87,7 @@ async def _one(row: dict) -> dict[str, Any]:
     health, detail, read_at = "unknown", "", None
     try:
         reading = await _store.site_health(slug)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         detail = f"the health reading could not be read: {explain(exc)}"
     else:
         if reading is None:
@@ -123,7 +123,7 @@ async def refresh() -> None:
     """Fill the brief's cache. Never raises."""
     try:
         view = await overview()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("client sites: registry unreadable: %s", explain(exc))
         _CACHE.clear()
         _CACHE.update(state="unreadable", at=datetime.now(UTC))

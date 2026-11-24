@@ -1,6 +1,6 @@
 """agency.demo_host -- `agency.deploy_demo`, Tier ASK.
 
-A client demo is a static build made outside ATLAS (examplehair:
+A client demo is a static build made outside ATLAS (Royal HairStyles:
 `scripts/build_static_demo.py`, its API mocked in the browser) and dropped
 by the operator into `AGENCY_DEMO_INTAKE_DIR/<slug>/`. Nothing here builds,
 fetches or executes anything: the intake is audited, copied into a release
@@ -17,7 +17,7 @@ key, a form that posts off-site and a script loaded from another host.
 Every real outcome is an `agency_site_events` row and rings the owner's
 phone through `escalate.ring_owner` (`CALL_ON`; quiet hours and the call
 budget apply, Slack always gets it). A dry run records and rings nothing.
-Deletion is Tier 3: taking a demo down is the owner's, by hand
+Deletion is Tier 3: taking a demo down is Miro's, by hand
 (docs/client-sites.md).
 """
 from __future__ import annotations
@@ -43,7 +43,7 @@ PUBLISH_ROOT = Path(os.getenv("AGENCY_DEMO_PUBLISH_DIR", "data/demos"))
 MAX_FILE_BYTES = 10 * 1024 * 1024
 MAX_TOTAL_BYTES = 50 * 1024 * 1024
 CALL_ON = ("deployed", "deploy_failed")
-# the owner, 2026-10-30: the brand is ATLAS Agency, and demos go live on Vercel
+# Miro, 2026-10-30: the brand is ATLAS Agency, and demos go live on Vercel
 # only (`agency.publish_vercel`); `agency.deploy_demo` refuses.
 BANNER = "Preview made by ATLAS Agency"
 
@@ -217,8 +217,8 @@ def _unpublish(slug: str, release: str, previous: str | None) -> str:
 
 
 def hostname_of(site: dict) -> str:
-    """The row's own domain, else its Vercel host (the owner 2026-10-30: no
-    agency.example.com/preview/<slug>/ any more)."""
+    """The row's own domain, else its Vercel host (Miro 2026-10-30: no
+    agency.storefront.test/preview/<slug>/ any more)."""
     if site.get("domain"):
         return str(site["domain"])
     from . import vercel
@@ -233,7 +233,7 @@ async def _event(slug: str, event: str, detail: str = "",
                  release: str | None = None) -> None:
     try:
         await _store.record_site_event(slug, event, detail=detail, release=release)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("demo %s: event %s not recorded: %s", slug, event, explain(exc))
 
 
@@ -242,7 +242,7 @@ async def _tell(event: str, title: str, line: str) -> None:
         return
     try:
         await escalate.ring_owner(title, line)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("demo call not placed: %s", type(exc).__name__)
 
 
@@ -376,7 +376,7 @@ async def signals() -> list[Signal]:
         return []
     try:
         rows = await _store.list_sites()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("demo intake: registry unreadable: %s", explain(exc))
         return []
     out: list[Signal] = []
@@ -390,7 +390,7 @@ async def signals() -> list[Signal]:
         try:
             fp = await _fingerprint_async(intake)
             events = await _store.site_events(str(slug), 20)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("demo intake %s unreadable: %s", slug, explain(exc))
             continue
         seen = next((e for e in events if "intake " in str(e.get("detail") or "")), None)
@@ -408,7 +408,7 @@ async def signals() -> list[Signal]:
             title=f"Publish demo {hostname} (intake {fp})",
             body=(f"A new build of the {slug} demo is in the intake and passed the "
                   f"audit. Approving publishes it at https://{hostname}/ and rings "
-                  "the owner once it is live (or if it fails)."),
+                  "Miro once it is live (or if it fails)."),
             severity=Severity.NORMAL, suggests="agency.deploy_demo",
             params={"slug": str(slug)}))
     return out

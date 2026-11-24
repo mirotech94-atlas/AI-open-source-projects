@@ -1,4 +1,4 @@
-"""Tutorial scripts written one episode per module (the owner, 2026-10-15: "make
+"""Tutorial scripts written one episode per module (Miro, 2026-10-15: "make
 sure videos are being posted automatically with no stopping").
 
 Each module is `<series>_<NN>.py` (for example `n8n_03.py`) and defines

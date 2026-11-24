@@ -183,7 +183,7 @@ def _sync_imap(account, words: tuple[str, ...], days: int, limit: int) -> list[d
     finally:
         try:
             conn.logout()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.debug("imap logout failed for %s: %s", account.name, exc)
 
 

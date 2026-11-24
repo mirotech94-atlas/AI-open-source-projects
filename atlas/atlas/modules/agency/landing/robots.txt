@@ -1,0 +1,36 @@
+# ONE robots.txt for agency.storefront.test (Caddyfile.public serves this file at /robots.txt;
+# the store build writes no robots.txt). Two sitemaps: this page's own, and the store's
+# (sitemap-academy.xml, written by atlas.modules.academy.site at the host root of the build).
+User-agent: *
+Allow: /
+Disallow: /thanks/
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://agency.storefront.test/sitemap.xml
+Sitemap: https://agency.storefront.test/sitemap-academy.xml

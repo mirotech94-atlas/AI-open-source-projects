@@ -12,7 +12,7 @@ import { WORDMARK } from "./deskModel";
 import { isRetiredAgent } from "./roster";
 
 /**
- * Agency: the agency map and nothing else (the owner, 2026-10-28: "the agency
+ * Agency: the agency map and nothing else (Miro, 2026-10-28: "the agency
  * tab should have only the agency map containing all the agents that are
  * present"). Every agent on the roster (`GET /api/agents`) is a neuron with
  * its live state; a roster that cannot be read draws every neuron UNKNOWN,
@@ -21,7 +21,7 @@ import { isRetiredAgent } from "./roster";
  * now, yesterday and issues per agent; then the SEO panel (`SeoPanel.tsx`):
  * Search Console and PageSpeed per site. What used to sit below the map is
  * the Command Center's Agency desk.
- * 2026-10-30 (the owner: "keep only the agent map and all agent cards and what
+ * 2026-10-30 (Miro: "keep only the agent map and all agent cards and what
  * they are doing"): the tab is the map and the agents' activity cards, nothing
  * else. AgencyMore, SeoPanel and the Agency desk are no longer mounted here;
  * their components stay in the tree.
@@ -166,7 +166,7 @@ export function AgencyTab({ reloadKey, overview }: {
                      radial selected={selected} onSelect={setSelected} fresh={fresh} />
       <AgentActivityPanel reloadKey={reloadKey} roster={roster} selected={selected}
                           onSelect={setSelected} />
-      {/* the owner 2026-10-30: the built demo sites, viewable in the portal. */}
+      {/* Miro 2026-10-30: the built demo sites, viewable in the portal. */}
       <div className="desk desk-prev-host"><PreviewsPanel reloadKey={reloadKey} /></div>
     </div>
   );

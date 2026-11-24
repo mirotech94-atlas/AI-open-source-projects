@@ -75,7 +75,7 @@ async def _section(title: str, coro, *, empty: str) -> Section:
     """Run one section's query, converting a failure into a visible warning."""
     try:
         lines = await coro
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("brief section %r failed: %s", title, exc)
         return Section(title, unavailable=f"{type(exc).__name__}: {exc}")
     return Section(title, list(lines), empty=empty)
@@ -140,7 +140,7 @@ async def agenda_items(now: datetime, horizon: timedelta = DEADLINE_HORIZON,
             return []       # documented default: nothing timed
         try:
             got = await module.agenda(horizon)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("module %s agenda failed: %s", name, exc)
             if unread is not None:
                 unread.append(f"{name} ({type(exc).__name__})")
@@ -220,7 +220,7 @@ async def _inbox() -> list[str]:
             return []       # documented default: nothing awaiting a reply
         try:
             got = await module.inbox(limit=10)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("module %s inbox failed: %s", name, exc)
             unreadable.append(name)
             return []
@@ -250,7 +250,7 @@ async def _inbox() -> list[str]:
 
 
 async def _circumstances() -> list[str]:
-    """What the owner told ATLAS about his schedule, still in force."""
+    """What Miro told ATLAS about his schedule, still in force."""
     from .rhythm import active_notes, circumstance_line
     notes = await active_notes()
     return [circumstance_line(n) for n in notes]
@@ -265,7 +265,7 @@ async def _businesses() -> list[str]:
             continue        # documented default: nothing to say
         try:
             line = module.brief()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             line = f"could not summarise: {type(exc).__name__}"
         if line:
             lines.append(f"{name}: {line}")
@@ -396,7 +396,7 @@ async def _checked_my_work(since: datetime) -> list[str]:
                 human += 1
             elif str(r["subject"]) not in wrong:
                 wrong.append(str(r["subject"]))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("brief: could not read the read-backs: %s", exc)
         unread.append("the read-backs")
     try:
@@ -404,7 +404,7 @@ async def _checked_my_work(since: datetime) -> list[str]:
             """SELECT count(*) AS n FROM outbox
                 WHERE status = 'needs_human' AND finished_at >= $1""", since)
         human += int(got[0]["n"]) if got else 0
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("brief: could not read the outbox: %s", exc)
         unread.append("the outbox")
     paused: list[str] = []
@@ -415,7 +415,7 @@ async def _checked_my_work(since: datetime) -> list[str]:
             why = _why(p.reason, 50)
             paused.append(what + (" (shadow)" if p.shadow else "")
                           + (f" — {why}" if why else ""))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("brief: could not read the pauses: %s", exc)
         unread.append("the pauses")
 
@@ -446,7 +446,7 @@ async def build(since: datetime | None = None) -> Brief:
     agenda_error: str | None = None
     try:
         day_lines, due_lines = await _agenda(now)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         agenda_error = f"{type(exc).__name__}: {exc}"
 
     sections = [

@@ -1,4 +1,4 @@
-"""Academy lesson videos on YouTube (the owner, 2026-11-14).
+"""Academy lesson videos on YouTube (Miro, 2026-11-14).
 
 Free preview lessons go PUBLIC, with a "Watch on YouTube" link on the store
 and a link back. Every other lesson goes UNLISTED and is embedded
@@ -14,7 +14,7 @@ that decides *what* may go up is code in this file, not a runtime argument:
     the store's files folder and never an old slide video;
   * the audience (public or unlisted) comes from `FREE_PREVIEWS`, a code
     constant, not from a parameter;
-  * the channel is @example_handle (the `clips` key, YOUTUBE_CLIPS_*); the
+  * the channel is @atlasacademyphp (the `clips` key, YOUTUBE_CLIPS_*); the
     clips channel's own upload gate opens for a gated lesson render only;
   * a per-day cap is counted from the table, so a restart cannot reset it.
 
@@ -43,13 +43,13 @@ STAGING_ENV = "ACADEMY_LESSONS_STAGING"
 PER_DAY_ENV = "ACADEMY_LESSONS_PER_DAY"
 DEFAULT_STAGING = "data/academy-staging/video"
 
-# Lessons whose YouTube copy is PUBLIC. the owner names them; empty until he does,
+# Lessons whose YouTube copy is PUBLIC. Miro names them; empty until he does,
 # so every lesson is unlisted until then. A code constant on purpose.
 FREE_PREVIEWS: frozenset[str] = frozenset()
 
 COURSES = ("operator", "adults", "60plus", "sell")
 _NUM = re.compile(r"^\d+\.\d+$")
-# Upload kinds (the owner 2026-11-14): the full lesson (UNLISTED, embedded on the paid
+# Upload kinds (Miro 2026-11-14): the full lesson (UNLISTED, embedded on the paid
 # page), a short PUBLIC preview of a lesson or of one ebook/PDF product, and a
 # vertical Short. Each has its own staged name, all behind the same gate.
 KINDS = ("full", "preview", "short")
@@ -98,7 +98,7 @@ def per_day() -> int:
 
 
 def lesson_channel() -> str:
-    """The channel the lessons go to: @example_handle, which ATLAS knows as
+    """The channel the lessons go to: @atlasacademyphp, which ATLAS knows as
     the `clips` key (YOUTUBE_CLIPS_* credentials). Fixed in code; the only
     uploads it takes besides the clips lane are gated lesson renders."""
     from ..youtube import api
@@ -163,7 +163,7 @@ def watch_url(video_id: str) -> str:
 
 def privacy_for(key: str, kind: str = "full") -> str:
     """The audience, decided in code. A preview and a Short are the public
-    face; a full lesson is unlisted unless the owner named it a free preview."""
+    face; a full lesson is unlisted unless Miro named it a free preview."""
     if kind in ("preview", "short"):
         return "public"
     return "public" if key in FREE_PREVIEWS else "unlisted"
@@ -320,7 +320,7 @@ def minutes_limit(seconds: float) -> int:
 
 
 def build_title(lesson_title: str, seconds: float) -> str:
-    """the owner 2026-11-14: "Learn X in less than N minutes!". At most 100
+    """Miro 2026-11-14: "Learn X in less than N minutes!". At most 100
     characters; a long topic is shortened, never the promise."""
     n = minutes_limit(seconds)
     tail = f" in less than {n} minute{'s' if n != 1 else ''}!"
@@ -419,7 +419,7 @@ async def embed_ids() -> dict[str, str]:
             "SELECT file_key, video_id FROM academy_lesson_youtube "
             "WHERE NOT withdrawn AND kind = 'full' "
             "AND privacy IN ('unlisted', 'public')")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return {}
     return {str(r["file_key"]): str(r["video_id"]) for r in rows
             if valid_video_id(r["video_id"])}
@@ -435,7 +435,7 @@ async def public_ids() -> dict[str, str]:
             "SELECT file_key, video_id FROM academy_lesson_youtube "
             "WHERE NOT withdrawn AND done AND privacy = 'public' "
             "AND kind = 'preview'")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return {}
     return {str(r["file_key"]).removeprefix("preview:"): str(r["video_id"])
             for r in rows if valid_video_id(r["video_id"])}
@@ -456,7 +456,7 @@ async def uploaded_today() -> int:
         row = await fetch_one(
             "SELECT count(*) AS n FROM academy_youtube_uploads "
             "WHERE at >= date_trunc('day', now() AT TIME ZONE 'utc')")
-    except Exception:                                   # noqa: BLE001  no table yet
+    except Exception:  # noqa: BLE001
         row = None
     return max(n, int(row["n"]) if row else 0)
 
@@ -617,7 +617,7 @@ async def upload_lesson(course: str = "", num: str = "", kind: str = "full",
     if row.get("item_id"):
         undo["item_id"] = row["item_id"]
     # Audience last, and only when the playlist took: an unlisted lesson with
-    # no playlist is harmless, a public one is the owner's card.
+    # no playlist is harmless, a public one is Miro's card.
     done_privacy, why = await api.set_privacy(ch, vid, plan["privacy"], synthetic=True)
     if done_privacy is None:
         said.append(f"still private: {why}")

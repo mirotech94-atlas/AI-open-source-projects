@@ -98,22 +98,22 @@ def test_scope_renders_both_halves():
 
 # ------------------------------------------------------------------ surface
 
-def test_a_denied_finding_still_reaches_owner_with_the_remedy_named():
+def test_a_denied_finding_still_reaches_miro_with_the_remedy_named():
     """A denial that does not say what would fix it is indistinguishable from
     not having looked."""
     h = surface(
-        what_changed="flycheap.example DMARC is p=none with no reporting address",
-        evidence='_dmarc.flycheap.example TXT "v=DMARC1; p=none;"',
+        what_changed="flycheap.example.com DMARC is p=none with no reporting address",
+        evidence='_dmarc.flycheap.example.com TXT "v=DMARC1; p=none;"',
         source="dns.dmarc",
-        target="flycheap.example",
+        target="flycheap.example.com",
         read_at=NOW,
-        remedy='_dmarc TXT  "v=DMARC1; p=none; rua=mailto:dmarc@flycheap.example"',
+        remedy='_dmarc TXT  "v=DMARC1; p=none; rua=mailto:dmarc@flycheap.example.com"',
     )
     rendered = h.render()
     assert h.delegation is False
     assert "permanently denied" in rendered
     assert "TO FIX BY HAND" in rendered
-    assert "rua=mailto:dmarc@flycheap.example" in rendered
+    assert "rua=mailto:dmarc@flycheap.example.com" in rendered
     # It is a finding, not a task: nothing tells an agent to do anything.
     assert "DONE LOOKS LIKE" not in rendered
     assert "TASK FOR CLAUDE CODE" not in rendered
@@ -146,7 +146,7 @@ def test_an_unknown_check_is_not_a_finding_and_cannot_dispatch_anyone():
 def test_a_measurement_carries_its_number_and_its_unit_into_the_task():
     h = from_observation(
         _obs(detail="disk is nearly full", value=94.0, unit="%"),
-        target="atlas.example.com", done_looks_like="usage below 80%", tier=Tier.ASK,
+        target="atlas.storefront.test", done_looks_like="usage below 80%", tier=Tier.ASK,
     )
     assert "disk is nearly full (94 %)" in h.render()
 

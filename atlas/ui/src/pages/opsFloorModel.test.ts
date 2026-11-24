@@ -65,7 +65,7 @@ describe("decisionButtons", () => {
 });
 
 describe("decisionNote", () => {
-  // the owner 2026-10-29: a click never fails silently. The note outlives the
+  // Miro 2026-10-29: a click never fails silently. The note outlives the
   // card (a declined card leaves the list) and says what happened in words.
   it("says a decline was done", () => {
     const n = decisionNote(412, "decline",

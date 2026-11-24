@@ -1,4 +1,4 @@
-"""Academy lessons rendered by NotebookLM (academy/notebooklm.py; the owner,
+"""Academy lessons rendered by NotebookLM (academy/notebooklm.py; Miro,
 2026-10-19): the source text the Mac runner is given, what it renders next,
 the inbox ingest with its holds and refusals, ready()'s NotebookLM profile,
 and the daily post that never falls back to the Fish voice unless told."""
@@ -339,7 +339,7 @@ def test_an_identifier_in_the_script_still_allows_its_bare_number():
 
 @pytest.mark.parametrize("phrase", ["as you can see on my screen", "let me open my editor",
                                     "I recorded this yesterday", "in my terminal",
-                                    "Hi, I'm the owner"])
+                                    "Hi, I'm Miro"])
 async def test_a_human_on_camera_claim_is_refused(box, phrase):
     box["words"] = heard_from_source(phrase)
     box["drop"]()
@@ -708,7 +708,7 @@ def test_the_first_look_marks_when_the_wait_began(box):
 
 
 def test_days_without_a_render_never_turn_the_fallback_on(box):
-    """the owner, 2026-10-19: NotebookLM videos only. The 3-day revert of
+    """Miro, 2026-10-19: NotebookLM videos only. The 3-day revert of
     ace186c4 is gone; a stale lane is said, never filled with Fish."""
     nlm.stale()
     _age(nlm.inbox() / nlm.WAITING_SINCE, 3.5)
@@ -806,7 +806,7 @@ async def test_no_teaching_short_is_cut_from_a_notebooklm_render(box, monkeypatc
 
 # ------------------------------------------------------- the opening gate
 #
-# the owner, 2026-10-17: a lesson opens on the finished result, never on a
+# Miro, 2026-10-17: a lesson opens on the finished result, never on a
 # welcome. The first OPENING_SECONDS of narration are read from Whisper's
 # word timings; two refusals for one episode let the third drop past this
 # one gate (the runner would remake it forever), every other gate intact.
@@ -1102,7 +1102,7 @@ async def test_with_the_switch_on_a_stale_lane_does_not_claim_nothing_old_posts(
         assert "ACADEMY_NOTEBOOKLM_FALLBACK is on" in text
 
 
-# ------------------------------------------- pace and 4K (the owner, 2026-10-20)
+# ------------------------------------------- pace and 4K (Miro, 2026-10-20)
 
 @pytest.mark.parametrize(("raw", "want"), [
     (None, 0.9), ("0.8", 0.8), ("0.5", 0.75), ("1.4", 1.0), ("x", 0.9), ("nan", 0.9),

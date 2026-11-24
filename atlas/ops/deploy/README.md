@@ -13,11 +13,11 @@ copy at the server path, and the two are kept equal by hand (below).
 
 ```
 .gitlab-ci.yml  deploy job (phases-12-14 only, after python + ui pass)
-  ssh -i $ATLAS_DEPLOY_KEY root@203.0.113.191 "deploy $CI_COMMIT_SHA"
+  ssh -i $ATLAS_DEPLOY_KEY root@162.220.52.191 "deploy $CI_COMMIT_SHA"
         |
         v
 /root/.ssh/authorized_keys on the host, the CD key's line:
-  from="203.0.113.147",command="/opt/atlas/bootstrap/deploy/deploy-gate.sh",restrict ssh-ed25519 <key> gitlab-cd->atlas
+  from="162.220.52.147",command="/opt/atlas/bootstrap/deploy/deploy-gate.sh",restrict ssh-ed25519 <key> gitlab-cd->atlas
         |   the key can run nothing else: sshd replaces whatever the client
         |   asked for with the gate, and puts the request in SSH_ORIGINAL_COMMAND
         v
@@ -70,7 +70,7 @@ ops/deploy/check-prod-sync.sh            # prints same / DRIFTED per file, exit 
 ```
 
 To change the CD path, all of these, in order. Installing a change on the
-host needs the owner's approval, because it is the privileged deploy path.
+host needs Miro's approval, because it is the privileged deploy path.
 
 1. Edit `ops/deploy/*.sh` here, run `bash -n`, and rehearse on the host with
    `ATLAS_DEPLOY_DRY=1 /opt/atlas/bootstrap/deploy/deploy.sh <sha>` (the
@@ -78,13 +78,13 @@ host needs the owner's approval, because it is the privileged deploy path.
 2. Update `SHA256SUMS` (`shasum -a 256 deploy.sh deploy-gate.sh > SHA256SUMS`
    in this directory) and commit it with the edit.
 3. Once the commit has deployed, the reviewed copy is on the host at
-   `/opt/atlas/ops/deploy/`. With the owner's OK, install it:
+   `/opt/atlas/ops/deploy/`. With Miro's OK, install it:
    `install -m 0755 /opt/atlas/ops/deploy/deploy.sh /opt/atlas/ops/deploy/deploy-gate.sh /opt/atlas/bootstrap/deploy/`.
    Do not run this while a deploy holds `/var/lock/atlas-deploy.lock`.
 4. Run `ops/deploy/check-prod-sync.sh` and expect `same` for both.
 
 If the host copy was edited in place (drift the other way), read it back
-with `ssh root@203.0.113.191 cat /opt/atlas/bootstrap/deploy/<file>`,
+with `ssh root@162.220.52.191 cat /opt/atlas/bootstrap/deploy/<file>`,
 review the diff, and commit it here with a new `SHA256SUMS`.
 
 ## Secrets

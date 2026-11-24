@@ -153,9 +153,9 @@ async def check_slack_channels() -> Observation:
 
     `chat:write.public` lets it post to a public channel it never joined, so
     every card arrives and looks fine. But Slack only sends message events
-    for channels the bot is a member of: whatever the owner types there, ATLAS
-    never hears. On 2026-09-27 that was #cloudco, #flycheap, #guardian and the
-    default channel -- "I should be able to talk with them" in #cloudco went
+    for channels the bot is a member of: whatever Miro types there, ATLAS
+    never hears. On 2026-09-27 that was #cloudhost, #flycheap, #guardian and the
+    default channel -- "I should be able to talk with them" in #cloudhost went
     nowhere, and nothing anywhere said so.
 
     Read only: `conversations.info`. Joining is a write, and without the
@@ -328,7 +328,7 @@ async def _last_send_before_restart() -> Observation | None:
                 WHERE p.name = 'comms' AND c.name = 'last_send'
                   AND o.evidence ? 'sent_at'
                 ORDER BY o.at DESC LIMIT 1""")
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     if row is None:
         return None
@@ -423,7 +423,7 @@ class CommsModule:
             # still reaches a phone — and if they are dead too, nothing is
             # lost by having tried.
             Check("reachable", check_reachable, timedelta(minutes=5),
-                  Severity.CRITICAL, "a channel that can reach the owner",
+                  Severity.CRITICAL, "a channel that can reach Miro",
                   baseline_sigma=None, timeout=timedelta(seconds=25)),
             Check("last_send", check_last_send, timedelta(minutes=5),
                   Severity.HIGH, "whether the last message landed",

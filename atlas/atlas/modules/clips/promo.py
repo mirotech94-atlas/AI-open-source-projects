@@ -1,8 +1,8 @@
 """The Academy store's promo reel on the clips accounts.
 
-the owner, 2026-10-05, after the store reel went out on the AI-stories accounts:
+Miro, 2026-10-05, after the store reel went out on the AI-stories accounts:
 "post on clips too". Until then the clips accounts -- Instagram
-@example_handle, TikTok @example_handle and the clips YouTube channel --
+@atlas.clipsdrop, TikTok @atlasclips12 and the clips YouTube channel --
 took one thing only: a campaign clip the clips lane cut and checked
 (`posting.publish_clip*`), and every doorway onto them refused anything
 else ("two TikTok accounts, never crossed", 2026-09-28).
@@ -23,7 +23,7 @@ rather than a hole in that rule:
   * it posts once per render (`idempotency`) and once per product and
     platform inside ACADEMY_PROMO_REPOST_DAYS (`academy_promo_claims`),
     and the card is Tier ASK: nothing reaches the clips accounts without
-    the owner's tap.
+    Miro's tap.
 
 Rollback takes the Instagram post down and deletes the Postiz posts while
 they are still queued; a published Postiz post is a manual note, as for
@@ -82,7 +82,7 @@ def vet(params: dict) -> str | None:
 LEGS = ("instagram", "tiktok", "youtube")
 log = logging.getLogger("atlas.clips.promo")
 
-# the owner, 2026-10-11: "only keep YouTube and TikTok". A run that names no
+# Miro, 2026-10-11: "only keep YouTube and TikTok". A run that names no
 # legs posts to these; `legs="instagram"` still names it explicitly.
 DEFAULT_LEGS = ("tiktok", "youtube")
 _SENTENCE = re.compile(r"(.+?[.!?])(?:\s|$)")
@@ -191,7 +191,7 @@ async def _instagram(media_id: int, caption: str, url: str
         result = await instagram.publish(caption, url, kind="reel",
                                          account=posting.IG_ACCOUNT,
                                          content_kind=CONTENT_KIND)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         said = instagram._why(exc)
         await legs.finish(IG_LEG, ACTION, False, said, media_id=media_id)
         return REFUSED, said, None
@@ -351,7 +351,7 @@ async def claim_leg(slug: str, leg: str, media_id: int) -> bool:
                    OR academy_promo_claims.claimed_at < now() - $4::interval
                RETURNING slug""",
             slug, leg, int(media_id), timedelta(days=repost_days()))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s on %s: the claim could not be made (%s); not posting",
                     slug, leg, type(exc).__name__)
         return False
@@ -367,7 +367,7 @@ async def release_leg(slug: str, leg: str, media_id: int) -> None:
             """UPDATE academy_promo_claims SET status = 'released'
                 WHERE slug = $1 AND leg = $2 AND media_id = $3""",
             slug, leg, int(media_id))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s on %s: could not release (%s)", slug, leg, type(exc).__name__)
 
 
@@ -378,7 +378,7 @@ async def settle_leg(slug: str, leg: str, media_id: int, detail: str) -> None:
             """UPDATE academy_promo_claims SET status = 'sent', detail = $4
                 WHERE slug = $1 AND leg = $2 AND media_id = $3""",
             slug, leg, int(media_id), detail[:500])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("%s on %s: could not settle (%s)", slug, leg, type(exc).__name__)
 
 
@@ -408,7 +408,7 @@ async def unpublish_promo(token: str) -> ActionResult:
 
 # ------------------------------------------------------------- automatic
 #
-# the owner, 2026-10-06: "make continuous reels about ATLAS Academy" on the clips
+# Miro, 2026-10-06: "make continuous reels about ATLAS Academy" on the clips
 # accounts. One a day posts itself (academy/reel.py `daily()`), Tier 1 in
 # code and gated here, the way the stories lane's autopublish is:
 #
@@ -423,9 +423,9 @@ async def unpublish_promo(token: str) -> ActionResult:
 # Anything that fails a check is not skipped: it is carded, reason first.
 
 CAP_HELD = "(CLIPS_PROMO_PER_DAY)"
-PER_DAY_DEFAULT = 2                  # the owner, 2026-10-11: two a day, each a different lesson
+PER_DAY_DEFAULT = 2                  # Miro, 2026-10-11: two a day, each a different lesson
 SECONDS = (12.0, 60.0)
-# the owner 2026-10-19: a NotebookLM Short may run 60-90 s (academy/
+# Miro 2026-10-19: a NotebookLM Short may run 60-90 s (academy/
 # notebooklm_shorts.py); every other gate is the same. Read from the
 # render's draft source in the database, never from a caller's params.
 NOTEBOOKLM_SECONDS = (50.0, 95.0)
@@ -441,7 +441,7 @@ async def draft_source(media_id: int) -> str | None:
             """SELECT d.source FROM content_media m
                  JOIN content_drafts d ON d.id = m.draft_id
                 WHERE m.id = $1""", int(media_id))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
     return None if row is None else str(row["source"] or "")
 
@@ -458,7 +458,7 @@ NOTEBOOKLM_ONLY = "NotebookLM only: ACADEMY_NOTEBOOKLM_FALLBACK is off"
 
 
 async def old_design_refusal(media_id: int) -> str | None:
-    """the owner, 2026-10-19: every Academy Short is NotebookLM's. While
+    """Miro, 2026-10-19: every Academy Short is NotebookLM's. While
     ACADEMY_NOTEBOOKLM_FALLBACK is off, only a NotebookLM Short's render
     (academy/notebooklm_shorts.py) may post; an ATLAS render -- a teaching
     cut, a lesson, concept or product reel, all ATLAS-drawn and Fish-voiced
@@ -497,7 +497,7 @@ def day_start(now: datetime | None = None) -> datetime:
     """Midnight today in New York, as a UTC instant. "Today" is a calendar
     date, never a rolling 24 h: on 2026-10-10 a rolling window held the
     16:03 reel because the previous day's had gone out at 16:06. And it is
-    New York's date, where the owner and the audience are (2026-10-12): two
+    New York's date, where Miro and the audience are (2026-10-12): two
     Shorts posted by hand at 9 pm New York fell on the next UTC date and
     would have spent that day's noon and 7 pm slots."""
     from zoneinfo import ZoneInfo
@@ -527,7 +527,7 @@ async def autopublish_check(media_id: int, caption: str,
             return why
     if (n := await posted_today()) >= per_day():
         return f"{n} Academy reel(s) already posted today {CAP_HELD}"
-    # The Academy's editions are composed frames by the owner's choice (2026-10-06,
+    # The Academy's editions are composed frames by Miro's choice (2026-10-06,
     # "make it more designable"); the stories lane's still-frame rule is off.
     return await quality.check_media(media_id, caption, series=False,
                                      seconds=await seconds_for(media_id), motion=False)
@@ -561,13 +561,13 @@ async def autopublish_promo(media_id: int, caption: str, slug: str = "",
                             youtube_caption: str = "", legs: str = "") -> ActionResult:
     """Post the Academy reel to the clips accounts by itself, or card it.
     An ATLAS render while the NotebookLM fallback is off is refused before
-    any check: never carded, since the card would ask the owner to post it."""
+    any check: never carded, since the card would ask Miro to post it."""
     if (why := await old_design_refusal(media_id)) is not None:
         return ActionResult(False, why)
     why = await autopublish_check(media_id, caption, youtube_caption)
     if why is not None and CAP_HELD in why:
         # The day's count, not the reel: it is not posted and not carded. A
-        # card here only asked the owner to break CLIPS_PROMO_PER_DAY (2026-10-12,
+        # card here only asked Miro to break CLIPS_PROMO_PER_DAY (2026-10-12,
         # memory approval-policy: routine holds wait, only real problems are
         # cards). The lesson was not shown, so a later day picks it again.
         return ActionResult(True, f"not posted today ({why}); no card -- the "

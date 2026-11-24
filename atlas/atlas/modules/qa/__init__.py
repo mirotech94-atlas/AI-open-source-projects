@@ -9,7 +9,7 @@ raised. Nothing is deleted.
 
 Actions:
 - `qa.check_draft(kind, ref)`: the words check over a stored draft
-  (`agency_outreach:<id>`, `church_posts:<id,...>`, `reddit_drafts:<id>`,
+  (`agency_outreach:<id>`, `community_posts:<id,...>`, `reddit_drafts:<id>`,
   `academy_comment_drafts:<id>`);
 - `qa.check_site(slug)`: the launch check over the files a deploy would put
   live (the gate's pass for `agency.deploy_site` / `deploy_demo`), plus,
@@ -19,6 +19,8 @@ Actions:
 - `qa.security_scan(slug)`: passive only (security.py);
 - `qa.verify_runs()`: hourly; every scheduled window due in the last day
   against `schedule_runs`; a miss is a remediation task, never a retry;
+- `qa.autopilot_cycle()`: diagnose, fix by a registered Tier 1 action or ask once
+  (autopilot.py);
 - `qa.create_remediation(...)`: one task on the local board, deduped.
 
 Watches: `gate_health` (QA results in the last day) and `open_remediation`
@@ -44,10 +46,10 @@ from ...kernel.contracts import (
     Tier,
 )
 from .._http import explain
-from . import browser, security, store, words
+from . import autopilot, browser, security, store, words
 
 DRAFT_CHECKS = ("words: $100 / guaranteed / #1", "words: unsourced numbers",
-                "signature (assistant, never the owner)", "CAN-SPAM (email)", "STOP (sms)",
+                "signature (assistant, never Miro)", "CAN-SPAM (email)", "STOP (sms)",
                 "Disclosure line (reddit)")
 SITE_CHECKS = ("launch check over the files a deploy would put live",
                "live launch check (when live)", "PageSpeed (when keyed)",
@@ -58,7 +60,7 @@ SECURITY_CHECKS = ("allowlist + public address before any socket", "TLS version 
 RUNS_LATE = timedelta(hours=2)
 RUNS_CHECK = ("every recorded window due in the last day has a done (or running) "
               "schedule_runs row")
-REF_PREFIXES = ("agency_outreach:", "church_posts:", "reddit_drafts:",
+REF_PREFIXES = ("agency_outreach:", "community_posts:", "reddit_drafts:",
                 "academy_comment_drafts:", "bizops_onboardings:", "bizops_invoices:",
                 "bizops_reminders:", "content_drafts:", "seo_changes:",
                 "research_client_reports:")
@@ -103,12 +105,12 @@ async def _draft_subject(kind: str, ref: str):  # type: ignore[no-untyped-def]
     head, _, rest = (ref or "").partition(":")
     if head == "agency_outreach" and rest.isdigit():
         subject = await qa_gate.RESOLVERS["agency.send_outreach"]({"outreach_id": rest})
-    elif head == "church_posts" and rest:
+    elif head == "community_posts" and rest:
         try:
             ids = [int(i) for i in rest.split(",")]
         except ValueError:
-            raise ValueError("church_posts ids must be numbers") from None
-        subject = await qa_gate.RESOLVERS["church.schedule_youtube_shorts"](
+            raise ValueError("community_posts ids must be numbers") from None
+        subject = await qa_gate.RESOLVERS["community.schedule_youtube_shorts"](
             {"post_ids": ids})
     elif head == "reddit_drafts" and rest.isdigit():
         subject = await qa_gate.RESOLVERS["reddit.submit_post"]({"draft_id": rest})
@@ -320,7 +322,7 @@ async def verify_runs() -> ActionResult:
     expected = expected_windows(now)
     try:
         seen = await _run_rows([job for job, _k, _d in expected])
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"schedule_runs unreadable: {explain(exc)}",
                             failure_class=FailureClass.TRANSIENT)
     missed = [(job, key, due) for job, key, due in expected
@@ -395,7 +397,7 @@ async def check_gate_health() -> Observation:
     now = datetime.now(UTC)
     try:
         counts = await store.counts_since(24)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("gate_health", Health.UNKNOWN, at=now,
                            detail=f"qa_results unreadable: {explain(exc)}")
     shots_on = bool(browser.socket_path())
@@ -425,7 +427,7 @@ async def check_open_remediation() -> Observation:
     now = datetime.now(UTC)
     try:
         n = await _open_remediation()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("open_remediation", Health.UNKNOWN, at=now,
                            detail=f"project board unreadable: {explain(exc)}")
     return Observation("open_remediation", Health.DEGRADED if n else Health.OK,
@@ -460,7 +462,7 @@ class QaModule:
                    "Run the words check on a stored draft and record the result",
                    run=check_draft, dry_run=check_draft_dry, rollback=rollback,
                    params={"kind": "email | sms | invite | post | reddit | report",
-                           "ref": "agency_outreach:<id>, church_posts:<id,...>, "
+                           "ref": "agency_outreach:<id>, community_posts:<id,...>, "
                                   "reddit_drafts:<id> or academy_comment_drafts:<id>"},
                    max_per_hour=60),
             Action("qa.check_site", Tier.AUTO,
@@ -476,6 +478,11 @@ class QaModule:
                    "Check every scheduled window of the last day ran; raise tasks",
                    run=verify_runs, dry_run=verify_runs_dry, rollback=rollback,
                    params={}, max_per_hour=4),
+            Action("qa.autopilot_cycle", Tier.AUTO,
+                   "Diagnose every check and agent that is not OK; run a registered "
+                   "Tier 1 fix and prove it by a re-read, else one task or card",
+                   run=autopilot.cycle, dry_run=autopilot.cycle_dry,
+                   rollback=autopilot.undo, params={}, max_per_hour=12),
             Action("qa.create_remediation", Tier.AUTO,
                    "Add one remediation task to the local board (deduped while open)",
                    run=create_remediation, dry_run=create_remediation_dry,

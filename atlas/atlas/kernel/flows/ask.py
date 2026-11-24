@@ -222,7 +222,7 @@ async def answer(produce: Callable[[], Awaitable[str]], source: str) -> str:
             text = (await produce() or "").strip()
     except TimeoutError:
         text, why = "", f"no answer within {ANSWER_S:.0f} s"
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ...modules._http import explain
         text, why = "", f"{source} failed: {explain(exc)}"
     if not text:

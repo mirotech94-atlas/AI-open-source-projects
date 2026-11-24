@@ -1,7 +1,7 @@
 """Bring the Academy's already-public videos up to the current tags,
 hashtags and description rules (academy.refresh_video_metadata).
 
-the owner, 2026-10-18: a new upload gets `tutorials.description()` (result and
+Miro, 2026-10-18: a new upload gets `tutorials.description()` (result and
 prerequisite first, 3-5 hashtags at the end, the synthetic-voice line and
 the AI label) and `tutorials.upload_tags()`; the videos posted before those
 rules keep their old text. This rewrites them, gently, through the executor
@@ -24,7 +24,7 @@ rules keep their old text. This rewrites them, gently, through the executor
     the video does not have. It passes the gates a new upload passes
     (description_refusal, tags_refusal, downloads_refusal). Anything that
     does not is held and said, never written.
-  * Tier 1 (the owner's approval policy: routine and reversible). The dry run
+  * Tier 1 (Miro's approval policy: routine and reversible). The dry run
     reads the snippet and shows the tags and description before and after;
     an UNKNOWN read is a refusal, never OK. The rollback writes the stored
     previous tags and description back, keeping the title as read then.
@@ -54,7 +54,7 @@ from ...kernel.permissions import wrap_untrusted
 from ..youtube import api
 from . import tutorial_short, tutorials
 
-log = logging.getLogger("academy.example.metadata")
+log = logging.getLogger("atlas.academy.metadata")
 
 ACTION = "academy.refresh_video_metadata"
 LESSON = "lesson"
@@ -104,7 +104,7 @@ async def _short_id(slug: str) -> tuple[str | None, str | None]:
     from . import synthetic
     try:
         rows = await synthetic._slug_rows(slug)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"the Shorts record was not read ({type(exc).__name__})"
     why = f"no YouTube post of {slug} on record"
     for row in rows:
@@ -234,7 +234,7 @@ async def refresh(series: str, episode: int, kind: str) -> ActionResult:
 
 async def unrefresh(token: str) -> ActionResult:
     """Write the stored previous tags and description back. The title,
-    category and languages are resent as read now, so a title the owner edited
+    category and languages are resent as read now, so a title Miro edited
     in Studio since is kept."""
     data = json.loads(token)
     ch, vid = str(data["channel"]), str(data["video_id"])
@@ -321,7 +321,7 @@ async def refresh_pass(now: datetime | None = None) -> list[str]:
     said: list[str] = []
     try:
         todo = await _candidates()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("metadata refresh: the record was not read: %s", type(exc).__name__)
         return [(f"UNKNOWN: the posts record was not read ({type(exc).__name__}); "
                  f"the metadata refresh is tried again tomorrow")]

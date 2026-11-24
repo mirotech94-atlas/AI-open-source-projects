@@ -1,19 +1,19 @@
 """LinkedIn — run by ATLAS, on the server.
 
 Until 2026-09-24 this module was a read-only mirror of a LinkedIn agent that
-ran twice a day inside the Claude desktop app on the owner's Mac. That agent is
+ran twice a day inside the Claude desktop app on Miro's Mac. That agent is
 gone. Its state file moved here whole and ATLAS is now the only thing that
 reads LinkedIn or writes to it.
 
 What stayed settled, from the agent's handoff, and is not re-litigated:
 
-* There is no LinkedIn API and no stored credential. the owner signs in once
+* There is no LinkedIn API and no stored credential. Miro signs in once
   through `bootstrap/linkedin-login.sh`; the saved browser session is the
   only authentication, and if it is signed out everything stops and says so.
 * No scraping, no bulk collection, no auto-accepting invitations, and no
   unattended first contact: ATLAS never opens a conversation. The sweep
   reads the surfaces a person would read, at a person's pace.
-* One narrow exception to "no unattended DMs", the owner's words on 2026-10-07:
+* One narrow exception to "no unattended DMs", Miro's words on 2026-10-07:
   "go to guardian and flycheap pages on linkedin and track the services
   that clients want and need and reply to them always based on what they
   want" and "make sure when requests come for either page you will see it
@@ -21,19 +21,19 @@ What stayed settled, from the agent's handoff, and is not re-litigated:
   the Guardian or FlyCheap page or requested its services first; once per
   inbound message; from a fact sheet held in code; every rule checked in
   code at send time (`requests.py`: no figures, prices, dates, promises or
-  guarantees, no link but the page's own, never claiming to be the owner or a
+  guarantees, no link but the page's own, never claiming to be Miro or a
   person, a daily cap, `LINKEDIN_REPLY_AUTOSEND`). A service request is
   never sent from here -- its proposal form has not been seen -- so it is
   a card with the draft. Every send posts a Slack receipt.
 * Only a post-bank entry marked `approved` is ever published, byte for byte.
-* the owner, 2026-10-11: the Vault page's approved posts go out on their own,
+* Miro, 2026-10-11: the Vault page's approved posts go out on their own,
   "the way reels already do" (memory approval-policy: promoted by a tier in
   code, never by approving cards at runtime). `linkedin.autopublish_post`
   is Tier AUTO with its gates in `publish.autopublish_refusal`; Vault only,
   never FlyCheap. Its rollback cannot delete the post (Tier 3); it pauses
   the page's autopublish. A refusal is the Tier 2 `linkedin.publish_post`
   card with "Held for you: <reason>" (`kernel.linkedin_autopost`). The
-  reshare to the owner's own profile stays Tier 2.
+  reshare to Miro's own profile stays Tier 2.
 
 The pieces: `sweep.py` reads and diffs (a collector: it reads LinkedIn and
 writes ATLAS's own state file); `publish.py` holds the one LinkedIn write,
@@ -56,6 +56,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from collections.abc import Iterator, Mapping
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -81,32 +82,32 @@ KNOWN_PAGES: dict[str, dict[str, str]] = {
     "flycheap": {"page_key": "page", "bank_key": "improver",
                  "followers_field": "followers_count",
                  "id": "116049014", "name": "FlyCheap",
-                 "link": "https://flycheap.example"},
+                 "link": "https://flycheap.example.com"},
     # Display name only: "Vault" is the product's new name (Task 64), but
     # the internal key, the state-file location, the Slack topic
     # (`topic_param="page"` reads `params["page"]`, still "guardian") and
     # the id/link are unchanged -- renaming those would move where pending
     # cards, the follower ledger and the post bank already live. The
     # LinkedIn page's own name changes only through
-    # `linkedin.update_page_identity`, a Tier 2 card (the owner asked, 2026-09-28).
+    # `linkedin.update_page_identity`, a Tier 2 card (Miro asked, 2026-09-28).
     "guardian": {"page_key": "guardian_page", "bank_key": "guardian_page",
                  "followers_field": "followers",
                  "id": "143909038", "name": "Vault",
-                 "link": "https://vault.example"},
-    # TutorSite (2026-11-11). Known, never active by default: it joins
-    # PAGES only when the owner names it in LINKEDIN_PAGES_ACTIVE. Its posts come
-    # from the fixed, fact-backed series in `mmt_series`, never the model.
-    "mmt": {"page_key": "mmt_page", "bank_key": "mmt_page",
+                 "link": "https://guarder.example.com"},
+    # ExampleTutor (2026-11-11). Known, never active by default: it joins
+    # PAGES only when Miro names it in LINKEDIN_PAGES_ACTIVE. Its posts come
+    # from the fixed, fact-backed series in `tutorco_series`, never the model.
+    "tutorco": {"page_key": "tutorco_page", "bank_key": "tutorco_page",
             "followers_field": "followers",
-            "id": "146926885", "name": "TutorSite",
-            "link": "https://tutoring.example"},
+            "id": "146926885", "name": "ExampleTutor",
+            "link": "https://exampletutor.com"},
 }
 
-# Pages whose drafts are always the owner's card to read: never auto-approved,
+# Pages whose drafts are always Miro's card to read: never auto-approved,
 # whatever LINKEDIN_AUTOAPPROVE says (see publish.autoapprove_refusal).
-HUMAN_APPROVAL_PAGES: tuple[str, ...] = ("mmt",)
+HUMAN_APPROVAL_PAGES: tuple[str, ...] = ("tutorco", "profile")
 
-# the owner, 2026-10-06: "advertise on LinkedIn the course page, ATLAS Academy
+# Miro, 2026-10-06: "advertise on LinkedIn the course page, ATLAS Academy
 # website" and "(a) create the atlas academy page". The lane exists the
 # moment the page does: its LinkedIn id goes in LINKEDIN_ACADEMY_PAGE_ID and
 # the page joins PAGES at boot. Without the id nothing changes, so no sweep
@@ -127,7 +128,26 @@ def _academy_page() -> dict[str, str] | None:
 if (_academy := _academy_page()) is not None:
     KNOWN_PAGES["academy"] = _academy
 
-# the owner, 2026-10-09: "delete flycheap page and only keep guardian for now".
+# Miro, 2026-11-23: no company page; post from his PERSONAL profile, one
+# approval card each. The lane exists when LINKEDIN_PROFILE_ENABLED=on (no
+# page id: it is his profile). `kind: "profile"` marks it: the company-page
+# loops (sweep, requests, identity, followers) never see it, see
+# COMPANY_PAGES. Its bank is `profile_page.post_bank` in the state file.
+PROFILE_ENV = "LINKEDIN_PROFILE_ENABLED"
+
+
+def _profile_page() -> dict[str, str] | None:
+    if os.getenv(PROFILE_ENV, "").strip().lower() not in ("on", "1", "true", "yes"):
+        return None
+    return {"kind": "profile", "page_key": "profile_page",
+            "bank_key": "profile_page", "followers_field": "followers",
+            "id": "", "name": "Miro's profile", "link": store_origin.url()}
+
+
+if (_profile := _profile_page()) is not None:
+    KNOWN_PAGES["profile"] = _profile
+
+# Miro, 2026-10-09: "delete flycheap page and only keep guardian for now".
 # Deleting a LinkedIn page is deletion (Tier 3, CLAUDE.md "Never"): ATLAS does
 # not do it and no action for it exists. What ATLAS does is stop using the
 # page: only the pages named in LINKEDIN_PAGES_ACTIVE are swept, refilled,
@@ -135,7 +155,7 @@ if (_academy := _academy_page()) is not None:
 # bank and request rows are left exactly as they are; naming "flycheap" in
 # the list again brings the lane back. Academy stays active whenever its page
 # id is set (it is only in KNOWN_PAGES then).
-# the owner, 2026-10-29: "delete flycheap and guardian, we don't use them
+# Miro, 2026-10-29: "delete flycheap and guardian, we don't use them
 # anymore". The Guardian (Vault) page leaves the default the same way
 # FlyCheap did: its state, bank and rows stay; nothing reads them.
 PAGES_ACTIVE_ENV = "LINKEDIN_PAGES_ACTIVE"
@@ -151,11 +171,32 @@ def active_keys(raw: str | None = None) -> tuple[str, ...]:
 
 
 PAGES: dict[str, dict[str, str]] = {k: KNOWN_PAGES[k] for k in active_keys()}
+if "profile" in KNOWN_PAGES:
+    PAGES["profile"] = KNOWN_PAGES["profile"]
+# The company pages only: what sweeps, requests, identity and follower checks
+# read. The profile lane has no admin pages to read, so it is never in here.
+class _CompanyPages(Mapping[str, dict[str, str]]):
+    """A live view of PAGES without the profile lane (reads PAGES on every
+    access, so a test or a boot that edits PAGES is seen)."""
+
+    def __getitem__(self, key: str) -> dict[str, str]:
+        if PAGES[key].get("kind") == "profile":
+            raise KeyError(key)
+        return PAGES[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return (k for k, v in PAGES.items() if v.get("kind") != "profile")
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
+
+
+COMPANY_PAGES: Mapping[str, dict[str, str]] = _CompanyPages()
 
 # Alerts the agent itself labels as not being a LinkedIn problem. It writes
 # scheduler stalls and permission-classifier refusals into the same list as
 # genuine account restrictions, so a bare "alerts is non-empty" rule would
-# page the owner about a resolved tooling issue from eleven days ago.
+# page Miro about a resolved tooling issue from eleven days ago.
 NOT_LINKEDIN = "not a linkedin alert"
 
 # A restriction is the one thing here that is genuinely urgent: it means the
@@ -256,7 +297,7 @@ async def post_runway(page: str) -> Observation:
                    f"{PAGES[page]['bank_key']}.post_bank")
 
     approved = [e for e in entries if e.get("status") == "approved"]
-    # Anything not approved and not already out is a draft waiting on the owner.
+    # Anything not approved and not already out is a draft waiting on Miro.
     waiting = [e for e in entries
                if e.get("status") not in ("approved", "published")]
 
@@ -425,7 +466,7 @@ async def account_alerts() -> Observation:
       before it, in the same sentence.
     * A hit reports DEGRADED, never FAILING, and quotes the alert verbatim.
       A heuristic over someone else's prose must not be the thing that rings
-      the owner's phone at 3am — the check says "read this", not "this happened".
+      Miro's phone at 3am — the check says "read this", not "this happened".
     """
     check = "account_alerts"
     try:
@@ -492,7 +533,7 @@ async def sweep_check() -> Observation:
         result = await run_sweep()
     except FileNotFoundError as exc:
         return Observation(check, Health.UNKNOWN, detail=f"no state file: {exc}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(check, Health.UNKNOWN,
                            detail=f"the sweep could not run: "
                                   f"{type(exc).__name__}: {str(exc)[:200]}")
@@ -554,7 +595,7 @@ async def media_fill_check() -> Observation:
         try:
             result = await fill_media_for(page)
             made += int(result.get("made", 0))
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             notes.append(f"{PAGES[page]['name']}: {type(exc).__name__}: "
                          f"{str(exc)[:150]}")
 
@@ -562,13 +603,17 @@ async def media_fill_check() -> Observation:
         state = _load()
     except StateUnavailable as exc:
         return _unknown(check, exc)
-    pending_after = sum(
-        1 for page in PAGES for e in _bank(state, page)[0]
-        if e.get("status") == "needs_media")
+    waiting = [e for page in PAGES for e in _bank(state, page)[0]
+               if e.get("status") == "needs_media"]
+    pending_after = len(waiting)
     health = Health.OK if pending_after == 0 else Health.DEGRADED
     detail = f"{made} of {pending_before} pending image/video generated"
     if pending_after:
         detail += f"; {pending_after} still waiting (retried next cycle)"
+        why = sorted({str(e.get("media_note"))[:120] for e in waiting
+                      if e.get("media_note")})
+        if why:
+            detail += "; why: " + " | ".join(why[:3])
     if notes:
         detail += "; " + "; ".join(notes)
     return Observation(check, health, float(made), "generated", detail,
@@ -605,6 +650,10 @@ def publish_card(page: str, entry: dict[str, Any], day: str) -> tuple[str, str]:
     raises it when an automatic post is held) share one card a day."""
     name = PAGES[page]["name"]
     kind = entry.get("kind") or "text"
+    if PAGES[page].get("kind") == "profile":
+        return (f"Publish {entry.get('id')} to {name} ({day})",
+                f"Next approved post for {name}. Approve and it goes out now, "
+                "word for word as approved.\n\n" + _card_body(entry, name)[:600])
     reshare_line = ", then reshares to your profile" if kind != "poll" else ""
     return (f"Publish {entry.get('id')} to {name} ({day})",
             f"Next approved {kind} post for the {name} page. Approve and it goes "
@@ -671,7 +720,7 @@ class LinkedInModule:
             # HIGH, not CRITICAL: this check reads prose heuristically and
             # can be wrong. CRITICAL is the only severity that breaks quiet
             # hours and rings the phone, and a keyword match has not earned
-            # that. A confirmed restriction is the owner's judgement to make.
+            # that. A confirmed restriction is Miro's judgement to make.
             Check("account_alerts", account_alerts, timedelta(hours=2),
                   Severity.HIGH,
                   "nothing in the agent's log reads as a LinkedIn restriction",
@@ -699,7 +748,7 @@ class LinkedInModule:
                       "requests and messages to the active LinkedIn pages are "
                       "seen and answered",
                       baseline_sigma=None, timeout=timedelta(minutes=5)))
-        for page in PAGES:
+        for page in COMPANY_PAGES:
             out += [
                 Check(f"{page}_post_runway", bind(post_runway, page),
                       timedelta(hours=6), Severity.HIGH,
@@ -710,12 +759,12 @@ class LinkedInModule:
                       f"{page} follower count matches the names recorded",
                       baseline_sigma=None),
             ]
-        if "mmt" in PAGES:
-            from .mmt_series import mmt_facts_fresh
+        if "tutorco" in PAGES:
+            from .tutorco_series import tutorco_facts_fresh
             out.append(
-                Check("mmt_facts_fresh", mmt_facts_fresh, timedelta(hours=24),
+                Check("tutorco_facts_fresh", tutorco_facts_fresh, timedelta(hours=24),
                       Severity.NORMAL,
-                      "every fact behind the TutorSite posts is still on the "
+                      "every fact behind the ExampleTutor posts is still on the "
                       "public site",
                       baseline_sigma=None, timeout=timedelta(minutes=2)))
         return tuple(out)
@@ -747,11 +796,12 @@ class LinkedInModule:
                 # approval; nothing goes out without a tap.
                 tier=Tier.ASK,
                 summary="Publish the next approved post to a LinkedIn page "
-                        "and reshare it to the owner's profile",
+                        "and reshare it to Miro's profile (the profile "
+                        "lane posts from his own profile, no reshare)",
                 run=publish, dry_run=publish_dry,
                 irreversible=True,
                 params={"page": "an active page key (LINKEDIN_PAGES_ACTIVE): 'guardian' "
-                                "'academy' or 'mmt'",
+                                "'academy', 'tutorco' or 'profile'",
                         "entry_id": "the post-bank id, e.g. B13 (optional; "
                                     "the next approved entry is used)"},
                 max_per_hour=2,
@@ -767,7 +817,7 @@ class LinkedInModule:
             ),
             Action(
                 name="linkedin.autopublish_post",
-                # Tier AUTO since 2026-10-11 (the owner: post the Vault page's
+                # Tier AUTO since 2026-10-11 (Miro: post the Vault page's
                 # approved posts automatically, the way reels do; memory
                 # approval-policy). The shape of content.autopublish_reel:
                 # posts only past publish.autopublish_refusal -- Vault only,
@@ -800,11 +850,11 @@ class LinkedInModule:
                 # publishing promised "I'll retry it next sweep" and nothing
                 # did (B5, G8 on 2026-09-28).
                 tier=Tier.ASK,
-                summary="Reshare a published LinkedIn page post to the owner's profile",
+                summary="Reshare a published LinkedIn page post to Miro's profile",
                 run=reshare, dry_run=reshare_dry,
                 irreversible=True,
                 params={"page": "an active page key (LINKEDIN_PAGES_ACTIVE): 'guardian' "
-                                "'academy' or 'mmt'",
+                                "'academy', 'tutorco' or 'profile'",
                         "entry_id": "the published post's id, e.g. B5"},
                 max_per_hour=4,
                 topic_param="page", verbose_card=True,
@@ -812,7 +862,7 @@ class LinkedInModule:
             ),
             Action(
                 name="linkedin.autoreshare_post",
-                # Tier AUTO since 2026-10-12 (the owner: "whatever you think should
+                # Tier AUTO since 2026-10-12 (Miro: "whatever you think should
                 # be done should be automatically approved, but whatever is
                 # really urgent should only need human approval"; memory
                 # approval-policy). The shape of autopublish_post: reshares
@@ -826,7 +876,7 @@ class LinkedInModule:
                 # the page, so it is not marked irreversible.
                 tier=Tier.AUTO,
                 summary="Reshare the Vault page's post ATLAS published today to "
-                        "the owner's profile, once it passes every automatic check",
+                        "Miro's profile, once it passes every automatic check",
                 run=autoreshare, dry_run=autoreshare_dry,
                 rollback=pause_autoreshare,
                 params={"page": "the page key; only 'guardian' (Vault) reshares itself",
@@ -837,7 +887,7 @@ class LinkedInModule:
             Action(
                 name="linkedin.update_page_identity",
                 # Tier 2: a page's public name and logo are its identity.
-                # the owner asked for it (2026-09-27/28: Guardian -> Vault, the
+                # Miro asked for it (2026-09-27/28: Guardian -> Vault, the
                 # Vault mark); the card is still the one tap that does it.
                 tier=Tier.ASK,
                 summary="Rename a LinkedIn page and/or replace its logo with "
@@ -845,7 +895,7 @@ class LinkedInModule:
                 run=update_identity, dry_run=update_identity_dry,
                 rollback=restore_identity,
                 params={"page": "an active page key (LINKEDIN_PAGES_ACTIVE): 'guardian' "
-                                "'academy' or 'mmt'",
+                                "'academy', 'tutorco' or 'profile'",
                         "name": "the new page name (optional)",
                         "logo": "a PNG file name in the LinkedIn brand folder, "
                                 "square, at least 300px (optional)"},
@@ -855,7 +905,7 @@ class LinkedInModule:
             ),
             Action(
                 name="linkedin.approve_draft",
-                # Tier 1 since 2026-10-12 (the owner: "whatever you think should
+                # Tier 1 since 2026-10-12 (Miro: "whatever you think should
                 # be done should be automatically approved, but whatever is
                 # really urgent should only need human approval"; memory
                 # approval-policy). Approving flips a draft to approved in
@@ -871,7 +921,7 @@ class LinkedInModule:
                 run=approve_draft, dry_run=approve_draft_dry,
                 rollback=unapprove_draft,
                 params={"page": "an active page key (LINKEDIN_PAGES_ACTIVE): 'guardian' "
-                                "'academy' or 'mmt'",
+                                "'academy', 'tutorco' or 'profile'",
                         "entry_id": "the draft's id, e.g. B14",
                         "text_sha256": "sha256 of the text the card showed; "
                                        "a mismatch means the draft changed "
@@ -895,7 +945,7 @@ class LinkedInModule:
             ),
             Action(
                 name="linkedin.send_request_reply",
-                # Tier 1 since 2026-10-07 (the owner: "make sure when requests come
+                # Tier 1 since 2026-10-07 (Miro: "make sure when requests come
                 # for either page you will see it and reply to it"). Only a
                 # draft id -- never free text (invariant 2). Gated in code at
                 # send time (requests._guard_send, the dry run): a page_message
@@ -928,7 +978,7 @@ class LinkedInModule:
 
         # No signal for post runway. `{page}_post_runway` already reports it
         # as DEGRADED/FAILING at Severity.HIGH, which is actionable and
-        # routes to the owner on its own. A signal as well is two notifications
+        # routes to Miro on its own. A signal as well is two notifications
         # for one fact -- the same reasoning applied above to missing state.
         # The draft list the signal used to carry now lives in the check's
         # detail, so nothing was lost by dropping it.
@@ -946,7 +996,7 @@ class LinkedInModule:
             posting_day_over,
         )
         from .store import today
-        for page in PAGES:
+        for page in PAGES:  # noqa: PLC0206
             entry, _why = gate(state, page)
             # Vault's post publishes itself (kernel.linkedin_autopost); its
             # card is raised there, only when a gate refuses it.
@@ -974,7 +1024,8 @@ class LinkedInModule:
             # card when it cannot; from tomorrow it is this signal's again.
             owned = autoreshare_candidate(state, page) if autoreshare_owns(page) \
                 else None
-            for e in _bank(state, page)[0]:
+            for e in ([] if PAGES[page].get("kind") == "profile"
+                      else _bank(state, page)[0]):
                 if owned is not None and str(e.get("id")) == str(owned.get("id")):
                     continue
                 published = str(e.get("published") or "")
@@ -1029,7 +1080,7 @@ class LinkedInModule:
                      f"{str(i.get('blocked_by'))[:100]}" for i in blocked[:7]]
             # A fixed title: signals dedup on title for 24 h, and a count in
             # it ("3 item(s)" then "4 item(s)") raised this seven times in a
-            # week (the owner, 2026-10-06: less chatter). The count is in the body.
+            # week (Miro, 2026-10-06: less chatter). The count is in the body.
             out.append(Signal(
                 title="LinkedIn: items waiting on you",
                 body=f"{len(blocked)} item(s):\n" + "\n".join(lines)
@@ -1049,7 +1100,7 @@ class LinkedInModule:
             return ()
         out: list[AgendaItem] = []
         now = datetime.now(UTC)
-        for page in PAGES:
+        for page in COMPANY_PAGES:
             entries, posting = _bank(state, page)
             if not entries or not posting.get("enabled", False):
                 continue

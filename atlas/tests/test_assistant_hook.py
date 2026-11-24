@@ -79,12 +79,12 @@ async def test_the_command_hook_answers_a_question_and_declines_the_rest(
 
     monkeypatch.setattr(assistant, "answer", fake_answer)
     out = await assistant.MODULE.command("ask what is the capital of Peru?",
-                                         channel="slack", who="UOWNER")
+                                         channel="slack", who="UMIRO")
     assert out is not None and out.ok and out.spoken.startswith("Lima.")
     assert out.action is None and out.ran is False
-    assert seen == [("what is the capital of Peru?", "slack", "UOWNER")]
+    assert seen == [("what is the capital of Peru?", "slack", "UMIRO")]
     assert await assistant.MODULE.command("snapshot everything", channel="slack",
-                                          who="UOWNER") is None
+                                          who="UMIRO") is None
 
 
 async def test_intent_act_reaches_the_hook_only_from_a_channel_that_proves_him(
@@ -105,12 +105,12 @@ async def test_intent_act_reaches_the_hook_only_from_a_channel_that_proves_him(
                                who="+1555")
     assert refused.ok is False and seen == []
     out = await intent.act("ask what is the capital of Peru?", channel="slack",
-                           who="UOWNER")
+                           who="UMIRO")
     assert out.ok and out.spoken == "Lima." and seen == ["what is the capital of Peru?"]
 
 
 def test_the_module_has_one_action_and_needs_no_credential(monkeypatch):
-    # Only the Tier 1 owner update; nothing else (the owner, 2026-11-19).
+    # Only the Tier 1 owner update; nothing else (Miro, 2026-11-19).
     assert [a.name for a in assistant.MODULE.actions()] == ["assistant.update_owner"]
     assert assistant.MODULE.requires_env == ()
     # Off by default: no check on the board for a module nobody can ask.
@@ -177,10 +177,10 @@ def test_a_plain_message_in_the_assistant_channel_is_a_question(monkeypatch, on)
     monkeypatch.setattr(intent, "act", never_act)
     monkeypatch.setattr("atlas.kernel.comms.notify", fake_notify)
 
-    asyncio.run(slack_events._request("atlas, snapshot everything", "UOWNER", "C0ASK",
+    asyncio.run(slack_events._request("atlas, snapshot everything", "UMIRO", "C0ASK",
                                       "7.7"))
 
-    assert asked == [("snapshot everything", "slack", "UOWNER")]
+    assert asked == [("snapshot everything", "slack", "UMIRO")]
     assert replied and replied[0].body.startswith("Lima.")
     assert replied[0].channel == "C0ASK" and replied[0].thread == "7.7"
 
@@ -213,7 +213,7 @@ def test_an_explicit_ask_anywhere_goes_to_the_assistant_not_chat(monkeypatch, on
     monkeypatch.setattr("atlas.kernel.comms.notify", fake_notify)
 
     asyncio.run(slack_events._request("atlas, ask what is the capital of Peru?",
-                                      "UOWNER", "CRANDOM", "7.8"))
+                                      "UMIRO", "CRANDOM", "7.8"))
 
     assert asked == ["what is the capital of Peru?"]
     assert replied and replied[0].body == "Lima." and replied[0].channel == "CRANDOM"

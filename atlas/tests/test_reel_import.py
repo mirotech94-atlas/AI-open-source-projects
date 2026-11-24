@@ -69,7 +69,7 @@ def world(tmp_path, monkeypatch):
 
 
 async def test_a_good_file_posts_itself_through_the_reels_path(world):
-    """the owner, 2026-09-28: Veo makes the episode, ATLAS uploads it everywhere."""
+    """Miro, 2026-09-28: Veo makes the episode, ATLAS uploads it everywhere."""
     done = await importer.import_reel(world["video"], CAPTION,
                                       series="The Parking Spot", part=2,
                                       total_parts=3)

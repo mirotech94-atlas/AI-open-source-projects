@@ -1,5 +1,5 @@
 """clips.publish_promo: the Academy store's promo reel on the clips accounts
-(the owner, 2026-10-05, "post on clips too"), explicit at every layer and never
+(Miro, 2026-10-05, "post on clips too"), explicit at every layer and never
 a hole in the campaign-clip rule."""
 from __future__ import annotations
 
@@ -12,13 +12,13 @@ from atlas.modules import instagram
 from atlas.modules.clips import promo
 from atlas.modules.content import postiz
 
-CAPTION = "My AI runs my businesses while I sleep.\n\nagency.example.com\n\nMade with AI"
+CAPTION = "My AI runs my businesses while I sleep.\n\nagency.storefront.test\n\nMade with AI"
 
 
 @pytest.fixture(autouse=True)
 def _old_design_allowed(monkeypatch):
     """The posting tests below drive ATLAS-rendered promo Shorts, which post
-    only with the NotebookLM fallback on (the owner, 2026-10-19). The NotebookLM-
+    only with the NotebookLM fallback on (Miro, 2026-10-19). The NotebookLM-
     only gate has its own tests at the end of this file."""
     monkeypatch.setenv("ACADEMY_NOTEBOOKLM_FALLBACK", "true")
 
@@ -48,7 +48,7 @@ def test_the_youtube_title_is_the_first_sentence_whole():
 
 
 def test_legs_default_to_all_three_and_a_subset_gets_its_own_claim():
-    # the owner, 2026-10-11: YouTube and TikTok only unless a run names Instagram.
+    # Miro, 2026-10-11: YouTube and TikTok only unless a run names Instagram.
     assert promo.legs_of("") == ("tiktok", "youtube") == promo.legs_of(None)
     assert promo.legs_of("instagram,tiktok,youtube") == promo.LEGS
     assert promo.legs_of("youtube") == ("youtube",)
@@ -165,7 +165,7 @@ async def test_a_promo_on_the_clips_tiktok_is_ai_made_not_brand_content(
 async def test_a_long_youtube_title_is_refused_never_cut(tmp_path, monkeypatch):
     _, path = _render(tmp_path, monkeypatch)
     monkeypatch.setenv("POSTIZ_API_KEY", "k")
-    monkeypatch.setenv("POSTIZ_YOUTUBE_CLIPS_INTEGRATION", "AtlasClips (@example_handle)")
+    monkeypatch.setenv("POSTIZ_YOUTUBE_CLIPS_INTEGRATION", "AtlasClips (@miroatlas)")
     status, said, *_ = await postiz.post_youtube_promo(str(path), "x" * 101, CAPTION, [])
     assert status == postiz.REFUSED and "2-100" in said
 
@@ -258,7 +258,7 @@ async def test_publish_promo_posts_each_leg_once_and_records_the_tokens(
     assert store.posts and store.posts[0][:2] == ("ai-for-every-age", 90)
     assert all(v == (90, "sent") for v in store.held.values()) and len(store.held) == 2
     assert ("settled", "promo:90") in claims
-    # The default run: TikTok and YouTube, no Instagram (the owner, 2026-10-11).
+    # The default run: TikTok and YouTube, no Instagram (Miro, 2026-10-11).
     assert [leg[0] for leg in legs] == ["tiktok", "youtube"]
     assert legs[1][1] == "My AI runs my businesses while I sleep."
     assert result.rollback_token == '{"tiktok": "pz-1", "youtube": "pz-2"}'
@@ -369,7 +369,7 @@ async def test_an_unset_clips_instagram_is_not_configured(monkeypatch, missing):
 
 
 async def test_the_promo_check_probes_the_file_without_the_still_frame_rule(monkeypatch):
-    """The editions are composed frames by the owner's choice; the stories lane's
+    """The editions are composed frames by Miro's choice; the stories lane's
     motion rule would hold every one of them (card #312, 2026-10-07)."""
     from atlas.modules.content import quality
     monkeypatch.setenv("ACADEMY_PROMO_AUTOPOST", "on")
@@ -536,7 +536,7 @@ def test_the_repost_window(monkeypatch, env, days):
     assert promo.repost_days() == days
 
 def test_instagram_switched_off_is_not_configured_everywhere(monkeypatch):
-    """the owner, 2026-10-11: Instagram off. Every caller gets its token through
+    """Miro, 2026-10-11: Instagram off. Every caller gets its token through
     instagram._cfg or the DM reader, and both say not configured."""
     from atlas.modules import instagram
     from atlas.modules.messages import instagram_dm
@@ -573,14 +573,14 @@ def test_a_youtube_caption_is_vetted_like_the_caption():
 
 
 def test_promos_carry_tiktoks_own_brand_disclosure_not_paid_partnership():
-    """the owner's own products (the growth plan, 2026-10-12)."""
+    """Miro's own products (the growth plan, 2026-10-12)."""
     assert postiz.PROMO_TIKTOK_FLAGS["brand_organic_toggle"] is True
     assert postiz.PROMO_TIKTOK_FLAGS["brand_content_toggle"] is False
 
 
 # ------------------------------------------------- NotebookLM only (2026-10-19)
 #
-# the owner: every Academy Short is NotebookLM's. The post itself refuses an
+# Miro: every Academy Short is NotebookLM's. The post itself refuses an
 # ATLAS render (a teaching cut, a lesson/concept/product reel) while
 # ACADEMY_NOTEBOOKLM_FALLBACK is off, read from the render's draft source in
 # the database -- and a source that can't be read is refused too.
@@ -627,7 +627,7 @@ async def test_a_render_whose_source_cant_be_read_is_refused(monkeypatch, source
 
 
 async def test_an_approved_card_of_an_atlas_render_is_refused_too(monkeypatch):
-    """clips.publish_promo (the owner's tap on an old card) asks the same."""
+    """clips.publish_promo (Miro's tap on an old card) asks the same."""
     monkeypatch.delenv("ACADEMY_NOTEBOOKLM_FALLBACK", raising=False)
     _source(monkeypatch, OLD_SOURCES[0])
     from atlas.modules.content import crosspost

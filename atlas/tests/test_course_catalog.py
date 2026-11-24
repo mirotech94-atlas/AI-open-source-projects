@@ -17,7 +17,7 @@ from atlas.modules.course import catalog, channels, compose, data, honesty, post
 from atlas.modules.course import price as live
 
 T0 = datetime(2026, 9, 29, 18, 30, tzinfo=UTC)
-VAULT = Path("/home/user/Documents/ATLAS Vault")
+VAULT = Path("/Users/mac/Documents/ATLAS Vault")
 
 HANDLES = {
     "operator": "build-a-safe-ai-operator-the-course",
@@ -64,7 +64,7 @@ async def _compose(product, fmt="social", lesson=None, *, read=None):
 def test_the_catalog_is_the_five_store_products_and_nothing_else():
     assert {k: p.handle for k, p in catalog.CATALOG.items()} == HANDLES
     for p in catalog.CATALOG.values():
-        assert p.url == f"https://academy-store.myshopify.example/products/{p.handle}"
+        assert p.url == f"https://atlasacademy-ai.myshopify.com/products/{p.handle}"
         assert p.audience and p.platforms and p.languages and p.vault_dir
         assert (Path(data.PRODUCTS) / p.data).is_file()
         assert "shopify_blog" in p.platforms
@@ -248,7 +248,7 @@ async def test_a_product_is_drafted_with_its_own_live_read(book):
     assert HANDLES["sixty_plus"] in post_args[-1]
     body = next(a for sql, a in book.updates if "status = 'drafted'" in sql)[1]
     assert "$19." in body and catalog.AGE_NOTICE in body
-    assert "This is my own guide. -- the owner" in body
+    assert "This is my own guide. -- Miro" in body
     assert "lesson 6.2" in body
 
 
@@ -370,7 +370,7 @@ async def test_reads_that_disagree_or_fail_are_unknown(store):
 
 
 async def test_only_catalog_products_on_the_store_are_read(store):
-    other = "https://academy-store.myshopify.example/products/some-other-thing.json"
+    other = "https://atlasacademy-ai.myshopify.com/products/some-other-thing.json"
     read = await live.read_price(other)
     assert not read.read and "catalog product" in read.why
     assert store.asked == []
@@ -602,7 +602,7 @@ def _norm(text: str) -> str:
     return " ".join(text.replace("[ ] ", "").split())
 
 
-@pytest.mark.skipif(not VAULT.is_dir(), reason="the vault is on the owner's Mac only")
+@pytest.mark.skipif(not VAULT.is_dir(), reason="the vault is on Miro's Mac only")
 @pytest.mark.parametrize("product", [k for k in catalog.KEYS if k != "operator"])
 def test_every_copied_excerpt_is_word_for_word_from_its_source(product):
     d = data.data(product)
@@ -618,7 +618,7 @@ def test_every_copied_excerpt_is_word_for_word_from_its_source(product):
                 assert _norm(line) in whole, (source, line)
 
 
-@pytest.mark.skipif(not VAULT.is_dir(), reason="the vault is on the owner's Mac only")
+@pytest.mark.skipif(not VAULT.is_dir(), reason="the vault is on Miro's Mac only")
 def test_the_operators_blog_stories_are_word_for_word():
     for sec in data.blog("operator")["sections"]:
         assert _norm(sec["text"]) in _norm((VAULT / sec["source"]).read_text())

@@ -24,7 +24,7 @@ from atlas.modules.agency import client as client_mod
 from atlas.modules.agency.client import client_data
 
 SLUG = "joes-plumbing-7"
-ORIGIN = "https://agency.example.com"
+ORIGIN = "https://agency.storefront.test"
 PATH = f"/public/call-me/{SLUG}"
 PAGE = f"{ORIGIN}/preview/{SLUG}/"
 OUTSIDER = "203.0.113.9"
@@ -48,7 +48,7 @@ def _returns(value):
 @pytest.mark.parametrize(("raw", "e164"), [
     ("(718) 555-0199", "+17185550199"), ("+1 718 555 0199", "+17185550199"),
     ("17185550199", "+17185550199"),
-    ("(018) 555-0199", None), ("(555) 010-0100", None), ("(911) 555-0199", None),
+    ("(018) 555-0199", None), ("(718) 155-0199", None), ("(911) 555-0199", None),
     ("555-0199", None), ("+44 20 7123 4567", None), ("", None), (None, None),
     ("7" * 50, None)])
 def test_only_a_real_us_number_is_called(raw, e164):
@@ -113,7 +113,7 @@ def test_the_widget_carries_the_endpoint_the_text_and_mapfronts_line(monkeypatch
     from pathlib import Path
     client = sitetemplate.themed(client_data(LEAD, None, Path("/nonexistent")), "trades")
     js = callme.widget_js(SLUG, client)
-    assert f'"endpoint": "https://agency.example.com/public/call-me/{SLUG}"' in js
+    assert f'"endpoint": "https://agency.storefront.test/public/call-me/{SLUG}"' in js
     assert callme.CONSENT_TEXT[:60] in js
     assert callme.CURRENT_VERSION in js and "(718) 555-0000" in js
     assert "innerHTML" not in js and "localStorage" not in js
@@ -192,7 +192,7 @@ class World:
         async def guard(lead_id, channel, *, now=None):
             if guard_ok:
                 return SimpleNamespace(lead=LEAD, phone="+17185550199",
-                                       opening="Hi, it's the owner's assistant..."), None
+                                       opening="Hi, it's Miro's assistant..."), None
             return None, "calling leads is off: AGENCY_CALLS_ENABLED is not set"
         monkeypatch.setattr(consent, "contact_guard", guard)
 
@@ -237,7 +237,7 @@ def _post(app, body=None, origin=ORIGIN, host=OUTSIDER, path=PATH):
 
 def test_a_ticked_box_records_the_consent_and_the_kernel_places_the_call(
         app, monkeypatch):
-    """2026-10-06 (the owner: "call them as well"): the consent is the gate, and
+    """2026-10-06 (Miro: "call them as well"): the consent is the gate, and
     once it passes the call goes through the executor with nobody attached;
     no card, a receipt."""
     world = World(monkeypatch)
@@ -305,7 +305,7 @@ def test_the_honeypot_records_nothing(app, monkeypatch):
     assert world.consents == [] and world.cards == []
 
 
-def test_blocked_by_the_guard_means_no_call_and_owner_is_told_why(app, monkeypatch):
+def test_blocked_by_the_guard_means_no_call_and_miro_is_told_why(app, monkeypatch):
     world = World(monkeypatch, guard_ok=False)
     assert _post(app).status_code == 200
     assert len(world.consents) == 1 and world.cards == [] and world.ran == []
@@ -324,8 +324,8 @@ def test_rate_limited_per_address_and_per_site(app, monkeypatch):
 
 
 @pytest.mark.parametrize("origin", [
-    "https://evil.example", "http://agency.example.com",
-    "https://joes-plumbing-7.agency.example.com", "https://evilagency.example.com", None])
+    "https://evil.example", "http://agency.storefront.test",
+    "https://joes-plumbing-7.agency.storefront.test", "https://evilagency.storefront.test", None])
 def test_any_other_origin_is_refused(app, monkeypatch, origin):
     world = World(monkeypatch)
     assert _post(app, origin=origin).status_code == 403
@@ -351,7 +351,7 @@ def test_a_sandboxed_preview_sends_origin_null_and_is_taken_for_a_deployed_slug(
 
 @pytest.mark.parametrize("page", [
     f"{ORIGIN}/", f"{ORIGIN}/preview/other-3/", f"{ORIGIN}/preview/", f"{ORIGIN}/x/{SLUG}/",
-    f"{ORIGIN}/preview/{SLUG}x/", f"http://agency.example.com/preview/{SLUG}/"])
+    f"{ORIGIN}/preview/{SLUG}x/", f"http://agency.storefront.test/preview/{SLUG}/"])
 def test_a_page_that_is_not_this_sites_preview_is_refused(app, monkeypatch, page):
     world = World(monkeypatch)
     assert _post(app, body={**GOOD, "page": page}).status_code == 422
@@ -409,7 +409,7 @@ async def test_outside_calling_hours_the_call_waits_for_a_tick(monkeypatch):
 
 async def test_a_lead_who_asked_is_top_of_the_brief(monkeypatch, tmp_path):
     """A lead that submitted the form (or rang the line) is the priority, and
-    the brief gives Mapfront's line for the owner to hand out."""
+    the brief gives Mapfront's line for Miro to hand out."""
     from datetime import UTC, datetime
 
     from atlas.modules.agency import calls, pricing

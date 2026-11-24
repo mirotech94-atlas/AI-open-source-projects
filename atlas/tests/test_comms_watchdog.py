@@ -76,7 +76,7 @@ async def test_no_registered_channels_is_unknown_not_failing():
 
 async def test_it_names_the_channel_that_would_actually_take_the_message():
     """Matrix is registered and available, but Slack comes first. Reporting
-    "matrix" here would send the owner looking in the wrong place."""
+    "matrix" here would send Miro looking in the wrong place."""
     install(FakeChannel("matrix"), FakeChannel("slack"))
     obs = await watchdog.check_reachable()
     assert obs.health is Health.OK
@@ -124,7 +124,7 @@ async def test_a_delivered_message_is_ok_and_names_the_channel():
 
 async def test_silence_alone_is_never_a_fault():
     """Deliberately not a staleness check: when nothing is wrong ATLAS sends
-    nothing, and alerting on quiet trains the owner to ignore this tile."""
+    nothing, and alerting on quiet trains Miro to ignore this tile."""
     router.LAST_SEND = Delivery(datetime.now(UTC) - timedelta(days=3),
                                 "brief", Severity.NORMAL, ("slack",))
     assert (await watchdog.check_last_send()).health is Health.OK
@@ -198,12 +198,12 @@ async def test_a_working_slack_token_is_ok(monkeypatch):
     monkeypatch.setenv("SLACK_CHANNEL", "C123")
 
     async def fake_post(url, **kw):
-        return {"ok": True, "team": "18dn", "user": "atlas"}, None
+        return {"ok": True, "team": "storefront", "user": "atlas"}, None
 
     monkeypatch.setattr(watchdog, "post_json", fake_post)
     obs = await watchdog.check_slack_auth()
     assert obs.health is Health.OK
-    assert obs.evidence["team"] == "18dn"
+    assert obs.evidence["team"] == "storefront"
 
 
 async def test_a_valid_token_with_no_channel_is_degraded(monkeypatch):
@@ -211,7 +211,7 @@ async def test_a_valid_token_with_no_channel_is_degraded(monkeypatch):
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-good")
 
     async def fake_post(url, **kw):
-        return {"ok": True, "team": "18dn"}, None
+        return {"ok": True, "team": "storefront"}, None
 
     monkeypatch.setattr(watchdog, "post_json", fake_post)
     assert (await watchdog.check_slack_auth()).health is Health.DEGRADED
@@ -379,7 +379,7 @@ def test_the_module_offers_no_actions():
 def _slack_env(monkeypatch):
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-good")
     monkeypatch.setenv("SLACK_CHANNEL", "CDEF")
-    monkeypatch.setenv("SLACK_CHANNELS", "cloudco:CVPS,decisions:CDEC")
+    monkeypatch.setenv("SLACK_CHANNELS", "cloudhost:CVPS,decisions:CDEC")
     monkeypatch.setenv("SLACK_INSTAGRAM_REELS_CHANNEL", "CREELS")
     # The Academy drafts channel has a default id; here it shares the reels one.
     monkeypatch.setenv("ACADEMY_TUTORIALS_SLACK_CHANNEL", "CREELS")
@@ -389,7 +389,7 @@ def _slack_env(monkeypatch):
 
 
 def _fake_slack(monkeypatch, members: dict[str, bool], broken: set[str] = frozenset()):
-    names = {"CVPS": "cloudco", "CDEC": "atlas-decisions", "CREELS": "reels",
+    names = {"CVPS": "cloudhost", "CDEC": "atlas-decisions", "CREELS": "reels",
              "CDEF": "mail-calender"}
 
     async def fake_post(url, **kw):
@@ -407,13 +407,13 @@ def _fake_slack(monkeypatch, members: dict[str, bool], broken: set[str] = frozen
 
 
 async def test_a_channel_the_bot_is_not_in_is_degraded_and_says_how_to_fix(monkeypatch):
-    """The 2026-09-27 case: cards reached #cloudco through chat:write.public,
-    but the owner's reply there never reached ATLAS."""
+    """The 2026-09-27 case: cards reached #cloudhost through chat:write.public,
+    but Miro's reply there never reached ATLAS."""
     _slack_env(monkeypatch)
     _fake_slack(monkeypatch, {"CDEC": True, "CREELS": True})
     obs = await watchdog.check_slack_channels()
     assert obs.health is Health.DEGRADED
-    assert "#cloudco (cloudco)" in obs.detail and "#mail-calender (default)" in obs.detail
+    assert "#cloudhost (cloudhost)" in obs.detail and "#mail-calender (default)" in obs.detail
     assert "/invite @atlas" in obs.detail
     assert "#reels" not in obs.detail
 

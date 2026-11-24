@@ -6,7 +6,7 @@ offered at all. A draft is never published, approved text is never edited,
 and the only link allowed is the page's own. It has no rollback: a LinkedIn
 post can only be undone by deleting it, and deletion is permanently denied.
 
-**Vault posts publish themselves** (the owner, 2026-10-11: post the Vault page's
+**Vault posts publish themselves** (Miro, 2026-10-11: post the Vault page's
 approved posts automatically "the way reels already do"; memory
 approval-policy -- a standing rule is a tier set in code, never a card
 approved at runtime). `linkedin.autopublish_post` is Tier AUTO, the shape of
@@ -26,10 +26,10 @@ card again until the pause is cleared by hand. Anything refused is the
 Tier 2 `linkedin.publish_post` card with "Held for you: <reason>"
 (`kernel.linkedin_autopost`).
 
-The reshare to the owner's profile is the distribution (a controlled pair: 1
+The reshare to Miro's profile is the distribution (a controlled pair: 1
 impression without it, 10 with it), done through the durable deep link and
 verified rather than assumed. A card-approved publish reshares as before.
-An automatic one does not: a reshare posts on the owner's personal profile and
+An automatic one does not: a reshare posts on Miro's personal profile and
 cannot be taken back, which is not the reels pattern (reels post to ATLAS's
 own accounts), so it stays `linkedin.reshare_post`, Tier 2 -- the entry is
 marked `reshared: False` and the module's reshare card follows.
@@ -142,7 +142,7 @@ def _entry(state: dict[str, Any], key: str, entry_id: str) -> dict | None:
 async def publish_dry(page: str = "", entry_id: str = "") -> ActionResult:
     try:
         state = load()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
     entry, why = gate(state, page)
     if entry is None:
@@ -151,10 +151,16 @@ async def publish_dry(page: str = "", entry_id: str = "") -> ActionResult:
         return ActionResult(False, f"{entry_id} is not the next approved entry for "
                                    f"{page}; that is {entry.get('id')}")
     text = str(entry.get("text") or "")
+    if PAGES[page].get("kind") == "profile":
+        return ActionResult(
+            True,
+            f"would post {entry.get('id')} from {PAGES[page]['name']} "
+            f"({len(text)} chars, text-only, no reshare):\n" + text[:400],
+            evidence={"page": page, "entry": entry.get("id"), "chars": len(text)})
     return ActionResult(
         True,
         f"would publish {entry.get('id')} to the {PAGES[page]['name']} page "
-        f"({len(text)} chars, text-only), then reshare it to the owner's profile:\n"
+        f"({len(text)} chars, text-only), then reshare it to Miro's profile:\n"
         + text[:400],
         evidence={"page": page, "entry": entry.get("id"), "chars": len(text)})
 
@@ -164,7 +170,7 @@ async def publish_dry(page: str = "", entry_id: str = "") -> ActionResult:
 # normalises whitespace on save cannot silently turn one back into a plain
 # space. Quill's innerText readback has rendered a plain typed space as any
 # of these; a comparison that does not fold them together aborts a post
-# that is, to the eye and to LinkedIn, identical to the one the owner approved.
+# that is, to the eye and to LinkedIn, identical to the one Miro approved.
 _SPACE_LIKE = chr(0x00A0) + chr(0x202F) + chr(0x2007)
 
 
@@ -214,14 +220,14 @@ def _readback_diff(approved: str, got: str) -> str | None:
 
 
 def text_sha256(text: str) -> str:
-    """The hash a card shows the owner alongside a draft's text, and the one
+    """The hash a card shows Miro alongside a draft's text, and the one
     `approve_draft` is asked to confirm against before it approves anything.
     A mismatch means the sweep rewrote the draft after the card went out."""
     return hashlib.sha256((text or "").encode()).hexdigest()
 
 
 def payload_sha256(entry: dict[str, Any]) -> str:
-    """The hash a card shows the owner, and the one `approve_draft` confirms
+    """The hash a card shows Miro, and the one `approve_draft` confirms
     before it approves anything -- covering the WHOLE payload a kind
     carries, not only `text` (Task 64). Before this, only the text was
     hashed: the sweep could have rewritten a poll's options, or a draft's
@@ -459,7 +465,7 @@ async def _open_poll_form(tab) -> None:
     direct = tab.locator(POLL_BUTTON_SELECTOR).first
     try:
         await direct.wait_for(state="visible", timeout=POLL_DIRECT_TIMEOUT_MS)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         await _click_more(tab)
         direct = tab.locator(POLL_BUTTON_SELECTOR).first
         await direct.wait_for(state="visible", timeout=10000)
@@ -496,7 +502,7 @@ async def _post_button(tab):
         try:
             await button.wait_for(state="visible", timeout=8000)
             return button
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             last = exc
     raise RuntimeError(f"no Post button in the composer ({last})")
 
@@ -532,10 +538,12 @@ def _mark_unverified(state: dict[str, Any], page: str, entry: dict[str, Any],
     save(state)
     log_run([(f"Post clicked for {entry.get('id')} on {PAGES[page]['name']} "
               "but not confirmed; marked posted_unverified")], label="publish")
+    where = ("on your recent activity" if PAGES[page].get("kind") == "profile"
+             else f"on the {PAGES[page]['name']} page's published list")
     return ActionResult(
         False,
         f"Post was clicked for {entry.get('id')} but it could not be "
-        f"confirmed on the {PAGES[page]['name']} page's published list; "
+        f"confirmed {where}; "
         f"marked posted_unverified so the gate will not send it again -- "
         f"check LinkedIn by hand.", evidence=evidence)
 
@@ -550,6 +558,8 @@ async def _publish(page: str, entry_id: str, *, auto: bool = False) -> ActionRes
     spec = PAGES[page]
     kind = entry.get("kind") or "text"
     text = str(entry.get("text") or "")
+    if spec.get("kind") == "profile":
+        return await _publish_profile(state, page, entry)
     if kind in ("image", "video") and not entry.get("media"):
         return ActionResult(False, f"{entry.get('id')} is a {kind} post with "
                                    f"no media attached; refusing rather than "
@@ -698,30 +708,30 @@ async def _publish(page: str, entry_id: str, *, auto: bool = False) -> ActionRes
     # No promise of a retry that nothing performs: the reshare card is raised
     # by the module's signals, and `linkedin.reshare_post` redoes it.
     if auto and autoreshare_owns(page):
-        tail = (" on its own; the reshare to the owner's profile follows on its own "
+        tail = (" on its own; the reshare to Miro's profile follows on its own "
                 f"({AUTORESHARE_ENV}), or a 'Reshare {entry.get('id')}' card if "
                 "it cannot")
     elif auto:
-        tail = (" on its own; the reshare to the owner's profile stays his tap -- a "
+        tail = (" on its own; the reshare to Miro's profile stays his tap -- a "
                 f"'Reshare {entry.get('id')}' card follows")
     elif reshared is True:
-        tail = ", reshared to the owner's profile"
+        tail = ", reshared to Miro's profile"
     elif reshared == UNVERIFIED:
-        tail = ("; the reshare to the owner's profile was clicked but did not verify -- "
+        tail = ("; the reshare to Miro's profile was clicked but did not verify -- "
                 "check his activity")
     else:
-        tail = ("; the reshare to the owner's profile did not go out -- a "
+        tail = ("; the reshare to Miro's profile did not go out -- a "
                 f"'Reshare {entry.get('id')}' card follows")
     detail = f"published {entry.get('id')} to the {spec['name']} page" + tail
     return ActionResult(True, detail, evidence=evidence)
 
 
-PROFILE_ACTIVITY = ("https://www.linkedin.com/in/example-profile/"
+PROFILE_ACTIVITY = ("https://www.linkedin.com/in/myron-mekhael-841196242/"
                     "recent-activity/all/")
 
 
 # How a reshare ended, as stored in the entry's `reshared`: True verified on
-# the owner's activity; UNVERIFIED Post was clicked but never seen there, so it may
+# Miro's activity; UNVERIFIED Post was clicked but never seen there, so it may
 # well be live and is never offered again (a second click is a duplicate
 # post); False Post was not clicked, safe to offer again.
 UNVERIFIED = "unverified"
@@ -729,7 +739,7 @@ ACTIVITY_LOOKS = 3
 
 
 async def _seen_on_activity(tab, text: str) -> bool:
-    """the owner's activity lags a fresh repost by seconds to a minute (G8,
+    """Miro's activity lags a fresh repost by seconds to a minute (G8,
     2026-09-28: missed on the first read, there five minutes later), so look
     more than once before saying it is not there."""
     needle = text.strip()[:40].lower()
@@ -746,7 +756,7 @@ async def _seen_on_activity(tab, text: str) -> bool:
 
 
 async def _reshare(tab, activity: str, text: str) -> tuple[bool | str, str]:
-    """Reshare a published page post to the owner's profile through the durable
+    """Reshare a published page post to Miro's profile through the durable
     deep link, then verify it on his activity. Returns (True | UNVERIFIED |
     False, why-not)."""
     deep = (f"https://www.linkedin.com/feed/?shareActive=true"
@@ -756,22 +766,115 @@ async def _reshare(tab, activity: str, text: str) -> tuple[bool | str, str]:
         await _click_post(tab)
     except (SignedOut, HardStop) as exc:
         return False, str(exc)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return False, f"{type(exc).__name__}: {str(exc)[:120]}"
     try:
         await pause(tab, 4000, 6000)
         if await _seen_on_activity(tab, text):
             return True, ""
-        why = f"Post clicked, but not on the owner's recent activity after {ACTIVITY_LOOKS} looks"
-    except Exception as exc:                            # noqa: BLE001
+        why = f"Post clicked, but not on Miro's recent activity after {ACTIVITY_LOOKS} looks"
+    except Exception as exc:  # noqa: BLE001
         why = f"Post clicked, then the check failed: {type(exc).__name__}: {str(exc)[:100]}"
     return UNVERIFIED, why
+
+
+# The profile lane (Miro, 2026-11-23): the post is made from his personal
+# profile through the feed composer, the same member composer `_reshare`
+# opens through this URL (that one is verified live, 2026-09-28). What is
+# NOT verified is typing into it: `.ql-editor` and the Post button are
+# ASSUMED to be the same as the page composer's. The guards make a wrong
+# guess fail closed, never post wrong text: a missing editor or button is a
+# named step failure with nothing posted; the editor must read back the
+# approved text byte for byte before Post is clicked; and the post must be
+# seen on his own activity afterwards, else the entry is `posted_unverified`
+# and the gate will not send it again.
+PROFILE_COMPOSER = "https://www.linkedin.com/feed/?shareActive=true"
+
+
+async def _publish_profile(state: dict[str, Any], page: str,
+                           entry: dict[str, Any]) -> ActionResult:
+    name = PAGES[page]["name"]
+    kind = entry.get("kind") or "text"
+    text = str(entry.get("text") or "")
+    if kind != "text":
+        return ActionResult(False, f"{entry.get('id')} is a {kind} post; the profile "
+                                   "lane posts text only; refusing")
+    if not text.strip():
+        return ActionResult(False, f"{entry.get('id')} has no text; refusing")
+    try:
+        pw, b, ctx = await browser()
+    except NoSession as exc:
+        return ActionResult(False, str(exc))
+    evidence: dict[str, Any] = {"page": page, "entry": entry.get("id"), "kind": kind}
+    try:
+        tab = await ctx.new_page()
+        try:
+            await goto(tab, PROFILE_COMPOSER)
+        except (SignedOut, HardStop) as exc:
+            if isinstance(exc, HardStop):
+                state.setdefault("alerts", []).append({"when": stamp(), "what": str(exc)})
+                save(state)
+            return ActionResult(False, str(exc))
+        try:
+            await _guarded("type-text", lambda: _type_text(tab, text))
+        except _StepFailed as exc:
+            shot = await snapshot(tab, f"step-{exc.step}-failed")
+            evidence["shot"] = shot
+            return ActionResult(False, f"step {exc.step!r} failed: {exc.cause}"
+                                       + (f" ({shot})" if shot else ""),
+                                evidence=evidence)
+        got = await _readback(tab)
+        diff = _readback_diff(text, got)
+        if diff is not None:
+            shot = await snapshot(tab, "readback-mismatch")
+            evidence.update({"readback": got[:400], "diff": diff, "shot": shot})
+            return ActionResult(False,
+                "the editor did not read back the approved text byte for "
+                "byte; aborted before Post:\n" + diff, evidence=evidence)
+        try:
+            await _guarded("click-post", lambda: _click_post(tab))
+        except _StepFailed as exc:
+            shot = await snapshot(tab, f"step-{exc.step}-failed")
+            evidence["shot"] = shot
+            return ActionResult(False, f"step {exc.step!r} failed: {exc.cause}"
+                                       + (f" ({shot})" if shot else ""),
+                                evidence=evidence)
+        await pause(tab, 4000, 6000)
+        try:
+            verified = await _seen_on_activity(tab, text)
+        except (SignedOut, HardStop):
+            verified = False
+        evidence["verified"] = verified
+        if not verified:
+            return _mark_unverified(state, page, entry, evidence)
+        await keep_session(ctx)
+    finally:
+        await ctx.close()
+        await b.close()
+        await pw.stop()
+    entry["status"] = "published"
+    entry["published"] = today()
+    entry["published_at"] = stamp()
+    entry["activity_url"] = ""
+    _entries, posting, holder = bank(state, page)
+    posting["last_post"] = today()
+    posting["last_post_attempt"] = stamp()
+    holder["posting"] = posting
+    page_obj(state, page).setdefault("posts", []).append(
+        {"id": entry.get("id"), "first_line": text.split("\n")[0][:120],
+         "posted": today(), "activity_url": ""})
+    save(state)
+    log_run([f"posted {entry.get('id')} from {name}"], label="publish")
+    return ActionResult(True, f"posted {entry.get('id')} from {name}; seen on "
+                              "your recent activity", evidence=evidence)
 
 
 def _reshare_target(state: dict[str, Any], page: str, entry_id: str
                     ) -> tuple[dict | None, str]:
     if page not in PAGES:
         return None, f"no such page {page!r}"
+    if PAGES[page].get("kind") == "profile":
+        return None, "the profile lane posts from the profile itself; nothing to reshare"
     entry = _entry(state, page, entry_id)
     if entry is None:
         return None, f"no entry {entry_id} in the {page} bank"
@@ -779,22 +882,22 @@ def _reshare_target(state: dict[str, Any], page: str, entry_id: str
         return None, f"{entry_id} is not a published post with a link to reshare"
     if entry.get("reshared") == UNVERIFIED:
         return None, (f"{entry_id}'s reshare was clicked once and did not verify; it may "
-                      f"be live -- check the owner's activity before resharing again")
+                      f"be live -- check Miro's activity before resharing again")
     if entry.get("reshared"):
-        return None, f"{entry_id} is already reshared to the owner's profile"
+        return None, f"{entry_id} is already reshared to Miro's profile"
     return entry, ""
 
 
 async def reshare_dry(page: str = "", entry_id: str = "") -> ActionResult:
     try:
         state = load()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
     entry, why = _reshare_target(state, page, entry_id)
     if entry is None:
         return ActionResult(False, f"would not reshare: {why}")
     return ActionResult(True, f"would reshare {entry_id} from the "
-                              f"{PAGES[page]['name']} page to the owner's profile "
+                              f"{PAGES[page]['name']} page to Miro's profile "
                               f"({entry['activity_url']})",
                         evidence={"page": page, "entry": entry_id})
 
@@ -837,17 +940,17 @@ async def _reshare_entry(state: dict[str, Any], page: str, entry_id: str,
         return ActionResult(False, f"the reshare of {entry_id} did not verify ({why}); "
                                    f"it may be live, so it is not offered again",
                             evidence={"reshare_unverified": True})
-    log_run([f"reshared {entry_id} ({PAGES[page]['name']}) to the owner's profile"
+    log_run([f"reshared {entry_id} ({PAGES[page]['name']}) to Miro's profile"
              + (" on its own" if auto else "")], label="reshare")
-    return ActionResult(True, f"reshared {entry_id} to the owner's profile, verified "
+    return ActionResult(True, f"reshared {entry_id} to Miro's profile, verified "
                               f"on his activity")
 
 
 # --------------------------------------------------------- automatic reshare
 #
-# the owner, 2026-10-12 (memory approval-policy): "whatever you think should be
+# Miro, 2026-10-12 (memory approval-policy): "whatever you think should be
 # done should be automatically approved, but whatever is really urgent should
-# only need human approval." linkedin.autoreshare_post reshares to the owner's
+# only need human approval." linkedin.autoreshare_post reshares to Miro's
 # profile only a post ATLAS itself just published on the Vault page
 # (`autopublished`, published today), the way autopublish_post posts it:
 #
@@ -932,13 +1035,13 @@ def autoreshare_refusal(state: dict[str, Any], page: str, entry_id: str,
 async def autoreshare_dry(page: str = "", entry_id: str = "") -> ActionResult:
     try:
         state = load()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
     entry, why, _kind = autoreshare_refusal(state, page, entry_id)
     if entry is None:
         return ActionResult(False, why, evidence={"page": page, "entry": entry_id})
     return ActionResult(True, f"would reshare {entry_id} from the "
-                              f"{PAGES[page]['name']} page to the owner's profile on its "
+                              f"{PAGES[page]['name']} page to Miro's profile on its "
                               f"own ({entry['activity_url']})",
                         evidence={"page": page, "entry": entry_id})
 
@@ -949,7 +1052,7 @@ async def autoreshare(page: str = "", entry_id: str = "") -> ActionResult:
     async with lock(), file_lock():
         try:
             state = load()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
         entry, why, _kind = autoreshare_refusal(state, page, entry_id)
         if entry is None:
@@ -979,7 +1082,7 @@ async def pause_autoreshare(token: str) -> ActionResult:
     log_run([(f"autoreshare for {name} paused by the rollback of {entry_id}; the "
               f"reshare stays live (deletion is Tier 3)")], label="reshare")
     return ActionResult(
-        True, f"{entry_id}'s reshare is still on the owner's profile -- it is not deleted "
+        True, f"{entry_id}'s reshare is still on Miro's profile -- it is not deleted "
               f"(deletion is permanently denied). Automatic resharing for {name} is "
               f"paused, so each next reshare is a card again; clear "
               f"posting.{RESHARE_PAUSED_KEY} in the state file to resume.",
@@ -993,7 +1096,7 @@ def _unquote(s: str) -> str:
 
 # ----------------------------------------------------------------- automatic
 #
-# the owner, 2026-10-11 (memory approval-policy). See the module docstring.
+# Miro, 2026-10-11 (memory approval-policy). See the module docstring.
 
 AUTOPUBLISH_PAGES = ("guardian",)        # Vault only; never FlyCheap, whatever PAGES says
 AUTOPUBLISH_ENV = "LINKEDIN_AUTOPUBLISH"
@@ -1119,7 +1222,7 @@ def autopublish_refusal(state: dict[str, Any], page: str, entry_id: str = "",
 async def autopublish_dry(page: str = "", entry_id: str = "") -> ActionResult:
     try:
         state = load()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
     entry, why, _kind = autopublish_refusal(state, page, entry_id)
     if entry is None:
@@ -1128,7 +1231,7 @@ async def autopublish_dry(page: str = "", entry_id: str = "") -> ActionResult:
     return ActionResult(
         True,
         f"would publish {entry.get('id')} to the {PAGES[page]['name']} page on its own "
-        f"({len(text)} chars); the reshare to the owner's profile stays a card:\n"
+        f"({len(text)} chars); the reshare to Miro's profile stays a card:\n"
         + text[:400],
         evidence={"page": page, "entry": entry.get("id"), "chars": len(text)})
 
@@ -1140,7 +1243,7 @@ async def autopublish(page: str = "", entry_id: str = "") -> ActionResult:
     async with lock(), file_lock():
         try:
             state = load()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
         entry, why, _kind = autopublish_refusal(state, page, entry_id)
         if entry is None:
@@ -1182,7 +1285,7 @@ async def pause_autopublish(token: str) -> ActionResult:
 
 # ----------------------------------------------- approving drafts on its own
 #
-# the owner, 2026-10-12 (memory approval-policy): "whatever you think should be
+# Miro, 2026-10-12 (memory approval-policy): "whatever you think should be
 # done should be automatically approved, but whatever is really urgent should
 # only need human approval." linkedin.approve_draft is Tier 1: a draft is
 # marked approved in ATLAS's own bank, and the rollback flips it back. That
@@ -1192,7 +1295,7 @@ async def pause_autopublish(token: str) -> ActionResult:
 #
 #   * never a page that publishes itself (AUTOPUBLISH_PAGES, Vault): there
 #     an approved entry goes out with no further read, so its drafts stay
-#     the owner's card -- the 2026-10-11 rule covered already-approved entries;
+#     Miro's card -- the 2026-10-11 rule covered already-approved entries;
 #   * LINKEDIN_AUTOAPPROVE (on by default): off, every draft is a card;
 #   * at most AUTOAPPROVE_PER_DAY drafts per page per day.
 
@@ -1211,7 +1314,7 @@ def _answered_by_card() -> bool:
 
 
 def autoapprove_refusal(state: dict[str, Any], page: str) -> str | None:
-    """Why this page's draft is the owner's card rather than approved by ATLAS,
+    """Why this page's draft is Miro's card rather than approved by ATLAS,
     or None. Never asked of an approved card: his tap is the answer."""
     if _answered_by_card():
         return None
@@ -1234,22 +1337,25 @@ def autoapprove_refusal(state: dict[str, Any], page: str) -> str | None:
 
 
 def _claim_refusal(entry: dict[str, Any]) -> str | None:
-    """Sage's TutorSite drafts pass the fact-backed claim gate again here;
+    """Sage's ExampleTutor drafts pass the fact-backed claim gate again here;
     every other drafter's entry is unaffected."""
-    from ..sagemmt.claims import entry_refusal
+    try:
+        from ..tutorseo.claims import entry_refusal
+    except ImportError:               # the SEO drafter is not part of this build
+        return None
     return entry_refusal(entry)
 
 
 async def approve_draft_dry(page: str = "", entry_id: str = "",
                             text_sha256: str = "") -> ActionResult:
     # Deliberately does not check `text_sha256` against the draft: this runs
-    # as `preview()`, before the owner decides, and as the executor's own
+    # as `preview()`, before Miro decides, and as the executor's own
     # pre-approval dry run -- returning ok=False here on a mismatch would
     # stop `execute()` before `run()` ever gets called, and it is `run()`
     # that has to notice the change and get a fresh card started.
     try:
         state = load()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"cannot read the LinkedIn state: {exc}")
     e = _entry(state, page, entry_id)
     if e is None:

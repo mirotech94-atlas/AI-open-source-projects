@@ -2,7 +2,7 @@
 
 Reads every configured mailbox -- owner@example.com over IMAP, read-only
 (plan 2026-10-30, B1) -- through `reply_today.read`, and reports what waits
-on the owner. It sends nothing and drafts nothing: `mail.draft_reply` writes a
+on Miro. It sends nothing and drafts nothing: `mail.draft_reply` writes a
 Gmail draft through the clips mailbox's OAuth token and Gmail thread ids,
 and an IMAP thread has neither, so drafting is named as blocked rather than
 reported as zero drafts done. Commitments are the ones `classify()` already
@@ -19,7 +19,7 @@ from .accounts import all_accounts
 
 log = logging.getLogger("atlas.mail.shift")
 
-DRAFTS_BLOCKED = ("drafting needs Gmail API access to the mailbox; owner is "
+DRAFTS_BLOCKED = ("drafting needs Gmail API access to the mailbox; example-owner is "
                   "read over IMAP with an app password, so no draft is written")
 
 
@@ -31,7 +31,7 @@ async def _commitments(days: int) -> int | None:
             """SELECT count(*) AS n FROM memories
                 WHERE namespace = 'commitments'
                   AND at > now() - ($1 || ' days')::interval""", str(days))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("inbox shift: commitments unread (%s)", type(exc).__name__)
         return None
     return int(row["n"]) if row else None

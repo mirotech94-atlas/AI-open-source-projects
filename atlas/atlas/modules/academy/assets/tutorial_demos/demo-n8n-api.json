@@ -1,0 +1,38 @@
+{
+ "key": "n8n-api",
+ "seconds": 25.856,
+ "marks": [
+  [
+   0.0,
+   7.362
+  ],
+  [
+   7.528,
+   14.24
+  ],
+  [
+   14.391,
+   25.856
+  ]
+ ],
+ "urls": [
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/c9e983",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/c9e983",
+  "localhost:5688/workflow/OQUb0TGdobfPqkoM/c9e983"
+ ],
+ "captions": [
+  "Add an HTTP Request node",
+  "URL: Open-Meteo's free city search, no key",
+  "Query parameter: name = {{ $json.body.city }}"
+ ],
+ "width": 1536,
+ "height": 864,
+ "fps": 30,
+ "bytes": 2193543,
+ "sha256": "0931c0a373cce7500fd6ce7d14dafcb02a9bce0efc3f58b97d8f6729e105fa5c",
+ "versions": {
+  "chromium": "153.0.8010.12",
+  "n8n": "2.40.7"
+ },
+ "recorded_at": "2026-10-12T16:50:35+00:00"
+}

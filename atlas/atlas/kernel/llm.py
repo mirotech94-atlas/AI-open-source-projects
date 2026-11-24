@@ -212,7 +212,7 @@ class OllamaProvider:
     def __init__(self, model: str) -> None:
         self.model = model
         self.base = os.getenv("OLLAMA_URL", "http://ollama:11434")
-        # Measured on atlas.example.com: 5.1 tok/s on one vCPU with no GPU, and a
+        # Measured on atlas.storefront.test: 5.1 tok/s on one vCPU with no GPU, and a
         # cold load costs two minutes before the first token. 120s timed out
         # before a real answer could arrive.
         self.timeout = _local_timeout()
@@ -307,7 +307,7 @@ class OllamaProvider:
                 r = await c.get(f"{self.base}/api/tags")
                 r.raise_for_status()
                 names = {m.get("name", "") for m in r.json().get("models", ())}
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.error("ollama unreachable at %s (%s: %s)",
                       self.base, type(exc).__name__, exc)
             return False
@@ -363,7 +363,7 @@ def local_base_url_ok(url: str) -> bool:
     try:
         parts = urlsplit(url.strip())
         host = (parts.hostname or "").lower()
-        parts.port                      # noqa: B018 - raises on a bad port
+        parts.port  # noqa: B018
     except ValueError:
         return False
     if parts.scheme not in ("http", "https") or not host or "@" in parts.netloc:
@@ -387,7 +387,7 @@ def _local_client(timeout: float) -> Any:
 class LocalOpenAIProvider:
     """The local model: qwen3.8 on the Spark's vLLM, OpenAI-compatible.
 
-    the owner, 2026-10-28: always qwen3.8 on vLLM, never Ollama. vLLM listens on
+    Miro, 2026-10-28: always qwen3.8 on vLLM, never Ollama. vLLM listens on
     the Spark's loopback only; the Mac reaches it through `spark-vllm.sh up`
     (127.0.0.1:18000) and the api container through host.docker.internal.
     `LOCAL_LLM_BASE_URL` selects it, `LOCAL_LLM_MODEL` names the model and
@@ -404,7 +404,7 @@ class LocalOpenAIProvider:
     def __init__(self, model: str | None = None) -> None:
         self.model = model or os.getenv("LOCAL_LLM_MODEL", "") or "qwen3.8:27b"
         self.base = os.getenv("LOCAL_LLM_BASE_URL", "").strip().rstrip("/")
-        # Optional second Spark (the owner, 2026-11-19). Unset means one endpoint,
+        # Optional second Spark (Miro, 2026-11-19). Unset means one endpoint,
         # exactly as before; it is asked only after the first one fails.
         self.base2 = os.getenv("LOCAL_LLM_BASE_URL_2", "").strip().rstrip("/")
         self.timeout = _local_timeout()
@@ -682,7 +682,7 @@ async def _read_models(base: str) -> tuple[set[str] | None, str]:
             r.raise_for_status()
             return {str(m.get("id", "")) for m in r.json().get("data") or ()
                     if isinstance(m, dict)}, ""
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         status = getattr(getattr(exc, "response", None), "status_code", None)
         return None, f"{type(exc).__name__}{f' HTTP {status}' if status else ''}"
 
@@ -765,7 +765,7 @@ def _local_timeout() -> float:
 
 
 def private_cloud_allowed() -> bool:
-    """`ATLAS_PRIVATE_ALLOW_CLOUD`: the owner's explicit opt-in to letting PRIVATE
+    """`ATLAS_PRIVATE_ALLOW_CLOUD`: Miro's explicit opt-in to letting PRIVATE
     work fall through to a cloud model when the local one fails. Off unless
     set to 1, true or yes; unset means never. The one reader of the flag:
     `build_routes`, `_think_private` and `self_status` all ask here."""
@@ -846,7 +846,7 @@ def build_routes() -> None:
     have_anthropic = bool(os.getenv("ANTHROPIC_API_KEY"))
     have_openai = bool(os.getenv("OPENAI_API_KEY"))
     # The local model: qwen3.8 on the Spark's vLLM (LOCAL_LLM_BASE_URL),
-    # the owner's rule since 2026-10-28. Ollama is legacy and only answers when
+    # Miro's rule since 2026-10-28. Ollama is legacy and only answers when
     # OLLAMA_URL is set and LOCAL_LLM_BASE_URL is not. A base URL that is not
     # a local address is refused here: PRIVATE then has no route at all.
     local_url = os.getenv("LOCAL_LLM_BASE_URL", "").strip()
@@ -905,7 +905,7 @@ def build_routes() -> None:
     # 2026-10-06: 1K requests and 200K tokens a day apiece for gpt-oss-120b,
     # gpt-oss-20b and qwen3.8-27b), and a cycle asks several HARD questions
     # in the same few seconds: three models are three answers a minute where
-    # one model was one. the owner: "pick all the free tiers".
+    # one model was one. Miro: "pick all the free tiers".
     groq_alt = GroqProvider(_env("ATLAS_MODEL_GROQ_ALT", "qwen/qwen3.8-27b"))
     # Groq retired llama-3.1-8b-instant and llama-3.3-70b-versatile: both
     # answered 404 at the 2026-10-07 boot, and its /models list that day had
@@ -968,7 +968,7 @@ def build_routes() -> None:
     # is not a failover for it — it is the thing being avoided. Falling back to
     # Haiku here meant that while the local model was misconfigured, every
     # private request went to Anthropic and the only sign was a warning per
-    # call. It fails closed, and says why -- unless the owner has explicitly opted
+    # call. It fails closed, and says why -- unless Miro has explicitly opted
     # in with ATLAS_PRIVATE_ALLOW_CLOUD, which is warned about once.
     cloud_ok = private_cloud_allowed() and have_anthropic
     if cloud_ok and not _WARNED_PRIVATE_CLOUD:
@@ -1022,16 +1022,16 @@ def build_routes() -> None:
             [deep] + ([gem_deep] if have_gemini else [])
             + ([other] if have_openai else []))
 
-    # the owner, 2026-10-05: "use free tiers ai models without credit not paid
+    # Miro, 2026-10-05: "use free tiers ai models without credit not paid
     # tiers". With ATLAS_FREE_ONLY set, no paid model sits in any cloud chain
     # (PRIVATE is local and untouched). It is refused, loudly, when there is
     # no free bench: an instruction about cost must not leave ATLAS mute.
     if free_only():
         if free_deep:
             ROUTES[Need.TRIVIAL] = list(free_fast)
-            # the owner, 2026-10-29: the Spark's local model is the LAST, free
+            # Miro, 2026-10-29: the Spark's local model is the LAST, free
             # fallback for drafts, so a drained free bench no longer ends a
-            # background shift with ReservedForOwner. Never a paid model.
+            # background shift with ReservedForMiro. Never a paid model.
             ROUTES[Need.DRAFT] = list(free_mid) + ([local] if have_local else [])
             for need in (Need.REASON, Need.HARD, Need.CRITICAL):
                 ROUTES[need] = list(free_deep)
@@ -1107,7 +1107,7 @@ async def _readmit_loop() -> None:
         try:
             if await readmit_local():
                 return
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("re-admit of the local model failed (%s)",
                         type(exc).__name__)
 
@@ -1231,7 +1231,7 @@ async def verify_cloud() -> dict[str, str]:
             await provider.complete("Reply with one word.",
                                     [Message("user", "ready")], max_tokens=256)
             probed[name] = "ok"
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             status = getattr(getattr(exc, "response", None), "status_code", None)
             if status in (401, 402, 403, 404):
                 body = redact(getattr(exc.response, "text", ""))[:120]
@@ -1300,7 +1300,7 @@ async def discover_groq_models() -> list[str]:
                             headers={"Authorization": f"Bearer {key}"})
             r.raise_for_status()
             listed = r.json().get("data") or []
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("groq model list unread (%s); keeping the configured "
                     "models", type(exc).__name__)
         return []
@@ -1337,7 +1337,7 @@ def _probe_key(provider: Any) -> str:
 
 
 # ---------------------------------------------------------------- answer lane
-# the owner, 2026-11-17: "use the qwen3.8:27B model always to answer and voice".
+# Miro, 2026-11-17: "use the qwen3.8:27B model always to answer and voice".
 # A call that answers a person passes `answer=True` and the Spark's qwen3.8
 # is asked FIRST, whatever Need it names; the Need's own chain is then only
 # the fallback. The provider is kept here, not read out of ROUTES, so a
@@ -1425,7 +1425,7 @@ async def _answer_local(system: str, messages: Sequence[Message],
             reply = await asyncio.wait_for(
                 provider.complete(system, messages, tools, max_tokens),
                 _answer_local_timeout())
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         breaker.failure(key, exc)
         return None, f"local model failed: {explain(exc)}"[:200]
     if isinstance(reply, ToolsUnsupported):
@@ -1571,10 +1571,10 @@ async def _think_routed(
     `ToolsUnsupported` comes back only when `tools` were passed and the
     model cannot call them; `harness.think_turn` handles it.
 
-    `interactive` says whether the owner is waiting on this answer; None reads
+    `interactive` says whether Miro is waiting on this answer; None reads
     the turn's own flag (`quota.interactive()`). A deployment whose known
     daily allowance is under its reserve answers only interactive calls;
-    background work that finds nothing else raises `quota.ReservedForOwner`
+    background work that finds nothing else raises `quota.ReservedForMiro`
     without asking anyone (kernel/quota.py).
     """
     system, messages = _secret_free(system, messages)
@@ -1599,7 +1599,7 @@ async def _think_routed(
                     raise EmptyCompletion(
                         f"empty completion at max_tokens={max_tokens}")
                 return reply
-            except Exception as exc:                        # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 from ..modules._http import explain
                 pin_failure = explain(exc)
                 log.warning("pinned model %s unavailable (%s); falling back "
@@ -1625,7 +1625,7 @@ async def _think_routed(
         raise RuntimeError("no LLM provider configured")
     last: Exception | None = None
     # The free allowance first (kernel/quota.py): background work never
-    # spends what is kept for the owner, and nobody asks a deployment the
+    # spends what is kept for Miro, and nobody asks a deployment the
     # provider itself said is spent until its reset. Before the breakers,
     # so "every breaker is open, try them all" below can never re-admit a
     # reserved deployment for background work.
@@ -1637,21 +1637,21 @@ async def _think_routed(
         # an OpenRouter model answers, so a spent count can come back.
         from .background import spawn
         spawn(quota.refresh_openrouter(), "quota.openrouter")
-    for_owner = quota.is_interactive() if interactive is None else interactive
-    rationed = [p for p in chain if quota.allowed(p, interactive_call=for_owner)]
+    for_miro = quota.is_interactive() if interactive is None else interactive
+    rationed = [p for p in chain if quota.allowed(p, interactive_call=for_miro)]
     if not rationed:
-        if not for_owner:
-            log.info("%s: every deployment is spent or kept for the owner; this "
+        if not for_miro:
+            log.info("%s: every deployment is spent or kept for Miro; this "
                      "background call waits for its next cycle", need)
-            raise quota.ReservedForOwner(
-                f"every {need} deployment is spent or kept for the owner")
-        # the owner is waiting: ask anyway. A provider may have come back early,
+            raise quota.ReservedForMiro(
+                f"every {need} deployment is spent or kept for Miro")
+        # Miro is waiting: ask anyway. A provider may have come back early,
         # and "no model answered" must mean they were asked.
         rationed = list(chain)
     elif len(rationed) < len(chain):
         log.info("skipping %s rationed deployment(s) for %s (%s)",
                  len(chain) - len(rationed), need,
-                 "interactive" if for_owner else "background")
+                 "interactive" if for_miro else "background")
     # A deployment whose breaker is open is skipped, not waited on
     # (kernel/breaker.py). If that would leave nothing to ask, the whole
     # chain is tried anyway: a breaker reorders the asking, it never turns
@@ -1667,7 +1667,7 @@ async def _think_routed(
                 raise EmptyCompletion(
                     f"empty completion at max_tokens={max_tokens} (a reasoning "
                     f"model spends the budget thinking and answers nothing)")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             too_large = getattr(getattr(exc, "response", None),
                                 "status_code", None) == 413
             if not isinstance(exc, EmptyCompletion) and not too_large:
@@ -1723,9 +1723,9 @@ async def _think_private(
     for provider in chain:
         try:
             return await provider.complete(system, messages, tools, max_tokens)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             model = getattr(provider, "model", provider.name)
-            # Redacted: this reason reaches logs, transcripts and what the owner
+            # Redacted: this reason reaches logs, transcripts and what Miro
             # reads or hears.
             reason = f"{model}: {explain(exc)}"[:200]
             log.warning("PRIVATE provider failed (%s)", reason)
@@ -1738,7 +1738,7 @@ async def think_twice(
 ) -> tuple[Completion, Completion, bool]:
     """Two providers, in parallel, for anything irreversible. Returns both
     answers and whether they agree. Disagreement does not pick a winner — it
-    escalates to the owner, which is the correct behaviour for a system that is
+    escalates to Miro, which is the correct behaviour for a system that is
     about to do something it cannot undo."""
     system, messages = _secret_free(system, messages)
     if critical_pair_on():
@@ -1773,7 +1773,7 @@ async def think_twice(
         try:
             answers.append(await provider.complete(system, messages, None, max_tokens))
             vendors.add(provider.name)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("CRITICAL cross-check: %s failed (%s), trying the next",
                         provider.name, type(exc).__name__)
         if len(answers) == 2:
@@ -1851,7 +1851,7 @@ async def _think_twice_pair(system: str, messages: Sequence[Message],
             continue
         try:
             reply = await provider.complete(system, messages, None, max_tokens)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("CRITICAL pair: %s failed (%s), trying the next",
                         provider.name, type(exc).__name__)
             continue
@@ -1879,7 +1879,7 @@ async def _think_twice_pair(system: str, messages: Sequence[Message],
         try:
             verdict = await judge.complete("Answer only AGREE or DIFFER.",
                                            prompt, None, 8)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("CRITICAL pair: adjudicator %s failed (%s)",
                         judge.name, type(exc).__name__)
             continue
@@ -2034,7 +2034,7 @@ class OpenRouterProvider(_OpenAICompatible):
     url = "https://openrouter.ai/api/v1/chat/completions"
     key_env = "OPENROUTER_API_KEY"
     extra_headers: ClassVar[dict[str, str]] = {
-        "HTTP-Referer": "https://atlas.example.com", "X-Title": "ATLAS"}
+        "HTTP-Referer": "https://atlas.storefront.test", "X-Title": "ATLAS"}
 
 
 class GroqProvider(_OpenAICompatible):
@@ -2069,7 +2069,7 @@ class GroqProvider(_OpenAICompatible):
 class CloudflareProvider(_OpenAICompatible):
     """Cloudflare Workers AI: a free daily allowance (10,000 neurons) on any
     account, OpenAI-compatible, and it calls tools on the Llama 3.3 70B the
-    InRoots bot already uses as its first fallback (read from its
+    Attendance bot already uses as its first fallback (read from its
     /api/ai/models, 2026-10-05). The account id is part of the URL."""
 
     name = "cloudflare"
@@ -2089,7 +2089,7 @@ class CloudflareProvider(_OpenAICompatible):
         `image_url` data URL is the documented shape for the vision models;
         the top-level `image` byte array is marked deprecated. Note
         `@cf/meta/llama-3.2-11b-vision-instruct` needs a one-time Meta
-        licence "agree" sent from the account first -- the owner's to send, not
+        licence "agree" sent from the account first -- Miro's to send, not
         ATLAS's -- so it is only asked when ATLAS_MODEL_CLOUDFLARE_VISION
         names it."""
         import httpx
@@ -2456,7 +2456,7 @@ async def look(system: str, prompt: str, image: Image,
             reply = await provider.see(system, prompt, image, max_tokens)
             if not reply.text.strip():
                 raise EmptyCompletion("the vision model answered nothing")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             if not isinstance(exc, EmptyCompletion):
                 breaker.failure(breaker.key_of(provider), exc)
             reason = f"{provider.name}:{getattr(provider, 'model', '?')}: {explain(exc)}"

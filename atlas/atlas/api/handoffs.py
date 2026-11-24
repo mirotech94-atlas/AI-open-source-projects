@@ -1,4 +1,4 @@
-"""Where the coding agent on the owner's Mac collects approved work and reports.
+"""Where the coding agent on Miro's Mac collects approved work and reports.
 
 Mesh-only by the middleware (`/handoffs` is not in PUBLIC_PATHS) and
 authenticated with a bearer token, the same defence in depth as
@@ -28,7 +28,7 @@ log = logging.getLogger("atlas.api.handoffs")
 
 router = APIRouter(prefix="/handoffs")
 
-REPORT_STATUSES = {"done", "failed", "needs_owner"}
+REPORT_STATUSES = {"done", "failed", "needs_miro"}
 MAX_REPORT = 6000
 
 
@@ -102,7 +102,7 @@ async def report(hid: int, request: Request, authorization: str = Header("")) ->
         raise HTTPException(409, f"handoff {hid} is not claimed")
     await audit("handoff.reported", f"handoff:{hid}", {"status": status})
     label = {"done": "done", "failed": "could not do it",
-             "needs_owner": "needs you"}[status]
+             "needs_miro": "needs you"}[status]
     link = ""
     if url:
         try:
@@ -132,6 +132,6 @@ async def report(hid: int, request: Request, authorization: str = Header("")) ->
 async def _json(request: Request) -> dict:
     try:
         body = await request.json()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return {}
     return body if isinstance(body, dict) else {}

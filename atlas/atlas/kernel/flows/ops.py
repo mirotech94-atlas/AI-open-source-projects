@@ -12,7 +12,7 @@ becomes a workflow:
     prepare(Fix, Tier 1)   PREPARING -> RUNNING      one outbox intent, with
                                                      the move, in one statement
     prepare(Fix, Tier 2)   a card; PREPARING -> NEEDS_HUMAN (the card waits)
-    prepare(NextStep)      PREPARING -> NEEDS_HUMAN  one next step, owner the owner
+    prepare(NextStep)      PREPARING -> NEEDS_HUMAN  one next step, owner Miro
     verify_recovery():
         RUNNING -> VERIFYING                         by the outbox, on delivery
         VERIFYING -> SUCCEEDED                       the check read OK after it
@@ -149,7 +149,7 @@ async def _open_incident(item: Any, workflow_id: int) -> int | None:
             severity, f"{item.key} {item.health}"[:200],
             " ".join((item.detail or "").split())[:500],
             f"workflow:{workflow_id}")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("incident for %s not recorded (%s)", item.key,
                     type(exc).__name__)
         return None
@@ -166,7 +166,7 @@ async def diagnose(produce: Callable[[], Awaitable[str]]) -> tuple[str, bool]:
     except TimeoutError:
         said = (f"could not diagnose it: the investigation passed its "
                 f"{DIAG_S:.0f} s limit")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ...modules._http import explain
         said = f"could not diagnose it: {explain(exc)}"
     said = str(said or "")[:DIAG_CHARS]
@@ -217,7 +217,7 @@ async def prepare(taken: Taken, plan: Plan, *,
 
 async def escalated(taken: Taken, said: str, complete: bool) -> None:
     """The sweep posted what the agent said (or the incomplete-incident
-    card): record it as the one next step, owner the owner."""
+    card): record it as the one next step, owner Miro."""
     from .. import durable
     try:
         await durable.transition(
@@ -277,7 +277,7 @@ async def verify_recovery(observe: Observe | None = None,
             continue
         try:
             health, at = await observe(key)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("ops workflow %s: %s unreadable (%s)", wid, key,
                         type(exc).__name__)
             continue
@@ -320,7 +320,7 @@ async def _post(post: Callable[[str, str], Awaitable[Any]] | None, key: str,
         post = _notify
     try:
         await post(f"{key} — escalated", body)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.warning("escalation for %s not posted", key)
 
 

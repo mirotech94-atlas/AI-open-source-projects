@@ -1,7 +1,7 @@
 """The football (soccer) reels lane: stat reels made from API-Football's
 numbers, never from footage.
 
-the owner, 2026-09-29: viral, "fire" short reels about football stars and
+Miro, 2026-09-29: viral, "fire" short reels about football stars and
 stories -- star comparisons, season leaders, the golden-boot race, a big
 club's form -- made ONLY from our own material: animated stats, bold text,
 original stylised visuals. Football is association football, soccer.
@@ -192,7 +192,7 @@ async def ensure_topics() -> dict[str, int]:
                WHERE NOT EXISTS (SELECT 1 FROM reel_formats r
                                   WHERE r.source = $3 AND lower(r.format) = lower($1))
                RETURNING id""",
-            t.name, "chosen by the owner, 2026-09-29: the football lane, numbers "
+            t.name, "chosen by Miro, 2026-09-29: the football lane, numbers "
                     "from API-Football", SOURCE, SEED_WEIGHT, MAX_BEATS)
         if row is None:
             row = await fetch_one(
@@ -220,7 +220,7 @@ async def ranked_topics(ids: dict[str, int], budget: int) -> list[Any]:
     from . import metrics
     try:
         earned = await metrics.score_bonus()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("football: reel metrics unreadable, ranking without: %s", exc)
         earned = {}
     last = {str(r["source"]): r["at"] for r in await fetch_all(
@@ -331,7 +331,7 @@ async def draft_football_reel(max_beats: int = MAX_BEATS) -> ActionResult:
     ids = await ensure_topics()
     try:
         budget = api.limit_day() - await api.used_today()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return ActionResult(False, f"the API-Football request count is unreadable, "
                                    f"so nothing was asked of it: {explain(exc)}")

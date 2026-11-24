@@ -1,12 +1,12 @@
 -- Rollback of the six-agents schema (phases 1-11, feat/local-agency after 7fdf6128).
 --
--- the owner runs this, by hand, after a backup (pg_dump). The builder never runs it.
+-- Miro runs this, by hand, after a backup (pg_dump). The builder never runs it.
 -- It drops only the tables and columns those phases added; nothing that
 -- existed before is touched. Revert the phase commits first, so no running
 -- code reads these tables:
---   git revert <phase commits>   (Phase 8 also re-registers the `church`
+--   git revert <phase commits>   (Phase 8 also re-registers the `community`
 --   roster agent: reverting that commit puts its register(Agent(...)) entry
---   back in atlas/kernel/agents.py; the church job, tiers and posting rules
+--   back in atlas/kernel/agents.py; the community job, tiers and posting rules
 --   were never changed).
 --
 --   docker compose exec -T postgres psql -U atlas atlas < db/rollback-six-agents.sql

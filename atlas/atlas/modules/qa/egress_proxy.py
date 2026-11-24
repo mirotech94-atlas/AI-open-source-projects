@@ -26,18 +26,18 @@ import sys
 
 PORT = 3128
 def _store_host() -> str:
-    """The store's host from ACADEMY_PUBLIC_ORIGIN (default agency.example.com).
+    """The store's host from ACADEMY_PUBLIC_ORIGIN (default agency.storefront.test).
     Inlined, not imported: this file runs alone in its container."""
     raw = os.environ.get("ACADEMY_PUBLIC_ORIGIN", "").strip().rstrip("/").lower()
     host = raw.removeprefix("https://") if raw.startswith("https://") else ""
     ok = (host and "." in host
           and all(c in "abcdefghijklmnopqrstuvwxyz0123456789.-" for c in host))
-    return host if ok else "agency.example.com"
+    return host if ok else "agency.storefront.test"
 
 
 # Public https hosts only, never a compose service name or an address. The
 # agency landing, the store and the client previews are one host.
-ALLOWED = frozenset({"agency.example.com", _store_host()})
+ALLOWED = frozenset({"agency.storefront.test", _store_host()})
 HEAD_LIMIT = 8192
 TIMEOUT_S = 20
 

@@ -1,4 +1,4 @@
-"""'Earn it' (the owner, 2026-09-28): a reversible Tier 2 action approved enough
+"""'Earn it' (Miro, 2026-09-28): a reversible Tier 2 action approved enough
 times in a row is OFFERED for promotion; nothing here changes a tier."""
 from __future__ import annotations
 

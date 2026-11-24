@@ -146,11 +146,11 @@ async def test_remember_stores_source_and_business(monkeypatch):
         got["sql"], got["args"] = " ".join(sql.split()), args
         return {"id": 7}
     monkeypatch.setattr(memory, "fetch_one", fetch_one)
-    rid = await memory.remember(Kind.SEMANTIC, "biz.mmt", "fee is 30", source="portal",
-                                business="mmt")
+    rid = await memory.remember(Kind.SEMANTIC, "biz.tutorco", "fee is 30", source="portal",
+                                business="tutorco")
     assert rid == 7
     assert "source" in got["sql"] and "business" in got["sql"]
-    assert got["args"][-2:] == ("portal", "mmt")
+    assert got["args"][-2:] == ("portal", "tutorco")
 
 
 async def test_a_forgotten_fact_is_not_learned_again(monkeypatch):
@@ -164,5 +164,5 @@ async def test_a_forgotten_fact_is_not_learned_again(monkeypatch):
         return {"id": 99}
     monkeypatch.setattr(memory, "fetch_all", fetch_all)
     monkeypatch.setattr(memory, "fetch_one", fetch_one)
-    assert await memory.learn_fact("owner", "the owner likes tea", source="whatsapp") == 41
+    assert await memory.learn_fact("owner", "Miro likes tea", source="whatsapp") == 41
     assert wrote == []

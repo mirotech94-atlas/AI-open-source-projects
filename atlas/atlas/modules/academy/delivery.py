@@ -31,13 +31,13 @@ from .. import store_origin
 from .catalog import Catalog, File
 from .stripe_read import SESSION_RE, Verdict
 
-log = logging.getLogger("academy.example.delivery")
+log = logging.getLogger("atlas.academy.delivery")
 
 DOWNLOAD_KEY_ENV = "ACADEMY_DOWNLOAD_KEY"
 FILES_ENV = "ACADEMY_FILES_DIR"
 DEFAULT_FILES_DIR = "data/academy/files"
 API_BASE_ENV = "ACADEMY_API_BASE"
-# atlas.example.com is deleted (2026-10-29); the store host proxies /public/*.
+# atlas.storefront.test is deleted (2026-10-29); the store host proxies /public/*.
 DEFAULT_API_BASE = store_origin.origin()
 ACCESS_PATH = "/public/academy/access"
 FILE_PREFIX = "/public/academy/file/"
@@ -66,7 +66,7 @@ def access_url(session_id: str) -> str:
 
 
 def redirect_url_for_stripe() -> str:
-    """What the owner pastes into each Payment Link's after-payment redirect."""
+    """What Miro pastes into each Payment Link's after-payment redirect."""
     return f"{api_base()}{ACCESS_PATH}?session_id={{CHECKOUT_SESSION_ID}}"
 
 
@@ -271,7 +271,7 @@ async def _notify_new(v: Verdict) -> None:
     else:
         title = (f"ATLAS Academy: new purchase, {_names(v)}, {v.amount_text()} "
                  f"(Stripe, read {read}){mode}")
-        # Invoice watch (the owner 2026-11-13): every paid checkout should carry a
+        # Invoice watch (Miro 2026-11-13): every paid checkout should carry a
         # Stripe invoice (the payment links create one). Say so, or say it is missing.
         if v.status == "paid":
             inv = (f"Invoice {v.invoice[:14]}... made; Stripe emails it to the buyer."
@@ -283,7 +283,7 @@ async def _notify_new(v: Verdict) -> None:
         body = f"Checkout {v.session_id[:14]}... status {v.status}. {inv}".strip()
     try:
         await notify(Outbound(title=title, body=body, topic="academy", kind="receipt"))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # The row is written; a failed post must not take the buyer's page down.
         log.warning("academy: purchase not posted to Slack (%s)", type(exc).__name__)
 
@@ -334,7 +334,7 @@ async def exceptions(cat: Catalog) -> Exceptions:
             """SELECT session_id, first_seen_at, amount_minor, currency, livemode
                  FROM academy_purchases WHERE status = 'unknown_price'
                 ORDER BY first_seen_at DESC LIMIT 50""")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Exceptions("unknown", missing=tuple(missing),
                           detail=f"purchase record unreadable ({type(exc).__name__})")
     return Exceptions("ok", tuple(dict(r) for r in rows or []), tuple(missing))

@@ -296,12 +296,12 @@ async def test_logs_is_a_placeholder_when_docker_cannot_be_asked(monkeypatch):
 
 # -------------------------------------------------------------------- run()
 
-REPO = "https://git.internal.example/owner/flycheap.git"
+REPO = "https://code.matrix.example.com/miro/flycheap.git"
 
 
 @pytest.fixture(autouse=True)
 def allowed(monkeypatch):
-    monkeypatch.setenv("NIGHTSHIFT_REPOS", "git.internal.example/owner/flycheap, "
+    monkeypatch.setenv("NIGHTSHIFT_REPOS", "code.matrix.example.com/miro/flycheap, "
                                            "gitlab.com/group/sub/proj")
 
 
@@ -424,7 +424,7 @@ async def test_a_branch_that_cannot_be_deleted_is_a_failed_rollback(monkeypatch)
 @pytest.mark.parametrize("job", [
     dict(JOB, branch="main"),                              # never another branch
     dict(JOB, branch="nightshift/job-10"),                 # nor another job's
-    dict(JOB, repo="https://evil.example/owner/flycheap"),  # nor an unlisted repo
+    dict(JOB, repo="https://evil.example/miro/flycheap"),  # nor an unlisted repo
 ])
 async def test_the_rollback_deletes_only_its_own_branch_on_a_listed_repo(
         monkeypatch, job):
@@ -445,32 +445,32 @@ async def test_a_rollback_that_raises_reports_a_failure(monkeypatch):
 # --------------------------------------------------- the NIGHTSHIFT_REPOS list
 
 @pytest.mark.parametrize("repo", [
-    "https://git.internal.example/owner/flycheap.git",
-    "https://git.internal.example/owner/flycheap",
-    "https://CODE.K9.MS/the owner/FlyCheap/",
+    "https://code.matrix.example.com/miro/flycheap.git",
+    "https://code.matrix.example.com/miro/flycheap",
+    "https://CODE.MATRIX.EXAMPLE.COM/Miro/FlyCheap/",
     "https://gitlab.com/group/sub/proj.git",
 ])
 def test_a_listed_repo_is_cloned_from_the_list_entry(repo):
     url, why = nightshift.repo_url(repo)
-    assert url in ("https://git.internal.example/owner/flycheap.git",
+    assert url in ("https://code.matrix.example.com/miro/flycheap.git",
                    "https://gitlab.com/group/sub/proj.git"), why
 
 
 @pytest.mark.parametrize("repo", [
-    "http://git.internal.example/owner/flycheap.git",                 # not https
-    "git@git.internal.example:owner/flycheap.git",                    # not a URL we take
-    "https://evil.example/owner/flycheap.git",              # not listed
-    "https://git.internal.example.evil.example/owner/flycheap.git",   # a suffix is not the host
-    "https://git.internal.example@evil.example/owner/flycheap.git",   # userinfo trick
-    "https://evil.example@git.internal.example/owner/flycheap.git",   # any userinfo at all
-    "https://tok:x@git.internal.example/owner/flycheap.git",
-    "https://git.internal.example:8443/owner/flycheap.git",           # a port
-    "https://git.internal.example/owner/flycheap.git?x=1",            # a query
-    "https://git.internal.example/owner/flycheap.git#frag",
-    "https://git.internal.example/owner/../owner/flycheap.git",        # dot segments
-    "https://evil.example\\@git.internal.example/owner/flycheap",     # a backslash
-    "https://git.internal.example/owner",                              # too short
-    "https://git.internal.example/owner/other",                        # same host, other repo
+    "http://code.matrix.example.com/miro/flycheap.git",                 # not https
+    "git@code.matrix.example.com:miro/flycheap.git",                    # not a URL we take
+    "https://evil.example/miro/flycheap.git",              # not listed
+    "https://code.matrix.example.com.evil.example/miro/flycheap.git",   # a suffix is not the host
+    "https://code.matrix.example.com@evil.example/miro/flycheap.git",   # userinfo trick
+    "https://evil.example@code.matrix.example.com/miro/flycheap.git",   # any userinfo at all
+    "https://tok:x@code.matrix.example.com/miro/flycheap.git",
+    "https://code.matrix.example.com:8443/miro/flycheap.git",           # a port
+    "https://code.matrix.example.com/miro/flycheap.git?x=1",            # a query
+    "https://code.matrix.example.com/miro/flycheap.git#frag",
+    "https://code.matrix.example.com/miro/../miro/flycheap.git",        # dot segments
+    "https://evil.example\\@code.matrix.example.com/miro/flycheap",     # a backslash
+    "https://code.matrix.example.com/miro",                              # too short
+    "https://code.matrix.example.com/miro/other",                        # same host, other repo
     "",
 ])
 def test_anything_off_the_list_is_refused(repo):

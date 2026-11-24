@@ -142,7 +142,7 @@ def _import_readback(package: str) -> None:
                          or exc.name == f"{package}.readback"):
             return
         log.warning("verifiers for %s failed to import: %s", package, exc)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("verifiers for %s failed to import: %s", package, exc)
 
 

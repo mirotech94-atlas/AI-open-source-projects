@@ -1,12 +1,12 @@
 """The first ten seconds of a call ATLAS places: who is calling, what is
 wrong in plain words, and one yes-or-no question.
 
-the owner, 2026-10-04 (the voice-partner brief): a call that opens by reading a
+Miro, 2026-10-04 (the voice-partner brief): a call that opens by reading a
 check's key and its collector output for forty seconds is a robot reading
 logs. He is often half asleep when it rings. So the opening is three beats
 and nothing else:
 
-  1. grounding      "Hey the owner, it's ATLAS."  (at night: "Sorry to wake you.")
+  1. grounding      "Hey Miro, it's ATLAS."  (at night: "Sorry to wake you.")
   2. the incident   one or two short sentences, in words a person would say
   3. the question   only when a card is pending: the action, "yes or no?"
 
@@ -27,19 +27,19 @@ from datetime import datetime, time
 
 INCIDENT_WORDS = 26          # beat two, at most
 QUESTION_WORDS = 18          # the action inside the question, at most
-GREETING = "Hey the owner, it's ATLAS."
-GREETING_NIGHT = "Hey the owner, it's ATLAS. Sorry to wake you."
+GREETING = "Hey Miro, it's ATLAS."
+GREETING_NIGHT = "Hey Miro, it's ATLAS. Sorry to wake you."
 MORE_IN_SLACK = "The details are in Slack."
 KEYPAD_HINT = "Press 1 for yes, 2 for no."
 NIGHT_DEFAULT = (time(23, 0), time(7, 0))
 
 # How an estate is said aloud.
 SPOKEN = {
-    "vault": "Vault", "cloudco": "CloudCo",
+    "vault": "Vault", "cloudhost": "CloudHost",
     "stripe_billing": "Stripe billing", "matrix_rooms": "the chat rooms",
     "fiverr": "Fiverr", "comms": "my own messaging", "screening": "screening",
-    "academy": "the Academy store", "agency": "Mapfront", "exampleco": "ExampleCo",
-    "inroots": "Roots", "instagram": "Instagram", "youtube": "YouTube",
+    "academy": "the Academy store", "agency": "Mapfront", "mirotech": "Mirotech",
+    "attendance": "Attendance", "instagram": "Instagram", "youtube": "YouTube",
     "tiktok": "TikTok", "content": "the reels", "clips": "the clips lane",
     "mail": "mail", "calendar": "the calendar", "backups": "backups",
     "markets": "markets", "netbird": "the mesh", "gitlab": "GitLab",

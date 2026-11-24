@@ -1,6 +1,6 @@
 """ATLAS's own voice: a local zero-shot clone of the NotebookLM host.
 
-the owner, 2026-10-29: ATLAS's spoken voice, in the portal and everywhere local
+Miro, 2026-10-29: ATLAS's spoken voice, in the portal and everywhere local
 voice is used, is NotebookLM's voice. NotebookLM has no TTS API, so the
 voice is cloned locally: Chatterbox (Resemble AI, MIT) on the Spark, from one
 13.5 s reference clip of the male host of a NotebookLM video overview
@@ -146,7 +146,7 @@ async def health() -> tuple[Health, str, str | None]:
         ok, reason = await _probe(), None
         if not ok:
             reason = "the clone voice server is loading or unwell"
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from ..modules._http import explain
         ok, reason = False, f"the clone voice server is unreachable ({explain(exc)})"
     _health_cache["clone"] = (time.monotonic(), ok, now, reason)

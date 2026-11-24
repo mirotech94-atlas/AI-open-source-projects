@@ -1,6 +1,6 @@
 /**
  * What the old Agents tab (Fleet) showed that the Agency room did not, moved
- * here whole when the two tabs became one (the owner, 2026-09-29: "keep only
+ * here whole when the two tabs became one (Miro, 2026-09-29: "keep only
  * agency"): the "Run all agents" warm-up, the org chart with each business's
  * deep dive (checks, last runs, memory scope), and the live feed of runs.
  * Every read keeps its own read time; nothing here writes anything except

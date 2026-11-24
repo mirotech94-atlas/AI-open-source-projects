@@ -8,7 +8,7 @@ Agents map read these so ATLAS's team reads as people meeting with him, and
 `/api/voice/speak` turns `voice` into one of three fixed Fish voices --
 never a voice id taken from the browser.
 
-Male voices only. the owner, 2026-10-11: "don't use the girl voice, only use the
+Male voices only. Miro, 2026-10-11: "don't use the girl voice, only use the
 guy voice at all times." Every persona speaks with "male"; "female" stays in
 the closed set `VOICES` only so an older browser asking for it still gets a
 200, and `/api/voice/speak` answers it in ATLAS's own (male) voice.
@@ -44,29 +44,29 @@ def _p(agent: str, name: str, specialty: str, voice: Voice) -> Persona:
     return Persona(agent=agent, name=name, specialty=specialty, voice=voice)
 
 
-# Every voice is male (the owner, 2026-10-11; see above). Every name is unique, and none is an agent key, a
+# Every voice is male (Miro, 2026-10-11; see above). Every name is unique, and none is an agent key, a
 # map display name ("Vault", "College") or "Atlas" -- except its own agent's key: the
-# mmt agent is called "MMT" (the owner, 2026-11-10).
+# tutorco agent is called "TUTORCO" (Miro, 2026-11-10).
 PERSONAS: dict[str, Persona] = {p.agent: p for p in (
-    # The eight (the owner, 2026-10-28). The retired agents' personas went with them.
+    # The eight (Miro, 2026-10-28). The retired agents' personas went with them.
     _p("inbox", "Clara", "Personal ops: mail, reply drafts, commitments, his calendar",
        "male"),
     _p("sites", "Felix", "Website clients: sites, demos, previews and owner emails",
        "male"),
-    _p("content", "Mark", "ECC and Academy YouTube, the church calendar, Reddit drafts",
+    _p("content", "Mark", "AMSM and Academy YouTube, the community calendar, Reddit drafts",
        "male"),
     _p("sales", "Sam", "Sales & Lead Gen: leads, outreach drafts, proposals",
        "male"),
     _p("bizops", "Bea", "Business automation: onboarding, test invoices, reminders",
        "male"),
-    _p("seo", "Sage", "SEO & Growth: audits, ranks, blog drafts, the TutorSite page calendar",
+    _p("seo", "Sage", "SEO & Growth: audits, ranks, blog drafts, the ExampleTutor page calendar",
        "male"),
     _p("research", "Rex", "Market Research: competitor watches, profiles, prices",
        "male"),
     _p("qa", "Quinn", "The QA gate: drafts, sites, passive security, missed runs",
        "male"),
-    # Nine with mmt (the owner, 2026-11-10).
-    _p("mmt", "MMT", "TutorSite: LinkedIn page posts, tutoring-centre prospects, intros",
+    # Nine with tutorco (Miro, 2026-11-10).
+    _p("tutorco", "TUTORCO", "ExampleTutor: LinkedIn page posts, tutoring-centre prospects, intros",
        "male"),
 )}
 

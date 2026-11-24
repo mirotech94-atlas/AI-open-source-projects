@@ -1,5 +1,5 @@
 """YouTube Shorts: the best AI reel of the week, three times a week
-(the owner, 2026-09-29).
+(Miro, 2026-09-29).
 
 YouTube's 2025 policy against "inauthentic / mass-produced" content rewards
 quality over volume, so this is curated, not a mirror: `SHORTS_PER_WEEK`
@@ -18,7 +18,7 @@ and the note says the ranking is by recency, not numbers.
 
 **The quality gate**, all in code, the first ranked reel that passes wins:
 a finished render of 1080x1920 with sound that is not silent, at least
-`crosspost.MIN_SECONDS` and at most `MAX_SECONDS` (the owner's Shorts limit --
+`crosspost.MIN_SECONDS` and at most `MAX_SECONDS` (Miro's Shorts limit --
 a longer reel is skipped, never cut); the caption guards the reel posted
 under (`crosspost._caption_refusal`, run over the new title AND the
 description) and its AI label; YouTube's title (2-100) and description
@@ -361,7 +361,7 @@ async def _derive(media_id: int, today: date) -> tuple[Short | None, str | None]
         if media_id in await on_youtube([media_id]):
             return None, f"media {media_id} is already on YouTube; not posted again"
         return await gate(media_id, runs[media_id].caption)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return None, (f"whether media {media_id} may go to YouTube could not be "
                       f"read ({explain(exc)}), so nothing is posted")
@@ -438,7 +438,7 @@ async def publish_short(media_id: int) -> ActionResult:
         await execute_sql(
             """INSERT INTO reel_posts (media_id, format_id, platform, post_ref)
                VALUES ($1, NULL, 'youtube', $2)""", media_id, post_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("short %s posted but not recorded: %s", media_id, exc)
     where = url or "its link not returned by Postiz yet"
     return ActionResult(True, f"short {media_id}: posted to YouTube (Postiz post "
@@ -493,7 +493,7 @@ async def check_shorts_lane() -> Observation:
         return Observation("shorts_lane", Health.UNKNOWN, detail=gap)
     try:
         _id, name = await postiz.youtube_channel()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("shorts_lane", Health.UNKNOWN,
                            detail=f"YouTube through Postiz: {exc}")
     today = local_today()
@@ -503,7 +503,7 @@ async def check_shorts_lane() -> Observation:
                 ORDER BY at DESC LIMIT 1""")
         done = await done_this_week(today)
         doubt = await in_doubt()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return Observation("shorts_lane", Health.UNKNOWN,
                            detail=f"reel_posts unreadable: {explain(exc)}")

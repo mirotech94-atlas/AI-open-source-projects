@@ -49,7 +49,7 @@ describe("SEATS", () => {
     expect(seat("websites").checks).toEqual(["agency.*"]);
     expect(seat("personal").checks).toEqual(["mail.*", "calendar.*"]);
     expect(seat("academy").checks).toEqual(
-      ["academy.*", "youtube.clips_*", "youtube.ecc_*", "church.*", "reddit.*"]);
+      ["academy.*", "youtube.clips_*", "youtube.amsm_*", "community.*", "reddit.*"]);
     expect(seat("sales").checks).toEqual(["sales.*"]);
     expect(seat("bizops").checks).toEqual(["bizops.*"]);
     expect(seat("seo").checks).toEqual(["seo.*"]);
@@ -57,7 +57,7 @@ describe("SEATS", () => {
     expect(seat("qa").checks).toEqual(["qa.*"]);
     expect(seat("websites").actionPrefix).toEqual(["agency."]);
     expect(seat("personal").actionPrefix).toEqual(["mail.", "calendar."]);
-    expect(seat("academy").actionPrefix).toEqual(["academy.", "youtube.", "church.", "reddit."]);
+    expect(seat("academy").actionPrefix).toEqual(["academy.", "youtube.", "community.", "reddit."]);
     expect(seat("websites").rosterAgents).toEqual(["sites"]);
     expect(seat("personal").rosterAgents).toEqual(["inbox"]);
     expect(seat("academy").rosterAgents).toEqual(["content"]);
@@ -72,8 +72,8 @@ const good = [
   mod("agency", [check("leads_waiting")]),
   mod("mail", [check("watch_active")]), mod("calendar", [check("conflicts")]),
   mod("academy", [check("delivery")]),
-  mod("youtube", [check("clips_stats"), check("clips_token"), check("ecc_stats")]),
-  mod("church", [check("queue")]), mod("reddit", [check("account")]),
+  mod("youtube", [check("clips_stats"), check("clips_token"), check("amsm_stats")]),
+  mod("community", [check("queue")]), mod("reddit", [check("account")]),
   mod("sales", [check("pipeline")]), mod("bizops", [check("invoices")]),
   mod("seo", [check("audits")]), mod("research", [check("briefs")]),
   mod("qa", [check("gate_health"), check("open_remediation")]),
@@ -85,9 +85,9 @@ describe("seatHealth", () => {
   });
 
   it("a seat whose module is not registered is unknown", () => {
-    for (const m of ["sales", "bizops", "seo", "research", "qa", "reddit", "church"]) {
+    for (const m of ["sales", "bizops", "seo", "research", "qa", "reddit", "community"]) {
       const without = good.filter((t) => t.module !== m);
-      const owner = m === "reddit" || m === "church" ? "academy" : m;
+      const owner = m === "reddit" || m === "community" ? "academy" : m;
       expect(seatHealth(seat(owner), without), m).toBe("unknown");
     }
   });
@@ -96,12 +96,12 @@ describe("seatHealth", () => {
     const others = good.map((t) => t.module === "sales" || t.module === "agency"
       ? { ...t, checks: t.checks.map((c) => ({ ...c, health: "failing" })) } : t);
     expect(seatHealth(seat("academy"), others)).toBe("ok");
-    const yt = mod("youtube", [check("clips_stats"), check("ecc_stats"),
+    const yt = mod("youtube", [check("clips_stats"), check("amsm_stats"),
                                check("flycheap_stats", { health: "failing" })]);
     expect(seatHealth(seat("academy"), [...good.filter((t) => t.module !== "youtube"), yt]))
       .toBe("ok");
-    const church = mod("church", [check("queue", { health: "failing" })]);
-    expect(seatHealth(seat("academy"), [...good.filter((t) => t.module !== "church"), church]))
+    const community = mod("community", [check("queue", { health: "failing" })]);
+    expect(seatHealth(seat("academy"), [...good.filter((t) => t.module !== "community"), community]))
       .toBe("failing");
   });
 
@@ -142,10 +142,10 @@ describe("doneSoFar", () => {
     expect(doneSoFar(seat("personal"), many)).toHaveLength(8);
   });
 
-  it("the Content seat counts academy, youtube, church and reddit finishes", () => {
+  it("the Content seat counts academy, youtube, community and reddit finishes", () => {
     const rows = [action("academy.publish_tutorial", "execute.finish", READ),
                   action("youtube.upload", "execute.finish", READ),
-                  action("church.schedule_youtube_shorts", "execute.finish", READ),
+                  action("community.schedule_youtube_shorts", "execute.finish", READ),
                   action("reddit.draft_post", "execute.finish", READ),
                   action("agency.build_site", "execute.finish", READ)];
     expect(doneSoFar(seat("academy"), rows)).toHaveLength(4);
@@ -265,7 +265,7 @@ describe("AgencyBody", () => {
 
   it("shows no retired name, even from live data, and counts what it hid", () => {
     const h = html([mod("agency", [check("leads_waiting")])]);
-    expect(h).not.toMatch(/guardian|flycheap|instagram|tiktok|whop|postiz|ecc|concierge|sentinel/i);
+    expect(h).not.toMatch(/guardian|flycheap|instagram|tiktok|whop|postiz|amsm|concierge|sentinel/i);
     expect(h).not.toMatch(/\bclips\b/i);
     expect(h).not.toContain("clips_");
     expect(h).not.toMatch(/reels?\b/i);
@@ -273,9 +273,9 @@ describe("AgencyBody", () => {
   });
 
   it("seat checks never print a retired key as a label", () => {
-    const yt = mod("youtube", [check("clips_stats"), check("clips_token"), check("ecc_stats")]);
+    const yt = mod("youtube", [check("clips_stats"), check("clips_token"), check("amsm_stats")]);
     const labels = seatChecks(seat("academy"), [yt]).map((c) => c.label);
-    expect(labels).toEqual(["Channel stats", "Token", "Church channel stats"]);
+    expect(labels).toEqual(["Channel stats", "Token", "Community channel stats"]);
     const odd = mod("agency", [check("tiktok_followers")]);
     const out = seatChecks(seat("websites"), [odd]);
     expect(out.map((c) => c.label).join(" ")).not.toMatch(/tiktok/i);

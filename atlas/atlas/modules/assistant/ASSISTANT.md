@@ -32,7 +32,7 @@ The explicit forms are parsed in code by `parse_explicit`, in Slack's own
 request path, before anything else reads the message. The `atlas, <question>`
 form goes through `kernel.intent.act`'s module `command` hook, the same hook
 as `/atlas funnel ...`. It is parsed in code, never by a model, and only after
-the channel has proved the words are the owner's: Slack, or a call ATLAS placed,
+the channel has proved the words are Miro's: Slack, or a call ATLAS placed,
 never an inbound call.
 
 ## Ask and Search
@@ -204,14 +204,14 @@ timeout) is finished as `cancelled`.
   credentials (`privacy.py`) runs on the local model only, with none of the
   outside tools. If there is no local model, it says honestly that the local
   model is down; it never falls through.
-- **Claim to be human.** The identity line says it is software the owner runs. It
+- **Claim to be human.** The identity line says it is software Miro runs. It
   never claims feelings, or to have done anything in the world.
 - **Follow a page.** Tool results are quoted data. An instruction inside one
   is reported (`injection.suspected` in the audit), not obeyed.
 
 ## Phase 1 vs the plan
 
-The owner's *Atlas Implementation Plan* (6 Oct 2026) scopes the first change to
+Miro's *Atlas Implementation Plan* (6 Oct 2026) scopes the first change to
 **Phase 1: Ask + Search**. Its handoff says to stop before Research, memory,
 artifacts and Act.
 

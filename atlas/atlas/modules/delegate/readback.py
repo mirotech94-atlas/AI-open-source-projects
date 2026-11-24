@@ -3,7 +3,7 @@ row: `queue` moves a handoff from `draft` to `queued`, and the agent on the
 Mac later claims and reports on it. So the authority is that row, read with
 a SELECT -- never `check_queue`, which UPDATEs expired rows.
 
-  queued, claimed, done, needs_owner, failed   the job was handed over
+  queued, claimed, done, needs_miro, failed   the job was handed over
                                               (a failed report is the
                                               agent's outcome, not a lost
                                               handoff)
@@ -30,7 +30,7 @@ from ...kernel.verify import (
 )
 from . import _hid
 
-HANDED_OVER = frozenset({"queued", "claimed", "done", "needs_owner", "failed"})
+HANDED_OVER = frozenset({"queued", "claimed", "done", "needs_miro", "failed"})
 
 
 async def _read(hid: int, started: datetime | None) -> Verification:

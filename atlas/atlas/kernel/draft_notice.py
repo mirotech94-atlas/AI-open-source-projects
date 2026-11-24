@@ -1,4 +1,4 @@
-"""Tell the owner on Slack about every new content draft (the owner 2026-11-13).
+"""Tell Miro on Slack about every new content draft (Miro 2026-11-13).
 
 Drafts are rows in `content_drafts` written by many modules; none of them told
 anyone. This reads new rows (id above a stored mark) and sends one Slack card
@@ -63,6 +63,6 @@ async def tick() -> dict[str, Any]:
             await _save(int(r["id"]))
             sent += 1
         return {"sent": sent}
-    except Exception as exc:                          # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("draft notice failed: %s", type(exc).__name__)
         return {"error": type(exc).__name__}

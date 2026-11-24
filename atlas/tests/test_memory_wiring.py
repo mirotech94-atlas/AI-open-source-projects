@@ -47,7 +47,7 @@ def _recall_returns(monkeypatch, items):
     return calls
 
 
-def _note(text="the owner prefers short replies."):
+def _note(text="Miro prefers short replies."):
     return memory.Memory(1, memory.Kind.SEMANTIC, "owner", text, source="whatsapp")
 
 
@@ -101,8 +101,8 @@ async def test_three_turns_leave_a_memory_row_with_source_and_time(monkeypatch):
 
     async def complete(self, system, messages, tools=None, max_tokens=2048):
         return llm.Completion(text=json.dumps([{
-            "kind": "fact", "business": "mmt",
-            "text": "MMT tutor rate goes up in January."}]),
+            "kind": "fact", "business": "tutorco",
+            "text": "TUTORCO tutor rate goes up in January."}]),
             provider="memory-local", model="m")
     monkeypatch.setattr(memory, "fetch_all", fetch_all)
     monkeypatch.setattr(memory, "fetch_one", fetch_one)
@@ -111,7 +111,7 @@ async def test_three_turns_leave_a_memory_row_with_source_and_time(monkeypatch):
     monkeypatch.setenv("ATLAS_MEMORY_WRITE", "1")
     monkeypatch.delenv("OLLAMA_URL", raising=False)
     for turn in ("Morning.", "Busy day.",
-                 "MMT tutor rate is going up to 35 euros an hour from January."):
+                 "TUTORCO tutor rate is going up to 35 euros an hour from January."):
         memory_extract.schedule(turn, "Noted.", "whatsapp")
     await memory_extract.drain()
     assert rows, "nothing was learned"

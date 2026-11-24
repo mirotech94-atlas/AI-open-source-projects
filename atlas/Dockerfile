@@ -12,6 +12,7 @@ COPY atlas/api/templates/_tokens.css /atlas/api/templates/_tokens.css
 # is cross-origin to the dashboard (CSP connect-src 'self'), so the catalog
 # and its covers are bundled from here at build time (ui/src/airglass/catalog.ts).
 COPY atlas/modules/academy/catalog.json /atlas/modules/academy/catalog.json
+COPY atlas/modules/academy/assets/covers/ /atlas/modules/academy/assets/covers/
 # The outcome-line cases are shared by pytest and vitest, and tsc -b checks
 # the test that reads them (ui/src/pages/outcomeText.test.ts).
 COPY tests/fixtures/outcome_lines.json /tests/fixtures/outcome_lines.json

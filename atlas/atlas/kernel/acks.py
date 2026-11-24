@@ -1,9 +1,9 @@
 """Acknowledged alerts: "I know about this. Stop telling me until it changes."
 
-the owner, 2026-09-24: "there should be an acknowledge button in Slack when they
+Miro, 2026-09-24: "there should be an acknowledge button in Slack when they
 send messages so they don't send the same one again." Before this, the only
 brake on a repeating alert was page()'s once-per-title-per-day window, so a
-known problem (a CloudCo balance he had already said he would top up) paged him
+known problem (a CloudHost balance he had already said he would top up) paged him
 every day and re-filed a tracking-issue card every time the last one expired.
 
 An ack mutes ONE check, and only while nothing about it has changed:
@@ -55,7 +55,7 @@ async def ack(key: str, via: str, *, days: int = ACK_DAYS) -> str | None:
 
 
 async def filter_acked(findings: list) -> list:
-    """Drop findings the owner has acknowledged, and retire acks that no longer
+    """Drop findings Miro has acknowledged, and retire acks that no longer
     apply. One small query when there are no acks, which is most cycles."""
     try:
         acks = await fetch_all("SELECT key, until, health FROM acks")

@@ -4,7 +4,7 @@ Watches: Slack mentions waiting on a reply, read-only through
 `conversations.history` on the channels named in `MESSAGING_SLACK_CHANNELS`.
 
 May do: nothing. There is no action here. WhatsApp was the last platform
-`messaging.reply` could send on, and it was removed at the owner's request on
+`messaging.reply` could send on, and it was removed at Miro's request on
 2026-09-28 -- so the action went with it rather than stay in the catalog as
 a Tier 2 name that could only ever refuse.
 
@@ -15,7 +15,7 @@ CAPABILITIES.md §2.3 ("this adds reading and drafting ... not just posting
 alerts").
 
 Endpoint assumed: Slack Web API `slack.com/api`, documented in
-`slack_read.py` for the owner to correct if a shape changes.
+`slack_read.py` for Miro to correct if a shape changes.
 
 Only `_SENDABLE` platforms are read back from `messaging_inbound`, and there
 are none left: rows from WhatsApp and Telegram, both since removed, stay in
@@ -83,7 +83,7 @@ async def check_unanswered() -> Observation:
             """SELECT platform FROM messaging_inbound
                WHERE replied_at IS NULL AND platform = ANY($1::text[])""",
             list(_SENDABLE))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("unanswered", Health.UNKNOWN, detail=str(exc))
 
     by_platform: dict[str, int] = {}
@@ -94,7 +94,7 @@ async def check_unanswered() -> Observation:
     slack_failed: str | None = None
     try:
         slack_pending = await slack_read.unanswered()
-    except Exception as exc:                             # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         # Any stored rows still stand, but the total does not: a
         # Slack that could not be read is not a Slack with nothing in it.
         from .._http import explain

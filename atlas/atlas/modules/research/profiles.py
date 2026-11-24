@@ -153,7 +153,7 @@ async def _judge(prompt: str) -> tuple[dict[str, Any] | None, str | None]:
     try:
         reply = await think(Need.DRAFT, SYSTEM, [Message("user", prompt)],
                             max_tokens=500)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"no free model answered ({type(exc).__name__})"
     text = str(getattr(reply, "text", "") or "")
     start, end = text.find("{"), text.rfind("}")

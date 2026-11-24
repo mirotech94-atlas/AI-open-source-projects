@@ -1,5 +1,5 @@
 """The lead-call and lead-text webhooks: signed, admitted per call, and
-never the routes that ring the owner."""
+never the routes that ring Miro."""
 from __future__ import annotations
 
 import hashlib
@@ -11,7 +11,7 @@ from tests.test_phone import _signed, calling, client  # noqa: F401  (fixtures)
 LEAD = {"id": 7, "name": "Joe's Plumbing", "category": "plumber"}
 
 
-OPENING = "Hi, this is the owner's assistant from ATLAS Agency, calling about Joe's Plumbing."
+OPENING = "Hi, this is Miro's assistant from ATLAS Agency, calling about Joe's Plumbing."
 
 
 def _row(token: str, **over):
@@ -34,7 +34,7 @@ def _db(monkeypatch, row):
         return None
 
     async def links(_lid):
-        return {"domain": "demo-site.vercel.example", "slug": "joes-plumbing-7",
+        return {"domain": "atlas-agency-joes-plumbing-7.vercel.app", "slug": "joes-plumbing-7",
                 "deployed": True}
 
     async def emailed(_lid):
@@ -76,7 +76,7 @@ def test_the_opening_is_the_identification_inside_the_gather(
                 {"CallSid": "CA1", "To": "+17185550101", "AnsweredBy": "human"})
     assert r.status_code == 200
     text = r.text.replace("&apos;", "'")
-    assert "Hi, this is the owner's assistant from ATLAS Agency, calling about Joe's" in text
+    assert "Hi, this is Miro's assistant from ATLAS Agency, calling about Joe's" in text
     assert "free preview at atlas-agency-joes-plumbing-7 dot vercel dot app" in text
     assert lead_call.ASK_OWNER in text and "I'm an AI" not in text
     assert "/webhooks/twilio/agency/turn" in r.text
@@ -114,12 +114,12 @@ def test_yes_to_the_owner_turns_the_turn_into_a_dial(client, calling, monkeypatc
     assert r.status_code == 200
     assert '<Dial action="/webhooks/twilio/agency/dial?c=5&amp;t=right"' in r.text
     assert 'timeout="25" callerId="+17185550000"' in r.text
-    assert ('<Number url="https://atlas.example.com/webhooks/twilio/agency/whisper?c=5'
+    assert ('<Number url="https://atlas.storefront.test/webhooks/twilio/agency/whisper?c=5'
             '&amp;t=right" method="POST">+19175550199</Number>') in r.text
     assert "<Gather" not in r.text and "<Hangup/>" not in r.text
 
 
-def test_the_whisper_is_admitted_on_the_parent_call_and_the_owners_number(
+def test_the_whisper_is_admitted_on_the_parent_call_and_miros_number(
         client, calling, monkeypatch):  # noqa: F811
     monkeypatch.setenv("AGENCY_ESCALATION_PHONE", "+19175550199")
     _transferring(monkeypatch)
@@ -146,7 +146,7 @@ def test_the_whisper_refuses_any_other_number_or_secret(client, calling, monkeyp
     assert unsigned.status_code == 401
 
 
-def test_owner_not_answering_ends_with_the_call_back_line_and_an_alert(
+def test_miro_not_answering_ends_with_the_call_back_line_and_an_alert(
         client, calling, monkeypatch):  # noqa: F811
     call = _transferring(monkeypatch)
     posted = []
@@ -157,7 +157,7 @@ def test_owner_not_answering_ends_with_the_call_back_line_and_an_alert(
     r = _signed(client, "/webhooks/twilio/agency/dial?c=5&t=right",
                 {"CallSid": "CA1", "To": "+17185550101", "DialCallStatus": "no-answer"})
     assert r.status_code == 200
-    assert lead_call.OWNER_CALLBACK in r.text
+    assert lead_call.MIRO_CALLBACK in r.text
     assert "<Hangup/>" in r.text and not call.transferring
     assert call.outcome == "callback"
     assert [p.title[:40] for p in posted] == ["CALL BACK: Joe's Plumbing +17185550101 a"]
@@ -172,7 +172,7 @@ def test_a_completed_transfer_just_says_goodbye(client, calling, monkeypatch):  
     assert call.outcome == "transferred"
 
 
-def test_a_lead_call_ending_never_counts_as_owner_declining(
+def test_a_lead_call_ending_never_counts_as_miro_declining(
         client, calling, monkeypatch):  # noqa: F811
     _db(monkeypatch, _row("right"))
     recorded = []

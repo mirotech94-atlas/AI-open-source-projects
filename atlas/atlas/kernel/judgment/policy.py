@@ -96,7 +96,7 @@ def _refuse(action: str, why: str) -> Prediction:
 
 
 async def predict(action: str, severity: int, *, at=None) -> Prediction:
-    """P(the owner approves) for this action right now, with reasons — or ABSTAIN.
+    """P(Miro approves) for this action right now, with reasons — or ABSTAIN.
 
     Tier 3 is refused first. The registry's decision for a NEVER action is
     the only thing consulted, and it is read, never written.
@@ -115,7 +115,7 @@ async def predict(action: str, severity: int, *, at=None) -> Prediction:
                                     reversible=reversible, at=at)
         x = encode(f)
         served = await _models.serving("approve")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("judgment unavailable, abstaining: %s", type(exc).__name__)
         return _refuse(action, f"learning layer unavailable: {type(exc).__name__}")
     env = served.envelope if served else None

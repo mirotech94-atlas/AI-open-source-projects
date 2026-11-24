@@ -303,7 +303,7 @@ class TokenSource:
                                       headers={"Accept": "application/json"})
         except RefreshRefused:
             raise
-        except Exception as exc:                           # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             raise RefreshRefused(
                 f"could not reach GetLayers' token endpoint: {explain(exc)}"
             ) from None

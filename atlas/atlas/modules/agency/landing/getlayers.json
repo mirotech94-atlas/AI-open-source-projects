@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "brief": {
+    "dimensionality": ["flat", "depth"],
+    "mood": ["calm", "playful"],
+    "tone": ["light"],
+    "motionEnergy": ["subtle"],
+    "density": ["balanced"]
+  },
+  "styleId": "ridgeline-style",
+  "tokens": {
+    "gl-bg": "#eef2ef",
+    "gl-bg-alt": "#0f3d3e",
+    "gl-surface": "#ffffff",
+    "gl-surface-raised": "#dfe8e3",
+    "gl-ink": "#0f3d3e",
+    "gl-ink-muted": "#465f5f",
+    "gl-accent": "#f4b942",
+    "gl-accent-ink": "#0f3d3e",
+    "gl-line": "rgba(15, 61, 62, 0.14)",
+    "gl-font-display": "'Archivo', ui-sans-serif, system-ui, sans-serif",
+    "gl-font-body": "'Archivo', ui-sans-serif, system-ui, sans-serif",
+    "gl-weight-display": "800",
+    "gl-weight-body": "400",
+    "gl-tracking-display": "-0.01em",
+    "gl-radius": "0.75rem",
+    "gl-radius-lg": "2rem",
+    "gl-border": "1px",
+    "gl-duration-fast": "150ms",
+    "gl-ease": "cubic-bezier(0.2, 0, 0, 1)"
+  },
+  "activeTemplateId": "ridgeline",
+  "placed": [
+    { "sectionId": "artist-hero", "slot": 0 },
+    { "sectionId": "artist-acquire", "slot": 1 },
+    { "sectionId": "helion-timeline", "slot": 2 },
+    { "sectionId": "creative-director-portfolio", "slot": 3 },
+    { "sectionId": "ai-studio-product-card", "slot": 3 },
+    { "sectionId": "lumora-footer", "slot": 4 }
+  ],
+  "notes": "placed[].sectionId holds GetLayers COMPOSITION ids (this build places no library Sections); slot 3 uses two compositions together. Route (c) build unique, target 'other' (plain static HTML under a strict CSP: no scripts, no media, fonts self-hosted). Style ridgeline-style re-themed: navy -> Mapfront teal #0f3d3e, marigold #f4b942 as the one accent (pins and the primary action only). Re-typed from Instrument Sans + Geist Mono to one family, Archivo variable (wdth 62-125, wght 100-900), subset and self-hosted at fonts/archivo-var.woff2 (OFL); the mono labels were dropped. The ridgeline template was materialized for rhythm and shape language only (card on a field, radius ladder 32/24/20/12, pill controls, the navy footer with an oversized wordmark); none of its sections, springs or photography were copied, so no 'preserve' layer (motion, composition) was rewritten. No scene, gradient or background: WebGL needs script, which the CSP and tests/test_mapfront_landing.py forbid. Slots: 0 hero (artist-hero split; right plate = Webild-style vertical storefront marquee), 1 package (artist-acquire baseline-split head over a city-block bento), 2 how it works (helion-timeline as a subway line, lettered stops), 3 preview (creative-director-portfolio split + ai-studio-product-card browser mock), 4 close (lumora-footer inverted slab with cropped wordmark). Marquee compositions (vexon-marquee, stride-logo-marquee) were considered and not used: both are logo walls."
+}

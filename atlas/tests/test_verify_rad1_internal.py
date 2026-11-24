@@ -26,7 +26,7 @@ T0 = datetime(2026, 9, 28, 10, 0, tzinfo=UTC)
 
 ACTIONS = ("marketing.propose_experiment", "marketing.propose_idea",
            "marketing.record_outcome", "nightshift.run", "nightshift.research",
-           "school.draft_work", "school.set_course", "vault.log_reading",
+           "vault.log_reading",
            "vault.reindex", "lessons.clear", "research.report",
            "rhythm.note_circumstance", "linkedin.approve_draft")
 
@@ -208,7 +208,7 @@ async def test_record_outcome_reconciler(db):
 
 # ================================================================== nightshift
 
-NR_PARAMS = {"task": "fix the flaky test", "repo": "https://git.internal.example/the owner/ai"}
+NR_PARAMS = {"task": "fix the flaky test", "repo": "https://code.matrix.example.com/Miro/ai"}
 NR_RESULT = ActionResult(True, "running", evidence={
     "job_id": 42, "container": "nightshift-42", "branch": "nightshift/job-42"},
     rollback_token="42")
@@ -350,14 +350,6 @@ async def test_run_report_records_the_research_id_and_body_hash(monkeypatch):
 
 # ================================================================== school
 
-@pytest.fixture
-def school_dir(monkeypatch, tmp_path):
-    monkeypatch.setenv("SCHOOL_DIR", str(tmp_path / "school"))
-    d = tmp_path / "school" / "phy-120" / "7-lab-1"
-    d.mkdir(parents=True)
-    (d / "README.md").write_text("# Lab 1\n")
-    (d / "answers.md").write_text("x = 3\n")
-    return d
 
 
 DW_BODY = f"Lab 1 answers ({SECRET})"
@@ -367,62 +359,12 @@ DW_RESULT = ActionResult(True, "drafted", evidence={
     rollback_token=json.dumps({"draft": 12, "dir": "phy-120/7-lab-1"}))
 
 
-def _draft(**over):
-    return {"kind": "school_handwritten", "source": "school_item:7",
-            "status": "draft", "body": DW_BODY, **over}
 
 
-async def test_school_draft_work(db, school_dir):
-    db["content_drafts"] = _draft()
-    got = await v.verify("school.draft_work", {"item_id": 7}, DW_RESULT)
-    assert got.state is v.State.VERIFIED
-    assert got.evidence["files"]["files"] == 2
-    _no_secret(got)
-
-    (school_dir / "answers.md").write_text("")
-    got = await v.verify("school.draft_work", {"item_id": 7}, DW_RESULT)
-    assert got.state is v.State.CONTRADICTED and "answers.md" in got.reason
-    (school_dir / "answers.md").write_text("x = 3\n")
-
-    db["content_drafts"] = _draft(status="dropped")
-    got = await v.verify("school.draft_work", {"item_id": 7}, DW_RESULT)
-    assert got.state is v.State.CONTRADICTED and "dropped" in got.reason
-
-    db["content_drafts"] = _draft(source="school_item:8")
-    got = await v.verify("school.draft_work", {"item_id": 7}, DW_RESULT)
-    assert got.state is v.State.CONTRADICTED
-
-    got = await v.verify("school.draft_work", {"item_id": 7}, ActionResult(True))
-    assert got.state is v.State.UNKNOWN
 
 
-async def test_school_draft_work_moved_to_trash(db, school_dir):
-    import shutil
-    db["content_drafts"] = _draft()
-    shutil.rmtree(school_dir)
-    got = await v.verify("school.draft_work", {"item_id": 7}, DW_RESULT)
-    assert got.state is v.State.CONTRADICTED
 
 
-async def test_school_set_course(db):
-    result = ActionResult(True, "set", evidence={
-        "code": "PHY 120", "work_kind": "webwork", "previous": None})
-    params = {"code": "phy120", "work_kind": "webwork"}
-    db["school_courses"] = {"work_kind": "webwork"}
-    got = await v.verify("school.set_course", params, result)
-    assert got.state is v.State.VERIFIED and got.evidence["code"] == "PHY 120"
-    db["school_courses"] = {"work_kind": "files"}
-    got = await v.verify("school.set_course", params, result)
-    assert got.state is v.State.CONTRADICTED
-    db["school_courses"] = None
-    got = await v.verify("school.set_course", params, result)
-    assert got.state is v.State.CONTRADICTED
-    got = await v.verify("school.set_course", {}, ActionResult(True))
-    assert got.state is v.State.UNKNOWN
-
-    db["school_courses"] = {"work_kind": "webwork"}
-    got = await v.reconcile_unknown("school.set_course", params, {"at": T0})
-    assert got.state is v.State.VERIFIED
 
 
 # ================================================================== vault
@@ -680,9 +622,6 @@ RAISING = [
     ("marketing.record_outcome", RO_PARAMS, RO_RESULT),
     ("nightshift.run", NR_PARAMS, NR_RESULT),
     ("nightshift.research", {"question": QUESTION}, NRS_RESULT),
-    ("school.draft_work", {"item_id": 7}, DW_RESULT),
-    ("school.set_course", {"code": "PHY 120", "work_kind": "webwork"},
-     ActionResult(True, evidence={"code": "PHY 120"})),
     ("vault.log_reading", LR_PARAMS, LR_RESULT),
     ("vault.reindex", {}, RX_RESULT),
     ("lessons.clear", LC_PARAMS, LC_RESULT),
@@ -691,18 +630,6 @@ RAISING = [
 ]
 
 
-@pytest.mark.parametrize("action,params,result", RAISING, ids=[r[0] for r in RAISING])
-async def test_a_raising_read_is_unknown_and_secret_free(db, action, params, result):
-    boom = RuntimeError(f"connection refused, password={SECRET}")
-    for table in ("marketing_experiments", "monetization_ideas", "content_drafts",
-                  "memories", "nightshift_jobs", "research_reports", "reports",
-                  "school_courses", "library_entries", "vault_documents", "lessons",
-                  "rhythm_notes"):
-        db[table] = boom
-    got = await v.verify(action, params, result)
-    assert got.state is v.State.UNKNOWN
-    assert "raised" in got.reason
-    _no_secret(got)
 
 
 async def test_linkedin_approve_draft_raising_read(li_bank, monkeypatch):

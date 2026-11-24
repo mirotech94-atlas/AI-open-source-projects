@@ -1,6 +1,6 @@
 """The teaching Short's frame: each scene recomposed at 1080x1920.
 
-docs/academy-video-system/components/ShortsFrame (the owner, 2026-10-17): the
+docs/academy-video-system/components/ShortsFrame (Miro, 2026-10-17): the
 `shorts-hook` headline from frame 0, the active panel recomposed for
 portrait -- never the 16:9 lesson squeezed or letterboxed -- and the
 `shorts-caption` plate, all inside the vertical safe area (x 72, below 220,

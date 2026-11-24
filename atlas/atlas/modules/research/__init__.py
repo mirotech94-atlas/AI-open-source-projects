@@ -271,7 +271,7 @@ async def _client_body(lead_id: int) -> str | None:
     lines += ["", "Measured prices:"]
     lines += [_price_line(p) for p in prices] or ["- none measured yet"]
     lines += ["", f"Prepared {watch.stamp()}. PDF: not rendered (plain text only).",
-              "", "the owner, Mapfront"]
+              "", "Miro, Mapfront"]
     return "\n".join(lines)
 
 
@@ -387,7 +387,7 @@ async def check_watch_health() -> Observation:
     now = datetime.now(UTC)
     try:
         s = await store.watch_stats()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("watch_health", Health.UNKNOWN,
                            detail=f"research_watches unreadable: {type(exc).__name__}")
     active, failing = int(s.get("active") or 0), int(s.get("failing") or 0)
@@ -405,7 +405,7 @@ async def check_scan_freshness() -> Observation:
     now = datetime.now(UTC)
     try:
         s = await store.watch_stats()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation("scan_freshness", Health.UNKNOWN,
                            detail=f"research_watches unreadable: {type(exc).__name__}")
     at = s.get("last_read")

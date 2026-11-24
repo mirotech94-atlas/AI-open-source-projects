@@ -16,7 +16,7 @@ from atlas.kernel import breaker, llm
 from atlas.kernel.llm import Completion, Message, Need
 
 BASE = "http://host.docker.internal:18000/v1"
-BASE2 = "http://10.0.0.9:8000/v1"
+BASE2 = "http://10.2.6.9:8000/v1"
 
 _ENV = ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "OLLAMA_URL", "OPENROUTER_API_KEY",
         "ATLAS_PRIVATE_ALLOW_CLOUD", "GROQ_API_KEY", "GEMINI_API_KEY",
@@ -132,11 +132,11 @@ async def test_second_endpoint_is_asked_only_after_the_first_fails(monkeypatch):
     seen = _wire(monkeypatch, handler)
     reply = await llm.LocalOpenAIProvider().complete("s", [Message("user", "hi")])
     assert reply.text == "from spark 2"
-    assert [r.url.host for r in seen] == ["host.docker.internal", "10.0.0.9"]
+    assert [r.url.host for r in seen] == ["host.docker.internal", "10.2.6.9"]
     # the failed endpoint is asked last for a while
     seen.clear()
     await llm.LocalOpenAIProvider().complete("s", [Message("user", "hi")])
-    assert [r.url.host for r in seen] == ["10.0.0.9"]
+    assert [r.url.host for r in seen] == ["10.2.6.9"]
 
 
 async def test_a_5xx_fails_over_but_a_4xx_does_not(monkeypatch):
@@ -183,7 +183,7 @@ async def test_private_never_leaves_local_when_every_spark_is_down(monkeypatch):
     seen = _wire(monkeypatch, boom)
     with pytest.raises(llm.LocalModelUnavailable):
         await llm.think(Need.PRIVATE, "s", [Message("user", "personal")])
-    assert {r.url.host for r in seen} <= {"host.docker.internal", "10.0.0.9"}
+    assert {r.url.host for r in seen} <= {"host.docker.internal", "10.2.6.9"}
 
 
 async def test_answer_lane_falls_to_cloud_and_says_so(monkeypatch):

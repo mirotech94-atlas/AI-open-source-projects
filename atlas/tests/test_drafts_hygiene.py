@@ -11,7 +11,7 @@ from atlas.modules.content import drafts
 def test_a_refusal_is_recognised_and_a_draft_is_not():
     for said in (("I’d love to turn that FlyCheap deal into a snappy video script, "
                   "but I don't have the deal."),
-                 "I'm happy to turn the owner's quick-tip into a script, but",
+                 "I'm happy to turn Miro's quick-tip into a script, but",
                  "Sorry, I can't write that.",
                  "I can't draft this without the footage, but here is"):
         assert drafts._REFUSAL.search(said), said
@@ -57,16 +57,16 @@ async def test_an_agent_may_not_draft_from_a_note(memory_backend):
     from atlas.kernel.tools import CURRENT_AGENT
     token = CURRENT_AGENT.set("marketing")
     try:
-        result = await drafts.draft("short_script", "note:tutorial on the the owner board")
+        result = await drafts.draft("short_script", "note:tutorial on the Miro board")
         dry = await drafts.draft_dry("short_script", "note:anything")
     finally:
         CURRENT_AGENT.reset(token)
-    assert result.ok is False and "only the owner writes notes" in result.detail
+    assert result.ok is False and "only Miro writes notes" in result.detail
     assert dry.ok is False
     assert not any("INSERT INTO content_drafts" in s for s, _ in memory_backend.sql_log)
 
 
-async def test_owner_himself_may_still_draft_from_a_note(memory_backend, monkeypatch):
+async def test_miro_himself_may_still_draft_from_a_note(memory_backend, monkeypatch):
     async def gather(source):
         return "<untrusted>note</untrusted>", None
 

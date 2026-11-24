@@ -146,7 +146,7 @@ def test_now_shows_the_agents_cards_and_last_run():
             "created_at": None, "expires_at": "2026-10-29T00:00:00+00:00"}
     out = _assemble(
         board=_board([_seat("sites", waiting=[card], in_flight=2,
-                            headline="1 card(s) waiting on the owner"), _seat("qa")]),
+                            headline="1 card(s) waiting on Miro"), _seat("qa")]),
         last_runs=[{"agent": "sites", "at": NOW - timedelta(hours=1), "failed": False}])
     now = out["sites"]["now"]
     assert now["waiting"] == 1 and now["in_flight"] == 2

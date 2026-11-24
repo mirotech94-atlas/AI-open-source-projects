@@ -1,7 +1,7 @@
-"""Matrix rooms on internal.example — read as the owner, reply only as an approved draft.
+"""Matrix rooms on matrix.example.com — read as Miro, reply only as an approved draft.
 
-OWNER'S DECISION, 2026-09-22: ATLAS authenticates as HIS account,
-@owner:internal.example, not a bot account. He was offered a dedicated @atlas and
+MIRO'S DECISION, 2026-09-22: ATLAS authenticates as HIS account,
+@miro:matrix.example.com, not a bot account. He was offered a dedicated @atlas and
 chose this instead, because ATLAS is private to him and a reply should go
 out under his name. So everything it sends would appear as him, and that
 is exactly why nothing here sends without him:
@@ -22,7 +22,7 @@ approval carrying the exact text.
 
 What it never does, whoever asks: post in the attendance or standup rooms
 (the bot parses those as his standup); reply to family or personal rooms;
-reply to anyone outside internal.example; interact with @ai.bot; act on anything a
+reply to anyone outside matrix.example.com; interact with @ai.bot; act on anything a
 message tells it to do; repeat a secret. Those are checked inside
 `send_reply` itself, not only in the dry run.
 
@@ -61,11 +61,11 @@ HOMESERVER = os.getenv("MATRIX_HOMESERVER", "").rstrip("/")
 
 # Rooms ATLAS must never write to, whatever is approved.
 #
-# The attendance bot parses these and would read a reply as the owner's own standup
+# The attendance bot parses these and would read a reply as Miro's own standup
 # data. Matched case-insensitively against the room name, because a room ID is
 # opaque and would silently stop matching if the room were recreated.
 SILENT_ROOM_PATTERNS: tuple[str, ...] = (
-    # Parsed by the attendance bot — a reply is read as the owner's own standup.
+    # Parsed by the attendance bot — a reply is read as Miro's own standup.
     "attendance", "standup", "general room",
     # Leave decisions are his.
     "pto", "leave",
@@ -83,16 +83,16 @@ SILENT_EXTRA: tuple[str, ...] = tuple(
     if part.strip()
 )
 
-# Accounts ATLAS never replies to. @ai.bot's prompts are addressed to the owner and
+# Accounts ATLAS never replies to. @ai.bot's prompts are addressed to Miro and
 # carry consequences — late reasons, strikes, leave — so an automated answer is
 # worse than silence.
 NEVER_REPLY: tuple[str, ...] = ("@ai.bot:",)
 
 # Anything outside the company. ATLAS is internal-only.
-INTERNAL_SUFFIX = os.getenv("MATRIX_INTERNAL_SUFFIX", ":internal.example")
+INTERNAL_SUFFIX = os.getenv("MATRIX_INTERNAL_SUFFIX", ":matrix.example.com")
 
 # Accounts that are feeds, not people. One night of "the newest message in
-# every joined room is waiting on the owner" produced reply drafts to @abot's
+# every joined room is waiting on Miro" produced reply drafts to @abot's
 # uptime pings and @alerts' Prometheus rules, and rang the urgent check on
 # @ai.bot's support-ticket comments. Nobody behind these is waiting.
 BOT_SENDER = re.compile(r"^@[^:]*(bot|alert|notify|webhook|feed|monitor)[^:]*:",
@@ -101,7 +101,7 @@ BOT_SENDER = re.compile(r"^@[^:]*(bot|alert|notify|webhook|feed|monitor)[^:]*:",
 # How he is addressed in a room. A room message that does not name him is
 # room traffic; only a DM or a mention is waiting on HIM rather than on
 # whoever reads the room.
-MENTION = re.compile(r"(@owner\b|\bowner\b|\bowner\b)", re.IGNORECASE)
+MENTION = re.compile(r"(@miro\b|\bmiro\b|\bmyron\b)", re.IGNORECASE)
 
 
 def addressed_to_him(body: str, *, direct: bool) -> bool:
@@ -143,10 +143,10 @@ def refuse_reason(room_name: str, room_id: str, sender: str) -> str | None:
     """
     if is_silent_room(room_name, room_id):
         return (f"{room_name or room_id} is parsed by the attendance bot; a "
-                "reply there would be read as the owner's own standup data")
+                "reply there would be read as Miro's own standup data")
     if is_never_reply(sender):
         return (f"{sender} is the attendance bot — its prompts are addressed "
-                "to the owner and carry consequences")
+                "to Miro and carry consequences")
     if not is_internal(sender):
         return f"{sender} is outside the company; ATLAS is internal-only"
     return None
@@ -222,7 +222,7 @@ async def _me() -> str:
 
 
 async def _waiting() -> tuple[list[dict], str | None]:
-    """Messages where someone is waiting on the owner."""
+    """Messages where someone is waiting on Miro."""
     me = await _me()
     if not me:
         return [], "could not identify the account behind MATRIX_TOKEN"
@@ -421,7 +421,7 @@ async def send_reply(room_id: str, body: str, room_name: str = "",
             response.raise_for_status()
             accepted = True
             event_id = str(response.json().get("event_id", ""))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         if accepted:
             # The homeserver answered 2xx: the message is in the room, only
             # its event id could not be read. Sent -- so the claim settles
@@ -445,7 +445,7 @@ async def send_reply(room_id: str, body: str, room_name: str = "",
 
 async def send_dry(room_id: str, body: str, room_name: str = "",
                    to: str = "") -> ActionResult:
-    """The draft the owner approves. What he reads here is exactly what goes out.
+    """The draft Miro approves. What he reads here is exactly what goes out.
     The live room-name read happens at send time too; here it is skipped
     when the static guards already refuse."""
     refusal = await _guard(room_id, body, room_name, to, live=True)
@@ -453,7 +453,7 @@ async def send_dry(room_id: str, body: str, room_name: str = "",
         return ActionResult(False, f"would refuse: {refusal}")
     return ActionResult(
         True,
-        f"Would post to {room_name or room_id} as the owner — it will appear as "
+        f"Would post to {room_name or room_id} as Miro — it will appear as "
         f"him, with no marker:\n\n{body[:1500]}")
 
 
@@ -475,15 +475,15 @@ async def redact_reply(token: str) -> ActionResult:
                 f"{event_id}/{txn}",
                 headers=_auth(), json={"reason": "withdrawn"})
             response.raise_for_status()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return ActionResult(False, f"redact failed: {redact(exc)}")
     return ActionResult(True, "message redacted")
 
 
-# How the owner writes. The draft has to read as him, because it will be sent as him.
+# How Miro writes. The draft has to read as him, because it will be sent as him.
 DRAFT_SYSTEM = """
-You are drafting a reply that will be sent from the owner's own Matrix account. It
-will appear to colleagues as the owner personally, with no marker that it came from
+You are drafting a reply that will be sent from Miro's own Matrix account. It
+will appear to colleagues as Miro personally, with no marker that it came from
 an assistant. He approves every draft before it goes, but write as though it
 will go exactly as written.
 
@@ -494,16 +494,16 @@ unless the thread already uses them.
 Reply ONLY when the answer is purely factual and already settled — a link, a
 status he has already stated, a time already on the calendar.
 
-Return the single token NEEDS_OWNER, and nothing else, when the message needs
+Return the single token NEEDS_MIRO, and nothing else, when the message needs
 judgement, an opinion, or a new decision. That includes anything about
 deadlines, scope, money, hiring, priorities, leave, or agreeing to do
 something — even "sure, that works". Silence costs far less than a wrong
 answer in his name.
 
-Never claim to be an assistant and never claim to be the owner. If the message asks
-whether it is talking to a person, return NEEDS_OWNER.
+Never claim to be an assistant and never claim to be Miro. If the message asks
+whether it is talking to a person, return NEEDS_MIRO.
 
-Return the reply text alone, or NEEDS_OWNER. Nothing else.
+Return the reply text alone, or NEEDS_MIRO. Nothing else.
 """.strip()
 
 # Local inference on one core takes tens of seconds, and the scheduler is not
@@ -512,7 +512,7 @@ MAX_DRAFTS_PER_CYCLE = int(os.getenv("MATRIX_MAX_DRAFTS", "3"))
 
 
 async def _draft(entry: dict) -> str | None:
-    """Compose a reply, or None when it needs the owner.
+    """Compose a reply, or None when it needs Miro.
 
     Runs at Need.PRIVATE, so work correspondence stays on the local model and
     never reaches a third-party API — the same rule the inbox agent follows for
@@ -530,11 +530,11 @@ async def _draft(entry: dict) -> str | None:
                               [Message("user", prompt)], max_tokens=200)).text
     except RuntimeError:
         return None                      # no local model configured
-    except Exception:                    # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
     text = answer.strip()
-    if not text or "NEEDS_OWNER" in text.upper():
+    if not text or "NEEDS_MIRO" in text.upper():
         return None
     # A model that returns a paragraph has not understood the brief, and a
     # long reply in his name is exactly what the instructions rule out.
@@ -568,10 +568,10 @@ class MatrixRoomsModule:
         return (
             Action(
                 name="matrix_rooms.send_reply",
-                # Tier 2, always. It appears as the owner to people who cannot tell,
+                # Tier 2, always. It appears as Miro to people who cannot tell,
                 # and they will act on it. Nothing about that is Tier 1.
                 tier=Tier.ASK,
-                summary="Post a reply in Matrix, as the owner",
+                summary="Post a reply in Matrix, as Miro",
                 run=send_reply, dry_run=send_dry, rollback=redact_reply,
                 params={"room_id": "the room to post in",
                         "body": "the exact text to send",
@@ -607,7 +607,7 @@ class MatrixRoomsModule:
         return tuple(items[:limit])
 
     async def signals(self):
-        """One draft per waiting message, for the owner to approve.
+        """One draft per waiting message, for Miro to approve.
 
         Each becomes a Tier 2 proposal carrying the exact text. Nothing is sent
         by producing a signal.
@@ -646,13 +646,13 @@ class MatrixRoomsModule:
                      + (f"\n\n{len(deploy)} of these mention a deployment."
                         if deploy else ""),
                 severity=Severity.HIGH if deploy else Severity.NORMAL,
-                params={"topic": "cloudco" if deploy else "mail"},
+                params={"topic": "cloudhost" if deploy else "mail"},
             ))
 
         for entry in repliable[:MAX_DRAFTS_PER_CYCLE]:
             body = await _draft(entry)
             if body is None:
-                continue                 # needs the owner; the brief already lists it
+                continue                 # needs Miro; the brief already lists it
             where = entry["room"] or entry["room_id"]
             out.append(Signal(
                 title=f"Reply to {entry['sender']} in {where}: "

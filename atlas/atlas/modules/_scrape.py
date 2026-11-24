@@ -1,6 +1,6 @@
 """The polite shared scraper for the Sales, SEO, Research and QA agents.
 
-the owner, 2026-10-27: "build our own simple polite web-scraping tool". It reads
+Miro, 2026-10-27: "build our own simple polite web-scraping tool". It reads
 public pages only, and only the way a careful person would:
 
   * an honest User-Agent with a contact URL (`SCRAPE_USER_AGENT`);
@@ -47,7 +47,7 @@ from ._netguard import get_public
 
 log = logging.getLogger("atlas.scrape")
 
-DEFAULT_UA = "ATLAS-scraper/1.0 (+https://agency.example.com/; polite, robots-aware)"
+DEFAULT_UA = "ATLAS-scraper/1.0 (+https://agency.storefront.test/; polite, robots-aware)"
 PER_HOST_SECONDS = 2.0
 TIMEOUT = 15.0
 MAX_BYTES = 2_000_000
@@ -192,7 +192,7 @@ async def robots_for(client: httpx.AsyncClient, site: str, *,
     try:
         response, why = await get_public(
             client, url, headers={"User-Agent": agent_ua or user_agent()})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"robots.txt unreadable: {explain(exc)}"
     if response is None:
         return None, f"robots.txt not fetched: {why}"
@@ -295,7 +295,7 @@ async def fetch(url: str, *, agent: str, client: str = "") -> Scraped:
         return _blocked(url, "only http(s) is fetched")
     try:
         cached = await _cache_get(url)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.debug("scrape cache unreadable: %s", explain(exc))
         cached = None
     if cached is not None:
@@ -304,7 +304,7 @@ async def fetch(url: str, *, agent: str, client: str = "") -> Scraped:
             return Scraped(url, url, 200, cached.get("text") or "", at, cached=True)
     try:
         used = await _count_today()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return _blocked(url, f"the daily count cannot be read ({explain(exc)}); "
                              "nothing is fetched")
     if used >= daily_cap():
@@ -312,7 +312,7 @@ async def fetch(url: str, *, agent: str, client: str = "") -> Scraped:
     ua = user_agent()
     try:
         got = await _get(url, ua)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return _blocked(url, explain(exc))
     if isinstance(got, str):
         return _blocked(url, got)
@@ -323,7 +323,7 @@ async def fetch(url: str, *, agent: str, client: str = "") -> Scraped:
         await _log(url, agent, client, status, len(body))
         if status == 200:
             await _cache_put(url, text, now)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("scrape log not written: %s", explain(exc))
     return Scraped(url, final, status, text, now, meta={"headers": headers})
 
@@ -351,7 +351,7 @@ async def _brave(query: str, limit: int, key: str) -> tuple[list[dict], str | No
                             params={"q": query, "count": min(20, limit)})
             r.raise_for_status()
             hits = r.json().get("web", {}).get("results", [])[:limit]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return [], redact(explain(exc))
     return [{"title": h.get("title", ""), "url": h.get("url", ""),
              "snippet": h.get("description", "")} for h in hits], None
@@ -366,7 +366,7 @@ async def _cse(query: str, limit: int, key: str, cx: str
                                     "num": min(10, limit)})
             r.raise_for_status()
             items = r.json().get("items", [])[:limit]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return [], redact(explain(exc))
     return [{"title": i.get("title", ""), "url": i.get("link", ""),
              "snippet": i.get("snippet", "")} for i in items], None

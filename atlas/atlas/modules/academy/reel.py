@@ -1,8 +1,8 @@
 """A daily Academy reel for the clips accounts, made here on the server.
 
-the owner, 2026-10-06: "keep it in clips since it's the most viewed profile ...
+Miro, 2026-10-06: "keep it in clips since it's the most viewed profile ...
 make continuous reels about ATLAS Academy to show people". The clips
-accounts (Instagram @example_handle, TikTok @example_handle, the clips
+accounts (Instagram @atlas.clipsdrop, TikTok @atlasclips12, the clips
 YouTube channel) have the followers; the Academy's store needs showing.
 
 What one reel is: a product from `catalog.json`, in rotation, hook first
@@ -38,14 +38,14 @@ from .. import store_origin
 from . import concept_short, lesson_short, reel_design
 from .catalog import Catalog, Product, load
 
-log = logging.getLogger("academy.example.reel")
+log = logging.getLogger("atlas.academy.reel")
 
 DRAFT_KIND = "academy_promo"
 PROVIDER = "academy"
 STORE = store_origin.host()
-STORE_SAID = store_origin.spoken()       # "agency dot one eight d n dot com"
+STORE_SAID = store_origin.spoken()       # "agency dot storefront dot test"
 DEFAULT_HOUR_UTC = 16                  # noon in New York, where the audience is
-# the owner, 2026-10-11: "post 2x per day, each reel a different lesson". Noon
+# Miro, 2026-10-11: "post 2x per day, each reel a different lesson". Noon
 # and 7 pm in New York.
 DEFAULT_HOURS_UTC = (16, 23)
 MIN_GAP_H = 3                          # two posts never land within this
@@ -133,7 +133,7 @@ def _lead(summary: str, limit: int = 90) -> str:
 def script_for(p: Product, day: int = 0) -> list[tuple[str, str]]:
     """The reel's beats as (what is shown, what is said), hook first.
 
-    the owner, 2026-10-11: "make the shorts actually wanting to watch it". The
+    Miro, 2026-10-11: "make the shorts actually wanting to watch it". The
     first beat is a claim or a question about the viewer's own work, from
     `promo_copy`, on screen from frame 0. The value comes next (the summary
     and two label rows, every word from the catalog). The product comes
@@ -168,7 +168,7 @@ async def times_shown(slug: str) -> int:
         row = await fetch_one(
             "SELECT count(*) AS n FROM academy_promo_posts WHERE slug = $1", slug)
         return int(row["n"]) if row is not None else 0
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return variant_for()
 
 
@@ -243,7 +243,7 @@ async def _frame(work: str, i: int, *, shown: str, title: str, cover: str = "") 
 
 
 def old_design_refusal() -> str | None:
-    """the owner, 2026-10-19: NotebookLM videos only. Every reel this action
+    """Miro, 2026-10-19: NotebookLM videos only. Every reel this action
     makes -- a product, lesson or concept Short -- is ATLAS-drawn and
     Fish-voiced, so the action itself renders nothing unless
     ACADEMY_NOTEBOOKLM_FALLBACK is on, whoever calls it."""
@@ -336,7 +336,7 @@ async def _render_designed(work: str, p: Product, beats: list[tuple[str, str]],
     frames = os.path.join(work, "frames")
     try:
         n = await reel_design.render_frames(pages, seconds, frames)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return "", [], f"the edition could not be drawn ({type(exc).__name__}): {exc}"[:300]
     audio_list = os.path.join(work, "audio.txt")
     await asyncio.to_thread(_write, audio_list, "".join(f"file '{w}'\n" for w in wavs))
@@ -475,7 +475,7 @@ async def render_lesson_short(key: str) -> ActionResult:
                         rollback_token=result.rollback_token)
 
 
-# the owner, 2026-10-12: "make it like a human talking, not an AI" -- "go for
+# Miro, 2026-10-12: "make it like a human talking, not an AI" -- "go for
 # it". A lesson Short is narrated fresh by the Fish S2 voice (it reads the
 # delivery cue its beat gets), the same British voice as the lessons. A beat
 # Fish cannot say falls back to the lesson's own recording; a Short that no
@@ -560,7 +560,7 @@ async def _render_lesson(work: str, les: lesson_short.Lesson, title: str,
     frames = os.path.join(work, "frames")
     try:
         n = await reel_design.render_frames(pages, seconds, frames)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return "", [], f"the Short could not be drawn ({type(exc).__name__}): {exc}"[:300]
     audio_list = os.path.join(work, "audio.txt")
     await asyncio.to_thread(_write, audio_list, "".join(f"file '{w}'\n" for w in wavs))
@@ -638,7 +638,7 @@ async def render_concept_short(key: str) -> ActionResult:
         frames = os.path.join(work, "frames")
         try:
             n = await reel_design.render_frames(pages, seconds, frames)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return await render._fail(media_id, f"the Short could not be drawn: {exc}"[:300])
         audio_list = os.path.join(work, "audio.txt")
         await asyncio.to_thread(_write, audio_list, "".join(f"file '{w}'\n" for w in wavs))
@@ -660,7 +660,7 @@ async def render_concept_short(key: str) -> ActionResult:
 
 
 def reel_kind() -> str:
-    """`ACADEMY_REEL_KIND`: `lesson` (default since 2026-10-11, the owner: Shorts
+    """`ACADEMY_REEL_KIND`: `lesson` (default since 2026-10-11, Miro: Shorts
     about each lesson's important part) or `product` (the store promo)."""
     kind = os.getenv("ACADEMY_REEL_KIND", "lesson").strip().lower()
     return kind if kind in ("lesson", "product") else "lesson"
@@ -773,12 +773,12 @@ async def daily() -> str:
     from ...kernel.executor import ExecutionRequest, execute
     from ..clips import promo
     from . import notebooklm
-    # the owner, 2026-10-19: NotebookLM videos only, the Fish promo Short too. It
+    # Miro, 2026-10-19: NotebookLM videos only, the Fish promo Short too. It
     # comes back only with ACADEMY_NOTEBOOKLM_FALLBACK switched on.
     if not notebooklm.fallback_enabled():
         return ("the Fish promo Short is off: NotebookLM videos only "
                 "(ACADEMY_NOTEBOOKLM_FALLBACK is off)")
-    # One claim per slot, not per date: two Shorts a day (the owner, 2026-10-11),
+    # One claim per slot, not per date: two Shorts a day (Miro, 2026-10-11),
     # each slot claimed once however often the box restarts.
     now = datetime.now(UTC)
     passed = [h for h in hours_utc() if h <= now.hour]
@@ -792,7 +792,7 @@ async def daily() -> str:
         shown = await last_shown()
         first_slot = bool(passed) and passed[-1] == hours_utc()[0]
         if concept_short.enabled() and first_slot:
-            # the owner, 2026-10-12: one concept Short and one lesson Short a day,
+            # Miro, 2026-10-12: one concept Short and one lesson Short a day,
             # once he has seen the concept previews (ACADEMY_CONCEPT_SHORTS).
             slug = concept_short.next_concept(shown)
         elif reel_kind() == "lesson":

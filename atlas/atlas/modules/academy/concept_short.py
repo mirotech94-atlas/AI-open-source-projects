@@ -1,6 +1,6 @@
 """Concept Shorts: the growth plan's idea bank, explained with motion.
 
-the owner, 2026-10-12 (Q&A on the TikTok + YouTube growth plan): "Concept
+Miro, 2026-10-12 (Q&A on the TikTok + YouTube growth plan): "Concept
 Shorts from the 30-idea bank". The lesson Shorts only reach the courses
 that have video lessons; the plan's first audience -- local business
 owners -- is served by the Automation Pack, which has none. These Shorts
@@ -15,7 +15,7 @@ the brand, with one animated diagram labelled "Concept animation"
 synthetic), no screen that pretends to be the product, no send animated
 for a flow that only drafts.
 
-Concept Shorts post only when `ACADEMY_CONCEPT_SHORTS` is on: the owner sees
+Concept Shorts post only when `ACADEMY_CONCEPT_SHORTS` is on: Miro sees
 the previews first. When on, the first slot of the day is a concept Short
 and the second a lesson Short (reel.daily).
 """
@@ -32,7 +32,7 @@ SCRIPTS = Path(__file__).with_name("concept_scripts.json")
 ENABLE_ENV = "ACADEMY_CONCEPT_SHORTS"
 MODEL_ENV = "ACADEMY_SHORTS_FISH_MODEL"
 MODEL_DEFAULT = "s2.1-pro"
-# the owner, 2026-10-12: "the voice should have feelings and laughter and make
+# Miro, 2026-10-12: "the voice should have feelings and laughter and make
 # jokes and have humor when needed, don't make him sound like a robot",
 # "make it like a human talking, not an AI". The scripts carry Fish S2
 # delivery cues ([excited], [chuckling], [break] ...): sent to the voice,
@@ -67,7 +67,7 @@ class Concept:
 
 
 def enabled() -> bool:
-    """Off until the owner has seen the previews and says so."""
+    """Off until Miro has seen the previews and says so."""
     return os.getenv(ENABLE_ENV, "off").strip().lower() in ("1", "on", "true", "yes")
 
 

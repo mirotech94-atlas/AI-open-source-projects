@@ -427,7 +427,7 @@
    "scheduler_owner": "ATLAS scheduler",
    "scheduler_owner_detail": "ATLAS scheduler via kernel/reels.py:post_or_card AND host systemd transient reel-hosp* timers via atlas.cli import-reel -> post_or_card (two owners)",
    "readiness": "partially_verified",
-   "readiness_evidence": "no execute.* rows in prod actions_log (never run); PUBLIC posting at Tier 1 by owner instruction (comment at content/__init__.py:669 'the owner, 2026-09-27: fully automated'); REELS_AUTOPUBLISH code default ON (crosspost.py:301-303); prod env override NOT read (instruction). Reached from kernel/reels.py:post_or_card (293-296) which the host reel-hosp* timers hit via atlas.cli import-reel. No execution in prod actions_log as of 2026-09-28 05:0xZ",
+   "readiness_evidence": "no execute.* rows in prod actions_log (never run); PUBLIC posting at Tier 1 by owner instruction (comment at content/__init__.py:669 'Miro, 2026-09-27: fully automated'); REELS_AUTOPUBLISH code default ON (crosspost.py:301-303); prod env override NOT read (instruction). Reached from kernel/reels.py:post_or_card (293-296) which the host reel-hosp* timers hit via atlas.cli import-reel. No execution in prod actions_log as of 2026-09-28 05:0xZ",
    "provenance": "static read (own + mapping pass) + prod read-only SQL/logs; [mapping pass] = file:line pointer from a read-only mapping agent, not re-read by me unless marked verified; treat as hypothesis until checked"
   },
   {
@@ -471,7 +471,7 @@
    "enabled_evidence": "prod boot log 2026-09-28 04:43Z 'loaded delegate (...)'; no refusal line for this action",
    "required_credentials_refs": [],
    "dry_run_handler": "atlas/modules/delegate/__init__.py:queue_dry",
-   "verification_handler": "atlas/modules/delegate/readback.py:verify_queue (handoffs row by id, SELECT only: queued/claimed/done/needs_owner/failed = handed over; expired/draft/cancelled -> contradicted); reconciler reconcile_queue; previously: none in ATLAS; agent reports back via /handoffs",
+   "verification_handler": "atlas/modules/delegate/readback.py:verify_queue (handoffs row by id, SELECT only: queued/claimed/done/needs_miro/failed = handed over; expired/draft/cancelled -> contradicted); reconciler reconcile_queue; previously: none in ATLAS; agent reports back via /handoffs",
    "idempotency_strategy": "atomic UPDATE handoffs ... WHERE status='draft' AND created_at > now()-DRAFT_TTL RETURNING (delegate/__init__.py:110-113); claim by Mac runner atomic with expiry (atlas/api/handoffs.py:56-59)",
    "recovery_rollback": "atlas/modules/delegate/__init__.py:cancel",
    "scheduler_owner": "other",
@@ -914,7 +914,7 @@
     "LINKEDIN_SESSION_PATH"
    ],
    "dry_run_handler": "atlas/modules/linkedin/publish.py:reshare_dry",
-   "verification_handler": "atlas/modules/linkedin/readback.py:verify_reshare (post bank reshared=True + entry's first 40 chars on the owner's recent activity, one browser read under lock(), session never saved); no reconciler",
+   "verification_handler": "atlas/modules/linkedin/readback.py:verify_reshare (post bank reshared=True + entry's first 40 chars on Miro's recent activity, one browser read under lock(), session never saved); no reconciler",
    "idempotency_strategy": "refuses 'already reshared' (linkedin/publish.py:599-605)",
    "recovery_rollback": null,
    "scheduler_owner": "other",
@@ -1205,7 +1205,7 @@
    "scheduler_owner": "other",
    "scheduler_owner_detail": "on demand: approval card, intent.act, agent tools.invoke, fixes.sweep, or a scheduler signal turned proposal",
    "readiness": "unverified",
-   "readiness_evidence": "no execute.* rows in prod actions_log (never run); irreversible=True; sends as the owner (iMessage/Instagram DM)",
+   "readiness_evidence": "no execute.* rows in prod actions_log (never run); irreversible=True; sends as Miro (iMessage/Instagram DM)",
    "provenance": "static read (own + mapping pass) + prod read-only SQL/logs; [mapping pass] = file:line pointer from a read-only mapping agent, not re-read by me unless marked verified; treat as hypothesis until checked"
   },
   {
@@ -1445,28 +1445,28 @@
    "removed_from_code": true
   },
   {
-   "capability_id": "action:cloudco.snapshot_all",
+   "capability_id": "action:cloudhost.snapshot_all",
    "kind": "action",
-   "module": "cloudco",
-   "module_path": "atlas/modules/cloudco/",
-   "action_name": "cloudco.snapshot_all",
+   "module": "cloudhost",
+   "module_path": "atlas/modules/cloudhost/",
+   "action_name": "cloudhost.snapshot_all",
    "code_defined_tier": 2,
-   "defined_at": "atlas/modules/cloudco/__init__.py:640",
+   "defined_at": "atlas/modules/cloudhost/__init__.py:640",
    "enabled": true,
-   "enabled_evidence": "prod boot log 2026-09-28 04:43Z 'loaded cloudco (...)'; no refusal line for this action",
+   "enabled_evidence": "prod boot log 2026-09-28 04:43Z 'loaded cloudhost (...)'; no refusal line for this action",
    "required_credentials_refs": [
-    "CLOUDCO_CLIENT_ID",
-    "CLOUDCO_CLIENT_SECRET",
-    "CLOUDCO_APPS_URL"
+    "CLOUDHOST_CLIENT_ID",
+    "CLOUDHOST_CLIENT_SECRET",
+    "CLOUDHOST_APPS_URL"
    ],
-   "dry_run_handler": "atlas/modules/cloudco/__init__.py:snapshot_dry",
-   "verification_handler": "atlas/modules/cloudco/readback.py:verify_snapshot_all (atlas-<stamp> snapshot per targeted instance; partial -> contradicted listing failures, RA-D2); reconciler reconcile_snapshot_all; previously: none (202 trusted)",
+   "dry_run_handler": "atlas/modules/cloudhost/__init__.py:snapshot_dry",
+   "verification_handler": "atlas/modules/cloudhost/readback.py:verify_snapshot_all (atlas-<stamp> snapshot per targeted instance; partial -> contradicted listing failures, RA-D2); reconciler reconcile_snapshot_all; previously: none (202 trusted)",
    "idempotency_strategy": "none (no existing-snapshot check; names atlas-YYYYmmdd-HHMM)",
    "recovery_rollback": null,
    "scheduler_owner": "other",
    "scheduler_owner_detail": "on demand: approval card, intent.act, agent tools.invoke, fixes.sweep, or a scheduler signal turned proposal",
    "readiness": "unverified",
-   "readiness_evidence": "no execute.* rows in prod actions_log (never run); returns ok=True on partial failure (cloudco/__init__.py:570-575); not marked irreversible though no rollback [mapping pass]",
+   "readiness_evidence": "no execute.* rows in prod actions_log (never run); returns ok=True on partial failure (cloudhost/__init__.py:570-575); not marked irreversible though no rollback [mapping pass]",
    "provenance": "static read (own + mapping pass) + prod read-only SQL/logs; [mapping pass] = file:line pointer from a read-only mapping agent, not re-read by me unless marked verified; treat as hypothesis until checked"
   },
   {
@@ -1517,24 +1517,24 @@
    "provenance": "static read (own + mapping pass) + prod read-only SQL/logs; [mapping pass] = file:line pointer from a read-only mapping agent, not re-read by me unless marked verified; treat as hypothesis until checked"
   },
   {
-   "capability_id": "action:exampleco.price_check",
+   "capability_id": "action:mirotech.price_check",
    "kind": "action",
-   "module": "exampleco",
-   "module_path": "atlas/modules/exampleco/",
-   "action_name": "exampleco.price_check",
+   "module": "mirotech",
+   "module_path": "atlas/modules/mirotech/",
+   "action_name": "mirotech.price_check",
    "code_defined_tier": 1,
-   "defined_at": "atlas/modules/exampleco/__init__.py:148",
+   "defined_at": "atlas/modules/mirotech/__init__.py:148",
    "enabled": false,
-   "enabled_evidence": "boot log 2026-09-28 04:43: 'module exampleco disabled — missing env EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN'",
+   "enabled_evidence": "boot log 2026-09-28 04:43: 'module mirotech disabled — missing env EBAY_CLIENT_ID, EBAY_CLIENT_SECRET, EBAY_REFRESH_TOKEN'",
    "required_credentials_refs": [
     "EBAY_CLIENT_ID",
     "EBAY_CLIENT_SECRET",
     "EBAY_REFRESH_TOKEN"
    ],
-   "dry_run_handler": "atlas/modules/exampleco/__init__.py:price_dry",
-   "verification_handler": "atlas/modules/exampleco/readback.py:verify_price_check (unknown by design: a read-only search that writes nothing; run-recorded comparables count/low/median/high; module off -> unknown disabled); no reconciler",
+   "dry_run_handler": "atlas/modules/mirotech/__init__.py:price_dry",
+   "verification_handler": "atlas/modules/mirotech/readback.py:verify_price_check (unknown by design: a read-only search that writes nothing; run-recorded comparables count/low/median/high; module off -> unknown disabled); no reconciler",
    "idempotency_strategy": "n/a (read)",
-   "recovery_rollback": "fake: lambda t: price_dry('noop') (exampleco/__init__.py:153)",
+   "recovery_rollback": "fake: lambda t: price_dry('noop') (mirotech/__init__.py:153)",
    "scheduler_owner": "other",
    "scheduler_owner_detail": "on demand: approval card, intent.act, agent tools.invoke, fixes.sweep, or a scheduler signal turned proposal",
    "readiness": "disabled",
@@ -1892,7 +1892,7 @@
    "action_name": null,
    "code_defined_tier": null,
    "enabled": true,
-   "enabled_evidence": "systemctl list-timers on 203.0.113.191, 2026-09-28",
+   "enabled_evidence": "systemctl list-timers on 162.220.52.191, 2026-09-28",
    "required_credentials_refs": [],
    "dry_run_handler": null,
    "verification_handler": "atlas/modules/backups/__init__.py (backup check: status.json age/dump_ok/offsite_ok; no restore)",
@@ -1913,7 +1913,7 @@
    "action_name": null,
    "code_defined_tier": null,
    "enabled": true,
-   "enabled_evidence": "systemctl list-timers on 203.0.113.191, 2026-09-28",
+   "enabled_evidence": "systemctl list-timers on 162.220.52.191, 2026-09-28",
    "required_credentials_refs": [],
    "dry_run_handler": null,
    "verification_handler": null,
@@ -1934,7 +1934,7 @@
    "action_name": null,
    "code_defined_tier": null,
    "enabled": true,
-   "enabled_evidence": "systemctl list-timers on 203.0.113.191, 2026-09-28",
+   "enabled_evidence": "systemctl list-timers on 162.220.52.191, 2026-09-28",
    "required_credentials_refs": [
     "GEMINI_API_KEY"
    ],
@@ -1964,7 +1964,7 @@
    "idempotency_strategy": "claims one queued handoff atomically (atlas/api/handoffs.py:56-59)",
    "recovery_rollback": null,
    "scheduler_owner": "other",
-   "scheduler_owner_detail": "Claude desktop scheduled task on the owner's Mac",
+   "scheduler_owner_detail": "Claude desktop scheduled task on Miro's Mac",
    "handler": "~/.claude/scheduled-tasks/atlas-handoff-runner/SKILL.md",
    "cadence": "*/15 * * * * (enabled)",
    "missed_run_policy": "n/a",
@@ -2034,7 +2034,7 @@
    "enabled": null,
    "enabled_evidence": "added after this inventory's prod read; not checked against a prod boot log",
    "required_credentials_refs": [
-    "STRIPE_SHOP_OWNER_KEY",
+    "STRIPE_SHOP_MIRO_KEY",
     "STRIPE_SHOP_GUARDIAN_KEY",
     "STRIPE_SHOP_FLYCHEAP_KEY",
     "ATLAS_HOST"
@@ -2205,7 +2205,7 @@
     "RENTCAST_API_KEY (optional; unset -> ARV unknown unless entered, no request made)"
    ],
    "scheduler_owner": "other",
-   "scheduler_owner_detail": "principal_only: runs only when the owner asks directly (Slack /atlas deal ..., the dashboard form); never the reasoner. Reads api.rentcast.io only; writes ATLAS's own realestate_deals row and notifies the owner (topic realestate). Contacts no third party",
+   "scheduler_owner_detail": "principal_only: runs only when Miro asks directly (Slack /atlas deal ..., the dashboard form); never the reasoner. Reads api.rentcast.io only; writes ATLAS's own realestate_deals row and notifies Miro (topic realestate). Contacts no third party",
    "verification_handler": "atlas/modules/realestate/readback.py:verify_deal (realestate_deals row by evidence.deal_id, not withdrawn); no reconciler"
   },
   {
@@ -2272,7 +2272,7 @@
     "INSTAGRAM_<ACCOUNT>_TOKEN with instagram_manage_comments + instagram_manage_messages (verified on the server 2026-09-30)"
    ],
    "scheduler_owner": "ATLAS scheduler",
-   "scheduler_owner_detail": "job funnels (kernel/funnels.py:tick) every 5 min: texts from the approved ig_funnels row only; public reply via reply_comment, DM as a private reply to the comment; 429/code 4/17/32/613 -> backoff on the send row; 401/403/190 -> pause.block_capability instagram:<account>; code 368/10/2xx -> funnel stopped + the owner told; none 22:00-08:00 in the funnel's timezone; daily_cap per account (default 200); executor ceilings (max_per_hour 60, ATLAS_MODULE_MAX_PER_HOUR) still apply",
+   "scheduler_owner_detail": "job funnels (kernel/funnels.py:tick) every 5 min: texts from the approved ig_funnels row only; public reply via reply_comment, DM as a private reply to the comment; 429/code 4/17/32/613 -> backoff on the send row; 401/403/190 -> pause.block_capability instagram:<account>; code 368/10/2xx -> funnel stopped + Miro told; none 22:00-08:00 in the funnel's timezone; daily_cap per account (default 200); executor ceilings (max_per_hour 60, ATLAS_MODULE_MAX_PER_HOUR) still apply",
    "verification_handler": "atlas/modules/instagram/readback.py:verify_funnel_reply (GET /{comment}/replies for the recorded public reply id; the private message id from the send response); no reconciler"
   },
   {
@@ -3652,11 +3652,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:cameras.mark_household",
+   "capability_id": "action:sensors.mark_household",
    "kind": "action",
-   "module": "cameras",
-   "module_path": "atlas/modules/cameras/",
-   "action_name": "cameras.mark_household",
+   "module": "sensors",
+   "module_path": "atlas/modules/sensors/",
+   "action_name": "sensors.mark_household",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -3672,11 +3672,11 @@
    "code_defined_tier": 2
   },
   {
-   "capability_id": "action:cameras.notify_clip",
+   "capability_id": "action:sensors.notify_clip",
    "kind": "action",
-   "module": "cameras",
-   "module_path": "atlas/modules/cameras/",
-   "action_name": "cameras.notify_clip",
+   "module": "sensors",
+   "module_path": "atlas/modules/sensors/",
+   "action_name": "sensors.notify_clip",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -3692,11 +3692,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:cameras.notify_owner",
+   "capability_id": "action:sensors.notify_owner",
    "kind": "action",
-   "module": "cameras",
-   "module_path": "atlas/modules/cameras/",
-   "action_name": "cameras.notify_owner",
+   "module": "sensors",
+   "module_path": "atlas/modules/sensors/",
+   "action_name": "sensors.notify_owner",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -3712,11 +3712,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:church.draft_captions",
+   "capability_id": "action:community.draft_captions",
    "kind": "action",
-   "module": "church",
-   "module_path": "atlas/modules/church/",
-   "action_name": "church.draft_captions",
+   "module": "community",
+   "module_path": "atlas/modules/community/",
+   "action_name": "community.draft_captions",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -3732,11 +3732,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:church.log_progress",
+   "capability_id": "action:community.log_progress",
    "kind": "action",
-   "module": "church",
-   "module_path": "atlas/modules/church/",
-   "action_name": "church.log_progress",
+   "module": "community",
+   "module_path": "atlas/modules/community/",
+   "action_name": "community.log_progress",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -3752,11 +3752,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:church.schedule_facebook_reels",
+   "capability_id": "action:community.schedule_facebook_reels",
    "kind": "action",
-   "module": "church",
-   "module_path": "atlas/modules/church/",
-   "action_name": "church.schedule_facebook_reels",
+   "module": "community",
+   "module_path": "atlas/modules/community/",
+   "action_name": "community.schedule_facebook_reels",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -3772,11 +3772,11 @@
    "code_defined_tier": 2
   },
   {
-   "capability_id": "action:church.schedule_youtube_shorts",
+   "capability_id": "action:community.schedule_youtube_shorts",
    "kind": "action",
-   "module": "church",
-   "module_path": "atlas/modules/church/",
-   "action_name": "church.schedule_youtube_shorts",
+   "module": "community",
+   "module_path": "atlas/modules/community/",
+   "action_name": "community.schedule_youtube_shorts",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -3792,11 +3792,11 @@
    "code_defined_tier": 2
   },
   {
-   "capability_id": "action:church.weekly_plan",
+   "capability_id": "action:community.weekly_plan",
    "kind": "action",
-   "module": "church",
-   "module_path": "atlas/modules/church/",
-   "action_name": "church.weekly_plan",
+   "module": "community",
+   "module_path": "atlas/modules/community/",
+   "action_name": "community.weekly_plan",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4552,11 +4552,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.call_owner",
+   "capability_id": "action:tutorco.call_owner",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.call_owner",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.call_owner",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4572,11 +4572,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.discover",
+   "capability_id": "action:tutorco.discover",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.discover",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.discover",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4592,11 +4592,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.draft_intro",
+   "capability_id": "action:tutorco.draft_intro",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.draft_intro",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.draft_intro",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4612,11 +4612,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.notify_alert",
+   "capability_id": "action:tutorco.notify_alert",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.notify_alert",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.notify_alert",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4632,11 +4632,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.notify_card",
+   "capability_id": "action:tutorco.notify_card",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.notify_card",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.notify_card",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4652,11 +4652,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.notify_daily",
+   "capability_id": "action:tutorco.notify_daily",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.notify_daily",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.notify_daily",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4672,11 +4672,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.notify_owner",
+   "capability_id": "action:tutorco.notify_owner",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.notify_owner",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.notify_owner",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4692,11 +4692,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.record_response",
+   "capability_id": "action:tutorco.record_response",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.record_response",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.record_response",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4712,11 +4712,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.score",
+   "capability_id": "action:tutorco.score",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.score",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.score",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4732,11 +4732,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:mmt.send_intro",
+   "capability_id": "action:tutorco.send_intro",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.send_intro",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.send_intro",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -4752,11 +4752,11 @@
    "code_defined_tier": 2
   },
   {
-   "capability_id": "action:mmt.suppress",
+   "capability_id": "action:tutorco.suppress",
    "kind": "action",
-   "module": "mmt",
-   "module_path": "atlas/modules/mmt/",
-   "action_name": "mmt.suppress",
+   "module": "tutorco",
+   "module_path": "atlas/modules/tutorco/",
+   "action_name": "tutorco.suppress",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -5332,11 +5332,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:sagemmt.accept_seo_note",
+   "capability_id": "action:tutorseo.accept_seo_note",
    "kind": "action",
-   "module": "sagemmt",
-   "module_path": "atlas/modules/sagemmt/",
-   "action_name": "sagemmt.accept_seo_note",
+   "module": "tutorseo",
+   "module_path": "atlas/modules/tutorseo/",
+   "action_name": "tutorseo.accept_seo_note",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -5352,11 +5352,11 @@
    "code_defined_tier": 2
   },
   {
-   "capability_id": "action:sagemmt.draft_seo_note",
+   "capability_id": "action:tutorseo.draft_seo_note",
    "kind": "action",
-   "module": "sagemmt",
-   "module_path": "atlas/modules/sagemmt/",
-   "action_name": "sagemmt.draft_seo_note",
+   "module": "tutorseo",
+   "module_path": "atlas/modules/tutorseo/",
+   "action_name": "tutorseo.draft_seo_note",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],
@@ -5372,11 +5372,11 @@
    "code_defined_tier": 1
   },
   {
-   "capability_id": "action:sagemmt.draft_week",
+   "capability_id": "action:tutorseo.draft_week",
    "kind": "action",
-   "module": "sagemmt",
-   "module_path": "atlas/modules/sagemmt/",
-   "action_name": "sagemmt.draft_week",
+   "module": "tutorseo",
+   "module_path": "atlas/modules/tutorseo/",
+   "action_name": "tutorseo.draft_week",
    "enabled": true,
    "enabled_evidence": "generated from code; prod state not read",
    "required_credentials_refs": [],

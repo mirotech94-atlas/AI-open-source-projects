@@ -30,7 +30,7 @@ guard. This finds the address a lead PUBLISHED, and only that:
 Every address is stored with its provenance (`agency_lead_emails`: the URL it
 was read on, the time, same-domain or not). Page text is untrusted
 (invariant 4); nothing here puts it in a prompt, and the address itself only
-ever lands in an email's To: line, after the owner approves the send.
+ever lands in an email's To: line, after Miro approves the send.
 """
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ from .._http import explain
 
 log = logging.getLogger("atlas.agency.contacts")
 
-USER_AGENT = "ATLAS-contact/1.0 (+https://agency.example.com/)"
+USER_AGENT = "ATLAS-contact/1.0 (+https://agency.storefront.test/)"
 FETCH_TIMEOUT = 8.0
 MAX_PAGES = 4
 MAX_BYTES = 1_500_000
@@ -192,7 +192,7 @@ def extract(page_html: str, url: str) -> tuple[list[str], list[tuple[str, str]]]
     try:
         parser.feed(page_html[:MAX_BYTES])
         parser.close()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         log.debug("contacts: a page did not parse to the end; kept what did")
     from urllib.parse import unquote
     candidates = [unquote(m).strip() for m in parser.mailtos]
@@ -260,7 +260,7 @@ async def _page(client: httpx.AsyncClient, url: str, home_key: str
     from .._netguard import get_public
     try:
         response, why = await get_public(client, url, headers={"User-Agent": USER_AGENT})
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, url, explain(exc)
     if response is None:
         return None, url, why

@@ -1,0 +1,31 @@
+<!-- @dsCard group="Ending" width=1080 height=1920 subtitle="1080×1920: hook, recomposed panel, caption, all inside the safe area" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1080px;height:1920px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);overflow:hidden}
+.unsafe{position:absolute;left:0;right:0;background:rgba(242,181,68,.12);border:2px dashed var(--amber);box-sizing:border-box;color:var(--amber);display:grid;place-items:center}
+.top{top:0;height:var(--safe-9-16-top)}
+.bot{bottom:0;height:var(--safe-9-16-bottom)}
+.safe{position:absolute;left:var(--safe-9-16-x);right:var(--safe-9-16-x);top:var(--safe-9-16-top);bottom:var(--safe-9-16-bottom);display:flex;flex-direction:column;gap:var(--step-6)}
+.hook{letter-spacing:-.01em}
+.panel{flex:1;background:var(--navy-raised);border:2px solid var(--navy-line);border-radius:var(--radius-card);padding:var(--step-4);box-sizing:border-box;display:flex;flex-direction:column;gap:var(--step-3)}
+.field{height:88px;border:2px solid var(--navy-line);border-radius:var(--radius-chip);display:flex;align-items:center;padding:0 var(--step-3);font-family:var(--font-mono)}
+.btn{align-self:flex-end;padding:var(--step-2) var(--step-4);background:var(--blue);color:var(--on-blue);border-radius:var(--radius-chip);font-weight:600}
+.cap{align-self:center;background:rgba(16,27,48,.8);border:2px solid var(--navy-line);padding:var(--step-2) var(--step-4);border-radius:var(--radius-chip);text-align:center}
+</style></head><body>
+<div class="frame">
+  <div class="unsafe top support">title / channel row — keep clear</div>
+  <div class="safe">
+    <div class="hook shorts-hook">One click,<br>one draft.</div>
+    <div class="panel">
+      <div class="field code">{{ $json.body }}</div>
+      <div class="field code">tone: friendly</div>
+      <div class="btn callout">Execute node</div>
+    </div>
+    <div class="cap shorts-caption">Run the step</div>
+  </div>
+  <div class="unsafe bot support">caption · like · share stack — keep clear</div>
+</div>
+</body></html>

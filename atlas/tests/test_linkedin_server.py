@@ -22,7 +22,7 @@ from atlas.modules.linkedin import browser, publish, store, sweep
 @pytest.fixture(autouse=True)
 def _flycheap_as_fixture_page(monkeypatch):
     """These tests drive the page mechanics with FlyCheap as their example
-    page. FlyCheap is retired by default (the owner, 2026-10-09); that default is
+    page. FlyCheap is retired by default (Miro, 2026-10-09); that default is
     pinned in test_linkedin_retired.py, not here."""
     from atlas.modules import linkedin as _li
     monkeypatch.setitem(_li.PAGES, "flycheap", _li.KNOWN_PAGES["flycheap"])
@@ -49,15 +49,15 @@ def doc(*entries: dict, page: str = "flycheap", posting: dict | None = None) -> 
 
 
 APPROVED = {"id": "B13", "status": "approved",
-            "text": "MIA to BOG for less.\nhttps://flycheap.example\n#travel"}
-DRAFT = {"id": "B14", "status": "draft", "text": "Draft.\nhttps://flycheap.example"}
+            "text": "MIA to BOG for less.\nhttps://flycheap.example.com\n#travel"}
+DRAFT = {"id": "B14", "status": "draft", "text": "Draft.\nhttps://flycheap.example.com"}
 
 
 # ------------------------------------------------------------------ gate
 
 def test_the_gate_offers_the_oldest_approved_entry(state):
     state(doc({"id": "B12", "status": "published"}, APPROVED,
-              {"id": "B15", "status": "approved", "text": "later https://flycheap.example"}))
+              {"id": "B15", "status": "approved", "text": "later https://flycheap.example.com"}))
     entry, why = publish.gate(store.load(), "flycheap")
     assert entry["id"] == "B13" and why == "ok"
 
@@ -76,7 +76,7 @@ def test_a_second_post_the_same_day_is_refused(state):
 
 def test_a_banned_link_blocks_the_gate(state):
     state(doc({"id": "B9", "status": "approved",
-               "text": "Try https://flycheap.example.com"}))
+               "text": "Try https://flycheap.storefront.test"}))
     entry, why = publish.gate(store.load(), "flycheap")
     assert entry is None and "banned link" in why
 
@@ -99,17 +99,17 @@ def test_publishing_is_tier_two_and_irreversible():
     assert appr.tier is Tier.AUTO and appr.rollback is not None
 
 
-# the owner, 2026-10-07: "make sure when requests come for either page you will
+# Miro, 2026-10-07: "make sure when requests come for either page you will
 # see it and reply to it". The ONLY unattended LinkedIn writes: a reply to
 # someone who wrote to the page first (requests.py). Nothing else is Tier 1.
 PAGE_REPLIES = {"linkedin.draft_request_reply", "linkedin.send_request_reply"}
-# the owner, 2026-10-11: post the Vault page's approved posts automatically "the
+# Miro, 2026-10-11: post the Vault page's approved posts automatically "the
 # way reels already do". Promoted in code with its gates (memory
 # approval-policy), never by approving cards at runtime; pinned in
 # test_linkedin_autopublish.py. Until then this test pinned every publish at
 # ASK, and linkedin.publish_post itself still is.
 AUTOPUBLISH = {"linkedin.autopublish_post"}
-# the owner, 2026-10-12: "whatever you think should be done should be automatically
+# Miro, 2026-10-12: "whatever you think should be done should be automatically
 # approved, but whatever is really urgent should only need human approval"
 # (memory approval-policy). The reshare of a post ATLAS itself published on
 # the Vault page today (rollback: pause autoreshare), and approving a draft
@@ -122,7 +122,7 @@ SINCE_2026_10_12 = {"linkedin.autoreshare_post", "linkedin.approve_draft"}
 def test_no_action_here_is_tier_one():
     """A LinkedIn post cannot be rolled back without deleting it, and
     deletion is permanently denied. Nothing here may run unattended, except
-    the two page-reply actions the owner asked for, the Vault autopublish and
+    the two page-reply actions Miro asked for, the Vault autopublish and
     autoreshare (whose honest rollbacks pause the page), and approving a
     draft in the bank, with their rules in code."""
     actions = {a.name: a for a in linkedin.MODULE.actions()}
@@ -186,9 +186,9 @@ def test_normalise_folds_nbsp_and_trailing_whitespace():
     depend on how a terminal or an editor chooses to render an invisible
     character."""
     nbsp, narrow_nbsp, figure_space = chr(0x00A0), chr(0x202F), chr(0x2007)
-    approved = "MIA to BOG for less.\nhttps://flycheap.example\n#travel"
+    approved = "MIA to BOG for less.\nhttps://flycheap.example.com\n#travel"
     readback = (f"MIA{nbsp}to{narrow_nbsp}BOG{figure_space}for{nbsp}less.   \n"
-                f"https://flycheap.example \n#travel")
+                f"https://flycheap.example.com \n#travel")
     assert nbsp in readback and narrow_nbsp in readback and figure_space in readback
     assert publish._normalise(approved) == publish._normalise(readback)
     assert publish._readback_diff(approved, readback) is None
@@ -207,8 +207,8 @@ def test_normalise_folds_paragraph_breaks_the_editor_adds():
 
 
 def test_normalise_still_catches_a_real_difference():
-    approved = "MIA to BOG for less.\nhttps://flycheap.example\n#travel"
-    readback = "MIA to BOG for MORE.\nhttps://flycheap.example\n#travel"
+    approved = "MIA to BOG for less.\nhttps://flycheap.example.com\n#travel"
+    readback = "MIA to BOG for MORE.\nhttps://flycheap.example.com\n#travel"
     diff = publish._readback_diff(approved, readback)
     assert diff is not None and "MORE" in diff and "for less" in diff
 
@@ -328,7 +328,7 @@ async def test_only_a_draft_can_be_approved(state):
 async def test_a_stale_hash_is_refused_and_leaves_the_draft_untouched(state):
     """The sweep rewrote the draft after the card went out (id reuse after a
     lost write, in production). Approving with the hash the OLD card showed
-    must refuse rather than post text the owner never saw."""
+    must refuse rather than post text Miro never saw."""
     state(doc(DRAFT))
     stale_hash = publish.text_sha256(DRAFT["text"])
     st = store.load()
@@ -386,7 +386,7 @@ async def test_the_daily_post_is_offered_as_a_card(state):
 
 
 async def test_drafts_become_approval_cards(state):
-    state(doc(DRAFT, {"id": "B15", "status": "draft", "text": "x https://flycheap.example"}))
+    state(doc(DRAFT, {"id": "B15", "status": "draft", "text": "x https://flycheap.example.com"}))
     sig = [s for s in await linkedin.MODULE.signals()
            if s.suggests == "linkedin.approve_draft"]
     assert [s.params["entry_id"] for s in sig] == ["B14", "B15"]
@@ -462,9 +462,9 @@ def test_refill_never_keeps_a_banned_link(monkeypatch):
     image/video/poll -- the banned-link filter must still drop a bad block
     and keep the good ones, whichever kind they carry."""
     class C:
-        text = ("KIND: image\nTEXT: Good one https://flycheap.example #x\n"
+        text = ("KIND: image\nTEXT: Good one https://flycheap.example.com #x\n"
                 "IMAGE_PROMPT: a route line\n---\n"
-                "KIND: video\nTEXT: Bad one https://flycheap.example.com\n"
+                "KIND: video\nTEXT: Bad one https://flycheap.storefront.test\n"
                 "VIDEO_PROMPT: a route line\n---\n"
                 "KIND: poll\nINTRO: quick one\nQUESTION: which?\n"
                 "OPTIONS: a | b")
@@ -477,14 +477,14 @@ def test_refill_never_keeps_a_banned_link(monkeypatch):
     posts = asyncio.run(sweep.draft_posts(doc(APPROVED), "flycheap", 3))
     kinds = [p["kind"] for p in posts]
     assert kinds == ["image", "poll"]
-    assert "18dn" not in json.dumps(posts)
+    assert "storefront" not in json.dumps(posts)
 
 
 # ------------------------------------------------------------- the Mac side
 
 def test_the_mac_side_agent_is_gone_from_the_repo():
     root = Path(__file__).resolve().parent.parent
-    for gone in ("bootstrap/com.owner.claude-linkedin-wake.plist",
+    for gone in ("bootstrap/com.myron.claude-linkedin-wake.plist",
                  "bootstrap/com.atlas.linkedin-state-sync.plist",
                  "bootstrap/sync-linkedin-state.sh"):
         assert not (root / gone).exists(), f"{gone} is the Mac-side path"
@@ -592,7 +592,7 @@ async def test_two_sweeps_over_the_same_draft_share_one_title(state):
     sweeps just because it embedded a hash of the text. That was the bug --
     two sweeps over the same still-unapproved draft could each mint their
     own title and so their own card)."""
-    state(doc({"id": "B14", "status": "draft", "text": "one https://flycheap.example"}))
+    state(doc({"id": "B14", "status": "draft", "text": "one https://flycheap.example.com"}))
     t1 = next(s.title for s in await linkedin.MODULE.signals() if "draft" in s.title)
     t2 = next(s.title for s in await linkedin.MODULE.signals() if "draft" in s.title)
     assert t1 == t2 == "Approve draft B14 for FlyCheap"
@@ -604,9 +604,9 @@ async def test_a_rewrite_alone_does_not_change_the_title(state):
     test_a_stale_approval_is_refused_and_the_next_card_is_fresh). Keying the
     title on the text would re-introduce the duplicate-card bug for every
     sweep that runs while a draft is merely being edited."""
-    state(doc({"id": "B14", "status": "draft", "text": "one https://flycheap.example"}))
+    state(doc({"id": "B14", "status": "draft", "text": "one https://flycheap.example.com"}))
     t1 = next(s.title for s in await linkedin.MODULE.signals() if "draft" in s.title)
-    state(doc({"id": "B14", "status": "draft", "text": "two https://flycheap.example"}))
+    state(doc({"id": "B14", "status": "draft", "text": "two https://flycheap.example.com"}))
     t2 = next(s.title for s in await linkedin.MODULE.signals() if "draft" in s.title)
     assert t1 == t2 == "Approve draft B14 for FlyCheap"
 
@@ -845,7 +845,7 @@ async def test_the_post_button_is_found_in_order_and_the_first_visible_wins():
 
 
 class _ActivityTab:
-    """the owner's activity, empty for the first `lag` reads (the feed lags)."""
+    """Miro's activity, empty for the first `lag` reads (the feed lags)."""
 
     def __init__(self, lag: int, text: str = "A team of four flew Boston to Austin"):
         self.lag, self.text, self.reads = lag, text, 0
@@ -909,7 +909,7 @@ async def test_an_unverified_reshare_is_recorded_and_never_offered_again(
         return _FakeHandle(), _FakeHandle(), _FakeCtx(object())
 
     async def fake_reshare(tab, activity, text):
-        return publish.UNVERIFIED, "Post clicked, but not on the owner's recent activity"
+        return publish.UNVERIFIED, "Post clicked, but not on Miro's recent activity"
 
     async def keep(ctx):
         return None
@@ -925,4 +925,4 @@ async def test_an_unverified_reshare_is_recorded_and_never_offered_again(
     assert [s for s in await linkedin.MODULE.signals()
             if s.suggests == "linkedin.reshare_post"] == []
     again = await publish.reshare_dry("flycheap", "B5")
-    assert not again.ok and "check the owner's activity" in again.detail
+    assert not again.ok and "check Miro's activity" in again.detail

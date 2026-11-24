@@ -83,10 +83,10 @@ export function groupAlerts(
 
 export type DecisionKind =
   | "YouTube post" | "Mapfront draft" | "Sales email" | "Proposal" | "Invoice"
-  | "SEO change" | "Research" | "Church post" | "Reddit post" | "Automation" | "other";
+  | "SEO change" | "Research" | "Community post" | "Reddit post" | "Automation" | "other";
 export const DECISION_KINDS: readonly DecisionKind[] = [
   "YouTube post", "Mapfront draft", "Sales email", "Proposal", "Invoice", "SEO change",
-  "Research", "Church post", "Reddit post", "Automation", "other",
+  "Research", "Community post", "Reddit post", "Automation", "other",
 ];
 
 const YOUTUBE_POSTS = new Set([
@@ -105,7 +105,7 @@ const BY_ACTION: Record<string, DecisionKind> = {
   "research.adopt_opportunity": "Research",
 };
 const BY_NAMESPACE: Record<string, DecisionKind> = {
-  sales: "Sales email", seo: "SEO change", research: "Research", church: "Church post",
+  sales: "Sales email", seo: "SEO change", research: "Research", community: "Community post",
   reddit: "Reddit post", bizops: "Automation",
 };
 
@@ -124,12 +124,12 @@ export function decisionKind(action: string): DecisionKind {
  *  Mirrors kernel/board.py (AGENT_OF_NAMESPACE, CLIENT_DEFAULT). null for a
  *  card no agency agent owns. */
 const AGENT_OF: Record<string, string> = {
-  sales: "Sales", academy: "Content", youtube: "Content", church: "Content",
+  sales: "Sales", academy: "Content", youtube: "Content", community: "Content",
   reddit: "Content", bizops: "BizOps", projects: "BizOps", seo: "SEO",
   research: "Research", qa: "QA", agency: "Websites",
 };
 const CLIENT_DEFAULT: Record<string, string> = {
-  academy: "Atlas Academy", youtube: "Atlas Academy", church: "ECC",
+  academy: "Atlas Academy", youtube: "Atlas Academy", community: "AMSM",
   reddit: "Atlas Agency",
 };
 const CLIENT_KEYS = ["client", "client_name", "business", "business_name", "lead_name"];

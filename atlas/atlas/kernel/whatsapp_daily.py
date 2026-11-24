@@ -3,7 +3,7 @@ any needs help. 8:00 PM New York by default.
 
 A collector-style read (`agent_report.read`, the same reads as the Agency map
 and the "agents" WhatsApp question) plus ONE send through the existing owner
-WhatsApp path: the Tier 1 action `mmt.notify_daily` (modules/mmt/notify.py),
+WhatsApp path: the Tier 1 action `tutorco.notify_daily` (modules/tutorco/notify.py),
 reached only through `executor.execute`. Nothing here talks to Twilio.
 
 Rules kept here (CLAUDE.md):
@@ -42,8 +42,8 @@ from .registry import REGISTRY
 
 log = logging.getLogger("atlas.whatsapp_daily")
 
-ACTION = "mmt.notify_daily"
-UNCERTAIN_MARK = " (outcome unknown, may have been delivered)"  # = mmt.notify's
+ACTION = "tutorco.notify_daily"
+UNCERTAIN_MARK = " (outcome unknown, may have been delivered)"  # = tutorco.notify's
 DEFAULT_HOUR = 20
 _NOTED: set[str] = set()     # New York dates already given a Slack note
 MAX_CHARS = 1500            # one WhatsApp message; longer is split, never cut
@@ -91,7 +91,7 @@ async def digest(now: datetime | None = None, limit: int = MAX_CHARS) -> list[st
     now = now or datetime.now(UTC)
     try:
         data = await agent_report.read(now)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("daily report unreadable: %s", type(exc).__name__)
         data = {"agents": [], "errors": {"the agents' records": "unreadable"}}
     text = agent_report.compose(data, now)
@@ -107,9 +107,9 @@ async def digest(now: datetime | None = None, limit: int = MAX_CHARS) -> list[st
 def _ready() -> str | None:
     decision = REGISTRY.decisions.get(ACTION)
     if ACTION not in REGISTRY.actions or decision is None or not decision.allowed:
-        return f"{ACTION} is not in the catalog (mmt module not loaded)"
+        return f"{ACTION} is not in the catalog (tutorco module not loaded)"
     if decision.tier is not Tier.AUTO:
-        return f"{ACTION} is not Tier 1; the daily report runs nothing that needs the owner"
+        return f"{ACTION} is not Tier 1; the daily report runs nothing that needs Miro"
     return None
 
 
@@ -122,7 +122,7 @@ async def _slack_note(why: str, parts: list[str]) -> bool:
             body=f"The WhatsApp daily report was not delivered ({why}). "
                  "Here it is:\n\n" + "\n\n".join(parts),
             severity=Severity.NORMAL, kind="digest", topic="brief"))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("daily report: the Slack note failed too: %s", type(exc).__name__)
         return False
     return bool(used)
@@ -142,7 +142,7 @@ async def run(now: datetime | None = None) -> dict[str, Any]:
         return {"day": day, "sent": False, "error": why}
     result = await execute(ExecutionRequest(
         action=ACTION, params={"day": day},
-        reason=f"the daily agent report the owner asked for at {hour()}:00 New York"))
+        reason=f"the daily agent report Miro asked for at {hour()}:00 New York"))
     if result.ok:
         return {"day": day, "sent": True, "detail": result.detail}
     log.warning("whatsapp daily %s failed: %s", day, result.detail)

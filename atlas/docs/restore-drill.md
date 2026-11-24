@@ -53,7 +53,7 @@ read-only `docker inspect atlas-postgres-1`.
 
 Until branch `ra-f4-h2` is merged and deployed, the script is not in
 `/opt/atlas`. Copy it outside the deployed tree first, for example
-`scp ops/restore_drill.sh root@203.0.113.191:/root/restore_drill.sh`, and run
+`scp ops/restore_drill.sh root@162.220.52.191:/root/restore_drill.sh`, and run
 `/root/restore_drill.sh` in place of `ops/restore_drill.sh` below. It needs
 nothing else from the repo.
 
@@ -83,7 +83,7 @@ age -d -i ~/.config/atlas/backup-age.key atlas-X.dump.age > atlas-X.dump  # off-
 docker compose stop api                       # nothing dispatches in between
 docker compose exec -T postgres pg_restore -U atlas -d atlas --clean < atlas-X.dump
 docker compose exec -T postgres psql -U atlas -d atlas -c \
-  "INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'owner')"
+  "INSERT INTO restores (dump, restored_by) VALUES ('atlas-X.dump', 'miro')"
 docker compose start api
 ```
 
@@ -123,14 +123,14 @@ Read-only facts from the ATLAS host, 2026-09-28 ~21:30Z:
   (DockerRootDir) and `/opt/atlas/data/app/backups` are on that same root
   filesystem. That is worse than the ~92% reported earlier today. The drill
   would refuse on the 5 GB floor, so it was not run, not even `--dry-run`.
-  Freeing space is for the owner to decide; nothing was deleted.
+  Freeing space is for Miro to decide; nothing was deleted.
 - Backups: `atlas-backup.timer` (`/etc/systemd/system/`, `OnCalendar 06:20 UTC`,
   `Persistent=true`) **did fire** at 06:20Z. `status.json` shows
   `dump_ok: true, offsite_ok: true`, file `atlas-20260928-0620.dump`,
   9,812,882 bytes. FINDINGS F §2 ("has not yet fired") is now stale. Dumps on
   the host: `atlas-20260928-0422.dump`, `-0428`, `-0620` (about 9.5–9.8 MB
   each, `pg_dump -Fc`). The off-box copies are age-encrypted
-  `*.dump.age` in `atlasbak@203.0.113.147:/srv/atlas-backups`.
+  `*.dump.age` in `atlasbak@162.220.52.147:/srv/atlas-backups`.
 - The image `pgvector/pgvector:pg16` is already on the host (621 MB), so
   the drill needs no pull. Docker is 29.8.1 and bash is 5.2.
 
@@ -173,9 +173,9 @@ Also verified:
 ## Known gaps
 
 - The drill proves the **local plain dump** restores. It does not prove the
-  off-box `.age` copy decrypts: the age key lives only on the owner's Mac
+  off-box `.age` copy decrypts: the age key lives only on Miro's Mac
   (`~/.config/atlas/backup-age.key`). An off-box drill has to run on the Mac,
-  or on a host the owner chooses, with `age -d` first. That is not scripted here.
+  or on a host Miro chooses, with `age -d` first. That is not scripted here.
 - Locally it has only restored dumps taken by the `postgres` superuser. Prod
   dumps are taken by the `atlas` role. The first prod run is the first
   against a prod-authored dump. If it reports "errors ignored on restore",
@@ -207,7 +207,7 @@ What it does and refuses:
   exit path**. The container is left running and is never removed.
 - It needs a plain `.dump` (`pg_restore` custom format). The nightly off-box
   copy is `.dump.age` and has to be decrypted first, with the key on the Mac.
-- A real dump goes in only if the owner says so; the 2026-11-15 test run used a
+- A real dump goes in only if Miro says so; the 2026-11-15 test run used a
   fixture built from `db/schema.sql` in a throwaway `restore_drill_src`
   database (200 tables, 2 `observations` rows, audit chain intact, 0 entries).
 

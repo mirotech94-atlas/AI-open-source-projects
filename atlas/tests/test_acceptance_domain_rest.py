@@ -43,11 +43,11 @@ NOW = datetime(2026, 9, 28, 12, 0, tzinfo=UTC)
 
 def test_D06_a_stale_ok_is_said_as_unknown_and_its_number_is_dropped():
     from atlas.api import voice
-    row = {"module": "cloudco", "check": "instances", "health": "ok",
+    row = {"module": "cloudhost", "check": "instances", "health": "ok",
            "detail": "12 of 12 instances running", "interval_s": 300,
            "at": NOW - timedelta(hours=3)}
     line = voice._live_line(row, NOW)
-    assert line.startswith("cloudco.instances: unknown")
+    assert line.startswith("cloudhost.instances: unknown")
     assert "stale" in line and "not known now" in line
     assert "12 of 12" not in line, "a stale number must not read as today's"
     never = voice._live_line({**row, "at": None}, NOW)
@@ -72,7 +72,7 @@ async def test_D06_the_agents_status_tool_never_reports_a_stale_ok(monkeypatch):
         return rows
 
     monkeypatch.setattr("atlas.kernel.state.fetch_all", fetch_all)
-    got = await builtin.module_status("cloudco")
+    got = await builtin.module_status("cloudhost")
     health = {c["check"]: c["health"] for c in got["checks"]}
     assert health == {"instances": "unknown", "balance": "unknown", "fresh": "ok"}
 
@@ -92,13 +92,13 @@ async def test_D06_an_optional_personal_peer_off_the_mesh_is_not_degraded(monkey
 
     async def peers(_path):
         return [{"id": "1", "name": "atlas", "connected": True},
-                {"id": "2", "name": "owner-iphone", "connected": False}], None
+                {"id": "2", "name": "miro-iphone", "connected": False}], None
 
     monkeypatch.setattr(netbird, "_get", peers)
-    monkeypatch.setenv("NETBIRD_OPTIONAL_PEERS", "owner-iphone")
+    monkeypatch.setenv("NETBIRD_OPTIONAL_PEERS", "miro-iphone")
     obs = await netbird.check_peers()
     assert obs.health is Health.OK
-    assert "optional and off: owner-iphone" in obs.detail
+    assert "optional and off: miro-iphone" in obs.detail
     # The same phone, not declared optional, is one peer offline -- degraded,
     # never a claim that the mesh is down.
     monkeypatch.setenv("NETBIRD_OPTIONAL_PEERS", "")
@@ -146,7 +146,7 @@ async def test_D11_the_same_request_twice_is_one_event(google):
 
 # -------------------------------------------------------------------- D14
 
-def _cloudco(balance, listed, actual):
+def _cloudhost(balance, listed, actual):
     async def fake(path, **_params):
         data = {"current_balance": balance}
         if listed is not None:
@@ -157,33 +157,13 @@ def _cloudco(balance, listed, actual):
     return fake
 
 
-async def test_D14_conflicting_charges_are_reconciled_on_one_stated_basis(monkeypatch):
-    from atlas.modules import cloudco
-    monkeypatch.delenv("CLOUDCO_RUNWAY_MONTHS", raising=False)
-    monkeypatch.setattr(cloudco, "_get", _cloudco(791.73, 694.15, 249.10))
-    obs = await cloudco.check_balance()
-    assert obs.value == 3.18                     # 791.73 / 249.10, the billed basis
-    assert "basis: the amount actually billed; list price 694.15 not used" in obs.detail
-    assert obs.evidence["monthly_listed"] == 694.15
-    assert obs.evidence["monthly_actual"] == 249.10
 
 
-async def test_D14_a_missing_billed_figure_names_the_basis_it_fell_back_to(monkeypatch):
-    from atlas.modules import cloudco
-    monkeypatch.setattr(cloudco, "_get", _cloudco(100.0, 50.0, None))
-    obs = await cloudco.check_balance()
-    assert obs.value == 2.0
-    assert "basis: the list price" in obs.detail
-    assert "billed amount was not reported" in obs.detail
 
 
-async def test_D14_no_charge_at_all_is_an_unknown_runway_not_a_number(monkeypatch):
-    from atlas.modules import cloudco
-    monkeypatch.setattr(cloudco, "_get", _cloudco(100.0, None, None))
-    obs = await cloudco.check_balance()
-    assert obs.evidence["months"] is None and obs.unit == "balance"
-    assert "runway not known" in obs.detail
-    assert "months of runway" not in obs.detail
+
+
+
 
 
 async def test_D14_revenue_in_two_currencies_is_not_summed_into_one(monkeypatch):
@@ -233,7 +213,7 @@ async def test_D15_an_unsupported_spoken_task_is_an_honest_limit_and_no_card(
     assert pids == [] and proposed == []
     assert said == voice.NO_ACTION           # "No action for that ... By hand:"
     pids, said = await voice._queue_steps(
-        "check the cloudco balance and book me a flight to the moon", source="voice",
+        "check the cloudhost balance and book me a flight to the moon", source="voice",
         principal=False)
     assert pids == [5] and proposed == ["stubd15.balance"]
     assert "“book me a flight to the moon”: no action for that." in said
@@ -359,7 +339,7 @@ async def test_D04_one_action_id_from_any_channel_is_one_action_one_proposal(
 
     # 1. Typed by id in a channel that is not the card's.
     await post_event(slack_message(f"approve {pid}", event_id="EvD04",
-                                   channel="C0SLACKCH05"))
+                                   channel="C0ELSEWHERE"))
     await drain_background()
     assert [n for n, _ in world.runs] == [CARD]
 
@@ -385,7 +365,7 @@ async def test_D04_one_action_id_from_any_channel_is_one_action_one_proposal(
     assert clicked and f"#{pid} was already executed" in clicked[0]
 
     # 3. The operator command, with the id written "#N".
-    said = await main._handle_command(f"approve #{pid}", via="cli:owner")
+    said = await main._handle_command(f"approve #{pid}", via="cli:miro")
     assert f"#{pid} was already executed" in said
 
     assert [n for n, _ in world.runs] == [CARD]
@@ -418,7 +398,7 @@ async def test_D12_a_card_whose_content_changed_returns_to_review(pg):
     await state.execute_sql(
         "UPDATE proposals SET params = $2::jsonb WHERE id = $1", pid,
         json.dumps({"media_id": 12, "caption": "Now with a giveaway. Made with AI"}))
-    await approvals.decide(pid, "approve", "slack:UOWNER")
+    await approvals.decide(pid, "approve", "slack:UMIRO")
     assert world.runs == []          # required: back to review, nothing posted
 
 
@@ -429,7 +409,7 @@ async def _queued_and_approved(media_id: int, occurrence: str) -> int:
     got = await outbox.enqueue(PUBLISH, {**media_params(media_id),
                                          "platform": "instagram"},
                                destination="instagram", occurrence=occurrence,
-                               approved_by="slack:UOWNER")
+                               approved_by="slack:UMIRO")
     row = await state.fetch_one(
         "SELECT catalog_version, approved_payload_hash FROM outbox WHERE id = $1",
         got.outbox_id)

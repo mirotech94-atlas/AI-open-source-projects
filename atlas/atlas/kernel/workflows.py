@@ -1,6 +1,6 @@
 """The workflow catalog: what ATLAS actually runs, as graphs.
 
-the owner, 2026-09-25: the Workflows tab should look like real n8n workflows, not
+Miro, 2026-09-25: the Workflows tab should look like real n8n workflows, not
 empty or short ones. This file is the read-only source of those graphs. It
 defines each workflow's nodes and edges in code -- never inferred from a
 model, never guessed from a name -- and how to read each node's last run
@@ -88,9 +88,9 @@ class Evidence:
     one nightshift jobs table and one phone-decided channel). `lifecycle`
     keys name one stage of the generic propose/decide/dry-run/execute/
     rollback path or the fixer's own two checkpoints -- see `_LIFECYCLE`.
-    `church` counts the ECC channel's `church_posts` at a stage: the key is
+    `community` counts the AMSM channel's `community_posts` at a stage: the key is
     `status`, `platform:status`, several joined by `|`, or `metrics`
-    (`church_metrics`) -- see `_church_status`.
+    (`community_metrics`) -- see `_community_status`.
     """
 
     source: str
@@ -206,7 +206,7 @@ def _scheduler_cycle() -> Workflow:
                   Evidence("lifecycle", "findings")),
             WNode("page", "channel", "Page on HIGH / CRITICAL",
                   "scheduler.page(): a FAILING finding at HIGH or CRITICAL "
-                  "reaches the owner whether or not the reasoner names an "
+                  "reaches Miro whether or not the reasoner names an "
                   "action -- recorded in signals so a restart does not "
                   "re-page the same title inside 24h.",
                   Evidence("lifecycle", "paged")),
@@ -307,7 +307,7 @@ def _reels_day() -> Workflow:
                   Evidence("proposal", "content.publish_reel")),
             WNode("preview", "channel", "Preview in the card's thread",
                   "preview_under_card(): the rendered MP4 uploaded into the "
-                  "card's own Slack thread so the owner can watch before he "
+                  "card's own Slack thread so Miro can watch before he "
                   "decides; on any upload failure, the public /media link "
                   "goes there instead. Per-card, so no single row stands "
                   "for 'the' preview."),
@@ -455,12 +455,12 @@ def _linkedin_publish() -> Workflow:
                   "is permanently denied (Tier 3).",
                   Evidence("proposal", "linkedin.publish_post")),
             WNode("publish", "action", "Publish + reshare",
-                  "publish(): posts to the page and reshares to the owner's own "
+                  "publish(): posts to the page and reshares to Miro's own "
                   "profile. Evidence: the newest execute.finish for "
                   "linkedin.publish_post.",
                   Evidence("action", "linkedin.publish_post")),
             WNode("blocked", "channel", "Items waiting on you",
-                  "Open items with a blocked_by reach the owner as a signal; "
+                  "Open items with a blocked_by reach Miro as a signal; "
                   "nothing here is unattended -- each one names him as the "
                   "blocker."),
         ),
@@ -531,7 +531,7 @@ def _fixes() -> Workflow:
                   "fixes.lasting(): every check whose newest reading is "
                   "degraded or failing, with no OK reading since, for at "
                   "least FIX_LASTING_HOURS. UNKNOWN is left out on purpose "
-                  "-- almost every UNKNOWN here is a setting only the owner can "
+                  "-- almost every UNKNOWN here is a setting only Miro can "
                   "supply. Evidence: the newest such observation, system-"
                   "wide.",
                   Evidence("lifecycle", "fixes_lasting")),
@@ -599,7 +599,7 @@ def _action_lifecycle() -> Workflow:
                   Evidence("lifecycle", "expire")),
             WNode("dry_run", "check", "Dry run",
                   "executor.preview() / execute()'s own dry run: what would "
-                  "happen, read before the owner decides and again at the "
+                  "happen, read before Miro decides and again at the "
                   "moment of approval, since the world may have moved. "
                   "Tier 1 refuses to construct an Action without one "
                   "(invariant 8). Evidence: the newest execute.dry_run or "
@@ -631,7 +631,7 @@ def _action_lifecycle() -> Workflow:
 
 
 def _reels_pipeline() -> Workflow:
-    """the owner, 2026-09-27/28: the reels make and post themselves. Every tick,
+    """Miro, 2026-09-27/28: the reels make and post themselves. Every tick,
     in this order, each step through the executor."""
     return _wf(
         "reels_pipeline", "Reels production", "cron",
@@ -650,16 +650,16 @@ def _reels_pipeline() -> Workflow:
                   "series parts and regular reels alternate days.",
                   Evidence("action", "content.render_video")),
             WNode("packages", "action", "Packaged reels",
-                  "content.render_calendar_job: the next of the owner's 60 "
+                  "content.render_calendar_job: the next of Miro's 60 "
                   "packaged reels with the clips left -- banked clip by clip, "
                   "smoothed to 60 fps, assembled with a 4K master. Tier 1.",
                   Evidence("action", "content.render_calendar_job")),
             WNode("autopost", "action", "Post itself, past the checks",
-                  "content.autopublish_reel: Tier 1 by the owner's ruling -- the "
+                  "content.autopublish_reel: Tier 1 by Miro's ruling -- the "
                   "switch, two a day, the AI label, the brand guard, a "
                   "1080x1920 render with sound that is not silent.",
                   Evidence("action", "content.autopublish_reel")),
-            WNode("held", "gate", "Held for the owner",
+            WNode("held", "gate", "Held for Miro",
                   "content.publish_reel: a reel that failed a check becomes "
                   "a Tier 2 card, the reason first; nothing posts on silence.",
                   Evidence("proposal", "content.publish_reel")),
@@ -680,7 +680,7 @@ def _reels_pipeline() -> Workflow:
 
 
 def _series_episodes() -> Workflow:
-    """the owner, 2026-09-28: "Veo makes the clips for the reel series, sends them
+    """Miro, 2026-09-28: "Veo makes the clips for the reel series, sends them
     to ATLAS, and ATLAS uploads them to all the platforms available." ATLAS's
     own pipeline owns the series (his choice, the same day); Code Chaos, made
     by the server's episode timers, finishes through them until Oct 2."""
@@ -723,7 +723,7 @@ def _series_episodes() -> Workflow:
                   "the Facebook Page and TikTok (TikTok with the #fyp caption "
                   "variant), past every automatic check.",
                   Evidence("action", "content.autopublish_reel")),
-            WNode("held", "gate", "Held for the owner",
+            WNode("held", "gate", "Held for Miro",
                   "Anything that fails a check, or a day whose automatic "
                   "posts are used, becomes a content.publish_reel card, the "
                   "reason first. Nothing posts on silence.",
@@ -762,7 +762,7 @@ def _agent_shifts() -> Workflow:
                   "says why once a day."),
             WNode("run", "agent", "The shift",
                   "The fixed shift prompt: call module_status on each module "
-                  "the role covers, say in three sentences what needs the owner, "
+                  "the role covers, say in three sentences what needs Miro, "
                   "act only through catalog actions. Evidence: the newest "
                   "shift run in agent_runs.",
                   Evidence("lifecycle", "agent_shift")),
@@ -878,16 +878,16 @@ def _reels_trigger_text() -> str:
             "(REELS_NUDGE_HOUR)")
 
 
-def _church_channel() -> Workflow:
-    """The ECC channel (atlas/modules/church, docs/church-agent.md): a video
+def _community_channel() -> Workflow:
+    """The AMSM channel (atlas/modules/community, docs/community-agent.md): a video
     goes from the owner's photos to two platforms. The first four stages
     happen on the owner's Mac and leave no row here, so they claim no time;
-    from the render on, each node counts `church_posts` at its stage, as
-    the Mac's sync and the church actions last wrote them."""
+    from the render on, each node counts `community_posts` at its stage, as
+    the Mac's sync and the community actions last wrote them."""
     return _wf(
-        "church", "ECC channel: photos to posts", "event",
+        "community", "AMSM channel: photos to posts", "event",
         "a new item photographed at the bookstore; the Mac syncs its calendar "
-        "with POST /api/church/progress",
+        "with POST /api/community/progress",
         nodes=(
             WNode("photos", "trigger", "Photos",
                   "Five shots per item (front, spine or side, contents, scale, "
@@ -895,37 +895,37 @@ def _church_channel() -> Workflow:
             WNode("script", "action", "Script (EN / AR)",
                   "The 35-second structure; English, and Arabic in Egyptian "
                   "dialect. Counts posts still planned.",
-                  Evidence("church", "planned")),
+                  Evidence("community", "planned")),
             WNode("voice", "action", "Voice",
                   "A warm British male narrator; no invented quotations, no "
                   "cloned clergy voices. On the Mac."),
-            WNode("music", "action", "community music",
-                  "Traditional hymn melodies in the church's own renditions "
+            WNode("music", "action", "Coptic music",
+                  "Traditional hymn melodies in the community's own renditions "
                   "(music/make_hymn_bg.py, music/mix_music.py); never a "
                   "ripped recording."),
             WNode("render", "store", "Render",
                   "The finished vertical video in music/output. Counts posts "
                   "rendered and reviewed, waiting for a slot.",
-                  Evidence("church", "rendered")),
+                  Evidence("community", "rendered")),
             WNode("review", "gate", "Owner's review",
                   "Every video is watched by the owner before it posts; the "
                   "posting actions refuse an unreviewed row. Counts videos "
-                  "awaiting review.", Evidence("church", "awaiting_review")),
+                  "awaiting review.", Evidence("community", "awaiting_review")),
             WNode("facebook", "action", "Facebook schedule",
-                  "church.schedule_facebook_reels: one Tier 2 card per batch, "
+                  "community.schedule_facebook_reels: one Tier 2 card per batch, "
                   "at most 29 days ahead. Counts reels scheduled.",
-                  Evidence("church", "facebook:scheduled")),
+                  Evidence("community", "facebook:scheduled")),
             WNode("youtube", "action", "YouTube schedule",
-                  "church.schedule_youtube_shorts: one Tier 2 card per batch, "
+                  "community.schedule_youtube_shorts: one Tier 2 card per batch, "
                   "private with publishAt, within the daily upload budget. "
-                  "Counts Shorts scheduled.", Evidence("church", "youtube:scheduled")),
+                  "Counts Shorts scheduled.", Evidence("community", "youtube:scheduled")),
             WNode("live", "channel", "Live",
                   "Public at its 9 AM or 6 PM New York slot. Counts posts "
-                  "published.", Evidence("church", "published")),
+                  "published.", Evidence("community", "published")),
             WNode("metrics", "store", "Metrics review",
                   "Reach, attention, trust, action and outcome, weekly; the "
-                  "platform's own numbers in church_metrics.",
-                  Evidence("church", "metrics")),
+                  "platform's own numbers in community_metrics.",
+                  Evidence("community", "metrics")),
         ),
         edges=(
             WEdge("photos", "script"), WEdge("script", "voice"),
@@ -945,7 +945,7 @@ WORKFLOWS: tuple[Workflow, ...] = (
     _morning_brief(),
     _reels_day(),
     _reels_pipeline(),
-    _church_channel(),
+    _community_channel(),
     _mail_followup(),
     _phone_approval(),
     _linkedin_publish(),
@@ -962,7 +962,7 @@ def _trigger_text(wf: Workflow) -> str:
     if callable(detail):
         try:
             return detail()
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("workflows: %s's trigger text failed: %s", wf.id, exc)
             return "(could not be read)"
     return detail
@@ -971,7 +971,7 @@ def _trigger_text(wf: Workflow) -> str:
 async def _safe_fetch_all(sql: str, *args: Any) -> list[Any] | None:
     try:
         return await fetch_all(sql, *args)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("workflows: query failed, marking its nodes unknown: %s", exc)
         return None
 
@@ -979,7 +979,7 @@ async def _safe_fetch_all(sql: str, *args: Any) -> list[Any] | None:
 async def _safe_fetch_one(sql: str, *args: Any) -> Any | None:
     try:
         return await fetch_one(sql, *args)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("workflows: query failed, marking its nodes unknown: %s", exc)
         return "__unreadable__"
 
@@ -1179,9 +1179,9 @@ async def _mail_nudged_status() -> NodeStatus:
     return NodeStatus(at, OK, "a follow-up thread was nudged")
 
 
-def _church_status(key: str, stages: list[Any] | None,
+def _community_status(key: str, stages: list[Any] | None,
                    metrics: Any | None) -> NodeStatus:
-    """How many ECC posts sit at this stage now, and when the newest of
+    """How many AMSM posts sit at this stage now, and when the newest of
     them last moved. Zero is `never` (nothing here now), not `ok`."""
     if key == "metrics":
         if metrics == "__unreadable__":
@@ -1319,16 +1319,16 @@ async def resolve_all(catalog: Sequence[Workflow]) -> dict[str, NodeStatus]:
             else:
                 out[n.id] = _job_status(row)
 
-    church_nodes = [n for _, n in all_nodes if n.evidence.source == "church"]
-    if church_nodes:
+    community_nodes = [n for _, n in all_nodes if n.evidence.source == "community"]
+    if community_nodes:
         stages = await _safe_fetch_all(
             """SELECT platform, status, count(*) AS n, max(updated_at) AS at
-                 FROM church_posts GROUP BY platform, status""")
+                 FROM community_posts GROUP BY platform, status""")
         metrics = (await _safe_fetch_one(
-            "SELECT count(*) AS n, max(read_at) AS at FROM church_metrics")
-            if any(n.evidence.key == "metrics" for n in church_nodes) else None)
-        for n in church_nodes:
-            out[n.id] = _church_status(n.evidence.key, stages, metrics)
+            "SELECT count(*) AS n, max(read_at) AS at FROM community_metrics")
+            if any(n.evidence.key == "metrics" for n in community_nodes) else None)
+        for n in community_nodes:
+            out[n.id] = _community_status(n.evidence.key, stages, metrics)
 
     lifecycle_nodes = [n for _, n in all_nodes if n.evidence.source == "lifecycle"]
     for n in lifecycle_nodes:

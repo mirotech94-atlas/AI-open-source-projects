@@ -1,0 +1,40 @@
+<!-- @dsCard group="Teaching" width=1920 height=1080 subtitle="Orientation: only the active step moves" -->
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--navy)}
+.frame{position:relative;width:1920px;height:1080px;background:var(--navy);font-family:var(--font-sans);color:var(--paper);overflow:hidden}
+.map{position:absolute;left:var(--safe-16-9);top:var(--safe-16-9);display:flex;align-items:center;gap:var(--step-4)}
+.node{position:relative;width:360px;background:var(--navy-raised);border:2px solid var(--navy-line);border-radius:var(--radius-card);padding:var(--step-3);box-sizing:border-box}
+.node .n{color:var(--blue-text);display:block;margin-bottom:var(--step-1)}
+.node .d{color:var(--paper-muted);display:block;margin-top:var(--step-1)}
+.node.active{background:var(--blue-tint);border-color:var(--blue);animation:lift var(--title-rise) var(--settle) both}
+.conn{width:var(--step-6);height:4px;background:var(--navy-line)}
+.conn.done{background:var(--blue)}
+.state{position:absolute;left:var(--safe-16-9);bottom:var(--safe-16-9);display:flex;gap:var(--step-2)}
+.chip{display:inline-flex;align-items:center;gap:var(--step-1);padding:var(--step-1) var(--step-2);border-radius:var(--radius-chip);background:var(--navy-raised);border:2px solid var(--navy-line)}
+.chip svg{width:28px;height:28px}
+.chip.ok{color:var(--success);border-color:var(--success)}
+.chip.wait{color:var(--amber);border-color:var(--amber)}
+.chip.err{color:var(--error);border-color:var(--error)}
+@keyframes lift{from{transform:translateY(16px);opacity:.3}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.node.active{animation:none}}
+</style></head><body>
+<div class="frame">
+  <div class="map">
+    <div class="node"><span class="n support">Step 1</span><span class="callout">Receive inquiry</span><span class="d support">Webhook trigger</span></div>
+    <div class="conn done"></div>
+    <div class="node active"><span class="n support">Step 2</span><span class="callout">Build the draft</span><span class="d support">Claude node · this lesson</span></div>
+    <div class="conn"></div>
+    <div class="node"><span class="n support">Step 3</span><span class="callout">Human review</span><span class="d support">Approval before send</span></div>
+    <div class="conn"></div>
+    <div class="node"><span class="n support">Step 4</span><span class="callout">Send reply</span><span class="d support">Gmail node</span></div>
+  </div>
+  <div class="state">
+    <span class="chip ok support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 7"/></svg>Tested</span>
+    <span class="chip wait support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Pending</span>
+    <span class="chip err support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>Error</span>
+  </div>
+</div>
+</body></html>

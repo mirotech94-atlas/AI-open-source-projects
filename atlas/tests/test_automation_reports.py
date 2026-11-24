@@ -197,10 +197,10 @@ async def test_reconcile_off_with_nothing_cut_off_still_says_it_is_off(
 async def test_a_paused_module_is_named_with_its_reason(pg):
     await state.execute_sql(
         """INSERT INTO pauses (scope, paused_by, reason, paused_at)
-           VALUES ('reels', 'owner', 'testing captions',
+           VALUES ('reels', 'miro', 'testing captions',
                    now() - interval '2 days 1 hour')""")
     text = await section()
-    assert "• reels paused 2d ago by owner: testing captions." in text
+    assert "• reels paused 2d ago by miro: testing captions." in text
     assert await brief_lines() == ["Paused: reels — testing captions."]
 
 
@@ -208,7 +208,7 @@ async def test_a_paused_module_is_named_with_its_reason(pg):
 async def test_a_resumed_pause_is_not_reported(pg):
     await state.execute_sql(
         """INSERT INTO pauses (scope, paused_by, reason, resumed_at, resumed_by)
-           VALUES ('reels', 'owner', 'testing', now(), 'owner')""")
+           VALUES ('reels', 'miro', 'testing', now(), 'miro')""")
     assert await section() is None
     assert await brief_lines() is None
 

@@ -1,6 +1,6 @@
 """Ask or Search: how much of the outside world a question may reach.
 
-Two modes, as the owner's Atlas Implementation Plan names them for Phase 1:
+Two modes, as Miro's Atlas Implementation Plan names them for Phase 1:
 
   ask     answered from what the model knows, with the calculator, unit
           conversion and the clock only -- no web search, no page, no

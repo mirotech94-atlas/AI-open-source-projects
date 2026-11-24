@@ -1,4 +1,4 @@
-"""Per-channel chat memory (the owner 2026-11-19): separate windows, private taint,
+"""Per-channel chat memory (Miro 2026-11-19): separate windows, private taint,
 wrap source = channel, additive schema, hand-run rollback."""
 from __future__ import annotations
 
@@ -95,7 +95,7 @@ async def test_taint_expires_with_the_window(table):
     assert await chat_memory.recent_with_taint(channel="slack") == ([], False)
 
 
-async def test_last_user_text_is_the_owners_own_words(table):
+async def test_last_user_text_is_miros_own_words(table):
     await chat_memory.remember("restart the bridge", "ok", channel="slack")
     await chat_memory.remember("something else", "fine", channel="whatsapp")
     assert await chat_memory.last_user_text("slack") == "restart the bridge"

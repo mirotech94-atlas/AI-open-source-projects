@@ -1,5 +1,5 @@
 """Leg sync: an AI reel that posted to some platforms and not others gets
-the missing leg later (the owner, 2026-09-29).
+the missing leg later (Miro, 2026-09-29).
 
 Media 12 ("Emergency Room: Code Chaos -- Part 2") auto-posted at 07:32 UTC:
 TikTok took it, the Instagram (stories) leg was refused with Graph HTTP 401
@@ -28,7 +28,7 @@ which are the only runs this reads.
     timeout or an unreachable host, a rate limit or a spent hourly
     allowance. A content refusal (the guard, the AI label, a caption rule,
     Instagram rejecting the file) is NOT retried, and neither is a leg that
-    was paused -- a pause is the owner's own stop.
+    was paused -- a pause is Miro's own stop.
 
 **The catch-up** is `content.post_missing_leg` (Tier 1, through the
 executor: dry run, audit, watch-only, pause, rate limits), params
@@ -61,7 +61,7 @@ part whole (a "wait", never a remake or a card) while its predecessor has
 an open retryable gap. The part before is found from an import's source
 (`import:<series>:part N`), `reel_series_parts`, or a calendar job's
 dependencies. The Tier 2 card path (automatic posting off) is not held: an
-approved card is the owner's own decision about that reel.
+approved card is Miro's own decision about that reel.
 """
 from __future__ import annotations
 
@@ -79,7 +79,7 @@ log = logging.getLogger("atlas.content.legsync")
 
 ACTION = "content.post_missing_leg"
 PUBLISHERS = ("content.autopublish_reel", "content.publish_reel")
-# YouTube is NOT a leg (the owner, 2026-09-29): Shorts are curated, three a week
+# YouTube is NOT a leg (Miro, 2026-09-29): Shorts are curated, three a week
 # (`content.shorts`, `content.publish_short`), never a mirror of every reel,
 # so a reel missing on YouTube is not a gap and is never back-filled here.
 LEGS = ("instagram", "facebook", "tiktok")
@@ -107,7 +107,7 @@ _RETRYABLE = re.compile(
     r"|this hour|hourly allowance|still processing"
     r"|the pause state could not be read")
 # A content or policy refusal, never retried: the guard / AI label / kind
-# rules ("refused: ..."), a pause (the owner's own stop), a parent not allowed.
+# rules ("refused: ..."), a pause (Miro's own stop), a parent not allowed.
 _POLICY = re.compile(r"^refused:|\bis paused\b|shadow mode|not a parent|is refused:")
 
 
@@ -386,7 +386,7 @@ async def series_hold(media_id: int, platform: str | None = None) -> str | None:
         open_ = [g for g in await gaps(media_ids=before)
                  if g.retryable and _configured(g.platform)
                  and (platform is None or g.platform == platform)]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return (f"{SERIES_HELD}: whether the part before it reached every "
                 f"platform could not be read ({explain(exc)})")
@@ -421,7 +421,7 @@ async def _find(media_id: int, platform: str) -> tuple[Gap | None, str | None]:
         return None, f"no such leg {platform!r}; one of {', '.join(LEGS)}"
     try:
         found = [g for g in await gaps(media_ids=[media_id]) if g.platform == platform]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return None, (f"whether media {media_id} is missing on {platform} could "
                       f"not be read ({explain(exc)}), so nothing is posted")
@@ -579,7 +579,7 @@ async def check_reel_legs_sync() -> Observation:
     configured leg is there (a content refusal is named, not retried)."""
     try:
         found = await gaps()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return Observation("reel_legs_sync", Health.UNKNOWN,
                            detail=f"the posted reels could not be read: "

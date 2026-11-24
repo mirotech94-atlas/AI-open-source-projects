@@ -115,7 +115,7 @@ def validate_params(tool: Tool, params: Any) -> str | None:
 
 def _stamped(content: Any) -> Any:
     """A read's dict result carries the moment it was read (invariant 6). A
-    model given a bare figure invents a time: 2026-09-28, the inroots agent
+    model given a bare figure invents a time: 2026-09-28, the attendance agent
     on Qwen said "200 at 2024-04-27T12:00:00Z" from an unstamped http_probe.
     A result that already names its time is left alone."""
     if isinstance(content, dict) and not any(k in content for k in _TIME_KEYS):

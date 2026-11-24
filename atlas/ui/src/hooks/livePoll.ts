@@ -2,7 +2,7 @@
  * A read that repeats on its own, as a pure controller: no React, no window.
  *
  * Used for the header pill and the status ring, which must never show a count
- * that is minutes old. Rules (the owner, 2026-11-12):
+ * that is minutes old. Rules (Miro, 2026-11-12):
  *   - one read every `intervalMs` (about 10 s);
  *   - never two at once: a tick while one is in flight is dropped;
  *   - nothing while the tab is hidden;

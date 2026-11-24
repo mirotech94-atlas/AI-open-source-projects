@@ -31,7 +31,7 @@ Each entry says, per product:
                      `FREE_WORDS`, never "$0"; a priced product reading 0, or
                      the kit reading anything else, is not drafted.
   * `compare_at`  -- whether a live compare-at ("was") price may be shown. The
-                     AI for Every Age products have none by the owner's brief
+                     AI for Every Age products have none by Miro's brief
                      (2026-09-29); if one appears on the store, nothing is
                      drafted until he looks. The Operator's "$20, was $49" is
                      the store's own figure and stays.
@@ -44,7 +44,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-STORE = "https://academy-store.myshopify.example"
+STORE = "https://atlasacademy-ai.myshopify.com"
 OPERATOR = "operator"
 FREE_WORDS = "Free with an email sign-up"
 AGE_NOTICE = "Sold to adults 18+."
@@ -66,7 +66,7 @@ class Product:
     vault_dir: str
     platforms: frozenset[str]
     languages: tuple[str, ...] = ("en",)
-    label: str = "This is my own course. -- the owner"
+    label: str = "This is my own course. -- Miro"
     noun: str = "course"
     strict_numbers: bool = False
     no_fear: bool = False
@@ -123,7 +123,7 @@ CATALOG: dict[str, Product] = {p.key: p for p in (
         data="sixty_plus.json",
         vault_dir="Products/AI for Every Age/seniors",
         platforms=frozenset({"facebook", "linkedin", "threads", "shopify_blog"}),
-        label="This is my own guide. -- the owner",
+        label="This is my own guide. -- Miro",
         noun="guide",
         strict_numbers=True,
         no_fear=True,
@@ -139,7 +139,7 @@ CATALOG: dict[str, Product] = {p.key: p for p in (
         data="bundle.json",
         vault_dir="Products/AI for Every Age (adults/ and seniors/)",
         platforms=frozenset({"facebook", "linkedin", "threads", "shopify_blog"}),
-        label="These are my own courses. -- the owner",
+        label="These are my own courses. -- Miro",
         noun="bundle",
     ),
     Product(
@@ -153,7 +153,7 @@ CATALOG: dict[str, Product] = {p.key: p for p in (
         vault_dir="Products/AI for Every Age/free-kit",
         platforms=frozenset({"facebook", "linkedin", "threads", "x", "bluesky",
                              "mastodon", "shopify_blog"}),
-        label="This is my own free kit. -- the owner",
+        label="This is my own free kit. -- Miro",
         noun="kit",
         strict_numbers=True,
         no_fear=True,

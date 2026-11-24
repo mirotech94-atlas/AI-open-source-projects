@@ -12,7 +12,7 @@ from atlas.modules import _http
 def secret_env(monkeypatch):
     monkeypatch.setenv("TRAVELPAYOUTS_TOKEN", "tp_live_SUPERSECRETVALUE123")
     monkeypatch.setenv("FLYCHEAP_API_TOKEN", "fc_abcdefghijklmnop")
-    monkeypatch.setenv("ATLAS_PUBLIC_URL", "https://atlas.example.com")
+    monkeypatch.setenv("ATLAS_PUBLIC_URL", "https://atlas.storefront.test")
 
 
 # ------------------------------------------------------------- redaction
@@ -41,8 +41,8 @@ def test_authorization_headers_are_redacted():
 
 
 def test_non_secret_values_survive():
-    out = _http.redact("https://atlas.example.com/healthz returned 502")
-    assert "atlas.example.com/healthz" in out and "502" in out
+    out = _http.redact("https://atlas.storefront.test/healthz returned 502")
+    assert "atlas.storefront.test/healthz" in out and "502" in out
 
 
 def test_explain_never_includes_the_query_string():
@@ -56,7 +56,7 @@ def test_explain_never_includes_the_query_string():
 
 
 def test_explain_names_a_wrong_path_helpfully():
-    request = httpx.Request("GET", "https://admin.flycheap.example/api/admin/nope")
+    request = httpx.Request("GET", "https://admin.flycheap.example.com/api/admin/nope")
     response = httpx.Response(404, request=request)
     reason = _http.explain(
         httpx.HTTPStatusError("x", request=request, response=response))

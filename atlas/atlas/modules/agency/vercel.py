@@ -2,7 +2,7 @@
 
 A built lead preview (or a demo dropped into the intake) is published as a
 static Vercel deployment at `https://atlas-agency-<slug>.vercel.app/`, only after
-the owner approves the card. The executor is the only caller of `publish_vercel`;
+Miro approves the card. The executor is the only caller of `publish_vercel`;
 `publish_vercel_dry` reads and counts, it never uploads.
 
 Before any HTTP call the files are audited (`demo_host.demo_audit`: noindex
@@ -16,7 +16,7 @@ team id travels only as a query parameter, never in a detail string.
 
 Rollback promotes the previous production deployment (Vercel's instant
 rollback). A first publish has nothing to go back to: deletion is Tier 3,
-so the deployment stays at its noindex URL and taking it down is the owner's, by
+so the deployment stays at its noindex URL and taking it down is Miro's, by
 hand in the Vercel dashboard. Nothing in this module deletes.
 """
 from __future__ import annotations
@@ -211,7 +211,7 @@ async def _fetch_page(url: str) -> tuple[int | None, str, str | None]:
         async with httpx.AsyncClient(timeout=PAGE_TIMEOUT,
                                      follow_redirects=False) as client:
             response = await client.get(url)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, "", _http.explain(exc)
     return response.status_code, response.text[:200_000], None
 
@@ -236,7 +236,7 @@ async def _event(slug: str, event: str, detail: str = "",
                  release: str | None = None) -> None:
     try:
         await _store.record_site_event(slug, event, detail=detail, release=release)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("vercel %s: event %s not recorded: %s",
                     slug, event, _http.explain(exc))
 
@@ -246,7 +246,7 @@ async def _tell(event: str, title: str, line: str) -> None:
         return
     try:
         await escalate.ring_owner(title, line)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("vercel call not placed: %s", type(exc).__name__)
 
 
@@ -388,7 +388,7 @@ async def publish_vercel_rollback(token: str) -> ActionResult:
         await _store.set_site_undeployed(slug)
         await _store.set_site_domain(slug, None)
         line = ("first deployment stays at its URL (noindex); taking it down is "
-                "the owner's, by hand in the Vercel dashboard")
+                "Miro's, by hand in the Vercel dashboard")
         await _event(slug, "rolled_back", line, release=deployment)
         return ActionResult(True, f"{slug}: {line}")
 

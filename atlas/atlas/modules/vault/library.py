@@ -8,13 +8,13 @@ memory it produced — so an approval that gets reversed leaves nothing behind.
 
 Three more writers live here, none of them tools or actions — they are
 called from elsewhere in the kernel so the library reflects what ATLAS
-already does, not only what the owner explicitly logs:
+already does, not only what Miro explicitly logs:
 
 * `keep_answer` — every knowledge-mode answer (`kernel/knowledge.py`),
   kind='answer'. Matched on kind+title within a day, so asking the same
   question again the same day updates the row instead of piling up a near-
   duplicate. Never raises: a failure to record an answer must never cost
-  the owner the answer itself.
+  Miro the answer itself.
 * `seed_skill` — one row per `atlas/skills/*.py` playbook, kind='skill',
   written idempotently at boot (`atlas/skills/__init__.py`). Matched on
   kind+source, so the same playbook re-seeded every boot updates one row

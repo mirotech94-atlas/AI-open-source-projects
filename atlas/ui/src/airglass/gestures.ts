@@ -6,7 +6,7 @@
 // the object-fit: cover crop have been applied by videoToScreen(). Time is
 // in seconds.
 //
-// One gesture (2026-10-06, the owner: "I only want pinch-slide with the hand,
+// One gesture (2026-10-06, Miro: "I only want pinch-slide with the hand,
 // doesn't matter which -- and make it natural"):
 //   pinch a tile and slide it up out of the tray  -> the model comes out, held
 //   pinch the model and slide                     -> it follows, and turns like a ball
@@ -16,7 +16,7 @@
 // Either hand; with both up, the one that pinched first owns the grab.
 // There is no hover-to-pick, no push/pull depth, no two-hand scale, no toss.
 //
-// Why picking failed with a real hand (the owner, 2026-10-06, "his forefinger
+// Why picking failed with a real hand (Miro, 2026-10-06, "his forefinger
 // cannot pick a model"): the tray sat in the bottom ~10% of the picture. A
 // fingertip that low needs the wrist and palm below the camera's frame, and
 // the hand model cannot find a hand whose palm it cannot see -- the demo's

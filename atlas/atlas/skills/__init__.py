@@ -22,7 +22,7 @@ Budget — read before adding a skill:
 * No credentials, ever. A skill body is injected into a prompt. Name where a
   secret lives; never the value.
 
-Seeding the library (Task 60) -- the owner: "there should also be some stuff on
+Seeding the library (Task 60) -- Miro: "there should also be some stuff on
 there based on his previous skills from agents that he has as well."
 `index_into_library()` reads every pack's own source (`ast`, no import: it
 never depends on `load_all()` having already run, and never risks a pack's
@@ -70,7 +70,7 @@ def load_all() -> None:
         before = {id(s) for s in SKILLS}
         try:
             importlib.import_module(f"{__name__}.{info.name}")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("skill pack %s failed to load: %s", info.name, exc)
             continue
         REGISTERED_BY_PACKS.update(
@@ -82,7 +82,7 @@ def _playbook_title_and_text(source: str) -> tuple[str, str] | None:
     None when there is no module docstring to build a title from.
 
     `title` is the docstring's first sentence, whitespace-collapsed --
-    "ExampleCo — eBay reselling of IT and networking hardware." rather than
+    "Mirotech — eBay reselling of IT and networking hardware." rather than
     the whole paragraph. `text` is the docstring plus "### <name>\\n<body>"
     for every `register(Skill(...))` call found by walking the tree, in
     source order -- the judgement calls that actually shape an agent, not

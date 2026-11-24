@@ -1,13 +1,13 @@
-"""The 30-day reels calendar the owner supplied (2026-09-27), rendered day by day.
+"""The 30-day reels calendar Miro supplied (2026-09-27), rendered day by day.
 
-Two packages ship beside this file, as the owner received them:
+Two packages ship beside this file, as Miro received them:
 
   * `calendars/stories-v2.json` -- the AI-stories account's month: 30
     original Egyptian-Arabic reels (RETURN, COURT, FOOD, KINDNESS), 170
     timed beats, each with its dialogue, its label-free Arabic subtitle and
     a generation prompt. Revision 2 replaces the whole of revision 1, which
     was never loaded.
-  * `calendars/business-v1.json` -- a business-education month. the owner
+  * `calendars/business-v1.json` -- a business-education month. Miro
     chose (2026-09-27): the same AI-stories account, the day after the
     stories month ends, one lesson a day, Egyptian Arabic on odd days and
     English on even ones. A lesson is narrated, not acted; every generated
@@ -22,14 +22,14 @@ into Veo's prompts as given and never reaches a reasoning model.
 parts of equal length, each part its own clip with its share of the lines.
 Each part costs one 8 s Veo clip, trimmed to the part's length (or to the
 time its lines need, when that is longer, capped at the clip). The month is
-259 clips; the owner's Gemini tier allows 10 a day (`VEO_DAILY_CLIPS`), and the
+259 clips; Miro's Gemini tier allows 10 a day (`VEO_DAILY_CLIPS`), and the
 longest RETURN episodes need 13, so clips are banked AHEAD: every tick
 spends what is left of today's allowance on the earliest unfinished day,
 up to `LOOKAHEAD_DAYS` ahead. The allowance is counted from midnight
 Pacific, when Google resets it. The seconds still count against
 `VEO_MONTHLY_SECONDS`, reserved one clip at a time under the render lock.
 
-**Captions** are in English whatever the voice (the owner, 2026-09-27: Arabic
+**Captions** are in English whatever the voice (Miro, 2026-09-27: Arabic
 voice, English captions, so everyone can follow): the package's own
 translation of each line (`english_meaning`, speaker labels stripped), on
 screen while its Arabic line is spoken -- never a transcription.
@@ -82,7 +82,7 @@ def jobs(name: str = "stories") -> list[dict[str, Any]]:
     return list(package(name)["jobs"])
 
 
-# Two stories to one business lesson (the owner, 2026-09-27), unless the weekly
+# Two stories to one business lesson (Miro, 2026-09-27), unless the weekly
 # Improver's mix says otherwise (kernel/reel_money.py): `load_mix` reads it
 # once a calendar tick. No mix, or an unreadable one, keeps two to one.
 STORIES_PER_LESSON = 2.0
@@ -95,14 +95,14 @@ async def load_mix(today: date | None = None) -> float:
     try:
         from ...kernel import reel_money
         ratio = await reel_money.stories_per_lesson(today or today_local())
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         ratio = STORIES_PER_LESSON
     _stories_per_lesson = ratio
     return ratio
 
 
 def scheduled(stories_per_lesson: float | None = None) -> list[dict[str, Any]]:
-    """Every job, in the order ATLAS makes them. the owner, 2026-09-27: "don't take
+    """Every job, in the order ATLAS makes them. Miro, 2026-09-27: "don't take
     the 30-day calendar literally -- do everything now". The packages are a
     plan, not a timetable: no dates gate anything. Two stories, then one
     business lesson, repeated -- or the mix's ratio (`load_mix`) -- each
@@ -192,7 +192,7 @@ OPEN = ("draft", "rendering", "rendered", "carded")
 
 async def active() -> bool:
     """While any packaged reel is still to be made or answered, the daily
-    rotation stands aside so Veo's clips finish the packages (the owner's choice,
+    rotation stands aside so Veo's clips finish the packages (Miro's choice,
     2026-09-27). Unreadable counts as active: the rotation must not spend
     the calendar's clips on a guess."""
     if not enabled():
@@ -201,7 +201,7 @@ async def active() -> bool:
         row = await fetch_one(
             "SELECT count(*) AS n FROM reel_calendar WHERE status = ANY($1::text[])",
             list(OPEN))
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return True
     return bool(row) and int(row["n"]) > 0
 
@@ -263,7 +263,7 @@ _SPEAKER = re.compile(r"^[^:]{1,40}:\s*")
 
 
 def _english(j: dict[str, Any], beat: dict[str, Any], count: int) -> list[str]:
-    """The English caption for each spoken line (the owner, 2026-09-27: Arabic
+    """The English caption for each spoken line (Miro, 2026-09-27: Arabic
     voice, English captions, so everyone can follow). A story beat's
     `english_meaning` has one line per dialogue line, in order; a lesson's
     `voice_en` is cut at its sentences like the Arabic is."""
@@ -279,7 +279,7 @@ def _english(j: dict[str, Any], beat: dict[str, Any], count: int) -> list[str]:
     return [part for part in _SENTENCE.split(said) if part.strip()]
 
 
-# the owner, 2026-09-27: "only the characters should be speaking to one another
+# Miro, 2026-09-27: "only the characters should be speaking to one another
 # -- don't be narrator." A lesson is therefore acted, not narrated: an
 # on-screen host talks to a shop owner who answers with his face and hands.
 HOST = "Nour"
@@ -447,7 +447,7 @@ def caption(j: dict[str, Any]) -> str:
 
 
 def script_text(j: dict[str, Any]) -> str:
-    """The draft row's body: what the owner reads in the dashboard."""
+    """The draft row's body: what Miro reads in the dashboard."""
     if is_business(j):
         return (f"CALENDAR: {j['job_id']} (business day {j['day']}, "
                 f"{language(j)})\nTITLE: {j['title']}\n\n"
@@ -661,7 +661,7 @@ async def _overflow(j: dict[str, Any]) -> tuple[int, str | None, bool]:
     made = [0]
     try:
         return await _overflow_parts(j, made)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         import logging
         said = higgsfield._masked(str(exc))[:200]
         logging.getLogger("atlas.content").warning(
@@ -789,7 +789,7 @@ async def _assemble(j: dict[str, Any]) -> ActionResult:
                                     ffmpeg.concat_list(trimmed))
             await ffmpeg.run(ffmpeg.concat_argv(listing, joined))
             total = await ffmpeg.duration(joined)
-            # the owner, 2026-09-27: captions on series only. A story reel is an
+            # Miro, 2026-09-27: captions on series only. A story reel is an
             # episode of its series; a business lesson has none -- only the
             # "Made with AI" tag, which every reel carries.
             burned = cues(parts, lengths) if is_series(j) else []
@@ -884,7 +884,7 @@ async def render_job(job_id: str) -> ActionResult:
         return ActionResult(True, (
             f"{j['job_id']}: {made} clip(s) banked, then {stopped}"
             + (f" -- refused {MAX_REFUSALS} times, so the day is BLOCKED until "
-               f"the owner looks at it" if blocked else "; one more try next tick")),
+               f"Miro looks at it" if blocked else "; one more try next tick")),
             evidence={"complete": False, "made": made, "left": left,
                       "blocked": blocked})
     if left:
@@ -947,7 +947,7 @@ async def rows(package_name: str = "stories") -> list[dict[str, Any]]:
 async def redo(job_id: str, why: str) -> None:
     """A finished reel that failed a quality check is made again, once: its
     banked clips are dropped (they may be the cause) and the day goes back
-    to the queue. A second failure is a card for the owner."""
+    to the queue. A second failure is a card for Miro."""
     await asyncio.to_thread(shutil.rmtree, clip_dir(job_id), True)
     await execute_sql(
         """UPDATE reel_calendar SET status = 'draft', media_id = NULL,

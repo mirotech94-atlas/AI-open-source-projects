@@ -59,7 +59,7 @@ async def _site(lead_id: int, slug: str = "joes-plumbing-7", deployed: str = "no
 async def test_found_emails_rank_same_domain_first_and_roll_back(pg):
     lead_id = await _lead()
     ids = await contacts.store(lead_id, [
-        contacts.Found("contact71@example.com", "https://joesplumbing.example/", False),
+        contacts.Found("joe.plumbing@gmail.com", "https://joesplumbing.example/", False),
         contacts.Found("office@joesplumbing.example", "https://joesplumbing.example/c",
                        True)])
     assert len(ids) == 2
@@ -76,7 +76,7 @@ async def test_the_form_writes_one_web_form_consent_with_its_evidence(pg):
     lead_id = await _lead()
     await _site(lead_id)
     sub = await callme.submit("joes-plumbing-7", name="Joe", phone="+17185550101",
-                              page_url="https://agency.example.com/preview/joes-plumbing-7/",
+                              page_url="https://agency.storefront.test/preview/joes-plumbing-7/",
                               ip="203.0.113.9", user_agent="UA/1",
                               version=callme.CURRENT_VERSION)
     assert sub.recorded and sub.listed
@@ -88,7 +88,7 @@ async def test_the_form_writes_one_web_form_consent_with_its_evidence(pg):
     assert "203.0.113.9" not in str(evidence)
     # A second submission reuses the live consent, and the message is kept once.
     again = await callme.submit("joes-plumbing-7", name="Joe", phone="+17185550101",
-                                page_url="https://agency.example.com/preview/joes-plumbing-7/",
+                                page_url="https://agency.storefront.test/preview/joes-plumbing-7/",
                                 ip="203.0.113.9", user_agent="UA/1",
                                 version=callme.CURRENT_VERSION)
     assert again.consent_id == sub.consent_id
@@ -108,7 +108,7 @@ async def test_a_suppressed_number_is_not_re_consented_by_the_form(pg):
     await _site(lead_id)
     await consent.opt_out(lead_id, phone="+17185550199", why="STOP")
     sub = await callme.submit("joes-plumbing-7", name="Joe", phone="+17185550199",
-                              page_url="https://agency.example.com/preview/joes-plumbing-7/",
+                              page_url="https://agency.storefront.test/preview/joes-plumbing-7/",
                               ip="203.0.113.9", user_agent="UA/1",
                               version=callme.CURRENT_VERSION)
     assert not sub.recorded and sub.why == "suppressed"

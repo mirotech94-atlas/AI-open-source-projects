@@ -82,7 +82,7 @@ CONSENT = {"id": 1, "lead_id": 7, "phone": "+17185550101", "scope": "sms"}
 
 # =============================================================== pricing
 
-def test_defaults_are_the_owners_prices(env):
+def test_defaults_are_miros_prices(env):
     assert (pricing.list_price(), pricing.floor_price()) == (500, 300)
     assert not hasattr(pricing, "first_sale_price")
 
@@ -185,7 +185,7 @@ def test_a_tampered_playbook_is_refused(monkeypatch, tmp_path):
     "Only 2 spots left this month!",
     "This offer ends today.",
     "Our clients saw 40% more calls.",
-    "Hi, this is the owner.",
+    "Hi, this is Miro.",
     "I'm a real person, promise.",
 ])
 def test_honesty_rules_refuse(text):
@@ -255,11 +255,11 @@ async def test_opt_out_revokes_and_suppresses(monkeypatch):
 
 
 def test_the_identification_is_the_first_line(env):
-    """the owner, 2026-10-01: a call opens with who is calling and from where,
+    """Miro, 2026-10-01: a call opens with who is calling and from where,
     not with "AI"; the truth is one question away (DISCLOSE_AGAIN). A text
     cannot be asked, so a text still says it."""
     line = consent.disclosure("Joe's Plumbing", calling=True)
-    assert line == ("Hi, this is the owner's assistant from ATLAS Agency, calling about "
+    assert line == ("Hi, this is Miro's assistant from ATLAS Agency, calling about "
                     "Joe's Plumbing.")
     assert "AI" not in line
     assert consent.discloses(f"{line}\nmore")
@@ -451,7 +451,7 @@ async def test_an_unverified_lead_gets_no_draft_and_the_alert_says_why(monkeypat
     assert "Run agency.verify on lead 7" in body
 
 
-async def test_alert_carries_what_owner_needs(monkeypatch):
+async def test_alert_carries_what_miro_needs(monkeypatch):
     monkeypatch.setattr(_store, "lead_links", _returns(
         {"domain": "joes.example", "slug": "joes", "webild_url": None, "mockup": None}))
     monkeypatch.setattr(_store, "consent_for_lead", _returns(None))
@@ -560,13 +560,13 @@ async def test_an_unknown_number_goes_back_to_reception(monkeypatch):
     assert not await leads.intake_sms("+12125550199", "hello?", sid="SM4")
 
 
-async def test_a_legal_threat_rings_owner_not_a_draft(monkeypatch):
+async def test_a_legal_threat_rings_miro_not_a_draft(monkeypatch):
     done = _intake_fakes(monkeypatch)
     rung = []
 
     async def emergency(business, kind, body):
         rung.append(kind)
-        return "rang the owner"
+        return "rang Miro"
     monkeypatch.setattr(escalate, "emergency", emergency)
     await leads.take_in(LEAD, "email", "<m1@x>", "joe@example.com",
                         "Stop spamming or my lawyer will be in touch")
@@ -588,7 +588,7 @@ async def test_stop_or_ill_sue_is_both_an_opt_out_and_an_emergency(monkeypatch):
 
     async def emergency(business, kind, body):
         rung.append(kind)
-        return "rang the owner"
+        return "rang Miro"
     monkeypatch.setattr(escalate, "emergency", emergency)
     got = await leads.take_in(LEAD, "email", "<m4@x>", "joe@example.com",
                               "Stop emailing me or I'll sue.")
@@ -598,7 +598,7 @@ async def test_stop_or_ill_sue_is_both_an_opt_out_and_an_emergency(monkeypatch):
 @pytest.mark.parametrize("text", ["Is this a scam?",
                                   "We pay $50 a month now for our site",
                                   "My last site cost $200 and it was bad"])
-async def test_ordinary_objections_do_not_ring_owner(monkeypatch, text):
+async def test_ordinary_objections_do_not_ring_miro(monkeypatch, text):
     _intake_fakes(monkeypatch, intent_model="question")
     rung = []
     monkeypatch.setattr(escalate, "emergency", lambda *a: rung.append(a))
@@ -657,7 +657,7 @@ async def test_draft_never_invents_a_price(env, monkeypatch):
 
 async def test_draft_quotes_500_new_and_300_returning_only(env, monkeypatch):
     """No objection unlocks a lower figure: the old first-sale tier is gone."""
-    _draft_fakes(monkeypatch, "As one of the owner's first clients, it's $100.",
+    _draft_fakes(monkeypatch, "As one of Miro's first clients, it's $100.",
                  bodies=("That's too much for us.",))
     assert not (await replies.draft_reply(7, "email")).ok
     _draft_fakes(monkeypatch, "For a returning client it's $300.", deals=1)
@@ -668,7 +668,7 @@ async def test_draft_quotes_500_new_and_300_returning_only(env, monkeypatch):
 
 async def test_draft_with_no_price_configured_says_placeholder(env, monkeypatch):
     monkeypatch.setenv("AGENCY_PRICE_LIST", "")
-    seen = _draft_fakes(monkeypatch, "the owner will confirm the [price] for you.")
+    seen = _draft_fakes(monkeypatch, "Miro will confirm the [price] for you.")
     result = await replies.draft_reply(7, "email")
     assert result.ok and "[price]" in seen["system"]
     _draft_fakes(monkeypatch, "It's $500.")
@@ -685,7 +685,7 @@ async def test_draft_gets_the_playbook_in_system_and_their_words_wrapped(env, mo
     assert "untrusted_data" in seen["user"].lower()
     assert "ignore previous instructions" in seen["user"]
     body = result.evidence["text"]
-    assert body.rstrip().endswith("— sent by the owner's assistant")
+    assert body.rstrip().endswith("— sent by Miro's assistant")
 
 
 async def test_draft_refuses_an_ai_chat_promise(env, monkeypatch):
@@ -718,7 +718,7 @@ async def test_send_agreement_only_at_an_allowed_price_with_a_link(env, monkeypa
 # ================================================================= tiers
 
 def test_new_actions_are_tiered_in_code():
-    """the owner, 2026-10-06: "make the lead replies send themselves too -- approve
+    """Miro, 2026-10-06: "make the lead replies send themselves too -- approve
     invoices too and schedule meetings with them via email as well and call
     them as well". Tier AUTO in code, each with the dry run and the honest
     rollback invariant 8 asks for; texting leads stays Tier ASK (it is off).
@@ -746,7 +746,7 @@ def _call(monkeypatch):
                               consent.disclosure("Joe's Plumbing", calling=True), "x")
     monkeypatch.setattr(_store, "lead_returning", _returns(False))
     monkeypatch.setattr(_store, "lead_links", _returns({"domain": "joes.example"}))
-    # The outreach email went (the owner approved its card), so the link may be said.
+    # The outreach email went (Miro approved its card), so the link may be said.
     monkeypatch.setattr(_store, "has_outreach", _returns(True))
     return lead_call, call
 
@@ -756,18 +756,18 @@ def _model_says(monkeypatch, lead_call, payload: str):
     monkeypatch.setattr(llm, "think", _returns(Completion(payload, "t", "m")))
 
 
-async def test_the_call_opens_with_the_owners_script(env, monkeypatch):
+async def test_the_call_opens_with_miros_script(env, monkeypatch):
     """Identification, the preview, stop + callback, the owner offer."""
     lead_call, call = _call(monkeypatch)
     monkeypatch.setattr(_store, "set_contact", _returns(None))
     monkeypatch.setattr(_store, "lead_links", _returns(
-        {"domain": "demo-site.vercel.example", "slug": "joes-plumbing-7",
+        {"domain": "atlas-agency-joes-plumbing-7.vercel.app", "slug": "joes-plumbing-7",
          "deployed": True}))
     from atlas.api import phone
     monkeypatch.setattr(phone, "clip", _returns(None))
     xml = await lead_call.opening(call, "CA1", "human", "atlas.example", "tok")
     first = call.turns[0][1]
-    assert first.startswith("Hi, this is the owner's assistant from ATLAS Agency, calling "
+    assert first.startswith("Hi, this is Miro's assistant from ATLAS Agency, calling "
                             "about Joe's Plumbing. We saw your website needed help, so "
                             "we built you a free preview at atlas-agency-joes-"
                             "plumbing-7 dot vercel dot app.")
@@ -783,8 +783,8 @@ async def test_the_call_opens_with_the_owners_script(env, monkeypatch):
     assert "<Say" in gather and "Joe" in gather
 
 
-async def test_the_call_names_no_link_before_owner_approved_the_email(env, monkeypatch):
-    """the owner, 2026-10-28: the preview reaches the owner first on the email
+async def test_the_call_names_no_link_before_miro_approved_the_email(env, monkeypatch):
+    """Miro, 2026-10-28: the preview reaches the owner first on the email
     card he approves; the AI call (Tier 1) never says the address before."""
     lead_call, call = _call(monkeypatch)
     monkeypatch.setattr(_store, "has_outreach", _returns(False))
@@ -795,7 +795,7 @@ async def test_the_call_names_no_link_before_owner_approved_the_email(env, monke
     monkeypatch.setattr(phone, "clip", _returns(None))
     await lead_call.opening(call, "CA1", "human", "atlas.example", "tok")
     first = call.turns[0][1]
-    assert "the owner will send you the link" in first and "mapfront" not in first
+    assert "Miro will send you the link" in first and "mapfront" not in first
 
 
 async def test_a_lead_with_no_website_hears_that(env, monkeypatch):
@@ -806,7 +806,7 @@ async def test_a_lead_with_no_website_hears_that(env, monkeypatch):
                     "joes dot example.")
     assert "saw your website" not in line
     nothing = lead_call.preview_line(call.lead, {"deployed": False})
-    assert "the owner will send you the link" in nothing and "dot" not in nothing
+    assert "Miro will send you the link" in nothing and "dot" not in nothing
 
 
 def _after_owner_ask(call):
@@ -859,11 +859,11 @@ async def test_no_number_to_bridge_to_is_the_call_back_path(env, monkeypatch):
     monkeypatch.setattr("atlas.kernel.background.spawn",
                         lambda coro, name: (alerts.append(name), coro.close()))
     text, done = await lead_call.reply(call, "CA1", "yes")
-    assert text == lead_call.OWNER_CALLBACK and done and not call.transferring
+    assert text == lead_call.MIRO_CALLBACK and done and not call.transferring
     assert call.outcome == "callback" and alerts == ["call-back alert"]
 
 
-async def test_owner_not_answering_tells_the_lead_records_it_and_alerts_slack(
+async def test_miro_not_answering_tells_the_lead_records_it_and_alerts_slack(
         env, monkeypatch):
     lead_call, call = _call(monkeypatch)
     call.transferring = True
@@ -882,7 +882,7 @@ async def test_owner_not_answering_tells_the_lead_records_it_and_alerts_slack(
                         lambda coro, name: asyncio.get_event_loop().create_task(coro))
     text, done = await lead_call.dial_result(call, "CA1", "no-answer")
     await asyncio.sleep(0)
-    assert text == lead_call.OWNER_CALLBACK and done and not call.transferring
+    assert text == lead_call.MIRO_CALLBACK and done and not call.transferring
     assert call.outcome == "callback"
     [(key, value)] = marked
     assert key == "callback_requested" and value["phone"] == "+17185550101"
@@ -890,7 +890,7 @@ async def test_owner_not_answering_tells_the_lead_records_it_and_alerts_slack(
     assert alert.title.startswith("CALL BACK: Joe's Plumbing +17185550101 agreed to talk — ")
     assert alert.topic == "agency" and alert.kind == "alert"
     assert alert.severity is Severity.HIGH
-    assert call.turns[-1] == ("atlas", lead_call.OWNER_CALLBACK)
+    assert call.turns[-1] == ("atlas", lead_call.MIRO_CALLBACK)
 
 
 async def test_a_completed_bridge_is_recorded_as_put_through(env, monkeypatch):
@@ -939,34 +939,34 @@ async def test_a_no_elsewhere_in_the_call_is_the_models_to_read(env, monkeypatch
 
 # ================================================= the brief and record_consent
 
-async def test_the_brief_carries_the_owners_opening_and_the_ask(env, monkeypatch, tmp_path):
-    """A lead with no consent: nothing dials them. the owner dials from the
+async def test_the_brief_carries_miros_opening_and_the_ask(env, monkeypatch, tmp_path):
+    """A lead with no consent: nothing dials them. Miro dials from the
     brief, in his own words, and asks the one line whose yes he records."""
     from atlas.modules.agency.audit import Audit
     monkeypatch.setenv("AGENCY_BRIEFS_DIR", str(tmp_path))
     monkeypatch.setattr(_store, "get_lead", _returns(LEAD))
     monkeypatch.setattr(_store, "lead_links", _returns(
-        {"domain": "demo-site.vercel.example", "slug": "joes-plumbing-7",
+        {"domain": "atlas-agency-joes-plumbing-7.vercel.app", "slug": "joes-plumbing-7",
          "deployed": True, "webild_url": None, "mockup": None}))
     monkeypatch.setattr(_store, "lead_returning", _returns(False))
     monkeypatch.setattr(_store, "consent_for_lead", _returns(None))
     monkeypatch.setattr(calls, "audit_lead", _returns(Audit(None, [], {}, 0)))
     text = await calls.brief_text(7)
-    assert ("Hi, is this Joe's Plumbing? This is the owner from ATLAS Agency. We looked "
+    assert ("Hi, is this Joe's Plumbing? This is Miro from ATLAS Agency. We looked "
             "at your website and thought it needed help, so we made you a free "
-            "preview to look at: https://demo-site.vercel.example/. Have you got "
+            "preview to look at: https://atlas-agency-joes-plumbing-7.vercel.app/. Have you got "
             "five minutes?") in text
     assert "## The ask\n" + calls.ASK_ASSISTANT in text
-    assert 'agency.record_consent(lead_id=7, how="said yes on the owner\'s call")' in text
-    assert "the owner dials this one himself" in text and "AI disclosure" not in text
+    assert 'agency.record_consent(lead_id=7, how="said yes on Miro\'s call")' in text
+    assert "Miro dials this one himself" in text and "AI disclosure" not in text
 
 
 def test_the_brief_opening_for_a_lead_with_no_site(env):
     line = calls.opening_line({"name": "Eco", "website": None},
-                              "https://agency.example.com/preview/eco-38/")
-    assert line == ("Hi, is this Eco? This is the owner from ATLAS Agency. We couldn't find "
+                              "https://agency.storefront.test/preview/eco-38/")
+    assert line == ("Hi, is this Eco? This is Miro from ATLAS Agency. We couldn't find "
                     "a website for your business, so we made you a free preview: "
-                    "https://agency.example.com/preview/eco-38/. Have you got five minutes?")
+                    "https://agency.storefront.test/preview/eco-38/. Have you got five minutes?")
     assert "looked at" not in line
     assert calls.opening_line({"name": "Eco", "website": None}).endswith(
         "so we made you a free preview. Have you got five minutes?")
@@ -974,8 +974,8 @@ def test_the_brief_opening_for_a_lead_with_no_site(env):
 
 def test_the_spoken_preview_url_reads_the_host_and_the_path():
     from atlas.api import lead_call
-    assert lead_call.spoken_url("https://agency.example.com/preview/joes-plumbing-7/") == (
-        "agency dot 18dn dot com slash preview slash joes-plumbing-7")
+    assert lead_call.spoken_url("https://agency.storefront.test/preview/joes-plumbing-7/") == (
+        "agency dot storefront dot test slash preview slash joes-plumbing-7")
     assert lead_call.spoken_url("https://joes-plumbing.com/") == "joes-plumbing dot com"
     assert lead_call.spoken_url("https://joes.com/menu/a.html") == (
         "joes dot com slash menu slash a dot html")
@@ -996,7 +996,7 @@ def _consent_world(monkeypatch, *, lead=LEAD, suppressed=False, live=None):
     return rows
 
 
-async def test_record_consent_is_the_owners_word_on_the_leads_listed_number(env, monkeypatch):
+async def test_record_consent_is_miros_word_on_the_leads_listed_number(env, monkeypatch):
     rows = _consent_world(monkeypatch)
     assert (await consent.record_consent_dry(7, "said yes on my call")).ok
     result = await consent.record_consent(7, "  said yes on my call,  Oct 1 ")
@@ -1005,7 +1005,7 @@ async def test_record_consent_is_the_owners_word_on_the_leads_listed_number(env,
     assert (row["phone"], row["scope"], row["channel"]) == ("+17185550101", "call",
                                                              "principal")
     assert row["quoted"] == "said yes on my call, Oct 1"
-    assert row["source_id"].startswith("owner:2026") and row["evidence"]["recorded_by"] == "the owner"
+    assert row["source_id"].startswith("miro:2026") and row["evidence"]["recorded_by"] == "Miro"
     assert result.evidence["consent_id"] == 31
 
 
@@ -1175,8 +1175,8 @@ async def test_a_refused_agreement_dry_run_puts_the_reason_first(env, monkeypatc
     assert text == lead_call.AGREED_LINE and "#99" in call.cards[0]
 
 
-async def test_asking_for_the_link_is_left_to_owner(env, monkeypatch):
-    """Texting leads is off (the owner, 2026-09-30): no text card, a note for the owner."""
+async def test_asking_for_the_link_is_left_to_miro(env, monkeypatch):
+    """Texting leads is off (Miro, 2026-09-30): no text card, a note for Miro."""
     lead_call, call = _call(monkeypatch)
     _model_says(monkeypatch, lead_call, '{"move": "send_link", "say": "sure"}')
     proposed = []
@@ -1191,7 +1191,7 @@ async def test_asking_for_the_link_is_left_to_owner(env, monkeypatch):
     assert any("link" in n for n in call.notes)
 
 
-async def test_a_refund_demand_on_a_call_rings_owner(env, monkeypatch):
+async def test_a_refund_demand_on_a_call_rings_miro(env, monkeypatch):
     lead_call, call = _call(monkeypatch)
     spawned = []
     monkeypatch.setattr(lead_call, "_spawn_emergency", lambda c, kind: spawned.append(kind))
@@ -1236,7 +1236,7 @@ def ring(monkeypatch):
 
 async def test_an_emergency_rings_once_then_batches(ring):
     placed, posted = ring
-    assert await escalate.emergency("Joe's", "a legal threat", "details") == "rang the owner"
+    assert await escalate.emergency("Joe's", "a legal threat", "details") == "rang Miro"
     second = await escalate.emergency("Ann's", "a complaint", "details")
     assert second.startswith("not rung") and len(placed) == 1
     assert len(posted) == 2 and all(p.topic == "agency" for p in posted)
@@ -1290,7 +1290,7 @@ def _gmail(monkeypatch, messages: dict, *, auth="dkim=pass header.d=example.com"
 
     from atlas.modules import mail
     from atlas.modules.mail import accounts
-    acct = accounts.Account("owner", "google", "owner@example.com", refresh_token="r")
+    acct = accounts.Account("myron", "google", "myron@gmail.com", refresh_token="r")
     monkeypatch.setattr(accounts, "all_accounts", lambda: [acct])
     monkeypatch.setenv("GOOGLE_CLIENT_ID", "id")
     monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
@@ -1332,14 +1332,14 @@ def _gmail_store(monkeypatch, outreach_for_reply):
 async def test_replies_are_read_from_the_forwarded_gmail(monkeypatch):
     queries = _gmail(monkeypatch, {
         "g1": ("Joe <joe@example.com>", "<ours@sender.example>",
-               "Call me at 718-555-0101, sounds good\n\nOn Mon, the owner wrote:\n> old"),
+               "Call me at 718-555-0101, sounds good\n\nOn Mon, Miro wrote:\n> old"),
         "g2": ("spam@else.example", "", "buy pills")})
 
     async def outreach_for_reply(ids, sender):
         return {"id": 3, "lead_id": 7} if "<ours@sender.example>" in ids else None
     taken = _gmail_store(monkeypatch, outreach_for_reply)
     got = await leads.sweep_inbox()
-    assert queries == ["(to:owner@example.com) newer_than:7d"]
+    assert queries == ["(to:agency.sender@gmail.com) newer_than:7d"]
     assert got == {"configured": True, "matched": 1, "new": 1}
     source_id, sender, body, grants = taken[0]
     assert source_id == "gmail:g1" and sender == "joe@example.com"
@@ -1365,11 +1365,11 @@ def test_academy_and_agency_mail_share_one_gmail_sender(monkeypatch):
     for name in ("AGENCY_SEND_FROM", "AGENCY_SMTP_USER", "AGENCY_SEND_DOMAIN",
                  "AGENCY_REPLY_ADDRESS"):
         monkeypatch.delenv(name, raising=False)
-    assert outreach._send_from_address() == "owner@example.com"
+    assert outreach._send_from_address() == "agency.sender@gmail.com"
     assert outreach.send_domain() == "gmail.com"
     monkeypatch.setenv("AGENCY_SMTP_USER", "resend")          # Resend's SMTP user
-    assert outreach._send_from_address() == "owner@example.com"
-    assert leads.reply_addresses() == ["owner@example.com"]
+    assert outreach._send_from_address() == "agency.sender@gmail.com"
+    assert leads.reply_addresses() == ["agency.sender@gmail.com"]
 
 
 # ========================================================= kernel drafting

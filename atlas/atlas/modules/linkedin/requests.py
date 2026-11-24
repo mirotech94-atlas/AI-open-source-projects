@@ -1,7 +1,7 @@
 """Requests and messages to the Guardian and FlyCheap LinkedIn pages: seen,
 tracked by what people want, and answered.
 
-the owner, 2026-10-07: "go to guardian and flycheap pages on linkedin and track
+Miro, 2026-10-07: "go to guardian and flycheap pages on linkedin and track
 the services that clients want and need and reply to them always based on
 what they want -- i have linkedin premium", and "make sure when requests
 come for either page you will see it and reply to it".
@@ -21,7 +21,7 @@ read-only discovery runs; nothing clicked):
 * Both company page inboxes show "No messages yet" / "New messages your page
   receives will show up here." FlyCheap has no service page, so it cannot
   receive service requests -- only page messages.
-* Every one of those pages also carries LinkedIn's messaging overlay (the owner's
+* Every one of those pages also carries LinkedIn's messaging overlay (Miro's
   PERSONAL inbox, with its own contenteditable). Nothing here reads or types
   into it.
 
@@ -46,7 +46,7 @@ thread with something in it, and the reply UI of either. So:
   has not been seen, and guessing a form that may cost credits is not
   acceptable. The send guard refuses them with "the proposal form has not
   been seen yet; draft attached", which becomes a Tier 2 card carrying the
-  draft for the owner to paste. The scan saves a screenshot and outline of the
+  draft for Miro to paste. The scan saves a screenshot and outline of the
   request page when it first sees one, so the next session can finish the
   flow. Anything that asks for credits or payment stops the run: money out
   is Tier 3.
@@ -61,11 +61,11 @@ location, the Q&A) -- never the list position, the age or the name, which
 LinkedIn hides ("--") until the request is unlocked. With Page Premium
 lapsed every pane showed an "Unlock this request ... Reactivate Premium"
 box and no message, reply or proposal control at all: such a request is
-recorded 'held' with `LOCKED_NOTE`, is never drafted or answered, and the owner
+recorded 'held' with `LOCKED_NOTE`, is never drafted or answered, and Miro
 gets one alert per request. The upsell is never clicked: buying Premium is
 money out, Tier 3.
 
-The narrow rule for unattended replies (the owner's words above, his date): ATLAS
+The narrow rule for unattended replies (Miro's words above, his date): ATLAS
 answers only someone who wrote to the page or requested its services first --
 never first contact -- once per inbound message, from a code-held fact sheet
 per page, past `content_refusal` and `_guard_send` in code. Both actions are
@@ -73,7 +73,7 @@ Tier AUTO with a dry run (the guard) and an honest rollback: a sent LinkedIn
 message cannot be unsent (deletion is Tier 3, permanently denied), so the
 rollback suppresses the thread and records it, like `agency.send_reply`.
 `LINKEDIN_REPLY_AUTOSEND=off` holds every send for a card. The reply signs
-off as the page's assistant with "the owner sees this thread", and
+off as the page's assistant with "Miro sees this thread", and
 `kernel.linkedin_replies` posts a Slack receipt of every send so that it is
 true.
 """
@@ -159,10 +159,10 @@ class Surface:
 
 def surfaces() -> tuple[Surface, ...]:
     """What the scan reads, in order. Only FlyCheap and Guardian: those are
-    the pages the owner named. The provider page is member-level; Guardian's is
+    the pages Miro named. The provider page is member-level; Guardian's is
     the only service page that exists (FlyCheap has none), so its items are
     Guardian's."""
-    from . import PAGES
+    from . import COMPANY_PAGES as PAGES
     every = (
         Surface("guardian-requests", "guardian", "service_request",
                 GUARDIAN_REQUESTS_URL, "requests_tab"),
@@ -174,7 +174,7 @@ def surfaces() -> tuple[Surface, ...]:
                 inbox_url("flycheap"), "inbox"),
     )
     # Only pages ATLAS still uses (LINKEDIN_PAGES_ACTIVE; FlyCheap retired by
-    # the owner 2026-10-09): a retired page's inbox is never opened.
+    # Miro 2026-10-09): a retired page's inbox is never opened.
     return tuple(s for s in every if s.page in PAGES)
 
 
@@ -252,7 +252,7 @@ def _request_href(href: str) -> bool:
 
 
 SELF_PREFIX = re.compile(r"^(?:you|you sent|sent)\s*[:·-]\s*")
-OUR_SIGNOFF = "(owner sees this thread)"
+OUR_SIGNOFF = "(miro sees this thread)"
 MATCH_HEAD = 32
 
 
@@ -610,7 +610,7 @@ async def _exec(sql: str, *args: Any) -> Any:
 
 async def upsert_seen(item: Item, label: str, label_by: str, budget: str,
                       timeline: str) -> dict[str, Any] | None:
-    """Record an inbound item. A thread that was answered, or held for the owner,
+    """Record an inbound item. A thread that was answered, or held for Miro,
     and has new words from them since goes back to 'new' (one reply per
     inbound; the held card's draft answered the older message). A suppressed
     one stays suppressed.
@@ -693,7 +693,7 @@ def newly_locked(item: Item, row: dict[str, Any] | None) -> bool:
 
 
 async def mark_answered_on_page(item: Item) -> None:
-    """The thread's latest line is the page's own (the owner answered it himself,
+    """The thread's latest line is the page's own (Miro answered it himself,
     or ATLAS did): it is answered. Its current line becomes the inbound the
     answer covers, so the requester's next message reopens it. Suppressed
     stays suppressed."""
@@ -736,13 +736,13 @@ async def get_request(request_id: int) -> dict[str, Any] | None:
 
 async def awaiting_reply(limit: int) -> list[dict[str, Any]]:
     """New or drafted requests whose latest inbound is under three days old.
-    Older ones are the owner's: the check has been red about them for days."""
+    Older ones are Miro's: the check has been red about them for days."""
     rows = await _all(
         """SELECT id, page, source FROM linkedin_requests
            WHERE status IN ('new', 'drafted')
              AND last_inbound_at > now() - interval '3 days'
            ORDER BY first_seen LIMIT $1""", limit)
-    from . import PAGES
+    from . import COMPANY_PAGES as PAGES
     # A retired page's rows stay exactly as they are; nothing is drafted or sent.
     return [dict(r) for r in rows if str(r["page"]) in PAGES]
 
@@ -826,7 +826,7 @@ async def open_requests() -> list[dict[str, Any]]:
                   last_inbound_at, note
            FROM linkedin_requests WHERE status IN ('new', 'drafted', 'held')
            ORDER BY last_inbound_at""")
-    from . import PAGES
+    from . import COMPANY_PAGES as PAGES
     # A retired page's open rows are kept but never turn the check red:
     # nothing would answer them, so nobody could clear it.
     return [dict(r) for r in rows if str(r["page"]) in PAGES]
@@ -900,7 +900,7 @@ class Facts:
 FACTS: dict[str, Facts] = {
     "guardian": Facts(
         name="Guardian", sign="Guardian's assistant",
-        link="https://vault.example", host="vault.example", contact="support@vault.example",
+        link="https://guarder.example.com", host="guarder.example.com", contact="support@guarder.example.com",
         what=("Guardian watches the network a business is responsible for: devices, "
               "servers, sites and certificates. For routine failures it performs the "
               "repair instead of sending another alert: services restarted, log "
@@ -909,20 +909,20 @@ FACTS: dict[str, Facts] = {
               "every site on one page, and what it fixed is already written down "
               "when the client asks."),
         services=("Network Support", "Computer Networking", "Cybersecurity"),
-        role=("the owner (the author) founded and owns Guardian. Never call him a "
+        role=("Miro (Myron Mekhael) founded and owns Guardian. Never call him a "
               "co-founder of it."),
-        extra=("Availability: remote, or in person in your city. "
-               "Pricing: on request only. Never state or estimate a price; say the owner "
+        extra=("Availability: remote, or in person in Staten Island, New York. "
+               "Pricing: on request only. Never state or estimate a price; say Miro "
                "will follow up on pricing in this thread."),
     ),
     "flycheap": Facts(
         name="FlyCheap", sign="FlyCheap's assistant",
-        link="https://flycheap.example", host="flycheap.example", contact="owner@flycheap.example",
+        link="https://flycheap.example.com", host="flycheap.example.com", contact="owner@example.com",
         what=("FlyCheap is a flight-deal site. It tracks fares on the routes people "
               "follow and sends an email alert when a price drops, with a link to "
               "book the deal."),
         services=("Fare alerts", "Flight deals"),
-        role=("the owner (the author) is co-founder and developer of FlyCheap. Never "
+        role=("Miro (Myron Mekhael) is co-founder and developer of FlyCheap. Never "
               "call him its owner or founder."),
         extra=("Never state a fare, a price or a saving. Never promise that a fare "
                "will drop or that a seat is available."),
@@ -931,7 +931,7 @@ FACTS: dict[str, Facts] = {
 
 
 def signoff(page_key: str) -> str:
-    return f"\n\n— {FACTS[page_key].sign} (the owner sees this thread)"
+    return f"\n\n— {FACTS[page_key].sign} (Miro sees this thread)"
 
 
 MAX_CHARS = int(os.getenv("LINKEDIN_REPLY_MAX_CHARS", "600"))
@@ -944,21 +944,21 @@ SERVICE_FORM_UNSEEN = ("the proposal form has not been seen yet; draft attached 
 SYSTEM = (
     "You write a short reply from {name}'s assistant on LinkedIn to someone who "
     "wrote to the {name} page or requested its services. Answer what they asked "
-    "for, using only the facts below; if the facts do not cover it, say the owner will "
+    "for, using only the facts below; if the facts do not cover it, say Miro will "
     "answer here. Two to four short sentences, plain text, no greeting line with "
     "a title, no sign-off (one is added).\n"
     "Hard rules: no numbers or digits at all; no prices, fees, discounts or "
     "anything free; no dates, days, times or delivery promises; no guarantees or "
     "promises; no link other than {link}; no email address other than {contact}; "
-    "never claim to be the owner or a person -- you are the page's assistant and the owner "
-    "reads this thread. For a quote, a date or a decision, say the owner will follow "
+    "never claim to be Miro or a person -- you are the page's assistant and Miro "
+    "reads this thread. For a quote, a date or a decision, say Miro will follow "
     "up here.\n\n" + EMAIL_STYLE + "\n\n"
     "Facts about {name}:\n{what}\nServices: {services}.\n{role}\n{extra}"
 )
 
 
 def autosend_enabled() -> bool:
-    """`LINKEDIN_REPLY_AUTOSEND`: on by default (the owner, 2026-10-07); 'off'
+    """`LINKEDIN_REPLY_AUTOSEND`: on by default (Miro, 2026-10-07); 'off'
     holds every reply for a card."""
     return os.getenv("LINKEDIN_REPLY_AUTOSEND", "on").strip().lower() not in (
         "0", "off", "false", "no")
@@ -1009,7 +1009,7 @@ def content_refusal(text: str, page_key: str) -> str | None:
     if not body.endswith(signoff(page_key)):
         return "it does not end with the assistant sign-off"
     # Only the contact address is lifted out before the scans. The link is
-    # judged by the host rule below, so "https://vault.example/anything" is
+    # judged by the host rule below, so "https://guarder.example.com/anything" is
     # still caught for its path.
     bare = body.replace(facts.contact, " ")
     for addr in _EMAIL.findall(bare):
@@ -1021,9 +1021,9 @@ def content_refusal(text: str, page_key: str) -> str | None:
             return f"it carries a link other than the page's own ({m.group(0)!r})"
     if (hit := _DIGIT.search(bare)) is not None:
         return (f"it contains a figure ({hit.group(0)!r}); prices, dates, times and "
-                "counts are the owner's to give")
+                "counts are Miro's to give")
     if (hit := _MONEY.search(bare)) is not None:
-        return f"it talks money ({hit.group(0)!r}); prices are the owner's to give"
+        return f"it talks money ({hit.group(0)!r}); prices are Miro's to give"
     if (hit := _FREE.search(bare)) is not None:
         return f"it offers something free or discounted ({hit.group(0)!r})"
     if (hit := _WHEN.search(bare)) is not None:
@@ -1087,7 +1087,7 @@ async def _draftable(request_id: int) -> tuple[dict[str, Any] | None, str]:
         return None, f"no such request: {request_id}"
     if request["page"] not in FACTS:
         return None, f"no fact sheet for page {request['page']!r}"
-    from . import PAGES
+    from . import COMPANY_PAGES as PAGES
     if request["page"] not in PAGES:
         return None, (f"the {request['page']} page is not active "
                       "(LINKEDIN_PAGES_ACTIVE); nothing is drafted for it")
@@ -1133,7 +1133,7 @@ async def _guard_send(draft_id: int) -> tuple[dict[str, Any] | None, str | None]
     if request is None:
         return None, f"no such request: {draft['request_id']}"
     page_key = str(request["page"])
-    from . import PAGES
+    from . import COMPANY_PAGES as PAGES
     if page_key not in PAGES:
         return None, (f"the {page_key} page is not active (LINKEDIN_PAGES_ACTIVE); "
                       "nothing is sent from its inbox")
@@ -1253,7 +1253,7 @@ async def send_request_reply_rollback(token: str) -> ActionResult:
 # ------------------------------------------------------------- the browser
 
 # The page script: rows inside <main>, never inside the messaging overlay
-# (the owner's personal inbox) or the global nav. Text and hrefs only.
+# (Miro's personal inbox) or the global nav. Text and hrefs only.
 ROWS_JS = r"""
 () => {
   const main = document.querySelector('main') || document.body;
@@ -1391,7 +1391,7 @@ async def save_outline(page: Any, label: str) -> str | None:
         path.write_text(json.dumps({"url": page.url.split("?")[0], "outline": outline},
                                    indent=1, ensure_ascii=False))
         return str(path)
-    except Exception:                                    # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -1454,7 +1454,7 @@ async def scan() -> Scan:
                                if surface.kind != "inbox" else None)
                 except (HardStop, SignedOut):
                     raise
-                except Exception as exc:                 # noqa: BLE001
+                except Exception as exc:  # noqa: BLE001
                     shot = await snapshot(page, f"requests-{surface.label}")
                     result.shots += [s for s in (shot,) if s]
                     result.reads.append(Read(surface, False, reason=(
@@ -1485,7 +1485,7 @@ async def scan() -> Scan:
                             result.shots += [s for s in (shot, outline) if s]
                         except HardStop:
                             raise
-                        except Exception:                # noqa: BLE001
+                        except Exception:  # noqa: BLE001
                             log.info("could not open request %s", item.url)
                 await pause(page, 2500, 6000)
             if any_read:
@@ -1509,7 +1509,7 @@ async def scan() -> Scan:
             key = (item.page, item.source, item.external_key)
             if item.from_us:
                 if key in known:
-                    # The page has the last word (the owner answered, or ATLAS
+                    # The page has the last word (Miro answered, or ATLAS
                     # did): answered, until they write again.
                     await mark_answered_on_page(item)
                 continue
@@ -1646,7 +1646,7 @@ async def _prior_scan() -> dict[str, Any]:
     from ...kernel.state import last_evidence
     try:
         return await last_evidence("linkedin", "requests")
-    except Exception:                                    # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return {}
 
 
@@ -1749,7 +1749,7 @@ async def requests_check() -> Observation:
             return Observation(check, Health.UNKNOWN, detail=(
                 f"the LinkedIn browser stayed busy for {LOCK_WAIT_S:.0f}s (a sweep "
                 "or a publish); read next cycle"))
-        except Exception as exc:                         # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             return Observation(check, Health.UNKNOWN, detail=(
                 f"the scan could not run: {type(exc).__name__}: {str(exc)[:200]}"))
         service = [r for r in result.reads if r.surface.source == "service_request"]
@@ -1770,12 +1770,12 @@ async def requests_check() -> Observation:
     try:
         rows = await open_requests()
         summary = await demand()
-    except Exception as exc:                             # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return Observation(check, Health.UNKNOWN, detail=(
             f"the requests table could not be read: {type(exc).__name__}"))
     now = datetime.now(UTC)
     # Unanswered = nobody has it: still new or drafted after STALE_HOURS. A
-    # held one is with the owner already (a card or an alert carries it), so it
+    # held one is with Miro already (a card or an alert carries it), so it
     # is counted and named, not paged on again every half hour.
     stale = [r for r in rows if r["status"] in ("new", "drafted")
              and (now - r["last_inbound_at"]).total_seconds() > STALE_HOURS * 3600]

@@ -1,6 +1,6 @@
 """Draw ATLAS's face: a particle bust, in pure Python, committed as SVG and PNG.
 
-the owner's ask: "when he calls me the contact photo should show ATLAS or the
+Miro's ask: "when he calls me the contact photo should show ATLAS or the
 humanoid." A phone shows a contact photo, so ATLAS needs one — and a picture
 that arrives as a binary blob nobody can regenerate is a dependency, not an
 asset. This file is the source; `ui/public/atlas-avatar.svg` and

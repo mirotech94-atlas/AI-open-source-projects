@@ -9,7 +9,7 @@ only code that acts is still `kernel/executor.py::execute`, reached from
 How a card is decided from here (CLAUDE.md invariants 2, 3, 4, 5, 6):
 
   * When a Tier 2 card is raised and WhatsApp is configured, one message goes
-    to the owner (`mmt.notify_card`, a Tier 1 action: the only WhatsApp write).
+    to the owner (`tutorco.notify_card`, a Tier 1 action: the only WhatsApp write).
     Every eligible Tier 2 card carries a one-time code and two
     tappable buttons (Approve / Decline, a Twilio quick-reply template whose
     button payload is `approve:<card>:<code>`); if the template is unavailable
@@ -23,7 +23,7 @@ How a card is decided from here (CLAUDE.md invariants 2, 3, 4, 5, 6):
   * The inbound text is untrusted and is parsed by one strict regex, never by a
     model. A bare "yes", "ok" or "approve" without a code never decides.
   * Tier 3 / PERMANENT_DENY, money out, DNS, deletion, credential revocation and
-    self-modification are refused here whatever a card says. the owner, 2026-11-11:
+    self-modification are refused here whatever a card says. Miro, 2026-11-11:
     "all actions are permissible", so every action whose tier is Tier 2 in the
     code registry (read live, never from a list kept here) can be decided from
     WhatsApp, new Tier 2 actions included. What stays refused: Tier 1, Tier 3
@@ -107,15 +107,15 @@ def portal_only(action: str, spec: object | None = None) -> bool:
             or getattr(spec, "moves_money_or_credentials", False) is True)
 
 
-# The MMT page only, and a named post: without `entry_id` the run publishes "the
+# The TUTORCO page only, and a named post: without `entry_id` the run publishes "the
 # next approved entry", which may not be the post the card showed.
-def _mmt_named_post(p: dict) -> bool:
-    return (p.get("page") == "mmt"
+def _tutorco_named_post(p: dict) -> bool:
+    return (p.get("page") == "tutorco"
             and str(p.get("entry_id") or "").strip().lower() not in ("", "none", "null"))
 
 
 PARAM_CHECKS: dict[str, Callable[[dict], bool]] = {
-    "linkedin.publish_post": _mmt_named_post,
+    "linkedin.publish_post": _tutorco_named_post,
 }
 
 
@@ -195,10 +195,10 @@ EFFECTS: dict[str, Callable[[dict], str]] = {
         "Approving: the clip is posted to the clips YouTube channel as a Short."),
     "clips.publish_promo": lambda p: (
         "Approving: the promo goes LIVE on the clips accounts."),
-    "church.schedule_youtube_shorts": lambda p: (
+    "community.schedule_youtube_shorts": lambda p: (
         "Approving: the Shorts upload as PRIVATE, each made public on its date."),
-    "church.schedule_facebook_reels": lambda p: (
-        "Approving: the reels are scheduled to go LIVE on the church Facebook page."),
+    "community.schedule_facebook_reels": lambda p: (
+        "Approving: the reels are scheduled to go LIVE on the community Facebook page."),
     "seo.publish_blog_post": lambda p: (
         "Approving: the post is written into the site build (not live yet)."),
     "seo.gsc_add_site": lambda p: (
@@ -229,7 +229,7 @@ def effect_line(action: str, params: dict | None, spec: object | None = None) ->
             line = " ".join(render(dict(params or {})).split())
             if line:
                 return line
-        except Exception:                                   # noqa: BLE001, S110
+        except Exception:  # noqa: BLE001, S110
             pass
     summary = " ".join(str(getattr(spec, "summary", "") or "").split())[:160]
     return f"Approving runs: {summary or action}."
@@ -321,7 +321,7 @@ def looks_like_a_verdict(text: str) -> bool:
 def enabled() -> bool:
     """WhatsApp cards are on only when the owner number and the Twilio sender
     are all set. Off, every function here that touches a card does nothing."""
-    from ..modules.mmt import notify
+    from ..modules.tutorco import notify
     number, _ = notify.owner_number()
     return number is not None and notify.sender_problem() is None
 
@@ -371,7 +371,7 @@ def eligibility(action: str, params: dict | None, *, dry_ok: bool | None = None,
             return False, NOT_FROM_WHATSAPP
         # The message shows `board.what_of(...)` cut at CARD_WHAT_MAX. A decision is
         # not made on words the owner cannot read in full: longer is portal-only.
-        from ..modules.mmt.notify import CARD_WHAT_MAX
+        from ..modules.tutorco.notify import CARD_WHAT_MAX
         from .board import what_of
         what = " ".join(what_of(action, dict(params or {}), spec).split())
         if len(what) > CARD_WHAT_MAX:
@@ -389,7 +389,7 @@ def eligibility(action: str, params: dict | None, *, dry_ok: bool | None = None,
             shown += " " + strip_code_shapes(effect_line(action, params, spec))
         if not params_shown(action, params, spec, shown):
             return False, NOT_FROM_WHATSAPP
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return False, NOT_FROM_WHATSAPP
     return True, ""
 
@@ -420,7 +420,7 @@ async def retire(pid: int) -> None:
         await execute_sql(
             "UPDATE whatsapp_codes SET status='retired' "
             "WHERE proposal_id=$1 AND status='open'", pid)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("card #%s: code not retired (%s)", pid, type(exc).__name__)
 
 
@@ -466,7 +466,7 @@ async def tell_slack(title: str, body: str) -> None:
         from .contracts import Severity
         await notify(Outbound(title=title, body=body, severity=Severity.NORMAL,
                               topic="decisions", kind="alert"))
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("slack notice not sent: %s", type(exc).__name__)
 
 
@@ -482,7 +482,7 @@ async def handle_reply(verdict: str, code: str, sid: str,
     now = now or datetime.now(UTC)
     try:
         until = await locked_until(now)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("lockout unreadable: %s", type(exc).__name__)
         return CANT_CHECK
     if until is not None:
@@ -501,7 +501,7 @@ async def handle_reply(verdict: str, code: str, sid: str,
             return (f"{WRONG_CODE} Too many wrong codes: WhatsApp approvals "
                     f"are off for {int(LOCK_FOR.total_seconds() // 60)} minutes."
                     if locked else WRONG_CODE)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("whatsapp decision not read: %s", type(exc).__name__)
         return CANT_CHECK
     return await _decide_row(row, verdict, sid, now)
@@ -547,7 +547,7 @@ async def _decide_row(row: Any, verdict: str, sid: str, now: datetime) -> str:
                                WHERE p.id = whatsapp_codes.proposal_id
                                  AND p.status='pending' AND p.expires_at > $2)
                RETURNING proposal_id""", int(row["id"]), now, sid)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("whatsapp decision not read: %s", type(exc).__name__)
         return CANT_CHECK
     if claimed is None:
@@ -556,7 +556,7 @@ async def _decide_row(row: Any, verdict: str, sid: str, now: datetime) -> str:
     from .approvals import decide
     try:
         result = await decide(pid, verdict, via=f"{CHANNEL}:{sid}")
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("whatsapp decision failed: %s", type(exc).__name__)
         await audit("whatsapp.decision_failed", str(pid), {
             "verdict": verdict, "channel": CHANNEL, "sid": sid})
@@ -578,7 +578,7 @@ async def _closed_reason(pid: int) -> str:
     try:
         row = await fetch_one(
             "SELECT status, expires_at FROM proposals WHERE id=$1", pid)
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return RETIRED_CODE
     if row is not None and row["status"] == "expired":
         return EXPIRED_CARD
@@ -613,7 +613,7 @@ async def handle_bare(now: datetime | None = None) -> str:
         if until is not None:
             return _locked_reply(until)
         cards = await waiting_cards(now)
-    except Exception as exc:                                # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("waiting cards unreadable: %s", type(exc).__name__)
         return CANT_CHECK
     if not cards:
@@ -634,7 +634,7 @@ async def _why_not(code_id: int, now: datetime) -> str:
     try:
         row = await fetch_one(
             "SELECT status, expires_at FROM whatsapp_codes WHERE id=$1", code_id)
-    except Exception:                                       # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return CANT_CHECK
     if row is not None and row["status"] == "used":
         return USED_CODE

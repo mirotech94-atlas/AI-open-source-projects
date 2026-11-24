@@ -1,12 +1,12 @@
 """The one place an outbound WhatsApp message gets its category tag.
 
-Every message to the owner starts with what it is about ("🏠 Home cameras · ..."), so he
+Every message to Miro starts with what it is about ("🏠 Home sensors · ..."), so he
 knows at a glance which part of ATLAS is talking. The tag is assigned in code, by
 sender or kind (or, for a chat answer, by the agent or module that answered); no model
 ever picks it. A message with no known topic is "💬 General", never untagged.
 
-Three places call `ensure` so nothing can go out bare: `mmt.notify.send_whatsapp`,
-`mmt.notify.send_whatsapp_card` and the chat reply `api.whatsapp.twiml`. Senders tag
+Three places call `ensure` so nothing can go out bare: `tutorco.notify.send_whatsapp`,
+`tutorco.notify.send_whatsapp_card` and the chat reply `api.whatsapp.twiml`. Senders tag
 their own text too (so the dry run and the stored outbox row show it), and `ensure`
 never tags twice. Only wording changes here: no fact, tier or refusal is touched.
 """
@@ -22,11 +22,11 @@ CUT_NOTE = " … (more on the portal)"
 
 
 class Category(str, Enum):
-    HOME_CAMERAS = "home_cameras"
-    MMT = "mmt"
+    HOME_SENSORS = "home_sensors"
+    TUTORCO = "tutorco"
     AGENCY = "agency"
     ACADEMY = "academy"
-    CHURCH = "church"
+    COMMUNITY = "community"
     MAIL = "mail"
     MONEY = "money"
     SYSTEM = "system"
@@ -36,11 +36,11 @@ class Category(str, Enum):
 
 
 TAGS: dict[Category, str] = {
-    Category.HOME_CAMERAS: "\U0001F3E0 Home cameras",
-    Category.MMT: "\U0001F4DA MMT",
+    Category.HOME_SENSORS: "\U0001F3E0 Home sensors",
+    Category.TUTORCO: "\U0001F4DA TUTORCO",
     Category.AGENCY: "\U0001F3E2 Agency",
     Category.ACADEMY: "\U0001F393 Academy",
-    Category.CHURCH: "⛪ ECC Church",
+    Category.COMMUNITY: "📣 AMSM Community",
     Category.MAIL: "\U0001F4E7 Mail",
     Category.MONEY: "\U0001F4B3 Money/Stripe",
     Category.SYSTEM: "\U0001F6E0️ System health",
@@ -52,14 +52,14 @@ _PREFIXES = tuple(t + SEP for t in TAGS.values())
 
 # Roster agent key -> category. Fixed in code; an unknown agent is General.
 _AGENT: dict[str, Category] = {
-    "mmt": Category.MMT, "qa": Category.SYSTEM, "content": Category.CONTENT,
+    "tutorco": Category.TUTORCO, "qa": Category.SYSTEM, "content": Category.CONTENT,
     "seo": Category.CONTENT, "sales": Category.AGENCY, "bizops": Category.AGENCY,
     "sites": Category.AGENCY, "research": Category.GENERAL,
 }
 # Module name -> category. A module not listed is a system matter.
 _MODULE: dict[str, Category] = {
-    "cameras": Category.HOME_CAMERAS, "mmt": Category.MMT, "sagemmt": Category.MMT,
-    "church": Category.CHURCH, "academy": Category.ACADEMY, "course": Category.ACADEMY,
+    "sensors": Category.HOME_SENSORS, "tutorco": Category.TUTORCO, "tutorseo": Category.TUTORCO,
+    "community": Category.COMMUNITY, "academy": Category.ACADEMY, "course": Category.ACADEMY,
     "school": Category.ACADEMY, "mail": Category.MAIL, "stripe_billing": Category.MONEY,
     "youtube": Category.CONTENT, "ytlearn": Category.CONTENT,
     "content": Category.CONTENT, "agency": Category.AGENCY, "sales": Category.AGENCY,
@@ -69,13 +69,13 @@ _MODULE: dict[str, Category] = {
 # answer when no roster agent owned it.
 _TOPICS: tuple[tuple[re.Pattern[str], Category], ...] = tuple(
     (re.compile(p, re.IGNORECASE), c) for p, c in (
-        (r"\b(cameras?|cctv|doorbell|driveway|porch|vehicle|clips?)\b",
-         Category.HOME_CAMERAS),
+        (r"\b(sensors?|cctv|doorbell|driveway|porch|vehicle|clips?)\b",
+         Category.HOME_SENSORS),
         (r"\b(e-?mails?|inbox|gmail|unread)\b", Category.MAIL),
         (r"\b(stripe|payouts?|revenue|invoices?|refunds?|balance)\b", Category.MONEY),
-        (r"\b(church|ecc|sermon|service|congregation)\b", Category.CHURCH),
+        (r"\b(community|amsm|sermon|service|congregation)\b", Category.COMMUNITY),
         (r"\b(academy|course|students?|enrol\w*)\b", Category.ACADEMY),
-        (r"\b(mmt|tutorsite|tutors?)\b", Category.MMT),
+        (r"\b(tutorco|exampletutor|tutors?)\b", Category.TUTORCO),
         (r"\b(youtube|video|channel|subscribers?|views)\b", Category.CONTENT),
         (r"\b(approvals?|cards?)\b", Category.APPROVALS),
     ))

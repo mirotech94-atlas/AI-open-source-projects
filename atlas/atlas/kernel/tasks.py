@@ -1,7 +1,7 @@
-"""Tracked requests: everything the owner asks ATLAS to do, in one table he can
+"""Tracked requests: everything Miro asks ATLAS to do, in one table he can
 check on.
 
-the owner, 2026-10-06 (Q&A on "automate everything"): hand ATLAS an urgent job
+Miro, 2026-10-06 (Q&A on "automate everything"): hand ATLAS an urgent job
 from Slack or the phone, then "just check on him". Both surfaces already
 route a request -- to an action (kernel/intent), a mission
 (kernel/missions), a development handoff (kernel/improve), a coding card
@@ -39,7 +39,7 @@ TEXT_MAX = 600
 OUTCOME_MAX = 600
 RECENT = 8
 OPEN, DONE, HELD, FAILED = "open", "done", "held", "failed"
-# A PRIVATE run (mail, calendar, notes, cameras) is never written here: the
+# A PRIVATE run (mail, calendar, notes, sensors) is never written here: the
 # rows below are read back into prompts that can reach a cloud model and into
 # other channels. Its question and reply become this placeholder, flagged.
 PRIVATE_OUTCOME = "(private request: its words and answer are not kept)"
@@ -60,7 +60,7 @@ async def note_private() -> None:
     if cell.get("id"):
         try:
             await execute_sql(_SCRUB, int(cell["id"]), PRIVATE_OUTCOME)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("private request not scrubbed: %s", type(exc).__name__)
 STATUS_QUESTION = re.compile(
     r"\b(status of|any update|where are (we|you) (with|on)|progress on|"
@@ -82,7 +82,7 @@ async def open(text: str, *, source: str, who: str = "", thread: str = "") -> in
                RETURNING id""", source[:40], (who or "")[:80], (thread or "")[:80], asked)
         cell["id"] = int(row["id"]) if row else None
         return cell["id"]
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("request not recorded: %s", type(exc).__name__)
         return None
 
@@ -104,7 +104,7 @@ async def close(task_id: int | None, *, route: str, ok: bool | None, outcome: st
                 """UPDATE tasks SET route = $2, status = $3, outcome = $4, text = $5,
                           cards = '[]', private = true, done_at = now() WHERE id = $1""",
                 int(task_id), "private", status, PRIVATE_OUTCOME, "(private request)")
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             log.warning("request #%s not closed: %s", task_id, type(exc).__name__)
         return
     try:
@@ -114,7 +114,7 @@ async def close(task_id: int | None, *, route: str, ok: bool | None, outcome: st
             int(task_id), route[:40], status,
             " ".join((outcome or "").split())[:OUTCOME_MAX],
             json.dumps([int(c) for c in cards]))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("request #%s not closed: %s", task_id, type(exc).__name__)
 
 
@@ -126,7 +126,7 @@ async def recent(limit: int = RECENT, *, like: str = "") -> list[dict[str, Any]]
         rows = await fetch_all(
             """SELECT id, at, source, text, route, status, outcome, cards, done_at
                  FROM tasks WHERE NOT private ORDER BY id DESC LIMIT $1""", max(limit * 4, 40))
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         log.warning("requests unreadable: %s", type(exc).__name__)
         return []
     out = [dict(r) for r in rows]
@@ -174,7 +174,7 @@ async def context_text(limit: int = RECENT) -> str:
     if not rows:
         return "TRACKED REQUESTS: none recorded yet."
     now = datetime.now(UTC)
-    return ("TRACKED REQUESTS (what the owner asked for, newest first; read at "
+    return ("TRACKED REQUESTS (what Miro asked for, newest first; read at "
             f"{now:%H:%M} UTC):\n" + "\n".join(line(r, now) for r in rows))
 
 

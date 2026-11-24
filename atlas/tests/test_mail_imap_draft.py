@@ -1,4 +1,4 @@
-"""`mail.draft_reply` for a mailbox read over IMAP (owner).
+"""`mail.draft_reply` for a mailbox read over IMAP (example-owner).
 
 The draft is an IMAP APPEND to that account's Drafts folder with the \\Draft
 flag. It is only ever a draft: no SMTP, no send. Rollback deletes that draft
@@ -91,22 +91,22 @@ def _env(monkeypatch):
     FakeIMAP.headers = HEADERS
     _STORE.clear()
     monkeypatch.setattr(imap_draft.imaplib, "IMAP4_SSL", FakeIMAP)
-    monkeypatch.setenv("MAIL_ACCOUNTS", "exampleco")
-    monkeypatch.setenv("MAIL_EXAMPLECO_KIND", "imap")
-    monkeypatch.setenv("MAIL_EXAMPLECO_EMAIL", "owner@example.com")
-    monkeypatch.setenv("MAIL_EXAMPLECO_HOST", "imap.gmail.com")
-    monkeypatch.delenv("MAIL_EXAMPLECO_PASSWORD", raising=False)
+    monkeypatch.setenv("MAIL_ACCOUNTS", "mirotech")
+    monkeypatch.setenv("MAIL_MIROTECH_KIND", "imap")
+    monkeypatch.setenv("MAIL_MIROTECH_EMAIL", "owner@example.com")
+    monkeypatch.setenv("MAIL_MIROTECH_HOST", "imap.gmail.com")
+    monkeypatch.delenv("MAIL_MIROTECH_PASSWORD", raising=False)
     monkeypatch.setenv("GMAIL_APP_PASSWORD", PASSWORD)
 
 
-TID = f"imap:exampleco:{ORIG_ID}"
-BODY = "Hi Ann, thanks, the quote is attached.\nBest, the owner"
+TID = f"imap:mirotech:{ORIG_ID}"
+BODY = "Hi Ann, thanks, the quote is attached.\nBest, Miro"
 
 
 def test_thread_id_parsing():
-    assert imap_draft.parse_thread_id(TID) == ("exampleco", ORIG_ID)
+    assert imap_draft.parse_thread_id(TID) == ("mirotech", ORIG_ID)
     assert imap_draft.parse_thread_id("18c0ffee") is None
-    assert imap_draft.parse_thread_id("imap:exampleco:") is None
+    assert imap_draft.parse_thread_id("imap:mirotech:") is None
 
 
 async def test_appends_a_draft_to_gmail_drafts_with_reply_headers():
@@ -129,7 +129,7 @@ async def test_appends_a_draft_to_gmail_drafts_with_reply_headers():
     # INBOX is only ever opened read-only
     assert all(c[2] is True for c in conn.log
                if c[0] == "select" and c[1] == "INBOX")
-    assert result.rollback_token == f"imap:exampleco:{msg['Message-ID']}"
+    assert result.rollback_token == f"imap:mirotech:{msg['Message-ID']}"
     assert result.evidence["draft_id"] == result.rollback_token
     assert result.evidence["thread_id"] == TID
 
@@ -148,8 +148,8 @@ async def test_original_not_found_appends_nothing():
     assert not any(c[0] == "append" for c in FakeIMAP.instances[0].log)
 
 
-@pytest.mark.parametrize("bad", ['imap:exampleco:<a"b@x>', "imap:exampleco:<a\r\nb@x>",
-                                 "imap:exampleco:<a\\b@x>"])
+@pytest.mark.parametrize("bad", ['imap:mirotech:<a"b@x>', "imap:mirotech:<a\r\nb@x>",
+                                 "imap:mirotech:<a\\b@x>"])
 async def test_injection_in_message_id_is_refused(bad):
     result = await mail.draft_reply(bad, BODY)
     assert not result.ok
@@ -158,7 +158,7 @@ async def test_injection_in_message_id_is_refused(bad):
 
 async def test_unknown_or_non_imap_account_is_refused(monkeypatch):
     assert not (await mail.draft_reply(f"imap:nobody:{ORIG_ID}", BODY)).ok
-    monkeypatch.setenv("MAIL_EXAMPLECO_KIND", "google")
+    monkeypatch.setenv("MAIL_MIROTECH_KIND", "google")
     assert not (await mail.draft_reply(TID, BODY)).ok
     assert FakeIMAP.instances == []
 
@@ -171,7 +171,7 @@ async def test_no_password_anywhere_refuses(monkeypatch):
 
 
 async def test_own_password_beats_the_shared_one(monkeypatch):
-    monkeypatch.setenv("MAIL_EXAMPLECO_PASSWORD", "own-pass")
+    monkeypatch.setenv("MAIL_MIROTECH_PASSWORD", "own-pass")
     await mail.draft_reply(TID, BODY)
     assert ("login", "owner@example.com", "own-pass") in FakeIMAP.instances[0].log
 
@@ -211,10 +211,10 @@ async def test_rollback_deletes_only_that_draft_in_drafts():
 
 
 async def test_rollback_with_a_bad_token_or_missing_draft_fails_closed():
-    assert not (await mail.delete_draft("imap:exampleco:")).ok
-    assert not (await mail.delete_draft('imap:exampleco:<a"b@x>')).ok
+    assert not (await mail.delete_draft("imap:mirotech:")).ok
+    assert not (await mail.delete_draft('imap:mirotech:<a"b@x>')).ok
     assert FakeIMAP.instances == []
-    undone = await mail.delete_draft("imap:exampleco:<gone@x>")   # Drafts empty
+    undone = await mail.delete_draft("imap:mirotech:<gone@x>")   # Drafts empty
     assert not undone.ok
     assert not any(c[0] == "expunge" for c in FakeIMAP.instances[0].log)
 

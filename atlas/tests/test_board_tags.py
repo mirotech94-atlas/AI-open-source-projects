@@ -1,6 +1,6 @@
 """Agent and client tags on agency cards (kernel/board.py).
 
-the owner, 2026-10-27: every card from the six agency agents is headed
+Miro, 2026-10-27: every card from the six agency agents is headed
 `[Agent · Client] #id · what`, so he knows which agent asked and for whom.
 Every other card keeps `[Area] #id · what`. The renderer is pure.
 """
@@ -15,7 +15,7 @@ from atlas.kernel import board, state
     ("sales.send_email", "Sales"),
     ("academy.send_comment_reply", "Content"),
     ("youtube.publish_short", "Content"),
-    ("church.publish_post", "Content"),
+    ("community.publish_post", "Content"),
     ("reddit.submit_post", "Content"),
     ("bizops.send_invoice", "BizOps"),
     ("projects.close", "BizOps"),
@@ -43,7 +43,7 @@ def test_a_client_naming_param_beats_the_default():
 
 @pytest.mark.parametrize(("action", "client"), [
     ("academy.x", "Atlas Academy"), ("youtube.x", "Atlas Academy"),
-    ("church.x", "ECC"), ("reddit.x", "Atlas Agency"), ("sales.x", "Mapfront"),
+    ("community.x", "AMSM"), ("reddit.x", "Atlas Agency"), ("sales.x", "Mapfront"),
 ])
 def test_namespace_defaults(action, client):
     assert board.client_of(action, None, None) == client

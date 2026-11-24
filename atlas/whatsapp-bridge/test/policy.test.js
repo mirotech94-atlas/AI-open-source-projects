@@ -3,12 +3,12 @@ const test = require('node:test');
 const assert = require('node:assert');
 const p = require('../policy');
 
-const OWNER = '13412033334';
+const OWNER = '+1 555 010 0142';
 const mk = (cap = 3, t = { v: 1e9 }) => ({ owner: OWNER, limiter: new p.Limiter(cap, () => t.v), accountNumber: OWNER });
 
 test('owner number only, any formatting', () => {
-  assert.ok(p.checkSend({ to: '+1 555 010 0100', text: 'hi' }, mk()).ok);
-  const bad = p.checkSend({ to: '+1 555 010 0100', text: 'hi' }, mk());
+  assert.ok(p.checkSend({ to: '+1 555 010 0142', text: 'hi' }, mk()).ok);
+  const bad = p.checkSend({ to: '+15550000001', text: 'hi' }, mk());
   assert.equal(bad.status, 403);
 });
 test('no owner configured refuses', () => {

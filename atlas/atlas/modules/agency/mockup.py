@@ -30,7 +30,7 @@ the same `pagegate`, and `agency.build_site` copies it rather than re-rendering.
 
 Nothing here calls GetLayers at run time. `AGENCY_GETLAYERS_LICENCE_OK`
 still gates it -- the templates are GetLayers-derived client work, and
-it is the switch the owner uses to pause site builds -- read fresh every call.
+it is the switch Miro uses to pause site builds -- read fresh every call.
 
 The three GetLayers tool names and `_find_tools` stay: `build.py`'s
 one-product store page still uses them.
@@ -137,7 +137,7 @@ async def _screenshot(html_path: Path) -> tuple[str | None, str]:
                 await page.screenshot(path=str(png_path))
             finally:
                 await browser.close()
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return None, f"no screenshot: {exc}"
     return str(png_path), ""
 
@@ -151,7 +151,7 @@ async def write_copy(client: ClientData, family: str) -> tuple[SiteCopy, list[st
     try:
         completion = await think(Need.DRAFT, sitetemplate.COPY_SYSTEM,
                                  [Message("user", facts)], max_tokens=1200)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         return (sitetemplate.default_copy(client, family),
                 [f"copy model unavailable ({type(exc).__name__}); code defaults used"])
     return sitetemplate.parse_copy(completion.text, client, family)

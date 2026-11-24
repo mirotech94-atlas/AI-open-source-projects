@@ -1,6 +1,6 @@
 """The offline pack: ATLAS's offline lines in its own Fish voice, or a 503.
 
-the owner wants ATLAS to speak only in his chosen Fish Audio voice, including
+Miro wants ATLAS to speak only in his chosen Fish Audio voice, including
 offline. ATLAS Menu and Air Glass keep this pack and play it when ATLAS is
 out of reach. The pack is never made in another voice: with no voice id or
 no way to render a missing line, the answer is 503 with the reason.

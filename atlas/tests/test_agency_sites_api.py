@@ -45,21 +45,21 @@ def registry(monkeypatch, tmp_path):
     monkeypatch.setattr(demo_host, "PUBLISH_ROOT", tmp_path / "demos")
     monkeypatch.setattr(hosting, "PUBLISH_ROOT", tmp_path / "sites")
     monkeypatch.delenv("AGENCY_DEPLOY_HOST", raising=False)
-    release = tmp_path / "demos" / ".releases" / "examplehair" / "20261027T090000000000Z"
+    release = tmp_path / "demos" / ".releases" / "examplesalon" / "20261027T090000000000Z"
     release.mkdir(parents=True)
-    (tmp_path / "demos" / "examplehair").symlink_to(
-        ".releases/examplehair/20261027T090000000000Z")
+    (tmp_path / "demos" / "examplesalon").symlink_to(
+        ".releases/examplesalon/20261027T090000000000Z")
 
     async def rows():
         return [
-            {"slug": "examplehair", "kind": "demo", "domain": "client-site.example.com",
+            {"slug": "examplesalon", "kind": "demo", "domain": "examplesalon.storefront.test",
              "deployed_at": READ, "source": "royal@176c272", "managed": True},
             {"slug": "joes-7", "kind": "built", "domain": None, "deployed_at": None,
              "source": None, "managed": True},
         ]
 
     async def health(slug):
-        if slug == "examplehair":
+        if slug == "examplesalon":
             return {"at": READ, "health": "ok", "detail": "up, 80 days left"}
         return None
 
@@ -69,7 +69,7 @@ def registry(monkeypatch, tmp_path):
 
 def test_the_reads_need_a_session(client):
     assert client.get("/api/agency/sites").status_code == 401
-    assert client.get("/api/agency/sites/examplehair/events").status_code == 401
+    assert client.get("/api/agency/sites/examplesalon/events").status_code == 401
 
 
 def test_the_sites_list(client, registry):
@@ -78,8 +78,8 @@ def test_the_sites_list(client, registry):
     assert datetime.fromisoformat(body["read_at"]).tzinfo is not None
     assert body["check_every_s"] == 1800
     by = {s["slug"]: s for s in body["sites"]}
-    royal = by["examplehair"]
-    assert royal["kind"] == "demo" and royal["hostname"] == "client-site.example.com"
+    royal = by["examplesalon"]
+    assert royal["kind"] == "demo" and royal["hostname"] == "examplesalon.storefront.test"
     assert royal["live_release"] == "20261027T090000000000Z"
     assert royal["health"] == "ok" and royal["health_read_at"] == READ.isoformat()
     joe = by["joes-7"]
@@ -116,8 +116,8 @@ def test_the_events(client, monkeypatch):
                  "release": None, "detail": "audit refused"}]
     monkeypatch.setattr(_store, "site_events", events)
     _login(client)
-    body = client.get("/api/agency/sites/examplehair/events").json()
-    assert seen == [("examplehair", 50)]
+    body = client.get("/api/agency/sites/examplesalon/events").json()
+    assert seen == [("examplesalon", 50)]
     assert [e["event"] for e in body["events"]] == ["deployed", "deploy_failed"]
     assert body["events"][0]["at"] == READ.isoformat() and body["read_at"]
 
@@ -133,7 +133,7 @@ def test_unreadable_events_are_a_503(client, monkeypatch):
         raise ConnectionRefusedError("db down")
     monkeypatch.setattr(_store, "site_events", down)
     _login(client)
-    assert client.get("/api/agency/sites/examplehair/events").status_code == 503
+    assert client.get("/api/agency/sites/examplesalon/events").status_code == 503
 
 
 # -------------------------------------------------------------------- brief
@@ -148,7 +148,7 @@ async def test_the_brief_carries_each_site_with_its_read_time(registry):
     await sites_view.refresh()
     brief = AgencyModule().brief()
     assert brief.startswith("Agency: prospecting")
-    line = next(x for x in brief.splitlines() if "client-site.example.com" in x)
+    line = next(x for x in brief.splitlines() if "examplesalon.storefront.test" in x)
     assert "ok" in line and "09:00" in line and "20261027T090000000000Z" in line
     joe = next(x for x in brief.splitlines() if "joes-7" in x)
     assert "UNKNOWN" in joe

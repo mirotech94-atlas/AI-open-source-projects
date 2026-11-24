@@ -1,7 +1,7 @@
 """One approved AI-stories reel, out to three places on one card.
 
 `content.publish_reel` is Tier 2 (ASK): a post under the AI-stories
-account's name is the owner's decision each time. One card covers all three legs,
+account's name is Miro's decision each time. One card covers all three legs,
 in this order, each independent of the others:
 
   1. **Instagram, the stories account** -- through `instagram.publish` with
@@ -135,7 +135,7 @@ async def _instagram(caption: str, url: str, *, parent: str,
     try:
         result = await instagram.publish(caption, url, kind="reel",
                                          account="stories", content_kind="ai_story")
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         said = instagram._why(exc)
         await legs.finish(IG_LEG, parent, False, said, media_id=media_id)
         return REFUSED, said, None
@@ -200,7 +200,7 @@ async def _lane(media_id: int) -> str:
     from . import hashtags
     try:
         lane, _, _ = await hashtags.media_lane(media_id)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return "stories"
     return lane if lane in ("football", "course", "business") else "stories"
 
@@ -288,7 +288,7 @@ async def _already_posted(media_id: int) -> str | None:
         prior = await fetch_one(
             """SELECT platform, post_ref FROM reel_posts
                 WHERE media_id = $1 ORDER BY at LIMIT 1""", media_id)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return (f"whether reel {media_id} already posted could not be read "
                 f"({explain(exc)}), so it was not posted")
@@ -333,7 +333,7 @@ async def publish_reel(media_id: int, caption: str, *,
 
 # ----------------------------------------------------------------- automatic
 #
-# the owner, 2026-09-27: "make sure everything is fully automated so I don't
+# Miro, 2026-09-27: "make sure everything is fully automated so I don't
 # have to manually do anything." Until then every reel waited for his tap
 # (content.publish_reel, Tier ASK). He asked for that gate to go, for the
 # AI-stories account's reels only, so `content.autopublish_reel` is Tier
@@ -353,7 +353,7 @@ async def publish_reel(media_id: int, caption: str, *,
 # Anything that fails a check is not skipped: it becomes the ordinary card,
 # with the reason first. The rollback deletes the posts (`unpublish_reel`).
 
-AUTO_PER_DAY_DEFAULT = 3  # the owner, 2026-09-29: two stories + one soccer reel
+AUTO_PER_DAY_DEFAULT = 3  # Miro, 2026-09-29: two stories + one soccer reel
 MIN_SECONDS = 5.0
 # A reel held back only because a platform's hourly allowance is spent: it
 # is not a quality failure, so `kernel.reels.post_or_card` waits instead of
@@ -396,12 +396,12 @@ async def posted_today() -> int:
 
 async def _caption_refusal(media_id: int, caption: str) -> str | None:
     """The stories' caption rule, or the football lane's: a football reel's
-    caption names the real players its numbers are about (the owner, 2026-09-29),
+    caption names the real players its numbers are about (Miro, 2026-09-29),
     and still no brand, trademark or American football."""
     from . import football, guard
     try:
         stats = await football.is_football_media(media_id)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         stats = False               # unreadable: the stricter stories rule
     if stats:
         return guard.football_caption_refusal(caption)
@@ -426,7 +426,7 @@ async def autopublish_check(media_id: int, caption: str) -> str | None:
         return why
     try:
         done = await posted_today()
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return "today's posts could not be counted, so nothing posts itself"
     if done >= autopublish_per_day():
         return (f"today's {autopublish_per_day()} automatic post(s) are done "
@@ -504,7 +504,7 @@ async def _record_posts(media_id: int, posted: dict[str, str]) -> None:
             await execute_sql(
                 """INSERT INTO reel_posts (media_id, format_id, platform, post_ref)
                    VALUES ($1, $2, $3, $4)""", media_id, format_id, platform, ref)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         logging.getLogger("atlas.content").warning(
             "reel %s posted but not recorded for measuring: %s", media_id, exc)
 
@@ -527,7 +527,7 @@ async def unpublish_reel(token: str) -> ActionResult:
         try:
             result = await instagram.unpublish(str(posted["instagram"]))
             ok, said = result.ok, result.detail
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             ok, said = False, instagram._why(exc)
         complete &= ok
         lines.append(_line("instagram", "deleted" if ok else "not deleted", said))

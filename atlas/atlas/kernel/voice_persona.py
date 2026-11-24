@@ -1,15 +1,15 @@
 """The house voice for every email or message reply ATLAS's model drafts.
 
-the owner, 2026-10-12: "yes wire the email prompt in". `EMAIL_PERSONA` is his
+Miro, 2026-10-12: "yes wire the email prompt in". `EMAIL_PERSONA` is his
 prompt, kept here verbatim and once. What the drafting prompts carry is
 `EMAIL_STYLE`: the same tone rules and banned list, WITHOUT the persona's
-identity line ("You are the owner"), its sign-off ("Cheers, the owner") or its word
+identity line ("You are Myron"), its sign-off ("Cheers, Myron") or its word
 count. Those three stay with each module's code, because:
 
   * every auto-sent draft is written by an AI, and the rules in code say
     so: support's `SIGNATURE` and `_HUMAN` guard, `playbook.honesty_refusal`,
-    the agency `TRAILER` ("sent by the owner's assistant"), LinkedIn's
-    `signoff()`; the owner's earlier ask to have the AI introduce itself as him
+    the agency `TRAILER` ("sent by Miro's assistant"), LinkedIn's
+    `signoff()`; Miro's earlier ask to have the AI introduce itself as him
     was declined (memory mapfront-agency), and the persona's own last rule
     is "never pretend to be someone else";
   * sign-offs and greetings are written by code, not the model, in every
@@ -31,7 +31,7 @@ from collections.abc import Awaitable, Callable, Iterable, Sequence
 from typing import Any
 
 EMAIL_PERSONA = """\
-You are the owner from ATLAS Academy / Mapfront, writing a short email to a real person. \
+You are Myron from ATLAS Academy / Mapfront, writing a short email to a real person. \
 Sound like a friendly human who cares, not a company or a bot.
 - Open by reacting to what they actually said, in one line, with warmth.
 - Plain words, short paragraphs, 60-150 words. Contractions. No buzzwords.
@@ -40,7 +40,7 @@ humour only if the topic allows it; never on complaints, refunds, security or mo
 - Answer the question first. Then at most two clear questions or one next step.
 - Only state facts, prices and dates that come from the provided sources or the \
 conversation. If unsure, say you'll check; never guess.
-- Sign off simply: "Cheers, the owner" or "Talk soon, the owner". Never "Best regards, The Team".
+- Sign off simply: "Cheers, Myron" or "Talk soon, Myron". Never "Best regards, The Team".
 - Never pretend to be someone else, and never promise what isn't in writing.
 Banned: "I hope this email finds you well", "delve", "seamlessly", "leverage", \
 "unlock", "game-changer", "don't hesitate to reach out", "per my last email".
@@ -129,7 +129,7 @@ def _sentences(text: str) -> list[str]:
 
 def strip_banned(text: str) -> str:
     """`text` without the lines or sentences that break the voice, for a
-    draft no rule holds (personal message drafts the owner reviews himself)."""
+    draft no rule holds (personal message drafts Miro reviews himself)."""
     kept_lines = []
     for line in _fold(text).splitlines():
         if _TEAM_SIGNOFF.search(line) or re.fullmatch(r"\s*the\s+team\s*", line,
@@ -166,6 +166,6 @@ async def reask(think: Callable[..., Awaitable[Any]], need: Any, system: str,
              Message("user", correction(problems, keep_format=keep_format))]
     try:
         completion = await think(need, system, turns, max_tokens=max_tokens)
-    except Exception:                                   # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return ""
     return (getattr(completion, "text", "") or "").strip()

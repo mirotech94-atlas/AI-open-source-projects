@@ -1,4 +1,4 @@
-"""The "Reply today" card: which emails need the owner's answer today.
+"""The "Reply today" card: which emails need Miro's answer today.
 
 One card a day, after BRIEF_HOUR, raised as a Signal by `MailModule.signals()`
 (no action: it tells him, it does nothing). Read-only against every mailbox.
@@ -172,7 +172,7 @@ async def read(accounts=None, now: datetime | None = None) -> ReplyToday:
             continue
         try:
             items = await _items(account)
-        except Exception as exc:                        # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             result.unreadable.append(f"{who}: {redact(exc)}"[:160])
             continue
         for item in items:
@@ -208,7 +208,7 @@ async def read(accounts=None, now: datetime | None = None) -> ReplyToday:
             try:
                 verdict = await _classify_capped(key, subject, sender,
                                                  item.get("snippet", ""), now, budget)
-            except Exception as exc:                    # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
                 verdict = {"unclassified": redact(exc)}
             where = sort_person(verdict, age_h)
             if where != "reply":
@@ -306,7 +306,7 @@ async def _run(window: str, now: datetime) -> None:
     from ...kernel import occurrence
     try:
         card = await read(now=now)
-    except Exception as exc:                            # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001
         from .._http import redact
         log.warning("reply-today card failed, retried later: %s", redact(exc))
         await occurrence.release("mail.reply_today", window)

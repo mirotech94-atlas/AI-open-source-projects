@@ -181,7 +181,7 @@ async def test_our_own_stores_get_no_client_email(fake):
 async def test_keyword_gaps_compare_search_results_with_the_store_and_titles(
         fake, monkeypatch):
     fake.gsc = [{"sites": [{**gsc_site(10, 14.0, NOW), "slug": "academy-store",
-                            "domain": "agency.example.com",
+                            "domain": "agency.storefront.test",
                             "top_queries": [{"query": "n8n tutorial", "clicks": 3,
                                              "impressions": 100, "ctr": 0.03,
                                              "position": 14.0}],
@@ -197,7 +197,7 @@ async def test_keyword_gaps_compare_search_results_with_the_store_and_titles(
         hits = [{"url": "https://www.youtube.com/watch?v=x", "title": "t", "snippet": "s"},
                 {"url": "https://other.example/", "title": "t", "snippet": "s"}]
         if q == "n8n tutorial":
-            hits.insert(0, {"url": "https://agency.example.com/n8n", "title": "t",
+            hits.insert(0, {"url": "https://agency.storefront.test/n8n", "title": "t",
                             "snippet": "s"})
         return hits, None
 

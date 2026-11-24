@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps the Mac's tunnel to the Spark's clone-voice TTS up, so ATLAS speaks in
+  its NotebookLM-host voice (ATLAS_VOICE_CLONE_URL=http://host.docker.internal:18010).
+
+  `spark-tts.sh up` is idempotent: it does nothing while 127.0.0.1:18010 is
+  bound, and otherwise opens `ssh -f -N -L 18010:127.0.0.1:8010 spark`
+  (Mac loopback only; OrbStack forwards host.docker.internal to it). The
+  Spark side is the atlas-tts.service user unit (loopback, bearer key).
+  Down, /api/voice/speak falls back to Fish Audio and the voice status reads
+  UNKNOWN.
+
+  Install (replace __HOME__):
+    sed "s#__HOME__#$HOME#g" bootstrap/mac/com.atlas.spark-tts-tunnel.plist \
+      > ~/Library/LaunchAgents/com.atlas.spark-tts-tunnel.plist
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.atlas.spark-tts-tunnel.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.atlas.spark-tts-tunnel</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__HOME__/.local/bin/spark-tts.sh</string>
+        <string>up</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>RunAtLoad</key><true/>
+    <key>StartInterval</key><integer>60</integer>
+    <key>StandardOutPath</key><string>__HOME__/Library/Logs/atlas-spark-tts-tunnel.log</string>
+    <key>StandardErrorPath</key><string>__HOME__/Library/Logs/atlas-spark-tts-tunnel.log</string>
+</dict>
+</plist>

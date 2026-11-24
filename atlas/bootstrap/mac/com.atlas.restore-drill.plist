@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Weekly restore drill on the Mac (the systemd timer in ops/restore-drill never
+     runs here). Restores the newest local dump into a throwaway, network-less
+     postgres, then writes data/app/backups/restore_drill.json, which the backups
+     check reads. Sunday 08:00 local; a Mac asleep then runs it on wake. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key><string>com.atlas.restore-drill</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__WT__/ops/restore_drill.sh</string>
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key><string>__HOME__/.orbstack/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>BACKUP_DIR</key><string>__HOME__/atlas-state/backups</string>
+        <key>DOCKER_DATA_ROOT</key><string>__HOME__/atlas-state/backups</string>
+        <key>DRILL_RESULT_FILE</key><string>__WT__/data/app/backups/restore_drill.json</string>
+    </dict>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key><integer>0</integer>
+        <key>Hour</key><integer>8</integer>
+        <key>Minute</key><integer>0</integer>
+    </dict>
+    <key>LowPriorityIO</key><true/>
+    <key>Nice</key><integer>10</integer>
+    <key>StandardOutPath</key><string>__HOME__/Library/Logs/atlas-restore-drill.log</string>
+    <key>StandardErrorPath</key><string>__HOME__/Library/Logs/atlas-restore-drill.log</string>
+</dict>
+</plist>
