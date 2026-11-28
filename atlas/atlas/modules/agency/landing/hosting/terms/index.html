@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms of service | ATLAS Agency</title>
+<meta name="description" content="Terms of service for ATLAS Agency hosting. Draft for legal review.">
+<meta name="theme-color" content="#0a0d14">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="/mapfront-icon.png">
+<link rel="preload" href="/fonts/archivo-var.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face { font-family: "Archivo"; src: url("/fonts/archivo-var.woff2") format("woff2-variations"), url("/fonts/archivo-var.woff2") format("woff2"); font-weight: 100 900; font-stretch: 62% 125%; font-style: normal; font-display: swap; }
+:root { color-scheme: dark; --blue:#5b8cff; --blue-light:#8fb0ff; --on-accent:#070a12; --band:#0f1420; --field:#0a0d14; --surface:#131a28; --raised:#1b2334; --ink:#eef2fa; --muted:#a3adc2; --line:rgba(143,176,255,.16); --line-strong:rgba(143,176,255,.34); --focus:#8fb0ff; --shadow:0 1px 1px rgba(0,0,0,.4),0 24px 56px -20px rgba(0,0,0,.75); --font:"Archivo",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; --mono:ui-monospace,"JetBrains Mono",SFMono-Regular,Menlo,Consolas,monospace; --wrap:75rem; --gutter:clamp(1rem,4vw,2.5rem); }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; scroll-padding-top:1.5rem; }
+body { margin:0; background:var(--field); color:var(--ink); font-family:var(--font); font-size:1.125rem; line-height:1.6; text-rendering:optimizeLegibility; }
+h1,h2,h3,p,ul,ol,figure,pre { margin:0; } ul,ol { padding:0; list-style:none; }
+a { color:inherit; text-underline-offset:.2em; transition:color 150ms; }
+:focus-visible { outline:3px solid var(--focus); outline-offset:3px; border-radius:2px; }
+.skip { position:absolute; left:1rem; top:-4rem; background:var(--surface); color:var(--ink); padding:.75rem 1rem; z-index:5; } .skip:focus { top:1rem; }
+.wrap { width:100%; max-width:var(--wrap); margin:0 auto; padding:0 var(--gutter); }
+.pin { width:1.1em; height:1.1em; flex:none; }
+h1,h2 { font-stretch:76%; letter-spacing:-.01em; }
+h1 { font-size:clamp(2.75rem,6.4vw,5rem); font-weight:750; line-height:1; }
+h2 { font-size:clamp(1.9rem,3.6vw,2.75rem); font-weight:700; font-stretch:80%; line-height:1.08; }
+h3 { font-size:1.25rem; font-weight:650; line-height:1.25; }
+.small { font-size:.9375rem; font-weight:600; line-height:1.4; } .muted { color:var(--muted); }
+.btn { display:inline-flex; align-items:center; justify-content:center; min-height:3rem; padding:.7rem 1.4rem; border:2px solid var(--blue); border-radius:6px; background:var(--blue); color:var(--on-accent); font:inherit; font-size:1rem; font-weight:700; text-decoration:none; transition:background-color 150ms,border-color 150ms; }
+.btn:hover { background:var(--blue-light); border-color:var(--blue-light); }
+.btn-line { background:transparent; color:var(--ink); border-color:var(--line-strong); } .btn-line:hover { background:var(--surface); color:var(--ink); border-color:var(--blue-light); }
+.top { padding:1.25rem 0; } .top .wrap { display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+.brand { display:inline-flex; align-items:center; gap:.5rem; min-height:2.75rem; text-decoration:none; }
+.wordmark { font-weight:900; font-size:1.5rem; letter-spacing:-.035em; text-transform:lowercase; }
+.top nav { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:0 1.25rem; }
+.top nav a:not(.btn) { font-size:1rem; font-weight:600; text-decoration:none; padding:.75rem 0; } .top nav a:not(.btn):hover { text-decoration:underline; }
+.top nav a[aria-current] { text-decoration:underline; text-decoration-color:var(--blue); text-decoration-thickness:2px; }
+.top .btn { min-height:2.75rem; padding:.5rem 1.1rem; }
+.hero { padding:4rem 0 3.5rem; border-bottom:1px solid var(--line); background:radial-gradient(60rem 22rem at 85% -10%,rgba(91,140,255,.14),transparent 70%); }
+.tagline { display:flex; align-items:center; gap:.5rem; margin-bottom:1.5rem; color:var(--muted); }
+.lede { max-width:40rem; margin-top:1.5rem; color:var(--muted); }
+.chips { display:flex; flex-wrap:wrap; gap:.75rem; margin-top:2.25rem; }
+.chips a { display:inline-flex; align-items:center; min-height:2.75rem; padding:.5rem 1rem; border:1.5px solid var(--line-strong); border-radius:999px; background:var(--surface); font-size:.9375rem; font-weight:600; text-decoration:none; }
+.chips a:hover { border-color:var(--blue-light); background:var(--raised); }
+.badge { display:inline-flex; align-items:center; gap:.5rem; margin-top:1.75rem; padding:.45rem .9rem; border:1.5px dashed var(--line-strong); border-radius:6px; background:var(--surface); font-size:.9375rem; font-weight:700; }
+.badge i { width:.55rem; height:.55rem; border-radius:50%; background:var(--blue-light); }
+.band { padding:6rem 0; } .alt { background:var(--surface); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.head { margin-bottom:3rem; max-width:44rem; } .head p { margin-top:1rem; color:var(--muted); }
+.steps { display:grid; grid-template-columns:repeat(4,1fr); gap:0 2rem; border-top:2px solid var(--line-strong); }
+.steps li { position:relative; padding-top:2.5rem; } .steps p { margin-top:.5rem; color:var(--muted); font-size:1rem; }
+.bullet { position:absolute; top:-1.25rem; left:0; width:2.5rem; height:2.5rem; border-radius:50%; display:grid; place-items:center; background:var(--blue); color:var(--on-accent); font-weight:800; }
+.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem; }
+.card { padding:1.5rem; border:1px solid var(--line); border-radius:10px; background:var(--field); box-shadow:var(--shadow); }
+.alt .card { background:var(--field); } .card p { margin-top:.5rem; color:var(--muted); font-size:1rem; }
+.card.warn { border-color:var(--line-strong); }
+.split { display:grid; grid-template-columns:repeat(12,1fr); column-gap:1.5rem; row-gap:2.5rem; }
+.split .l { grid-column:1 / span 5; } .split .r { grid-column:7 / span 6; }
+.code { border:1px solid var(--line-strong); border-radius:10px; background:#070a12; box-shadow:var(--shadow); overflow:hidden; }
+.code .bar2 { display:flex; gap:.35rem; padding:.65rem .9rem; background:var(--raised); border-bottom:1px solid var(--line); }
+.code .bar2 span { width:.55rem; height:.55rem; border-radius:50%; background:rgba(143,176,255,.35); }
+.code pre { padding:1.25rem 1.1rem; font-family:var(--mono); font-size:.9375rem; line-height:1.8; color:#c9d2e3; overflow-x:auto; }
+.code .c { color:#7f8aa3; } .code .k { color:var(--blue-light); }
+.list li { padding:1rem 0; border-top:1px solid var(--line); color:var(--muted); } .list li:first-child { border-top:0; padding-top:0; } .list b { color:var(--ink); }
+.note { margin-top:1.5rem; padding:1rem 1.25rem; border-left:4px solid var(--blue); background:var(--surface); border-radius:0 8px 8px 0; color:var(--ink); }
+code { font-family:var(--mono); font-size:.9em; padding:.1em .4em; border-radius:4px; background:var(--raised); }
+.toc-grid { display:grid; grid-template-columns:repeat(12,1fr); column-gap:3rem; }
+.toc { grid-column:1 / span 3; position:sticky; top:2rem; align-self:start; }
+.toc h3 { font-size:.9375rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-bottom:1rem; }
+.toc a { display:block; padding:.55rem 0 .55rem 1rem; border-left:2px solid var(--line); font-size:1rem; font-weight:600; text-decoration:none; color:var(--muted); }
+.toc a:hover { color:var(--ink); border-left-color:var(--blue); }
+.doc { grid-column:4 / span 9; }
+.doc section { padding:0 0 3rem; margin-bottom:3rem; border-bottom:1px solid var(--line); }
+.doc section:last-child { border-bottom:0; margin-bottom:0; }
+.num { display:block; margin-bottom:.5rem; color:var(--blue-light); font-weight:800; font-stretch:80%; letter-spacing:.04em; }
+.doc ul { margin-top:1.25rem; } .doc li { position:relative; padding:.5rem 0 .5rem 1.75rem; color:var(--muted); }
+.doc li::before { content:""; position:absolute; left:0; top:1.1rem; width:.6rem; height:.6rem; border-radius:50%; background:var(--blue); }
+.doc p { margin-top:1rem; color:var(--muted); } .doc a { color:var(--ink); text-decoration-color:var(--blue); text-decoration-thickness:2px; }
+.contact { background:var(--band); border-top:1px solid var(--line); padding:5rem 0 2.5rem; }
+.contact .row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1.5rem 3rem; }
+.contact .lede { margin-top:.75rem; color:#c9d2e3; }
+.foot { display:flex; flex-wrap:wrap; align-items:baseline; gap:1rem 2.5rem; margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--line); color:#c9d2e3; font-size:.9375rem; }
+.foot .wordmark { font-size:1.25rem; color:var(--ink); } .foot a { font-weight:600; padding:.7rem 0; display:inline-block; }
+.rise { animation:rise 400ms ease-out both; } @keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+@media (max-width:900px) {
+  .steps { grid-template-columns:1fr; border-top:0; border-left:2px solid var(--line-strong); gap:2rem 0; } .steps li { padding:0 0 0 2.5rem; } .bullet { top:0; left:-1.25rem; }
+  .cards { grid-template-columns:1fr; } .split .l,.split .r { grid-column:1 / -1; }
+  .toc { position:static; grid-column:1 / -1; margin-bottom:2.5rem; } .doc { grid-column:1 / -1; }
+  .toc nav { display:flex; flex-wrap:wrap; gap:.5rem; } .toc a { border:1.5px solid var(--line-strong); border-radius:999px; padding:.5rem 1rem; }
+  .band { padding:4rem 0; } .hero { padding:2.5rem 0 2.5rem; }
+}
+@media (max-width:640px) { body { font-size:1.0625rem; } .top nav a:not(.btn) { display:none; } }
+@media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } .rise { animation:none; } a,.btn { transition:none; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="pin" viewBox="0 0 24 24"><path fill="#5b8cff" d="M12 1.5c-4.7 0-8.5 3.7-8.5 8.3 0 5.9 7 12.4 7.7 13a1.2 1.2 0 0 0 1.6 0c.7-.6 7.7-7.1 7.7-13 0-4.6-3.8-8.3-8.5-8.3zm0 11.6a3.3 3.3 0 1 1 0-6.6 3.3 3.3 0 0 1 0 6.6z"/></symbol></svg>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/" aria-label="ATLAS Agency home"><svg class="pin" aria-hidden="true"><use href="#pin"/></svg><span class="wordmark">ATLAS Agency</span></a>
+  <nav aria-label="Main">
+    <a href="/hosting/docs/">Guide</a>
+    <a href="/hosting/terms/" aria-current="page">Terms</a>
+    <a href="/agency/">Agency</a>
+    <a href="/academy/help/">Help</a>
+    <a class="btn" href="mailto:owner@example.com">Contact</a>
+  </nav>
+</div></header>
+<main id="main">
+<section class="hero"><div class="wrap rise">
+  <p class="tagline small"><svg class="pin" aria-hidden="true"><use href="#pin"/></svg>Terms of service</p>
+  <h1>Plain terms for the hosting service.</h1>
+  <p class="lede">What you can do, what you pay, what we promise and what happens if either side stops.</p>
+  <p class="badge"><i></i>Draft for Miro's legal review. Not final.</p>
+</div></section>
+
+<section class="band"><div class="wrap toc-grid">
+  <aside class="toc"><h3>On this page</h3><nav aria-label="Terms sections">
+    <a href="#use">Acceptable use</a><a href="#billing">Billing</a><a href="#liability">Liability</a><a href="#data">Your data</a><a href="#end">Termination</a><a href="#changes">Changes and contact</a></nav></aside>
+  <div class="doc">
+    <section id="use"><span class="num">01</span><h2>Acceptable use</h2>
+      <ul><li>Use servers for lawful purposes only.</li><li>No spam, malware, phishing, attacks on other systems or port scanning of others.</li><li>No content that breaks copyright or that harms children.</li><li>Keep your account details and keys safe. You are responsible for what happens under your account.</li></ul></section>
+    <section id="billing"><span class="num">02</span><h2>Billing</h2>
+      <ul><li>You are charged for the servers and options you use, at the prices shown in the portal.</li><li>Invoices are due when issued. A failed payment can lead to the service being paused.</li><li>Refunds are considered case by case. Write to us within 14 days of the charge.</li></ul></section>
+    <section id="liability"><span class="num">03</span><h2>Liability</h2>
+      <ul><li>The service is provided as is. We aim for it to run well but do not promise it never fails.</li><li>To the extent the law allows, our liability is limited to the amount you paid in the last three months.</li><li>We are not liable for lost data, lost profit or indirect damage. Keep your own backups.</li></ul></section>
+    <section id="data"><span class="num">04</span><h2>Your data</h2>
+      <ul><li>Your data stays yours. We do not look at it or sell it.</li><li>We keep only what we need to run and bill the service: contact details, invoices and usage.</li><li>We may be required by law to share information with authorities.</li><li>On request we delete your account details, except what the law requires us to keep.</li></ul></section>
+    <section id="end"><span class="num">05</span><h2>Termination</h2>
+      <ul><li>You can close your account at any time. Delete your servers first, because deleted data cannot be restored.</li><li>We can suspend or end the service if these terms are broken, or if payment stays unpaid. We try to warn you first unless there is risk to others.</li><li>When the service ends, servers and their data are deleted after a short grace period.</li></ul></section>
+    <section id="changes"><span class="num">06</span><h2>Changes and contact</h2>
+      <p>We may update these terms and will post the new version here. Questions: <a href="mailto:owner@example.com">owner@example.com</a>. See also the <a href="/hosting/docs/">hosting guide</a>.</p></section>
+  </div>
+</div></section>
+</main>
+<footer class="contact"><div class="wrap">
+  <div class="row"><div><h2>Questions about these terms?</h2><p class="lede">Write to us. We answer in plain words.</p></div><a class="btn" href="mailto:owner@example.com">owner@example.com</a></div>
+  <div class="foot"><span class="wordmark">ATLAS Agency</span><span>Powered by ATLAS Agency</span><a href="/hosting/docs/">Guide</a><a href="/hosting/terms/">Terms</a><a href="mailto:owner@example.com">owner@example.com</a></div>
+</div></footer>
+</body>
+</html>

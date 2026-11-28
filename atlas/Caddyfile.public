@@ -251,7 +251,7 @@ http://agency.storefront.test {
 	}
 
 	@landing {
-		path /agency /agency/ /thanks /thanks/ /thanks/* /robots.txt /sitemap.xml /llms.txt /mapfront-icon.png /contact.js /fonts/*
+		path /agency /agency/ /hosting/docs /hosting/docs/ /hosting/terms /hosting/terms/ /thanks /thanks/ /thanks/* /robots.txt /sitemap.xml /llms.txt /mapfront-icon.png /contact.js /fonts/*
 	}
 	handle @landing {
 		encode zstd gzip
