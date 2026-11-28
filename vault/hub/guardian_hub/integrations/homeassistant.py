@@ -108,7 +108,7 @@ def _mqtt_publish_all(host: str, port: int, user: str | None, password: str | No
 
     Plain TCP on a private host, or TLS (port 8883 / a CA given) anywhere:
     that is what lets a broker sit on a public address -- the owner's Home
-    Assistant on a VPSie VM -- without the MQTT password crossing the
+    Assistant on a CloudHost VM -- without the MQTT password crossing the
     internet in the clear. The broker's certificate is verified against the
     CA the owner pasted (a self-signed CA is the normal case for a private
     broker), or the system store when none is given.

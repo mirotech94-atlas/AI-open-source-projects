@@ -358,3 +358,7 @@ Every token is scoped down to the narrowest thing that works. Specifically:
   anywhere else.
 - Nothing is written to logs, to Postgres, or into a prompt. The reasoner sees
   *"the flycheap admin API returned 401"*, never the key.
+
+---
+
+<p align="center"><img src="brand/lockup.svg" alt="ATLAS Agency" width="240"><br>Powered by ATLAS Agency</p>

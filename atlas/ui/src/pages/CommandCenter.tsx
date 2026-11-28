@@ -305,7 +305,7 @@ export function AutopilotLine({ autopilot }: {
         <span className="cmd-dim">{stamp(autopilot.fetchedAt)}</span>
       </p>
       {l.items.length > 0 && (
-        <ul className="cmd-dim">
+        <ul className="cmd-dim cmd-ap-items">
           {l.items.map((it, i) => (
             <li key={i}>{safeText(it.subject)}: {safeText(it.cause)} → {safeText(it.fix)}
               {" "}({safeText(it.outcome)})</li>

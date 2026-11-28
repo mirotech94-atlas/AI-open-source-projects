@@ -38,4 +38,13 @@ describe("autopilotLine", () => {
     expect(autopilotLine({ ...base, items }, hh).items).toHaveLength(3);
     expect(autopilotLine({ ...base, items, waiting_on_miro: 0 }, hh).items).toEqual([]);
   });
+  it("off shows its count, Unknown when null, nothing when 0 or absent", () => {
+    expect(autopilotLine({ ...base, off: 47 }, hh).text).toContain("· off 47");
+    const u = autopilotLine({ ...base, off: null }, hh);
+    expect(u.text).toContain("off Unknown");
+    expect(u.text).not.toMatch(/off 0/);
+    expect(u.unknown).toContain("off");
+    expect(autopilotLine({ ...base, off: 0 }, hh).text).not.toContain("off");
+    expect(autopilotLine(base, hh).text).not.toContain("off");
+  });
 });

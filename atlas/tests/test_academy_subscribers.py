@@ -217,7 +217,11 @@ def test_only_a_form_post_is_accepted_and_the_body_is_capped(client, store):
 
 
 def test_a_get_to_the_signup_path_does_nothing(client, store):
-    assert client.get(api.SUBSCRIBE_PATH).status_code == 405
+    # 405 without a built dashboard; with one, the SPA catch-all answers a GET
+    # with its HTML shell. Either way nothing is stored.
+    r = client.get(api.SUBSCRIBE_PATH)
+    assert r.status_code == 405 or (
+        r.status_code == 200 and "text/html" in r.headers.get("content-type", ""))
     assert store.rows == {}
 
 

@@ -44,7 +44,8 @@ export function Status({ reloadKey }: { reloadKey: number }): JSX.Element {
   // UNKNOWN. (UNKNOWN stays on its tile; it is counted in the self-test line.)
   const oddChecks = modules.flatMap((m) =>
     m.checks
-      .filter((k) => k.state?.kind === "parked" || k.state?.kind === "retired")
+      .filter((k) => k.state?.kind === "parked" || k.state?.kind === "retired"
+        || k.state?.kind === "switched_off")
       .map((check) => ({ module: m.module, check })));
 
   // `?focus=flycheap`: the module a spoken status just named. Its tile is

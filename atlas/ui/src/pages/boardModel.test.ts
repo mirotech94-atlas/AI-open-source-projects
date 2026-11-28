@@ -18,6 +18,9 @@ const cases: [string, CheckSummary, string][] = [
     state: { kind: "parked", label: "parked until 2026-12-01: waiting on a vendor" } }, "Parked"],
   ["retired", { ...base, health: "unknown",
     state: { kind: "retired", label: "retired: the code no longer has this check" } }, "Retired"],
+  ["switched_off", { ...base, health: "failing",
+    state: { kind: "switched_off", label: "switched off: not used (ATLAS_UNUSED_CHECKS)" } },
+    "Switched off"],
 ];
 
 describe("the board's four honest looks", () => {
@@ -44,7 +47,7 @@ describe("the board's four honest looks", () => {
   });
 
   it("a parked or retired check is never shown as OK even when its row says ok", () => {
-    for (const kind of ["parked", "retired"] as const) {
+    for (const kind of ["parked", "retired", "switched_off"] as const) {
       const look = checkLook({ ...base, health: "ok",
         state: { kind, label: `${kind}: x` } });
       expect(look.kind).toBe(kind);
@@ -85,5 +88,19 @@ describe("the board's four honest looks", () => {
     for (const l of lines) expect(l).toContain("10:00:00 UTC");
     expect(lines[0]).toContain("8 of 10");
     expect(selfTestLine(undefined)[0]).toContain("not read");
+  });
+
+  it("names switched-off checks apart from unknown, only when there are some", () => {
+    const at = "2026-11-14T10:00:00Z";
+    const t = {
+      read_at: at,
+      checks_run: { n: 8, of: 10, read_at: at, oldest_reading_at: null },
+      unknown: { n: 0, read_at: at }, parked: { n: 0, read_at: at },
+      retired: { n: 0, read_at: at },
+    };
+    expect(selfTestLine(t)).toHaveLength(3);
+    const lines = selfTestLine({ ...t, switched_off: { n: 7, read_at: at } });
+    expect(lines).toHaveLength(4);
+    expect(lines[3]).toContain("7 switched off");
   });
 });

@@ -211,9 +211,13 @@ async def overview(_s: SignedIn) -> dict:
         # out of the module's colour. A switched-off module is different: its
         # tile is replaced by the "switched off" label below. With no
         # registry loaded (nothing to compare with) nothing is called retired.
-        gone = ((name in REGISTRY.modules and key not in REGISTRY.checks)
-                or (loaded and name not in REGISTRY.modules
-                    and name not in REGISTRY.disabled))
+        # A check Miro does not use is left out of the registry on purpose and
+        # is switched off, not retired.
+        unused = key in REGISTRY.unused or board_state.is_unused(key)
+        gone = (not unused
+                and ((name in REGISTRY.modules and key not in REGISTRY.checks)
+                     or (loaded and name not in REGISTRY.modules
+                         and name not in REGISTRY.disabled)))
         tile = tiles.setdefault(name, {
             "module": name,
             "title": getattr(REGISTRY.modules.get(name), "title", name),
@@ -233,9 +237,14 @@ async def overview(_s: SignedIn) -> dict:
                                          interval, moment)
         # Retired and parked outrank the check's own words: the board says
         # which of the two it is, in its own look, never as OK.
-        state = (board_state.override_state(key, registered=not gone, today=today)
+        state = (board_state.override_state(key, registered=not gone, today=today,
+                                            unused=unused)
                  or _check_state(health, row["detail"] or ""))
         observed = row["observed_at"].isoformat() if row["observed_at"] else None
+        if unused:
+            # Whatever it last read is history from before it was switched off:
+            # not a reading of now, so never OK and never a fault either.
+            health, stale = "unknown", False
         tile["checks"].append({
             "name": row["check_name"],
             "health": health,
@@ -243,7 +252,7 @@ async def overview(_s: SignedIn) -> dict:
             "stale": stale,
             # A stale reading is UNKNOWN and says when it was last read.
             "last_read_at": observed,
-            "detail": row["detail"] or "",
+            "detail": ("" if unused else row["detail"] or ""),
             "observed_at": observed,
             "next_run_at": row["next_run_at"].isoformat() if row["next_run_at"] else None,
             "interval_s": row["interval_s"],
@@ -253,8 +262,8 @@ async def overview(_s: SignedIn) -> dict:
             # UNKNOWN or stale reading can still carry a value, and that
             # value is not a measurement of now. `read_at` is `observed_at`
             # under the name the history endpoint uses.
-            "value": _number(row.get("value")),
-            "unit": row.get("unit") or None,
+            "value": None if unused else _number(row.get("value")),
+            "unit": None if unused else row.get("unit") or None,
             "read_at": observed,
         })
         # Compare against what we have SEEN, not against the initial value.
@@ -308,6 +317,27 @@ async def overview(_s: SignedIn) -> dict:
             "detail": "never read: this check has not reported yet",
             "observed_at": None, "next_run_at": None,
             "interval_s": int(interval.total_seconds()) if interval else None,
+            "value": None, "unit": None, "read_at": None,
+        })
+
+    # A check Miro does not use is not in the registry, so it is listed here:
+    # switched off, in words, even when it has no row at all.
+    unused_keys = set(REGISTRY.unused) | {
+        k for k in board_state.unused_checks() if k.partition(".")[0] in REGISTRY.modules}
+    for key in sorted(unused_keys - seen_keys):
+        name, _, check_name = key.partition(".")
+        tile = tiles.setdefault(name, {
+            "module": name,
+            "title": getattr(REGISTRY.modules.get(name), "title", name),
+            "health": "unknown", "checks": [], "last_check_at": None,
+            "next_check_at": None, "enabled": name in REGISTRY.modules,
+        })
+        state = board_state.switched_off_state()
+        tile.setdefault("_set_aside", []).append(state)
+        tile["checks"].append({
+            "name": check_name, "health": "unknown", "state": state,
+            "stale": False, "last_read_at": None, "detail": "",
+            "observed_at": None, "next_run_at": None, "interval_s": None,
             "value": None, "unit": None, "read_at": None,
         })
 

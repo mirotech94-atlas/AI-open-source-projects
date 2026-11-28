@@ -2,7 +2,7 @@
 executor only when a Tier 1 action exists, ask once otherwise, never loop."""
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -29,6 +29,7 @@ class IO:
         self.fix_result = fix_result or ActionResult(True, "ran", dispatched=True)
         self.reread_to, self.fixes = reread, fixes
         self.ran, self.tasks, self.cards, self.recorded = [], [], [], []
+        self.ok_now, self.open, self.closed = set(), [], []
 
     async def findings(self):
         return self._findings
@@ -60,6 +61,15 @@ class IO:
     async def record(self, at, rows, report):
         self.recorded.append((rows, report))
         return 1
+
+    def recovered(self):
+        return self.ok_now
+
+    async def open_tasks(self):
+        return self.open
+
+    async def close_task(self, task_id):
+        self.closed.append(task_id)
 
 
 # --------------------------------------------------------------- classify
@@ -205,6 +215,78 @@ async def test_unused_module_is_idle_and_raises_nothing(monkeypatch):
     assert io.recorded[0][0][0]["outcome"] == "idle"
 
 
+# ------------------------------------------------------------ boot grace
+
+BOOT = NOW - timedelta(minutes=5)
+
+
+def test_unknown_with_no_detail_is_unknown_since_boot_but_creds_still_win():
+    d = ap.classify(finding("sites.build", "unknown", ""), None)
+    assert d.cause_class == "unknown_since_boot"
+    d = ap.classify(finding("sites.build", "unknown", "first run after start"), None)
+    assert d.cause_class == "unknown_since_boot"
+    d = ap.classify(finding("sites.build", "degraded", "not read recently"), None)
+    assert d.cause_class == "stale_data"
+    assert ap.classify(finding("x.y", "unknown", "K_EY unset"), None
+                       ).cause_class == "missing_credential"
+
+
+@pytest.mark.asyncio
+async def test_boot_grace_records_stale_and_unknown_without_task_card_or_fix():
+    io = IO([finding(stale=True), finding("sites.build", "unknown", "first run after start")])
+    rep = await ap.run_cycle(io, NOW, boot_at=BOOT)
+    assert io.tasks == [] and io.cards == [] and io.ran == []
+    assert [r["outcome"] for r in io.recorded[0][0]] == ["grace", "grace"]
+    assert rep.grace == 2 and rep.tasks == 0 and rep.fixed == 0
+    assert "grace" not in ap.ATTEMPTED
+
+
+@pytest.mark.asyncio
+async def test_boot_grace_never_hides_real_faults_credentials_or_tokens():
+    io = IO([finding("sites.build", "failing", "build exited 2"),
+             finding("fiverr.inbox", "unknown"), finding(detail="HTTP 401 from api")],
+            disabled={"fiverr": "missing env: FIVERR_KEY"})
+    rep = await ap.run_cycle(io, NOW, boot_at=BOOT)
+    outcomes = [r["outcome"] for r in io.recorded[0][0]]
+    assert outcomes == ["task_open", "waiting_miro", "waiting_miro"] and rep.grace == 0
+    assert len(io.tasks) == 2
+
+
+@pytest.mark.asyncio
+async def test_after_the_grace_period_stale_is_handled_again(monkeypatch):
+    monkeypatch.setenv("AUTOPILOT_BOOT_GRACE_MIN", "30")
+    io = IO([finding(stale=True)])
+    await ap.run_cycle(io, NOW, boot_at=NOW - timedelta(minutes=31))
+    assert io.ran == [("research.daily_scan", {})]
+    monkeypatch.setenv("AUTOPILOT_BOOT_GRACE_MIN", "60")
+    io = IO([finding(stale=True)])
+    rep = await ap.run_cycle(io, NOW, boot_at=NOW - timedelta(minutes=31))
+    assert io.ran == [] and rep.grace == 1
+
+
+def test_grace_minutes_default_and_bad_value(monkeypatch):
+    monkeypatch.delenv("AUTOPILOT_BOOT_GRACE_MIN", raising=False)
+    assert ap.boot_grace() == timedelta(minutes=30)
+    monkeypatch.setenv("AUTOPILOT_BOOT_GRACE_MIN", "nope")
+    assert ap.boot_grace() == timedelta(minutes=30)
+    monkeypatch.setenv("AUTOPILOT_BOOT_GRACE_MIN", "0")
+    assert ap.boot_grace() == timedelta(0)
+
+
+# ------------------------------------------------------ close on recovery
+
+@pytest.mark.asyncio
+async def test_a_check_that_reads_ok_closes_its_open_autopilot_task_only():
+    io = IO([finding("sites.build", "failing", "build exited 2")])
+    io.ok_now = {"research.scan_freshness"}
+    io.open = [(11, "research.scan_freshness:stale_data"),
+               (12, "research.scan_freshness:real_fault"),
+               (13, "sites.build:real_fault"),      # still failing: stays open
+               (14, "credentials")]                 # not a check: stays open
+    await ap.run_cycle(io, NOW)
+    assert io.closed == [11, 12]
+
+
 # ------------------------------------------------------------- the action
 
 def test_the_action_is_tier1_with_dry_run_and_rollback():
@@ -240,3 +322,61 @@ async def test_summary_endpoint_reads_the_latest_cycle_and_names_a_failed_read(
     monkeypatch.setattr("atlas.kernel.state.fetch_one", boom)
     out = await ap.read_summary()
     assert out["fixed"] is None and out["waiting_on_miro"] is None and out["unread"]
+
+
+# ------------------------------------------------------- switched-off modules
+
+OFF = "switched off (ATLAS_DISABLED_MODULES)"
+
+
+def test_a_module_switched_off_by_env_is_module_off_not_a_fault():
+    d = ap.classify(finding("gitlab.pipelines", "unknown", stale=True), OFF)
+    assert d.cause_class == "module_off" and d.who == "nobody"
+    # a missing env keeps its credential handling
+    d = ap.classify(finding("fiverr.inbox", "unknown"), "missing env: FIVERR_KEY")
+    assert d.cause_class == "missing_credential"
+
+
+@pytest.mark.asyncio
+async def test_off_findings_open_no_task_card_fix_or_attempt_and_are_counted():
+    io = IO([finding("gitlab.pipelines", "unknown", stale=True),
+             finding("cloudhost.nodes", "unknown", stale=True),
+             finding("cloudhost.api", "unknown", stale=True),
+             finding("research.scan_freshness", "degraded", stale=True)],
+            disabled={"gitlab": OFF, "cloudhost": OFF})
+    rep = await ap.run_cycle(io, NOW)
+    assert rep.off == 3 and rep.fixed == 1 and rep.total == 4
+    assert io.ran == [("research.daily_scan", {})]
+    assert io.tasks == [] and io.cards == []
+    rows = io.recorded[0][0]
+    off = [r for r in rows if r["outcome"] == "module_off"]
+    assert len(off) == 1                       # ONE grouped line
+    assert off[0]["cause_class"] == "module_off"
+    assert off[0]["detail"] == "cloudhost, gitlab"
+
+
+@pytest.mark.asyncio
+async def test_off_findings_are_not_held_by_the_boot_grace():
+    io = IO([finding("gitlab.pipelines", "unknown", stale=True)], disabled={"gitlab": OFF})
+    rep = await ap.run_cycle(io, NOW, boot_at=NOW)
+    assert rep.off == 1 and rep.grace == 0
+
+
+@pytest.mark.asyncio
+async def test_open_tasks_of_switched_off_modules_are_closed_not_deleted():
+    io = IO([], disabled={"gitlab": OFF, "fiverr": "missing env: FIVERR_KEY"})
+    io.open = [(1, "gitlab.pipelines:stale_data"), (2, "fiverr.inbox:missing_credential"),
+               (3, "research.x:real_fault"), (4, "agent:qa:real_fault")]
+    await ap.run_cycle(io, NOW)
+    assert io.closed == [1]
+
+
+def test_summary_carries_the_off_count_and_unknown_when_missing():
+    s = ap.summary(None, NOW)
+    assert s["off"] is None
+    s = ap.summary({"at": NOW, "fixed": 0, "waiting": 0, "held": 0, "tasks": 0,
+                    "off": 47, "id": 1}, NOW)
+    assert s["off"] == 47
+    s = ap.summary({"at": NOW, "fixed": 0, "waiting": 0, "held": 0, "tasks": 0,
+                    "off": None, "id": 1}, NOW)
+    assert s["off"] is None

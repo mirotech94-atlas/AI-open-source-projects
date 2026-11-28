@@ -11,7 +11,7 @@ from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 
 from ..modules._http import explain, redact
-from . import background, board
+from . import background, board, board_state
 from .approvals import expire_stale, propose
 from .contracts import Health, Observation, Severity, Tier, implements
 from .detect import Finding, correlate, evaluate
@@ -71,8 +71,10 @@ async def _check_id(key: str) -> int:
 async def run_once() -> list[Finding]:
     global FIRST_PASS_DONE
     now = time.monotonic()
+    # A check Miro does not use (ATLAS_UNUSED_CHECKS) is never run, even if
+    # something registered it after load.
     due = [k for k, c in REGISTRY.checks.items()
-           if now >= _next_run.get(k, 0.0)]
+           if now >= _next_run.get(k, 0.0) and not board_state.is_unused(k)]
     findings: list[Finding] = []
 
     first = not FIRST_PASS_DONE

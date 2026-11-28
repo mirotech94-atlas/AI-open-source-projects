@@ -14,7 +14,7 @@ import sys
 from dataclasses import dataclass, field
 from typing import Any
 
-from .board_state import SWITCHED_OFF
+from .board_state import SWITCHED_OFF, UNUSED_LABEL, is_unused
 from .contracts import Action, Check, Module, Tier
 from .permissions import Decision, classify
 
@@ -28,6 +28,9 @@ class Registry:
     actions: dict[str, Action] = field(default_factory=dict)
     decisions: dict[str, Decision] = field(default_factory=dict)
     disabled: dict[str, str] = field(default_factory=dict)   # name -> why
+    # "module.check" -> why, for checks named in ATLAS_UNUSED_CHECKS: left out
+    # of `checks` (so never scheduled) but remembered so the board can say so.
+    unused: dict[str, str] = field(default_factory=dict)
     # action name -> the dotted module that declared it, for ACTION_VERSION.
     action_modules: dict[str, str] = field(default_factory=dict)
 
@@ -82,7 +85,12 @@ class Registry:
         self.modules[instance.name] = instance
 
         for check in instance.checks():
-            self.checks[f"{instance.name}.{check.name}"] = check
+            key = f"{instance.name}.{check.name}"
+            if is_unused(key):
+                self.unused[key] = UNUSED_LABEL
+                log.info("check %s switched off by ATLAS_UNUSED_CHECKS", key)
+                continue
+            self.checks[key] = check
 
         for action in instance.actions():
             key = action.name
@@ -144,6 +152,8 @@ class Registry:
         prefix = f"{name}."
         for key in [k for k in self.checks if k.startswith(prefix)]:
             del self.checks[key]
+        for key in [k for k in self.unused if k.startswith(prefix)]:
+            del self.unused[key]
         for key in [k for k in self.actions if k.startswith(prefix)]:
             del self.actions[key]
             self.decisions[key] = Decision(

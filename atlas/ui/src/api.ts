@@ -32,7 +32,7 @@ export interface CheckSummary {
   /** Set aside from the module's colour: not set up, or deliberately paused.
    *  Still UNKNOWN underneath -- never OK. */
   state?: {
-    kind: "not_set_up" | "paused" | "parked" | "retired";
+    kind: "not_set_up" | "paused" | "parked" | "retired" | "switched_off";
     label: string;
     until?: string;
     reason?: string;
@@ -204,6 +204,8 @@ export interface SelfTest {
   unknown: SelfTestCount;
   parked: SelfTestCount;
   retired: SelfTestCount;
+  /** Checks named in ATLAS_UNUSED_CHECKS: never run, never counted above. */
+  switched_off?: SelfTestCount;
 }
 
 export interface Overview extends Envelope {

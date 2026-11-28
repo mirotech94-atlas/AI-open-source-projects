@@ -54,7 +54,7 @@ def test_the_roadmap_series_and_their_playlists():
         assert s.episodes and s.episodes[0].level == (1 if s.key in NEW[1:] else 0)
         assert not s.playlist or ts.STORE_URL in s.playlist_description
         assert len({e.number for e in s.episodes}) == len(s.episodes)
-    assert [len(s.episodes) for s in ts.SERIES] == [1, 8, 9, 8, 7, 6, 10, 8, 8, 6]
+    assert [len(s.episodes) for s in ts.SERIES] == [1, 10, 11, 10, 9, 8, 10, 8, 8, 6]
 
 
 def test_every_series_runs_from_level_0_to_advanced():
@@ -715,7 +715,7 @@ def test_tiers_mirror_the_reel():
 def test_params_are_closed_to_the_catalog():
     assert tut.vet({"series": "n8n", "episode": 1}) is None
     assert "no tutorial series" in tut.vet({"series": "crypto", "episode": 1})
-    assert "no episode 9" in tut.vet({"series": "n8n", "episode": 9})
+    assert "no episode 99" in tut.vet({"series": "n8n", "episode": 99})
     assert "number" in tut.vet({"series": "n8n", "episode": "one; rm -rf"})
     assert tut.vet_video({"series": "n8n", "episode": 1, "video_id": "abcdefghijk"}) is None
     assert "11-character" in tut.vet_video({"series": "n8n", "episode": 1,
@@ -777,7 +777,9 @@ def test_the_automatic_cap_is_one_per_series(monkeypatch):
     monkeypatch.delenv("ACADEMY_TUTORIALS_PER_DAY", raising=False)
     # Miro's cap stays seven (rule 23); the three 2026-10-18 series have no
     # script yet, so every series that can post still fits under it.
-    can_post = [s for s in ts.SERIES if any(e.scripted for e in s.episodes)]
+    # (the welcome is posted once and is not a daily slot)
+    can_post = [s for s in ts.SERIES
+                if s.key != "channel" and any(e.scripted for e in s.episodes)]
     assert tut.per_day() == 7 >= len(can_post)
     assert tut.per_series_daily() == 1
 
@@ -1033,7 +1035,8 @@ def test_each_series_climbs_its_own_ladder_in_strict_order():
     agents = ts.series("agents")
     assert tut.next_in_series(agents, set()) == (1, None)
     # never past an unscripted lower episode, even when a later one is scripted
-    planned = next((s, e) for s in ts.SERIES for e in tut.ladder(s) if not e.scripted)
+    planned = next((s, e) for s in ts.SERIES for e in tut.ladder(s)
+                   if not e.scripted and ts.held(s.key, e) is None)
     s, ep = planned
     done = {(s.key, e.number) for e in tut.ladder(s) if e is not ep and
             tut.ladder(s).index(e) < tut.ladder(s).index(ep)}
@@ -1046,8 +1049,8 @@ def test_todays_lineup_is_one_per_series():
     """2026-10-11: the welcome and Claude #0 are public."""
     todo, notes = tut.lineup({("channel", 1), ("claude", 0)}, {})
     assert todo == [("claude", 1), ("n8n", 0), ("project", 0), ("business", 0),
-                    ("agents", 1), ("local", 0)]
-    # the 2026-10-18 series: nothing scripted yet, security held to its first
+                    ("agents", 1), ("local", 0), ("explained", 1)]
+    # the 2026-10-18 series: only AI Explained #1 is scripted, security held to its first
     # recording, the opinion series' only writable lesson is #6
     assert notes == NEW_NOTES
 
@@ -1137,8 +1140,8 @@ def test_the_series_posted_longest_ago_goes_first():
             "n8n": now - timedelta(days=1), "project": now - timedelta(days=2),
             "business": now - timedelta(days=1)}
     todo, _ = tut.lineup({("channel", 1), ("claude", 0)}, {}, last)
-    assert todo == [("agents", 1), ("local", 0), ("project", 0), ("claude", 1),
-                    ("n8n", 0), ("business", 0)]
+    assert todo == [("agents", 1), ("local", 0), ("explained", 1), ("project", 0),
+                    ("claude", 1), ("n8n", 0), ("business", 0)]
 
 
 async def test_a_series_that_lost_yesterday_comes_first_today(tick):
@@ -1177,8 +1180,7 @@ async def test_a_private_or_withdrawn_upload_is_not_a_last_post(tick):
     assert last["claude"] == now - timedelta(days=1)
 
 
-NEW_NOTES = ["script not written for explained #1",
-             ts.held("security", ts.series("security").episode(1)),
+NEW_NOTES = [ts.held("security", ts.series("security").episode(1)),
              "script not written for future #6"]
 
 
@@ -1189,9 +1191,12 @@ def test_every_series_is_scripted_two_days_ahead():
     done = {("channel", 1), ("claude", 0)}
     for _day in range(2):            # today and tomorrow, every series
         todo, notes = tut.lineup(done, {})
-        assert notes == NEW_NOTES, notes
-        assert {k for k, _ in todo} == {s.key for s in ts.SERIES
-                                        if s.playlist and s.key not in NEW}
+        # day 2: the next AI Explained lesson that is not held, #6, has no script
+        assert notes == (NEW_NOTES if _day == 0 else
+                         ["script not written for explained #6", *NEW_NOTES]), notes
+        # AI Explained #1 is the one new-series lesson written; #2 is held
+        want = {s.key for s in ts.SERIES if s.playlist and s.key not in NEW}
+        assert {k for k, _ in todo} == (want | {"explained"} if _day == 0 else want)
         done |= set(todo)
 
 
@@ -1371,7 +1376,8 @@ async def test_today_drafts_one_per_series_then_stops(tick):
                     {"kind": "post", "series": "claude", "episode": 0, "at": yesterday}]
     await tut.daily()
     assert tick["reviewed"] == [("claude", 1), ("n8n", 0), ("project", 0),
-                                ("business", 0), ("agents", 1), ("local", 0)]
+                                ("business", 0), ("agents", 1), ("local", 0),
+                                ("explained", 1)]
     now = datetime.now(UTC)
     tick["rows"] += [{"kind": "draft", "series": k, "episode": n, "at": now}
                      for k, n in tick["reviewed"]]
@@ -1387,15 +1393,16 @@ async def test_a_missing_script_skips_only_its_series_and_is_said_once_a_day(
         tick, monkeypatch):
     from datetime import UTC, datetime, timedelta
     old = datetime.now(UTC) - timedelta(days=3)
-    claude = ts.series("claude")
-    gap = next(e for e in tut.ladder(claude) if not e.scripted)
-    tick["rows"] = [{"kind": "draft", "series": "claude", "episode": e.number, "at": old}
-                    for e in tut.ladder(claude) if e.level < gap.level
+    series = ts.series("explained")        # the only series with a writable gap left
+    gap = next(e for e in tut.ladder(series)
+               if not e.scripted and ts.held(series.key, e) is None)
+    tick["rows"] = [{"kind": "draft", "series": "explained", "episode": e.number, "at": old}
+                    for e in tut.ladder(series) if e.level < gap.level
                     or (e.level == gap.level and e.number < gap.number)]
     said = await tut.daily()
-    note = f"script not written for claude #{gap.number}"
+    note = f"script not written for explained #{gap.number}"
     assert note in said
-    assert ("claude", gap.number) not in tick["reviewed"]
+    assert ("explained", gap.number) not in tick["reviewed"]
     assert ("n8n", 0) in tick["reviewed"]                  # the others go on
     assert sum(note in t for t in tick["told"]) == 1
     await tut.daily()                                      # a redeploy reruns the tick
@@ -1500,7 +1507,7 @@ async def test_a_render_over_the_hourly_ceiling_waits_quietly_for_the_next_hour(
     assert "project" in ceiling[0] and "local" in ceiling[0]
     assert "next hour" in said
     held = {k for k, _ in tut.deferred()}
-    assert held == {"project", "business", "agents", "local"}
+    assert held == {"project", "business", "agents", "local", "explained"}
     now = tick["noon"]
     assert not tut.retry_due(now)                            # the window is still full
     assert tut.retry_due(now + timedelta(minutes=61))
@@ -1512,11 +1519,15 @@ async def test_a_render_over_the_hourly_ceiling_waits_quietly_for_the_next_hour(
     assert renders == ["project", "business"]
     assert not [a for a, p in tick["seen"] if p.get("series") in ("channel", "claude",
                                                                  "n8n")]
-    assert {k for k, _ in tut.deferred()} == {"agents", "local"}
+    assert {k for k, _ in tut.deferred()} == {"agents", "local", "explained"}
     assert len([t for t in tick["told"] if "hourly" in t]) == 1
     renders.clear()
     await tut.catch_up()
     assert renders == ["agents", "local"]
+    assert {k for k, _ in tut.deferred()} == {"explained"}
+    renders.clear()
+    await tut.catch_up()
+    assert renders == ["explained"]
     assert tut.deferred() == []
     assert not tut.retry_due(now + timedelta(hours=5))
 
@@ -3979,8 +3990,9 @@ def test_no_recap_says_a_playlist_or_the_series_is_over():
             last = ts.plain(recap.said[-1])
             assert len(recap.said) == len(recap.items), e.slug
             assert "&" not in last and (not s.playlist or s.playlist not in last), e.slug
-            # every series has planned episodes today: none is a true last one
-            assert ts.LAST_SAID not in last, e.slug
+            # only the series' true last episode closes it (2026-11-24: the
+            # approved drafts used up the plan of every scripted series)
+            assert (ts.LAST_SAID in last) == (e is s.episodes[-1]), e.slug
 
 
 def test_a_true_last_episode_closes_the_series():

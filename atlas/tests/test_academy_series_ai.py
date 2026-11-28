@@ -19,7 +19,9 @@ def test_the_three_series_are_planned_with_the_specs_lessons():
         assert s.playlist == ts.PLAYLISTS[key] and ts.STORE_URL in s.playlist_description
         assert key in ts.SCRIPT_SERIES
         for e in s.episodes:
-            assert not e.scripted and 5 <= len(e.outline) <= 8, e.slug
+            assert e.scripted == ((key, e.number) == ("explained", 1)), e.slug
+            if not e.scripted:       # a scripted lesson no longer carries its outline
+                assert 5 <= len(e.outline) <= 8, e.slug
             assert e.opener_topic == ts.OPENER_TOPICS[(key, e.number)]
             assert not any(ch.isdigit() for ch in e.opener_topic), e.opener_topic
 

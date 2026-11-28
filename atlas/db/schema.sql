@@ -3736,4 +3736,6 @@ CREATE TABLE IF NOT EXISTS autopilot_log (
     detail      TEXT NOT NULL DEFAULT '',
     env_missing JSONB NOT NULL DEFAULT '[]'::jsonb
 );
+-- 2026-11-24: findings of modules switched off on purpose (NULL on older cycles = Unknown).
+ALTER TABLE autopilot_cycles ADD COLUMN IF NOT EXISTS off INT;
 CREATE INDEX IF NOT EXISTS autopilot_log_cause ON autopilot_log (cause_key, at DESC);

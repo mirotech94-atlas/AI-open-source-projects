@@ -787,3 +787,6 @@ html:has(.cmd-shell), html:has(.cmd-shell) body { background: #0a0d14; color-sch
   .cmd-shell.v2 .cmd-main { padding: var(--s-4); }
   .cmd-shell.v2 .cmd-foot { padding: var(--s-3) var(--s-4); }
 }
+
+.cmd-ap-items { max-width: 100%; margin: 4px 0 0; }
+.cmd-ap-items li { overflow-wrap: anywhere; white-space: normal; }

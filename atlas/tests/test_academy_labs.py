@@ -57,7 +57,7 @@ def test_the_lab_is_a_list_scene_with_four_beats():
 
 def test_every_n8n_lesson_ends_with_a_lab_before_the_recap():
     n8n = [e for s, e in LESSONS if s.key == "n8n"]
-    assert [e.number for e in n8n] == [0, 1, 2, 3, 4, 5, 6, 7]
+    assert [e.number for e in n8n] == list(range(11))
     for ep in n8n:
         chapters = [sc for sc in ep.scenes if sc.chapter]
         assert chapters[-1].kind == "checklist" and chapters[-1].chapter == "Recap"

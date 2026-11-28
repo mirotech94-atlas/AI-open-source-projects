@@ -4,18 +4,22 @@ import { normaliseHealth, type CheckSummary, type SelfTest } from "../api";
  * How the board draws one check (invariants 3 and 7). Six looks, and no two
  * share a treatment: OK is a solid lit dot; UNKNOWN is grey, unlit, dashed and
  * hatched; PARKED is a double border in violet (someone said why, until when);
- * RETIRED is struck through and dotted (the code no longer has the check).
+ * RETIRED is struck through and dotted (the code no longer has the check);
+ * SWITCHED OFF is a flat grey, unlit chip with its words (Miro does not use
+ * the check: never run, never OK, never counted as a fault).
  * Every look carries its word, so colour never carries the meaning alone.
  */
 export type LookKind =
-  | "ok" | "degraded" | "failing" | "unknown" | "parked" | "retired";
+  | "ok" | "degraded" | "failing" | "unknown" | "parked" | "retired"
+  | "switched_off";
 
 export interface CheckLook {
   kind: LookKind;
   word: string;
   /** The one CSS treatment: the stylesheet keys on this, and no two differ
    *  in name or in rule. */
-  treatment: "lit" | "amber" | "red" | "dashed-hatch" | "double" | "struck-dotted";
+  treatment: "lit" | "amber" | "red" | "dashed-hatch" | "double" | "struck-dotted"
+    | "off-grey";
   /** Why it looks this way, in words (parked reason, "last read at ..."). */
   note: string;
 }
@@ -23,11 +27,13 @@ export interface CheckLook {
 const WORD: Record<LookKind, string> = {
   ok: "OK", degraded: "Degraded", failing: "Failing",
   unknown: "Unknown", parked: "Parked", retired: "Retired",
+  switched_off: "Switched off",
 };
 
 const TREATMENT: Record<LookKind, CheckLook["treatment"]> = {
   ok: "lit", degraded: "amber", failing: "red",
   unknown: "dashed-hatch", parked: "double", retired: "struck-dotted",
+  switched_off: "off-grey",
 };
 
 export function readAt(iso: string | null | undefined): string {
@@ -40,12 +46,12 @@ type LookInput = Pick<CheckSummary, "health" | "state" | "last_read_at"
 export function checkLook(check: LookInput): CheckLook {
   const stateKind = check.state?.kind;
   const kind: LookKind =
-    stateKind === "retired" || stateKind === "parked"
+    stateKind === "retired" || stateKind === "parked" || stateKind === "switched_off"
       ? stateKind
       : normaliseHealth(check.health);
   const when = check.last_read_at ?? check.observed_at ?? null;
   const note =
-    kind === "retired" || kind === "parked"
+    kind === "retired" || kind === "parked" || kind === "switched_off"
       ? check.state?.label ?? ""
       : kind === "unknown"
         ? `${readAt(when)}${check.detail ? `: ${check.detail}` : ""}`
@@ -61,5 +67,7 @@ export function selfTestLine(t: SelfTest | undefined | null): string[] {
     `${t.checks_run.n} of ${t.checks_run.of} checks ran (read ${at(t.checks_run.read_at)})`,
     `${t.unknown.n} unknown (read ${at(t.unknown.read_at)})`,
     `${t.parked.n} parked (read ${at(t.parked.read_at)})`,
+    ...(t.switched_off && t.switched_off.n > 0
+      ? [`${t.switched_off.n} switched off (read ${at(t.switched_off.read_at)})`] : []),
   ];
 }

@@ -38,6 +38,11 @@ CREDENTIAL_REF = "credentials"
 SOURCE = "qa.autopilot"
 # The outcomes that count as "we tried a fix".
 ATTEMPTED = ("fixed", "fix_failed")
+# Causes that only mean "this process has not read the check yet".
+GRACE_CLASSES = ("stale_data", "unknown_since_boot")
+GRACE_DEFAULT_MIN = 30
+# Import time stands in for the process start (the api imports this at boot).
+PROCESS_START = datetime.now(UTC)
 
 # Check key -> (Tier 1 action, params) that cures it when stale or failing.
 # Each action is re-verified at run time (registered, Tier 1, dry run and
@@ -62,7 +67,10 @@ _UNSET = re.compile(r"\b(unset|not set|missing|not configured|no key|absent)\b",
 _TOKEN = re.compile(r"\b(401|403|expired|invalid[_ ]grant|revoked|unauthori[sz]ed|"
                     r"token)\b", re.IGNORECASE)
 _DISK = re.compile(r"(no space|enospc|disk|% full|free space|volume full)", re.IGNORECASE)
-_STALE = re.compile(r"\b(stale|older than|not read since|out of date)\b", re.IGNORECASE)
+_STALE = re.compile(r"\b(stale|older than|not read since|not read recently|out of date)\b",
+                    re.IGNORECASE)
+_BOOT = re.compile(r"(first run|not run yet|no observation|since (boot|start)|"
+                   r"after start)", re.IGNORECASE)
 _RESOURCE_AGENT = re.compile(r"(reservedformiro|quota|rate limit|429)", re.IGNORECASE)
 
 
@@ -106,12 +114,28 @@ class Report:
     waiting_on_miro: int = 0
     held: int = 0
     tasks: int = 0
+    grace: int = 0
+    off: int = 0
+
+
+# The registry's reason for a module named in ATLAS_DISABLED_MODULES (or the
+# committed switch list, which reads "switched off (committed: ...)").
+SWITCHED_OFF = "switched off"
 
 
 def _unused() -> set[str]:
     """Modules Miro declared he does not use (his word, never inferred)."""
     return {m.strip() for m in os.getenv("AUTOPILOT_UNUSED_MODULES", "").split(",")
             if m.strip()}
+
+
+def boot_grace() -> timedelta:
+    """How long after process start a not-yet-read check is only noted."""
+    try:
+        minutes = float(os.getenv("AUTOPILOT_BOOT_GRACE_MIN", GRACE_DEFAULT_MIN))
+    except ValueError:
+        minutes = GRACE_DEFAULT_MIN
+    return timedelta(minutes=max(minutes, 0))
 
 
 def _envs(text: str) -> tuple[str, ...]:
@@ -134,6 +158,10 @@ def classify(f: Finding, disabled: str | None) -> Diagnosis:
                         "wait for the quota reset or add model capacity", "agent")
         return make("real_fault", f"last shift did not finish: {f.detail[:160]}",
                     "read the shift's run row and fix what it names", "agent")
+    if disabled and disabled.startswith(SWITCHED_OFF):
+        # Miro turned the module off on purpose: its stale checks are not faults.
+        return make("module_off", f"{f.module} is switched off on purpose",
+                    "none needed", "nobody")
     if disabled and disabled.startswith("missing env:"):
         names = _envs(disabled.removeprefix("missing env:"))
         if f.module in _unused():
@@ -154,9 +182,12 @@ def classify(f: Finding, disabled: str | None) -> Diagnosis:
     if _DISK.search(f.detail):
         return make("resource", f"disk or space problem: {f.detail[:140]}",
                     "free disk space (ATLAS never deletes by itself)", "miro")
-    if f.stale or _STALE.search(f.detail):
+    since_boot = (f.health == "unknown" and not f.stale and
+                  (not f.detail.strip() or bool(_BOOT.search(f.detail))))
+    if f.stale or since_boot or _STALE.search(f.detail):
         action = FIX_ACTIONS.get(f.subject)
-        return make("stale_data", "the check has not been read recently",
+        return make("unknown_since_boot" if since_boot and not _STALE.search(f.detail)
+                    else "stale_data", "the check has not been read recently",
                     f"run {action[0]}" if action else "re-run the collector",
                     "autopilot" if action else "agent",
                     fix_action=action[0] if action else None,
@@ -185,6 +216,19 @@ class IO:
                          dedup_key: str) -> int: raise NotImplementedError
     async def record(self, at: datetime, rows: list[dict[str, Any]], report: Report
                      ) -> int: raise NotImplementedError
+    def recovered(self) -> set[str]: return set()
+    async def open_tasks(self) -> list[tuple[int, str]]: return []
+    async def close_task(self, task_id: int) -> None: raise NotImplementedError
+    def unused_checks(self) -> set[str]:
+        """`module.check` names Miro does not use (ATLAS_UNUSED_CHECKS)."""
+        return set()
+
+
+def _unused_of(io: Any) -> set[str]:
+    """The checks Miro does not use, lower-cased. An IO without the method
+    (a test double) has none."""
+    fn = getattr(io, "unused_checks", None)
+    return {u.lower() for u in fn()} if callable(fn) else set()
 
 
 def _held(res: ActionResult) -> bool:
@@ -230,15 +274,42 @@ async def _fix(d: Diagnosis, hist: History, io: IO) -> tuple[str, str]:
     return "fix_failed", f"{action} ran but the check reads {after}"
 
 
-async def run_cycle(io: IO, now: datetime) -> Report:
+async def _close_recovered(io: IO) -> None:
+    """A check that reads OK closes its open autopilot task (marked done, never
+    deleted). A task is `<check>:<class>`; other refs are not checks."""
+    ok = io.recovered()
+    for task_id, ref in await io.open_tasks():
+        check = ref.rpartition(":")[0]
+        off = (not check.startswith("agent:") and "." in check and
+               ((io.disabled_reason(check.partition(".")[0]) or "").startswith(SWITCHED_OFF)
+                or check.lower() in _unused_of(io)))
+        if check in ok or off:
+            await io.close_task(task_id)
+
+
+async def run_cycle(io: IO, now: datetime, boot_at: datetime | None = None) -> Report:
+    """`boot_at` is the process start; None means no grace period."""
     rep = Report(at=now)
     rows: list[dict[str, Any]] = []
     credentials: list[Diagnosis] = []
+    off_modules: dict[str, int] = {}
+    in_grace = boot_at is not None and now - boot_at < boot_grace()
+    unused = _unused_of(io)
+    off_checks: set[str] = set()
     for f in await io.findings():
+        if f.kind == "check" and f.subject.lower() in unused:
+            # Miro does not use this check: not watched, no task, no fix.
+            off_checks.add(f.subject.lower())
+            continue
         d = classify(f, io.disabled_reason(f.module))
+        if d.cause_class == "module_off":
+            off_modules[f.module] = off_modules.get(f.module, 0) + 1
+            continue
         hist = await io.history(d.cause_key)
         detail = ""
-        if d.who == "nobody":
+        if in_grace and d.cause_class in GRACE_CLASSES:
+            outcome, detail = "grace", "not read since the process started"
+        elif d.who == "nobody":
             outcome = "idle"
         elif d.who == "miro":
             outcome = "waiting_miro"
@@ -262,13 +333,33 @@ async def run_cycle(io: IO, now: datetime) -> Report:
             "Miro", f"{len(credentials)} thing(s) need a key or token only you have",
             {"missing": {d.subject: list(d.env_missing) for d in credentials}},
             "; ".join(lines)[:1500], CREDENTIAL_REF)
-    rep.total = len(rows)
+    if off_modules:
+        names = ", ".join(sorted(off_modules))
+        rows.append({"subject": "modules:off", "kind": "check",
+                     "cause_key": "modules:off:module_off", "cause_class": "module_off",
+                     "cause": "switched off on purpose (ATLAS_DISABLED_MODULES), not watched",
+                     "fix": "none needed", "who": "nobody", "outcome": "module_off",
+                     "action": None, "detail": names, "env_missing": []})
+    # Unused checks that never produced a finding still count as off.
+    off_checks.update(unused)
+    if off_checks:
+        rows.append({"subject": "checks:off", "kind": "check",
+                     "cause_key": "checks:off:module_off", "cause_class": "module_off",
+                     "cause": "switched off on purpose (ATLAS_UNUSED_CHECKS), not watched",
+                     "fix": "none needed", "who": "nobody", "outcome": "module_off",
+                     "action": None, "detail": ", ".join(sorted(off_checks)),
+                     "env_missing": []})
+    rep.off = sum(off_modules.values()) + len(off_checks)
+    rep.total = (len(rows) - (1 if off_modules else 0) - (1 if off_checks else 0)
+                 + rep.off)
     rep.fixed = sum(r["outcome"] == "fixed" for r in rows)
     rep.waiting_on_miro = sum(r["outcome"] == "waiting_miro" for r in rows)
     rep.held = sum(r["outcome"] == "held" for r in rows)
+    rep.grace = sum(r["outcome"] == "grace" for r in rows)
     rep.tasks = sum(r["outcome"] in ("task_open", "escalated") for r in rows) \
         + (1 if credentials else 0)
     await io.record(now, rows, rep)
+    await _close_recovered(io)
     return rep
 
 
@@ -279,6 +370,7 @@ class LiveIO(IO):
 
     def __init__(self) -> None:
         self.rolled: list[int] = []
+        self.ok: set[str] = set()
 
     async def findings(self) -> list[Finding]:
         from ...kernel import agent_activity
@@ -293,6 +385,8 @@ class LiveIO(IO):
                 continue                        # a retired check
             interval = timedelta(seconds=int(r["interval_s"])) if r["interval_s"] else None
             health, stale = effective_health(r["health"], r["observed_at"], interval, now)
+            if health == "ok":
+                self.ok.add(key)
             if health in ("degraded", "failing", "unknown"):
                 detail = await _detail_of(module, name)
                 out.append(Finding("check", key, str(health), detail, {}, bool(stale),
@@ -303,6 +397,10 @@ class LiveIO(IO):
     def disabled_reason(self, module: str) -> str | None:
         from ...kernel.registry import REGISTRY
         return REGISTRY.disabled.get(module)
+
+    def unused_checks(self) -> set[str]:
+        from ...kernel import board_state
+        return set(board_state.unused_checks())
 
     async def history(self, cause_key: str) -> History:
         from ...kernel.state import fetch_all
@@ -348,6 +446,21 @@ class LiveIO(IO):
         res = await create_remediation(owner, title, evidence, fix, SOURCE, ref)
         return int(res.evidence.get("task_id", 0)) if res.ok else 0
 
+    def recovered(self) -> set[str]:
+        return set(self.ok)
+
+    async def open_tasks(self) -> list[tuple[int, str]]:
+        from ...kernel.state import fetch_all
+        rows = await fetch_all(
+            """SELECT id, source_ref FROM project_tasks WHERE kind = 'remediation'
+                  AND source_action = $1 AND status IN ('todo','doing','blocked')""",
+            SOURCE)
+        return [(int(r["id"]), str(r["source_ref"])) for r in rows]
+
+    async def close_task(self, task_id: int) -> None:
+        from ..projects import store as board
+        await board.set_task_status(task_id, "done")
+
     async def raise_card(self, action: str, params: dict[str, Any], reason: str,
                          dedup_key: str) -> int:
         from ...kernel import approvals
@@ -357,10 +470,10 @@ class LiveIO(IO):
                      ) -> int:
         from ...kernel.state import execute_sql, fetch_one
         head = await fetch_one(
-            """INSERT INTO autopilot_cycles (at, total, fixed, waiting, held, tasks)
-               VALUES ($1, $2, $3, $4, $5, $6) RETURNING id""",
+            """INSERT INTO autopilot_cycles (at, total, fixed, waiting, held, tasks, off)
+               VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id""",
             at, report.total, report.fixed, report.waiting_on_miro, report.held,
-            report.tasks)
+            report.tasks, report.off)
         cid = int(head["id"]) if head is not None else 0
         for r in rows:
             await execute_sql(
@@ -413,15 +526,16 @@ async def _agent_findings(now: datetime) -> list[Finding]:
 async def cycle() -> ActionResult:
     now = datetime.now(UTC)
     try:
-        rep = await run_cycle(LiveIO(), now)
+        rep = await run_cycle(LiveIO(), now, PROCESS_START)
     except Exception as exc:  # noqa: BLE001
         from .._http import explain
         return ActionResult(False, f"autopilot could not run: {explain(exc)}")
     return ActionResult(
         True, f"{rep.total} diagnosed, {rep.fixed} fixed, {rep.waiting_on_miro} waiting "
-              f"on Miro, {rep.held} held, {rep.tasks} task(s)",
+              f"on Miro, {rep.held} held, {rep.tasks} task(s), {rep.grace} in boot grace",
         evidence={"total": rep.total, "fixed": rep.fixed, "waiting": rep.waiting_on_miro,
-                  "held": rep.held, "tasks": rep.tasks, "read_at": now.isoformat()})
+                  "held": rep.held, "tasks": rep.tasks, "grace": rep.grace,
+                  "read_at": now.isoformat()})
 
 
 async def cycle_dry() -> ActionResult:
@@ -456,13 +570,14 @@ def summary(row: dict[str, Any] | None, now: datetime) -> dict[str, Any]:
     """The Command Center line. None (unreadable or never ran) is UNKNOWN."""
     base: dict[str, Any] = {"read_at": now.isoformat(), "last_cycle_at": None,
                             "fixed": None, "waiting_on_miro": None, "held": None,
-                            "tasks": None}
+                            "tasks": None, "off": None}
     if row is None:
         return base
     at = row["at"]
     base.update(last_cycle_at=at.isoformat() if hasattr(at, "isoformat") else str(at),
                 fixed=int(row["fixed"]), waiting_on_miro=int(row["waiting"]),
-                held=int(row["held"]), tasks=int(row["tasks"]))
+                held=int(row["held"]), tasks=int(row["tasks"]),
+                off=None if row.get("off") is None else int(row["off"]))
     return base
 
 
@@ -472,7 +587,7 @@ async def read_summary() -> dict[str, Any]:
     unread: list[str] = []
     try:
         row = await fetch_one(
-            """SELECT id, at, fixed, waiting, held, tasks FROM autopilot_cycles
+            """SELECT id, at, fixed, waiting, held, tasks, off FROM autopilot_cycles
                 WHERE superseded_at IS NULL ORDER BY at DESC, id DESC LIMIT 1""")
         out = summary(dict(row) if row is not None else None, now)
         items: list[dict[str, Any]] = []

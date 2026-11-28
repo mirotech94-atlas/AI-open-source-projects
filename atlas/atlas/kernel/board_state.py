@@ -11,6 +11,9 @@ them may look like OK or like each other (invariants 3 and 7):
   * **retired** -- the check has a row in the database but the code no longer
     registers it (renamed, removed). Its last reading is history, not a
     reading of now, and is never OK.
+  * **switched off (check)** -- one check Miro does not use, named in
+    `ATLAS_UNUSED_CHECKS` (`module.check,...`). Never run, never counted
+    FAILING / DEGRADED / UNKNOWN, never OK: listed in words as "switched off".
   * **switched off** -- a whole module off by name (`ATLAS_DISABLED_MODULES`
     or `SWITCHED_OFF` below). Shown by the board as its own label.
 
@@ -19,6 +22,7 @@ self-test line call these; nothing here executes anything.
 """
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
@@ -67,6 +71,26 @@ SWITCHED_OFF: dict[str, str] = {
 }
 
 
+UNUSED_LABEL = "switched off: not used (ATLAS_UNUSED_CHECKS)"
+
+
+def unused_checks() -> frozenset[str]:
+    """`module.check` names in `ATLAS_UNUSED_CHECKS` (comma list, lower-cased).
+    Read on every call, like `ATLAS_DISABLED_MODULES` at load. An entry that is
+    not exactly `module.check` is ignored, never guessed at."""
+    out: set[str] = set()
+    for raw in os.getenv("ATLAS_UNUSED_CHECKS", "").split(","):
+        name = raw.strip().lower()
+        module, _, check = name.partition(".")
+        if module and check and "." not in check:
+            out.add(name)
+    return frozenset(out)
+
+
+def is_unused(key: str) -> bool:
+    return key.strip().lower() in unused_checks()
+
+
 def validate(parked: tuple[Parked, ...] = PARKED) -> list[str]:
     """Problems with the committed list: a missing reason, a bad date, a
     duplicate. Empty when it is sound (a test holds it to that)."""
@@ -106,12 +130,20 @@ def parked_state(entry: Parked) -> dict[str, str]:
             "label": f"parked until {entry.until.isoformat()}: {entry.reason}"}
 
 
+def switched_off_state() -> dict[str, str]:
+    return {"kind": "switched_off", "label": UNUSED_LABEL}
+
+
 def override_state(key: str, *, registered: bool, today: date,
                    registry_loaded: bool = True,
-                   parked: tuple[Parked, ...] | None = None) -> dict[str, str] | None:
-    """`retired` when the registry (loaded) no longer has the check, else
-    `parked` when the committed list says so, else None. Retired wins: a
-    parking for a check that does not exist is not a reason to show it."""
+                   parked: tuple[Parked, ...] | None = None,
+                   unused: bool = False) -> dict[str, str] | None:
+    """`switched_off` when Miro said he does not use the check, else `retired`
+    when the registry (loaded) no longer has it, else `parked` when the
+    committed list says so, else None. Switched off wins: an unused check is
+    deliberately not registered, which is not the same as retired."""
+    if unused:
+        return switched_off_state()
     if registry_loaded and not registered:
         return retired_state()
     entry = parked_entry(key, today, parked)
@@ -130,12 +162,14 @@ def self_test(checks: list[dict[str, Any]], read_at: datetime) -> dict[str, Any]
     a parked check that ran still counts as run, but is counted under parked
     and never under UNKNOWN. Counted now, from the rows just read."""
     at = read_at.isoformat()
-    live = [c for c in checks if not _is(c, "retired")]
+    off = [c for c in checks if _is(c, "switched_off")]
+    live = [c for c in checks
+            if not _is(c, "retired") and not _is(c, "switched_off")]
     parked = [c for c in live if _is(c, "parked")]
     rest = [c for c in live if not _is(c, "parked")]
     ran = [c for c in live if c.get("observed_at") and not c.get("stale")]
     unknown = [c for c in rest if c.get("health") == "unknown"]
-    retired = len(checks) - len(live)
+    retired = len(checks) - len(live) - len(off)
     oldest = min((c["observed_at"] for c in ran), default=None)
     return {
         "read_at": at,
@@ -144,6 +178,7 @@ def self_test(checks: list[dict[str, Any]], read_at: datetime) -> dict[str, Any]
         "unknown": {"n": len(unknown), "read_at": at},
         "parked": {"n": len(parked), "read_at": at},
         "retired": {"n": retired, "read_at": at},
+        "switched_off": {"n": len(off), "read_at": at},
     }
 
 

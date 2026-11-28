@@ -5,13 +5,15 @@ export interface AutopilotRead {
   fixed: number | null;
   waiting_on_miro: number | null;
   held: number | null;
+  /** Stale checks of modules switched off on purpose; null = not read. */
+  off?: number | null;
   items: Array<{ subject: string; cause: string; fix: string; outcome: string }>;
   unread: string[];
 }
 
 export interface AutopilotLine {
   text: string;
-  /** Parts shown as Unknown: "cycle", "fixed", "waiting". */
+  /** Parts shown as Unknown: "cycle", "fixed", "waiting", "off". */
   unknown: string[];
   items: AutopilotRead["items"];
 }
@@ -26,6 +28,10 @@ export function autopilotLine(r: AutopilotRead, hhmm: (s: string) => string): Au
     ? (unknown.push("waiting"), "Unknown") : String(r.waiting_on_miro);
   let text = `Autopilot · last cycle ${cycle} · fixed ${fixed} · waiting on Miro ${wait}`;
   if (r.held !== null && r.held > 0) text += ` · held ${r.held}`;
+  // Off (ATLAS_DISABLED_MODULES) is a count, never a fault. A figure that was
+  // not read is Unknown, never 0; a cycle that saw none says nothing.
+  if (r.off === null) { unknown.push("off"); text += " · off Unknown"; }
+  else if (r.off !== undefined && r.off > 0) text += ` · off ${r.off}`;
   const items = r.waiting_on_miro !== null && r.waiting_on_miro > 0
     ? r.items.slice(0, ITEMS_SHOWN) : [];
   return { text, unknown, items };

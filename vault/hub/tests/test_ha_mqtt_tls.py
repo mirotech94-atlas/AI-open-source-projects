@@ -1,5 +1,5 @@
 """MQTT over TLS lets the broker live on a public address -- the owner's Home
-Assistant on a VPSie VM -- without the MQTT password crossing the internet
+Assistant on a CloudHost VM -- without the MQTT password crossing the internet
 in the clear. Plain TCP stays private-only."""
 from guardian_hub.integrations import homeassistant as ha, urlpolicy
 

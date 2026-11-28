@@ -1920,6 +1920,8 @@ button { font: inherit; }
   background: repeating-linear-gradient(135deg, transparent 0 5px,
     rgba(141, 156, 171, .18) 5px 6px); }
 .bd-check[data-treatment="double"] { border: 3px double #8b5cf6; color: #8b5cf6; }
+.bd-check[data-treatment="off-grey"] { border: 1px solid var(--text-faint);
+  background: transparent; color: var(--text-faint); }
 .bd-check[data-treatment="struck-dotted"] { border: 1px dotted var(--text-faint);
   color: var(--text-faint); text-decoration: line-through; opacity: .75; }
 
